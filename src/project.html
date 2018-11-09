@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mapcache</title>
+  <link rel="stylesheet" href="./app.css"></link>
+</head>
+<body>
+
+  <div id="app" class="container">
+    <div id="source-drop-zone" class="project-sidebar">
+      <strong><p id="project-name"></p></strong>
+      <div class="add-data-button">
+        <div class="major-button-text">Add Data To Project</div>
+        <div class="major-button-detail">Data formats accepted are: GeoPackage, GeoJSON, GeoTIFF, Shapefile, MBTiles, or zip files of XYZ tiles</div>
+      </div>
+      <div id="source-container">
+
+      </div>
+    </div>
+
+    <div class="work-area">
+      <div id="map" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <script src="project.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "name": "@ngageoint/mapcache-electron",
+  "productName": "Mapcache",
+  "description": "Starter for your Electron application",
+  "version": "1.0.0",
+  "private": true,
+  "author": "NGA <mage@nga.mil>",
+  "copyright": "© NGA",
+  "homepage": "http://example.com",
+  "main": "app/background.js",
+  "build": {
+    "appId": "com.example.electron-boilerplate",
+    "files": [
+      "app/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "resources"
+    },
+    "publish": null
+  },
+  "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "preunit": "webpack --config=build/webpack.unit.config.js --env=test --display=none",
+    "unit": "electron-mocha temp/specs.js --renderer --require source-map-support/register",
+    "pree2e": "webpack --config=build/webpack.app.config.js --env=test --display=none && webpack --config=build/webpack.e2e.config.js --env=test --display=none",
+    "e2e": "mocha temp/e2e.js --require source-map-support/register",
+    "test": "npm run unit && npm run e2e",
+    "start": "node build/start.js",
+    "release": " webpack --config=build/webpack.app.config.js --env=production && electron-builder",
+    "release-test": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder"
+  },
+  "dependencies": {
+    "@ngageoint/geopackage": "github:ngageoint/geopackage-js",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "fs-jetpack": "^2.1.0",
+    "leaflet": "^1.3.4",
+    "leaflet.vectorgrid": "github:chriszrc/Leaflet.VectorGrid",
+    "mustache": "^3.0.0",
+    "xel": "0.0.158"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.54",
+    "@babel/preset-env": "^7.0.0-beta.54",
+    "babel-loader": "^8.0.0-beta.4",
+    "babel-plugin-transform-object-rest-spread": "^7.0.0-beta.3",
+    "chai": "^4.1.0",
+    "copy-webpack-plugin": "^4.5.4",
+    "css-loader": "^1.0.0",
+    "electron": "2.0.2",
+    "electron-builder": "^20.15.1",
+    "electron-mocha": "^6.0.4",
+    "extract-loader": "^3.0.0",
+    "file-loader": "^2.0.0",
+    "friendly-errors-webpack-plugin": "^1.7.0",
+    "html-loader": "^0.5.5",
+    "mini-css-extract-plugin": "^0.4.4",
+    "mocha": "^5.2.0",
+    "mustache-loader": "^1.4.1",
+    "source-map-support": "^0.5.6",
+    "spectron": "^3.8.0",
+    "style-loader": "^0.21.0",
+    "url-loader": "^1.1.2",
+    "webpack": "^4.12.0",
+    "webpack-cli": "^3.0.4",
+    "webpack-merge": "^4.1.3",
+    "webpack-node-externals": "^1.7.2"
+  }
+}
