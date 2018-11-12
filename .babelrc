@@ -1,14 +1,39 @@
 {
-  "presets": [
-    [
-      "@babel/env",
-      {
-        "targets": {
-          "browsers": "last 2 Chrome versions",
-          "node": "current"
-        }
-      }
-    ]
-  ],
-  "plugins": [["transform-object-rest-spread", { "useBuiltIns": true }]]
+  "comments": false,
+  "env": {
+    "test": {
+      "presets": [
+        ["env", {
+          "targets": { "node": 7 }
+        }],
+        "stage-0"
+      ],
+      "plugins": ["istanbul"]
+    },
+    "main": {
+      "presets": [
+        ["env", {
+          "targets": { "node": 7 }
+        }],
+        "stage-0"
+      ]
+    },
+    "renderer": {
+      "presets": [
+        ["env", {
+          "modules": false
+        }],
+        "stage-0"
+      ]
+    },
+    "web": {
+      "presets": [
+        ["env", {
+          "modules": false
+        }],
+        "stage-0"
+      ]
+    }
+  },
+  "plugins": ["transform-runtime"]
 }

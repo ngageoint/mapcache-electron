@@ -1,10 +1,11 @@
-node_modules
 .DS_Store
-Thumbs.db
-*.log
-
-/dist
-/temp
-
-# ignore everything in 'app' folder what had been generated from 'src' folder
-app
+dist/electron/*
+dist/web/*
+build/*
+!build/icons
+coverage
+node_modules/
+npm-debug.log
+npm-debug.log.*
+thumbs.db
+!.gitkeep
