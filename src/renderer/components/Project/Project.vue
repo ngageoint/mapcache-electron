@@ -21,6 +21,8 @@
 <script>
   import * as Projects from '../../projects'
   import L from 'leaflet'
+  // eslint-disable-next-line no-unused-vars
+  import vendor from '../../vendor'
 
   const projectId = new URL(location.href).searchParams.get('id')
   console.log('projectId', projectId)
@@ -49,6 +51,10 @@
       map.setView(defaultCenter, defaultZoom)
 
       basemap.addTo(map)
+
+      L.marker([38.889269, -77.0501769]).addTo(map)
+        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+        .openPopup()
     }
   }
 </script>
