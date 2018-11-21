@@ -21,12 +21,14 @@ export const readProjects = () => {
 
 export const saveProject = project => {
   let mapcacheProjects = readProjects()
-  mapcacheProjects[project.id] = project
+  mapcacheProjects[project.id] = JSON.parse(JSON.stringify(project))
+  console.log({mapcacheProjects})
   userDataDir.write(mapcacheStoreFile, mapcacheProjects, { atomic: true })
 }
 
 export const getProjectConfiguration = id => {
-  return readProjects()[id]
+  return Object.assign({}, {sources: {}}, readProjects()[id])
+  // return Object.assign({}, readProjects()[id], {sources: {}})
 }
 
 export const openProject = projectId => {
@@ -35,10 +37,6 @@ export const openProject = projectId => {
     ? `http://localhost:9080/#/project`
     : `file://${__dirname}/index.html#project`
 
-  // function createWindow () {
-    /**
-     * Initial window options
-     */
   projectWindow = new remote.BrowserWindow({
     height: 563,
     useContentSize: true,

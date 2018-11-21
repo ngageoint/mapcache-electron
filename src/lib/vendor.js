@@ -15,3 +15,5 @@ L.Icon.Default.mergeOptions({
   iconUrl: marker,
   shadowUrl: markerShadow
 })
+
+export * as L from 'leaflet'

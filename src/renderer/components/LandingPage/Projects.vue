@@ -20,7 +20,7 @@
 </template>
 
 <script>
-  import * as Projects from '../../projects'
+  import * as Projects from '../../../lib/projects'
 
   let projects = Object.values(Projects.readProjects())
 
