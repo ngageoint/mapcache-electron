@@ -55,7 +55,6 @@
   async function addSource (source) {
     let mapSource = await SourceFactory.constructSource(source, project)
     let layer = mapSource.mapLayer
-    console.log('layer', layer)
     let layerArray = Array.isArray(layer) ? layer : [layer]
     layerArray.forEach(function (layer) {
       layer.addTo(map)
@@ -82,8 +81,8 @@
     },
     mounted: function () {
       map = vendor.L.map('map')
-      const defaultCenter = [39.658748, -104.843165]
-      const defaultZoom = 13
+      const defaultCenter = [40.500098, -74.490142]
+      const defaultZoom = 12
       const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
       })

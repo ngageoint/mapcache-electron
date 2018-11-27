@@ -10,6 +10,16 @@ import Source from './Source'
 import * as GeoTIFF from 'geotiff'
 import GeoTiffLayer from '../map/GeoTiffLayer'
 
+const userDataDir = jetpack.cwd(remote.app.getPath('userData'))
+console.log('user data dir', userDataDir)
+
+var defs = require('../projection/proj4Defs')
+for (var name in defs) {
+  if (defs[name]) {
+    proj4.defs(name, defs[name])
+  }
+}
+
 export default class GeoTiffSource extends Source {
   async initialize () {
     this.geotiff = await GeoTIFF.fromFile(this.configuration.file.path)
@@ -39,7 +49,8 @@ export default class GeoTiffSource extends Source {
     if (this.layer) return this.layer
 
     this.layer = new GeoTiffLayer({
-      source: this
+      source: this,
+      pane: 'tilePane'
     })
     return this.layer
   }
@@ -191,15 +202,5 @@ export default class GeoTiffSource extends Source {
       b: raster[bands * (x + (y * imageWidth)) + 2],
       a: 255
     }
-  }
-}
-
-const userDataDir = jetpack.cwd(remote.app.getPath('userData'))
-console.log('user data dir', userDataDir)
-
-var defs = require('../projection/proj4Defs')
-for (var name in defs) {
-  if (defs[name]) {
-    proj4.defs(name, defs[name])
   }
 }

@@ -15,6 +15,9 @@ let mainConfig = {
   externals: [
     ...Object.keys(dependencies || {})
   ],
+  // optimization: {
+  //   runtimeChunk: 'single'
+  // },
   module: {
     rules: [
       {

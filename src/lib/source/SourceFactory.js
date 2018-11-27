@@ -1,6 +1,8 @@
 import path from 'path'
 import GeoTiffSource from './GeoTiffSource'
 import GeoJSONSource from './GeoJSONSource'
+import GeoPackageSource from './GeoPackageSource'
+import ShapefileSource from './ShapefileSource'
 import Vue from 'vue'
 import * as Projects from '../projects'
 
@@ -42,6 +44,19 @@ export default class SourceFactory {
         let geotiffSource = new GeoTiffSource(configuration, project)
         await geotiffSource.initialize()
         return geotiffSource
+      case 'gpkg':
+      case 'geopackage':
+        configuration.type = 'geopackage'
+        let geopackageSource = new GeoPackageSource(configuration, project)
+        await geopackageSource.initialize()
+        return geopackageSource
+      case 'zip':
+      case 'shapefile':
+      case 'shp':
+        configuration.type = 'shapefile'
+        let shapefileSource = new ShapefileSource(configuration, project)
+        await shapefileSource.initialize()
+        return shapefileSource
       default:
         console.log('unknown file type', configuration)
     }

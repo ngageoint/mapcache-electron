@@ -3,7 +3,6 @@ import * as Projects from '../projects'
 
 export default class Source {
   constructor (configuration, project) {
-    console.log('configuration', configuration)
     this.configuration = configuration
     this.project = project
   }

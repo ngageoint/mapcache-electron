@@ -26,15 +26,16 @@ export default class GeoJSONSource extends Source {
         if (count === 1000000) {
           count = 0
           layers.push(Vendor.L.vectorGrid.slicer(currentJson, {
+            pane: 'overlayPane'
           }))
           currentJson = Object.assign({}, initialJson)
         }
       })
       jsonStream.on('end', function () {
         layers.push(Vendor.L.vectorGrid.slicer(currentJson, {
-          interactive: true
+          interactive: true,
+          pane: 'overlayPane'
         }))
-        console.log('configuration', configuration)
         saveSource(configuration)
         resolve()
       })
