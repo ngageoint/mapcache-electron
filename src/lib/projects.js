@@ -1,34 +1,41 @@
 
 import { remote } from 'electron'
 import jetpack from 'fs-jetpack'
+import Project from './project/Project'
 
 const app = remote.app
 
 const userDataDir = jetpack.cwd(app.getPath('userData'))
 const mapcacheStoreFile = 'mapcache-projects.json'
+console.log('userDataDir', app.getPath('userData'))
+
+let mapcacheProjects
 
 export const readProjects = () => {
-  let mapcacheProjects = {}
-
+  if (mapcacheProjects) return mapcacheProjects
+  mapcacheProjects = {}
   try {
-    mapcacheProjects = userDataDir.read(mapcacheStoreFile, 'json')
+    let projectsConfiguration = userDataDir.read(mapcacheStoreFile, 'json')
+    console.log({projectsConfiguration})
+    for (var projectId in projectsConfiguration) {
+      mapcacheProjects[projectId] = new Project(projectsConfiguration[projectId])
+    }
   } catch (err) {
     console.log('err', err)
   }
-
-  return Object.assign({}, mapcacheProjects)
+  console.log({mapcacheProjects})
+  return mapcacheProjects
 }
 
 export const saveProject = project => {
   let mapcacheProjects = readProjects()
-  mapcacheProjects[project.id] = JSON.parse(JSON.stringify(project))
+  mapcacheProjects[project.id] = project
   console.log({mapcacheProjects})
   userDataDir.write(mapcacheStoreFile, mapcacheProjects, { atomic: true })
 }
 
-export const getProjectConfiguration = id => {
-  return Object.assign({}, {sources: {}}, readProjects()[id])
-  // return Object.assign({}, readProjects()[id], {sources: {}})
+export const getProject = id => {
+  return readProjects()[id]
 }
 
 export const openProject = projectId => {
@@ -54,23 +61,13 @@ export const openProject = projectId => {
 }
 
 export const newProject = () => {
-  const projectId = getId()
-
-  let project = {
+  let project = new Project({
     name: 'New Project',
-    id: projectId
-  }
+    layerCount: 0,
+    sources: {}
+  })
   saveProject(project)
-  openProject(projectId)
+  openProject(project.id)
 
   return project
-}
-
-export const getId = () => {
-  function s4 () {
-    return Math.floor((1 + Math.random()) * 0x10000)
-      .toString(16)
-      .substring(1)
-  }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
 }

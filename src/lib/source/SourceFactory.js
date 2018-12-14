@@ -1,8 +1,9 @@
 import path from 'path'
 import GeoTiffSource from './GeoTiffSource'
-import GeoJSONSource from './GeoJSONSource'
+// import GeoJSONSource from './GeoJSONSource'
 import GeoPackageSource from './GeoPackageSource'
-import ShapefileSource from './ShapefileSource'
+import GdalVectorSource from './GdalVectorSource'
+import KMZSource from './KMZSource'
 import Vue from 'vue'
 import * as Projects from '../projects'
 
@@ -23,6 +24,7 @@ export default class SourceFactory {
       }
       configuration = {
         file: file,
+        originalType: path.extname(file.name).slice(1),
         type: path.extname(file.name).slice(1),
         name: file.name,
         shown: true
@@ -30,35 +32,47 @@ export default class SourceFactory {
     }
     configuration.projectId = project.id
 
-    switch (configuration.type) {
-      case 'geojson':
-      case 'json':
-        configuration.type = 'geojson'
-        let geoJsonSource = new GeoJSONSource(configuration, project)
-        await geoJsonSource.initialize()
-        return geoJsonSource
-      case 'geotiff':
-      case 'tiff':
-      case 'tif':
-        configuration.type = 'geotiff'
-        let geotiffSource = new GeoTiffSource(configuration, project)
-        await geotiffSource.initialize()
-        return geotiffSource
-      case 'gpkg':
-      case 'geopackage':
-        configuration.type = 'geopackage'
-        let geopackageSource = new GeoPackageSource(configuration, project)
-        await geopackageSource.initialize()
-        return geopackageSource
-      case 'zip':
-      case 'shapefile':
-      case 'shp':
-        configuration.type = 'shapefile'
-        let shapefileSource = new ShapefileSource(configuration, project)
-        await shapefileSource.initialize()
-        return shapefileSource
-      default:
-        console.log('unknown file type', configuration)
+    try {
+      switch (configuration.type) {
+        case 'geojson':
+        case 'json':
+        case 'zip':
+        case 'shapefile':
+        case 'shp':
+        case 'gdal':
+          configuration.type = 'gdal'
+          let gdalSource = new GdalVectorSource(configuration, project)
+          await gdalSource.initialize()
+          return gdalSource
+        case 'geotiff':
+        case 'tiff':
+        case 'tif':
+          configuration.type = 'geotiff'
+          let geotiffSource = new GeoTiffSource(configuration, project)
+          await geotiffSource.initialize()
+          return geotiffSource
+        case 'gpkg':
+        case 'geopackage':
+          configuration.type = 'geopackage'
+          let geopackageSource = new GeoPackageSource(configuration, project)
+          await geopackageSource.initialize()
+          return geopackageSource
+        case 'kmz':
+        case 'kml':
+          configuration.type = 'kmz'
+          let kmzSource = new KMZSource(configuration, project)
+          await kmzSource.initialize()
+          return kmzSource
+        default:
+          console.log('unknown file type', configuration)
+          // just try to let gdal open it
+          configuration.type = 'gdal'
+          let defaultSource = new GdalVectorSource(configuration, project)
+          await defaultSource.initialize()
+          return defaultSource
+      }
+    } catch (e) {
+      console.log('Failed to open file ' + configuration.file)
     }
   }
 

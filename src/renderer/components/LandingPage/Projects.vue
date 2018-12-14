@@ -2,7 +2,7 @@
   <div>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
-        <li v-for="project in projects" @click="openProject(project.id)">
+        <li v-for="project in projects" @click="openProject(project)">
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>
           </div>
@@ -23,7 +23,7 @@
   import * as Projects from '../../../lib/projects'
 
   let projects = Object.values(Projects.readProjects())
-
+  
   const newProject = () => {
     projects.push(Projects.newProject())
   }
@@ -35,8 +35,9 @@
       }
     },
     methods: {
-      openProject (id) {
-        Projects.openProject(id)
+      openProject (project) {
+        console.log('open project', project)
+        Projects.openProject(project.id)
       },
       newProject
     }

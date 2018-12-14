@@ -7,9 +7,7 @@
         <div class="major-button-detail">Data formats accepted are: GeoPackage, GeoJSON, GeoTIFF, Shapefile, MBTiles, or zip files of XYZ tiles</div>
       </div>
       <div id="source-container">
-        <ul class="sources" id="source-list" v-for="source in project.sources" @click="zoomToExtent(source.extent)">
-          {{source.name}}
-        </ul>
+        <source-view v-for="source in project.sources" :source="source" :key="source.id" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer"></source-view>
       </div>
     </div>
 
@@ -20,20 +18,18 @@
 </template>
 
 <script>
-/* eslint-disable */
-
-  import path from 'path'
-  import Vue from 'vue'
   import * as Projects from '../../../lib/projects'
   // eslint-disable-next-line no-unused-vars
   import * as vendor from '../../../lib/vendor'
-  import { remote } from 'electron'
   import SourceFactory from '../../../lib/source/SourceFactory'
 
+  import SourceView from './Source'
 
   let map
   const projectId = new URL(location.href).searchParams.get('id')
-  let project = Projects.getProjectConfiguration(projectId)
+  let project = Projects.getProject(projectId)
+  console.log({project})
+  let mapLayers = {}
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault()
@@ -48,16 +44,21 @@
   async function addExistingSouces () {
     for (let sourceId in project.sources) {
       let source = project.sources[sourceId]
+      console.log({source})
       await addSource(source)
     }
   }
 
   async function addSource (source) {
     let mapSource = await SourceFactory.constructSource(source, project)
+    mapSource.map = map
     let layer = mapSource.mapLayer
     let layerArray = Array.isArray(layer) ? layer : [layer]
     layerArray.forEach(function (layer) {
+      console.log('layer', layer)
       layer.addTo(map)
+      console.log('add map layer with id', layer.id)
+      mapLayers[layer.id] = layer
     })
   }
 
@@ -67,22 +68,32 @@
         project
       }
     },
+    components: {
+      SourceView
+    },
     methods: {
-      openProject (id) {
-        console.log('open project', id)
-      },
       zoomToExtent (extent) {
         console.log({extent})
         map.fitBounds([
           [extent[1], extent[0]],
           [extent[3], extent[2]]
         ])
+      },
+      toggleLayer (layer) {
+        console.log('toggle layer', layer)
+        let mapLayer = mapLayers[layer.id]
+        console.log({mapLayers})
+        if (!layer.hidden) {
+          mapLayer.addTo(map)
+        } else {
+          mapLayer.remove()
+        }
       }
     },
     mounted: function () {
       map = vendor.L.map('map')
-      const defaultCenter = [40.500098, -74.490142]
-      const defaultZoom = 12
+      const defaultCenter = [39.658748, -104.843165]
+      const defaultZoom = 4
       const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
       })
@@ -126,9 +137,11 @@
   }
 
   .project-sidebar {
-    margin: 10px;
+    margin: 15px;
     text-align: center;
-    width: 300px;
+    width: 350px;
+    height: 100vh;
+    overflow-y: scroll;
   }
 
   .add-data-button {
@@ -136,6 +149,8 @@
     border-width: 1px;
     border-style: dashed;
     border-radius: 5px;
+    margin-top: 10px;
+    margin-bottom: 15px;
   }
 
   .major-button-text {

@@ -127,7 +127,7 @@ function startElectron () {
   }
 
   electronProcess = spawn(electron, args)
-  
+
   electronProcess.stdout.on('data', data => {
     electronLog(data, 'blue')
   })
@@ -159,11 +159,7 @@ function electronLog (data, color) {
 
 function greeting () {
   const cols = process.stdout.columns
-  let text = ''
-
-  if (cols > 104) text = 'electron-vue'
-  else if (cols > 76) text = 'electron-|vue'
-  else text = false
+  let text = 'Mapcache'
 
   if (text) {
     say(text, {

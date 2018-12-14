@@ -16,6 +16,8 @@
   import MapcacheWelcome from './LandingPage/MapcacheWelcome'
   import Projects from './LandingPage/Projects'
 
+  console.log('process.execPath', process.execPath)
+
   export default {
     name: 'landing-page',
     components: { MapcacheWelcome, Projects },

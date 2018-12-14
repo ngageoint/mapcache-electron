@@ -1,0 +1,1051 @@
+*, *:before, *:after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+$openSans: 'Open Sans', Helvetica, Arial, sans-serif;
+body {
+  background: #222;
+  font-family: $openSans;
+}
+
+$screenW: 375px;
+$screenH: 667px;
+$padSide: 24px;
+$padVert: 106px;
+$phoneW: $screenW + $padSide*2;
+$phoneH: $screenH + $padVert*2;
+
+%smallHeading {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #B5B5B5;
+}
+
+.phone {
+  position: relative;
+  width: $phoneW;
+  height: $phoneH;
+  margin: 2rem auto 2rem;
+  padding: $padVert $padSide;
+  background-color: #f8f8f8;
+  border-radius: 56px;
+
+  @media (max-width: 480px) {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  &__screen {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #525A75;
+  }
+
+  &__scroll-cont {
+    overflow-y: auto;
+    position: absolute;
+    left: 0;
+    top: -21px;
+    width: calc(100% + 15px);
+    height: calc(100% + 42px);
+    padding: 21px 0;
+
+    @media (max-width: 480px) {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__content {
+    position: relative;
+    padding-top: 30px;
+  }
+}
+
+$cardHeight: 160px;
+$cardHeaderHeight: 40px;
+$cardStatsHeight: $cardHeight - $cardHeaderHeight;
+$cardMapHeight: $cardHeight + 100px;
+$cardSenderHeight: 90px;
+$cardFromToHeight: $cardHeight - $cardSenderHeight;
+$cardLastPartHeight: $cardFromToHeight + 15px;
+$cardMrgBtm: 15px;
+$cardStep1MrgBtm: $cardHeight + $cardMrgBtm;
+$cardStep2MrgBtm: $cardStep1MrgBtm + $cardFromToHeight;
+$cardStep3MrgBtm: $cardStep2MrgBtm + $cardLastPartHeight;
+$cardReqStep1MrgBtm: $cardHeaderHeight + $cardSenderHeight + $cardLastPartHeight - $cardHeight;
+$cardReqStep2MrgBtm: $screenH - $cardHeight - $cardMrgBtm*2;
+$cardBorderRadius: 11px;
+
+$cardAnimStep1: 0.5s;
+$cardAnimStep2: 0.5s;
+$cardAnimStep3: 0.5s;
+
+$cardReqAnimStep1: 0.6s;
+$cardReqAnimStep2: 0.6s;
+
+$cardReqClosing1: 0.5s;
+$cardReqClosing2: 0.5s;
+
+$cardAnimTotal: $cardAnimStep1 + $cardAnimStep2 + $cardAnimStep3;
+
+$purple: #BA68C8;
+$green: #52A43A;
+$orange: #F7AA17;
+$red: #EF5350;
+
+@mixin colorTheme($color) {
+  .card__face__colored-side {
+    background: $color;
+  }
+  .card__face__path {
+    background: repeating-linear-gradient($color, $color 3px, transparent 3px, transparent 6px);
+    border-color: $color;
+  }
+  .card__header {
+    background: $color;
+  }
+  .card__sender__rating__star {
+    color: $color;
+  }
+  .card__path-big {
+    background: repeating-linear-gradient($color, $color 3px, transparent 3px, transparent 6px);
+    border-color: $color;
+  }
+}
+
+.card {
+  z-index: 1;
+  position: relative;
+  width: 90%;
+  height: $cardHeight;
+  margin-left: 18px;
+  margin-bottom: $cardMrgBtm;
+  perspective: 2000px;
+  transition: margin $cardAnimStep1 * 0.8 $cardAnimStep1 * 0.2;
+
+  &.active {
+    transition: margin $cardAnimStep1 * 0.8;
+  }
+
+  &.flip-step1 {
+    margin-bottom: $cardStep1MrgBtm;
+  }
+
+  &.flip-step2 {
+    margin-bottom: $cardStep2MrgBtm;
+  }
+
+  &.flip-step3 {
+    margin-bottom: $cardStep3MrgBtm;
+  }
+
+  &.req-active1 {
+    transition: margin $cardReqAnimStep1 cubic-bezier(.77,.03,.83,.67);
+    margin-bottom: $cardReqStep1MrgBtm;
+  }
+
+  &.req-active2 {
+    transition: margin $cardReqAnimStep2 cubic-bezier(.31,.14,.48,1.52);
+    margin-bottom: $cardReqStep2MrgBtm;
+  }
+  
+  &.req-closing1 {
+    transition: margin $cardReqClosing1;
+    margin-bottom: $cardHeight + $cardMrgBtm;
+  }
+  
+  &.req-closing2 {
+    transition: margin $cardReqClosing2;
+    margin-bottom: $cardMrgBtm;
+  }
+  
+  &.hidden-hack {
+    .card__part-2 > .m--front{
+      display: none;
+    }
+  }
+  
+  &.no-transition {
+    transition: all 0s 0s !important;
+    
+    * {
+      transition: all 0s 0s !important;
+    }
+  }
+
+  &.theme-purple {
+    @include colorTheme($purple);
+  }
+  &.theme-green {
+    @include colorTheme($green);
+  }
+  &.theme-orange {
+    @include colorTheme($orange);
+  }
+  &.theme-red {
+    @include colorTheme($red);
+  }
+
+  &__part {
+    z-index: 1;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    border-radius: $cardBorderRadius;
+    transform-origin: 50% 0;
+    transform-style: preserve-3d;
+
+    &__side {
+      z-index: 1;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: #fff;
+      backface-visibility: hidden;
+      transform-style: preserve-3d;
+
+      &.m--back {
+        transform: rotateX(180deg);
+      }
+      &.m--front {
+        background: #fff;
+      }
+    }
+
+    &-1 {
+      top: 0;
+      height: 100%;
+      transition: all $cardAnimStep1/2;
+      transform: translateZ(-3px);
+
+      .card.flip-step1 & {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+        transform: translateZ(0);
+      }
+
+      .card.req-closing2 & {
+        border-radius: $cardBorderRadius;
+      }
+    }
+
+    &-2 {
+      z-index: 6;
+      top: 100%;
+      height: 100%;
+      transform: rotateX(179deg) translateZ(3px);
+      transition: transform $cardAnimStep1 ease-out, border-radius $cardAnimStep1/2;
+
+      > .m--back {
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .card.flip-step1 & {
+        transform: translateZ(0);
+        border-radius: 0;
+      }
+
+      .card.req-active1 & {
+        transition: transform $cardReqAnimStep1;
+        transform: translate3d(0,-$cardStatsHeight,0);
+      }
+
+      .card.req-active2 & {
+        transition: transform $cardReqAnimStep2 cubic-bezier(.61,.14,.18,1.52);
+        transform: translate3d(0, $cardMapHeight - $cardStatsHeight,0);
+      }
+
+      .card.req-closing1 & {
+        transition: transform $cardReqClosing1;
+        transform: translate3d(0,0,0);
+      }
+
+      .card.req-closing2 & {
+        transition: transform, border-radius;
+        transition-duration: $cardReqClosing2;
+        transform: rotateX(179deg) translateZ(3px);
+        border-radius: $cardBorderRadius;
+      }
+    }
+
+    &-3 {
+      top: 100%;
+      height: $cardFromToHeight;
+      transform: rotateX(179deg) translateZ(-3px);
+      transition: transform $cardAnimStep2, border-radius 0s $cardAnimStep3;
+
+      > .m--back {
+        background: #F7EFF7;
+      }
+
+      .card.flip-step2 & {
+        transition: transform $cardAnimStep2, border-radius 0s 0s;
+        border-radius: 0;
+        transform: translateZ(0);
+      }
+
+      .card.req-active1 & {
+        transition: transform, height;
+        transition-duration: $cardReqAnimStep1;
+        transform: translate3d(0,-$cardFromToHeight,0);
+        height: 0;
+      }
+
+      .card.req-active2 & {
+        transition: transform, height;
+        transition-duration: $cardReqAnimStep2;
+        transform: translate3d(0,0,0);
+        height: 75px;
+      }
+
+      .card.req-closing1 & {
+        transition: transform $cardReqClosing1;
+        transform: rotateX(179deg) translateZ(-3px);
+      }
+      
+      .card.req-closing2 & {
+        transition: border-radius $cardReqClosing1;
+        border-radius: $cardBorderRadius;
+      }
+    }
+
+    &-4 {
+      top: 100%;
+      height: $cardFromToHeight;
+      transform: rotateX(179deg) translateZ(0);
+      transition: transform $cardAnimStep3, border-radius 0s 0s, height $cardAnimStep3;
+
+      > .m--back {
+        background: #F7EFF7;
+      }
+
+      > .m--front {
+        padding: 10px 20px;
+        opacity: 0;
+        transition: opacity 0s $cardAnimStep3;
+      }
+
+      .card.flip-step2 & {
+        transition: transform $cardAnimStep3, border-radius 0s 0s, height $cardAnimStep3*0.66 $cardAnimStep3*0.33;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+
+      .card.flip-step3 & {
+        transition: transform $cardAnimStep2, border-radius 0s 0s, height $cardAnimStep2*0.66;
+        height: $cardLastPartHeight;
+        transform: translateZ(0);
+
+        > .m--front {
+          opacity: 1;
+          transition: opacity 0s 0s;
+        }
+      }
+      
+      .card.req-closing1 & {
+        transition: border-radius $cardReqClosing1;
+        border-radius: 0;
+      }
+
+      .card.req-closing2 & {
+        transition: border-radius $cardReqClosing2;
+        border-radius: $cardBorderRadius;
+      }
+    }
+
+    &__inner {
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+  }
+
+  &__text {
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+
+    &:after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 20px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0), #fff);
+    }
+
+    p {
+      width: 200%;
+    }
+
+    &--left {
+      left: 0;
+    }
+    &--right {
+      left: 50%;
+    }
+
+    &__heading {
+      @extend %smallHeading;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    &__middle {
+      font-size: 18px;
+      line-height: 1;
+      font-weight: bold;
+      color: #4B4D52;
+    }
+
+    &__bottom {
+      font-size: 14px;
+      color: #555A5F;
+    }
+  }
+
+  &__face {
+    padding: 20px 20px 15px;
+
+    &:after {
+      content: "";
+      z-index: 5;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 20px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255, 1) 60%, rgba(255,255,255,1) 100%);
+    }
+
+    &__colored-side {
+      z-index: -1;
+      position: fixed; // THE ONLY CASE when top left corner is not bugged in Chrome/FF (it's still bugged in FF, but looks much better)
+      left: 0;
+      top: 0;
+      width: 7px;
+      height: 100%;
+      border-top-left-radius: $cardBorderRadius;
+      border-bottom-left-radius: $cardBorderRadius;
+      transition: width 0.3s;
+
+      .card__face:hover & {
+        width: 80px;
+      }
+    }
+
+    &__price {
+      margin-top: -3px;
+      font-weight: normal;
+      font-size: 22px;
+      color: #555A5F;
+      transition: color 0.3s;
+
+      .card__face:hover & {
+        color: #fff;
+      }
+    }
+
+    &__divider {
+      position: absolute;
+      left: 80px;
+      top: 10px;
+      width: 1px;
+      height: calc(100% - 20px);
+      background: #ECECEC;
+    }
+
+    &__path {
+      position: absolute;
+      left: 105px;
+      top: 36px;
+      width: 2px;
+      height: 23px;
+
+      &:before,
+      &:after {
+        content: "";
+        position: absolute;
+        left: -3px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 2px solid;
+        border-color: inherit;
+      }
+
+      &:before {
+        top: -11px;
+      }
+      &:after {
+        bottom: -9px;
+      }
+    }
+
+    &__from-to {
+      position: absolute;
+      left: 120px;
+      top: 20px;
+      width: 300px;
+      color: #555A5F;
+      font-size: 13px;
+
+      &:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: #ECECEC;
+      }
+
+      p:first-child {
+        margin-bottom: 15px;
+      }
+    }
+
+    &__deliv-date {
+      position: absolute;
+      left: 20px;
+      top: 105px;
+      color: #9A9E9E;
+      text-transform: uppercase;
+      font-size: 12px;
+      transition: color 0.3s;
+
+      p {
+        color: #606568;
+        transition: color 0.3s;
+      }
+
+      .card__face:hover & {
+        color: rgba(255,255,255,0.8);
+
+        p {
+          color: #fff;
+        }
+      }
+    }
+
+    &__stats {
+      position: absolute;
+      top: 105px;
+      color: #B5B5B5;
+      text-transform: uppercase;
+      font-size: 12px;
+
+      p {
+        font-size: 15px;
+        color: #ADADAD;
+        font-weight: bold;
+      }
+
+      &--req {
+        left: 100px;
+      }
+
+      &--pledge {
+        left: 190px;
+      }
+
+      &--weight {
+        left: 270px;
+        p {
+          text-transform: lowercase;
+        }
+      }
+    }
+
+  }
+
+  &__header {
+    position: relative;
+    height: $cardHeaderHeight;
+    color: rgba(255,255,255,0.8);
+
+    &__close-btn {
+      z-index: 2;
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      width: 16px;
+      height: 16px;
+      transition: transform 0.3s;
+      cursor: pointer;
+
+      &:hover {
+        transform: rotate(90deg);
+      }
+
+      &:before,
+      &:after {
+        content: "";
+        position: absolute;
+        left: -4px;
+        top: 7px;
+        width: 23px;
+        height: 2px;
+        background: #fff;
+      }
+      &:before {
+        transform: rotate(45deg);
+      }
+      &:after {
+        transform: rotate(-45deg);
+      }
+    }
+
+    &__id {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      line-height: $cardHeaderHeight;
+      text-align: center;
+    }
+
+    &__price {
+      position: absolute;
+      right: 10px;
+      top: 0;
+      line-height: $cardHeaderHeight;
+    }
+  }
+
+  &__stats {
+    position: relative;
+    height: $cardStatsHeight;
+    background-size: cover;
+    background-position: center center;
+    transition: opacity $cardReqAnimStep1;
+
+    &:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .card.req-active1 & {
+      opacity: 0;
+    }
+
+    .card.req-active2 & {
+      display: none;
+    }
+
+    &__item {
+      position: absolute;
+      bottom: 10px;
+
+      &--req {
+        z-index: 2;
+        left: 20px;
+      }
+
+      &--pledge {
+        z-index: 1;
+        left: 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      &--weight {
+        z-index: 2;
+        right: 20px;
+        text-align: right;
+      }
+    }
+
+    &__type {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+
+    &__value {
+      font-size: 19px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+  }
+
+  &__map {
+    display: none;
+    overflow: hidden;
+    z-index: -1;
+    position: absolute;
+    left: 0;
+    top: $cardHeaderHeight;
+    width: 100%;
+    height: $cardMapHeight - 150px;
+    opacity: 0;
+
+    .card.map-active & {
+      display: block;
+    }
+
+    .card.req-active2 & {
+      transition: height $cardReqAnimStep2*0.8;
+      height: $cardMapHeight + 50px;
+      z-index: 5;
+      opacity: 1;
+    }
+
+    .card.req-closing1 & {
+      transition: height $cardReqClosing1;
+      height: $cardStatsHeight;
+    }
+
+    .card.req-closing2 & {
+      transition: opacity $cardReqClosing2;
+      opacity: 0;
+    }
+
+    &__inner {
+      position: absolute;
+      left: -5%;
+      top: -5%;
+      width: 110%;
+      height: ($cardMapHeight + 50px) * 1.1;
+      transform: scale(1);
+      transition: transform $cardReqAnimStep2 cubic-bezier(.8,-1.4,.8,1.4);
+
+      .card.req-active2 & {
+        transform: scale(1.1) !important;
+      }
+    }
+  }
+
+  &__sender {
+    position: relative;
+    height: $cardSenderHeight;
+    padding: 10px 20px 0;
+
+    .card.req-active2 & {
+      height: $cardHeight;
+    }
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1px;
+      background: #ECECEC;
+      transition: opacity $cardReqAnimStep2/2;
+      opacity: 0;
+
+      .card.req-active2 & {
+        opacity: 1;
+      }
+    }
+
+    &__heading {
+      @extend %smallHeading;
+      margin-bottom: 5px;
+
+      .card.req-active1 & {
+        transition: opacity, margin;
+        transition-duration: $cardReqAnimStep1*0.8;
+        opacity: 0;
+        margin-top: -9px;
+      }
+
+      .card.req-active2 & {
+        pointer-events: none;
+      }
+    }
+
+    &__img-cont {
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: top;
+      width: 50px;
+      height: 50px;
+      margin-right: 5px;
+      border-radius: 8px;
+
+      &__inner {
+        height: 100%;
+        filter: grayscale(100%);
+      }
+    }
+
+    &__img {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    &__name-and-rating {
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: top;
+      max-width: 180px;
+      height: 55px;
+      margin-top: -5px;
+      margin-bottom: 20px;
+    }
+
+    &__name {
+      font-size: 18px;
+      color: #3B424A;
+    }
+
+    &__rating {
+      font-size: 14px;
+
+      .card.req-active1 & {
+        transition: opacity $cardReqAnimStep1*0.8;
+        opacity: 0;
+      }
+
+      .card.req-active2 & {
+        display: none;
+      }
+
+      &__star {
+        opacity: 0.3;
+      }
+
+      @for $i from 1 through 5 {
+        &-#{$i} {
+          @for $j from 1 through $i {
+            .card__sender__rating__star:nth-child(#{$j}) {
+              opacity: 1;
+            }
+          }
+        }
+      }
+
+      &__count {
+        font-size: 12px;
+        color: #8C9093;
+      }
+    }
+
+    &__address {
+      font-size: 12px;
+      color: #8C9093;
+      opacity: 0;
+      pointer-events: none;
+
+      .card.req-active2 & {
+        transition: opacity $cardReqAnimStep2;
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+  }
+
+  &__receiver {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 0;
+
+    .card.req-active2 & {
+      transition: height $cardReqAnimStep2;
+      height: 65px;
+    }
+
+    &__inner {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 65px;
+    }
+
+  }
+
+  &__path-big {
+    position: absolute;
+    right: 26px;
+    top: 55px;
+    width: 2px;
+    height: 57px;
+    opacity: 0;
+
+    .card.req-active2 & {
+      transition: opacity $cardReqAnimStep2/2;
+      opacity: 1;
+    }
+
+    &:before,
+    &:after {
+      content: "";
+      position: absolute;
+      left: -4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid;
+      border-color: inherit;
+    }
+
+    &:before {
+      top: -13px;
+    }
+    &:after {
+      bottom: -11px;
+    }
+  }
+
+  &__from-to {
+    position: relative;
+    height: $cardFromToHeight;
+    padding: 10px 20px 0;
+
+    .card.req-active1 & {
+      transition: opacity $cardReqAnimStep1*0.8;
+      opacity: 0;
+    }
+
+    .card.req-active2 & {
+      display: none;
+    }
+
+    &__inner {
+      position: relative;
+      height: 100%;
+
+      &:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: -10px;
+        width: 100%;
+        height: 1px;
+        background: #ECECEC;
+      }
+    }
+
+  }
+
+  &__timings {
+    position: relative;
+    height: 100%;
+    padding: 10px 20px 0;
+
+    .card.req-active1 & {
+      transition: opacity $cardReqAnimStep1*0.8;
+      opacity: 0;
+    }
+
+    .card.req-active2 & {
+      display: none;
+    }
+
+    &__inner {
+      position: relative;
+      height: 100%;
+    }
+  }
+
+  &__timer {
+    display: none;
+    margin-top: 22px;
+    font-size: 30px;
+    color: #A4ADAD;
+    text-align: center;
+
+    .card.req-active2 & {
+      display: block;
+    }
+  }
+
+  &__request-btn {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    background-color: #FFBD18;
+    text-transform: uppercase;
+    font-size: 18px;
+    color: #3F2F1F;
+    outline: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0; // you need to manually set value, because FireFox can't interpolate from normal to needed value with transition
+    transition: letter-spacing 0.3s;
+
+    &__text-1 {
+      transition: opacity $cardReqAnimStep1*0.8;
+
+      .card.req-active1 & {
+        opacity: 0;
+      }
+
+      .card.req-active2 & {
+        display: none;
+      }
+    }
+
+    &__text-2 {
+      z-index: -5;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity $cardReqAnimStep2;
+
+      .card.req-active2 & {
+        z-index: 1;
+        opacity: 1;
+      }
+    }
+
+    &:hover {
+      letter-spacing: 5px;
+    }
+  }
+
+  &__counter {
+    position: absolute;
+    left: 0;
+    top: 57px;
+    width: 100%;
+    font-size: 14px;
+    color: #A2A2A5;
+    text-align: center;
+
+    transition: opacity $cardReqAnimStep1*0.8;
+
+    .card.req-active1 & {
+      opacity: 0;
+    }
+
+    .card.req-active2 & {
+      display: none;
+    }
+  }
+
+}

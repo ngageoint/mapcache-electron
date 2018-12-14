@@ -20,7 +20,7 @@
     "test": "npm run unit && npm run e2e",
     "unit": "karma start test/unit/karma.conf.js",
     "postinstall": "npm run lint:fix",
-    "rebuild": "electron-rebuild -w better-sqlite3"
+    "rebuild": "electron-rebuild -w better-sqlite3 gdal"
   },
   "build": {
     "productName": "mapcache",
@@ -74,8 +74,10 @@
     "leaflet.vectorgrid": "github:chriszrc/Leaflet.VectorGrid",
     "pbf": "^3.1.0",
     "proj4": "^2.5.0",
+    "verte": "0.0.7",
     "vt-pbf": "^3.1.1",
     "vue": "^2.5.16",
+    "vue-awesome": "^3.2.0",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1",
