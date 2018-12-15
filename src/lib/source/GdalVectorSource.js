@@ -16,7 +16,6 @@ export default class GdalVectorSource extends Source {
     let gdalFilePath = this.configuration.file.path
     this.openGdalFile(gdalFilePath)
     this.createAndSaveConfigurationInformation()
-
     return this
   }
 
@@ -33,7 +32,7 @@ export default class GdalVectorSource extends Source {
     let outLayer = outds.layers.create(layer.name, layer.srs, gdal.wkbPolygon)
     layer.features.forEach(function (feature) {
       let geom = feature.getGeometry()
-      if (geom.name === 'MULTIPOLYGON') {
+      if (geom.name === 'MULTIPOLYGON' || geom.name === 'MULTILINESTRING') {
         let children = geom.children
         children.forEach(function (child, i) {
           console.log('Processing', i)
@@ -42,6 +41,8 @@ export default class GdalVectorSource extends Source {
           outLayer.features.add(newFeature)
           expanded = true
         })
+      } else {
+        outLayer.features.add(feature)
       }
     })
     outds.close()
@@ -109,6 +110,8 @@ export default class GdalVectorSource extends Source {
       let layerConfig = configuration.layers.find(function (sourceLayer) {
         return layer.name === sourceLayer.name
       })
+      console.log('layer is', layer)
+      console.log({layerConfig})
       styles[layer.name] = layerConfig.style
       var vectorLayer = Vendor.L.vectorGrid.protobuf('', {
         maxNativeZoom: 18,
@@ -132,6 +135,9 @@ export default class GdalVectorSource extends Source {
       vectorLayer._getVectorTilePromise = function (coords, tileBounds) {
         return getTile(coords, tileBounds, layer, vectorLayer, configuration)
           .then(function (json) {
+            if (!json) {
+              return {}
+            }
             // Normalize feature getters into actual instanced features
             for (var layerName in json.layers) {
               var feats = []
@@ -202,7 +208,7 @@ function getTile (coords, tileBounds, gdalLayer, sourceLayer, configuration) {
     })
     var fullExtent = layerConfig.extent
     if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
-      return done(null, tile)
+      return resolve()
     }
 
     // console.log('Tile Intersects - start rendering')
