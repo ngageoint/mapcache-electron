@@ -65,6 +65,11 @@ export default class GdalVectorSource extends Source {
       let wgs84 = gdal.SpatialReference.fromEPSG(4326)
       let sourceLayers = this.configuration.layers = []
 
+      let myLayerName
+      if (this.gdalLayers.count() === 1) {
+        myLayerName = this.configuration.file.name
+      }
+
       this.gdalLayers.forEach(function (layer) {
         let toNative = new gdal.CoordinateTransformation(layer.srs, wgs84)
         let extentPoly = layer.getExtent().toPolygon()
@@ -82,7 +87,7 @@ export default class GdalVectorSource extends Source {
         sourceLayers.push({
           id: layerId,
           type: 'feature',
-          name: layer.name,
+          name: myLayerName || layer.name,
           count: layer.features.count(),
           extent: [currentEnvelope.minX, currentEnvelope.minY, currentEnvelope.maxX, currentEnvelope.maxY],
           overviewTile: overviewTilePath,
