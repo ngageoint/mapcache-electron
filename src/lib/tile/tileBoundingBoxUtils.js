@@ -69,9 +69,9 @@ export const determineImageDimensionsFromExtent = (ll, ur) => {
   // 2 / 1  > 1 = wider than tall
   // 1/ 2 < 1 = taller than wide
   if (widthHeightRatio > 1) {
-    width = height * widthHeightRatio
+    width = Math.ceil(height * widthHeightRatio)
   } else {
-    height = width * widthHeightRatio
+    height = Math.ceil(width * widthHeightRatio)
   }
   return {
     width,

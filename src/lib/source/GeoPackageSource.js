@@ -12,7 +12,7 @@ export default class GeoPackageSource extends Source {
   async initialize () {
     let geopackagePath = this.configuration.file.path
     this.geopackage = await GeoPackage.open(geopackagePath)
-    this.createAndSaveConfigurationInformation()
+    return this.createAndSaveConfigurationInformation()
   }
 
   async createAndSaveConfigurationInformation () {
@@ -30,10 +30,22 @@ export default class GeoPackageSource extends Source {
         let {width, height} = TileBoundingBoxUtils.determineImageDimensionsFromExtent(ll, ur)
         let retriever = new GeoPackage.GeoPackageTileRetriever(tileDao, width, height)
         let targetBoundingBox = new GeoPackage.BoundingBox(ll[0], ur[0], ll[1], ur[1])
-        let tile = await retriever.getTileWithWgs84BoundsInProjection(targetBoundingBox, tileDao.minZoom, 'EPSG:4326')
+        let canvas = Vendor.L.DomUtil.create('canvas')
+        canvas.width = width
+        canvas.height = height
+        console.log('height', height)
+        console.log('width', width)
+        await retriever.getTileWithWgs84BoundsInProjection(targetBoundingBox, tileDao.minZoom, 'EPSG:4326', canvas)
         let layerId = this.generateLayerId()
         let overviewTilePath = this.sourceCacheFolder.dir(layerId).path('overviewTile.png')
-        jetpack.write(overviewTilePath, tile)
+        canvas.toBlob(function (blob) {
+          var reader = new FileReader()
+          reader.addEventListener('loadend', function () {
+            // reader.result contains the contents of blob as a typed array
+            jetpack.write(overviewTilePath, Buffer.from(reader.result))
+          })
+          reader.readAsArrayBuffer(blob)
+        }, 'image/png')
         sourceLayers.push({
           id: layerId,
           name: layer,

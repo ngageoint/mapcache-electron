@@ -2,8 +2,9 @@ import Vue from 'vue'
 import axios from 'axios'
 
 import 'xel/xel.min.js'
-import 'vue-awesome/icons'
-import Icon from 'vue-awesome/components/Icon'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import App from './App'
 import router from './router'
@@ -17,7 +18,8 @@ Vue.config.ignoredElements = [
   /^x-/
 ]
 
-Vue.component('v-icon', Icon)
+library.add(fas)
+Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 /* eslint-disable no-new */
 new Vue({

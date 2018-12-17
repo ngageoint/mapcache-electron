@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-for="layer of source.layers" class="sources" id="source-list">
-      <layer-card class="sources" :card="layer" :source="source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer"></layer-card>
+      <layer-card class="sources" :layer="layer" :source="source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"></layer-card>
     </div>
   </div>
 </template>
@@ -26,6 +26,16 @@
       colorChanged (colorHex, layerId) {
         console.log('source', this.source)
         console.log('color changed arguments', arguments)
+      },
+      deleteLayer (layer) {
+        let layerIndex = this.source.layers.findIndex(function (sourceLayer) {
+          return sourceLayer.id === layer.id
+        })
+        this.source.layers.splice(layerIndex, 1)
+        this.$emit('delete-layer', layer)
+        if (!this.source.layers.length) {
+          this.$emit('delete-source', this.source)
+        }
       }
     }
   }

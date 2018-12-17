@@ -2,12 +2,14 @@
   <div id="project" class="container">
     <div id="source-drop-zone" class="project-sidebar">
       <strong><p id="project-name">{{project.name}}</p></strong>
-      <div class="add-data-button">
-        <div class="major-button-text">Add Data To Project</div>
+      <div @dragover.prevent="onDragOver" @drop.prevent="onDrop" @dragleave.prevent="onDragLeave" class="add-data-button" v-bind:class="{dragover: processing.dataDragOver}">
+        <div class="major-button-text">Drag File Here To Add Data To Project</div>
         <div class="major-button-detail">Data formats accepted are: GeoPackage, GeoJSON, GeoTIFF, Shapefile, MBTiles, or zip files of XYZ tiles</div>
+        <div v-if="processing.dragging" class="major-button-text">{{processing.dragging}}</div>
       </div>
       <div id="source-container">
-        <source-view v-for="source in project.sources" :source="source" :key="source.id" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer"></source-view>
+        <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
+        <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
       </div>
     </div>
 
@@ -22,54 +24,92 @@
   // eslint-disable-next-line no-unused-vars
   import * as vendor from '../../../lib/vendor'
   import SourceFactory from '../../../lib/source/SourceFactory'
+  import Vue from 'vue'
 
-  import SourceView from './Source'
-
-  let map
-  const projectId = new URL(location.href).searchParams.get('id')
-  let project = Projects.getProject(projectId)
-  console.log({project})
-  let mapLayers = {}
+  import LayerCard from './LayerCard'
+  import ProcessingSource from './ProcessingSource'
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault()
   }
 
-  document.body.ondrop = (ev) => {
-    console.log(ev.dataTransfer.files[0])
-    let file = ev.dataTransfer.files[0]
-    addSource(file)
+  let map
+  const projectId = new URL(location.href).searchParams.get('id')
+  let project = Projects.getProject(projectId)
+  let mapLayers = {}
+  let processing = {
+    dataDragOver: false,
+    sources: [],
+    dragging: undefined
   }
 
   async function addExistingSouces () {
     for (let sourceId in project.sources) {
       let source = project.sources[sourceId]
-      console.log({source})
       await addSource(source)
     }
   }
 
   async function addSource (source) {
-    let mapSource = await SourceFactory.constructSource(source, project)
-    mapSource.map = map
-    let layer = mapSource.mapLayer
-    let layerArray = Array.isArray(layer) ? layer : [layer]
-    layerArray.forEach(function (layer) {
-      console.log('layer', layer)
-      layer.addTo(map)
-      console.log('add map layer with id', layer.id)
-      mapLayers[layer.id] = layer
-    })
+    try {
+      let mapSource = await SourceFactory.constructSource(source, project, function (status) {
+        source.status = status
+      })
+      mapSource.map = map
+      let layer = mapSource.mapLayer
+      console.log('map layer', layer)
+      let layerArray = Array.isArray(layer) ? layer : [layer]
+      layerArray.forEach(function (layer) {
+        console.log('layer', layer)
+        layer.addTo(map)
+        console.log('add map layer with id', layer.id)
+        mapLayers[layer.id] = layer
+      })
+      clearProcessing(source)
+    } catch (e) {
+      console.log('source', source)
+      console.log('setting source error to', e)
+      source.error = e.toString()
+    }
+  }
+
+  function clearProcessing (processingSource) {
+    console.log('processingSource', processingSource)
+    for (let i = 0; i < processing.sources.length; i++) {
+      let source = processing.sources[i]
+      console.log('source', source)
+      if (source.file.path === processingSource.file.path) {
+        processing.sources.splice(i, 1)
+        break
+      }
+    }
   }
 
   export default {
     data () {
       return {
-        project
+        project,
+        processing
+      }
+    },
+    computed: {
+      layers () {
+        let sourceLayers = []
+        for (let sourceId in this.project.sources) {
+          let source = this.project.sources[sourceId]
+          source.layers.forEach(function (layer) {
+            sourceLayers.push({layer, source})
+          })
+        }
+        sourceLayers.sort(function (a, b) {
+          return b.layer.zIndex - a.layer.zIndex
+        })
+        return sourceLayers
       }
     },
     components: {
-      SourceView
+      LayerCard,
+      ProcessingSource
     },
     methods: {
       zoomToExtent (extent) {
@@ -80,15 +120,59 @@
         ])
       },
       toggleLayer (layer) {
-        console.log('toggle layer', layer)
         let mapLayer = mapLayers[layer.id]
-        console.log({mapLayers})
         if (!layer.hidden) {
           mapLayer.addTo(map)
         } else {
           mapLayer.remove()
         }
-      }
+      },
+      deleteLayer (layer, source) {
+        let layerIndex = source.layers.findIndex(function (sourceLayer) {
+          return sourceLayer.id === layer.id
+        })
+        source.layers.splice(layerIndex, 1)
+        if (!source.layers.length) {
+          Vue.delete(this.project.sources, source.id)
+        }
+        let mapLayer = mapLayers[layer.id]
+        mapLayer.remove()
+        Projects.saveProject(this.project)
+      },
+      onDragOver (ev) {
+        let item = ev.dataTransfer.items[0]
+        let kind = item.kind
+        let type = item.type
+        processing.dragging = ev.dataTransfer.items.length + ' ' + type + ' ' + kind
+        processing.dataDragOver = true
+      },
+      onDrop (ev) {
+        processing.dragging = undefined
+        processing.dataDragOver = false
+        let file = ev.dataTransfer.files[0]
+        let sourceToProcess = {
+          file: {
+            lastModified: file.lastModified,
+            lastModifiedDate: file.lastModifiedDate,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            path: file.path
+          },
+          status: undefined,
+          error: undefined
+        }
+        processing.sources.push(sourceToProcess)
+        console.log({file})
+        setTimeout(function () {
+          addSource(sourceToProcess)
+        }, 0)
+      },
+      onDragLeave (ev) {
+        processing.dataDragOver = false
+        processing.dragging = undefined
+      },
+      clearProcessing
     },
     mounted: function () {
       map = vendor.L.map('map')
@@ -151,6 +235,11 @@
     border-radius: 5px;
     margin-top: 10px;
     margin-bottom: 15px;
+  }
+
+  .dragover {
+    background-color: #3556ce;
+    color: #FFF;
   }
 
   .major-button-text {

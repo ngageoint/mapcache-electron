@@ -72,7 +72,8 @@ export default class SourceFactory {
           return defaultSource
       }
     } catch (e) {
-      console.log('Failed to open file ' + configuration.file)
+      console.log('Failed to open file ' + configuration.file.path, e)
+      throw new Error('Failed to open file ' + configuration.file.path + ' ' + e.message)
     }
   }
 

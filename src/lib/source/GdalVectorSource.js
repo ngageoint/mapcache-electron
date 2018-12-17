@@ -88,6 +88,7 @@ export default class GdalVectorSource extends Source {
           id: layerId,
           type: 'feature',
           name: myLayerName || layer.name,
+          gdalLayerName: layer.name,
           count: layer.features.count(),
           extent: [currentEnvelope.minX, currentEnvelope.minY, currentEnvelope.maxX, currentEnvelope.maxY],
           overviewTile: overviewTilePath,
@@ -110,10 +111,12 @@ export default class GdalVectorSource extends Source {
     if (this.layers) return this.layers
     let layers = this.layers = []
     let configuration = this.configuration
+    console.log({configuration})
     this.gdalLayers.forEach(function (layer) {
       var styles = {}
+      console.log('layer.id', layer.id)
       let layerConfig = configuration.layers.find(function (sourceLayer) {
-        return layer.name === sourceLayer.name
+        return layer.name === sourceLayer.gdalLayerName
       })
       console.log('layer is', layer)
       console.log({layerConfig})
