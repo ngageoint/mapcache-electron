@@ -1,15 +1,29 @@
 <template>
   <div id="project" class="container">
     <div id="source-drop-zone" class="project-sidebar">
-      <strong><p id="project-name">{{project.name}}</p></strong>
+      <div class="project-name-container">
+        <div v-if="!editNameMode" @click.stop="editProjectName" class="project-name">
+          {{project.name}}
+        </div>
+        <x-input class="project-name-edit" v-if="editNameMode" :value="project.name"></x-input>
+        <x-button class="save-name-button" v-if="editNameMode" @click.stop="saveEditedName" toggled>
+          <x-label>Save</x-label>
+        </x-button>
+        <div class="cancel-save-name-button" v-if="editNameMode">
+          <x-button @click.stop="cancelEditName">
+            <x-label>Cancel</x-label>
+          </x-button>
+        </div>
+      </div>
       <div @dragover.prevent="onDragOver" @drop.prevent="onDrop" @dragleave.prevent="onDragLeave" class="add-data-button" v-bind:class="{dragover: processing.dataDragOver}">
         <div class="major-button-text">Drag File Here To Add Data To Project</div>
         <div class="major-button-detail">Data formats accepted are: GeoPackage, GeoJSON, GeoTIFF, Shapefile, MBTiles, or zip files of XYZ tiles</div>
         <div v-if="processing.dragging" class="major-button-text">{{processing.dragging}}</div>
       </div>
-      <div id="source-container">
+      <div class="source-container">
         <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
-        <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
+        <!-- <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/> -->
+        <layer-flip-card v-for="sourceLayer in layers" :key="sourceLayer.layer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
       </div>
     </div>
 
@@ -27,6 +41,7 @@
   import Vue from 'vue'
 
   import LayerCard from './LayerCard'
+  import LayerFlipCard from './LayerFlipCard'
   import ProcessingSource from './ProcessingSource'
 
   document.ondragover = document.ondrop = (ev) => {
@@ -42,6 +57,7 @@
     sources: [],
     dragging: undefined
   }
+  let editNameMode = false
 
   async function addExistingSouces () {
     for (let sourceId in project.sources) {
@@ -55,6 +71,8 @@
       let mapSource = await SourceFactory.constructSource(source, project, function (status) {
         source.status = status
       })
+      console.log({source})
+      // console.log('source', source.layers[0].name)
       mapSource.map = map
       let layer = mapSource.mapLayer
       console.log('map layer', layer)
@@ -62,6 +80,7 @@
       layerArray.forEach(function (layer) {
         console.log('layer', layer)
         layer.addTo(map)
+
         console.log('add map layer with id', layer.id)
         mapLayers[layer.id] = layer
       })
@@ -89,7 +108,8 @@
     data () {
       return {
         project,
-        processing
+        processing,
+        editNameMode
       }
     },
     computed: {
@@ -109,9 +129,22 @@
     },
     components: {
       LayerCard,
+      LayerFlipCard,
       ProcessingSource
     },
     methods: {
+      editProjectName () {
+        this.editNameMode = true
+      },
+      saveEditedName (event) {
+        this.editNameMode = false
+        let projectNameEdit = event.target.closest('.project-name-container').querySelector('.project-name-edit')
+        project.name = projectNameEdit.value
+        Projects.saveProject(project)
+      },
+      cancelEditName () {
+        this.editNameMode = false
+      },
       zoomToExtent (extent) {
         console.log({extent})
         map.fitBounds([
@@ -128,14 +161,19 @@
         }
       },
       deleteLayer (layer, source) {
+        console.log({layer})
+        console.log({source})
         let layerIndex = source.layers.findIndex(function (sourceLayer) {
           return sourceLayer.id === layer.id
         })
+        console.log({layerIndex})
         source.layers.splice(layerIndex, 1)
         if (!source.layers.length) {
           Vue.delete(this.project.sources, source.id)
         }
+        console.log({mapLayers})
         let mapLayer = mapLayers[layer.id]
+        console.log({mapLayer})
         mapLayer.remove()
         Projects.saveProject(this.project)
       },
@@ -206,6 +244,10 @@
     color: #525252;
   }
 
+  .source-container {
+
+  }
+
   .container {
     display:flex;
     flex-direction: row;
@@ -213,6 +255,24 @@
     height: 100vh;
     margin: 0;
     padding: 0;
+  }
+
+  .project-name-container {
+    display:flex;
+    flex-direction: row;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .project-name-edit {
+    flex: 1;
+    max-width: none;
+    margin-right: 5px;
+  }
+
+  .save-name-button {
+    margin-right: 5px;
   }
 
   .work-area {
@@ -240,6 +300,12 @@
   .dragover {
     background-color: #3556ce;
     color: #FFF;
+  }
+
+  .project-name {
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
   }
 
   .major-button-text {

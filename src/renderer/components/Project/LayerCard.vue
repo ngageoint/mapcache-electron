@@ -13,14 +13,14 @@
             <p class="layer__stats__type">Source Location</p>
             <span class="layer__stats__value">{{source.file.path}}</span>
           </div>
-          <div class="layer__stats__item layer__stats__item--pledge">
+          <!-- <div class="layer__stats__item layer__stats__item--pledge">
             <p class="layer__stats__type">Pledge</p>
             <span class="layer__stats__value">${{layer.pledge}}</span>
           </div>
           <div class="layer__stats__item layer__stats__item--weight">
             <p class="layer__stats__type">Weight</p>
             <span class="layer__stats__value">{{layer.weight}} oz</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </section>
@@ -32,7 +32,7 @@
             <div class="layer__face__source-name contrast-text">
               {{layer.name}}
             </div>
-            <div class="layer-checked contrast-svg" @click.stop="toggleLayer()">
+            <div class="layer-checked contrast-svg-always" @click.stop="toggleLayer()">
               <font-awesome-icon v-if="!layer.hidden" icon="check-square" size="sm"/>
               <font-awesome-icon v-if="layer.hidden" icon="square" size="sm"/>
             </div>
@@ -69,25 +69,19 @@
       </div>
       <div class="layer__part__side m--front">
         <div class="layer__sender">
-          <h4 class="layer__sender__heading">Sender</h4>
-          <div class="layer__sender__img-cont">
-            <div class="layer__sender__img-cont__inner">
-              <img :src="layer.senderImg" class="layer__sender__img" />
+          <div class="layer-style-container">
+            <div class="layer-style-type">
+              <h4 class="layer-style-heading">Fill {{layer.style.fillColor}}</h4>
+              <div style="position: relative; z-index: 9999;">
+                <verte :menuOnly="true" v-model="layer.style.fillColor" model="hex"></verte>
+              </div>
             </div>
-          </div>
-          <div class="layer__sender__name-and-rating">
-            <p class="layer__sender__name">{{layer.sender}}</p>
-            <p :class="'layer__sender__rating layer__sender__rating-'+layer.rating">
-              <span class="layer__sender__rating__star">&#9733;</span>
-              <span class="layer__sender__rating__star">&#9733;</span>
-              <span class="layer__sender__rating__star">&#9733;</span>
-              <span class="layer__sender__rating__star">&#9733;</span>
-              <span class="layer__sender__rating__star">&#9733;</span>
-              <span class="layer__sender__rating__count">({{layer.ratingCount}})</span>
-            </p>
-            <p class="layer__sender__address">
-              {{layer.fromStreet}}, {{layer.fromCity}}
-            </p>
+            <div class="layer-style-type">
+              <h4 class="layer-style-heading">Line {{layer.style.color}}</h4>
+              <div style="position: relative; z-index: 9999;">
+                <verte v-model="layer.style.color" model="hex"></verte>
+              </div>
+            </div>
           </div>
           <div class="layer__receiver">
             <div class="layer__receiver__inner">
@@ -274,6 +268,8 @@
 
 <style scoped>
 
+@import '~verte/dist/verte.css';
+
 *, *:before, *:after {
   box-sizing: border-box;
   margin: 0;
@@ -289,6 +285,14 @@ body {
   font-size: 10px;
   text-transform: uppercase;
   color: #B5B5B5;
+}
+
+.layer-style-heading {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #656565;
+  text-align: center;
+  padding-bottom: 6px;
 }
 
 .layer-checked {
@@ -363,9 +367,6 @@ body {
 .layer.themed .layer__header {
   color: var(--contrast-text-color);
   background: var(--fill-color);
-}
-.layer.themed .layer__sender__rating__star {
-  color: var(--fill-color);
 }
 .layer.themed .layer__path-big {
   background: -webkit-repeating-linear-gradient(var(--fill-color), var(--fill-color) 3px, transparent 3px, transparent 6px);
@@ -691,6 +692,10 @@ body {
 .layer-type-icon {
   margin-top: 10px;
 }
+.contrast-svg-always {
+  transition: color 0.3s;
+  color: var(--contrast-text-color);
+}
 .contrast-svg {
   transition: color 0.3s;
   color: black;
@@ -949,7 +954,7 @@ body {
 .layer.req-active2 .layer__sender {
   height: 160px;
 }
-.layer__sender:after {
+/* .layer__sender:after {
   content: "";
   position: absolute;
   left: 0;
@@ -963,7 +968,7 @@ body {
 }
 .layer.req-active2 .layer__sender:after {
   opacity: 1;
-}
+} */
 .layer__sender__heading {
   margin-bottom: 5px;
 }
@@ -986,11 +991,6 @@ body {
   height: 50px;
   margin-right: 5px;
   border-radius: 8px;
-}
-.layer__sender__img-cont__inner {
-  height: 100%;
-  -webkit-filter: grayscale(100%);
-          filter: grayscale(100%);
 }
 .layer__sender__img {
   width: 100%;
@@ -1247,6 +1247,12 @@ body {
 .layer.req-active2 .layer__counter {
   display: none;
 }
-
+.layer-style-container {
+  display: flex;
+  flex-direction: row;
+}
+.layer-style-type {
+  flex: 1;
+}
 
 </style>

@@ -24,6 +24,8 @@ for (var name in defs) {
 
 export default class GeoTiffSource extends Source {
   async initialize () {
+    console.log('opening', this.configuration.file.path)
+
     // I cannot get this to work with the node-gdal library, not sure why
     // gdalinfo /vsis3/landsat-pds/c1/L8/139/045/LC08_L1TP_139045_20170304_20170316_01_T1/LC08_L1TP_139045_20170304_20170316_01_T1_B8.TIF
     this.ds = gdal.open(this.configuration.file.path)
@@ -85,14 +87,14 @@ export default class GeoTiffSource extends Source {
   }
 
   get mapLayer () {
-    if (this.layer) return this.layer
-
+    if (this.layer) return [this.layer]
+    console.log('geotiff source', this)
     this.layer = new GeoTiffLayer({
       source: this,
       pane: 'tilePane'
     })
     this.layer.id = this.configuration.layers[0].id
-    return this.layer
+    return [this.layer]
   }
 
   renderOverviewTile () {

@@ -80,86 +80,102 @@ export const determineImageDimensionsFromExtent = (ll, ur) => {
 }
 
 export const determineXYZTileForExtent = (ll, ur) => {
-  var llwm = proj4('EPSG:4326', 'EPSG:3857').forward(ll)
-  var urwm = proj4('EPSG:4326', 'EPSG:3857').forward(ur)
+  try {
+    var llwm = proj4('EPSG:4326', 'EPSG:3857').forward(ll)
+    var urwm = proj4('EPSG:4326', 'EPSG:3857').forward(ur)
 
-  let webMercatorBoundingBox = {
-    minLongitude: llwm[0],
-    minLatitude: llwm[1],
-    maxLongitude: urwm[0],
-    maxLatitude: urwm[1]
-  }
-
-  let minX = 0
-  let maxX = 0
-  let maxY = 0
-  let minY = 0
-  let x = 0
-  let y = 0
-  for (let z = 0; z < 19; z++) {
-    let tilesPerSide = tilesPerSideWithZoom(z)
-    let tileSize = tileSizeWithTilesPerSide(tilesPerSide)
-
-    minX = Math.floor((webMercatorBoundingBox.minLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
-    maxX = Math.max(0, Math.floor(((webMercatorBoundingBox.maxLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
-    maxY = Math.max(0, Math.ceil(((-1 * (webMercatorBoundingBox.minLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
-    minY = Math.floor((-1 * (webMercatorBoundingBox.maxLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
-    if ((minX < maxX && minX !== maxX) || minY !== maxY) {
-      return {
-        x: minX,
-        y: minY,
-        z: z
-      }
+    let webMercatorBoundingBox = {
+      minLongitude: llwm[0],
+      minLatitude: llwm[1],
+      maxLongitude: urwm[0],
+      maxLatitude: urwm[1]
     }
-    x = minX
-    y = minY
-  }
-  return {
-    x: x,
-    y: y,
-    z: 18
+
+    let minX = 0
+    let maxX = 0
+    let maxY = 0
+    let minY = 0
+    let x = 0
+    let y = 0
+    for (let z = 0; z < 19; z++) {
+      let tilesPerSide = tilesPerSideWithZoom(z)
+      let tileSize = tileSizeWithTilesPerSide(tilesPerSide)
+
+      minX = Math.floor((webMercatorBoundingBox.minLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
+      maxX = Math.max(0, Math.floor(((webMercatorBoundingBox.maxLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
+      maxY = Math.max(0, Math.ceil(((-1 * (webMercatorBoundingBox.minLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
+      minY = Math.floor((-1 * (webMercatorBoundingBox.maxLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
+      if ((minX < maxX && minX !== maxX) || minY !== maxY) {
+        return {
+          x: minX,
+          y: minY,
+          z: z
+        }
+      }
+      x = minX
+      y = minY
+    }
+    return {
+      x: x,
+      y: y,
+      z: 18
+    }
+  } catch (e) {
+    return {
+      x: 0,
+      y: 0,
+      z: 0
+    }
   }
 }
 
 export const determineXYZTileInsideExtent = (ll, ur) => {
-  var llwm = proj4('EPSG:4326', 'EPSG:3857').forward(ll)
-  var urwm = proj4('EPSG:4326', 'EPSG:3857').forward(ur)
+  try {
+    var llwm = proj4('EPSG:4326', 'EPSG:3857').forward(ll)
+    var urwm = proj4('EPSG:4326', 'EPSG:3857').forward(ur)
 
-  let webMercatorBoundingBox = {
-    minLongitude: llwm[0],
-    minLatitude: llwm[1],
-    maxLongitude: urwm[0],
-    maxLatitude: urwm[1]
-  }
-
-  let minX = 0
-  let maxX = 0
-  let maxY = 0
-  let minY = 0
-  let x = 0
-  let y = 0
-  for (let z = 0; z < 19; z++) {
-    let tilesPerSide = tilesPerSideWithZoom(z)
-    let tileSize = tileSizeWithTilesPerSide(tilesPerSide)
-
-    minX = Math.floor((webMercatorBoundingBox.minLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
-    maxX = Math.max(0, Math.floor(((webMercatorBoundingBox.maxLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
-    maxY = Math.max(0, Math.ceil(((-1 * (webMercatorBoundingBox.minLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
-    minY = Math.floor((-1 * (webMercatorBoundingBox.maxLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
-    if ((minX < maxX && minX !== maxX && ((maxX - minX) >= 2)) || ((minY !== maxY) && (maxY - minY) >= 2)) {
-      return {
-        x: minX + 1,
-        y: minY + 1,
-        z: z
-      }
+    let webMercatorBoundingBox = {
+      minLongitude: llwm[0],
+      minLatitude: llwm[1],
+      maxLongitude: urwm[0],
+      maxLatitude: urwm[1]
     }
-    x = minX
-    y = minY
-  }
-  return {
-    x: x,
-    y: y,
-    z: 18
+
+    let minX = 0
+    let maxX = 0
+    let maxY = 0
+    let minY = 0
+    let x = 0
+    let y = 0
+    for (let z = 0; z < 19; z++) {
+      let tilesPerSide = tilesPerSideWithZoom(z)
+      let tileSize = tileSizeWithTilesPerSide(tilesPerSide)
+
+      minX = Math.floor((webMercatorBoundingBox.minLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
+      maxX = Math.max(0, Math.floor(((webMercatorBoundingBox.maxLongitude - (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
+      maxY = Math.max(0, Math.ceil(((-1 * (webMercatorBoundingBox.minLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize) - 1))
+      minY = Math.floor((-1 * (webMercatorBoundingBox.maxLatitude - WEB_MERCATOR_HALF_WORLD_WIDTH)) / tileSize)
+      if ((minX < maxX && minX !== maxX && ((maxX - minX) >= 2)) || ((minY !== maxY) && (maxY - minY) >= 2)) {
+        return {
+          x: minX + 1,
+          y: minY + 1,
+          z: z
+        }
+      }
+      x = minX
+      y = minY
+    }
+    return {
+      x: x,
+      y: y,
+      z: 18
+    }
+  } catch (e) {
+    return {
+      x: 0,
+      y: 0,
+      z: 0
+    }
   }
 }
 

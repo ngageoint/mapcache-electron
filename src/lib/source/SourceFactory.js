@@ -13,6 +13,7 @@ export default class SourceFactory {
   }
 
   static async constructSource (configuration, project) {
+    console.log('configuration', configuration)
     if (!configuration.file) {
       let file = {
         lastModified: configuration.lastModified,
@@ -22,16 +23,16 @@ export default class SourceFactory {
         type: configuration.type,
         path: configuration.path
       }
-      configuration = {
-        file: file,
-        originalType: path.extname(file.name).slice(1),
-        type: path.extname(file.name).slice(1),
-        name: file.name,
-        shown: true
-      }
+      configuration.file = file
     }
+    configuration.originalType = configuration.originalType || path.extname(configuration.file.name).slice(1)
+    configuration.type = configuration.type || path.extname(configuration.file.name).slice(1)
+    configuration.name = configuration.name || configuration.file.name
+    configuration.shown = configuration.shown || true
     configuration.projectId = project.id
 
+    console.log('Configuration Type: ', configuration.type)
+    console.log('File: ', configuration.file.name)
     try {
       switch (configuration.type) {
         case 'geojson':
@@ -78,9 +79,6 @@ export default class SourceFactory {
   }
 
   saveSource (source) {
-    if (!source.id) {
-      source.id = Projects.getId()
-    }
     Vue.set(this.options.project.sources, source.id, source)
     console.log('project', this.options.project)
     Projects.saveProject(this.options.project)
