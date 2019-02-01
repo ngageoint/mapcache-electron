@@ -6,7 +6,7 @@
 
 <script>
   export default {
-    name: 'mapcache'
+    name: 'MapCache'
   }
 </script>
 

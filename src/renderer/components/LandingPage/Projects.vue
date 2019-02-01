@@ -2,7 +2,8 @@
   <div>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
-        <li v-for="project in projects" @click="openProject(project)">
+        <li v-for="project in projects" @click="openProject(project)" style="position: relative;">
+          <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>
           </div>
@@ -23,7 +24,7 @@
   import * as Projects from '../../../lib/projects'
 
   let projects = Object.values(Projects.readProjects())
-  
+
   const newProject = () => {
     projects.push(Projects.newProject())
   }
@@ -38,6 +39,10 @@
       openProject (project) {
         console.log('open project', project)
         Projects.openProject(project.id)
+      },
+      deleteProject (project) {
+        console.log('delete project', project)
+        Projects.deleteProject(project)
       },
       newProject
     }
@@ -76,6 +81,17 @@
     width:100%;
     height:100%;
     border-radius: 55px;
+  }
+
+  .project-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .project-delete:hover {
+    border: 2px solid lightgrey;
+    border-radius: 10px;
   }
 
 </style>

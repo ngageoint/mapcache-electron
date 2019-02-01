@@ -1,20 +1,13 @@
-import Vue from 'vue'
-import { remote } from 'electron'
-import jetpack from 'fs-jetpack'
-import * as Projects from '../projects'
-
-const app = remote.app
-const userDataDir = jetpack.cwd(app.getPath('userData'))
+import { userDataDir } from '../settings/Settings'
 
 export default class Source {
-  constructor (configuration, project) {
-    this.configuration = configuration
-    this.project = project
-    this.sourceId = this.configuration.id || this.generateSourceId()
+  constructor (filePath, sourceId = createId()) {
+    this.sourceId = sourceId
+    this.filePath = filePath
   }
 
   get sourceCacheFolder () {
-    return userDataDir.dir(this.sourceId)
+    return userDataDir().dir(this.sourceId)
   }
 
   get mapLayer () {
@@ -23,27 +16,6 @@ export default class Source {
 
   async initialize () {
     throw new Error('Abstract method must be implemented in subclass')
-  }
-
-  generateLayerId () {
-    return createId()
-  }
-
-  generateSourceId () {
-    return createId()
-  }
-
-  saveSource (source) {
-    source.id = source.id || this.generateSourceId()
-    let project = this.project
-    source.layers.forEach(function (layer) {
-      layer.id = layer.id || this.generateLayerId()
-      layer.zIndex = layer.zIndex || project.layerCount++
-      layer.style = layer.style || {}
-      layer.hidden = false
-    }.bind(this))
-    Vue.set(this.project.sources, source.id, source)
-    Projects.saveProject(this.project)
   }
 }
 

@@ -1,7 +1,8 @@
 
-import { remote } from 'electron'
+import { ipcRenderer, remote } from 'electron'
 import jetpack from 'fs-jetpack'
 import Project from './project/Project'
+// import WindowState from './settings/WindowState'
 
 const app = remote.app
 
@@ -38,26 +39,13 @@ export const getProject = id => {
   return readProjects()[id]
 }
 
+export const deleteProject = project => {
+  delete mapcacheProjects[project.id]
+  userDataDir.write(mapcacheStoreFile, mapcacheProjects, { atomic: true })
+}
+
 export const openProject = projectId => {
-  let projectWindow
-  const winURL = process.env.NODE_ENV === 'development'
-    ? `http://localhost:9080/#/project`
-    : `file://${__dirname}/index.html#project`
-
-  projectWindow = new remote.BrowserWindow({
-    height: 563,
-    useContentSize: true,
-    width: 1000
-  })
-
-  var url = new URL(winURL)
-  url.searchParams.append('id', projectId)
-
-  projectWindow.loadURL(url.href)
-
-  projectWindow.on('closed', () => {
-    projectWindow = null
-  })
+  ipcRenderer.send('open-project', projectId)
 }
 
 export const newProject = () => {

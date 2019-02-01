@@ -39,6 +39,7 @@
   import * as vendor from '../../../lib/vendor'
   import SourceFactory from '../../../lib/source/SourceFactory'
   import Vue from 'vue'
+  // import { remote } from 'electron'
 
   import LayerCard from './LayerCard'
   import LayerFlipCard from './LayerFlipCard'
@@ -174,7 +175,9 @@
         console.log({mapLayers})
         let mapLayer = mapLayers[layer.id]
         console.log({mapLayer})
-        mapLayer.remove()
+        if (mapLayer) {
+          mapLayer.remove()
+        }
         Projects.saveProject(this.project)
       },
       onDragOver (ev) {

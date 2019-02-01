@@ -2,8 +2,9 @@
 import Source from './Source'
 import proj4 from 'proj4'
 import gdal from 'gdal'
+import path from 'path'
 import jetpack from 'fs-jetpack'
-import * as TileBoundingBoxUtils from '../tile/tileBoundingBoxUtils'
+import TileBoundingBoxUtils from '../tile/tileBoundingBoxUtils'
 import * as geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
 import * as Pbf from 'pbf'
@@ -27,15 +28,16 @@ export default class GdalVectorSource extends Source {
 
   removeMultiFeatures (layer) {
     let expanded = false
-    let filePath = this.sourceCacheFolder.dir(layer.id).file(layer.name + '.shp').path()
-    let outds = gdal.open(filePath, 'w', 'ESRI Shapefile')
+    let fileName = layer.name + '.geojson'
+    let filePath = this.sourceCacheFolder.dir(layer.id).file(fileName).path()
+    let fullFile = path.join(filePath, fileName)
+    let outds = gdal.open(fullFile, 'w', 'GeoJSON')
     let outLayer = outds.layers.create(layer.name, layer.srs, gdal.wkbPolygon)
     layer.features.forEach(function (feature) {
       let geom = feature.getGeometry()
       if (geom.name === 'MULTIPOLYGON' || geom.name === 'MULTILINESTRING') {
         let children = geom.children
         children.forEach(function (child, i) {
-          console.log('Processing', i)
           let newFeature = feature.clone()
           newFeature.setGeometry(child)
           outLayer.features.add(newFeature)
@@ -47,15 +49,15 @@ export default class GdalVectorSource extends Source {
     })
     outds.close()
     if (expanded) {
-      this.openGdalFile(filePath)
+      this.openGdalFile(fullFile)
       layer = this.gdalLayers.get(0)
     } else {
-      this.sourceCacheFolder.dir(layer.id).file(layer.name + '.shp').remove()
+      this.sourceCacheFolder.dir(layer.id).file(layer.name + '.geojson').remove()
       filePath = undefined
     }
     return {
-      layer: this.gdalLayers.get(0),
-      filePath
+      layer: layer,
+      filePath: fullFile
     }
   }
 
@@ -111,15 +113,12 @@ export default class GdalVectorSource extends Source {
     if (this.layers) return this.layers
     let layers = this.layers = []
     let configuration = this.configuration
-    console.log({configuration})
     this.gdalLayers.forEach(function (layer) {
       var styles = {}
-      console.log('layer.id', layer.id)
       let layerConfig = configuration.layers.find(function (sourceLayer) {
         return layer.name === sourceLayer.gdalLayerName
       })
-      console.log('layer is', layer)
-      console.log({layerConfig})
+      if (!layerConfig) return
       styles[layer.name] = layerConfig.style
       var vectorLayer = Vendor.L.vectorGrid.protobuf('', {
         maxNativeZoom: 18,
@@ -235,6 +234,7 @@ function getTile (coords, tileBounds, gdalLayer, sourceLayer, configuration) {
       type: 'FeatureCollection',
       features: features
     }
+
     let featureMap = gdalLayer.features.map(function (feature) {
       return feature
     })
