@@ -57,7 +57,7 @@ export default class GeoTiffLayer extends Layer {
       name: this.name,
       extent: this.extent,
       id: this.id,
-      pane: 'tile',
+      pane: 'overlayPane',
       layerType: 'GeoTIFF',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
@@ -101,13 +101,16 @@ export default class GeoTiffLayer extends Layer {
     if (this._mapLayer) return [this._mapLayer]
 
     this._mapLayer = new MapcacheMapLayer({
-      renderer: this.renderer,
-      source: this,
+      layer: this,
       pane: this.configuration.pane
     })
 
     this._mapLayer.id = this.id
-    return this._mapLayer
+    return [this._mapLayer]
+  }
+
+  async renderTile (coords, tileCanvas, done) {
+    await this.renderer.renderTile(coords, tileCanvas, done)
   }
 
   renderOverviewTile () {

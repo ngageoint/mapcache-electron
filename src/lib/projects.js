@@ -31,7 +31,7 @@ export const readProjects = () => {
 export const saveProject = project => {
   let mapcacheProjects = readProjects()
   mapcacheProjects[project.id] = project
-  console.log({mapcacheProjects})
+  console.log('going to save this:', mapcacheProjects)
   userDataDir.write(mapcacheStoreFile, mapcacheProjects, { atomic: true })
 }
 
@@ -52,7 +52,7 @@ export const newProject = () => {
   let project = new Project({
     name: 'New Project',
     layerCount: 0,
-    sources: {}
+    layers: {}
   })
   saveProject(project)
   openProject(project.id)

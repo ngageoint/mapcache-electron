@@ -3,17 +3,14 @@ import Layer from './Layer'
 import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 import GeoPackage from '@ngageoint/geopackage'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
-import MapboxGL from '@mapbox/mapbox-gl-native'
-import Sharp from 'sharp'
-import Mercator from '@mapbox/sphericalmercator'
+import VectorTileRenderer from './renderer/VectorTileRenderer'
 
 export default class GeoPackageLayer extends Layer {
   extent
-  _style
   geopackage
   dao
   count
-  _mapboxGlMap
+  _vectorTileRenderer
 
   async initialize () {
     console.log('opening', this.filePath)
@@ -26,7 +23,7 @@ export default class GeoPackageLayer extends Layer {
     let ur = proj.inverse([contents.max_x, contents.max_y])
     this.extent = [ll[0], ll[1], ur[0], ur[1]]
     let {width, height} = TileBoundingBoxUtils.determineImageDimensionsFromExtent(ll, ur)
-    let {x, y, z} = TileBoundingBoxUtils.determineXYZTileInsideExtent([this.extent[0], this.extent[1]], [this.extent[2], this.extent[3]])
+    let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([this.extent[0], this.extent[1]], [this.extent[2], this.extent[3]])
     if (this.pane === 'tile') {
       this.dao = this.geopackage.getTileDao(this.sourceLayerName)
       if (!jetpack.exists(this.overviewTilePath)) {
@@ -40,21 +37,6 @@ export default class GeoPackageLayer extends Layer {
       this.dao = this.geopackage.getFeatureDao(this.sourceLayerName)
       let gp = this.geopackage
       let tableName = this.sourceLayerName
-      this._mapboxGlMap = new MapboxGL.Map({
-        request: function (req, callback) {
-          let split = req.url.split('-')
-          let z = Number(split[0])
-          let x = Number(split[1])
-          let y = Number(split[2])
-          console.log('go get the tile', req)
-          GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
-            .then(function (buff) {
-              callback(null, {data: buff})
-            })
-        },
-        ratio: 1
-      })
-
       let styleSources = {}
       styleSources[this.name] = {
         'type': 'vector',
@@ -64,41 +46,67 @@ export default class GeoPackageLayer extends Layer {
         ]
       }
 
-      this._mapboxGlMap.load({
+      let style = {
         'version': 8,
         'name': 'Empty',
         'sources': styleSources,
+        'glyphs': '/data/github/fonts/_output/{fontstack}/{range}.pbf',
         'layers': [
           {
-            'id': this.sourceLayerName + 'line',
-            'type': 'line',
-            'source': this.sourceLayerName,
-            'source-layer': this.sourceLayerName,
+            'id': 'fill-style',
+            'type': 'fill',
+            'source': this.name,
+            'source-layer': this.name,
+            'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
             'paint': {
-              'line-width': 1.0,
-              'line-color': 'blue'
+              'fill-color': this.style.fillColor,
+              'fill-opacity': this.style.fillOpacity
             }
           },
           {
-            'id': this.sourceLayerName + 'circle',
-            'type': 'circle',
-            'source': this.sourceLayerName,
-            'source-layer': this.sourceLayerName,
+            'id': 'line-style',
+            'type': 'line',
+            'source': this.name,
+            'source-layer': this.name,
+            'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
             'paint': {
-              'circle-radius': {
-                'stops': [
-                  [0, 5],
-                  [20, 10]
-                ],
-                'base': 2
-              },
-              'circle-color': '#5b94c6',
-              'circle-opacity': 0.6
+              'line-width': this.style.weight,
+              'line-color': this.style.color
+            }
+          },
+          {
+            'id': 'point-style',
+            'type': 'circle',
+            'source': this.name,
+            'source-layer': this.name,
+            'filter': ['match', ['geometry-type'], ['Point'], true, false],
+            'paint': {
+              'circle-color': this.style.fillColor,
+              'circle-stroke-color': this.style.color,
+              'circle-opacity': this.style.fillOpacity,
+              'circle-stroke-width': this.style.weight,
+              'circle-radius': this.style.weight
             }
           }
+          // ,
+          // {
+          //   'id': 'text-style',
+          //   'type': 'symbol',
+          //   'source': this.name,
+          //   'source-layer': this.name,
+          //   'layout': {
+          //     'text-field': ['to-string', ['get', 'label']],
+          //     'text-font': ['Open Sans Regular']
+          //   },
+          //   'paint': { }
+          // }
         ]
+      }
+      this._vectorTileRenderer = new VectorTileRenderer(style, (x, y, z) => {
+        return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
       })
-      await this.renderOverviewTile()
+
+      await this.renderOverviewTile(coords)
     }
     this.count = this.dao.count()
     return this
@@ -115,6 +123,7 @@ export default class GeoPackageLayer extends Layer {
   async renderImageryTile (coords, tileCanvas, done) {
     let {x, y, z} = coords
     if (tileCanvas) {
+      console.log('tile Canvas is', tileCanvas)
       await GeoPackage.drawXYZTileInCanvas(this.geopackage, this.sourceLayerName, x, y, z, tileCanvas.width, tileCanvas.height, tileCanvas)
       if (done) {
         done(null, tileCanvas)
@@ -128,87 +137,14 @@ export default class GeoPackageLayer extends Layer {
   }
 
   async renderVectorTile (coords, tileCanvas, done) {
-    let map = this._mapboxGlMap
-    let {x, y, z} = coords
-    let width = tileCanvas ? tileCanvas.width : 256
-    let height = tileCanvas ? tileCanvas.height : 256
-
-    let merc = new Mercator()
-    let longitude = ((x + 0.5) / (1 << z)) * (256 << z)
-    let latitude = ((y + 0.5) / (1 << z)) * (256 << z)
-    let tileCenter = merc.ll([
-      longitude,
-      latitude
-    ], z)
-
-    let renderWidth = z === 0 ? width * 2 : width
-    let renderHeight = z === 0 ? height * 2 : height
-
-    map.render({
-      zoom: z,
-      center: [tileCenter[0], tileCenter[1]],
-      width: renderWidth,
-      height: renderHeight
-    }, async (err, buffer) => {
-      if (err) throw err
-      if (tileCanvas) {
-        let image = await Sharp(buffer, {
-          raw: {
-            width: renderWidth,
-            height: renderHeight,
-            channels: 4
-          }
-        })
-
-        if (z === 0) {
-          image.resize(width, height)
-        }
-        const data = await image.raw()
-          .toBuffer()
-        tileCanvas.putImageData(new ImageData(data, width, height))
-        if (done) {
-          done(null, tileCanvas)
-        }
-        return tileCanvas
-      } else {
-        let image = Sharp(buffer, {
-          raw: {
-            width: renderWidth,
-            height: renderHeight,
-            channels: 4
-          }
-        })
-        if (z === 0) {
-          image.resize(width, height)
-        }
-        const pngdata = await image.png()
-          .toBuffer()
-        if (done) {
-          done(null, pngdata)
-        }
-        return pngdata
-      }
-    })
+    this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
-  renderOverviewTile () {
-    let map = this._mapboxGlMap
-    return new Promise(function (resolve) {
-      map.render({zoom: 0}, function (err, buffer) {
-        if (err) throw err
-        let image = Sharp(buffer, {
-          raw: {
-            width: 512,
-            height: 512,
-            channels: 4
-          }
-        })
-
-        image.toFile('/tmp/image.png', function (err) {
-          if (err) throw err
-          resolve()
-        })
-      })
+  renderOverviewTile (coords) {
+    let overviewTilePath = this.overviewTilePath
+    this.renderTile(coords, null, function (err, imageData) {
+      if (err) throw err
+      jetpack.write(overviewTilePath, imageData)
     })
   }
 
@@ -229,7 +165,13 @@ export default class GeoPackageLayer extends Layer {
 
   get style () {
     this._style = this._style || {
-      opacity: 1
+      weight: 2,
+      radius: 2,
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+      opacity: 1,
+      fillColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+      fillOpacity: 0.5,
+      fill: false
     }
     return this._style
   }
@@ -239,7 +181,7 @@ export default class GeoPackageLayer extends Layer {
 
     this._mapLayer = new MapcacheMapLayer({
       layer: this,
-      pane: this.pane
+      pane: this.pane === 'tile' ? 'tilePane' : 'overlayPane'
     })
 
     this._mapLayer.id = this.id

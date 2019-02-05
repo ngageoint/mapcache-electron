@@ -2,7 +2,7 @@
   <div>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
-        <li v-for="project in projects" @click="openProject(project)" style="position: relative;">
+        <li v-for="project in projects" :key="project.id" @click="openProject(project)" style="position: relative;">
           <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>

@@ -1,21 +1,18 @@
+import jetpack from 'fs-jetpack'
 import Layer from './Layer'
 import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 import gdal from 'gdal'
 import path from 'path'
-import jetpack from 'fs-jetpack'
 import proj4 from 'proj4'
 import geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
-import Pbf from 'pbf'
-import * as VectorTile from '@mapbox/vector-tile'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
-import MapboxGL from '@mapbox/mapbox-gl-native'
-import Sharp from 'sharp'
-import Mercator from '@mapbox/sphericalmercator'
+import VectorTileRenderer from './renderer/VectorTileRenderer'
 
 export default class GDALVectorLayer extends Layer {
+  _vectorTileRenderer
+
   async initialize () {
-    // let gdalFilePath = this.configuration.file.path
     this.openGdalFile()
     if (this.layer.name.startsWith('OGR')) {
       this.name = path.basename(this.filePath, path.extname(this.filePath))
@@ -28,26 +25,6 @@ export default class GDALVectorLayer extends Layer {
     let extent = this.extent
     let layer = this.layer
 
-    MapboxGL.on('message', function (msg) {
-      console.log({msg})
-    })
-
-    this._mapboxGlMap = new MapboxGL.Map({
-      request: function (req, callback) {
-        let split = req.url.split('-')
-        let z = Number(split[0])
-        let x = Number(split[1])
-        let y = Number(split[2])
-        console.log('go get the tile', req)
-
-        getTile({x: x, y: y, z: z}, layer, extent, name)
-          .then(function (buff) {
-            callback(null, {data: buff})
-          })
-      },
-      ratio: 1
-    })
-
     let styleSources = {}
     styleSources[this.name] = {
       'type': 'vector',
@@ -57,39 +34,52 @@ export default class GDALVectorLayer extends Layer {
       ]
     }
 
-    this._mapboxGlMap.load({
+    let mbStyle = {
       'version': 8,
       'name': 'Empty',
       'sources': styleSources,
       'layers': [
         {
-          'id': this.name + 'line',
-          'type': 'line',
+          'id': 'fill-style',
+          'type': 'fill',
           'source': this.name,
           'source-layer': this.name,
+          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
           'paint': {
-            'line-width': 1.0,
-            'line-color': 'blue'
+            'fill-color': this.style.fillColor,
+            'fill-opacity': this.style.fillOpacity
           }
         },
         {
-          'id': this.name + 'circle',
+          'id': 'line-style',
+          'type': 'line',
+          'source': this.name,
+          'source-layer': this.name,
+          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
+          'paint': {
+            'line-width': this.style.weight,
+            'line-color': this.style.color
+          }
+        },
+        {
+          'id': 'point-style',
           'type': 'circle',
           'source': this.name,
           'source-layer': this.name,
+          'filter': ['match', ['geometry-type'], ['Point'], true, false],
           'paint': {
-            'circle-radius': {
-              'stops': [
-                [0, 5],
-                [20, 10]
-              ],
-              'base': 2
-            },
-            'circle-color': '#5b94c6',
-            'circle-opacity': 0.6
+            'circle-color': this.style.fillColor,
+            'circle-stroke-color': this.style.color,
+            'circle-opacity': this.style.fillOpacity,
+            'circle-stroke-width': this.style.weight,
+            'circle-radius': this.style.weight
           }
         }
       ]
+    }
+
+    this._vectorTileRenderer = new VectorTileRenderer(mbStyle, (x, y, z) => {
+      return getTile({x: x, y: y, z: z}, layer, extent, name)
     })
 
     await this.renderOverviewTile()
@@ -166,75 +156,14 @@ export default class GDALVectorLayer extends Layer {
       color: '#' + Math.floor(Math.random() * 16777215).toString(16),
       opacity: 1,
       fillColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      fillOpacity: 1,
+      fillOpacity: 0.5,
       fill: false
     }
     return this._style
   }
 
   async renderTile (coords, tileCanvas, done) {
-    let map = this._mapboxGlMap
-    let {x, y, z} = coords
-    console.log('rendertile', coords)
-    let width = tileCanvas ? tileCanvas.width : 256
-    let height = tileCanvas ? tileCanvas.height : 256
-
-    let merc = new Mercator()
-    let longitude = ((x + 0.5) / (1 << z)) * (256 << z)
-    let latitude = ((y + 0.5) / (1 << z)) * (256 << z)
-    let tileCenter = merc.ll([
-      longitude,
-      latitude
-    ], z)
-
-    let renderWidth = z === 0 ? width * 2 : width
-    let renderHeight = z === 0 ? height * 2 : height
-
-    map.render({
-      zoom: z,
-      center: [tileCenter[0], tileCenter[1]],
-      width: renderWidth,
-      height: renderHeight
-    }, async (err, buffer) => {
-      if (err) throw err
-      if (tileCanvas) {
-        let image = await Sharp(buffer, {
-          raw: {
-            width: renderWidth,
-            height: renderHeight,
-            channels: 4
-          }
-        })
-
-        if (z === 0) {
-          image.resize(width, height)
-        }
-        const data = await image.raw()
-          .toBuffer()
-        tileCanvas.putImageData(new ImageData(data, width, height))
-        if (done) {
-          done(null, tileCanvas)
-        }
-        return tileCanvas
-      } else {
-        let image = Sharp(buffer, {
-          raw: {
-            width: renderWidth,
-            height: renderHeight,
-            channels: 4
-          }
-        })
-        if (z === 0) {
-          image.resize(width, height)
-        }
-        const pngdata = await image.png()
-          .toBuffer()
-        if (done) {
-          done(null, pngdata)
-        }
-        return pngdata
-      }
-    })
+    this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
   get mapLayer () {
@@ -242,7 +171,7 @@ export default class GDALVectorLayer extends Layer {
 
     this._mapLayer = new MapcacheMapLayer({
       layer: this,
-      pane: this.pane
+      pane: 'overlayPane'
     })
 
     this._mapLayer.id = this.id
@@ -250,23 +179,13 @@ export default class GDALVectorLayer extends Layer {
   }
 
   renderOverviewTile () {
-    let map = this._mapboxGlMap
-    return new Promise(function (resolve) {
-      map.render({zoom: 0}, function (err, buffer) {
-        if (err) throw err
-        let image = Sharp(buffer, {
-          raw: {
-            width: 512,
-            height: 512,
-            channels: 4
-          }
-        })
-
-        image.toFile('/tmp/image.png', function (err) {
-          if (err) throw err
-          resolve()
-        })
-      })
+    let overviewTilePath = this.overviewTilePath
+    console.log('jetpack.exists(this.overviewTilePath)', jetpack.exists(this.overviewTilePath))
+    if (jetpack.exists(this.overviewTilePath)) return
+    console.log(this.overviewTilePath + ' does not exist')
+    this.renderTile({x: 0, y: 0, z: 0}, null, function (err, imageData) {
+      if (err) throw err
+      jetpack.write(overviewTilePath, imageData)
     })
   }
 }
@@ -282,9 +201,10 @@ function getTile (coords, gdalLayer, extent, name) {
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
     let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
     let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+    let distance = tileBbox.maxLat - tileBbox.minLat
 
     if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
-      return resolve()
+      return resolve(emptyVectorTile(name))
     }
 
     console.time('x ' + x + ' y ' + y + ' z ' + z)
@@ -294,7 +214,7 @@ function getTile (coords, gdalLayer, extent, name) {
       minY: tileLowerLeft[1],
       maxY: tileUpperRight[1]
     })
-    let filter = envelope.toPolygon()
+    let filter = envelope.toPolygon().buffer((distance / 256) * 8)
     filter.transform(fromNative)
     gdalLayer.setSpatialFilter(filter)
     let features = []
@@ -302,7 +222,6 @@ function getTile (coords, gdalLayer, extent, name) {
       type: 'FeatureCollection',
       features: features
     }
-
     let featureMap = gdalLayer.features.map(function (feature) {
       return feature
     })
@@ -311,12 +230,14 @@ function getTile (coords, gdalLayer, extent, name) {
       let feature = featureMap[i]
       try {
         let projected = feature.clone()
+        if (envelope.toPolygon().within(projected.getGeometry())) {
+          continue
+        }
+        // let geom = projected.getGeometry()
         let geom = projected.getGeometry()
         geom.transform(toNative)
-        // I don't know why I have to do this, geom.toObject() should work just fine
-        let wkt = geom.toWKT()
-        let mygeom = gdal.Geometry.fromWKT(wkt)
-        let geojson = mygeom.toObject()
+        geom.intersection(envelope.toPolygon().buffer((distance / 256) * 8))
+        let geojson = geom.toObject()
 
         features.push({
           type: 'Feature',
@@ -328,12 +249,9 @@ function getTile (coords, gdalLayer, extent, name) {
       }
     }
 
-    console.log('feature', featureCollection.features[0])
-
     let tileBuffer = 8
     let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
     var tile = tileIndex.getTile(z, x, y)
-
     gdalLayer.setSpatialFilter(null)
 
     var gjvt = {}
@@ -344,8 +262,13 @@ function getTile (coords, gdalLayer, extent, name) {
     }
 
     let vectorTilePBF = vtpbf.fromGeojsonVt(gjvt)
-
     resolve(vectorTilePBF)
     console.timeEnd('x ' + x + ' y ' + y + ' z ' + z)
   })
+}
+
+function emptyVectorTile (name) {
+  var gjvt = {}
+  gjvt[name] = {features: []}
+  return vtpbf.fromGeojsonVt(gjvt)
 }

@@ -3,16 +3,16 @@ export default class Project {
   id
   layerCount
   sources
-  constructor ({name = 'New Project', id = createId(), layerCount = 0, sources = {}}) {
+  constructor ({name = 'New Project', id = createId(), layerCount = 0, layers = {}}) {
     this.name = name
     this.id = id
     this.layerCount = layerCount
-    this.sources = sources
+    this.layers = layers
   }
 
   toJSON () {
-    let {name, id, layerCount, sources} = this
-    return {name, id, layerCount, sources}
+    let {name, id, layerCount, layers} = this
+    return {name, id, layerCount, layers}
   }
 }
 

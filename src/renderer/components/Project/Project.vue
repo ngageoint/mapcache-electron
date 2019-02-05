@@ -23,7 +23,7 @@
       <div class="source-container">
         <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
         <!-- <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/> -->
-        <layer-flip-card v-for="sourceLayer in layers" :key="sourceLayer.layer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
+        <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
       </div>
     </div>
 
@@ -38,6 +38,7 @@
   // eslint-disable-next-line no-unused-vars
   import * as vendor from '../../../lib/vendor'
   import SourceFactory from '../../../lib/source/SourceFactory'
+  import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import Vue from 'vue'
   // import { remote } from 'electron'
 
@@ -50,8 +51,8 @@
   }
 
   let map
-  const projectId = new URL(location.href).searchParams.get('id')
-  let project = Projects.getProject(projectId)
+  let project
+
   let mapLayers = {}
   let processing = {
     dataDragOver: false,
@@ -60,36 +61,81 @@
   }
   let editNameMode = false
 
+  function loadProject () {
+    const projectId = new URL(location.href).searchParams.get('id')
+    project = Projects.getProject(projectId)
+    if (!project) {
+      console.log('Tried to open the project ' + projectId + ' but got nothing')
+      return
+    }
+    project.layers = project.layers || {}
+    console.log({project})
+  }
+
+  loadProject()
+
   async function addExistingSouces () {
-    for (let sourceId in project.sources) {
-      let source = project.sources[sourceId]
-      await addSource(source)
+    console.log('adding existing sorces')
+    for (let layerId in project.layers) {
+      let layer = project.layers[layerId]
+      await addLayer(layer)
+    }
+  }
+
+  async function addLayer (layerConfig) {
+    console.log('add old layer', layerConfig)
+    try {
+      let layer = LayerFactory.constructLayer(layerConfig)
+      await layer.initialize()
+      for (const mapLayer of layer.mapLayer) {
+        console.log('mapLayer', mapLayer)
+        mapLayer.addTo(map)
+        mapLayers[mapLayer.id] = mapLayer
+      }
+    } catch (e) {
+      console.log('error was', e)
     }
   }
 
   async function addSource (source) {
     try {
-      let mapSource = await SourceFactory.constructSource(source, project, function (status) {
-        source.status = status
-      })
+      let createdSource = SourceFactory.constructSource(source.file.path)
       console.log({source})
-      // console.log('source', source.layers[0].name)
-      mapSource.map = map
-      let layer = mapSource.mapLayer
-      console.log('map layer', layer)
-      let layerArray = Array.isArray(layer) ? layer : [layer]
-      layerArray.forEach(function (layer) {
-        console.log('layer', layer)
-        layer.addTo(map)
+      console.log({createdSource})
+      let layers = await createdSource.retrieveLayers()
 
-        console.log('add map layer with id', layer.id)
-        mapLayers[layer.id] = layer
-      })
+      for (const layer of layers) {
+        await layer.initialize()
+        let config = layer.configuration
+        console.log('Layer configuration', config)
+        project.layers[config.id] = config
+        for (const mapLayer of layer.mapLayer) {
+          console.log('mapLayer', mapLayer)
+          mapLayer.addTo(map)
+          mapLayers[mapLayer.id] = mapLayer
+        }
+      }
+
+      console.log({project})
+      Projects.saveProject(project)
+      // console.log('source', source.layers[0].name)
+      // mapSource.map = map
+      // let layer = mapSource.mapLayer
+      // console.log('map layer', layer)
+      // let layerArray = Array.isArray(layer) ? layer : [layer]
+      // layerArray.forEach(function (layer) {
+      //   console.log('layer', layer)
+      //   layer.addTo(map)
+      //
+      //   console.log('add map layer with id', layer.id)
+      //   mapLayers[layer.id] = layer
+      // })
       clearProcessing(source)
     } catch (e) {
       console.log('source', source)
       console.log('setting source error to', e)
       source.error = e.toString()
+      throw e
     }
   }
 
@@ -163,21 +209,12 @@
       },
       deleteLayer (layer, source) {
         console.log({layer})
-        console.log({source})
-        let layerIndex = source.layers.findIndex(function (sourceLayer) {
-          return sourceLayer.id === layer.id
-        })
-        console.log({layerIndex})
-        source.layers.splice(layerIndex, 1)
-        if (!source.layers.length) {
-          Vue.delete(this.project.sources, source.id)
-        }
-        console.log({mapLayers})
         let mapLayer = mapLayers[layer.id]
         console.log({mapLayer})
         if (mapLayer) {
           mapLayer.remove()
         }
+        Vue.delete(this.project.layers, layer.id)
         Projects.saveProject(this.project)
       },
       onDragOver (ev) {

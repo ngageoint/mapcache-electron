@@ -24,7 +24,7 @@
     "report": "nyc report",
     "clean-test": "rm -rf ./.test_run; rm -rf ./.nyc_output; rm -rf ./docs/coverage",
     "postinstall": "npm run lint:fix",
-    "rebuild": "electron-rebuild -w better-sqlite3 gdal"
+    "rebuild": "electron-rebuild -w better-sqlite3 gdal @mapbox/mapbox-gl-native"
   },
   "nyc": {
     "require": [

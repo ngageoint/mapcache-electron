@@ -19,8 +19,8 @@
            <div class="left-side-summary layer-thumb" :style="overviewBackgroundStyle">
              <div class="layer-type-icon fill-background-color flex-the-rest">
                <div class="contrast-svg">
-                 <font-awesome-icon v-if="layer.type === 'feature'" icon="vector-square" size="2x"/>
-                 <font-awesome-icon v-if="layer.type === 'tile'" icon="atlas" size="2x"/>
+                 <font-awesome-icon v-if="layer.pane === 'vector'" icon="vector-square" size="2x"/>
+                 <font-awesome-icon v-if="layer.pane === 'tile'" icon="atlas" size="2x"/>
                </div>
              </div>
              <div class="layer-action-buttons">
@@ -43,7 +43,7 @@
              </div>
              <div class="flex-container-row lower-stats">
                <div class="layer__face__stats flex-the-rest">
-                 <div v-if="layer.type === 'feature'">
+                 <div v-if="layer.pane === 'vector'">
                    Features
                    <p>{{layer.count}}</p>
                  </div>
@@ -51,7 +51,7 @@
                <div class="layer__face__stats flex-the-rest">
                  Source
                  <p class="layer__face__stats__weight">
-                   <span>{{source.originalType}}</span>
+                   <span>{{layer.layerType}}</span>
                  </p>
                </div>
              </div>
@@ -151,7 +151,7 @@
         this.expanded = !this.expanded
       },
       removeLayer (event) {
-        this.$emit('delete-layer', this.layer, this.source)
+        this.$emit('delete-layer', this.layer)
       }
     }
   }

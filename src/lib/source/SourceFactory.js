@@ -5,7 +5,7 @@ import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
 // import GdalVectorSource from './GdalVectorSource'
 // import KMZSource from './KMZSource'
-import Vue from 'vue'
+// import Vue from 'vue'
 // import * as Projects from '../projects'
 
 export default class SourceFactory {
