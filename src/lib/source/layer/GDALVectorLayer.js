@@ -134,7 +134,8 @@ export default class GDALVectorLayer extends Layer {
       layerType: 'GDALVector',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
-      count: this.layer.features.count()
+      count: this.layer.features.count(),
+      shown: this.shown || true
     }
   }
 

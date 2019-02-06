@@ -76,6 +76,29 @@ describe('GeoPackage Source Tests', function () {
     })
   })
 
+  it.only('should construct a new GeoPackage source and get the 1-0-0 vector tile', async () => {
+    let geoPackagePath = path.join(__dirname, '..', 'fixtures', 'geopackage', 'ne_rivers.gpkg')
+    let source = new GeoPackageSource(geoPackagePath, 'id')
+    source.filePath.should.be.equal(geoPackagePath)
+    source.sourceId.should.be.equal('id')
+    let layers = await source.retrieveLayers()
+    layers.length.should.be.equal(1)
+
+    await layers[0].initialize()
+    let layer = layers[0]
+    layer.filePath.should.be.equal(geoPackagePath)
+    let configuration = layer.configuration
+    configuration.pane.should.be.equal('vector')
+    configuration.style.should.exist
+    return new Promise(function(resolve) {
+      layer.renderTile({x: 3, y: 6, z: 4}, null, function(err, pngData) {
+        pngData.should.exist
+        jetpack.write('/tmp/346.png', pngData)
+        resolve()
+      })
+    })
+  })
+
   it('should construct a new GeoPackage source and get an imagery tile', async () => {
     let geoPackagePath = path.join(__dirname, '..', 'fixtures', 'geopackage', 'rivers.gpkg')
     let source = new GeoPackageSource(geoPackagePath, 'id')

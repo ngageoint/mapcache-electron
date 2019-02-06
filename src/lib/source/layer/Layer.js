@@ -18,6 +18,7 @@ export default class Layer {
     this.overviewTilePath = this.cacheFolder.dir(this.id).path('overviewTile.png')
     this.pane = configuration.pane
     this._style = this._configuration.style
+    this.shown = this._configuration.shown || true
   }
 
   async initialize () {
@@ -34,7 +35,8 @@ export default class Layer {
       filePath: this.filePath,
       sourceLayerName: this.sourceLayerName,
       name: this.name,
-      overviewTilePath: this.overviewTilePath
+      overviewTilePath: this.overviewTilePath,
+      shown: this.shown || true
     })
   }
 }

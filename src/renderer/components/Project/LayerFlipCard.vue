@@ -8,11 +8,11 @@
          <div class="layer__face__colored-side"></div>
          <div class="layer__face__header fill-background-color">
            <div class="layer__face__source-name contrast-text">
-             {{layer.name}}
+             {{layer.name}} {{layer.shown}}
            </div>
            <div class="layer-checked contrast-svg-always" @click.stop="toggleLayer()">
-             <font-awesome-icon v-if="!layer.hidden" icon="check-square" size="lg"/>
-             <font-awesome-icon v-if="layer.hidden" icon="square" size="lg"/>
+             <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
+             <font-awesome-icon v-show="!layer.shown" icon="square" size="lg"/>
            </div>
          </div>
          <div class="layer-summary">
@@ -27,12 +27,11 @@
                <p class="zoom-to contrast-svg" @click.stop="zoomToExtent(layer.extent)"><font-awesome-icon icon="crosshairs" title="ZoomTo" size="lg"/></p>
              </div>
            </div>
-           <div class="layer__face__divider"></div>
+           <div class="path-container">
+             <div class="layer__face__path"></div>
+           </div>
            <div class="flex-the-rest flex-container-column">
              <div class="flex-container-row">
-               <div class="path-container">
-                 <div class="layer__face__path"></div>
-               </div>
                <div class="layer__face__from-to flex-the-rest">
                  <div class="coordinate-container">
                    <div class="layer-coordinates">Lower Left: {{layer.extent[0] | latitude}}, {{layer.extent[1] | longitude}}</div>
@@ -43,16 +42,16 @@
              </div>
              <div class="flex-container-row lower-stats">
                <div class="layer__face__stats flex-the-rest">
-                 <div v-if="layer.pane === 'vector'">
-                   Features
-                   <p>{{layer.count}}</p>
-                 </div>
-               </div>
-               <div class="layer__face__stats flex-the-rest">
                  Source
                  <p class="layer__face__stats__weight">
                    <span>{{layer.layerType}}</span>
                  </p>
+               </div>
+               <div class="layer__face__stats flex-the-rest">
+                 <div v-if="layer.pane === 'vector'">
+                   Features
+                   <p>{{layer.count}}</p>
+                 </div>
                </div>
              </div>
            </div>
@@ -88,16 +87,26 @@
 
   let expanded = false
 
-  function getContrastYIQ (hexcolor) {
+  function parseHexColor (hexcolor) {
     var r = parseInt(hexcolor.substr(1, 2), 16)
     var g = parseInt(hexcolor.substr(3, 2), 16)
     var b = parseInt(hexcolor.substr(5, 2), 16)
+    return {r, g, b}
+  }
+
+  function getContrastYIQ (hexcolor) {
+    let {r, g, b} = parseHexColor(hexcolor)
     var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
     return (yiq >= 128) ? '#222' : '#eee'
   }
 
+  function setColorAlpha (hexcolor, alpha) {
+    let {r, g, b} = parseHexColor(hexcolor)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
   export default {
-    props: ['layer', 'source', 'zIndex'],
+    props: ['layer', 'zIndex'],
     components: {
       TransitionExpand
     },
@@ -109,7 +118,7 @@
     computed: {
       cssProps () {
         return {
-          '--fill-color': this.layer.style && this.layer.style.color ? this.layer.style.color : '#FEFEFE',
+          '--fill-color': this.layer.style && this.layer.style.color ? setColorAlpha(this.layer.style.color, 0.95) : 'rgba(254, 254, 254, .95)',
           '--contrast-text-color': getContrastYIQ(this.layer.style && this.layer.style.color ? this.layer.style.color : '#FEFEFE')
         }
       },
@@ -132,11 +141,11 @@
       }
     },
     mounted: function () {
-      console.log('this.layer', this.source)
+      console.log('this.layer', this.layer)
     },
     methods: {
       toggleLayer () {
-        this.layer.hidden = !this.layer.hidden
+        this.layer.shown = !this.layer.shown
         this.$emit('toggle-layer', this.layer)
       },
       zoomToExtent (extent) {
@@ -207,12 +216,12 @@
   align-items: center;
 }
 .path-container {
-  width: 25px;
+  width: 10px;
 }
 .lower-stats {
   padding-top: 12px;
   padding-bottom: 11px;
-  padding-left: 20px;
+  padding-left: 10px;
   padding-right: 20px;
 }
 
@@ -237,7 +246,7 @@
 }
 
 .layer-coordinates {
-  padding: 5px 15px;
+  padding: 5px 10px;
 }
 .coordinate-container {
   padding-top: 5px;
@@ -299,7 +308,7 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: #fff;
+  background: rgba(255, 255, 255, .95);
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
   -webkit-transform-style: preserve-3d;
@@ -310,7 +319,7 @@
           transform: rotateX(180deg);
 } */
 .layer__part__side.m--front {
-  background: #fff;
+  background: rgba(255, 255, 255, .95);
 }
 .layer__back {
   top: 0;
@@ -445,10 +454,10 @@
 }
 .layer__face__path {
   position: absolute;
-  left: 105px;
+  left: 80px;
   top: 54px;
   width: 2px;
-  height: 23px;
+  height: 78px;
 }
 .layer__face__path:before, .layer__face__path:after {
   content: "";
@@ -488,6 +497,7 @@
   color: #777;
   text-transform: uppercase;
   font-size: 12px;
+  margin-right: 15px;
 }
 .layer__face__stats p {
   font-size: 15px;

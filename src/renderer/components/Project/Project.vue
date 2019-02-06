@@ -24,6 +24,7 @@
         <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
         <!-- <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/> -->
         <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
+        {{project.layers}}
       </div>
     </div>
 
@@ -40,7 +41,6 @@
   import SourceFactory from '../../../lib/source/SourceFactory'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import Vue from 'vue'
-  // import { remote } from 'electron'
 
   import LayerCard from './LayerCard'
   import LayerFlipCard from './LayerFlipCard'
@@ -83,7 +83,7 @@
   }
 
   async function addLayer (layerConfig) {
-    console.log('add old layer', layerConfig)
+    console.log('add old layer', layerConfig.shown)
     try {
       let layer = LayerFactory.constructLayer(layerConfig)
       await layer.initialize()
@@ -100,14 +100,13 @@
   async function addSource (source) {
     try {
       let createdSource = SourceFactory.constructSource(source.file.path)
-      console.log({source})
-      console.log({createdSource})
       let layers = await createdSource.retrieveLayers()
 
       for (const layer of layers) {
         await layer.initialize()
         let config = layer.configuration
-        console.log('Layer configuration', config)
+        console.log('Layer configuration', config.shown)
+        Vue.set(project.layers, config.id, config)
         project.layers[config.id] = config
         for (const mapLayer of layer.mapLayer) {
           console.log('mapLayer', mapLayer)
@@ -118,18 +117,6 @@
 
       console.log({project})
       Projects.saveProject(project)
-      // console.log('source', source.layers[0].name)
-      // mapSource.map = map
-      // let layer = mapSource.mapLayer
-      // console.log('map layer', layer)
-      // let layerArray = Array.isArray(layer) ? layer : [layer]
-      // layerArray.forEach(function (layer) {
-      //   console.log('layer', layer)
-      //   layer.addTo(map)
-      //
-      //   console.log('add map layer with id', layer.id)
-      //   mapLayers[layer.id] = layer
-      // })
       clearProcessing(source)
     } catch (e) {
       console.log('source', source)
@@ -201,7 +188,7 @@
       },
       toggleLayer (layer) {
         let mapLayer = mapLayers[layer.id]
-        if (!layer.hidden) {
+        if (layer.shown) {
           mapLayer.addTo(map)
         } else {
           mapLayer.remove()
@@ -256,12 +243,15 @@
       map = vendor.L.map('map')
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
-      const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
+        subdomains: ['1', '2', '3', '4']
       })
+      // const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      //   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+      // })
 
       map.setView(defaultCenter, defaultZoom)
-      basemap.addTo(map)
+      osmbasemap.addTo(map)
       addExistingSouces()
     }
   }
@@ -279,9 +269,9 @@
     padding: 0;
   }
 
-  body {
+  #project {
     font-family: sans-serif;
-    color: #525252;
+    color: rgba(255, 255, 255, .87);
   }
 
   .source-container {
@@ -295,6 +285,11 @@
     height: 100vh;
     margin: 0;
     padding: 0;
+    overflow: hidden;
+  }
+
+  .project-name {
+    /* color: rgba(68, 152, 192, .87) */
   }
 
   .project-name-container {
@@ -317,19 +312,19 @@
 
   .work-area {
     flex: 1;
-    background: #FAFAFA;
+    /* background: #FAFAFA; */
   }
 
   .project-sidebar {
-    margin: 15px;
+    padding: 15px;
     text-align: center;
-    width: 350px;
+    width: 380px;
     height: 100vh;
     overflow-y: scroll;
   }
 
   .add-data-button {
-    border-color: #333;
+    border-color: rgba(255, 255, 255, .87);
     border-width: 1px;
     border-style: dashed;
     border-radius: 5px;
@@ -338,8 +333,8 @@
   }
 
   .dragover {
-    background-color: #3556ce;
-    color: #FFF;
+    background-color: rgb(68, 152, 192);
+    color: rgba(255, 255, 255, .95);
   }
 
   .project-name {

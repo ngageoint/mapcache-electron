@@ -12,7 +12,8 @@ export default class GeoPackageSource extends Source {
       this.layers.push(new GeoPackageLayer({
         filePath: this.filePath,
         sourceLayerName: layer,
-        pane: 'tile'
+        pane: 'tile',
+        shown: true
       }))
     }
     let featureLayers = this.geopackage.getFeatureTables()
@@ -20,7 +21,8 @@ export default class GeoPackageSource extends Source {
       this.layers.push(new GeoPackageLayer({
         filePath: this.filePath,
         sourceLayerName: layer,
-        pane: 'vector'
+        pane: 'vector',
+        shown: true
       }))
     }
 

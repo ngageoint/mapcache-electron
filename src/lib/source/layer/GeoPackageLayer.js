@@ -159,7 +159,8 @@ export default class GeoPackageLayer extends Layer {
       layerType: 'GeoPackage',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
-      count: this.count
+      count: this.count,
+      shown: this.shown || true
     }
   }
 

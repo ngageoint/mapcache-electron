@@ -65,7 +65,8 @@ export default class GeoTiffLayer extends Layer {
       dstBands: this.dstBands,
       dstAlphaBand: this.dstAlphaBand,
       photometricInterpretation: this.photometricInterpretation,
-      info: this.gdalInfo(this.ds)
+      info: this.gdalInfo(this.ds),
+      shown: this.shown || true
     }
   }
 

@@ -108,34 +108,6 @@ export default class GeoTiffRenderer {
     }
   }
 
-  // convertDestinationPixelToSource (conversion, row, column, bbox, sourceImageMinLon, sourceImageMaxLat, tileHeightUnitsPerPixel, tileWidthUnitsPerPixel, invHeightUnitsPerPixel, invWidthUnitsPerPixel, sourceImageWidth, sourceImageHeight) {
-  //   // get latitude longitude of destination pixel
-  //   let latitude3857 = bbox.maxLat - (row * tileHeightUnitsPerPixel)
-  //   let longitude3857 = bbox.minLon + (column * tileWidthUnitsPerPixel)
-  //
-  //   let latlonProjected = proj4('EPSG:3857').inverse([longitude3857, latitude3857])
-  //
-  //   // project that lat/lng to the source coordinate system
-  //   var projected = conversion.forward(latlonProjected)
-  //   var projectedLongitude = projected[0]
-  //   var projectedLatitude = projected[1]
-  //
-  //   // now find the source pixel
-  //   var xPixel = Math.round((projectedLongitude - sourceImageMinLon) * invWidthUnitsPerPixel)
-  //   var yPixel = Math.round((sourceImageMaxLat - projectedLatitude) * -1 * invHeightUnitsPerPixel)
-  //
-  //   return {xPixel, yPixel}
-  // }
-  //
-  // getPixelFromImage (raster, imageWidth, x, y, bands) {
-  //   return {
-  //     r: raster[bands * (x + y * imageWidth)],
-  //     g: raster[bands * (x + (y * imageWidth)) + 1],
-  //     b: raster[bands * (x + (y * imageWidth)) + 2],
-  //     a: 255
-  //   }
-  // }
-
   reproject (ds, epsgCode, tileCutline, srcCutline, srcBands, dstBands, dstAlphaBand, width, height) {
     // colored-infrared bands = [4, 1, 2]
     // RGB bands = [1, 2, 3]

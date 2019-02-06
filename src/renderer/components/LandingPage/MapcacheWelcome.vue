@@ -1,10 +1,12 @@
 <template>
   <div>
-    <img class="gp-img" src="~@/assets/geopackage.png">
-    <h4>Welcome to Mapcache</h4>
-    <p>
-      Version: <strong id="mapcache-version">{{version}}</strong>
-    </p>
+    <div class="app-title-block">
+      <img class="gp-img" src="~@/assets/256x256.png">
+      <h4>Welcome to Mapcache</h4>
+      <p>
+        Version: <strong id="mapcache-version">{{version}}</strong>
+      </p>
+    </div>
     <div class="divider"></div>
     <div v-for="item in sidebarItems">
       <button class="sidebar-item" @click="open(item.link)">
@@ -33,7 +35,7 @@
     title: 'What is a GeoPackage?',
     description: 'Visit geopackage.org to learn more',
     link: 'http://www.geopackage.org',
-    image: require('../../assets/geopackage.png')
+    image: require('../../assets/geopackage-2.png')
   }, {
     title: 'NGA GeoPackage Libraries',
     description: 'Learn about the GeoPackage libraries develoepd by NGA',
@@ -63,6 +65,11 @@
 </script>
 
 <style scoped>
+
+  .app-title-block {
+    color: rgba(255, 255, 255, .87);
+  }
+
   .title {
     color: #888;
     font-size: 18px;
@@ -97,7 +104,7 @@
     width: 150px;
     height: 2px;
     float: right;
-    background-color: #000;
+    background-color: rgb(22, 117, 170);
     opacity: .07;
     margin-bottom: 10px;
   }
@@ -126,17 +133,17 @@
     cursor: pointer;
     outline: none;
     padding: 0.75em 2em;
-    border-radius: 2em;
+    border-radius: 1em;
     display: inline-block;
-    color: #fff;
-    background-color: #4fc08d;
+    color: rgba(255, 255, 255, .87);
+    background-color: rgb(68, 152, 192);
     transition: all 0.15s ease;
     box-sizing: border-box;
-    border: 1px solid #4fc08d;
+    border: 1px solid rgb(68, 152, 192);
   }
 
   button.alt {
-    color: #42b983;
+    color: rgb(22, 117, 170);
     background-color: transparent;
   }
 </style>
