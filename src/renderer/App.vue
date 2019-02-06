@@ -11,5 +11,13 @@
 </script>
 
 <style>
-  /* CSS */
+
+#app {
+  background:
+    radial-gradient(
+      ellipse at bottom right,
+    rgb(22, 117, 170) 5%,
+    rgba(0, 0, 0, 0.87) 100%
+  );
+}
 </style>
