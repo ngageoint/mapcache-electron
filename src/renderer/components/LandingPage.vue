@@ -43,12 +43,12 @@
   body { font-family: 'Source Sans Pro', sans-serif; }
 
   #wrapper {
-    background:
+    /* background:
       radial-gradient(
         ellipse at bottom right,
         rgb(22, 117, 170) 5%,
         rgba(0, 0, 0, 0.87) 100%
-      );
+      ); */
     height: 100vh;
     width: 100vw;
   }

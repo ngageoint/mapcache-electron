@@ -51,6 +51,10 @@
 
 <style scoped>
 
+  .project-container {
+    margin: 20px;
+  }
+
   .projects {
     list-style: none;
     display: flex;

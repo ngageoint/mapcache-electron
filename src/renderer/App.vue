@@ -16,8 +16,10 @@
   background:
     radial-gradient(
       ellipse at bottom right,
-    rgb(22, 117, 170) 5%,
+    rgba(22, 117, 170, .5) 5%,
     rgba(0, 0, 0, 0.87) 100%
-  );
+  ), url("./assets/nasa_earth.png") bottom right no-repeat;
+  background-size: cover;
+
 }
 </style>

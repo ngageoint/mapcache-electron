@@ -4,6 +4,7 @@ import axios from 'axios'
 import 'xel/xel.min.js'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Verte from 'verte'
 
@@ -20,6 +21,7 @@ Vue.config.ignoredElements = [
 ]
 
 library.add(fas)
+library.add(far)
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 // register component globally

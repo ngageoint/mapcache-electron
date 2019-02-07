@@ -12,7 +12,7 @@
            </div>
            <div class="layer-checked contrast-svg-always" @click.stop="toggleLayer()">
              <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
-             <font-awesome-icon v-show="!layer.shown" icon="square" size="lg"/>
+             <font-awesome-icon v-show="!layer.shown" :icon="['far', 'square']" size="lg"/>
            </div>
          </div>
          <div class="layer-summary">

@@ -24,7 +24,6 @@
         <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
         <!-- <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/> -->
         <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
-        {{project.layers}}
       </div>
     </div>
 
