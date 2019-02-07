@@ -41,6 +41,11 @@
     description: 'Learn about the GeoPackage libraries develoepd by NGA',
     link: 'http://ngageoint.github.io/GeoPackage/',
     image: require('../../assets/nga.png')
+  }, {
+    title: 'EventKit',
+    description: 'Import GeoPackage files created with EventKit',
+    link: 'https://eventkit.gs.mil/',
+    image: require('../../assets/eventkit.png')
   }]
 
   export default {
@@ -68,6 +73,7 @@
 
   .app-title-block {
     color: rgba(255, 255, 255, .87);
+    margin-bottom: 2em;
   }
 
   .title {
@@ -75,14 +81,14 @@
     font-size: 18px;
     font-weight: initial;
     letter-spacing: .25px;
-    margin-top: 10px;
+    margin-top: 1em;
   }
 
   .items { margin-top: 8px; }
 
   .item {
     display: flex;
-    margin-bottom: 6px;
+    margin-bottom: 1em;
   }
 
   .item .name {
@@ -96,7 +102,6 @@
   }
 
   .gp-img {
-    margin-top: 30px;
     width: 200px;
   }
 
@@ -125,7 +130,7 @@
   .sidebar-item-info {
     flex: 1;
     text-align: left;
-    margin-left: 10px;
+    padding-left: 2em;
   }
 
   button {

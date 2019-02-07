@@ -59,7 +59,7 @@
   }
 
   .welcome-sidebar {
-    margin-left: 10px;
+    margin: 2em;
     text-align: center;
     width: 300px;
   }

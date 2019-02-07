@@ -2,7 +2,13 @@
   <div>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
-        <li v-for="project in projects" :key="project.id" @click="openProject(project)" style="position: relative;">
+        <li class="project" @click="newProject()">
+          <div class="project-thumb">
+            <font-awesome-icon class="new-project-icon" icon="plus" size="2x"/>
+          </div>
+          <div class="project-thumb-name">Create A New Project</div>
+        </li>
+        <li v-for="project in projects" :key="project.id" @click="openProject(project)" class="project">
           <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>
@@ -11,12 +17,6 @@
         </li>
       </ul>
     </div>
-    <x-button @click="newProject()" id="new-project-button">
-      <x-box>
-        <x-icon name="camera"></x-icon>
-        <x-label>New Project</x-label>
-      </x-box>
-    </x-button>
   </div>
 </template>
 
@@ -51,24 +51,25 @@
 
 <style scoped>
 
-  .project-container {
-    margin: 20px;
-  }
-
   .projects {
     list-style: none;
     display: flex;
     flex-flow: row wrap;
-    justify-content: space-around;
+    justify-content: center;
+  }
+
+  .project {
+    position: relative;
+    margin: 2em;
   }
 
   .project-thumb {
     background: lightgrey;
     padding: 5px;
-    width: 200px;
-    height: 200px;
+    width: 6em;
+    height: 6em;
     margin-top: 10px;
-    border-radius: 60px;
+    border-radius: 1em;
     line-height: 200px;
     color: white;
     text-align: center;
@@ -79,23 +80,32 @@
     text-align: center;
     font-weight: 300;
     font-size: 1em;
+    color: rgba(255, 255, 255, .87)
   }
 
   .project-thumb-icon {
     width:100%;
     height:100%;
-    border-radius: 55px;
+    border-radius: .8em;
   }
 
   .project-delete {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 5px;
+    right: 0px;
+    color: rgba(255, 255, 255, .87);
   }
 
   .project-delete:hover {
     border: 2px solid lightgrey;
     border-radius: 10px;
+  }
+
+  .new-project-icon {
+    width: 100%;
+    height: 100%;
+    padding: 50px;
+    text-align: center;
   }
 
 </style>

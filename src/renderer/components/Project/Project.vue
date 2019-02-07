@@ -41,7 +41,6 @@
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import Vue from 'vue'
 
-  import LayerCard from './LayerCard'
   import LayerFlipCard from './LayerFlipCard'
   import ProcessingSource from './ProcessingSource'
 
@@ -161,7 +160,6 @@
       }
     },
     components: {
-      LayerCard,
       LayerFlipCard,
       ProcessingSource
     },
