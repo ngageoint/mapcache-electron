@@ -64,7 +64,7 @@
   }
 
   .project-thumb {
-    background: lightgrey;
+    background: rgb(150, 150, 150);
     padding: 5px;
     width: 6em;
     height: 6em;

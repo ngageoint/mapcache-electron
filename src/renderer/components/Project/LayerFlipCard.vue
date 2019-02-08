@@ -8,7 +8,7 @@
          <div class="layer__face__colored-side"></div>
          <div class="layer__face__header fill-background-color">
            <div class="layer__face__source-name contrast-text">
-             {{layer.name}} {{layer.shown}}
+             {{layer.name}}
            </div>
            <div class="layer-checked contrast-svg-always" @click.stop="toggleLayer()">
              <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
@@ -240,7 +240,7 @@
 }
 
 .layer-checked {
-  margin-right: 10px;
+  margin-right: 6px;
   padding-top: 3px;
   padding-bottom: 0px;
 }
@@ -297,7 +297,7 @@
   /* position: absolute;
   left: 0; */
   width: 100%;
-  border-radius: 11px;
+  border-radius: 4px;
   /* -webkit-transform-origin: 50% 0;
           transform-origin: 50% 0;
   -webkit-transform-style: preserve-3d;
@@ -398,8 +398,8 @@
   top: 0;
   width: 9px;
   height: 100%;
-  border-top-left-radius: 11px;
-  border-bottom-left-radius: 11px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
   -webkit-transition: width 0.3s;
   transition: width 0.3s;
 }
@@ -631,7 +631,7 @@
   color: #FFF;
   outline: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   letter-spacing: 0;
   -webkit-transition: letter-spacing 0.3s;
