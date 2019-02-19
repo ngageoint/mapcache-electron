@@ -1,13 +1,26 @@
 import path from 'path'
+import request from 'request-promise-native'
 import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
+import XYZServerSource from './XYZServerSource'
 
 export default class SourceFactory {
-  static constructUrlSource (url) {
+  static async constructUrlSource (url) {
+    // try to figure out what this thing is
+    let result = await request({
+      method: 'HEAD',
+      uri: url
+    })
 
+    console.log('result', result)
+
+    return new XYZServerSource(url)
   }
 
-  static constructSource (filePath) {
+  static async constructSource (filePath) {
+    if (filePath.startsWith('http')) {
+      return SourceFactory.constructUrlSource(filePath)
+    }
     let type = path.extname(filePath).slice(1)
 
     console.log('Type: ', type)

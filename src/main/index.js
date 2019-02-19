@@ -2,7 +2,8 @@
 
 import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import WindowState from '../lib/settings/WindowState'
-
+// eslint-disable-next-line no-unused-vars
+import Store from '../store'
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
@@ -55,7 +56,7 @@ ipcMain.on('open-project', (event, projectId) => {
     projectWindow = null
   })
 
-  mainWindow.close()
+  // mainWindow.close()
 })
 
 function getMenuTemplate () {

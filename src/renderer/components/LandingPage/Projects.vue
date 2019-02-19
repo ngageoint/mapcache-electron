@@ -22,34 +22,45 @@
 
 <script>
   import * as Projects from '../../../lib/projects'
-
-  let projects = Object.values(Projects.readProjects())
-
-  const newProject = () => {
-    projects.push(Projects.newProject())
-  }
+  import { mapState, mapActions, mapGetters } from 'Vuex'
 
   export default {
-    data () {
-      return {
-        projects
-      }
+    computed: {
+      ...mapState({
+        projects: state => {
+          console.log('state', state)
+          return state.Projects
+        }
+      }),
+      ...mapGetters({
+        'getNewProject': 'Projects/getNewProject'
+      })
     },
     methods: {
+      ...mapActions({
+        'addProject': 'Projects/addProject',
+        'deleteProject': 'Projects/deleteProject'
+      }),
       openProject (project) {
         console.log('open project', project)
         Projects.openProject(project.id)
       },
-      deleteProject (project) {
-        console.log('delete project', project)
-        Projects.deleteProject(project)
-      },
-      newProject
+      newProject () {
+        let project = this.getNewProject()
+        this.addProject(project)
+        Projects.openProject(project.id)
+      }
     }
   }
 </script>
 
 <style scoped>
+
+  .project-container {
+    overflow-y: scroll;
+    height: 100vh;
+    overflow-x: hidden;
+  }
 
   .projects {
     list-style: none;

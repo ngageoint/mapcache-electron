@@ -30,7 +30,6 @@
 </script>
 
 <style>
-  @import '~xel/themes/macos.css';
 
   @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
 
@@ -40,15 +39,13 @@
     padding: 0;
   }
 
-  body { font-family: 'Source Sans Pro', sans-serif; }
+  body {
+    font-family: 'Source Sans Pro', sans-serif;
+    line-height: 1.6;
+    font-size: 15px;
+  }
 
   #wrapper {
-    /* background:
-      radial-gradient(
-        ellipse at bottom right,
-        rgb(22, 117, 170) 5%,
-        rgba(0, 0, 0, 0.87) 100%
-      ); */
     height: 100vh;
     width: 100vw;
   }
@@ -59,9 +56,13 @@
   }
 
   .welcome-sidebar {
-    margin: 2em;
+    margin: 0 2em;
+    padding-top: 2em;
     text-align: center;
     width: 300px;
+    height: 100vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
   }
 
   .work-area {

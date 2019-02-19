@@ -1,5 +1,6 @@
 <template>
   <div id="project" class="container">
+    <add-url-dialog v-if="processing.url" :url="processing.url"/>
     <div id="source-drop-zone" class="project-sidebar">
       <div class="project-name-container">
         <div v-if="!editNameMode" @click.stop="editProjectName" class="project-name">
@@ -37,7 +38,7 @@
             <form class="link-form">
               <span class="provide-link-text">
                 <label for="link-input">Link from web</label>
-                <input type="url" id="link-input" class="link-input" :value="linkToValidate"></input>
+                <input type="url" id="link-input" class="link-input" v-model="linkToValidate"></input>
                 <div class="provide-link-buttons">
                   <a @click.stop="validateLink">Add URL</a>
                   |
@@ -48,11 +49,13 @@
           </div>
       </div>
       <div class="source-container">
-        <processing-source v-for="source in processing.sources" :source="source" class="sources processing-source" @clear-processing="clearProcessing"/>
+        <div class="section-name"><span class="pull-left">Layers</span><a class="pull-right create-gp-button" @click.stop="createGeoPackage">Create GeoPackage</a></div>
+        <processing-source v-for="source in processing.sources" :source="source" :key="source.file.path" class="sources processing-source" @clear-processing="clearProcessing"/>
         <!-- <layer-card v-for="sourceLayer in layers" :key="sourceLayer.zIndex" class="sources" :layer="sourceLayer.layer" :source="sourceLayer.source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/> -->
         <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"/>
       </div>
     </div>
+    <create-geopackage v-if="processing.createGeoPackage" :project="project" @activate-draw="activateDraw"/>
 
     <div class="work-area">
       <div id="map" style="width: 100%; height: 100%;"></div>
@@ -63,7 +66,8 @@
 <script>
   import { remote } from 'electron'
   import jetpack from 'fs-jetpack'
-  import * as Projects from '../../../lib/projects'
+  import { mapGetters, mapActions } from 'vuex'
+  // import * as Projects from '../../../lib/projects'
   // eslint-disable-next-line no-unused-vars
   import * as vendor from '../../../lib/vendor'
   import SourceFactory from '../../../lib/source/SourceFactory'
@@ -73,6 +77,8 @@
 
   import LayerFlipCard from './LayerFlipCard'
   import ProcessingSource from './ProcessingSource'
+  import AddUrlDialog from './AddUrlDialog'
+  import CreateGeopackage from './CreateGeopackage'
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault()
@@ -85,40 +91,26 @@
   let processing = {
     dataDragOver: false,
     sources: [],
-    dragging: undefined
+    dragging: undefined,
+    url: undefined,
+    createGeoPackage: false
   }
   let editNameMode = false
   let linkInputVisible = false
   let linkToValidate = ''
 
-  function loadProject () {
-    const projectId = new URL(location.href).searchParams.get('id')
-    project = Projects.getProject(projectId)
-    if (!project) {
-      console.log('Tried to open the project ' + projectId + ' but got nothing')
-      return
-    }
-    project.layers = project.layers || {}
-    console.log({project})
-  }
-
-  loadProject()
-
   async function addExistingSouces () {
-    console.log('adding existing sorces')
-    for (let layerId in project.layers) {
-      let layer = project.layers[layerId]
+    for (let layerId in this.project.layers) {
+      let layer = this.project.layers[layerId]
       await addLayer(layer)
     }
   }
 
   async function addLayer (layerConfig) {
-    console.log('add old layer', layerConfig.shown)
     try {
       let layer = LayerFactory.constructLayer(layerConfig)
       await layer.initialize()
       for (const mapLayer of layer.mapLayer) {
-        console.log('mapLayer', mapLayer)
         mapLayer.addTo(map)
         mapLayers[mapLayer.id] = mapLayer
       }
@@ -129,24 +121,21 @@
 
   async function addSource (source) {
     try {
-      let createdSource = SourceFactory.constructSource(source.file.path)
+      let createdSource = await SourceFactory.constructSource(source.file.path)
       let layers = await createdSource.retrieveLayers()
 
       for (const layer of layers) {
         await layer.initialize()
         let config = layer.configuration
-        console.log('Layer configuration', config.shown)
         Vue.set(project.layers, config.id, config)
         project.layers[config.id] = config
         for (const mapLayer of layer.mapLayer) {
-          console.log('mapLayer', mapLayer)
           mapLayer.addTo(map)
           mapLayers[mapLayer.id] = mapLayer
         }
       }
 
-      console.log({project})
-      Projects.saveProject(project)
+      // Projects.saveProject(project)
       clearProcessing(source)
     } catch (e) {
       console.log('source', source)
@@ -156,11 +145,14 @@
     }
   }
 
+  function createGeoPackage () {
+    console.log('Create a GeoPackage')
+    processing.createGeoPackage = true
+  }
+
   function clearProcessing (processingSource) {
-    console.log('processingSource', processingSource)
     for (let i = 0; i < processing.sources.length; i++) {
       let source = processing.sources[i]
-      console.log('source', source)
       if (source.file.path === processingSource.file.path) {
         processing.sources.splice(i, 1)
         break
@@ -189,10 +181,20 @@
     }, 0)
   }
 
+  function processUrl (url) {
+    processFiles([{
+      path: url
+    }])
+    console.log('Process the URL', url)
+    // setTimeout(function () {
+    //   processing.url = url
+    // }, 0)
+  }
+
   export default {
     data () {
       return {
-        project,
+        // project,
         processing,
         editNameMode,
         linkInputVisible,
@@ -200,6 +202,16 @@
       }
     },
     computed: {
+      ...mapGetters({
+        getProjectById: 'Projects/getProjectById'
+      }),
+      ...mapActions([
+        'setProjectName'
+      ]),
+      project () {
+        const projectId = new URL(location.href).searchParams.get('id')
+        return this.getProjectById(projectId)
+      },
       layers () {
         let sourceLayers = []
         for (let sourceId in this.project.sources) {
@@ -216,9 +228,15 @@
     },
     components: {
       LayerFlipCard,
-      ProcessingSource
+      ProcessingSource,
+      AddUrlDialog,
+      CreateGeopackage
     },
     methods: {
+      activateDraw () {
+        console.log('activate draw')
+        map.editTools.startRectangle()
+      },
       provideLink () {
         this.linkInputVisible = true
       },
@@ -228,6 +246,7 @@
       },
       validateLink () {
         console.log('validate the link', this.linkToValidate)
+        processUrl(this.linkToValidate)
       },
       editProjectName () {
         this.editNameMode = true
@@ -238,8 +257,10 @@
       saveEditedName (event) {
         this.editNameMode = false
         let projectNameEdit = event.target.closest('.project-name-container').querySelector('.project-name-edit')
-        project.name = projectNameEdit.value
-        Projects.saveProject(project)
+        this.$store.dispatch('Projects/setProjectName', {project: this.project, name: projectNameEdit.value})
+        // this.setProjectName({project: this.project, name: projectNameEdit.value})
+        // this.project.name = projectNameEdit.value
+        // Projects.saveProject(project)
       },
       cancelEditName () {
         this.editNameMode = false
@@ -267,7 +288,7 @@
           mapLayer.remove()
         }
         Vue.delete(this.project.layers, layer.id)
-        Projects.saveProject(this.project)
+        // Projects.saveProject(this.project)
       },
       addFileClick (ev) {
         remote.dialog.showOpenDialog({
@@ -303,10 +324,11 @@
         processing.dataDragOver = false
         processing.dragging = undefined
       },
+      createGeoPackage,
       clearProcessing
     },
     mounted: function () {
-      map = vendor.L.map('map')
+      map = vendor.L.map('map', {editable: true})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
       const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
@@ -357,6 +379,18 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
+  }
+
+  .pull-right {
+    text-align: center;
+    width: 49%;
+    display: inline-block;
+  }
+
+  .pull-left {
+    text-align: left;
+    width: 50%;
+    display: inline-block;
   }
 
   .link-form {
@@ -466,6 +500,7 @@
     color: rgba(54, 62, 70, .87);
     background-color: #ECEFF1;
     padding-bottom: .2em;
+    cursor: pointer;
   }
 
   .dragover {
@@ -474,15 +509,32 @@
   }
 
   .project-name {
-    font-size: 1.1em;
+    font-size: 1.4em;
     font-weight: bold;
+    cursor: pointer;
+  }
+
+  .section-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+
+  .create-gp-button {
+    border-color: rgba(54, 62, 70, .87);
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 4px;
+    padding: .2em;
+    color: rgba(255, 255, 255, .95);
+    background-color: rgba(68, 152, 192, .95);
     cursor: pointer;
   }
 
   .major-button-text {
     font-size: 1.6em;
     font-weight: bold;
-    margin-bottom: -10px;
   }
 
   .major-button-subtext {

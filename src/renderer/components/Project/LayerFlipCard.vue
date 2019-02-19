@@ -15,12 +15,15 @@
              <font-awesome-icon v-show="!layer.shown" :icon="['far', 'square']" size="lg"/>
            </div>
          </div>
+         <div class="layer-file-path">
+          {{layer.filePath}}
+         </div>
          <div class="layer-summary">
            <div class="left-side-summary layer-thumb" :style="overviewBackgroundStyle">
              <div class="layer-type-icon fill-background-color flex-the-rest">
                <div class="contrast-svg">
-                 <font-awesome-icon v-if="layer.pane === 'vector'" icon="vector-square" size="2x"/>
-                 <font-awesome-icon v-if="layer.pane === 'tile'" icon="atlas" size="2x"/>
+                 <font-awesome-icon v-if="layer.pane === 'vector' || layer.pane === 'overlayPane'" icon="vector-square" size="2x"/>
+                 <font-awesome-icon v-if="layer.pane === 'tile' || layer.pane === 'tilePane'" icon="atlas" size="2x"/>
                </div>
              </div>
              <div class="layer-action-buttons">
@@ -180,6 +183,7 @@
 }
 
 .layer-summary {
+  position: relative;
   display: flex;
   flex-direction: row;
 }
@@ -229,6 +233,14 @@
   font-size: 10px;
   text-transform: uppercase;
   color: #B5B5B5;
+}
+
+.layer-file-path {
+  color: #555A5F;
+  font-size: 13px;
+  margin-left: 20px;
+  margin-top: 5px;
+  word-wrap: break-word;
 }
 
 .layer-style-heading {
@@ -455,7 +467,7 @@
 .layer__face__path {
   position: absolute;
   left: 80px;
-  top: 54px;
+  top: 25px;
   width: 2px;
   height: 78px;
 }
