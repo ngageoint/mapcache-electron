@@ -1,7 +1,7 @@
 'use strict'
 
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
-import WindowState from '../lib/settings/WindowState'
+import { app, BrowserWindow, Menu } from 'electron'
+import WindowState from '../lib/window/WindowState'
 // eslint-disable-next-line no-unused-vars
 import Store from '../store'
 /**
@@ -39,25 +39,6 @@ function createWindow () {
   const menu = Menu.buildFromTemplate(menuTemplate)
   mainWindow.setMenu(menu)
 }
-
-ipcMain.on('open-project', (event, projectId) => {
-  let projectWindow
-  const winURL = process.env.NODE_ENV === 'development'
-    ? `http://localhost:9080/?id=${projectId}#/project`
-    : `file://${__dirname}/index.html?id=${projectId}#project`
-
-  const projectWindowState = new WindowState('project-' + projectId)
-  let windowOptions = projectWindowState.retrieveState()
-  projectWindow = new BrowserWindow(windowOptions)
-  projectWindowState.track(projectWindow)
-
-  projectWindow.loadURL(winURL)
-  projectWindow.on('closed', () => {
-    projectWindow = null
-  })
-
-  // mainWindow.close()
-})
 
 function getMenuTemplate () {
   const viewSubmenu = [

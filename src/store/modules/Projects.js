@@ -1,5 +1,5 @@
-// import Project from './Project'
 import Vue from 'vue'
+import WindowLauncher from '../../lib/window/WindowLauncher'
 
 const newProject = () => {
   let project = {
@@ -46,14 +46,19 @@ const mutations = {
 }
 
 const actions = {
-  addProject ({ commit, state }, project) {
+  newProject ({ commit, state }) {
+    let project = newProject()
     commit('pushProjectToProjects', project)
+    actions.openProject({ commit, state }, project)
   },
   setProjectName ({ commit, state }, {project, name}) {
     commit('setProjectName', {project, name})
   },
   deleteProject ({ commit, state }, project) {
     commit('deleteProject', project)
+  },
+  openProject ({ commit, state }, project) {
+    WindowLauncher.launchProjectWindow(project.id)
   }
 }
 

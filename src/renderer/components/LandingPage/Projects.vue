@@ -21,14 +21,12 @@
 </template>
 
 <script>
-  import * as Projects from '../../../lib/projects'
   import { mapState, mapActions, mapGetters } from 'Vuex'
 
   export default {
     computed: {
       ...mapState({
         projects: state => {
-          console.log('state', state)
           return state.Projects
         }
       }),
@@ -38,18 +36,10 @@
     },
     methods: {
       ...mapActions({
-        'addProject': 'Projects/addProject',
-        'deleteProject': 'Projects/deleteProject'
-      }),
-      openProject (project) {
-        console.log('open project', project)
-        Projects.openProject(project.id)
-      },
-      newProject () {
-        let project = this.getNewProject()
-        this.addProject(project)
-        Projects.openProject(project.id)
-      }
+        'newProject': 'Projects/newProject',
+        'deleteProject': 'Projects/deleteProject',
+        'openProject': 'Projects/openProject'
+      })
     }
   }
 </script>
