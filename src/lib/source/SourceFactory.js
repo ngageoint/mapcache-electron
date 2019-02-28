@@ -5,8 +5,9 @@ import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 
 export default class SourceFactory {
-  static async constructUrlSource (url) {
+  static async constructUrlSource (parameterizedUrl) {
     // try to figure out what this thing is
+    let url = parameterizedUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
     let result = await request({
       method: 'HEAD',
       uri: url
@@ -14,7 +15,7 @@ export default class SourceFactory {
 
     console.log('result', result)
 
-    return new XYZServerSource(url)
+    return new XYZServerSource(parameterizedUrl)
   }
 
   static async constructSource (filePath) {

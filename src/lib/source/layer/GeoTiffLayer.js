@@ -57,7 +57,7 @@ export default class GeoTiffLayer extends Layer {
       name: this.name,
       extent: this.extent,
       id: this.id,
-      pane: 'overlayPane',
+      pane: 'tile',
       layerType: 'GeoTIFF',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
@@ -99,19 +99,23 @@ export default class GeoTiffLayer extends Layer {
   }
 
   get mapLayer () {
-    if (this._mapLayer) return [this._mapLayer]
+    if (this._mapLayer) return this._mapLayer
 
     this._mapLayer = new MapcacheMapLayer({
       layer: this,
-      pane: this.configuration.pane
+      pane: this.configuration.panet === 'tile' ? 'tilePane' : 'overlayPane'
     })
 
     this._mapLayer.id = this.id
-    return [this._mapLayer]
+    return this._mapLayer
   }
 
   async renderTile (coords, tileCanvas, done) {
-    await this.renderer.renderTile(coords, tileCanvas, done)
+    return this.renderer.renderTile(coords, tileCanvas, done)
+  }
+
+  async renderImageryTile (coords, tileCanvas, done) {
+    return this.renderTile(coords, tileCanvas, done)
   }
 
   renderOverviewTile () {

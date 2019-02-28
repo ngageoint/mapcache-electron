@@ -8,7 +8,7 @@ export default class VectorTileRenderer {
   constructor (style, getVectorTileProtobuf) {
     this._mapboxGlMap = new MapboxGL.Map({
       request: async function (req, callback) {
-        console.log('go get the tile', req)
+        // console.log('go get the tile', req)
         // if (req.kind === 4) {
         //   let pathToFont = req.url
         //   fs.readFile(pathToFont, function (err, data) {

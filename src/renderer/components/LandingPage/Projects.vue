@@ -31,14 +31,14 @@
         }
       }),
       ...mapGetters({
-        'getNewProject': 'Projects/getNewProject'
+        getNewProject: 'Projects/getNewProject'
       })
     },
     methods: {
       ...mapActions({
-        'newProject': 'Projects/newProject',
-        'deleteProject': 'Projects/deleteProject',
-        'openProject': 'Projects/openProject'
+        newProject: 'Projects/newProject',
+        deleteProject: 'Projects/deleteProject',
+        openProject: 'Projects/openProject'
       })
     }
   }

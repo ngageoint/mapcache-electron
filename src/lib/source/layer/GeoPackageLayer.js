@@ -114,9 +114,9 @@ export default class GeoPackageLayer extends Layer {
 
   async renderTile (coords, tileCanvas, done) {
     if (this.pane === 'vector') {
-      this.renderVectorTile(coords, tileCanvas, done)
+      return this.renderVectorTile(coords, tileCanvas, done)
     } else {
-      this.renderImageryTile(coords, tileCanvas, done)
+      return this.renderImageryTile(coords, tileCanvas, done)
     }
   }
 
@@ -128,16 +128,18 @@ export default class GeoPackageLayer extends Layer {
       if (done) {
         done(null, tileCanvas)
       }
+      return tileCanvas
     } else {
       let image = await GeoPackage.getTileFromXYZ(this.geopackage, this.sourceLayerName, x, y, z, 256, 256)
       if (done) {
         done(null, image)
       }
+      return image
     }
   }
 
   async renderVectorTile (coords, tileCanvas, done) {
-    this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
+    return this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
   renderOverviewTile (coords) {
@@ -146,6 +148,39 @@ export default class GeoPackageLayer extends Layer {
       if (err) throw err
       jetpack.write(overviewTilePath, imageData)
     })
+  }
+
+  getLayerColumns () {
+    let columns = {
+      columns: []
+    }
+    let geomColumn = this.dao.getTable().getGeometryColumn()
+    columns.geom = {
+      name: geomColumn.name
+    }
+    let idColumn = this.dao.getTable().getIdColumn()
+    columns.id = {
+      name: idColumn.name,
+      dataType: GeoPackage.DataTypes.name(idColumn.dataType)
+    }
+    for (const column of this.dao.getTable().columns) {
+      if (column.name !== columns.id.name && column.name !== columns.geom.name) {
+        let c = {
+          dataType: GeoPackage.DataTypes.name(column.dataType),
+          name: column.name,
+          max: column.max,
+          notNull: column.notNull,
+          defaultValue: column.defaultValue
+        }
+        columns.columns.push(c)
+      }
+    }
+    return columns
+  }
+
+  iterateFeaturesInBounds (bounds) {
+    let bb = new GeoPackage.BoundingBox(bounds[0][1], bounds[1][1], bounds[0][0], bounds[1][0])
+    return this.dao.queryForGeoJSONIndexedFeaturesWithBoundingBox(bb)
   }
 
   get configuration () {
@@ -178,7 +213,7 @@ export default class GeoPackageLayer extends Layer {
   }
 
   get mapLayer () {
-    if (this._mapLayer) return [this._mapLayer]
+    if (this._mapLayer) return this._mapLayer
 
     this._mapLayer = new MapcacheMapLayer({
       layer: this,
@@ -186,6 +221,6 @@ export default class GeoPackageLayer extends Layer {
     })
 
     this._mapLayer.id = this.id
-    return [this._mapLayer]
+    return this._mapLayer
   }
 }

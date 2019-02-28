@@ -1,3 +1,4 @@
+import request from 'request-promise-native'
 import Layer from './Layer'
 import * as Vendor from '../../vendor'
 
@@ -19,7 +20,7 @@ export default class XYZServerLayer extends Layer {
       name: this.name,
       extent: this.extent,
       id: this.id,
-      pane: 'tilePane',
+      pane: 'tile',
       layerType: 'XYZServer',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
@@ -43,34 +44,67 @@ export default class XYZServerLayer extends Layer {
   }
 
   get mapLayer () {
-    if (this._mapLayer) return [this._mapLayer]
+    if (this._mapLayer) return this._mapLayer
 
     this._mapLayer = Vendor.L.tileLayer(this.filePath, {
-      pane: this.configuration.pane
+      pane: this.configuration.pane === 'tile' ? 'tilePane' : 'overlayPane'
     })
 
     this._mapLayer.id = this.id
-    return [this._mapLayer]
+    return this._mapLayer
   }
 
-  // renderOverviewTile () {
-  //   let overviewTilePath = this.overviewTilePath
-  // if (!jetpack.exists(overviewTilePath)) {
-  //   var fullExtent = this.extent
-  //   let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([fullExtent[0], fullExtent[1]], [fullExtent[2], fullExtent[3]])
-  //   let canvas = Vendor.L.DomUtil.create('canvas')
-  //   canvas.width = 500
-  //   canvas.height = 500
-  //   this.renderer.renderTile(coords, canvas, function (err, tile) {
-  //     if (err) console.log('err', err)
-  //     canvas.toBlob(function (blob) {
-  //       var reader = new FileReader()
-  //       reader.addEventListener('loadend', function () {
-  //         jetpack.write(overviewTilePath, Buffer.from(reader.result))
-  //       })
-  //       reader.readAsArrayBuffer(blob)
-  //     })
-  //   })
-  // }
-  // }
+  async renderImageryTile (coords, tileCanvas, done) {
+    if (!tileCanvas) {
+      tileCanvas = document.createElement('canvas')
+      tileCanvas.width = 256
+      tileCanvas.height = 256
+    }
+
+    let ctx = tileCanvas.getContext('2d')
+    ctx.clearRect(0, 0, tileCanvas.width, tileCanvas.height)
+
+    let parameterizedUrl = this.filePath
+    let url = parameterizedUrl.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y)
+
+    let result = await request({
+      method: 'GET',
+      url: url,
+      encoding: null
+    })
+
+    return result
+
+    // ctx.drawImage(result, 0, 0)
+
+    // return tileCanvas.toDataURL()
+    // console.log('result', result)
+    //
+    // return new Promise((resolve, reject) => {
+    //   let reader = new FileReader()
+    //   reader.addEventListener('load', function () {
+    //     console.log('reader loaded')
+    //     let image = new Image()
+    //     image.onload = () => {
+    //       console.log('image loaded')
+    //       ctx.drawImage(image, 0, 0)
+    //       resolve(tileCanvas.toDataURL())
+    //     }
+    //     image.onerror = () => {
+    //       console.log('image error')
+    //       console.log('arguments', arguments)
+    //     }
+    //     console.log('reader.result', reader.result)
+    //     image.src = reader.result
+    //   })
+    //   reader.readAsDataURL(new Blob(result, {type: 'image/png'}))
+    //
+    //   // let image = new Image()
+    //   // image.onload = () => {
+    //   //   ctx.drawImage(image, 0, 0)
+    //   //   resolve(tileCanvas.toDataURL())
+    //   // }
+    //   // image.src = URL.createObjectURL(result)
+    // })
+  }
 }

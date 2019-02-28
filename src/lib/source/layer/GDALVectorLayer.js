@@ -79,7 +79,7 @@ export default class GDALVectorLayer extends Layer {
     }
 
     this._vectorTileRenderer = new VectorTileRenderer(mbStyle, (x, y, z) => {
-      return getTile({x: x, y: y, z: z}, layer, extent, name)
+      return this.getTile({x: x, y: y, z: z}, layer, extent, name)
     })
 
     await this.renderOverviewTile()
@@ -98,6 +98,9 @@ export default class GDALVectorLayer extends Layer {
     let fileName = this.name + '.geojson'
     let filePath = this.cacheFolder.dir(this.id).file(fileName).path()
     let fullFile = path.join(filePath, fileName)
+    if (fullFile === this.filePath) {
+      return
+    }
     let outds = gdal.open(fullFile, 'w', 'GeoJSON')
     let outLayer = outds.layers.create(this.sourceLayerName, this.layer.srs, gdal.wkbPolygon)
     this.layer.features.forEach(feature => {
@@ -168,7 +171,7 @@ export default class GDALVectorLayer extends Layer {
   }
 
   get mapLayer () {
-    if (this._mapLayer) return [this._mapLayer]
+    if (this._mapLayer) return this._mapLayer
 
     this._mapLayer = new MapcacheMapLayer({
       layer: this,
@@ -176,100 +179,163 @@ export default class GDALVectorLayer extends Layer {
     })
 
     this._mapLayer.id = this.id
-    return [this._mapLayer]
+    return this._mapLayer
   }
 
   renderOverviewTile () {
     let overviewTilePath = this.overviewTilePath
-    console.log('jetpack.exists(this.overviewTilePath)', jetpack.exists(this.overviewTilePath))
     if (jetpack.exists(this.overviewTilePath)) return
-    console.log(this.overviewTilePath + ' does not exist')
     this.renderTile({x: 0, y: 0, z: 0}, null, function (err, imageData) {
       if (err) throw err
       jetpack.write(overviewTilePath, imageData)
     })
   }
-}
 
-function getTile (coords, gdalLayer, extent, name) {
-  return new Promise(function (resolve, reject) {
-    let {x, y, z} = coords
+  getTile (coords, gdalLayer, extent, name) {
+    return new Promise((resolve, reject) => {
+      let {x, y, z} = coords
 
+      let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+      let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
+      let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+
+      if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
+        return resolve(this.emptyVectorTile(name))
+      }
+
+      console.time('x ' + x + ' y ' + y + ' z ' + z)
+      let features = []
+      let featureCollection = {
+        type: 'FeatureCollection',
+        features: features
+      }
+
+      let featureMap = this.iterateFeaturesInBounds([
+        [tileLowerLeft[1], tileLowerLeft[0]],
+        [tileUpperRight[1], tileUpperRight[0]]
+      ], true)
+
+      console.log('featureMap.length', featureMap.length)
+      for (let i = 0; i < featureMap.length; i++) {
+        let feature = featureMap[i]
+        if (feature) {
+          features.push(feature)
+        }
+      }
+
+      let tileBuffer = 8
+      let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
+      var tile = tileIndex.getTile(z, x, y)
+      gdalLayer.setSpatialFilter(null)
+
+      var gjvt = {}
+      if (tile) {
+        gjvt[name] = tile
+      } else {
+        gjvt[name] = {features: []}
+      }
+
+      let vectorTilePBF = vtpbf.fromGeojsonVt(gjvt)
+      resolve(vectorTilePBF)
+      console.timeEnd('x ' + x + ' y ' + y + ' z ' + z)
+    })
+  }
+
+  emptyVectorTile (name) {
+    var gjvt = {}
+    gjvt[name] = {features: []}
+    return vtpbf.fromGeojsonVt(gjvt)
+  }
+
+  getLayerColumns () {
+    let columns = {
+      columns: [],
+      geom: {
+        name: 'geometry'
+      },
+      id: {
+        name: 'id',
+        dataType: 'INTEGER'
+      }
+    }
+    this.layer.fields.forEach((field, i) => {
+      let dataType = field.type
+      if (dataType === 'string') dataType = 'TEXT'
+      let c = {
+        dataType: dataType,
+        name: field.name,
+        justification: field.justification,
+        ignored: field.ignored,
+        precision: field.precision,
+        width: field.width
+      }
+      columns.columns.push(c)
+      console.log('c', c)
+    })
+    // let geomColumn = this.dao.getTable().getGeometryColumn()
+    // columns.geom = {
+    //   name: geomColumn.name
+    // }
+    // let idColumn = this.dao.getTable().getIdColumn()
+    // columns.id = {
+    //   name: idColumn.name,
+    //   dataType: GeoPackage.DataTypes.name(idColumn.dataType)
+    // }
+    // for (const column of this.dao.getTable().columns) {
+    //   if (column.name !== columns.id.name && column.name !== columns.geom.name) {
+    //     let c = {
+    //       dataType: GeoPackage.DataTypes.name(column.dataType),
+    //       name: column.name,
+    //       max: column.max,
+    //       notNull: column.notNull,
+    //       defaultValue: column.defaultValue
+    //     }
+    //     columns.columns.push(c)
+    //   }
+    // }
+    return columns
+  }
+
+  iterateFeaturesInBounds (bounds, buffer) {
     let wgs84 = gdal.SpatialReference.fromEPSG(4326)
-    let toNative = new gdal.CoordinateTransformation(gdalLayer.srs, wgs84)
-    let fromNative = new gdal.CoordinateTransformation(wgs84, gdalLayer.srs)
+    let fromNative = new gdal.CoordinateTransformation(wgs84, this.layer.srs)
+    let toNative = new gdal.CoordinateTransformation(this.layer.srs, wgs84)
 
-    let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-    let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
-    let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
-    let distance = tileBbox.maxLat - tileBbox.minLat
-
-    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
-      return resolve(emptyVectorTile(name))
-    }
-
-    console.time('x ' + x + ' y ' + y + ' z ' + z)
     let envelope = new gdal.Envelope({
-      minX: tileLowerLeft[0],
-      maxX: tileUpperRight[0],
-      minY: tileLowerLeft[1],
-      maxY: tileUpperRight[1]
+      minX: bounds[0][1],
+      maxX: bounds[1][1],
+      minY: bounds[0][0],
+      maxY: bounds[1][0]
     })
-    let filter = envelope.toPolygon().buffer((distance / 256) * 8)
-    filter.transform(fromNative)
-    gdalLayer.setSpatialFilter(filter)
-    let features = []
-    let featureCollection = {
-      type: 'FeatureCollection',
-      features: features
+
+    let bufferDistance = 0
+    if (buffer) {
+      bufferDistance = ((bounds[1][1] - bounds[0][1]) / 256) * 8
     }
-    let featureMap = gdalLayer.features.map(function (feature) {
-      return feature
-    })
-    console.log('featureMap.length', featureMap.length)
-    for (let i = 0; i < featureMap.length; i++) {
-      let feature = featureMap[i]
+    let filter = envelope.toPolygon().buffer(bufferDistance, 0)
+
+    filter.transform(fromNative)
+    this.layer.setSpatialFilter(filter)
+    let featureMap = this.layer.features.map((feature) => {
       try {
         let projected = feature.clone()
-        if (envelope.toPolygon().within(projected.getGeometry())) {
-          continue
-        }
-        // let geom = projected.getGeometry()
         let geom = projected.getGeometry()
         geom.transform(toNative)
-        geom.intersection(envelope.toPolygon().buffer((distance / 256) * 8))
+        if (envelope.toPolygon().within(geom)) {
+          return
+        }
+        geom.intersection(envelope.toPolygon().buffer(bufferDistance))
         let geojson = geom.toObject()
-
-        features.push({
+        return {
           type: 'Feature',
           properties: feature.fields.toObject(),
           geometry: geojson
-        })
+        }
       } catch (e) {
-        console.log('error with feature', e)
+
       }
-    }
-
-    let tileBuffer = 8
-    let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
-    var tile = tileIndex.getTile(z, x, y)
-    gdalLayer.setSpatialFilter(null)
-
-    var gjvt = {}
-    if (tile) {
-      gjvt[name] = tile
-    } else {
-      gjvt[name] = {features: []}
-    }
-
-    let vectorTilePBF = vtpbf.fromGeojsonVt(gjvt)
-    resolve(vectorTilePBF)
-    console.timeEnd('x ' + x + ' y ' + y + ' z ' + z)
-  })
-}
-
-function emptyVectorTile (name) {
-  var gjvt = {}
-  gjvt[name] = {features: []}
-  return vtpbf.fromGeojsonVt(gjvt)
+      // return feature
+    })
+    return featureMap
+  }
 }

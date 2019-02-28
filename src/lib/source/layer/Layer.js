@@ -9,7 +9,6 @@ export default class Layer {
   name
   mapLayers
   constructor (configuration = {}) {
-    // filePath, sourceLayerName = defaultLayerName(filePath), name = defaultLayerName(filePath)) {
     this._configuration = configuration
     this.id = this._configuration.id || createId()
     this.filePath = this._configuration.filePath
@@ -30,14 +29,17 @@ export default class Layer {
   }
 
   get configuration () {
-    return Object.assign(this._configuration, {
-      id: this.id,
-      filePath: this.filePath,
-      sourceLayerName: this.sourceLayerName,
-      name: this.name,
-      overviewTilePath: this.overviewTilePath,
-      shown: this.shown || true
-    })
+    return {
+      ...this._configuration,
+      ...{
+        id: this.id,
+        filePath: this.filePath,
+        sourceLayerName: this.sourceLayerName,
+        name: this.name,
+        overviewTilePath: this.overviewTilePath,
+        shown: this.shown || true
+      }
+    }
   }
 }
 

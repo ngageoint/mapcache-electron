@@ -10,7 +10,7 @@
            <div class="layer__face__source-name contrast-text">
              {{layer.name}}
            </div>
-           <div class="layer-checked contrast-svg-always" @click.stop="toggleLayer()">
+           <div class="layer-checked contrast-svg-always" @click.stop="toggleProjectLayer({projectId: projectId, layerId: layer.id})">
              <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
              <font-awesome-icon v-show="!layer.shown" :icon="['far', 'square']" size="lg"/>
            </div>
@@ -36,11 +36,7 @@
            <div class="flex-the-rest flex-container-column">
              <div class="flex-container-row">
                <div class="layer__face__from-to flex-the-rest">
-                 <div class="coordinate-container">
-                   <div class="layer-coordinates">Lower Left: {{layer.extent[0] | latitude}}, {{layer.extent[1] | longitude}}</div>
-                   <div class="layer__horizontal__divider coordinate-divider"></div>
-                   <div class="layer-coordinates">Upper Right: {{layer.extent[2] | latitude}}, {{layer.extent[3] | longitude}}</div>
-                 </div>
+                 <bounds-ui :bounds="bounds"/>
                </div>
              </div>
              <div class="flex-container-row lower-stats">
@@ -69,7 +65,7 @@
                    <p class="layer__stats__type">Source Location</p>
                    <span class="layer__stats__value">{{source.file.path}}</span>
                  </div> -->
-                 <button type="button" class="layer__request-btn" @click.stop="removeLayer()">
+                 <button type="button" class="layer__request-btn" @click.stop="removeProjectLayer({projectId: projectId, layerId: layer.id})">
                    <span class="layer__request-btn__text-1">Remove Layer</span>
                  </button>
                </div>
@@ -87,6 +83,8 @@
   import fs from 'fs'
   import jetpack from 'fs-jetpack'
   import TransitionExpand from '../../TransitionExpand'
+  import BoundsUi from './BoundsUi'
+  import { mapActions } from 'vuex'
 
   let expanded = false
 
@@ -109,9 +107,10 @@
   }
 
   export default {
-    props: ['layer', 'zIndex'],
+    props: ['layer', 'zIndex', 'projectId'],
     components: {
-      TransitionExpand
+      TransitionExpand,
+      BoundsUi
     },
     data () {
       return {
@@ -133,24 +132,23 @@
             'background-image': 'url(data:image/png;base64,' + tile + ')'
           }
         }
-      }
-    },
-    filters: {
-      latitude: function (value) {
-        return value.toFixed(4) + '°' + (value < 0 ? ' W' : ' E')
       },
-      longitude: function (value) {
-        return value.toFixed(4) + '°' + (value < 0 ? ' S' : ' N')
+      bounds () {
+        return [[this.layer.extent[0], this.layer.extent[1]], [this.layer.extent[2], this.layer.extent[3]]]
       }
     },
     mounted: function () {
       console.log('this.layer', this.layer)
     },
     methods: {
-      toggleLayer () {
-        this.layer.shown = !this.layer.shown
-        this.$emit('toggle-layer', this.layer)
-      },
+      ...mapActions({
+        removeProjectLayer: 'Projects/removeProjectLayer',
+        toggleProjectLayer: 'Projects/toggleProjectLayer'
+      }),
+      // toggleLayer () {
+      //   this.layer.shown = !this.layer.shown
+      //   this.$emit('toggle-layer', this.layer)
+      // },
       zoomToExtent (extent) {
         console.log({extent})
         this.$emit('zoom-to', extent)
@@ -161,10 +159,11 @@
       },
       openDetail () {
         this.expanded = !this.expanded
-      },
-      removeLayer (event) {
-        this.$emit('delete-layer', this.layer)
       }
+      // ,
+      // removeLayer (event) {
+      //   this.$emit('delete-layer', this.layer)
+      // }
     }
   }
 </script>

@@ -30,14 +30,22 @@ export default class GeoTiffRenderer {
     let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
     var fullExtent = this.layer.extent
     if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
-      return done(null, tile)
+      if (done) {
+        return done(null, tile)
+      }
+      return
     }
     console.log('Tile Intersects - start rendering')
     console.time('x ' + coords.x + ' y ' + coords.y + ' z ' + coords.z)
     console.log('tile', tile)
 
+    if (!tile) {
+      tile = document.createElement('canvas')
+      tile.width = 256
+      tile.height = 256
+    }
+
     let ctx = tile.getContext('2d')
-    ctx.clearRect(0, 0, tile.width, tile.height)
 
     let target = ctx.createImageData(tile.width, tile.height)
     let targetData = target.data
@@ -54,9 +62,13 @@ export default class GeoTiffRenderer {
     ctx.clearRect(0, 0, tile.width, tile.height)
     ctx.putImageData(target, 0, 0)
     setTimeout(() => {
-      done(null, tile)
+      if (done) {
+        done(null, tile)
+      }
     }, 0)
     console.timeEnd('x ' + x + ' y ' + y + ' z ' + z)
+
+    return tile.toDataURL()
   }
 
   populateTargetData (targetData, ds, width, height) {
