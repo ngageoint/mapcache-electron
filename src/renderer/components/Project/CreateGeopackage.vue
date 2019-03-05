@@ -1,6 +1,9 @@
 <template>
   <div class="geopackage-sidebar">
-    <div class="project-name">
+    <choose-layers v-if="geopackageConfiguration.step === 1" :project="project" :geopackage="geopackageConfiguration"/>
+    <setup-imagery-layers v-if="geopackageConfiguration.step === 2" :project="project" :geopackage="geopackageConfiguration"/>
+    {{geopackageConfiguration}}
+    <!-- <div class="project-name">
       Create GeoPackage
     </div>
     <div class="instruction" :class="{incomplete : !geopackageConfiguration.aoi, complete : geopackageConfiguration.aoi}">
@@ -42,21 +45,21 @@
         </div>
       </form>
     </div>
-    <div class="instruction complete">
+    <div class="instruction">
       <div class="instruction-title">
         3) Verify Selected Layer Options
       </div>
       <div class="instruction-detail">
         Layers that will be included in the GeoPackage
       </div>
-      <!-- <div class="instruction-content">
-        <div v-for="layer in visibleLayers" :key="layer.id">
+      <div class="instruction-content">
+        <div v-for="layer in project.layers" :key="layer.id">
           Layer:
-          {{layer}}
+          {{layer.name}}
         </div>
-      </div> -->
+      </div>
     </div>
-    <div class="instruction complete">
+    <div class="instruction" :class="{complete: geopackageConfiguration.fileName}">
       <div class="instruction-title">
         4) Choose where to save the GeoPackage
       </div>
@@ -64,17 +67,11 @@
         {{geopackageConfiguration.fileName}}
       </div>
       <a class="choose-gp-button" @click.stop="chooseSaveLocation()">Choose File Location</a>
-      <!-- <div class="instruction-content">
-        <div v-for="layer in visibleLayers" :key="layer.id">
-          Layer:
-          {{layer}}
-        </div>
-      </div> -->
     </div>
     <a class="choose-gp-button" @click.stop="createGeoPackage()">GO!</a>
     <div>
       {{project}}
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -84,11 +81,15 @@
   import GeoPackageBuilder from '../../../lib/source/GeoPackageBuilder'
   import FloatLabels from 'float-labels.js'
   import BoundsUi from './BoundsUi'
+  import ChooseLayers from '../GeoPackage/ChooseLayers'
+  import SetupImageryLayers from '../GeoPackage/SetupImageryLayers'
 
   export default {
     props: ['project'],
     components: {
-      BoundsUi
+      BoundsUi,
+      ChooseLayers,
+      SetupImageryLayers
     },
     computed: {
       geopackageConfiguration () {
@@ -218,6 +219,10 @@
 .project-name {
   font-size: 1.4em;
   font-weight: bold;
+}
+
+.instruction {
+  color: rgba(54, 62, 70, .87);
 }
 
 .instruction.incomplete {

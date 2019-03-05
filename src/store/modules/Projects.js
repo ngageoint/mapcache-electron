@@ -1,4 +1,5 @@
 import Vue from 'vue'
+// import UIState from './UIState'
 import WindowLauncher from '../../lib/window/WindowLauncher'
 
 function createId () {
@@ -35,6 +36,10 @@ const mutations = {
     }
     Vue.set(state[project.id], 'currentGeoPackage', geopackage.id)
   },
+  updateGeopackageLayers (state, {projectId, geopackageId, imageryLayers, featureLayers}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayers', imageryLayers)
+    Vue.set(state[projectId].geopackages[geopackageId], 'featureLayers', featureLayers)
+  },
   toggleEditGeoPackage (state, {project, geopackageId}) {
     if (state[project.id].currentGeoPackage === geopackageId) {
       Vue.delete(state[project.id], 'currentGeoPackage')
@@ -44,6 +49,12 @@ const mutations = {
   },
   toggleProjectLayer (state, {projectId, layerId}) {
     Vue.set(state[projectId].layers[layerId], 'shown', !state[projectId].layers[layerId].shown)
+  },
+  setGeoPackageStepNumber (state, {projectId, geopackageId, step}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'step', step)
+  },
+  setGeoPackageLayerOptions (state, {projectId, geopackageId, layerId, options}) {
+    Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
   },
   setGeoPackageAOI (state, {projectId, geopackageId, aoi}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
@@ -66,7 +77,7 @@ const mutations = {
 }
 
 const actions = {
-  newProject ({ commit, state }) {
+  newProject ({ dispatch, commit, state }) {
     let project = {
       id: createId(),
       name: 'New Project',
@@ -92,9 +103,14 @@ const actions = {
       aoi: undefined,
       minZoom: undefined,
       maxZoom: undefined,
-      layerOptions: {}
+      imageryLayers: {},
+      featureLayers: {},
+      step: 0
     }
     commit('addGeoPackage', {project, geopackage})
+  },
+  updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers}) {
+    commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers})
   },
   toggleProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('toggleProjectLayer', {projectId, layerId})
@@ -104,6 +120,12 @@ const actions = {
   },
   setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, aoi}) {
     commit('setGeoPackageAOI', {projectId, geopackageId, aoi})
+  },
+  setGeoPackageStepNumber ({ commit, state }, {projectId, geopackageId, step}) {
+    commit('setGeoPackageStepNumber', {projectId, geopackageId, step})
+  },
+  setGeoPackageLayerOptions ({ commit, state }, {projectId, geopackageId, layerId, options}) {
+    commit('setGeoPackageLayerOptions', {projectId, geopackageId, layerId, options})
   },
   setMinZoom ({ commit, state }, {projectId, geopackageId, minZoom}) {
     commit('setMinZoom', {projectId, geopackageId, minZoom})

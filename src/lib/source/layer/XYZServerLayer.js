@@ -74,37 +74,5 @@ export default class XYZServerLayer extends Layer {
     })
 
     return result
-
-    // ctx.drawImage(result, 0, 0)
-
-    // return tileCanvas.toDataURL()
-    // console.log('result', result)
-    //
-    // return new Promise((resolve, reject) => {
-    //   let reader = new FileReader()
-    //   reader.addEventListener('load', function () {
-    //     console.log('reader loaded')
-    //     let image = new Image()
-    //     image.onload = () => {
-    //       console.log('image loaded')
-    //       ctx.drawImage(image, 0, 0)
-    //       resolve(tileCanvas.toDataURL())
-    //     }
-    //     image.onerror = () => {
-    //       console.log('image error')
-    //       console.log('arguments', arguments)
-    //     }
-    //     console.log('reader.result', reader.result)
-    //     image.src = reader.result
-    //   })
-    //   reader.readAsDataURL(new Blob(result, {type: 'image/png'}))
-    //
-    //   // let image = new Image()
-    //   // image.onload = () => {
-    //   //   ctx.drawImage(image, 0, 0)
-    //   //   resolve(tileCanvas.toDataURL())
-    //   // }
-    //   // image.src = URL.createObjectURL(result)
-    // })
   }
 }

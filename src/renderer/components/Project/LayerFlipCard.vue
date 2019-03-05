@@ -84,7 +84,7 @@
   import jetpack from 'fs-jetpack'
   import TransitionExpand from '../../TransitionExpand'
   import BoundsUi from './BoundsUi'
-  import { mapActions } from 'vuex'
+  import { mapActions, mapState } from 'vuex'
 
   let expanded = false
 
@@ -118,6 +118,11 @@
       }
     },
     computed: {
+      ...mapState({
+        uiState (state) {
+          return state.UIState[this.projectId]
+        }
+      }),
       cssProps () {
         return {
           '--fill-color': this.layer.style && this.layer.style.color ? setColorAlpha(this.layer.style.color, 0.95) : 'rgba(254, 254, 254, .95)',
@@ -143,7 +148,8 @@
     methods: {
       ...mapActions({
         removeProjectLayer: 'Projects/removeProjectLayer',
-        toggleProjectLayer: 'Projects/toggleProjectLayer'
+        toggleProjectLayer: 'Projects/toggleProjectLayer',
+        setProjectExtents: 'UIState/setProjectExtents'
       }),
       // toggleLayer () {
       //   this.layer.shown = !this.layer.shown
@@ -151,6 +157,7 @@
       // },
       zoomToExtent (extent) {
         console.log({extent})
+        this.setProjectExtents({projectId: this.projectId, extents: extent})
         this.$emit('zoom-to', extent)
       },
       colorChanged (colorHex, layerId) {

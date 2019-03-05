@@ -35,13 +35,14 @@
     },
     computed: {
       ...mapState({
-        project: state => {
+        project (state) {
           const projectId = new URL(location.href).searchParams.get('id')
           return state.Projects[projectId]
         }
       }),
       ...mapGetters({
-        getProjectById: 'Projects/getProjectById'
+        getProjectById: 'Projects/getProjectById',
+        getUIStateByProjectId: 'UIState/getUIStateByProjectId'
       })
     },
     components: {
@@ -54,10 +55,18 @@
     methods: {
       ...mapActions({
         addProjectLayer: 'Projects/addProjectLayer',
-        addGeoPackage: 'Projects/addGeoPackage'
+        addGeoPackage: 'Projects/addGeoPackage',
+        addProjectState: 'UIState/addProjectState'
       }),
       createGeoPackage () {
         this.creatingGeoPackage = true
+      }
+    },
+    mounted: function () {
+      let uistate = this.getUIStateByProjectId(this.project.id)
+      console.log('state.UIState[projectId]', uistate)
+      if (!uistate) {
+        this.addProjectState({projectId: this.project.id})
       }
     }
   }

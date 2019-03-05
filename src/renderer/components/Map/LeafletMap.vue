@@ -3,7 +3,7 @@
 </template>
 
 <script>
-  import { mapActions } from 'vuex'
+  import { mapActions, mapState } from 'vuex'
   import * as vendor from '../../../lib/vendor'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import LeafletZoomIndicator from '../../../lib/map/LeafletZoomIndicator'
@@ -13,27 +13,33 @@
 
   export default {
     props: ['layerConfigs', 'activeGeopackage', 'projectId'],
+    computed: {
+      ...mapState({
+        uiState (state) {
+          return state.UIState[this.projectId]
+        }
+      })
+    },
     methods: {
       ...mapActions({
-        setGeoPackageAOI: 'Projects/setGeoPackageAOI'
+        setGeoPackageAOI: 'Projects/setGeoPackageAOI',
+        setProjectExtents: 'UIState/setProjectExtents'
       }),
-      activateDraw () {
-        console.log('activate draw')
-        // map.editTools.startRectangle()
-      },
       activateGeoPackageAOI () {
-        let r
+        if (this.r) {
+          map.removeLayer(this.r)
+        }
         if (!this.activeGeopackage.aoi) {
-          r = map.editTools.startRectangle()
+          this.r = map.editTools.startRectangle()
         } else {
           let bounds = vendor.L.latLngBounds(this.activeGeopackage.aoi)
-          r = vendor.L.rectangle(bounds)
-          r.addTo(map)
-          r.enableEdit()
+          this.r = vendor.L.rectangle(bounds)
+          this.r.addTo(map)
+          this.r.enableEdit()
         }
-        r.on('editable:vertex:dragend', () => {
-          let sw = r.getBounds().getSouthWest()
-          let ne = r.getBounds().getNorthEast()
+        this.r.on('editable:vertex:dragend', () => {
+          let sw = this.r.getBounds().getSouthWest()
+          let ne = this.r.getBounds().getNorthEast()
           let bounds = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
           this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.activeGeopackage.id, aoi: bounds})
         })
@@ -47,6 +53,19 @@
       }
     },
     watch: {
+      uiState: {
+        handler (value, oldValue) {
+          let oldExtent = oldValue.extents
+          let extent = value.extents
+          if (!oldExtent || extent[0] !== oldExtent[0] || extent[1] !== oldExtent[1] || extent[2] !== oldExtent[2] || extent[3] !== oldExtent[3]) {
+            map.fitBounds([
+              [extent[1], extent[0]],
+              [extent[3], extent[2]]
+            ])
+          }
+        },
+        deep: true
+      },
       activeGeopackage: {
         handler (value, oldValue) {
           this.activateGeoPackageAOI()
@@ -112,6 +131,17 @@
       osmbasemap.addTo(map)
 
       map.addControl(new LeafletZoomIndicator())
+
+      let extent = this.uiState.extents
+      map.fitBounds([
+        [extent[1], extent[0]],
+        [extent[3], extent[2]]
+      ])
+
+      map.on('moveend', () => {
+        let bounds = map.getBounds()
+        this.setProjectExtents({projectId: this.projectId, extents: [bounds.getEast(), bounds.getSouth(), bounds.getWest(), bounds.getNorth()]})
+      }, this)
 
       for (const layerId in this.layerConfigs) {
         let layerConfig = this.layerConfigs[layerId]
