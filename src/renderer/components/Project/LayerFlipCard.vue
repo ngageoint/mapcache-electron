@@ -107,7 +107,11 @@
   }
 
   export default {
-    props: ['layer', 'zIndex', 'projectId'],
+    props: {
+      layer: Object,
+      zIndex: Number,
+      projectId: String
+    },
     components: {
       TransitionExpand,
       BoundsUi

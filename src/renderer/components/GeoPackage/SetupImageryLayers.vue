@@ -27,7 +27,10 @@
   import StepButtons from './StepButtons'
 
   export default {
-    props: ['project', 'geopackage'],
+    props: {
+      geopackage: Object,
+      project: Object
+    },
     components: {
       LayerHeader,
       StepButtons

@@ -30,7 +30,10 @@
   }
 
   export default {
-    props: ['layer', 'geopackage'],
+    props: {
+      layer: Object,
+      geopackage: Object
+    },
     computed: {
       cssProps () {
         return {

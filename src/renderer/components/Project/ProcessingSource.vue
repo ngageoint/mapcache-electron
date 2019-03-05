@@ -40,7 +40,9 @@
 
 <script>
   export default {
-    props: ['source'],
+    props: {
+      source: Object
+    },
     computed: {
       cssProps () {
         let fillColor = '#83BFC3'

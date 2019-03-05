@@ -56,7 +56,9 @@
   let linkToValidate = ''
 
   export default {
-    props: ['project'],
+    props: {
+      project: Object
+    },
     data () {
       return {
         processing,

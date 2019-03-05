@@ -24,7 +24,9 @@
   let editNameMode = false
 
   export default {
-    props: ['project'],
+    props: {
+      project: Object
+    },
     data () {
       return {
         editNameMode

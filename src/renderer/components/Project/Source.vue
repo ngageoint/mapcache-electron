@@ -11,7 +11,9 @@
   import LayerCard from './LayerCard'
 
   export default {
-    props: ['source'],
+    props: {
+      source: Object
+    },
     components: {
       LayerCard,
       Verte

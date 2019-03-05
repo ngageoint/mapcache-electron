@@ -12,7 +12,11 @@
   let mapLayers = {}
 
   export default {
-    props: ['layerConfigs', 'activeGeopackage', 'projectId'],
+    props: {
+      layerConfigs: Object,
+      activeGeopackage: Object,
+      projectId: String
+    },
     computed: {
       ...mapState({
         uiState (state) {

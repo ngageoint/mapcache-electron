@@ -26,7 +26,9 @@
         source
       }
     },
-    props: ['url'],
+    props: {
+      url: String
+    },
     computed: {
       cssProps () {
         let fillColor = '#83BFC3'

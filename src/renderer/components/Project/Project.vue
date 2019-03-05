@@ -64,7 +64,6 @@
     },
     mounted: function () {
       let uistate = this.getUIStateByProjectId(this.project.id)
-      console.log('state.UIState[projectId]', uistate)
       if (!uistate) {
         this.addProjectState({projectId: this.project.id})
       }

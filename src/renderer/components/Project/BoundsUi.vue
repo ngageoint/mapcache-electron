@@ -8,7 +8,9 @@
 
 <script>
   export default {
-    props: ['bounds'],
+    props: {
+      bounds: Array
+    },
     filters: {
       latitude: function (value) {
         return value.toFixed(4) + '°' + (value < 0 ? ' W' : ' E')

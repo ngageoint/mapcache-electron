@@ -85,7 +85,9 @@
   import SetupImageryLayers from '../GeoPackage/SetupImageryLayers'
 
   export default {
-    props: ['project'],
+    props: {
+      project: Object
+    },
     components: {
       BoundsUi,
       ChooseLayers,
