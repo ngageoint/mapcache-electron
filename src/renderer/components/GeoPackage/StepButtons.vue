@@ -3,7 +3,7 @@
     <div v-if="!back" class="step-button back"/>
     <a v-if="back" class="step-button back" @click.stop="back()">
       <font-awesome-icon icon="arrow-circle-left" size="lg"/>
-      Back
+      {{backText || 'Back'}}
     </a>
     <div class="step-indicators">
       <template v-for="n in steps">
@@ -13,7 +13,7 @@
     </div>
     <div v-if="!next" class="step-button next"/>
     <a v-if="next" class="step-button next" @click.stop="next()">
-      Next
+      {{nextText || 'Next'}}
       <font-awesome-icon icon="arrow-circle-right" size="lg"/>
     </a>
   </div>
@@ -27,7 +27,9 @@
       step: Number,
       steps: Number,
       next: Function,
-      back: Function
+      back: Function,
+      nextText: String,
+      backText: String
     }
   }
 </script>
@@ -52,6 +54,7 @@
     font-size: .5em;
     line-height: 28px;
     flex-grow: 1;
+    text-align: center;
   }
 
   .step-button {
@@ -59,7 +62,7 @@
     cursor: pointer;
     font-size: 1.2em;
     font-weight: bold;
-    width: 25%;
+    width: 40%;
   }
 
   .step-button.back {

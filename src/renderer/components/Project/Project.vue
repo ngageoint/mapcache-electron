@@ -1,11 +1,40 @@
 <template>
   <div id="project" class="container">
-    <div id="source-drop-zone" class="project-sidebar">
+    <div class="admin-actions">
+      <div class="admin-actions-content">
+        <div class="admin-action" :class="{'admin-action-selected': !geopackagesShowing}" @click.stop="showLayers()">
+          <!-- <div :class="{'admin-action-arrow-left': !geopackagesShowing}"></div> -->
+          <div class="admin-badge">
+            <font-awesome-icon icon="layer-group" size="2x"/>
+          </div>
+          <div>Layers</div>
+        </div>
+        <div class="admin-action" :class="{'admin-action-selected': geopackagesShowing}" @click.stop="showGeoPackages()">
+          <!-- <div :class="{'admin-action-arrow-left': geopackagesShowing}"></div> -->
+          <div class="admin-badge">
+            <font-awesome-icon icon="archive" size="2x"/>
+          </div>
+          <div>GeoPackages</div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="tab-bar">
+      <div class="tab-name vertical-text">Layers</div>
+      <div class="tab-name vertical-text">GeoPackages</div>
+    </div> -->
+    <div id="source-drop-zone" class="project-sidebar" v-if="!project.currentGeoPackage">
       <edit-project-name :project="project"/>
-      <add-source :project="project"/>
+      <add-source v-if="!geopackagesShowing" :project="project"/>
       <div class="source-container">
-        <div class="section-name"><span class="pull-left">Layers</span><a class="pull-right create-gp-button" @click.stop="addGeoPackage({project})">Create GeoPackage</a></div>
-        <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" :projectId="project.id"/>
+        <div v-if="!geopackagesShowing">
+          <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" :projectId="project.id"/>
+        </div>
+        <div v-if="geopackagesShowing">
+          <a class="pull-right create-gp-button" @click.stop="addGeoPackage({project})">Create GeoPackage</a>
+          <div v-for="geopackage in project.geopackages" :key="geopackage.id" class="geopackage-item">
+            {{geopackage.id}}
+          </div>
+        </div>
       </div>
     </div>
     <create-geopackage v-if="project.currentGeoPackage" :project="project"/>
@@ -25,13 +54,13 @@
   import AddSource from './AddSource'
   import EditProjectName from './EditProjectName'
 
-  let creatingGeoPackage = false
+  let options = {
+    geopackagesShowing: false
+  }
 
   export default {
     data () {
-      return {
-        creatingGeoPackage
-      }
+      return options
     },
     computed: {
       ...mapState({
@@ -58,8 +87,13 @@
         addGeoPackage: 'Projects/addGeoPackage',
         addProjectState: 'UIState/addProjectState'
       }),
-      createGeoPackage () {
-        this.creatingGeoPackage = true
+      showLayers () {
+        console.log('show Layers')
+        options.geopackagesShowing = false
+      },
+      showGeoPackages () {
+        console.log('show geopackages')
+        options.geopackagesShowing = true
       }
     },
     mounted: function () {
@@ -105,6 +139,74 @@
   .work-area {
     flex: 1;
     /* background: #FAFAFA; */
+  }
+
+  .tab-bar {
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vertical-text {
+    transform: rotate(270deg);
+  }
+
+  .admin-actions {
+    background: linear-gradient(to right, rgba(80, 80, 80, 0.3) 93%, transparent 40%) no-repeat;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-actions-content {
+    overflow: auto;
+  }
+
+  .admin-badge {
+    position: relative;
+  }
+
+  .admin-content {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .admin-action {
+    position: relative;
+    padding: 25px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+  }
+
+  .admin-action-arrow-left {
+    position: absolute;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right:10px solid white;
+  }
+
+  .admin-action .fa {
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
+
+  .admin-action .fa-mobile-phone {
+    font-size: 46px;
+    margin-bottom: 0;
+   }
+
+  .admin-action-selected {
+    color: rgba(255, 255, 255, .96);
+    background-color: #444;
+    -webkit-clip-path: polygon(100% 50%, 93% 40%, 93% 0%, 0% 0%, 0% 100%, 93% 100%, 93% 60%);
+    clip-path: polygon(100% 50%, 93% 40%, 93% 0%, 0% 0%, 0% 100%, 93% 100%, 93% 60%);
   }
 
   .project-sidebar {

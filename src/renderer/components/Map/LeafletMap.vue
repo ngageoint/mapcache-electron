@@ -19,34 +19,22 @@
     },
     computed: {
       ...mapState({
-        uiState (state) {
-          return state.UIState[this.projectId]
+        extents (state) {
+          return state.UIState[this.projectId].extents
+        },
+        drawBounds (state) {
+          console.log('state', state.UIState[this.projectId].drawBounds)
+          return state.UIState[this.projectId].drawBounds
         }
       })
     },
     methods: {
       ...mapActions({
-        setGeoPackageAOI: 'Projects/setGeoPackageAOI',
+        setDrawnBounds: 'UIState/setDrawnBounds',
         setProjectExtents: 'UIState/setProjectExtents'
       }),
       activateGeoPackageAOI () {
-        if (this.r) {
-          map.removeLayer(this.r)
-        }
-        if (!this.activeGeopackage.aoi) {
-          this.r = map.editTools.startRectangle()
-        } else {
-          let bounds = vendor.L.latLngBounds(this.activeGeopackage.aoi)
-          this.r = vendor.L.rectangle(bounds)
-          this.r.addTo(map)
-          this.r.enableEdit()
-        }
-        this.r.on('editable:vertex:dragend', () => {
-          let sw = this.r.getBounds().getSouthWest()
-          let ne = this.r.getBounds().getNorthEast()
-          let bounds = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.activeGeopackage.id, aoi: bounds})
-        })
+
       },
       zoomToExtent (extent) {
         console.log({extent})
@@ -54,13 +42,62 @@
           [extent[1], extent[0]],
           [extent[3], extent[2]]
         ])
+      },
+      setupDrawing (drawBounds) {
+        console.log('draw bounds handler')
+        if (this.r) {
+          map.removeLayer(this.r)
+        }
+
+        console.log('drawBounds', drawBounds)
+        // find the newly activated drawing
+        let gpDrawBounds = drawBounds[this.activeGeopackage.id]
+        for (const key in gpDrawBounds) {
+          console.log('key', key)
+          console.log('value', gpDrawBounds[key])
+          // if the bounds drawing for the whole geopackage was activated, do this
+          if (gpDrawBounds[key] === true) {
+            let aoi
+            if (key === 'geopackage') {
+              aoi = this.activeGeopackage.aoi
+            } else if (this.activeGeopackage.imageryLayers[key]) {
+              aoi = this.activeGeopackage.imageryLayers[key].aoi
+            } else if (this.activeGeopackage.featureLayers[key]) {
+              aoi = this.activeGeopackage.featureLayers[key].aoi
+            }
+            console.log('aoi', aoi)
+            if (!aoi || !aoi.length) {
+              this.r = map.editTools.startRectangle()
+            } else {
+              let bounds = vendor.L.latLngBounds(aoi)
+              this.r = vendor.L.rectangle(bounds)
+              this.r.addTo(map)
+              this.r.enableEdit()
+            }
+            this.r.layerId = key
+            this.r.on('editable:vertex:dragend', () => {
+              let sw = this.r.getBounds().getSouthWest()
+              let ne = this.r.getBounds().getNorthEast()
+              let bounds = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
+              this.setDrawnBounds({projectId: this.projectId, bounds, geopackageId: this.activeGeopackage.id, layerId: this.r.layerId})
+              // this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.activeGeopackage.id, aoi: bounds})
+            })
+          }
+        }
       }
     },
     watch: {
-      uiState: {
+      drawBounds: {
         handler (value, oldValue) {
-          let oldExtent = oldValue.extents
-          let extent = value.extents
+          this.setupDrawing(value)
+        },
+        deep: true
+      },
+      extents: {
+        handler (value, oldValue) {
+          console.log('uistate changing', value)
+          let oldExtent = oldValue
+          let extent = value
           if (!oldExtent || extent[0] !== oldExtent[0] || extent[1] !== oldExtent[1] || extent[2] !== oldExtent[2] || extent[3] !== oldExtent[3]) {
             map.fitBounds([
               [extent[1], extent[0]],
@@ -70,12 +107,12 @@
         },
         deep: true
       },
-      activeGeopackage: {
-        handler (value, oldValue) {
-          this.activateGeoPackageAOI()
-        },
-        deep: true
-      },
+      // activeGeopackage: {
+      //   handler (value, oldValue) {
+      //     this.activateGeoPackageAOI()
+      //   },
+      //   deep: true
+      // },
       layerConfigs: {
         async handler (value, oldValue) {
           let currentLayerIds = Object.keys(value)
@@ -136,7 +173,7 @@
 
       map.addControl(new LeafletZoomIndicator())
 
-      let extent = this.uiState.extents
+      let extent = this.extents
       map.fitBounds([
         [extent[1], extent[0]],
         [extent[3], extent[2]]
@@ -158,6 +195,8 @@
         mapLayer.addTo(map)
         mapLayers[mapLayer.id] = mapLayer
       }
+
+      this.setupDrawing(this.drawBounds)
       if (this.activeGeopackage) {
         this.activateGeoPackageAOI()
       }

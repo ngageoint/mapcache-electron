@@ -36,6 +36,15 @@ const mutations = {
     }
     Vue.set(state[project.id], 'currentGeoPackage', geopackage.id)
   },
+  setCurrentGeoPackage (state, {projectId, geopackageId}) {
+    Vue.set(state[projectId], 'currentGeoPackage', geopackageId)
+  },
+  setImageryLayersShareBounds (state, {projectId, geopackageId, sharesBounds}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayersShareBounds', sharesBounds)
+  },
+  setFeatureLayersShareBounds (state, {projectId, geopackageId, sharesBounds}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'featureLayersShareBounds', sharesBounds)
+  },
   updateGeopackageLayers (state, {projectId, geopackageId, imageryLayers, featureLayers}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayers', imageryLayers)
     Vue.set(state[projectId].geopackages[geopackageId], 'featureLayers', featureLayers)
@@ -56,14 +65,51 @@ const mutations = {
   setGeoPackageLayerOptions (state, {projectId, geopackageId, layerId, options}) {
     Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
   },
-  setGeoPackageAOI (state, {projectId, geopackageId, aoi}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
+  setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
+    console.log('aoi', aoi)
+    while (aoi[0][1] < -180) {
+      aoi[0][1] = aoi[0][1] + 360
+    }
+    while (aoi[0][1] > 180) {
+      aoi[0][1] = aoi[0][1] - 360
+    }
+    while (aoi[1][1] < -180) {
+      aoi[1][1] = aoi[1][1] + 360
+    }
+    while (aoi[1][1] > 180) {
+      aoi[1][1] = aoi[1][1] - 360
+    }
+    if (layerId) {
+      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'aoi', aoi)
+      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'aoi', aoi)
+      }
+    } else {
+      Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
+    }
   },
-  setMaxZoom (state, {projectId, geopackageId, maxZoom}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'maxZoom', maxZoom)
+  setMaxZoom (state, {projectId, geopackageId, layerId, maxZoom}) {
+    if (layerId) {
+      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'maxZoom', maxZoom)
+      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'maxZoom', maxZoom)
+      }
+    } else {
+      Vue.set(state[projectId].geopackages[geopackageId], 'maxZoom', maxZoom)
+    }
   },
-  setMinZoom (state, {projectId, geopackageId, minZoom}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'minZoom', minZoom)
+  setMinZoom (state, {projectId, geopackageId, layerId, minZoom}) {
+    if (layerId) {
+      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'minZoom', minZoom)
+      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'minZoom', minZoom)
+      }
+    } else {
+      Vue.set(state[projectId].geopackages[geopackageId], 'minZoom', minZoom)
+    }
   },
   setGeoPackageLocation (state, { projectId, geopackageId, fileName }) {
     Vue.set(state[projectId].geopackages[geopackageId], 'fileName', fileName)
@@ -105,9 +151,18 @@ const actions = {
       maxZoom: undefined,
       imageryLayers: {},
       featureLayers: {},
-      step: 0
+      step: 1
     }
     commit('addGeoPackage', {project, geopackage})
+  },
+  setCurrentGeoPackage ({ commit, state }, {projectId, geopackageId}) {
+    commit('setCurrentGeoPackage', {projectId, geopackageId})
+  },
+  setImageryLayersShareBounds ({ commit, state }, {projectId, geopackageId, sharesBounds}) {
+    commit('setImageryLayersShareBounds', {projectId, geopackageId, sharesBounds})
+  },
+  setFeatureLayersShareBounds ({ commit, state }, {projectId, geopackageId, sharesBounds}) {
+    commit('setFeatureLayersShareBounds', {projectId, geopackageId, sharesBounds})
   },
   updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers}) {
     commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers})
@@ -118,8 +173,8 @@ const actions = {
   removeProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('removeProjectLayer', {projectId, layerId})
   },
-  setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, aoi}) {
-    commit('setGeoPackageAOI', {projectId, geopackageId, aoi})
+  setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, layerId, aoi}) {
+    commit('setGeoPackageAOI', {projectId, geopackageId, layerId, aoi})
   },
   setGeoPackageStepNumber ({ commit, state }, {projectId, geopackageId, step}) {
     commit('setGeoPackageStepNumber', {projectId, geopackageId, step})
@@ -127,17 +182,18 @@ const actions = {
   setGeoPackageLayerOptions ({ commit, state }, {projectId, geopackageId, layerId, options}) {
     commit('setGeoPackageLayerOptions', {projectId, geopackageId, layerId, options})
   },
-  setMinZoom ({ commit, state }, {projectId, geopackageId, minZoom}) {
-    commit('setMinZoom', {projectId, geopackageId, minZoom})
+  setMinZoom ({ commit, state }, {projectId, geopackageId, layerId, minZoom}) {
+    commit('setMinZoom', {projectId, geopackageId, layerId, minZoom})
   },
-  setMaxZoom ({ commit, state }, {projectId, geopackageId, maxZoom}) {
-    commit('setMaxZoom', {projectId, geopackageId, maxZoom})
+  setMaxZoom ({ commit, state }, {projectId, geopackageId, layerId, maxZoom}) {
+    commit('setMaxZoom', {projectId, geopackageId, layerId, maxZoom})
   },
   setGeoPackageLocation ({ commit, state }, {projectId, geopackageId, fileName}) {
     commit('setGeoPackageLocation', {projectId, geopackageId, fileName})
   },
   deleteProject ({ commit, state }, project) {
     commit('deleteProject', project)
+    commit('UIState/deleteProject', project.id, {root: true})
   },
   openProject ({ commit, state }, project) {
     WindowLauncher.launchProjectWindow(project.id)

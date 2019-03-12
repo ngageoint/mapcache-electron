@@ -1,22 +1,26 @@
 <template>
-<div class="coordinate-container">
-  <div class="layer-coordinates">Lower Left: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}}</div>
-  <div class="layer__horizontal__divider coordinate-divider"></div>
-  <div class="layer-coordinates">Upper Right: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}</div>
-</div>
+  <div :class="{'coordinate-container': !mini, 'mini': mini}">
+    <div v-if="mini" class="mini">LL: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}} UR: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}</div>
+    <div v-if="!mini">
+      <div class="layer-coordinates" v-if="lowerLeft">Lower Left: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}}</div>
+      <div class="layer__horizontal__divider coordinate-divider"></div>
+      <div class="layer-coordinates" v-if="upperRight">Upper Right: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}</div>
+    </div>
+  </div>
 </template>
 
 <script>
   export default {
     props: {
-      bounds: Array
+      bounds: Array,
+      mini: Boolean
     },
     filters: {
       latitude: function (value) {
-        return value.toFixed(4) + '°' + (value < 0 ? ' W' : ' E')
+        return value.toFixed(3) + '°' + (value < 0 ? ' W' : ' E')
       },
       longitude: function (value) {
-        return value.toFixed(4) + '°' + (value < 0 ? ' S' : ' N')
+        return value.toFixed(3) + '°' + (value < 0 ? ' S' : ' N')
       }
     },
     computed: {
@@ -31,6 +35,9 @@
 </script>
 
 <style>
+  .mini {
+    display: inline;
+  }
   .layer-coordinates {
     padding: 5px 10px;
   }

@@ -12,7 +12,9 @@ const getters = {
 const mutations = {
   addProjectState (state, {projectId}) {
     Vue.set(state, projectId, {
-      extents: [-180, -90, 180, 90]
+      extents: [-180, -90, 180, 90],
+      drawBounds: {},
+      boundsBeingDrawn: {}
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -20,6 +22,42 @@ const mutations = {
   },
   deleteProject (state, projectId) {
     Vue.delete(state, projectId)
+  },
+  activateDrawForGeoPackage (state, {projectId, geopackageId, layerId}) {
+    console.log('Activate', arguments)
+    if (state[projectId].drawBounds[geopackageId]) {
+      if (layerId) {
+        Vue.set(state[projectId].drawBounds[geopackageId], layerId, true)
+        Vue.set(state[projectId].boundsBeingDrawn[geopackageId], layerId, [])
+      } else {
+        Vue.set(state[projectId].drawBounds[geopackageId], 'geopackage', true)
+        Vue.set(state[projectId].boundsBeingDrawn[geopackageId], 'geopackage', [])
+      }
+    } else {
+      Vue.set(state[projectId].drawBounds, geopackageId, {})
+      Vue.set(state[projectId].boundsBeingDrawn, geopackageId, {})
+      if (layerId) {
+        Vue.set(state[projectId].drawBounds, geopackageId, {[layerId]: true})
+        Vue.set(state[projectId].boundsBeingDrawn, geopackageId, {[layerId]: []})
+      } else {
+        Vue.set(state[projectId].drawBounds, geopackageId, {geopackage: true})
+        Vue.set(state[projectId].boundsBeingDrawn, geopackageId, {geopackage: []})
+      }
+    }
+  },
+  deactivateDrawForGeoPackage (state, {projectId, geopackageId, layerId}) {
+    if (layerId) {
+      Vue.set(state[projectId].drawBounds[geopackageId], layerId, false)
+    } else {
+      Vue.set(state[projectId].drawBounds[geopackageId], 'geopackage', false)
+    }
+  },
+  setDrawnBounds (state, {projectId, geopackageId, layerId, bounds}) {
+    if (layerId) {
+      Vue.set(state[projectId].boundsBeingDrawn[geopackageId], layerId, bounds)
+    } else {
+      Vue.set(state[projectId].boundsBeingDrawn[geopackageId], 'geopackage', bounds)
+    }
   }
 }
 
@@ -32,6 +70,16 @@ const actions = {
   },
   deleteProject ({ commit, state }, projectId) {
     commit('deleteProject', projectId)
+  },
+  activateDrawForGeoPackage ({ commit, state }, {projectId, geopackageId, layerId}) {
+    commit('activateDrawForGeoPackage', {projectId, geopackageId, layerId})
+  },
+  deactivateDrawForGeoPackage ({ commit, state }, {projectId, geopackageId, layerId}) {
+    commit('deactivateDrawForGeoPackage', {projectId, geopackageId, layerId})
+  },
+  setDrawnBounds ({ commit, state }, {projectId, geopackageId, layerId, bounds}) {
+    console.log('set drawn bounds', {projectId, geopackageId, layerId, bounds})
+    commit('setDrawnBounds', {projectId, geopackageId, layerId, bounds})
   }
 }
 

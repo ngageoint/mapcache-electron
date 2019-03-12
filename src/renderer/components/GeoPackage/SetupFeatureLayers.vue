@@ -2,7 +2,7 @@
   <div class="instruction">
     <step-buttons :step="geopackage.step" :back="back" :next="next" :top="true" :steps="4"></step-buttons>
     <div class="instruction-title">
-      Imagery Layers Setup
+      Feature Layers Setup
     </div>
     <div class="instruction-detail">
       You will now specify the bounds for your imagery layers.  You can either set one bounds and set of zoom levels for all layers, or specify bounds and zoom levels per layer.
@@ -13,30 +13,30 @@
           Please Choose One
         </div>
         <div>
-          <a class="step-button" :class="{selected: geopackage.imageryLayersShareBounds === true}" @click.stop="useSameConfigurations()">
+          <a class="step-button" :class="{selected: geopackage.featureLayerShareBounds === true}" @click.stop="useSameConfigurations()">
             Use The Same Configuration For All Layers
           </a>
         </div>
         <div>
-          <a class="step-button" :class="{selected: geopackage.imageryLayersShareBounds === false}" @click.stop="useDifferentConfigurations()">
+          <a class="step-button" :class="{selected: geopackage.featureLayerShareBounds === false}" @click.stop="useDifferentConfigurations()">
             Use Different Configurations Per Layer
           </a>
         </div>
       </div>
-      <div v-if="geopackage.imageryLayersShareBounds === true">
-        <imagery-options :projectId="project.id" :geopackageId="geopackage.id" :options="geopackage"></imagery-options>
+      <div v-if="geopackage.featureLayersShareBounds === true">
+        <feature-options :projectId="project.id" :geopackageId="geopackage.id" :options="geopackage"></feature-options>
       </div>
-      <div v-if="geopackage.imageryLayersShareBounds === false">
+      <div v-if="geopackage.featureLayersShareBounds === false">
         <div class="layer-group-header">
           Layers
         </div>
         <hr/>
-        <div class="imagery-layers">
-          <div v-for="imageryLayer in imageryLayers">
+        <div class="feature-layers">
+          <div v-for="featureLayer in featureLayers">
             <div class="layer-name">
-              {{imageryLayer.name}}
+              {{featureLayer.name}}
             </div>
-            <imagery-options :projectId="project.id" :geopackageId="geopackage.id" :options="imageryLayer" :layerId="imageryLayer.id"></imagery-options>
+            <feature-options :projectId="project.id" :geopackageId="geopackage.id" :options="featureLayer" :layerId="featureLayer.id"></feature-options>
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@
   import { mapActions } from 'vuex'
   import LayerHeader from './LayerHeader'
   import StepButtons from './StepButtons'
-  import ImageryOptions from './ImageryOptions'
+  import FeatureOptions from './FeatureOptions'
 
   export default {
     props: {
@@ -59,13 +59,13 @@
     components: {
       LayerHeader,
       StepButtons,
-      ImageryOptions
+      FeatureOptions
     },
     methods: {
       ...mapActions({
         updateGeopackageLayers: 'Projects/updateGeopackageLayers',
         setGeoPackageStepNumber: 'Projects/setGeoPackageStepNumber',
-        setImageryLayersShareBounds: 'Projects/setImageryLayersShareBounds',
+        setFeatureLayersShareBounds: 'Projects/setFeatureLayersShareBounds',
         setGeoPackageAOI: 'Projects/setGeoPackageAOI'
       }),
       next () {
@@ -89,14 +89,14 @@
         })
       },
       useDifferentConfigurations () {
-        this.setImageryLayersShareBounds({
+        this.setFeatureLayersShareBounds({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
           sharesBounds: false
         })
       },
       useSameConfigurations () {
-        this.setImageryLayersShareBounds({
+        this.setFeatureLayersShareBounds({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
           sharesBounds: true
@@ -116,6 +116,7 @@
             style: layer.style
           }
         }
+        console.log('layer.pane', layer.pane)
         if (layer.pane === 'vector' && !this.featureLayers[layerId]) {
           this.featureLayers[layerId] = {
             id: layer.id,
