@@ -62,6 +62,9 @@ const mutations = {
   setGeoPackageStepNumber (state, {projectId, geopackageId, step}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'step', step)
   },
+  setGeoPackageName (state, {projectId, geopackageId, name}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'name', name)
+  },
   setGeoPackageLayerOptions (state, {projectId, geopackageId, layerId, options}) {
     Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
   },
@@ -142,9 +145,13 @@ const actions = {
     commit('addProjectLayer', {project, layerId, config})
   },
   addGeoPackage ({ commit, state }, {project}) {
-    console.log('project', project)
+    let name = project.name + ' GeoPackage'
+    if (Object.keys(project.geopackages).length) {
+      name += ' ' + Object.keys(project.geopackages).length
+    }
     let geopackage = {
-      id: 'geopackage',
+      id: createId(),
+      name: name,
       layers: Object.keys(project.layers),
       aoi: undefined,
       minZoom: undefined,
@@ -178,6 +185,9 @@ const actions = {
   },
   setGeoPackageStepNumber ({ commit, state }, {projectId, geopackageId, step}) {
     commit('setGeoPackageStepNumber', {projectId, geopackageId, step})
+  },
+  setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {
+    commit('setGeoPackageName', {projectId, geopackageId, name})
   },
   setGeoPackageLayerOptions ({ commit, state }, {projectId, geopackageId, layerId, options}) {
     commit('setGeoPackageLayerOptions', {projectId, geopackageId, layerId, options})

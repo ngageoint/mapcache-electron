@@ -1,6 +1,6 @@
 <template>
   <div class="geopackage-sidebar">
-    GeoPackage Creator
+    <edit-geo-package-name :geopackage="geopackageConfiguration" :project="project"/>
     <choose-layers v-if="geopackageConfiguration.step === 1" :project="project" :geopackage="geopackageConfiguration"/>
     <setup-imagery-layers v-if="geopackageConfiguration.step === 2" :project="project" :geopackage="geopackageConfiguration"/>
     <setup-feature-layers v-if="geopackageConfiguration.step === 3" :project="project" :geopackage="geopackageConfiguration"/>
@@ -17,6 +17,7 @@
   import SetupImageryLayers from '../GeoPackage/SetupImageryLayers'
   import SetupFeatureLayers from '../GeoPackage/SetupFeatureLayers'
   import CreationSummary from '../GeoPackage/CreationSummary'
+  import EditGeoPackageName from '../GeoPackage/EditGeoPackageName'
 
   export default {
     props: {
@@ -26,7 +27,8 @@
       ChooseLayers,
       SetupImageryLayers,
       SetupFeatureLayers,
-      CreationSummary
+      CreationSummary,
+      EditGeoPackageName
     },
     computed: {
       ...mapState({

@@ -3,14 +3,12 @@
     <div class="admin-actions">
       <div class="admin-actions-content">
         <div class="admin-action" :class="{'admin-action-selected': !geopackagesShowing}" @click.stop="showLayers()">
-          <!-- <div :class="{'admin-action-arrow-left': !geopackagesShowing}"></div> -->
           <div class="admin-badge">
             <font-awesome-icon icon="layer-group" size="2x"/>
           </div>
           <div>Layers</div>
         </div>
         <div class="admin-action" :class="{'admin-action-selected': geopackagesShowing}" @click.stop="showGeoPackages()">
-          <!-- <div :class="{'admin-action-arrow-left': geopackagesShowing}"></div> -->
           <div class="admin-badge">
             <font-awesome-icon icon="archive" size="2x"/>
           </div>
@@ -18,10 +16,6 @@
         </div>
       </div>
     </div>
-    <!-- <div class="tab-bar">
-      <div class="tab-name vertical-text">Layers</div>
-      <div class="tab-name vertical-text">GeoPackages</div>
-    </div> -->
     <div id="source-drop-zone" class="project-sidebar" v-if="!project.currentGeoPackage">
       <edit-project-name :project="project"/>
       <add-source v-if="!geopackagesShowing" :project="project"/>
@@ -30,10 +24,8 @@
           <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" :projectId="project.id"/>
         </div>
         <div v-if="geopackagesShowing">
-          <a class="pull-right create-gp-button" @click.stop="addGeoPackage({project})">Create GeoPackage</a>
-          <div v-for="geopackage in project.geopackages" :key="geopackage.id" class="geopackage-item">
-            {{geopackage.id}}
-          </div>
+          <a class="pull-right create-gp-button" @click.stop="addGeoPackage({project})">Create New GeoPackage</a>
+          <geo-package-card v-for="geopackage in project.geopackages" :key="geopackage.id" :geopackage="geopackage" :project="project"/>
         </div>
       </div>
     </div>
@@ -53,6 +45,7 @@
   import LeafletMap from '../Map/LeafletMap'
   import AddSource from './AddSource'
   import EditProjectName from './EditProjectName'
+  import GeoPackageCard from './GeoPackageCard'
 
   let options = {
     geopackagesShowing: false
@@ -79,7 +72,8 @@
       CreateGeopackage,
       LeafletMap,
       AddSource,
-      EditProjectName
+      EditProjectName,
+      GeoPackageCard
     },
     methods: {
       ...mapActions({
@@ -88,11 +82,9 @@
         addProjectState: 'UIState/addProjectState'
       }),
       showLayers () {
-        console.log('show Layers')
         options.geopackagesShowing = false
       },
       showGeoPackages () {
-        console.log('show geopackages')
         options.geopackagesShowing = true
       }
     },
@@ -106,8 +98,6 @@
 </script>
 
 <style scoped>
-
-  @import '~float-labels.js/dist/float-labels.css';
 
   #project {
     font-family: sans-serif;
@@ -234,6 +224,7 @@
     color: rgba(255, 255, 255, .95);
     background-color: rgba(68, 152, 192, .95);
     cursor: pointer;
+    font-weight: bold;
   }
 
   .sources {
