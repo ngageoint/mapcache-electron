@@ -1,10 +1,26 @@
 <template>
   <div class="geopackage-sidebar">
-    <edit-geo-package-name :geopackage="geopackageConfiguration" :project="project"/>
-    <choose-layers v-if="geopackageConfiguration.step === 1" :project="project" :geopackage="geopackageConfiguration"/>
-    <setup-imagery-layers v-if="geopackageConfiguration.step === 2" :project="project" :geopackage="geopackageConfiguration"/>
-    <setup-feature-layers v-if="geopackageConfiguration.step === 3" :project="project" :geopackage="geopackageConfiguration"/>
-    <creation-summary v-if="geopackageConfiguration.step === 4" :project="project" :geopackage="geopackageConfiguration"/>
+    
+    <edit-geo-package-name
+        :geopackage="geopackageConfiguration"
+        :project="project"/>
+    <choose-layers
+        v-if="geopackageConfiguration.step === 1"
+        :project="project"
+        :geopackage="geopackageConfiguration"/>
+    <setup-imagery-layers
+        v-if="geopackageConfiguration.step === 2"
+        :project="project"
+        :geopackage="geopackageConfiguration"/>
+    <setup-feature-layers
+        v-if="geopackageConfiguration.step === 3"
+        :project="project"
+        :geopackage="geopackageConfiguration"/>
+    <creation-summary
+        v-if="geopackageConfiguration.step === 4"
+        :project="project"
+        :geopackage="geopackageConfiguration"/>
+
     <div class="gp-button" @click.stop="cancel()">
       <span>Cancel</span>
     </div>

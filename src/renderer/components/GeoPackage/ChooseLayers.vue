@@ -1,19 +1,31 @@
 <template>
+
   <div class="instruction">
-    <step-buttons :step="geopackage.step" :next="next" :top="true" :steps="4"></step-buttons>
+    <step-buttons
+        :step="geopackage.step"
+        :next="next"
+        :top="true"
+        :steps="4">
+    </step-buttons>
+
     <div class="instruction-title">
       Choose Layers To Include
     </div>
+
     <div class="instruction-detail">
       Checked layers will be included in the exported GeoPackage.  You will have an opportunity to choose options for each layer later.
     </div>
+
     <div class="instruction-configuration">
       <div class="imagery-layers">
         <div class="layer-group-header">
           Imagery Layers
         </div>
         <div v-for="imageryLayer in imageryLayers">
-          <layer-header class="layer-header" :layer="imageryLayer" :geopackage="geopackage"/>
+          <layer-header
+              class="layer-header"
+              :layer="imageryLayer"
+              :geopackage="geopackage"/>
         </div>
       </div>
       <div class="feature-layers">
@@ -21,12 +33,23 @@
           Feature Layers
         </div>
         <div v-for="featureLayer in featureLayers">
-          <layer-header class="layer-header" :layer="featureLayer" :geopackage="geopackage"/>
+          <layer-header
+              class="layer-header"
+              :layer="featureLayer"
+              :geopackage="geopackage"/>
         </div>
       </div>
     </div>
-    <step-buttons :step="geopackage.step" :next="next" :bottom="true" :steps="4"></step-buttons>
+
+    <step-buttons
+        :step="geopackage.step"
+        :next="next"
+        :bottom="true"
+        :steps="4">
+    </step-buttons>
+
   </div>
+
 </template>
 
 <script>

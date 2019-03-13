@@ -1,13 +1,23 @@
 <template>
+
   <div class="project-name-container">
-    <div v-if="!editNameMode" @click.stop="editGeoPackageName" class="project-name">
+
+    <div v-if="!editNameMode"
+         @click.stop="editGeoPackageName"
+         class="project-name">
       <div v-if="geopackage.name">{{geopackage.name}}</div>
       <div v-if="!geopackage.name">Unnamed</div>
     </div>
+    
     <div v-show="editNameMode" class="add-data-outer provide-link-text">
       <form class="link-form">
         <label for="project-name-edit">GeoPackage Name</label>
-        <input type="text" class="project-name-edit" id="project-name-edit" :value="geopackage.name"></input>
+        <input
+            type="text"
+            class="project-name-edit"
+            id="project-name-edit"
+            :value="geopackage.name">
+        </input>
         <div class="provide-link-buttons">
           <a @click.stop="saveEditedName">Save</a>
           |
@@ -15,7 +25,9 @@
         </div>
       </form>
     </div>
+
   </div>
+
 </template>
 
 <script>

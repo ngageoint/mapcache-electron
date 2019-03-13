@@ -2,12 +2,14 @@
   <div>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
+
         <li class="project" @click="newProject()">
           <div class="project-thumb">
             <font-awesome-icon class="new-project-icon" icon="plus" size="2x"/>
           </div>
           <div class="project-thumb-name">Create A New Project</div>
         </li>
+
         <li v-for="project in projects" :key="project.id" @click="openProject(project)" class="project">
           <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
           <div class="project-thumb">
@@ -15,6 +17,7 @@
           </div>
           <div class="project-thumb-name">{{project.name}}</div>
         </li>
+
       </ul>
     </div>
   </div>

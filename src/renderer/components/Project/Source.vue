@@ -1,7 +1,17 @@
 <template>
   <div>
-    <div v-for="layer of source.layers" class="sources" id="source-list">
-      <layer-card class="sources" :layer="layer" :source="source" @zoom-to="zoomToExtent" @toggle-layer="toggleLayer" @delete-layer="deleteLayer"></layer-card>
+    <div
+        v-for="layer of source.layers"
+        class="sources"
+        id="source-list">
+      <layer-card
+          class="sources"
+          :layer="layer"
+          :source="source"
+          @zoom-to="zoomToExtent"
+          @toggle-layer="toggleLayer"
+          @delete-layer="deleteLayer">
+      </layer-card>
     </div>
   </div>
 </template>

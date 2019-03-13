@@ -2,37 +2,72 @@
   <div id="project" class="container">
     <div class="admin-actions">
       <div class="admin-actions-content">
-        <div class="admin-action" :class="{'admin-action-selected': !geopackagesShowing}" @click.stop="showLayers()">
+
+        <div
+            class="admin-action"
+            :class="{'admin-action-selected': !geopackagesShowing}"
+            @click.stop="showLayers()">
           <div class="admin-badge">
             <font-awesome-icon icon="layer-group" size="2x"/>
           </div>
           <div>Layers</div>
         </div>
-        <div class="admin-action" :class="{'admin-action-selected': geopackagesShowing}" @click.stop="showGeoPackages()">
+
+        <div
+            class="admin-action"
+            :class="{'admin-action-selected': geopackagesShowing}"
+            @click.stop="showGeoPackages()">
           <div class="admin-badge">
             <font-awesome-icon icon="archive" size="2x"/>
           </div>
           <div>GeoPackages</div>
         </div>
+
       </div>
     </div>
-    <div id="source-drop-zone" class="project-sidebar" v-if="!project.currentGeoPackage">
+    <div
+        id="source-drop-zone"
+        class="project-sidebar"
+        v-if="!project.currentGeoPackage">
+
       <edit-project-name :project="project"/>
+
       <add-source v-if="!geopackagesShowing" :project="project"/>
+
       <div class="source-container">
+
         <div v-if="!geopackagesShowing">
-          <layer-flip-card v-for="sourceLayer in project.layers" :key="sourceLayer.id" class="sources" :layer="sourceLayer" :projectId="project.id"/>
+          <layer-flip-card
+              v-for="sourceLayer in project.layers"
+              :key="sourceLayer.id"
+              class="sources"
+              :layer="sourceLayer"
+              :projectId="project.id"/>
         </div>
+
         <div v-if="geopackagesShowing">
-          <a class="pull-right create-gp-button" @click.stop="addGeoPackage({project})">Create New GeoPackage</a>
-          <geo-package-card v-for="geopackage in project.geopackages" :key="geopackage.id" :geopackage="geopackage" :project="project"/>
+          <a class="pull-right create-gp-button"
+              @click.stop="addGeoPackage({project})">
+            Create New GeoPackage
+          </a>
+          <geo-package-card
+              v-for="geopackage in project.geopackages"
+              :key="geopackage.id"
+              :geopackage="geopackage"
+              :project="project"/>
         </div>
+
       </div>
     </div>
     <create-geopackage v-if="project.currentGeoPackage" :project="project"/>
 
     <div class="work-area">
-      <leaflet-map style="width: 100%; height: 100%;" :active-geopackage="project.geopackages[project.currentGeoPackage]" :layer-configs="project.layers" :project-id="project.id"></leaflet-map>
+      <leaflet-map
+          style="width: 100%; height: 100%;"
+          :active-geopackage="project.geopackages[project.currentGeoPackage]"
+          :layer-configs="project.layers"
+          :project-id="project.id">
+      </leaflet-map>
     </div>
   </div>
 </template>

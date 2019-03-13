@@ -1,10 +1,18 @@
 <template>
   <div :class="{'coordinate-container': !mini, 'mini': mini}">
-    <div v-if="mini" class="mini">LL: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}} UR: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}</div>
+    
+    <div v-if="mini" class="mini">
+      LL: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}} UR: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}
+    </div>
+
     <div v-if="!mini">
-      <div class="layer-coordinates" v-if="lowerLeft">Lower Left: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}}</div>
+      <div class="layer-coordinates" v-if="lowerLeft">
+        Lower Left: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}}
+      </div>
       <div class="layer__horizontal__divider coordinate-divider"></div>
-      <div class="layer-coordinates" v-if="upperRight">Upper Right: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}</div>
+      <div class="layer-coordinates" v-if="upperRight">
+        Upper Right: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}
+      </div>
     </div>
   </div>
 </template>

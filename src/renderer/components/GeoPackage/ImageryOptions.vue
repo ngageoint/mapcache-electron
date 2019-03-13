@@ -1,27 +1,43 @@
 <template>
+
   <div>
-    <div class="instruction" :class="{incomplete : !aoi, complete : aoi}">
+    <div
+        class="instruction"
+        :class="{incomplete : !aoi, complete : aoi}">
+
       <div class="instruction-title">
         1) Specify the Bounds
       </div>
+
       <div class="instruction-detail">
         Draw bounds on the map to specify what will be included in the GeoPackage.  This AOI will be used for all layers that are selected.
       </div>
+
       <bounds-ui v-if="aoi" :bounds="aoi"/>
-      <a v-if="!currentlyDrawingBounds && aoi && aoi.length" class="bounds-button" @click.stop="drawBounds()">
+
+      <a v-if="!currentlyDrawingBounds && aoi && aoi.length"
+          class="bounds-button"
+          @click.stop="drawBounds()">
         Update Bounds
       </a>
-      <a v-if="!currentlyDrawingBounds && (!aoi || !aoi.length)" class="bounds-button" @click.stop="drawBounds()">
+      <a v-if="!currentlyDrawingBounds && (!aoi || !aoi.length)"
+          class="bounds-button"
+          @click.stop="drawBounds()">
         Draw Bounds
       </a>
-      <a v-if="currentlyDrawingBounds" class="bounds-button" @click.stop="setBounds()">
+      <a v-if="currentlyDrawingBounds"
+          class="bounds-button"
+          @click.stop="setBounds()">
         Set Bounds
       </a>
     </div>
+
     <div class="instruction" :class="{incomplete : (!minZoomValue || !maxZoomValue), complete : (minZoomValue && maxZoomValue)}">
+
       <div class="instruction-title">
         2) Specify zoom levels
       </div>
+
       <div class="instruction-detail">
         Specify zoom levels to create in the GeoPackage
       </div>
@@ -49,6 +65,7 @@
       </form>
     </div>
   </div>
+
 </template>
 
 <script>

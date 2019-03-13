@@ -1,5 +1,7 @@
 <template>
-  <div class="create-gp-button" @click.stop="setCurrentGeoPackage({projectId: project.id, geopackageId: geopackage.id})">
+  <div
+      class="create-gp-button"
+      @click.stop="setCurrentGeoPackage({projectId: project.id, geopackageId: geopackage.id})">
     <div class="geopackage-name">
       <div v-if="geopackage.name">{{geopackage.name}}</div>
       <div v-if="!geopackage.name">Unnamed</div>

@@ -1,25 +1,56 @@
 <template>
   <div>
     <div class="add-data-outer">
-      <div @dragover.prevent="onDragOver" @drop.prevent="onDrop" @dragleave.prevent="onDragLeave" @click.stop="addFileClick" class="add-data-button" v-bind:class="{dragover: processing.dataDragOver}">
+      <div
+          @dragover.prevent="onDragOver"
+          @drop.prevent="onDrop"
+          @dragleave.prevent="onDragLeave"
+          @click.stop="addFileClick"
+          class="add-data-button"
+          :class="{dragover: processing.dataDragOver}">
         <div class="file-icons">
           <div class="file-type-icons">
-            <font-awesome-icon class="file-type-icon-1" icon="file-image" size="2x"/>
-            <font-awesome-icon class="file-type-icon-2" icon="file-archive" size="2x"/>
-            <font-awesome-icon class="file-type-icon-3" icon="globe-americas" transform="shrink-9 down-1" mask="file" size="2x" />
+            <font-awesome-icon
+                class="file-type-icon-1"
+                icon="file-image"
+                size="2x"/>
+            <font-awesome-icon
+                class="file-type-icon-2"
+                icon="file-archive"
+                size="2x"/>
+            <font-awesome-icon
+                class="file-type-icon-3"
+                icon="globe-americas"
+                transform="shrink-9 down-1"
+                mask="file"
+                size="2x" />
           </div>
-          <font-awesome-icon class="file-import-icon" icon="file-import" size="3x"/>
+          <font-awesome-icon
+              class="file-import-icon"
+              icon="file-import"
+              size="3x"/>
         </div>
+
         <div class="major-button-text">Drag and drop or click here</div>
         <div class="major-button-subtext">to add data to your project</div>
+
         <div v-if="processing.dragging" class="major-button-text">{{processing.dragging}}</div>
       </div>
-      <div v-if="!linkInputVisible" class="provide-link-text">You can also provide a <a @click.stop="provideLink">link from the web</a></div>
+
+      <div v-if="!linkInputVisible"
+        class="provide-link-text">You can also provide a <a @click.stop="provideLink">link from the web</a>
+      </div>
+
       <div v-show="linkInputVisible">
         <form class="link-form">
           <span class="provide-link-text">
             <label for="link-input">Link from web</label>
-            <input type="url" id="link-input" class="link-input" v-model="linkToValidate"></input>
+            <input
+                type="url"
+                id="link-input"
+                class="link-input"
+                v-model="linkToValidate">
+            </input>
             <div class="provide-link-buttons">
               <a @click.stop="validateLink">Add URL</a>
               |
@@ -28,8 +59,15 @@
           </span>
         </form>
       </div>
+
     </div>
-    <processing-source v-for="source in processing.sources" :source="source" :key="source.file.path" class="sources processing-source" @clear-processing="clearProcessing"/>
+    <processing-source
+        v-for="source in processing.sources"
+        :source="source"
+        :key="source.file.path"
+        class="sources processing-source"
+        @clear-processing="clearProcessing">
+    </processing-source>
   </div>
 </template>
 

@@ -1,12 +1,15 @@
 <template>
   <div :style="cssProps" class="layer__face__header fill-background-color">
+    
     <div class="layer__face__source-name contrast-text">
       {{layer.name}}
     </div>
+
     <div class="layer-checked contrast-svg-always" @click.stop="layerClicked()">
       <font-awesome-icon v-show="layer.included" icon="check-square" size="lg"/>
       <font-awesome-icon v-show="!layer.included" :icon="['far', 'square']" size="lg"/>
     </div>
+
   </div>
 </template>
 

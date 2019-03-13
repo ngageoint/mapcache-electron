@@ -1,47 +1,81 @@
 <template>
   <div class="instruction">
-    <step-buttons :step="geopackage.step" :back="back" :next="next" :top="true" :steps="4"></step-buttons>
+    <step-buttons
+        :step="geopackage.step"
+        :back="back"
+        :next="next"
+        :top="true"
+        :steps="4">
+    </step-buttons>
+
     <div class="instruction-title">
       Imagery Layers Setup
     </div>
+
     <div class="instruction-detail">
       You will now specify the bounds for your imagery layers.  You can either set one bounds and set of zoom levels for all layers, or specify bounds and zoom levels per layer.
     </div>
+
     <div class="instruction-configuration">
       <div class="consolidated-config-chooser">
+
         <div class="layer-group-header">
           Please Choose One
         </div>
+
         <div>
-          <a class="step-button" :class="{selected: geopackage.imageryLayersShareBounds === true}" @click.stop="useSameConfigurations()">
+          <a class="step-button"
+              :class="{selected: geopackage.imageryLayersShareBounds === true}"
+              @click.stop="useSameConfigurations()">
             Use The Same Configuration For All Layers
           </a>
         </div>
         <div>
-          <a class="step-button" :class="{selected: geopackage.imageryLayersShareBounds === false}" @click.stop="useDifferentConfigurations()">
+          <a class="step-button"
+              :class="{selected: geopackage.imageryLayersShareBounds === false}"
+              @click.stop="useDifferentConfigurations()">
             Use Different Configurations Per Layer
           </a>
         </div>
       </div>
+
       <div v-if="geopackage.imageryLayersShareBounds === true">
-        <imagery-options :projectId="project.id" :geopackageId="geopackage.id" :options="geopackage"></imagery-options>
+        <imagery-options
+            :projectId="project.id"
+            :geopackageId="geopackage.id"
+            :options="geopackage">
+        </imagery-options>
       </div>
+
       <div v-if="geopackage.imageryLayersShareBounds === false">
         <div class="layer-group-header">
           Layers
         </div>
+
         <hr/>
         <div class="imagery-layers">
           <div v-for="imageryLayer in imageryLayers">
             <div class="layer-name">
               {{imageryLayer.name}}
             </div>
-            <imagery-options :projectId="project.id" :geopackageId="geopackage.id" :options="imageryLayer" :layerId="imageryLayer.id"></imagery-options>
+            <imagery-options
+                projectId="project.id"
+                :geopackageId="geopackage.id"
+                :options="imageryLayer"
+                :layerId="imageryLayer.id">
+              </imagery-options>
           </div>
         </div>
       </div>
     </div>
-    <step-buttons :step="geopackage.step" :back="back" :next="next" :bottom="true" :steps="4"></step-buttons>
+
+    <step-buttons
+        :step="geopackage.step"
+        :back="back"
+        :next="next"
+        :bottom="true"
+        :steps="4">
+    </step-buttons>
   </div>
 </template>
 

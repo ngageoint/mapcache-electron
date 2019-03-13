@@ -1,5 +1,6 @@
 <template>
   <div>
+
     <div class="app-title-block">
       <img class="gp-img" src="~@/assets/256x256.png">
       <h4>Welcome to Mapcache</h4>
@@ -7,19 +8,23 @@
         Version: <strong id="mapcache-version">{{version}}</strong>
       </p>
     </div>
+
     <div class="divider"></div>
     <div v-for="item in sidebarItems">
       <button class="sidebar-item" @click="open(item.link)">
-        <img class="sidebar-item-img" :src="item.image">
+        <img class="sidebar-item-img" :src="item.image"/>
+
         <div class="sidebar-item-info">
           <div class="sidebar-item-title">
             {{item.title}}
           </div>
+
           <div class="sidebar-item-detail">
             {{item.description}}
           </div>
         </div>
       </button>
+      
       <div class="divider"></div>
     </div>
 

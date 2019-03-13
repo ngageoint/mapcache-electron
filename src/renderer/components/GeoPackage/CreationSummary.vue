@@ -1,35 +1,56 @@
 <template>
+
   <div class="instruction">
-    <div>{{includedImageryLayers.length}} Imagery Layers, and {{includedFeatureLayers.length}} Feature Layers will be added to the GeoPackage
+    <div>
+      {{includedImageryLayers.length}} Imagery Layers, and {{includedFeatureLayers.length}} Feature Layers will be added to the GeoPackage
     </div>
+
     <div v-if="geopackage.imageryLayersShareBounds">
       All imagery layers will share the same bounds and will be created for zoom level {{geopackage.minZoom}} to {{geopackage.maxZoom}}
     </div>
+
     <div v-if="!geopackage.imageryLayersShareBounds">
       Each imagery layer has specific bounds and zoom levels.
       <div v-for="imageryLayer in includedImageryLayers" class="imagery-layer-summary">
-        <span class="layer-name">{{imageryLayer.name}}</span><span class="layer-info">{{imageryLayer.minZoom}} - {{imageryLayer.maxZoom}}</span>
+        <span class="layer-name">{{imageryLayer.name}}</span>
+        <span class="layer-info">{{imageryLayer.minZoom}} - {{imageryLayer.maxZoom}}</span>
       </div>
     </div>
+
     <div v-if="geopackage.featureLayersShareBounds">
       All feature layers will share the same bounds
     </div>
+
     <div v-if="!geopackage.featureLayersShareBounds">
       Each feature layer has specific bounds.
       <div v-for="featureLayer in includedFeatureLayers" class="feature-layer-summary">
-        <!-- {{featureLayer.aoi}} -->
-        <span class="layer-name">{{featureLayer.name}}</span><span class="layer-info"><bounds-ui :mini="true" :bounds="featureLayer.aoi"/></span>
+        <span class="layer-name">{{featureLayer.name}}</span>
+        <span class="layer-info">
+          <bounds-ui :mini="true" :bounds="featureLayer.aoi"/>
+        </span>
       </div>
     </div>
+
     <div class="gp-save-location-button" @click.stop="chooseSaveLocation()">
       <span v-if="!geopackage.fileName">Choose GeoPackage Save Location</span>
       <span v-if="geopackage.fileName">Save To: {{geopackage.fileName}}</span>
     </div>
-    <step-buttons :step="geopackage.step" :back="back" :bottom="true" :steps="geopackage.step"></step-buttons>
-    <div v-if="geopackage.fileName" class="gp-save-location-button" @click.stop="createGeoPackage()">
+
+    <step-buttons
+        :step="geopackage.step"
+        :back="back"
+        :bottom="true"
+        :steps="geopackage.step">
+    </step-buttons>
+
+    <div
+        v-if="geopackage.fileName"
+        class="gp-save-location-button"
+        @click.stop="createGeoPackage()">
       <span>Create The GeoPackage</span>
     </div>
   </div>
+
 </template>
 
 <script>
