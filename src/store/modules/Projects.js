@@ -4,7 +4,7 @@ import WindowLauncher from '../../lib/window/WindowLauncher'
 
 function createId () {
   function s4 () {
-    return Math.floor((1 + Math.random()) * 0x10000)
+    return new Date().getTime()
       .toString(16)
       .substring(1)
   }

@@ -1,0 +1,71 @@
+import { mapState, mapActions } from 'vuex'
+import * as vendor from '../../../lib/vendor'
+
+export default {
+  computed: {
+    ...mapState({
+      drawBounds (state) {
+        console.log('state', state.UIState[this.projectId].drawBounds)
+        return state.UIState[this.projectId].drawBounds
+      }
+    })
+  },
+  methods: {
+    ...mapActions({
+      setDrawnBounds: 'UIState/setDrawnBounds'
+    }),
+    setupDrawing (drawBounds) {
+      if (this.r) {
+        this.map.removeLayer(this.r)
+      }
+      // find the newly activated drawing
+      if (!this.activeGeopackage) return
+      let gpDrawBounds = drawBounds[this.activeGeopackage.id]
+      for (const key in gpDrawBounds) {
+        // if the bounds drawing for the whole geopackage was activated, do this
+        if (gpDrawBounds[key] === true) {
+          let aoi
+          if (key === 'geopackage') {
+            aoi = this.activeGeopackage.aoi
+          } else if (this.activeGeopackage.imageryLayers[key]) {
+            aoi = this.activeGeopackage.imageryLayers[key].aoi
+          } else if (this.activeGeopackage.featureLayers[key]) {
+            aoi = this.activeGeopackage.featureLayers[key].aoi
+          }
+          console.log('aoi', aoi)
+          if (!aoi || !aoi.length) {
+            this.r = this.map.editTools.startRectangle()
+          } else {
+            let bounds = vendor.L.latLngBounds(aoi)
+            this.r = vendor.L.rectangle(bounds)
+            this.r.addTo(this.map)
+            this.r.enableEdit()
+          }
+          this.r.layerId = key
+          this.r.on('editable:vertex:dragend', () => {
+            let sw = this.r.getBounds().getSouthWest()
+            let ne = this.r.getBounds().getNorthEast()
+            let bounds = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
+            this.setDrawnBounds({projectId: this.projectId, bounds, geopackageId: this.activeGeopackage.id, layerId: this.r.layerId})
+          })
+        }
+      }
+    }
+  },
+  watch: {
+    drawBounds: {
+      handler (value, oldValue) {
+        console.log('draw bounds value changed', value)
+        this.setupDrawing(value)
+      },
+      deep: true
+    }
+  },
+  mounted: function () {
+    this.$nextTick(function () {
+      console.log('Draw Bounds mounted')
+
+      this.setupDrawing(this.drawBounds)
+    })
+  }
+}
