@@ -11,3 +11,4 @@ thumbs.db
 !.gitkeep
 .test_run
 test/fixtures/tmp/*
+package-lock.json
