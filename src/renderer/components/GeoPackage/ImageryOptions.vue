@@ -85,10 +85,8 @@
     },
     computed: {
       ...mapState({
-        uiState (state) {
-          return state.UIState[this.projectId]
-        },
         drawBoundsState (state) {
+          console.log('this.projectId', this.projectId)
           return state.UIState[this.projectId].drawBounds
         },
         boundsBeingDrawn (state) {
@@ -117,10 +115,11 @@
       },
       aoi: {
         get () {
-          return this.options.aoi
+          return this.options.imageryAoi
         },
         set (value) {
-          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: this.layerId, aoi: value})
+          let layerId = this.layerId || 'imageryAoi'
+          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: layerId, aoi: value})
         }
       }
     },

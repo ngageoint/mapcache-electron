@@ -38,12 +38,17 @@ export default class GeoPackageBuilder {
       columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, 'GEOMETRYCOLLECTION', false, null))
       let columnCount = 2
       for (const column of layerColumns.columns) {
-        columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
+        if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
+          console.log('Pushing column', column)
+          console.log('data type', GeoPackage.DataTypes.fromName(column.dataType))
+          columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
+        }
       }
       let bb = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0])
       await gp.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
       let iterator = await layer.iterateFeaturesInBounds(aoi)
       for (let feature of iterator) {
+        console.log('adding feature', feature)
         GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.name)
       }
     }

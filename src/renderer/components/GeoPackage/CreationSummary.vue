@@ -49,6 +49,7 @@
         @click.stop="createGeoPackage()">
       <span>Create The GeoPackage</span>
     </div>
+    {{geopackage}}
   </div>
 
 </template>

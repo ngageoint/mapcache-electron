@@ -254,7 +254,7 @@ export default class GDALVectorLayer extends Layer {
         name: 'geometry'
       },
       id: {
-        name: 'id',
+        name: 'generated_id',
         dataType: 'INTEGER'
       }
     }

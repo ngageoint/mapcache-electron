@@ -66,10 +66,11 @@
       },
       aoi: {
         get () {
-          return this.options.aoi
+          return this.options.featureAoi
         },
         set (value) {
-          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: this.layerId, aoi: value})
+          let layerId = this.layerId || 'featureAoi'
+          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: layerId, aoi: value})
         }
       }
     },

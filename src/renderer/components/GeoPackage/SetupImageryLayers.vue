@@ -59,7 +59,7 @@
               {{imageryLayer.name}}
             </div>
             <imagery-options
-                projectId="project.id"
+                :projectId="project.id"
                 :geopackageId="geopackage.id"
                 :options="imageryLayer"
                 :layerId="imageryLayer.id">
