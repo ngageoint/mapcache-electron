@@ -28,38 +28,38 @@
     <div
         id="source-drop-zone"
         class="project-sidebar"
-        v-if="!project.currentGeoPackage">
+        v-if="!geopackagesShowing">
 
       <edit-project-name :project="project"/>
 
-      <add-source v-if="!geopackagesShowing" :project="project"/>
+      <add-source :project="project"/>
 
       <div class="source-container">
-
-        <div v-if="!geopackagesShowing">
-          <layer-flip-card
-              v-for="sourceLayer in project.layers"
-              :key="sourceLayer.id"
-              class="sources"
-              :layer="sourceLayer"
-              :projectId="project.id"/>
-        </div>
-
-        <div v-if="geopackagesShowing">
-          <a class="pull-right create-gp-button"
-              @click.stop="addGeoPackage({project})">
-            Create New GeoPackage
-          </a>
-          <geo-package-card
-              v-for="geopackage in project.geopackages"
-              :key="geopackage.id"
-              :geopackage="geopackage"
-              :project="project"/>
-        </div>
+        <layer-flip-card
+            v-for="sourceLayer in project.layers"
+            :key="sourceLayer.id"
+            class="sources"
+            :layer="sourceLayer"
+            :projectId="project.id"/>
 
       </div>
     </div>
-    <create-geopackage v-if="project.currentGeoPackage" :project="project"/>
+    <div
+        class="project-sidebar"
+        v-if="geopackagesShowing">
+      <div v-if="!project.currentGeoPackage">
+        <a class="pull-right create-gp-button"
+            @click.stop="addGeoPackage({project})">
+          Create New GeoPackage
+        </a>
+        <geo-package-card
+            v-for="geopackage in project.geopackages"
+            :key="geopackage.id"
+            :geopackage="geopackage"
+            :project="project"/>
+      </div>
+      <create-geopackage v-if="project.currentGeoPackage" :project="project"/>
+    </div>
 
     <div class="work-area">
       <leaflet-map
@@ -236,6 +236,7 @@
 
   .project-sidebar {
     padding: 15px;
+    padding-left: 10px;
     text-align: center;
     min-width: 380px;
     max-width: 500px;

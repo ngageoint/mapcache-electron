@@ -10,7 +10,7 @@
       </div>
 
       <div class="instruction-detail">
-        Draw bounds on the map to specify what will be included in the GeoPackage.  This AOI will be used for all layers that are selected.
+        Draw bounds on the map to specify what will be included in the GeoPackage.
       </div>
 
       <bounds-ui v-if="aoi" :bounds="aoi"/>
@@ -24,6 +24,11 @@
           class="bounds-button"
           @click.stop="drawBounds()">
         Draw Bounds
+      </a>
+      <a v-if="!currentlyDrawingBounds && layer && layer.extent"
+         class="bounds-button"
+         @click.stop="aoi = [[layer.extent[1], layer.extent[0]], [layer.extent[3], layer.extent[2]]]">
+        Use Layer Bounds
       </a>
       <a v-if="currentlyDrawingBounds"
           class="bounds-button"
@@ -78,7 +83,7 @@
       options: Object,
       projectId: String,
       geopackageId: String,
-      layerId: String
+      layer: Object
     },
     components: {
       BoundsUi
@@ -86,7 +91,6 @@
     computed: {
       ...mapState({
         drawBoundsState (state) {
-          console.log('this.projectId', this.projectId)
           return state.UIState[this.projectId].drawBounds
         },
         boundsBeingDrawn (state) {
@@ -94,8 +98,11 @@
         }
       }),
       currentlyDrawingBounds () {
-        let layer = this.layerId || 'geopackage'
+        let layer = this.layerId || 'imageryAoi'
         return this.drawBoundsState && this.drawBoundsState[this.geopackageId] && this.drawBoundsState[this.geopackageId][layer]
+      },
+      layerId () {
+        return this.layer ? this.layer.id : undefined
       },
       minZoomValue: {
         get () {
@@ -115,11 +122,13 @@
       },
       aoi: {
         get () {
-          return this.options.imageryAoi
+          return this.layerId ? this.options.aoi : this.options.imageryAoi
         },
         set (value) {
-          let layerId = this.layerId || 'imageryAoi'
-          this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: layerId, aoi: value})
+          if (value) {
+            let layerId = this.layerId || 'imageryAoi'
+            this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: layerId, aoi: value})
+          }
         }
       }
     },
@@ -138,19 +147,20 @@
         return this.maxZoomValue <= 18 && this.maxZoomValue >= 0 && this.maxZoomValue >= this.minZoomValue
       },
       setBounds () {
+        let layerId = this.layerId || 'imageryAoi'
         this.deactivateDrawForGeoPackage({
           projectId: this.projectId,
           geopackageId: this.geopackageId,
-          layerId: this.layerId
+          layerId: layerId
         })
-        let layerId = this.layerId || 'geopackage'
         this.aoi = this.boundsBeingDrawn[this.geopackageId][layerId]
       },
       drawBounds () {
+        let layerId = this.layerId || 'imageryAoi'
         this.activateDrawForGeoPackage({
           projectId: this.projectId,
           geopackageId: this.geopackageId,
-          layerId: this.layerId
+          layerId: layerId
         })
       }
     },

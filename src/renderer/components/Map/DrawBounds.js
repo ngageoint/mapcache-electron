@@ -25,14 +25,13 @@ export default {
         // if the bounds drawing for the whole geopackage was activated, do this
         if (gpDrawBounds[key] === true) {
           let aoi
-          if (key === 'geopackage') {
-            aoi = this.activeGeopackage.aoi
-          } else if (this.activeGeopackage.imageryLayers[key]) {
+          if (this.activeGeopackage.imageryLayers[key]) {
             aoi = this.activeGeopackage.imageryLayers[key].aoi
           } else if (this.activeGeopackage.featureLayers[key]) {
             aoi = this.activeGeopackage.featureLayers[key].aoi
+          } else {
+            aoi = this.activeGeopackage[key]
           }
-          console.log('aoi', aoi)
           if (!aoi || !aoi.length) {
             this.r = this.map.editTools.startRectangle()
           } else {
@@ -42,6 +41,7 @@ export default {
             this.r.enableEdit()
           }
           this.r.layerId = key
+          this.r.setStyle({color: 'DarkRed'})
           this.r.on('editable:vertex:dragend', () => {
             let sw = this.r.getBounds().getSouthWest()
             let ne = this.r.getBounds().getNorthEast()

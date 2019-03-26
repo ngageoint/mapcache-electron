@@ -62,7 +62,7 @@
                 :projectId="project.id"
                 :geopackageId="geopackage.id"
                 :options="imageryLayer"
-                :layerId="imageryLayer.id">
+                :layer="project.layers[imageryLayer.id]">
               </imagery-options>
           </div>
         </div>

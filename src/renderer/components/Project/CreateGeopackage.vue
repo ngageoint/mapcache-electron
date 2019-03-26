@@ -1,6 +1,6 @@
 <template>
-  <div class="geopackage-sidebar">
-    
+  <div>
+
     <edit-geo-package-name
         :geopackage="geopackageConfiguration"
         :project="project"/>

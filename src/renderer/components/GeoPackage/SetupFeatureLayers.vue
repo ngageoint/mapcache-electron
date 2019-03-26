@@ -25,14 +25,14 @@
 
         <div>
           <a class="step-button"
-              :class="{selected: geopackage.featureLayerShareBounds === true}"
+              :class="{selected: geopackage.featureLayersShareBounds === true}"
               @click.stop="useSameConfigurations()">
             Use The Same Configuration For All Layers
           </a>
         </div>
         <div>
           <a class="step-button"
-              :class="{selected: geopackage.featureLayerShareBounds === false}"
+              :class="{selected: geopackage.featureLayersShareBounds === false}"
               @click.stop="useDifferentConfigurations()">
             Use Different Configurations Per Layer
           </a>
@@ -62,7 +62,7 @@
                 :projectId="project.id"
                 :geopackageId="geopackage.id"
                 :options="featureLayer"
-                :layerId="featureLayer.id">
+                :layer="project.layers[featureLayer.id]">
             </feature-options>
           </div>
         </div>
