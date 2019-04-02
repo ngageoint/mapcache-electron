@@ -3,6 +3,7 @@ import request from 'request-promise-native'
 import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
+import KMLSource from './KMLSource'
 
 export default class SourceFactory {
   static async constructUrlSource (parameterizedUrl) {
@@ -31,6 +32,10 @@ export default class SourceFactory {
         case 'gpkg':
         case 'geopackage':
           return new GeoPackageSource(filePath)
+        case 'kml':
+          let kmlSource = new KMLSource(filePath)
+          kmlSource.initialize()
+          return kmlSource
         default:
           return new GDALSource(filePath)
       }

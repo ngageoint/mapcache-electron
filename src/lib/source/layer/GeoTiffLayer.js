@@ -25,18 +25,21 @@ export default class GeoTiffLayer extends Layer {
     // I cannot get this to work with the node-gdal library, not sure why
     // gdalinfo /vsis3/landsat-pds/c1/L8/139/045/LC08_L1TP_139045_20170304_20170316_01_T1/LC08_L1TP_139045_20170304_20170316_01_T1_B8.TIF
     this.ds = gdal.open(this.filePath)
-    // gdalInfo(this.ds)
-
+    console.log(this.gdalInfo(this.ds))
     this.geotiff = await GeoTIFF.fromFile(this.filePath)
     this.image = await this.geotiff.getImage()
     this.fileDirectory = this.image.fileDirectory
     this.photometricInterpretation = this.fileDirectory.PhotometricInterpretation
-    if (this.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.RGB) {
-      this.srcBands = [1, 2, 3]
-      this.dstBands = [1, 2, 3]
+
+    if (this.photometricInterpretation === 2) {
+      // RGB === 2
+      this.srcBands = [1, 2, 3, 4]
+      this.srcAlphaBand = 4
+      this.dstBands = [1, 2, 3, 4]
       this.dstAlphaBand = 4
-    } else if (this.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.Palette ||
-    this.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.BlackIsZero) {
+    } else if (this.photometricInterpretation === 3 ||
+    this.photometricInterpretation === 1) {
+      // Palette === 3 || BlackIsZero === 1
       this.srcBands = [1]
       this.dstBands = [1]
       this.dstAlphaBand = 2

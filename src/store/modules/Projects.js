@@ -116,8 +116,21 @@ const mutations = {
       Vue.set(state[projectId].geopackages[geopackageId], 'minZoom', minZoom)
     }
   },
+  setLayerName (state, {projectId, geopackageId, layerId, layerName}) {
+    console.log('arguments', arguments)
+    if (layerId) {
+      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'layerName', layerName)
+      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'layerName', layerName)
+      }
+    }
+  },
   setGeoPackageLocation (state, { projectId, geopackageId, fileName }) {
     Vue.set(state[projectId].geopackages[geopackageId], 'fileName', fileName)
+  },
+  setGeoPackageStatus (state, {projectId, geopackageId, status}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'status', status)
   },
   removeProjectLayer (state, {projectId, layerId}) {
     Vue.delete(state[projectId].layers, layerId)
@@ -203,8 +216,14 @@ const actions = {
   setMaxZoom ({ commit, state }, {projectId, geopackageId, layerId, maxZoom}) {
     commit('setMaxZoom', {projectId, geopackageId, layerId, maxZoom})
   },
+  setLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
+    commit('setLayerName', {projectId, geopackageId, layerId, layerName})
+  },
   setGeoPackageLocation ({ commit, state }, {projectId, geopackageId, fileName}) {
     commit('setGeoPackageLocation', {projectId, geopackageId, fileName})
+  },
+  setGeoPackageStatus ({ commit, state }, {projectId, geopackageId, status}) {
+    commit('setGeoPackageStatus', {projectId, geopackageId, status})
   },
   deleteProject ({ commit, state }, project) {
     commit('deleteProject', project)

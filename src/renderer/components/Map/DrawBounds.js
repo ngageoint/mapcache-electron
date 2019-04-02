@@ -41,7 +41,7 @@ export default {
             this.r.enableEdit()
           }
           this.r.layerId = key
-          this.r.setStyle({color: 'DarkRed'})
+          // this.r.setStyle({color: 'DarkRed'})
           this.r.on('editable:vertex:dragend', () => {
             let sw = this.r.getBounds().getSouthWest()
             let ne = this.r.getBounds().getNorthEast()

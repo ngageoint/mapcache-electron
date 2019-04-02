@@ -37,7 +37,7 @@ export default class GeoTiffRenderer {
     }
     console.log('Tile Intersects - start rendering')
     console.time('x ' + coords.x + ' y ' + coords.y + ' z ' + coords.z)
-    console.log('tile', tile)
+    // console.log('tile', tile)
 
     if (!tile) {
       tile = document.createElement('canvas')
@@ -67,25 +67,29 @@ export default class GeoTiffRenderer {
       }
     }, 0)
     console.timeEnd('x ' + x + ' y ' + y + ' z ' + z)
-
+    // console.log(tile.toDataURL())
     return tile.toDataURL()
   }
 
   populateTargetData (targetData, ds, width, height) {
-    if (this.layer.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.RGB) {
+    if (this.layer.photometricInterpretation === 2) {
+      // RGB === 2
+      // console.log('rgba data')
       let readOptions = {}
       let redBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
       let greenBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)
       let blueBand = ds.bands.get(3).pixels.read(0, 0, width, height, null, readOptions)
       let alphaBand = ds.bands.get(4).pixels.read(0, 0, width, height, null, readOptions)
-      console.log({targetData})
+      // console.log('apha', alphaBand)
+      // console.log({targetData})
       for (let i = 0; i < redBand.length; i++) {
         targetData[i * 4] = redBand[i]
         targetData[(i * 4) + 1] = greenBand[i]
         targetData[(i * 4) + 2] = blueBand[i]
         targetData[(i * 4) + 3] = alphaBand[i]
       }
-    } else if (this.layer.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.Palette) {
+    } else if (this.layer.photometricInterpretation === 3) {
+      // Palette === 3
       let colorMap = this.layer.colorMap
       let readOptions = {}
       let colorBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
@@ -104,7 +108,8 @@ export default class GeoTiffRenderer {
         targetData[(i * 4) + 2] = b
         targetData[(i * 4) + 3] = a
       }
-    } else if (this.layer.photometricInterpretation === GeoTIFF.globals.photometricInterpretations.BlackIsZero) {
+    } else if (this.layer.photometricInterpretation === 1) {
+      // BlackIsZero === 1
       let readOptions = {}
       let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
       let alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)

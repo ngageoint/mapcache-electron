@@ -5,28 +5,41 @@ import Mercator from '@mapbox/sphericalmercator'
 export default class VectorTileRenderer {
   _mapboxGLMap
   style
-  constructor (style, getVectorTileProtobuf) {
-    this._mapboxGlMap = new MapboxGL.Map({
+  constructor (style, getVectorTileProtobuf, images) {
+    let map = this._mapboxGlMap = new MapboxGL.Map({
       request: async function (req, callback) {
-        // console.log('go get the tile', req)
-        // if (req.kind === 4) {
-        //   let pathToFont = req.url
-        //   fs.readFile(pathToFont, function (err, data) {
-        //     callback(err, { data: data })
-        //   })
-        // } else {
+        console.log('req', req)
         let split = req.url.split('-')
         let z = Number(split[0])
         let x = Number(split[1])
         let y = Number(split[2])
-        let buffer = await getVectorTileProtobuf(x, y, z)
+        let buffer = await getVectorTileProtobuf(x, y, z, map)
         return callback(null, {data: buffer})
-        // }
       },
       ratio: 1
     })
     this.style = style
+    this.images = images
+  }
+
+  async init () {
     this._mapboxGlMap.load(this.style)
+
+    if (this.images) {
+      for (const image of this.images) {
+        let imageData = await Sharp(image.filePath).raw().toBuffer()
+        // let imageData = fs.readFileSync(image.filePath)
+
+        console.log('adding the image to the map', image.id)
+        this._mapboxGlMap.addImage(image.id, imageData, {
+          height: 16,
+          width: 16,
+          pixelRatio: 1,
+          sdf: false
+        })
+      }
+    }
+    console.log('Loading the style in the renderer')
   }
 
   waitForRenderer () {

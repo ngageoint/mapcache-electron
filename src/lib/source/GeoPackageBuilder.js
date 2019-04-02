@@ -1,6 +1,7 @@
 import GeoPackage from '@ngageoint/geopackage'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
+import store from '../../store'
 
 export default class GeoPackageBuilder {
   config
@@ -11,14 +12,50 @@ export default class GeoPackageBuilder {
     this.project = project
   }
 
+  dispatchStatusUpdate (status) {
+    console.log('DISPATCHING')
+    store.dispatch('Projects/setGeoPackageStatus', {
+      projectId: this.project.id,
+      geopackageId: this.config.id,
+      status
+    })
+  }
+
   async go () {
+    var blankCanvas = document.createElement('canvas')
+    blankCanvas.width = 256
+    blankCanvas.height = 256
+    let blankURL = blankCanvas.toDataURL()
+
+    // var canvas = document.getElementById('editor'),
+    //     ctx = canvas.getContext('2d'),
+    //     blankURL = document.getElementById('blank').toDataURL();
+    //
+    // canvas.addEventListener('mousemove', function(e){
+    //     ctx.lineTo(e.pageX, e.pageY);
+    //     ctx.stroke();
+    // }, false);
+    //
+    // document.getElementById('save').addEventListener('click', function(){
+    //     if(canvas.toDataURL() === blankURL){
+    //         alert('It is blank');
+    //     }
+    //     else{
+    //         alert('Save it!');
+    //     }
+    // }, false);
+
+    let status = {
+      creation: 'Started',
+      layerStatus: {}
+    }
+    this.dispatchStatusUpdate(status)
     console.log('GO CREATE IT')
     let gp = await GeoPackage.create(this.config.fileName)
     for (const layerId in this.config.featureLayers) {
       let geopackageLayerConfig = this.config.featureLayers[layerId]
       console.log('layerId', layerId)
       console.log('GP Layer Config', geopackageLayerConfig)
-
       let aoi = this.config.featureLayersShareBounds ? this.config.featureAoi : geopackageLayerConfig.aoi
       let layerConfig = this.project.layers[layerId]
       let layer = LayerFactory.constructLayer(layerConfig)
@@ -56,28 +93,64 @@ export default class GeoPackageBuilder {
       let geopackageLayerConfig = this.config.imageryLayers[layerId]
       console.log('layerId', layerId)
       console.log('GP Layer Config', geopackageLayerConfig)
+
       let aoi = this.config.imageryLayersShareBounds ? this.config.imageryAoi : geopackageLayerConfig.aoi
-      let minZoom = this.config.imageryLayersShareBounds ? this.config.minZoom : geopackageLayerConfig.minZoom
-      let maxZoom = this.config.imageryLayersShareBounds ? this.config.maxZoom : geopackageLayerConfig.maxZoom
+      let minZoom = Number(this.config.imageryLayersShareBounds ? this.config.minZoom : geopackageLayerConfig.minZoom)
+      let maxZoom = Number(this.config.imageryLayersShareBounds ? this.config.maxZoom : geopackageLayerConfig.maxZoom)
       let layerConfig = this.project.layers[layerId]
+      console.log('aoi', aoi)
+      console.log('minZoom', minZoom)
+      console.log('maxZoom', maxZoom)
+      let layerStatus = {
+        layerId,
+        totalTileCount: XYZTileUtilities.tileCountInExtent(aoi, minZoom, maxZoom),
+        creation: 'Started',
+        totalSize: 0,
+        remainingTime: 0,
+        startTime: Date.now()
+      }
+      status.layerStatus[layerId] = layerStatus
+      this.dispatchStatusUpdate(status)
+
       let layer = LayerFactory.constructLayer(layerConfig)
       await layer.initialize()
       console.log('Tile Layer')
-      const contentsBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
+      const contentsBounds = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
       const contentsSrsId = 3857
       const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857
-      await GeoPackage.createStandardWebMercatorTileTable(gp, geopackageLayerConfig.name, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      await GeoPackage.createStandardWebMercatorTileTable(gp, geopackageLayerConfig.layerName || geopackageLayerConfig.name, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      let tilesComplete = 0
+      let totalSize = 0
+      let time = Date.now()
+      let currentTile
       let done = await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
         console.log(`z: ${z} x: ${x} y: ${y}`)
         let base64 = await layer.renderImageryTile({x, y, z})
+        tilesComplete++
+        currentTile = {z, x, y}
+        console.log('totalSize', totalSize)
+        if (Date.now() - time > 1000) {
+          time = Date.now()
+          console.log('GO DISPATCH')
+          layerStatus.tilesComplete = tilesComplete
+          layerStatus.currentTile = currentTile
+          layerStatus.totalSize = totalSize
+          layerStatus.remainingTime = ((time - layerStatus.startTime) / layerStatus.tilesComplete) * (layerStatus.totalTileCount - layerStatus.tilesComplete)
+          this.dispatchStatusUpdate(status)
+        }
         if (!base64) {
           return false
         }
         if (Buffer.isBuffer(base64)) {
-          gp.addTile(base64, layerConfig.name, z, y, x)
+          gp.addTile(base64, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
           return false
         }
+        if (blankURL === base64) {
+          console.log('IT IS BLANK')
+          return false
+        }
+
         var canvas = document.createElement('canvas')
         canvas.width = 256
         canvas.height = 256
@@ -91,11 +164,13 @@ export default class GeoPackageBuilder {
             canvas.toBlob((blob) => {
               var reader = new FileReader()
               reader.addEventListener('loadend', function () {
-                gp.addTile(Buffer.from(reader.result), layerConfig.name, z, y, x)
+                totalSize += reader.result.byteLength
+                console.log('totalSize', totalSize)
+                gp.addTile(Buffer.from(reader.result), geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
                 resolve(false)
               })
               reader.readAsArrayBuffer(blob)
-            })
+            }, 'image/jpeg', 0.80)
           }
           image.src = base64
         })

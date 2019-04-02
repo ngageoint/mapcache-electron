@@ -1,25 +1,26 @@
 import jetpack from 'fs-jetpack'
 import Layer from './Layer'
 import MapcacheMapLayer from '../../map/MapcacheMapLayer'
-import gdal from 'gdal'
-import path from 'path'
-import proj4 from 'proj4'
+import { DOMParser } from 'xmldom'
+import * as ToGeoJSON from '@tmcw/togeojson'
+import fs from 'fs'
 import geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
 
-export default class GDALVectorLayer extends Layer {
+export default class KMLLayer extends Layer {
   _vectorTileRenderer
 
   async initialize () {
-    this.openGdalFile()
-    if (this.layer.name.startsWith('OGR')) {
-      this.name = path.basename(this.filePath, path.extname(this.filePath))
-    } else {
-      this.name = this.layer.name
-    }
-    this.removeMultiFeatures()
+    const string = fs.readFileSync(this.filePath, 'utf8')
+    const kml = new DOMParser().parseFromString(string)
+    console.log('kml', kml)
+    console.log('ToGeoJSON', ToGeoJSON)
+    const converted = ToGeoJSON.kml(kml)
+    console.log('converted', converted)
+
+    this.name = path.basename(this.filePath, path.extname(this.filePath))
 
     let name = this.name
     let extent = this.extent
@@ -34,8 +35,7 @@ export default class GDALVectorLayer extends Layer {
       ]
     }
 
-    console.log('configuration style', this._configuration.mbStyle)
-    this.mbStyle = this._configuration.mbStyle || {
+    let mbStyle = {
       'version': 8,
       'name': 'Empty',
       'sources': styleSources,
@@ -79,99 +79,42 @@ export default class GDALVectorLayer extends Layer {
       ]
     }
 
-    this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
-      return this.getTile({x: x, y: y, z: z}, map, layer, extent, name)
-    }, this._configuration.images)
+    this._vectorTileRenderer = new VectorTileRenderer(mbStyle, (x, y, z) => {
+      return this.getTile({x: x, y: y, z: z}, layer, extent, name)
+    })
 
-    await this._vectorTileRenderer.init()
     await this.renderOverviewTile()
 
     return this
   }
 
-  openGdalFile () {
-    gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
-    this.dataset = gdal.open(this.filePath)
-    this.layer = this.dataset.layers.get(this.sourceLayerName)
-  }
-
-  removeMultiFeatures () {
-    let expanded = false
-    let fileName = this.name + '.geojson'
-    let filePath = this.cacheFolder.dir(this.id).file(fileName).path()
-    let fullFile = path.join(filePath, fileName)
-    if (fullFile === this.filePath) {
-      return
-    }
-    let outds = gdal.open(fullFile, 'w', 'GeoJSON')
-    let outLayer = outds.layers.create(this.sourceLayerName, this.layer.srs, gdal.wkbPolygon)
-    this.layer.features.forEach(feature => {
-      let geom = feature.getGeometry()
-      if (geom.name === 'MULTIPOLYGON' || geom.name === 'MULTILINESTRING') {
-        let children = geom.children
-        children.forEach((child, i) => {
-          let newFeature = feature.clone()
-          newFeature.setGeometry(child)
-          outLayer.features.add(newFeature)
-          expanded = true
-        })
-      } else {
-        outLayer.features.add(feature)
-      }
-    })
-    outds.close()
-    if (expanded) {
-      this.filePath = fullFile
-      this.openGdalFile()
-    } else {
-      this.cacheFolder.dir(this.id).remove()
-    }
-  }
-
   get configuration () {
     return {
       filePath: this.filePath,
-      sourceLayerName: this.sourceLayerName,
+      sourceLayerName: this.name,
       name: this.name,
       extent: this.extent,
       id: this.id,
       pane: 'vector',
-      layerType: 'GDALVector',
+      layerType: 'KMLLayer',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
       count: this.layer.features.count(),
-      shown: this.shown || true,
-      mbStyle: this.mbStyle,
-      images: this._configuration.images
+      shown: this.shown || true
     }
   }
 
   get extent () {
-    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
-
-    let toNative = new gdal.CoordinateTransformation(this.layer.srs, wgs84)
-    let extentPoly = this.layer.getExtent().toPolygon()
-    extentPoly.transform(toNative)
-    let currentEnvelope = extentPoly.getEnvelope()
-
-    return [currentEnvelope.minX, currentEnvelope.minY, currentEnvelope.maxX, currentEnvelope.maxY]
-  }
-
-  generateColor () {
-    let color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-    return color.padEnd(7, '0')
+    return [-180, -85, 180, 85]
   }
 
   get style () {
-    let color = this.generateColor()
-    let fillColor = this.generateColor()
-
     this._style = this._style || {
       weight: 2,
       radius: 2,
-      color: color,
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
       opacity: 1,
-      fillColor: fillColor,
+      fillColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
       fillOpacity: 0.5,
       fill: false
     }
@@ -203,27 +146,7 @@ export default class GDALVectorLayer extends Layer {
     })
   }
 
-  createStyle (type, id, paint) {
-    let geomTypes = []
-    if (type === 'fill') {
-      geomTypes.push('Polygon')
-      geomTypes.push('MultiPolygon')
-    }
-    return {
-      'id': type + '-style-' + id,
-      'type': type,
-      'source': this.name,
-      'source-layer': this.name,
-      'filter': ['match', ['geometry-type'], geomTypes, true, false],
-      'paint': paint
-      // {
-      //   'fill-color': this.style.fillColor,
-      //   'fill-opacity': this.style.fillOpacity
-      // }
-    }
-  }
-
-  getTile (coords, map, gdalLayer, extent, name) {
+  getTile (coords, gdalLayer, extent, name) {
     return new Promise((resolve, reject) => {
       let {x, y, z} = coords
 
@@ -251,7 +174,6 @@ export default class GDALVectorLayer extends Layer {
       for (let i = 0; i < featureMap.length; i++) {
         let feature = featureMap[i]
         if (feature) {
-          // console.log('feature', feature)
           features.push(feature)
         }
       }
@@ -259,6 +181,7 @@ export default class GDALVectorLayer extends Layer {
       let tileBuffer = 8
       let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
       var tile = tileIndex.getTile(z, x, y)
+      gdalLayer.setSpatialFilter(null)
 
       var gjvt = {}
       if (tile) {
@@ -304,6 +227,27 @@ export default class GDALVectorLayer extends Layer {
       columns.columns.push(c)
       console.log('c', c)
     })
+    // let geomColumn = this.dao.getTable().getGeometryColumn()
+    // columns.geom = {
+    //   name: geomColumn.name
+    // }
+    // let idColumn = this.dao.getTable().getIdColumn()
+    // columns.id = {
+    //   name: idColumn.name,
+    //   dataType: GeoPackage.DataTypes.name(idColumn.dataType)
+    // }
+    // for (const column of this.dao.getTable().columns) {
+    //   if (column.name !== columns.id.name && column.name !== columns.geom.name) {
+    //     let c = {
+    //       dataType: GeoPackage.DataTypes.name(column.dataType),
+    //       name: column.name,
+    //       max: column.max,
+    //       notNull: column.notNull,
+    //       defaultValue: column.defaultValue
+    //     }
+    //     columns.columns.push(c)
+    //   }
+    // }
     return columns
   }
 
@@ -311,6 +255,7 @@ export default class GDALVectorLayer extends Layer {
     let wgs84 = gdal.SpatialReference.fromEPSG(4326)
     let fromNative = new gdal.CoordinateTransformation(wgs84, this.layer.srs)
     let toNative = new gdal.CoordinateTransformation(this.layer.srs, wgs84)
+
     let envelope = new gdal.Envelope({
       minX: bounds[0][1],
       maxX: bounds[1][1],
@@ -320,26 +265,22 @@ export default class GDALVectorLayer extends Layer {
 
     let bufferDistance = 0
     if (buffer) {
-      bufferDistance = ((bounds[1][1] - bounds[0][1]) / 256) * 32
+      bufferDistance = ((bounds[1][1] - bounds[0][1]) / 256) * 8
     }
-    let filter = envelope.toPolygon().buffer(bufferDistance, 0).getEnvelope().toPolygon()
-    if (!this.layer.srs.isSame(wgs84)) {
-      filter.transform(fromNative)
-    }
+    let filter = envelope.toPolygon().buffer(bufferDistance, 0)
+
+    filter.transform(fromNative)
     this.layer.setSpatialFilter(filter)
     let featureMap = this.layer.features.map((feature) => {
       try {
         let projected = feature.clone()
         let geom = projected.getGeometry()
-        if (!this.layer.srs.isSame(wgs84)) {
-          geom.transform(toNative)
-        }
+        geom.transform(toNative)
         if (envelope.toPolygon().within(geom)) {
           return
         }
         geom.intersection(envelope.toPolygon().buffer(bufferDistance))
         let geojson = geom.toObject()
-
         return {
           type: 'Feature',
           properties: feature.fields.toObject(),
@@ -348,9 +289,8 @@ export default class GDALVectorLayer extends Layer {
       } catch (e) {
 
       }
+      // return feature
     })
-    this.layer.setSpatialFilter(null)
-
     return featureMap
   }
 }

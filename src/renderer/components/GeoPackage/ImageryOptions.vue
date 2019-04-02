@@ -69,6 +69,32 @@
         </div>
       </form>
     </div>
+
+    Total Tiles: {{tileCount}}
+
+    <div v-if="!editNameMode"
+         @click.stop="editLayerGeoPackageName"
+         class="project-name">
+      <div>{{layerNameValue}}</div>
+    </div>
+
+    <div v-show="editNameMode" class="edit-name-container add-data-outer provide-link-text">
+      <form class="link-form">
+        <label for="project-name-edit">Layer Name</label>
+        <input
+            type="text"
+            class="project-name-edit"
+            id="project-name-edit"
+            :value="layerNameValue">
+        </input>
+        <div class="provide-link-buttons">
+          <a @click.stop="saveEditedName">Save</a>
+          |
+          <a @click.stop="cancelEditName">Cancel</a>
+        </div>
+      </form>
+    </div>
+    {{options}}
   </div>
 
 </template>
@@ -76,7 +102,10 @@
 <script>
   import FloatLabels from 'float-labels.js'
   import BoundsUi from '../Project/BoundsUi'
+  import XYZTileUtilities from '../../../lib/XYZTileUtilities'
   import { mapActions, mapState } from 'vuex'
+
+  let editNameMode = false
 
   export default {
     props: {
@@ -84,6 +113,11 @@
       projectId: String,
       geopackageId: String,
       layer: Object
+    },
+    data () {
+      return {
+        editNameMode
+      }
     },
     components: {
       BoundsUi
@@ -97,12 +131,20 @@
           return state.UIState[this.projectId].boundsBeingDrawn
         }
       }),
+      tileCount () {
+        if (this.minZoomValue && this.maxZoomValue && this.aoi) {
+          return XYZTileUtilities.tileCountInExtent(this.aoi, Number(this.minZoomValue), Number(this.maxZoomValue))
+        }
+      },
       currentlyDrawingBounds () {
         let layer = this.layerId || 'imageryAoi'
         return this.drawBoundsState && this.drawBoundsState[this.geopackageId] && this.drawBoundsState[this.geopackageId][layer]
       },
       layerId () {
         return this.layer ? this.layer.id : undefined
+      },
+      layerNameValue () {
+        return this.options.layerName || (this.layer ? this.layer.name : 'Layer')
       },
       minZoomValue: {
         get () {
@@ -138,8 +180,25 @@
         deactivateDrawForGeoPackage: 'UIState/deactivateDrawForGeoPackage',
         setGeoPackageAOI: 'Projects/setGeoPackageAOI',
         setMinZoom: 'Projects/setMinZoom',
-        setMaxZoom: 'Projects/setMaxZoom'
+        setMaxZoom: 'Projects/setMaxZoom',
+        setLayerName: 'Projects/setLayerName'
       }),
+      editLayerGeoPackageName () {
+        this.editNameMode = true
+        setTimeout(() => {
+          document.getElementById('project-name-edit').focus()
+        }, 0)
+      },
+      saveEditedName (event) {
+        this.editNameMode = false
+        console.log('this.layerId', this.layerId)
+        let geopackageNameEdit = event.target.closest('.edit-name-container').querySelector('.project-name-edit')
+        console.log('name value', geopackageNameEdit.value)
+        this.setLayerName({projectId: this.projectId, geopackageId: this.geopackageId, layerId: this.layerId, layerName: geopackageNameEdit.value})
+      },
+      cancelEditName () {
+        this.editNameMode = false
+      },
       minZoomValid () {
         return this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue
       },
