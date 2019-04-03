@@ -72,29 +72,38 @@
 
     Total Tiles: {{tileCount}}
 
-    <div v-if="!editNameMode"
-         @click.stop="editLayerGeoPackageName"
-         class="project-name">
-      <div>{{layerNameValue}}</div>
-    </div>
+    <div class="instruction">
 
-    <div v-show="editNameMode" class="edit-name-container add-data-outer provide-link-text">
-      <form class="link-form">
-        <label for="project-name-edit">Layer Name</label>
-        <input
-            type="text"
-            class="project-name-edit"
-            id="project-name-edit"
-            :value="layerNameValue">
-        </input>
-        <div class="provide-link-buttons">
-          <a @click.stop="saveEditedName">Save</a>
-          |
-          <a @click.stop="cancelEditName">Cancel</a>
-        </div>
-      </form>
+      <div class="instruction-title">
+        3) Specify the layer name in the resultant GeoPackage
+      </div>
+
+      <div class="instruction-detail">
+        Click to edit the layer name in the GeoPackage
+      </div>
+      <div v-if="!editNameMode"
+           @click.stop="editLayerGeoPackageName"
+           class="project-name">
+        <div>{{layerNameValue}}</div>
+      </div>
+
+      <div v-show="editNameMode" class="edit-name-container add-data-outer provide-link-text">
+        <form class="link-form">
+          <label for="project-name-edit">Layer Name</label>
+          <input
+              type="text"
+              class="project-name-edit"
+              id="project-name-edit"
+              :value="layerNameValue">
+          </input>
+          <div class="provide-link-buttons">
+            <a @click.stop="saveEditedName">Save</a>
+            |
+            <a @click.stop="cancelEditName">Cancel</a>
+          </div>
+        </form>
+      </div>
     </div>
-    {{options}}
   </div>
 
 </template>
@@ -260,5 +269,35 @@
 
   .valid-label .fl-label {
     color: green !important;
+  }
+
+  .provide-link-text {
+    margin-top: .6em;
+    font-size: .8em;
+    color: rgba(54, 62, 70, .87);
+  }
+
+  .provide-link-text a {
+    color: rgba(68, 152, 192, .95);
+    cursor: pointer;
+  }
+
+  .provide-link-buttons {
+    margin-top: -10px;
+  }
+
+  .link-form {
+    margin-top: 1em;
+  }
+
+  .save-name-button {
+    margin-right: 5px;
+  }
+
+  .project-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    cursor: pointer;
+    color: rgba(68, 152, 192, .95);
   }
 </style>

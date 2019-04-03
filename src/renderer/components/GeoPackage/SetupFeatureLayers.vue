@@ -68,7 +68,7 @@
         </div>
       </div>
     </div>
-Valid: {{allLayersValid}}
+
     <step-buttons
         :step="geopackage.step"
         :back="back"
