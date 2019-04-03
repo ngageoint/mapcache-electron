@@ -1,6 +1,6 @@
 <template>
   <div :style="cssProps" class="layer__face__header fill-background-color">
-    
+
     <div class="layer__face__source-name contrast-text">
       {{layer.name}}
     </div>
@@ -9,11 +9,13 @@
       <font-awesome-icon v-show="layer.included" icon="check-square" size="lg"/>
       <font-awesome-icon v-show="!layer.included" :icon="['far', 'square']" size="lg"/>
     </div>
-
+    <!-- {{geopackage}} -->
   </div>
 </template>
 
 <script>
+  import { mapActions } from 'vuex'
+
   function parseHexColor (hexcolor) {
     var r = parseInt(hexcolor.substr(1, 2), 16)
     var g = parseInt(hexcolor.substr(3, 2), 16)
@@ -35,7 +37,9 @@
   export default {
     props: {
       layer: Object,
-      geopackage: Object
+      geopackage: Object,
+      projectId: String,
+      group: String
     },
     computed: {
       cssProps () {
@@ -46,12 +50,22 @@
       }
     },
     methods: {
+      ...mapActions({
+        updateGeoPackageLayerIncluded: 'Projects/updateGeoPackageLayerIncluded'
+      }),
       layerClicked () {
-        this.layer.included = !this.layer.included
-        this.$emit('layer-included', {
+        this.updateGeoPackageLayerIncluded({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
           layerId: this.layer.id,
-          included: this.layer.included
+          group: this.group,
+          included: !this.layer.included
         })
+        // this.layer.included = !this.layer.included
+        // this.$emit('layer-included', {
+        //   layerId: this.layer.id,
+        //   included: !this.layer.included
+        // })
       }
     }
   }

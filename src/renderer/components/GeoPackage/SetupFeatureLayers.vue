@@ -1,11 +1,11 @@
 <template>
-
   <div class="instruction">
     <step-buttons
         :step="geopackage.step"
         :back="back"
         :next="next"
         :top="true"
+        :disableNext="!allLayersValid"
         :steps="4">
     </step-buttons>
 
@@ -54,7 +54,7 @@
         <hr/>
 
         <div class="feature-layers">
-          <div v-for="featureLayer in featureLayers">
+          <div v-for="featureLayer in geopackage.featureLayers" v-if="featureLayer.included">
             <div class="layer-name">
               {{featureLayer.name}}
             </div>
@@ -68,12 +68,13 @@
         </div>
       </div>
     </div>
-
+Valid: {{allLayersValid}}
     <step-buttons
         :step="geopackage.step"
         :back="back"
         :next="next"
         :bottom="true"
+        :disableNext="!allLayersValid"
         :steps="4">
     </step-buttons>
   </div>
@@ -95,6 +96,20 @@
       StepButtons,
       FeatureOptions
     },
+    computed: {
+      allLayersValid () {
+        if (this.geopackage.featureLayersShareBounds) {
+          return !!this.geopackage.featureAoi
+        } else {
+          if (!this.geopackage.featureLayers || !Object.values(this.geopackage.featureLayers).length) {
+            return false
+          }
+          return Object.values(this.geopackage.featureLayers).some((featureLayer) => {
+            return featureLayer.included && !!featureLayer.aoi
+          })
+        }
+      }
+    },
     methods: {
       ...mapActions({
         updateGeopackageLayers: 'Projects/updateGeopackageLayers',
@@ -105,8 +120,8 @@
       next () {
         this.updateGeopackageLayers({
           projectId: this.project.id,
-          imageryLayers: this.imageryLayers,
-          featureLayers: this.featureLayers,
+          imageryLayers: this.geopackage.imageryLayers,
+          featureLayers: this.geopackage.featureLayers,
           geopackageId: this.geopackage.id
         })
         this.setGeoPackageStepNumber({
@@ -116,10 +131,14 @@
         })
       },
       back () {
+        let previousStep = this.geopackage.step - 1
+        if (!this.geopackage.imageryLayers || !Object.keys(this.geopackage.imageryLayers).length) {
+          previousStep = this.geopackage.step - 2
+        }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
-          step: this.geopackage.step - 1
+          step: previousStep
         })
       },
       useDifferentConfigurations () {
@@ -135,30 +154,6 @@
           geopackageId: this.geopackage.id,
           sharesBounds: true
         })
-      }
-    },
-    created: function () {
-      this.imageryLayers = this.geopackage.imageryLayers || {}
-      this.featureLayers = this.geopackage.featureLayers || {}
-      for (const layerId in this.project.layers) {
-        let layer = this.project.layers[layerId]
-        if (layer.pane === 'tile' && !this.imageryLayers[layerId]) {
-          this.imageryLayers[layerId] = {
-            id: layer.id,
-            included: layer.shown,
-            name: layer.name,
-            style: layer.style
-          }
-        }
-        console.log('layer.pane', layer.pane)
-        if (layer.pane === 'vector' && !this.featureLayers[layerId]) {
-          this.featureLayers[layerId] = {
-            id: layer.id,
-            included: layer.shown,
-            name: layer.name,
-            style: layer.style
-          }
-        }
       }
     }
   }

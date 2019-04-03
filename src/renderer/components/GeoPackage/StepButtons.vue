@@ -28,7 +28,7 @@
 
     <div v-if="!next" class="step-button next"/>
 
-    <a v-if="next"
+    <a v-if="next && !disableNext"
         class="step-button next"
         @click.stop="next()">
       {{nextText || 'Next'}}
@@ -36,6 +36,13 @@
           icon="arrow-circle-right"
           size="lg"/>
     </a>
+    <div v-if="next && disableNext"
+        class="step-button disabled next">
+      {{nextText || 'Next'}}
+      <font-awesome-icon
+          icon="arrow-circle-right"
+          size="lg"/>
+    </div>
 
   </div>
 </template>
@@ -50,7 +57,8 @@
       next: Function,
       back: Function,
       nextText: String,
-      backText: String
+      backText: String,
+      disableNext: Boolean
     }
   }
 </script>
@@ -84,6 +92,10 @@
     font-size: 1.2em;
     font-weight: bold;
     width: 40%;
+  }
+
+  .step-button.disabled {
+    color: rgba(68, 68, 68, .54)
   }
 
   .step-button.back {

@@ -49,6 +49,9 @@ const mutations = {
     Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayers', imageryLayers)
     Vue.set(state[projectId].geopackages[geopackageId], 'featureLayers', featureLayers)
   },
+  updateGeoPackageLayerIncluded (state, {projectId, geopackageId, group, layerId, included}) {
+    Vue.set(state[projectId].geopackages[geopackageId][group][layerId], 'included', included)
+  },
   toggleEditGeoPackage (state, {project, geopackageId}) {
     if (state[project.id].currentGeoPackage === geopackageId) {
       Vue.delete(state[project.id], 'currentGeoPackage')
@@ -191,6 +194,9 @@ const actions = {
   },
   updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers}) {
     commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers})
+  },
+  updateGeoPackageLayerIncluded ({ commit, state }, {projectId, geopackageId, group, layerId, included}) {
+    commit('updateGeoPackageLayerIncluded', {projectId, geopackageId, group, layerId, included})
   },
   toggleProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('toggleProjectLayer', {projectId, layerId})

@@ -5,6 +5,7 @@
         :step="geopackage.step"
         :next="next"
         :top="true"
+        :disableNext="!atLeastOneLayer"
         :steps="4">
     </step-buttons>
 
@@ -24,6 +25,8 @@
         <div v-for="imageryLayer in imageryLayers">
           <layer-header
               class="layer-header"
+              :projectId="project.id"
+              group="imageryLayers"
               :layer="imageryLayer"
               :geopackage="geopackage"/>
         </div>
@@ -35,6 +38,8 @@
         <div v-for="featureLayer in featureLayers">
           <layer-header
               class="layer-header"
+              :projectId="project.id"
+              group="featureLayers"
               :layer="featureLayer"
               :geopackage="geopackage"/>
         </div>
@@ -45,6 +50,7 @@
         :step="geopackage.step"
         :next="next"
         :bottom="true"
+        :disableNext="!atLeastOneLayer"
         :steps="4">
     </step-buttons>
 
@@ -66,6 +72,15 @@
       LayerHeader,
       StepButtons
     },
+    computed: {
+      atLeastOneLayer () {
+        return Object.values(this.imageryLayers).some((imageryLayer) => {
+          return imageryLayer.included
+        }) || Object.values(this.featureLayers).some((featureLayer) => {
+          return featureLayer.included
+        })
+      }
+    },
     methods: {
       ...mapActions({
         updateGeopackageLayers: 'Projects/updateGeopackageLayers',
@@ -78,22 +93,27 @@
           featureLayers: this.featureLayers,
           geopackageId: this.geopackage.id
         })
+        let nextStep = this.geopackage.step + 1
+        if (!this.geopackage.imageryLayers || !Object.keys(this.geopackage.imageryLayers).length) {
+          nextStep = this.geopackage.step + 2
+        }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
-          step: this.geopackage.step + 1
+          step: nextStep
         })
       }
     },
     created: function () {
       this.imageryLayers = this.geopackage.imageryLayers || {}
       this.featureLayers = this.geopackage.featureLayers || {}
+      let firstTime = !Object.keys(this.imageryLayers).length && !Object.keys(this.featureLayers).length
       for (const layerId in this.project.layers) {
         let layer = this.project.layers[layerId]
         if (layer.pane === 'tile' && !this.imageryLayers[layerId]) {
           this.imageryLayers[layerId] = {
             id: layer.id,
-            included: layer.shown,
+            included: layer.shown && firstTime,
             name: layer.name,
             style: layer.style
           }
@@ -101,7 +121,7 @@
         if (layer.pane === 'vector' && !this.featureLayers[layerId]) {
           this.featureLayers[layerId] = {
             id: layer.id,
-            included: layer.shown,
+            included: layer.shown && firstTime,
             name: layer.name,
             style: layer.style
           }
