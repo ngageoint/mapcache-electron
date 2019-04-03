@@ -33,10 +33,16 @@ export default class GeoTiffLayer extends Layer {
 
     if (this.photometricInterpretation === 2) {
       // RGB === 2
-      this.srcBands = [1, 2, 3, 4]
-      this.srcAlphaBand = 4
-      this.dstBands = [1, 2, 3, 4]
-      this.dstAlphaBand = 4
+      if (this.ds.bands.count() === 4) {
+        this.srcBands = [1, 2, 3, 4]
+        this.srcAlphaBand = 4
+        this.dstBands = [1, 2, 3, 4]
+        this.dstAlphaBand = 4
+      } else {
+        this.srcBands = [1, 2, 3]
+        this.dstBands = [1, 2, 3]
+        this.dstAlphaBand = 4
+      }
     } else if (this.photometricInterpretation === 3 ||
     this.photometricInterpretation === 1) {
       // Palette === 3 || BlackIsZero === 1
