@@ -94,7 +94,8 @@
               type="text"
               class="project-name-edit"
               id="project-name-edit"
-              :value="layerNameValue">
+              :value="layerNameValue"
+              @keydown.enter.prevent="saveEditedName">
           </input>
           <div class="provide-link-buttons">
             <a @click.stop="saveEditedName">Save</a>

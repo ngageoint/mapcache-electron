@@ -8,7 +8,7 @@
       <div v-if="geopackage.name">{{geopackage.name}}</div>
       <div v-if="!geopackage.name">Unnamed</div>
     </div>
-    
+
     <div v-show="editNameMode" class="add-data-outer provide-link-text">
       <form class="link-form">
         <label for="project-name-edit">GeoPackage Name</label>
@@ -16,7 +16,8 @@
             type="text"
             class="project-name-edit"
             id="project-name-edit"
-            :value="geopackage.name">
+            :value="geopackage.name"
+            @keydown.enter.prevent="saveEditedName">
         </input>
         <div class="provide-link-buttons">
           <a @click.stop="saveEditedName">Save</a>

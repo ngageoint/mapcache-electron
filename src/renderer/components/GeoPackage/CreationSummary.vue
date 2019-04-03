@@ -51,6 +51,15 @@
     </div>
 
     <div class="status" v-if="geopackage.status">
+      <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.featureLayers[layerId]">
+        <span class="layer-name">Layer: {{geopackage.featureLayers[layerId].name}}</span>
+        <div>
+          <span class="layer-name">Features Added:</span>
+          <span class="layer-info">{{layerStatus.featuresAdded}}</span>
+        </div>
+        <hr/>
+      </div>
+
       <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.imageryLayers[layerId]">
         <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId].name}}</span>
         <div>
@@ -96,7 +105,9 @@
           <span class="layer-name">Current X/Y:</span>
           <span class="layer-info">X: {{layerStatus.currentTile.x}} Y: {{layerStatus.currentTile.y}}</span>
         </div>
+        <hr/>
       </div>
+
     </div>
   </div>
 

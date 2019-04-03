@@ -56,6 +56,18 @@ export default class GeoPackageBuilder {
       let geopackageLayerConfig = this.config.featureLayers[layerId]
       console.log('layerId', layerId)
       console.log('GP Layer Config', geopackageLayerConfig)
+      if (!geopackageLayerConfig.included) {
+        continue
+      }
+      let layerStatus = {
+        layerId,
+        creation: 'Started',
+        featuresAdded: 0,
+        remainingTime: 0,
+        startTime: Date.now()
+      }
+      status.layerStatus[layerId] = layerStatus
+      this.dispatchStatusUpdate(status)
       let aoi = this.config.featureLayersShareBounds ? this.config.featureAoi : geopackageLayerConfig.aoi
       let layerConfig = this.project.layers[layerId]
       let layer = LayerFactory.constructLayer(layerConfig)
@@ -64,7 +76,7 @@ export default class GeoPackageBuilder {
       let layerColumns = layer.getLayerColumns()
       const FeatureColumn = GeoPackage.FeatureColumn
       let geometryColumns = new GeoPackage.GeometryColumns()
-      geometryColumns.table_name = geopackageLayerConfig.name
+      geometryColumns.table_name = geopackageLayerConfig.layerName || geopackageLayerConfig.name
       geometryColumns.column_name = layerColumns.geom.name
       geometryColumns.geometry_type_name = 'GEOMETRYCOLLECTION'
       geometryColumns.z = 0
@@ -86,13 +98,20 @@ export default class GeoPackageBuilder {
       let iterator = await layer.iterateFeaturesInBounds(aoi)
       for (let feature of iterator) {
         console.log('adding feature', feature)
-        GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.name)
+        GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.layerName || geopackageLayerConfig.name)
+        layerStatus.featuresAdded++
+        if (layerStatus.featuresAdded % 10 === 0) {
+          this.dispatchStatusUpdate(status)
+        }
       }
     }
     for (const layerId in this.config.imageryLayers) {
       let geopackageLayerConfig = this.config.imageryLayers[layerId]
       console.log('layerId', layerId)
       console.log('GP Layer Config', geopackageLayerConfig)
+      if (!geopackageLayerConfig.included) {
+        continue
+      }
 
       let aoi = this.config.imageryLayersShareBounds ? this.config.imageryAoi : geopackageLayerConfig.aoi
       let minZoom = Number(this.config.imageryLayersShareBounds ? this.config.minZoom : geopackageLayerConfig.minZoom)
@@ -175,6 +194,11 @@ export default class GeoPackageBuilder {
           image.src = base64
         })
       })
+      layerStatus.tilesComplete = layerStatus.totalTileCount
+      layerStatus.currentTile = currentTile
+      layerStatus.totalSize = totalSize
+      layerStatus.remainingTime = 0
+      this.dispatchStatusUpdate(status)
       console.log('done', done)
     }
   }

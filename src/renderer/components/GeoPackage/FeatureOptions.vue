@@ -57,7 +57,8 @@
               type="text"
               class="project-name-edit"
               id="project-name-edit"
-              :value="layerNameValue">
+              :value="layerNameValue"
+              @keydown.enter.prevent="saveEditedName">
           </input>
           <div class="provide-link-buttons">
             <a @click.stop="saveEditedName">Save</a>
@@ -76,12 +77,19 @@
   import BoundsUi from '../Project/BoundsUi'
   import { mapActions, mapState } from 'vuex'
 
+  let editNameMode = false
+
   export default {
     props: {
       options: Object,
       projectId: String,
       geopackageId: String,
       layer: Object
+    },
+    data () {
+      return {
+        editNameMode
+      }
     },
     components: {
       BoundsUi

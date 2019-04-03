@@ -13,7 +13,8 @@
             type="text"
             class="project-name-edit"
             id="project-name-edit"
-            :value="project.name">
+            :value="project.name"
+            @keydown.enter.prevent="saveEditedName">
         </input>
         <div class="provide-link-buttons">
           <a @click.stop="saveEditedName">Save</a>
