@@ -4,6 +4,7 @@ import GeoTiffRenderer from './renderer/GeoTiffRenderer'
 import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 import Layer from './Layer'
 import * as GeoTIFF from 'geotiff'
+import * as GeoTIFFGlobals from 'geotiff/src/globals'
 import gdal from 'gdal'
 import * as Vendor from '../../vendor'
 
@@ -17,19 +18,32 @@ export default class GeoTiffLayer extends Layer {
   srcBands
   dstBands
   dstAlphaBand
+  srcAlphaBand
   colorMap
 
   async initialize () {
-    console.log('opening', this.filePath)
-
+    console.log('opening in geotiff layer', this.filePath)
     // I cannot get this to work with the node-gdal library, not sure why
     // gdalinfo /vsis3/landsat-pds/c1/L8/139/045/LC08_L1TP_139045_20170304_20170316_01_T1/LC08_L1TP_139045_20170304_20170316_01_T1_B8.TIF
-    this.ds = gdal.open(this.filePath)
-    console.log(this.gdalInfo(this.ds))
     this.geotiff = await GeoTIFF.fromFile(this.filePath)
     this.image = await this.geotiff.getImage()
     this.fileDirectory = this.image.fileDirectory
     this.photometricInterpretation = this.fileDirectory.PhotometricInterpretation
+    this.samplesPerPixel = this.fileDirectory.SamplesPerPixel
+    this.bitsPerSample = this.fileDirectory.BitsPerSample
+    this.ds = gdal.open(this.filePath)
+    console.log(this.gdalInfo(this.ds, this.image))
+
+    this.srcBands = []
+    this.dstBands = []
+    for (let i = 1; i <= this.samplesPerPixel; i++) {
+      this.srcBands.push(i)
+      this.dstBands.push(i)
+    }
+    if (this.samplesPerPixel > 3) {
+      this.srcAlphaBand = 4
+      this.dstAlphaBand = 4
+    }
 
     if (this.photometricInterpretation === 2) {
       // RGB === 2
@@ -43,8 +57,9 @@ export default class GeoTiffLayer extends Layer {
         this.dstBands = [1, 2, 3]
         this.dstAlphaBand = 4
       }
-    } else if (this.photometricInterpretation === 3 ||
-    this.photometricInterpretation === 1) {
+    } else if (this.photometricInterpretation === 3) {
+    //    ||
+    // this.photometricInterpretation === 1) {
       // Palette === 3 || BlackIsZero === 1
       this.srcBands = [1]
       this.dstBands = [1]
@@ -73,8 +88,11 @@ export default class GeoTiffLayer extends Layer {
       srcBands: this.srcBands,
       dstBands: this.dstBands,
       dstAlphaBand: this.dstAlphaBand,
+      srcAlphaBand: this.srcAlphaBand,
       photometricInterpretation: this.photometricInterpretation,
-      info: this.gdalInfo(this.ds),
+      samplesPerPixel: this.samplesPerPixel,
+      bitsPerSample: this.bitsPerSample,
+      info: this.gdalInfo(this.ds, this.image),
       shown: this.shown || true
     }
   }
@@ -183,7 +201,7 @@ export default class GeoTiffLayer extends Layer {
     return coordinateCorners
   }
 
-  gdalInfo (ds) {
+  gdalInfo (ds, image) {
     let info = ''
     let size = ds.rasterSize
     if (ds.rasterSize) {
@@ -202,6 +220,25 @@ export default class GeoTiffLayer extends Layer {
     info += 'DataSource Layer Count ' + layer.count() + '\n'
     for (var i = 0; i < layer.count(); i++) {
       info += 'Layer ' + i + ': ' + layer.get(i) + '\n'
+    }
+
+    if (image) {
+      info += 'FileDirectory\n'
+      for (let key in image.fileDirectory) {
+        let varName = key.charAt(0).toLowerCase() + key.slice(1) + 's'
+        let globals = GeoTIFFGlobals[varName]
+        if (globals) {
+          for (const globalKey in globals) {
+            let globalValue = globals[globalKey]
+            if (globalValue === image.fileDirectory[key]) {
+              info += '\t' + key + ': ' + globalKey + ' (' + image.fileDirectory[key] + ')\n'
+            }
+          }
+        } else {
+          info += '\t' + key + ': ' + image.fileDirectory[key] + '\n'
+        }
+        // JSON.stringify(image.fileDirectory, null, 2)
+      }
     }
 
     info += 'srs: ' + (ds.srs ? ds.srs.toPrettyWKT() : 'null') + '\n'
