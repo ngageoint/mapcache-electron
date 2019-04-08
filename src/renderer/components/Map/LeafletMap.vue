@@ -50,6 +50,7 @@
           for (const layerId of added) {
             let layerConfig = value[layerId]
             let layer = LayerFactory.constructLayer(layerConfig)
+            console.log('initialize the layer')
             await layer.initialize()
 
             let mapLayer = layer.mapLayer
@@ -71,6 +72,16 @@
               let mapLayer = mapLayers[layerId]
               mapLayer.remove()
               delete mapLayers[layerId]
+            } else if (layerConfig.shown) {
+              let mapLayer = mapLayers[layerId]
+              mapLayer.remove()
+              delete mapLayers[layerId]
+              let layer = LayerFactory.constructLayer(layerConfig)
+              await layer.initialize()
+
+              mapLayer = layer.mapLayer
+              mapLayer.addTo(this.map)
+              mapLayers[mapLayer.id] = mapLayer
             }
           }
         },
@@ -100,6 +111,7 @@
         if (!layerConfig.shown) continue
 
         let layer = LayerFactory.constructLayer(layerConfig)
+        console.log('initialize the layer', layer)
         await layer.initialize()
 
         let mapLayer = layer.mapLayer

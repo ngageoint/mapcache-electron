@@ -120,7 +120,6 @@ const mutations = {
     }
   },
   setLayerName (state, {projectId, geopackageId, layerId, layerName}) {
-    console.log('arguments', arguments)
     if (layerId) {
       if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
         Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'layerName', layerName)
@@ -137,6 +136,10 @@ const mutations = {
   },
   removeProjectLayer (state, {projectId, layerId}) {
     Vue.delete(state[projectId].layers, layerId)
+  },
+  updateProjectLayer (state, {projectId, layer}) {
+    console.log('update project layer', arguments)
+    Vue.set(state[projectId].layers, layer.id, layer)
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -203,6 +206,9 @@ const actions = {
   },
   removeProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('removeProjectLayer', {projectId, layerId})
+  },
+  updateProjectLayer ({ commit, state }, {projectId, layer}) {
+    commit('updateProjectLayer', {projectId, layer})
   },
   setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, layerId, aoi}) {
     commit('setGeoPackageAOI', {projectId, geopackageId, layerId, aoi})

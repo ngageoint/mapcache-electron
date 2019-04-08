@@ -16,7 +16,8 @@
            </div>
          </div>
          <div class="layer-file-path">
-          {{layer.filePath}}
+          {{layer.filePath}}            {{layer.layerType}}
+
          </div>
          <div class="layer-summary">
            <div class="left-side-summary layer-thumb" :style="overviewBackgroundStyle">
@@ -55,11 +56,13 @@
              </div>
            </div>
          </div>
+         <div class="layer-type-options">
+           <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
+         </div>
          <transition-expand>
            <div v-show="expanded">
              <div class="layer-detail">
                <div class="layer__horizontal__divider detail-divider"></div>
-
                <div class="flex-container-column align-center">
                  <!-- <div class="layer__stats__item layer__stats__item--req">
                    <p class="layer__stats__type">Source Location</p>
@@ -84,6 +87,7 @@
   import jetpack from 'fs-jetpack'
   import TransitionExpand from '../../TransitionExpand'
   import BoundsUi from './BoundsUi'
+  import GeotiffOptions from './GeotiffOptions'
   import { mapActions, mapState } from 'vuex'
 
   let expanded = false
@@ -114,7 +118,8 @@
     },
     components: {
       TransitionExpand,
-      BoundsUi
+      BoundsUi,
+      GeotiffOptions
     },
     data () {
       return {
@@ -143,7 +148,9 @@
         }
       },
       bounds () {
-        return [[this.layer.extent[0], this.layer.extent[1]], [this.layer.extent[2], this.layer.extent[3]]]
+        if (this.layer.extent) {
+          return [[this.layer.extent[0], this.layer.extent[1]], [this.layer.extent[2], this.layer.extent[3]]]
+        }
       }
     },
     mounted: function () {
@@ -237,6 +244,11 @@
   padding-bottom: 11px;
   padding-left: 10px;
   padding-right: 20px;
+}
+
+.layer-type-options {
+  color: #656565;
+  padding: 10px;
 }
 
 .layer__text__heading, .layer__sender__heading {
