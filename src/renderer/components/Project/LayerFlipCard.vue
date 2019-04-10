@@ -1,6 +1,5 @@
 <template>
   <section :style="cssProps"
-           @click.stop="openDetail"
            class="layer themed">
     <section class="layer__part layer__front">
       <div class="layer__part__side">
@@ -16,8 +15,7 @@
            </div>
          </div>
          <div class="layer-file-path">
-          {{layer.filePath}}            {{layer.layerType}}
-
+          {{layer.filePath}}
          </div>
          <div class="layer-summary">
            <div class="left-side-summary layer-thumb" :style="overviewBackgroundStyle">
@@ -56,11 +54,13 @@
              </div>
            </div>
          </div>
-         <div class="layer-type-options">
-           <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
-         </div>
+         <div @click.stop="openDetail" class="advanced-options">Advanced Options</div>
          <transition-expand>
            <div v-show="expanded">
+             <div class="layer-type-options">
+               <hr/>
+               <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
+             </div>
              <div class="layer-detail">
                <div class="layer__horizontal__divider detail-divider"></div>
                <div class="flex-container-column align-center">
@@ -248,7 +248,8 @@
 
 .layer-type-options {
   color: #656565;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .layer__text__heading, .layer__sender__heading {
@@ -690,6 +691,14 @@
 }
 .layer-style-type {
   flex: 1;
+}
+.advanced-options {
+  color: rgba(68, 152, 192, .95);
+  text-transform: uppercase;
+  font-size: 12px;
+  margin-left: 10px;
+  cursor: pointer;
+  margin-bottom: 10px;
 }
 
 </style>

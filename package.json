@@ -7,6 +7,9 @@
   "main": "./dist/electron/main.js",
   "scripts": {
     "build": "node .electron-vue/build.js && electron-builder",
+    "build-windows": "node .electron-vue/build.js && electron-builder --win portable nsis",
+    "build-mac": "node .electron-vue/build.js && electron-builder --mac",
+    "build-linux": "node .electron-vue/build.js && electron-builder --linux",
     "build:dir": "node .electron-vue/build.js && electron-builder --dir",
     "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
     "build:web": "cross-env BUILD_TARGET=web node .electron-vue/build.js",
@@ -76,13 +79,29 @@
       ]
     },
     "mac": {
+      "target": [
+        "dmg",
+        "pkg"
+      ],
       "icon": "build/icons/icon.icns"
     },
     "win": {
+      "target": [
+        "portable"
+      ],
       "icon": "build/icons/icon.ico"
     },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
     "linux": {
-      "icon": "build/icons"
+      "icon": "build/icons",
+      "target": [
+        "deb",
+        "rpm",
+        "tar.gz"
+      ]
     }
   },
   "dependencies": {

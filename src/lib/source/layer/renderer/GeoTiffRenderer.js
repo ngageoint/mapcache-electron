@@ -56,7 +56,10 @@ export default class GeoTiffRenderer {
     var tileCutline = this.createCutlineInProjection({west: tileLowerLeft[0], south: tileLowerLeft[1], east: tileUpperRight[0], north: tileUpperRight[1]}, gdal.SpatialReference.fromEPSG(3857))
     var srcCutline = this.createPixelCoordinateCutline({west: fullExtent[0], south: fullExtent[1], east: fullExtent[2], north: fullExtent[3]}, this.layer.ds)
 
-    let dstBands = [this.layer.dstRedBand, this.layer.dstGreenBand, this.layer.dstBlueBand, this.layer.dstAlphaBand]
+    let dstBands = [this.layer.dstRedBand, this.layer.dstGreenBand, this.layer.dstBlueBand]
+    if (this.layer.dstAlphaBand) {
+      dstBands.push(this.layer.dstAlphaBand)
+    }
 
     let reprojectedFile = this.reproject(this.layer.ds, 3857, tileCutline, srcCutline, this.layer.srcBands, this.layer.srcAlphaBand, dstBands, this.layer.dstAlphaBand, tile.width, tile.height)
 
@@ -117,7 +120,6 @@ export default class GeoTiffRenderer {
 
       let colorConstant = 1
       let dt = this.layer.ds.bands.get(1).dataType
-
       if (dt === gdal.GDT_UInt16) {
         colorConstant = 8
       }
@@ -208,13 +210,13 @@ export default class GeoTiffRenderer {
     let sourceBands = srcBands
     let destinationBands = dstBands
 
-    if (!dstAlphaBand) {
-      destinationBands = dstBands.slice(0, 3)
-    }
-
-    if (!srcAlphaBand) {
-      sourceBands = srcBands.slice(0, 3)
-    }
+    // if (!dstAlphaBand) {
+    //   destinationBands = dstBands.slice(0, 3)
+    // }
+    //
+    // if (!srcAlphaBand) {
+    //   sourceBands = srcBands.slice(0, 3)
+    // }
     console.log('source Bands', sourceBands)
     console.log('destination bands', destinationBands)
     gdal.reprojectImage({

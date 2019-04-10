@@ -53,6 +53,15 @@ export default class GeoTiffLayer extends Layer {
         this.dstRedBand = 1
         this.dstGreenBand = 2
         this.dstBlueBand = 3
+      } else if (this.samplesPerPixel === 1) {
+        this.srcBands.push(1)
+        this.srcBands.push(1)
+        this.dstRedBand = 1
+        this.dstGreenBand = 1
+        this.dstBlueBand = 1
+      } else if (this.samplesPerPixel === 2) {
+        this.dstRedBand = 1
+        this.dstAlphaBand = 2
       }
 
       if (this.photometricInterpretation === 2) {
@@ -77,7 +86,7 @@ export default class GeoTiffLayer extends Layer {
         // Palette === 3 || BlackIsZero === 1
         this.srcBands = [1]
         this.dstRedBand = 1
-        this.dstAlphaBand = 2
+        // this.dstAlphaBand = 2
         this.colorMap = this.fileDirectory.ColorMap
       }
 
@@ -252,7 +261,7 @@ export default class GeoTiffLayer extends Layer {
               info += '\t' + key + ': ' + globalKey + ' (' + image.fileDirectory[key] + ')\n'
             }
           }
-        } else {
+        } else if (key !== 'StripOffsets' && key !== 'StripByteCounts') {
           info += '\t' + key + ': ' + image.fileDirectory[key] + '\n'
         }
         // JSON.stringify(image.fileDirectory, null, 2)
