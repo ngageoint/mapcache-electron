@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import WindowState from './WindowState'
+import path from 'path'
 
 class WindowLauncher {
   mainWindow
@@ -12,6 +13,7 @@ class WindowLauncher {
     const mainWindowState = new WindowState('main')
     let windowOptions = mainWindowState.retrieveState()
     windowOptions.title = 'MapCache'
+    windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
     this.mainWindow = new BrowserWindow(windowOptions)
     mainWindowState.track(this.mainWindow)
     this.mainWindow.loadURL(winURL)
