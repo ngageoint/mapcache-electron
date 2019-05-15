@@ -23,6 +23,7 @@ const getters = {
 const mutations = {
   pushProjectToProjects (state, project) {
     Vue.set(state, project.id, project)
+    console.log('state', state)
   },
   setProjectName (state, {project, name}) {
     state[project.id].name = name
@@ -159,7 +160,9 @@ const actions = {
       geopackages: {},
       currentGeoPackage: undefined
     }
+    commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
+    console.log('adding project state')
     actions.openProject({ commit, state }, project)
   },
   setProjectName ({ commit, state }, {project, name}) {

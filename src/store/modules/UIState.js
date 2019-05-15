@@ -11,6 +11,7 @@ const getters = {
 
 const mutations = {
   addProjectState (state, {projectId}) {
+    console.log('adding a project state for projectId', projectId)
     Vue.set(state, projectId, {
       extents: [-180, -90, 180, 90],
       drawBounds: {},
