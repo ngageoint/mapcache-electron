@@ -76,7 +76,6 @@
           updatedLayer.dstRedBand = Number(bands[0])
           updatedLayer.dstGreenBand = Number(bands[1])
           updatedLayer.dstBlueBand = Number(bands[2])
-          updatedLayer.dstAlphaBand = 4
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer

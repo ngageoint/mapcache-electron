@@ -162,7 +162,7 @@ export default class GeoTiffRenderer {
         targetData[i * 4] = colorMap[mapIndex] / 65536 * 256
         targetData[(i * 4) + 1] = colorMap[mapIndex + greenOffset] / 65536 * 256
         targetData[(i * 4) + 2] = colorMap[mapIndex + blueOffset] / 65536 * 256
-        targetData[(i * 4) + 3] = ds.bands.count() === 2 ? alphaBand[i] : colorBand[i] ? 255 : 0
+        targetData[(i * 4) + 3] = this.layer.dstAlphaBand ? alphaBand[i] : colorBand[i] ? 255 : 0
       }
     } else if (this.layer.photometricInterpretation === 1) {
       // BlackIsZero === 1
