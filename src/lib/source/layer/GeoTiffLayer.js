@@ -31,8 +31,8 @@ export default class GeoTiffLayer extends Layer {
     this.samplesPerPixel = this.fileDirectory.SamplesPerPixel
     this.bitsPerSample = this.fileDirectory.BitsPerSample
     this.ds = gdal.open(this.filePath)
+    this.colorMap = this.fileDirectory.ColorMap
     console.log(this.gdalInfo(this.ds, this.image))
-
     if (this._configuration.srcBands) {
       this.srcBands = this._configuration.srcBands
       this.srcAlphaBand = this._configuration.srcAlphaBand
@@ -40,60 +40,29 @@ export default class GeoTiffLayer extends Layer {
       this.dstRedBand = this._configuration.dstRedBand
       this.dstGreenBand = this._configuration.dstGreenBand
       this.dstBlueBand = this._configuration.dstBlueBand
-      this.colorMap = this._configuration.colorMap
       this._extent = this._configuration.extent
     } else {
       this.srcBands = []
-      for (let i = 1; i <= this.samplesPerPixel; i++) {
-        this.srcBands.push(i)
-      }
-      if (this.samplesPerPixel > 3) {
-        this.srcAlphaBand = 4
-        this.dstAlphaBand = 4
+      // when photometric interpretation is RGB, we can adjust bands
+      if (this.photometricInterpretation === 2 || this.samplesPerPixel >= 3) {
+        this.srcBands = [1, 2, 3]
         this.dstRedBand = 1
         this.dstGreenBand = 2
         this.dstBlueBand = 3
-      } else if (this.samplesPerPixel === 1) {
-        this.srcBands.push(1)
-        this.srcBands.push(1)
-        this.dstRedBand = 1
-        this.dstGreenBand = 1
-        this.dstBlueBand = 1
-      } else if (this.samplesPerPixel === 2) {
-        this.dstRedBand = 1
-        this.dstAlphaBand = 2
-      }
-
-      if (this.photometricInterpretation === 2) {
-        // RGB === 2
         if (this.ds.bands.count() === 4) {
-          this.srcBands = [1, 2, 3, 4]
+          this.srcBands.push(4)
           this.srcAlphaBand = 4
           this.dstAlphaBand = 4
-          this.dstRedBand = 1
-          this.dstGreenBand = 2
-          this.dstBlueBand = 3
-        } else {
-          this.srcBands = [1, 2, 3]
-          this.dstAlphaBand = 4
-          this.dstRedBand = 1
-          this.dstGreenBand = 2
-          this.dstBlueBand = 3
         }
-      } else if (this.photometricInterpretation === 3) {
-      //    ||
-      // this.photometricInterpretation === 1) {
-        // Palette === 3 || BlackIsZero === 1
-        this.srcBands = [1]
-        this.dstRedBand = 1
-        // this.dstAlphaBand = 2
-        this.colorMap = this.fileDirectory.ColorMap
+      } else {
+        for (let i = 1; i <= this.samplesPerPixel; i++) {
+          this.srcBands.push(i)
+        }
       }
-
       this._extent = this.extent
     }
     this.renderer = new GeoTiffRenderer(this)
-    console.log('this.dstGreenBand', this.dstGreenBand)
+    // console.log('this.dstGreenBand', this.dstGreenBand)
     this.renderOverviewTile()
     return this
   }

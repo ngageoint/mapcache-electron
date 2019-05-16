@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="showColorMapping">
     <div class="layer__face__stats">
       <p class="layer__face__stats__weight">
         Color Mapping
@@ -158,6 +158,11 @@
         },
         set (value) {
           console.log('new value', value)
+        }
+      },
+      showColorMapping: {
+        get () {
+          return this.layer.srcBands.length >= 3
         }
       },
       redBandMapping: {

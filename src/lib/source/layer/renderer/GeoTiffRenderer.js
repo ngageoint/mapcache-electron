@@ -1,8 +1,6 @@
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import gdal from 'gdal'
-// import * as GeoTIFF from 'geotiff'
-import { fromPalette } from 'geotiff/src/rgb'
 
 var defs = require('../../../projection/proj4Defs')
 for (var name in defs) {
@@ -56,7 +54,16 @@ export default class GeoTiffRenderer {
     var tileCutline = this.createCutlineInProjection({west: tileLowerLeft[0], south: tileLowerLeft[1], east: tileUpperRight[0], north: tileUpperRight[1]}, gdal.SpatialReference.fromEPSG(3857))
     var srcCutline = this.createPixelCoordinateCutline({west: fullExtent[0], south: fullExtent[1], east: fullExtent[2], north: fullExtent[3]}, this.layer.ds)
 
-    let dstBands = [this.layer.dstRedBand, this.layer.dstGreenBand, this.layer.dstBlueBand]
+    let dstBands = [1]
+    if (this.layer.dstRedBand) {
+      dstBands = [this.layer.dstRedBand]
+      if (this.layer.dstGreenBand) {
+        dstBands.push(this.layer.dstGreenBand)
+        if (this.layer.dstBlueBand) {
+          dstBands.push(this.layer.dstBlueBand)
+        }
+      }
+    }
     if (this.layer.dstAlphaBand) {
       dstBands.push(this.layer.dstAlphaBand)
     }
@@ -100,11 +107,6 @@ export default class GeoTiffRenderer {
       }
       let { r, g, b, a } = this.createRGBArrays(width, height)
 
-      // ds.bands.get(1).pixels.read(0, 0, width, height, r, readOptions)
-      // ds.bands.get(2).pixels.read(0, 0, width, height, g, readOptions)
-      // ds.bands.get(3).pixels.read(0, 0, width, height, b, readOptions)
-      // ds.bands.get(4).pixels.read(0, 0, width, height, a, readOptions)
-
       if (this.layer.dstRedBand) {
         ds.bands.get(this.layer.dstRedBand).pixels.read(0, 0, width, height, r, readOptions)
       }
@@ -143,28 +145,24 @@ export default class GeoTiffRenderer {
         if (this.layer.dstAlphaBand) {
           targetData[(i * 4) + 3] = a[i] / colorConstant
         } else {
-          targetData[(i * 4) + 3] = 255
+          targetData[(i * 4) + 3] = r[i] ? 255 : 0
         }
       }
     } else if (this.layer.photometricInterpretation === 3) {
       // Palette === 3
-      let colorMap = this.layer.colorMap
+      let colorMap = new Uint16Array(this.layer.colorMap.buffer)
       let readOptions = {}
       let colorBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
       let alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)
-      colorBand.width = width
-      colorBand.height = height
 
-      let paletted = fromPalette(colorBand, colorMap)
-      for (let i = 0, p = 0; i < colorBand.length; i++) {
-        let r = paletted[p++]
-        let g = paletted[p++]
-        let b = paletted[p++]
-        let a = alphaBand[i]
-        targetData[i * 4] = r
-        targetData[(i * 4) + 1] = g
-        targetData[(i * 4) + 2] = b
-        targetData[(i * 4) + 3] = a
+      const greenOffset = colorMap.length / 3
+      const blueOffset = colorMap.length / 3 * 2
+      for (let i = 0, j = 0; i < colorBand.length; ++i, j += 3) {
+        const mapIndex = colorBand[i]
+        targetData[i * 4] = colorMap[mapIndex] / 65536 * 256
+        targetData[(i * 4) + 1] = colorMap[mapIndex + greenOffset] / 65536 * 256
+        targetData[(i * 4) + 2] = colorMap[mapIndex + blueOffset] / 65536 * 256
+        targetData[(i * 4) + 3] = ds.bands.count() === 2 ? alphaBand[i] : colorBand[i] ? 255 : 0
       }
     } else if (this.layer.photometricInterpretation === 1) {
       // BlackIsZero === 1
@@ -185,23 +183,42 @@ export default class GeoTiffRenderer {
           targetData[(i * 4) + 3] = 255
         }
       }
+    } else if (this.layer.photometricInterpretation === 0) {
+      // WhiteIsZero === 0
+      let readOptions = {}
+      let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
+      let alphaBand = Array(width * height).fill(255)
+      if (ds.bands.count() === 2) {
+        alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)
+      }
+
+      for (let i = 0; i < greyBand.length; i++) {
+        targetData[i * 4] = 255 - greyBand[i]
+        targetData[(i * 4) + 1] = 255 - greyBand[i]
+        targetData[(i * 4) + 2] = 255 - greyBand[i]
+        if (ds.bands.count() === 2) {
+          targetData[(i * 4) + 3] = alphaBand[i]
+        } else if (greyBand[i]) {
+          targetData[(i * 4) + 3] = 255
+        }
+      }
     }
   }
 
   reproject (ds, epsgCode, tileCutline, srcCutline, srcBands, srcAlphaBand, dstBands, dstAlphaBand, width, height) {
-    console.log('reproject arguments', arguments)
+    // console.log('reproject arguments', arguments)
     // colored-infrared bands = [4, 1, 2]
     // RGB bands = [1, 2, 3]
-    var tileExtent = tileCutline.getEnvelope()
-    var targetSrs = gdal.SpatialReference.fromEPSG(epsgCode)
+    let tileExtent = tileCutline.getEnvelope()
+    let targetSrs = gdal.SpatialReference.fromEPSG(epsgCode)
 
-    var gt = ds.geoTransform
+    let gt = ds.geoTransform
 
-    var tr = {
+    let tr = {
       x: Math.max(tileExtent.maxX - tileExtent.minX) / width,
       y: Math.max(tileExtent.maxY - tileExtent.minY) / height
     }
-    var destination = gdal.open('memory', 'w', 'MEM', width, height, 4, ds.bands.get(1).dataType)
+    let destination = gdal.open('memory', 'w', 'MEM', width, height, 4, ds.bands.get(1).dataType)
     destination.srs = targetSrs
     destination.geoTransform = [
       tileExtent.minX, tr.x, gt[2],
@@ -210,26 +227,20 @@ export default class GeoTiffRenderer {
     let sourceBands = srcBands
     let destinationBands = dstBands
 
-    // if (!dstAlphaBand) {
-    //   destinationBands = dstBands.slice(0, 3)
-    // }
-    //
-    // if (!srcAlphaBand) {
-    //   sourceBands = srcBands.slice(0, 3)
-    // }
-    console.log('source Bands', sourceBands)
-    console.log('destination bands', destinationBands)
-    gdal.reprojectImage({
+    let options = {
       src: ds,
       dst: destination,
       s_srs: ds.srs, // jshint ignore:line
       t_srs: targetSrs, // jshint ignore:line
       cutline: srcCutline.getEnvelope().toPolygon(),
-      dstAlphaBand,
-      srcAlphaBand,
       sourceBands,
       destinationBands
-    })
+    }
+    if (srcAlphaBand && dstAlphaBand) {
+      options.srcAlphaBand = srcAlphaBand
+      options.dstAlphaBand = dstAlphaBand
+    }
+    gdal.reprojectImage(options)
 
     return destination
   }

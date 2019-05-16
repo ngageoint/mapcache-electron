@@ -106,6 +106,7 @@ export default class GeoPackageLayer extends Layer {
         return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
       })
 
+      await this._vectorTileRenderer.init()
       await this.renderOverviewTile(coords)
     }
     this.count = this.dao.count()
