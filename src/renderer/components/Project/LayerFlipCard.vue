@@ -162,10 +162,6 @@
         toggleProjectLayer: 'Projects/toggleProjectLayer',
         setProjectExtents: 'UIState/setProjectExtents'
       }),
-      // toggleLayer () {
-      //   this.layer.shown = !this.layer.shown
-      //   this.$emit('toggle-layer', this.layer)
-      // },
       zoomToExtent (extent) {
         console.log({extent})
         this.setProjectExtents({projectId: this.projectId, extents: extent})
@@ -178,10 +174,6 @@
       openDetail () {
         this.expanded = !this.expanded
       }
-      // ,
-      // removeLayer (event) {
-      //   this.$emit('delete-layer', this.layer)
-      // }
     }
   }
 </script>

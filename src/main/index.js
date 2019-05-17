@@ -2,8 +2,8 @@
 
 import { app } from 'electron'
 import WindowLauncher from '../lib/window/WindowLauncher'
-// eslint-disable-next-line no-unused-vars
-import Store from '../store'
+import '../store'
+
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html

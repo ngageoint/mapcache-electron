@@ -8,8 +8,10 @@
   import DrawBounds from './DrawBounds'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import LeafletZoomIndicator from '../../../lib/map/LeafletZoomIndicator'
+  import _ from 'lodash'
 
-  let mapLayers = {}
+  let shownMapLayers = {}
+  let shownLayerConfigs = {}
 
   export default {
     mixins: [
@@ -36,15 +38,19 @@
       layerConfigs: {
         async handler (value, oldValue) {
           let currentLayerIds = Object.keys(value)
-          let oldLayerIds = Object.keys(mapLayers)
-          let removed = oldLayerIds.filter((i) => currentLayerIds.indexOf(i) < 0)
-          let added = currentLayerIds.filter((i) => oldLayerIds.indexOf(i) < 0)
-          let same = oldLayerIds.filter((i) => currentLayerIds.indexOf(i) >= 0)
+          let existingLayerIds = Object.keys(shownMapLayers)
+          // layers that have been removed from the list or are no longer being shown
+          let removed = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) < 0 || !value[i].shown)
+          // layers that have been added and are being shown
+          let added = currentLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0 && value[i].shown)
+          // layers that still exist may have changed. check if the rgb has changed...
+          let same = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) >= 0 && value[i].shown)
 
           for (const layerId of removed) {
-            let mapLayer = mapLayers[layerId]
+            let mapLayer = shownMapLayers[layerId]
             mapLayer.remove()
-            delete mapLayers[layerId]
+            delete shownMapLayers[layerId]
+            delete shownLayerConfigs[layerId]
           }
 
           for (const layerId of added) {
@@ -52,36 +58,28 @@
             let layer = LayerFactory.constructLayer(layerConfig)
             console.log('initialize the layer')
             await layer.initialize()
-
             let mapLayer = layer.mapLayer
             mapLayer.addTo(this.map)
-            mapLayers[mapLayer.id] = mapLayer
+            shownMapLayers[mapLayer.id] = mapLayer
+            shownLayerConfigs[mapLayer.id] = layerConfig
           }
 
           for (const layerId of same) {
-            // check if it got hidden
             let layerConfig = value[layerId]
-            if (layerConfig.shown && !mapLayers[layerId]) {
-              let layer = LayerFactory.constructLayer(layerConfig)
-              await layer.initialize()
+            let oldLayerConfig = shownLayerConfigs[layerId]
 
-              let mapLayer = layer.mapLayer
-              mapLayer.addTo(this.map)
-              mapLayers[mapLayer.id] = mapLayer
-            } else if (!layerConfig.shown && mapLayers[layerId]) {
-              let mapLayer = mapLayers[layerId]
-              mapLayer.remove()
-              delete mapLayers[layerId]
-            } else if (layerConfig.shown) {
-              let mapLayer = mapLayers[layerId]
-              mapLayer.remove()
-              delete mapLayers[layerId]
+            if (!_.isEqual(layerConfig, oldLayerConfig)) {
+              let existingMapLayer = shownMapLayers[layerId]
+              existingMapLayer.remove()
+              delete shownMapLayers[layerId]
+              delete shownLayerConfigs[layerId]
               let layer = LayerFactory.constructLayer(layerConfig)
+              console.log('initialize the layer')
               await layer.initialize()
-
-              mapLayer = layer.mapLayer
-              mapLayer.addTo(this.map)
-              mapLayers[mapLayer.id] = mapLayer
+              let updateMapLayer = layer.mapLayer
+              updateMapLayer.addTo(this.map)
+              shownMapLayers[updateMapLayer.id] = updateMapLayer
+              shownLayerConfigs[updateMapLayer.id] = layerConfig
             }
           }
         },
@@ -113,10 +111,10 @@
         let layer = LayerFactory.constructLayer(layerConfig)
         console.log('initialize the layer', layer)
         await layer.initialize()
-
         let mapLayer = layer.mapLayer
         mapLayer.addTo(this.map)
-        mapLayers[mapLayer.id] = mapLayer
+        shownMapLayers[mapLayer.id] = mapLayer
+        shownLayerConfigs[mapLayer.id] = layerConfig
       }
 
       this.setupDrawing(this.drawBounds)
