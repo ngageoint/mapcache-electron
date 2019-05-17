@@ -7,7 +7,7 @@
          <div class="layer__face__colored-side"></div>
          <div class="layer__face__header fill-background-color">
            <div class="layer__face__source-name contrast-text">
-             {{layer.name}}
+             {{layer.name.length > 40 ? layer.name.substring(0, 37) + "..." : layer.name}}
            </div>
            <div class="layer-checked contrast-svg-always" @click.stop="toggleProjectLayer({projectId: projectId, layerId: layer.id})">
              <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
