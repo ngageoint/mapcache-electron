@@ -8,6 +8,9 @@ import geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
+import proj4 from 'proj4'
+import gdal from 'gdal'
+import path from 'path'
 
 export default class KMLLayer extends Layer {
   _vectorTileRenderer

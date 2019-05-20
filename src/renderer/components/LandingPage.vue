@@ -59,9 +59,9 @@
     margin: 0 2em;
     padding-top: 2em;
     text-align: center;
-    width: 300px;
+    width: 350px;
     height: 100vh;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
   }
 
