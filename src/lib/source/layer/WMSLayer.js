@@ -2,6 +2,7 @@ import Layer from './Layer'
 import * as Vendor from '../../vendor'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
+import request from 'request-promise-native'
 
 export default class WMSLayer extends Layer {
   _extent
@@ -67,12 +68,10 @@ export default class WMSLayer extends Layer {
     let {x, y, z} = coords
 
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-    // let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
-    // let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
-    let tileUpperRightBuffered = proj4('EPSG:3857').inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
-    let tileLowerLeftBuffered = proj4('EPSG:3857').inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])
-    let fullExtent = this.layer.extent
-    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRightBuffered, tileLowerLeftBuffered, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
+    let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
+    let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+    let fullExtent = this._extent
+    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
       if (done) {
         return done(null, tile)
       }
@@ -85,8 +84,21 @@ export default class WMSLayer extends Layer {
       tile.height = 256
     }
 
-    // TODO: figure out how to get image for tile
+    let ctx = tile.getContext('2d')
+    ctx.clearRect(0, 0, tile.width, tile.height)
 
-    return null
+    let referenceSystemName = 'srs'
+    let bbox = tileLowerLeft[0] + ',' + tileLowerLeft[1] + ',' + tileUpperRight[0] + ',' + tileUpperRight[1]
+    if (this.filePath.indexOf('1.3.0') > 0) {
+      referenceSystemName = 'crs'
+    }
+
+    let url = this.filePath + '&request=GetMap&layers=' + this._configuration.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox
+    console.log(url)
+    return request({
+      method: 'GET',
+      url: url,
+      encoding: null
+    })
   }
 }
