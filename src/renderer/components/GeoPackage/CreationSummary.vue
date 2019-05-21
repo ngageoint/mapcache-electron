@@ -183,7 +183,6 @@
         })
       },
       createGeoPackage () {
-        console.log('Create the GeoPackage')
         let gp = new GeoPackageBuilder(this.geopackage, this.project)
         gp.go()
       },

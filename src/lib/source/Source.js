@@ -1,9 +1,10 @@
 import { userDataDir } from '../settings/Settings'
 
 export default class Source {
-  constructor (filePath, sourceId = createId()) {
+  constructor (filePath, layers = [], sourceId = createId()) {
     this.sourceId = sourceId
     this.filePath = filePath
+    this.layers = layers
   }
 
   get sourceCacheFolder () {

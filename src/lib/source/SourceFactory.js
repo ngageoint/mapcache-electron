@@ -4,19 +4,23 @@ import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
+import WMSSource from './WMSSource'
 
 export default class SourceFactory {
   static async constructUrlSource (parameterizedUrl) {
-    // try to figure out what this thing is
+    // this is x,y,z tile server
     let url = parameterizedUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
     let result = await request({
       method: 'HEAD',
       uri: url
     })
-
     console.log('result', result)
-
     return new XYZServerSource(parameterizedUrl)
+  }
+
+  static async constructWMSSource (url, layers) {
+    // try to figure out what this thing is
+    return new WMSSource(url, layers)
   }
 
   static async constructSource (filePath) {

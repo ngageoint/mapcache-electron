@@ -2,6 +2,7 @@ import GeoTiffLayer from './GeoTiffLayer'
 import GeoPackageLayer from './GeoPackageLayer'
 import GDALVectorLayer from './GDALVectorLayer'
 import XYZServerLayer from './XYZServerLayer'
+import WMSLayer from './WMSLayer'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
@@ -14,6 +15,8 @@ export default class LayerFactory {
         return new GDALVectorLayer(configuration)
       case 'XYZServer':
         return new XYZServerLayer(configuration)
+      case 'WMS':
+        return new WMSLayer(configuration)
     }
   }
 }

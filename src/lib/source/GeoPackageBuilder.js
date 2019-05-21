@@ -50,7 +50,6 @@ export default class GeoPackageBuilder {
       layerStatus: {}
     }
     this.dispatchStatusUpdate(status)
-    console.log('GO CREATE IT')
     let gp = await GeoPackage.create(this.config.fileName)
     for (const layerId in this.config.featureLayers) {
       let geopackageLayerConfig = this.config.featureLayers[layerId]

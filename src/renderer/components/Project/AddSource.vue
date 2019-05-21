@@ -1,5 +1,25 @@
 <template>
   <div>
+    <modal
+        v-if="wmsLayerSelectionVisible"
+        header="Select WMS Layers"
+        footer="Confirm Selection"
+        :ok="confirmWMSLayerImport"
+        :cancel="cancelWMSLayerImport">
+      <div slot="body">
+        <multiselect v-model="wmsLayerSelection" :options="wmsLayers" :multiple="true" :close-on-select="false" :clear-on-select="false" placeholder="Select Layers" label="name" track-by="name" :preselect-first="false">
+          <template slot="selection" slot-scope="{ wmsLayers, isOpen }"><span class="multiselect__single" v-if="!isOpen">{{ wmsLayerSelection.length }} layers selected</span></template>
+        </multiselect>
+      </div>
+    </modal>
+    <modal
+        v-if="showErrorModal"
+        header="Invalid URL"
+        :ok="dismissErrorModal">
+      <div slot="body">
+        <p style="color: #42b983">{{error}}</p>
+      </div>
+    </modal>
     <div class="add-data-outer">
       <div
           @dragover.prevent="onDragOver"
@@ -41,6 +61,7 @@
         class="provide-link-text">You can also provide a <a @click.stop="provideLink">link from the web</a>
       </div>
 
+
       <div v-show="linkInputVisible">
         <form class="link-form">
           <span class="provide-link-text">
@@ -79,6 +100,10 @@
   import FloatLabels from 'float-labels.js'
   import ProcessingSource from './ProcessingSource'
   import AddUrlDialog from './AddUrlDialog'
+  import xml2js from 'xml2js'
+  import Modal from '../Modal'
+  import request from 'request-promise-native'
+  import Multiselect from 'vue-multiselect'
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault()
@@ -92,6 +117,11 @@
   }
   let linkInputVisible = false
   let linkToValidate = ''
+  let wmsLayerSelectionVisible = false
+  let wmsLayers = []
+  let wmsLayerSelection = []
+  let error = null
+  let showErrorModal = false
 
   export default {
     props: {
@@ -101,12 +131,19 @@
       return {
         processing,
         linkInputVisible,
-        linkToValidate
+        linkToValidate,
+        wmsLayerSelectionVisible,
+        wmsLayers,
+        wmsLayerSelection,
+        showErrorModal,
+        error
       }
     },
     components: {
       AddUrlDialog,
-      ProcessingSource
+      ProcessingSource,
+      Modal,
+      Multiselect
     },
     methods: {
       ...mapActions({
@@ -119,9 +156,82 @@
         this.linkToValidate = ''
         this.linkInputVisible = false
       },
-      validateLink () {
-        console.log('validate the link', this.linkToValidate)
-        this.processUrl(this.linkToValidate)
+      dismissErrorModal () {
+        this.showErrorModal = false
+        this.error = null
+      },
+      async xml2json (xml) {
+        return new Promise((resolve, reject) => {
+          new xml2js.Parser().parseString(xml, function (err, json) {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(json)
+            }
+          })
+        })
+      },
+      async validateLink () {
+        const { type, error } = this.validateUrlSource(this.linkToValidate)
+        if (error === null) {
+          if (type === 'XYZ') {
+            this.processUrl(this.linkToValidate)
+          } else if (type === 'WMS') {
+            let layers = []
+            const getCapabilitiesUri = this.linkToValidate + '&request=GetCapabilities'
+            console.log(getCapabilitiesUri)
+            let xml = await request({
+              method: 'GET',
+              uri: getCapabilitiesUri
+            })
+            let json = await this.xml2json(xml)
+            if (this.linkToValidate.indexOf('1.1.1') > 0) {
+              for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                const bbox = layer['LatLonBoundingBox'][0]['$']
+                const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+                layers.push({name: layer['Name'][0], extent: extent})
+              }
+            } else if (this.linkToValidate.indexOf('1.3.0') > 0) {
+              for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                const bbox = layer['EX_GeographicBoundingBox'][0]
+                const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
+                layers.push({name: layer['Name'][0], extent: extent})
+              }
+            }
+            this.wmsLayers = layers
+            this.wmsLayerSelectionVisible = true
+          } else {
+            this.error = 'Unsupported URL: ' + type
+            this.showErrorModal = true
+          }
+        } else {
+          this.error = error
+          this.showErrorModal = true
+        }
+      },
+      cancelWMSLayerImport () {
+        this.wmsLayers = []
+        this.wmsLayerSelectionVisible = false
+        this.linkToValidate = ''
+      },
+      confirmWMSLayerImport () {
+        if (this.wmsLayerSelection.length > 0) {
+          let sourceToProcess = {
+            file: {
+              path: this.linkToValidate
+            },
+            wms: true,
+            layers: this.wmsLayerSelection.slice()
+          }
+          processing.sources.push(sourceToProcess)
+          setTimeout(() => {
+            this.addSource(sourceToProcess)
+            this.wmsLayers = []
+            this.wmsLayerSelectionVisible = false
+            this.linkToValidate = ''
+            this.wmsLayerSelection = []
+          }, 0)
+        }
       },
       addFileClick (ev) {
         remote.dialog.showOpenDialog({
@@ -159,7 +269,12 @@
       },
       async addSource (source) {
         try {
-          let createdSource = await SourceFactory.constructSource(source.file.path)
+          let createdSource = null
+          if (source.wms) {
+            createdSource = await SourceFactory.constructWMSSource(source.file.path, source.layers)
+          } else {
+            createdSource = await SourceFactory.constructSource(source.file.path)
+          }
           let layers = await createdSource.retrieveLayers()
           for (const layer of layers) {
             await layer.initialize()
@@ -197,7 +312,8 @@
             path: file.path
           },
           status: undefined,
-          error: undefined
+          error: undefined,
+          wms: false
         }
         processing.sources.push(sourceToProcess)
         console.log({file})
@@ -205,11 +321,38 @@
           this.addSource(sourceToProcess)
         }, 0)
       },
-
       processUrl (url) {
         this.processFiles([{
           path: url
         }])
+      },
+      validateUrlSource (url) {
+        let error = null
+        let type = 'UNKNOWN'
+        if (url.startsWith('http')) {
+          if (url.toLowerCase().indexOf('{x}') > 0 && url.toLowerCase().indexOf('{y}') > 0 && url.toLowerCase().indexOf('{z}') > 0) {
+            type = 'XYZ'
+          } else if (url.toLowerCase().indexOf('wms') > 0) {
+            const versionIdx = url.toLowerCase().indexOf('version=')
+            if (versionIdx > 0) {
+              let version = url.toLowerCase().substring(versionIdx + 8)
+              if (version.indexOf('&') > 0) {
+                version = version.substring(0, version.indexOf('&'))
+              }
+              if (version !== '1.1.1' && version !== '1.3.0') {
+                error = 'WMS version ' + version + ' not supported. Supported versions are [1.1.1, 1.3.0].'
+              }
+            } else {
+              error = 'WMS version not provided. Valid versions [1.1.1, 1.3.0] should be used.'
+            }
+            type = 'WMS'
+          } else {
+            error = 'URL not supported. Supported URLs include WMS and XYZ tile servers.'
+          }
+        } else {
+          error = 'URL not supported.'
+        }
+        return { type, error }
       }
     },
     mounted: function () {
@@ -224,6 +367,7 @@
 <style scoped>
 
   @import '~float-labels.js/dist/float-labels.css';
+  @import "~vue-multiselect/dist/vue-multiselect.min.css";
 
   .link-form {
     margin-top: 1em;
