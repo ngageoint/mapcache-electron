@@ -107,26 +107,6 @@
     created: function () {
       this.imageryLayers = this.geopackage.imageryLayers || {}
       this.featureLayers = this.geopackage.featureLayers || {}
-      let firstTime = !Object.keys(this.imageryLayers).length && !Object.keys(this.featureLayers).length
-      for (const layerId in this.project.layers) {
-        let layer = this.project.layers[layerId]
-        if (layer.pane === 'tile' && !this.imageryLayers[layerId]) {
-          this.imageryLayers[layerId] = {
-            id: layer.id,
-            included: layer.shown && firstTime,
-            name: layer.name,
-            style: layer.style
-          }
-        }
-        if (layer.pane === 'vector' && !this.featureLayers[layerId]) {
-          this.featureLayers[layerId] = {
-            id: layer.id,
-            included: layer.shown && firstTime,
-            name: layer.name,
-            style: layer.style
-          }
-        }
-      }
     }
   }
 </script>

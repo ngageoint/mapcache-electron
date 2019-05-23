@@ -176,6 +176,29 @@ const actions = {
     if (Object.keys(project.geopackages).length) {
       name += ' ' + Object.keys(project.geopackages).length
     }
+
+    let imageryLayers = {}
+    let featureLayers = {}
+    for (const layerId in project.layers) {
+      let layer = project.layers[layerId]
+      if (layer.pane === 'tile' && !imageryLayers[layerId]) {
+        imageryLayers[layerId] = {
+          id: layer.id,
+          included: layer.shown,
+          name: layer.name,
+          style: layer.style
+        }
+      }
+      if (layer.pane === 'vector' && !featureLayers[layerId]) {
+        featureLayers[layerId] = {
+          id: layer.id,
+          included: layer.shown,
+          name: layer.name,
+          style: layer.style
+        }
+      }
+    }
+
     let geopackage = {
       id: createId(),
       name: name,
@@ -183,8 +206,8 @@ const actions = {
       aoi: undefined,
       minZoom: undefined,
       maxZoom: undefined,
-      imageryLayers: {},
-      featureLayers: {},
+      imageryLayers: imageryLayers,
+      featureLayers: featureLayers,
       step: 1
     }
     commit('addGeoPackage', {project, geopackage})

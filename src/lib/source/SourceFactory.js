@@ -5,6 +5,7 @@ import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
 import WMSSource from './WMSSource'
+import WFSSource from './WFSSource'
 
 export default class SourceFactory {
   static async constructUrlSource (parameterizedUrl) {
@@ -21,6 +22,10 @@ export default class SourceFactory {
   static async constructWMSSource (url, layers) {
     // try to figure out what this thing is
     return new WMSSource(url, layers)
+  }
+
+  static async constructWFSSource (url, layers) {
+    return new WFSSource(url, layers)
   }
 
   static async constructSource (filePath) {

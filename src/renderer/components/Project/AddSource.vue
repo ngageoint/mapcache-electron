@@ -1,14 +1,14 @@
 <template>
   <div>
     <modal
-        v-if="wmsLayerSelectionVisible"
-        header="Select WMS Layers"
+        v-if="layerSelectionVisible"
+        header="Select Layers"
         footer="Confirm Selection"
-        :ok="confirmWMSLayerImport"
-        :cancel="cancelWMSLayerImport">
+        :ok="confirmLayerImport"
+        :cancel="cancelLayerImport">
       <div slot="body">
-        <multiselect v-model="wmsLayerSelection" :options="wmsLayers" :multiple="true" :close-on-select="false" :clear-on-select="false" placeholder="Select Layers" label="name" track-by="name" :preselect-first="false">
-          <template slot="selection" slot-scope="{ wmsLayers, isOpen }"><span class="multiselect__single" v-if="!isOpen">{{ wmsLayerSelection.length }} layers selected</span></template>
+        <multiselect v-model="layerSelection" :options="layerChoices" :multiple="true" :close-on-select="false" :clear-on-select="false" placeholder="Select Layers" label="name" track-by="name" :preselect-first="false">
+          <template slot="selection" slot-scope="{ layerChoices, isOpen }"><span class="multiselect__single" v-if="!isOpen">{{ layerSelection.length }} layers selected</span></template>
         </multiselect>
       </div>
     </modal>
@@ -117,9 +117,9 @@
   }
   let linkInputVisible = false
   let linkToValidate = ''
-  let wmsLayerSelectionVisible = false
-  let wmsLayers = []
-  let wmsLayerSelection = []
+  let layerSelectionVisible = false
+  let layerChoices = []
+  let layerSelection = []
   let error = null
   let showErrorModal = false
 
@@ -132,9 +132,9 @@
         processing,
         linkInputVisible,
         linkToValidate,
-        wmsLayerSelectionVisible,
-        wmsLayers,
-        wmsLayerSelection,
+        layerSelectionVisible,
+        layerChoices,
+        layerSelection,
         showErrorModal,
         error
       }
@@ -189,17 +189,51 @@
               for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
                 const bbox = layer['LatLonBoundingBox'][0]['$']
                 const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-                layers.push({name: layer['Name'][0], extent: extent})
+                layers.push({name: layer['Name'][0], extent: extent, wms: true})
               }
             } else if (this.linkToValidate.indexOf('1.3.0') > 0) {
               for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
                 const bbox = layer['EX_GeographicBoundingBox'][0]
                 const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
-                layers.push({name: layer['Name'][0], extent: extent})
+                layers.push({name: layer['Name'][0], extent: extent, wms: true})
               }
             }
-            this.wmsLayers = layers
-            this.wmsLayerSelectionVisible = true
+            this.layerChoices = layers
+            this.layerSelectionVisible = true
+          } else if (type === 'WFS') {
+            let layers = []
+            const getCapabilitiesUri = this.linkToValidate + '&request=GetCapabilities'
+            console.log(getCapabilitiesUri)
+            let xml = await request({
+              method: 'GET',
+              uri: getCapabilitiesUri
+            })
+            let json = await this.xml2json(xml)
+            if (this.linkToValidate.indexOf('1.0.0') > 0) {
+              for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                const bbox = layer['LatLongBoundingBox'][0]['$']
+                const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+              }
+            } else if (this.linkToValidate.indexOf('1.1.0') > 0) {
+              for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                const bbox = layer['ows:WGS84BoundingBox'][0]
+                const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
+                const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
+                const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
+                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+              }
+            } else if (this.linkToValidate.indexOf('2.0.0') > 0) {
+              for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                const bbox = layer['ows:WGS84BoundingBox'][0]
+                const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
+                const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
+                const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
+                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+              }
+            }
+            this.layerChoices = layers
+            this.layerSelectionVisible = true
           } else {
             this.error = 'Unsupported URL: ' + type
             this.showErrorModal = true
@@ -209,27 +243,28 @@
           this.showErrorModal = true
         }
       },
-      cancelWMSLayerImport () {
-        this.wmsLayers = []
-        this.wmsLayerSelectionVisible = false
+      cancelLayerImport () {
+        this.layerChoices = []
+        this.layerSelectionVisible = false
         this.linkToValidate = ''
       },
-      confirmWMSLayerImport () {
-        if (this.wmsLayerSelection.length > 0) {
+      confirmLayerImport () {
+        if (this.layerSelection.length > 0) {
           let sourceToProcess = {
             file: {
               path: this.linkToValidate
             },
-            wms: true,
-            layers: this.wmsLayerSelection.slice()
+            wms: this.layerSelection[0].wms,
+            wfs: this.layerSelection[0].wfs,
+            layers: this.layerSelection.slice()
           }
           processing.sources.push(sourceToProcess)
           setTimeout(() => {
             this.addSource(sourceToProcess)
-            this.wmsLayers = []
-            this.wmsLayerSelectionVisible = false
+            this.layerChoices = []
+            this.layerSelectionVisible = false
             this.linkToValidate = ''
-            this.wmsLayerSelection = []
+            this.layerSelection = []
           }, 0)
         }
       },
@@ -272,6 +307,8 @@
           let createdSource = null
           if (source.wms) {
             createdSource = await SourceFactory.constructWMSSource(source.file.path, source.layers)
+          } else if (source.wfs) {
+            createdSource = await SourceFactory.constructWFSSource(source.file.path, source.layers)
           } else {
             createdSource = await SourceFactory.constructSource(source.file.path)
           }
@@ -346,8 +383,22 @@
               error = 'WMS version not provided. Valid versions [1.1.1, 1.3.0] should be used.'
             }
             type = 'WMS'
+          } else if (url.toLowerCase().indexOf('wfs') > 0) {
+            const versionIdx = url.toLowerCase().indexOf('version=')
+            if (versionIdx > 0) {
+              let version = url.toLowerCase().substring(versionIdx + 8)
+              if (version.indexOf('&') > 0) {
+                version = version.substring(0, version.indexOf('&'))
+              }
+              if (version !== '2.0.0' && version !== '1.1.0' && version !== '1.0.0') {
+                error = 'WFS version ' + version + ' not supported. Supported versions are [2.0.0, 1.1.0, 1.0.0].'
+              }
+            } else {
+              error = 'WFS version not provided. Valid versions [2.0.0, 1.1.0, 1.0.0] should be used.'
+            }
+            type = 'WFS'
           } else {
-            error = 'URL not supported. Supported URLs include WMS and XYZ tile servers.'
+            error = 'URL not supported. Supported URLs include WMS, WFS and XYZ tile servers.'
           }
         } else {
           error = 'URL not supported.'

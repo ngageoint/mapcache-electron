@@ -3,6 +3,7 @@ import GeoPackageLayer from './GeoPackageLayer'
 import GDALVectorLayer from './GDALVectorLayer'
 import XYZServerLayer from './XYZServerLayer'
 import WMSLayer from './WMSLayer'
+import WFSLayer from './WFSLayer'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
@@ -17,6 +18,8 @@ export default class LayerFactory {
         return new XYZServerLayer(configuration)
       case 'WMS':
         return new WMSLayer(configuration)
+      case 'WFS':
+        return new WFSLayer(configuration)
     }
   }
 }
