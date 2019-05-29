@@ -60,6 +60,7 @@
              <div class="layer-type-options">
                <hr/>
                <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
+               <vector-options v-if="layer.pane === 'vector'" :layer="layer" :projectId="projectId"></vector-options>
              </div>
              <div class="layer-detail">
                <div class="layer__horizontal__divider detail-divider"></div>
@@ -89,6 +90,7 @@
   import BoundsUi from './BoundsUi'
   import GeotiffOptions from './GeotiffOptions'
   import { mapActions, mapState } from 'vuex'
+  import VectorOptions from './VectorOptions'
 
   let expanded = false
 
@@ -117,6 +119,7 @@
       projectId: String
     },
     components: {
+      VectorOptions,
       TransitionExpand,
       BoundsUi,
       GeotiffOptions
@@ -134,8 +137,8 @@
       }),
       cssProps () {
         return {
-          '--fill-color': this.layer.style && this.layer.style.color ? setColorAlpha(this.layer.style.color, 0.95) : 'rgba(254, 254, 254, .95)',
-          '--contrast-text-color': getContrastYIQ(this.layer.style && this.layer.style.color ? this.layer.style.color : '#FEFEFE')
+          '--fill-color': this.layer.style && this.layer.style.fillColor ? setColorAlpha(this.layer.style.fillColor, 0.95) : 'rgba(254, 254, 254, .95)',
+          '--contrast-text-color': getContrastYIQ(this.layer.style && this.layer.style.fillColor ? this.layer.style.fillColor : '#FEFEFE')
         }
       },
       overviewBackgroundStyle () {

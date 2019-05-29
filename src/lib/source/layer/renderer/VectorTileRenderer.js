@@ -4,11 +4,10 @@ import Mercator from '@mapbox/sphericalmercator'
 
 export default class VectorTileRenderer {
   _mapboxGLMap
-  style
-  constructor (style, getVectorTileProtobuf, images) {
+  constructor (style, name, getVectorTileProtobuf, images) {
     let map = this._mapboxGlMap = new MapboxGL.Map({
       request: async function (req, callback) {
-        console.log('req', req)
+        // console.log('req', req)
         let split = req.url.split('-')
         let z = Number(split[0])
         let x = Number(split[1])
@@ -18,19 +17,73 @@ export default class VectorTileRenderer {
       },
       ratio: 1
     })
-    this.style = style
     this.images = images
+    this.mbStyle = VectorTileRenderer.generateMbStyle(style, name)
+  }
+
+  static generateMbStyle (style, name) {
+    let styleSources = {}
+    styleSources[name] = {
+      'type': 'vector',
+      'maxzoom': 18,
+      'tiles': [
+        '{z}-{x}-{y}'
+      ]
+    }
+    return {
+      'version': 8,
+      'name': 'Empty',
+      'sources': styleSources,
+      'layers': [
+        {
+          'id': 'fill-style',
+          'type': 'fill',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+          'paint': {
+            'fill-color': style.fillColor,
+            'fill-opacity': style.fillOpacity
+          }
+        },
+        {
+          'id': 'line-style',
+          'type': 'line',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
+          'paint': {
+            'line-width': style.weight,
+            'line-color': style.color
+          }
+        },
+        {
+          'id': 'point-style',
+          'type': 'circle',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['Point'], true, false],
+          'paint': {
+            'circle-color': style.fillColor,
+            'circle-stroke-color': style.color,
+            'circle-opacity': style.fillOpacity,
+            'circle-stroke-width': style.weight,
+            'circle-radius': style.radius
+          }
+        }
+      ]
+    }
   }
 
   async init () {
-    this._mapboxGlMap.load(this.style)
+    this._mapboxGlMap.load(this.mbStyle)
 
     if (this.images) {
       for (const image of this.images) {
         let imageData = await Sharp(image.filePath).raw().toBuffer()
         // let imageData = fs.readFileSync(image.filePath)
 
-        console.log('adding the image to the map', image.id)
+        // console.log('adding the image to the map', image.id)
         this._mapboxGlMap.addImage(image.id, imageData, {
           height: 16,
           width: 16,
@@ -39,7 +92,7 @@ export default class VectorTileRenderer {
         })
       }
     }
-    console.log('Loading the style in the renderer')
+    // console.log('Loading the style in the renderer')
   }
 
   waitForRenderer () {

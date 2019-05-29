@@ -94,7 +94,6 @@ export default class WMSLayer extends Layer {
     }
 
     let url = this.filePath + '&request=GetMap&layers=' + this._configuration.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox
-    console.log(url)
     return request({
       method: 'GET',
       url: url,

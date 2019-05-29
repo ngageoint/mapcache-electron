@@ -61,12 +61,15 @@
             let mapLayer = layer.mapLayer
             mapLayer.addTo(this.map)
             shownMapLayers[mapLayer.id] = mapLayer
-            shownLayerConfigs[mapLayer.id] = layerConfig
+            shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
           }
 
           for (const layerId of same) {
             let layerConfig = value[layerId]
             let oldLayerConfig = shownLayerConfigs[layerId]
+
+            console.log(layerConfig.style)
+            console.log(oldLayerConfig.style)
 
             if (!_.isEqual(layerConfig, oldLayerConfig)) {
               let existingMapLayer = shownMapLayers[layerId]
@@ -79,7 +82,7 @@
               let updateMapLayer = layer.mapLayer
               updateMapLayer.addTo(this.map)
               shownMapLayers[updateMapLayer.id] = updateMapLayer
-              shownLayerConfigs[updateMapLayer.id] = layerConfig
+              shownLayerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
             }
           }
         },
@@ -114,7 +117,7 @@
         let mapLayer = layer.mapLayer
         mapLayer.addTo(this.map)
         shownMapLayers[mapLayer.id] = mapLayer
-        shownLayerConfigs[mapLayer.id] = layerConfig
+        shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
       }
 
       this.setupDrawing(this.drawBounds)

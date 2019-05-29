@@ -25,61 +25,7 @@ export default class GDALVectorLayer extends Layer {
     let extent = this.extent
     let layer = this.layer
 
-    let styleSources = {}
-    styleSources[this.name] = {
-      'type': 'vector',
-      'maxzoom': 18,
-      'tiles': [
-        '{z}-{x}-{y}'
-      ]
-    }
-
-    console.log('configuration style', this._configuration.mbStyle)
-    this.mbStyle = this._configuration.mbStyle || {
-      'version': 8,
-      'name': 'Empty',
-      'sources': styleSources,
-      'layers': [
-        {
-          'id': 'fill-style',
-          'type': 'fill',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-          'paint': {
-            'fill-color': this.style.fillColor,
-            'fill-opacity': this.style.fillOpacity
-          }
-        },
-        {
-          'id': 'line-style',
-          'type': 'line',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
-          'paint': {
-            'line-width': this.style.weight,
-            'line-color': this.style.color
-          }
-        },
-        {
-          'id': 'point-style',
-          'type': 'circle',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['Point'], true, false],
-          'paint': {
-            'circle-color': this.style.fillColor,
-            'circle-stroke-color': this.style.color,
-            'circle-opacity': this.style.fillOpacity,
-            'circle-stroke-width': this.style.weight,
-            'circle-radius': this.style.weight
-          }
-        }
-      ]
-    }
-
-    this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, layer, extent, name)
     }, this._configuration.images)
 

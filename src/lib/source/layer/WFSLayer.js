@@ -15,67 +15,12 @@ export default class WFSLayer extends Layer {
   async initialize () {
     this.features = await this.getFeaturesInLayer(this._configuration.sourceLayerName)
     this.count = this.features.length
-
     let name = this.name
     let extent = this.extent
     let layer = this._configuration.sourceLayerName
-
-    let styleSources = {}
-    styleSources[this.name] = {
-      'type': 'vector',
-      'maxzoom': 18,
-      'tiles': [
-        '{z}-{x}-{y}'
-      ]
-    }
-
-    this.mbStyle = this._configuration.mbStyle || {
-      'version': 8,
-      'name': 'Empty',
-      'sources': styleSources,
-      'layers': [
-        {
-          'id': 'fill-style',
-          'type': 'fill',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-          'paint': {
-            'fill-color': this.style.fillColor,
-            'fill-opacity': this.style.fillOpacity
-          }
-        },
-        {
-          'id': 'line-style',
-          'type': 'line',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
-          'paint': {
-            'line-width': this.style.weight,
-            'line-color': this.style.color
-          }
-        },
-        {
-          'id': 'point-style',
-          'type': 'circle',
-          'source': this.name,
-          'source-layer': this.name,
-          'filter': ['match', ['geometry-type'], ['Point'], true, false],
-          'paint': {
-            'circle-color': this.style.fillColor,
-            'circle-stroke-color': this.style.color,
-            'circle-opacity': this.style.fillOpacity,
-            'circle-stroke-width': this.style.weight,
-            'circle-radius': this.style.weight
-          }
-        }
-      ]
-    }
-    this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, layer, extent, name)
     })
-
     await this._vectorTileRenderer.init()
     await this.renderOverviewTile()
     return this
@@ -216,7 +161,7 @@ export default class WFSLayer extends Layer {
       overviewTilePath: this.overviewTilePath,
       count: this.count || 0,
       shown: this.shown || true,
-      mbStyle: this.mbStyle
+      style: this.style
     }
   }
 
@@ -234,17 +179,13 @@ export default class WFSLayer extends Layer {
   }
 
   get style () {
-    let color = this.generateColor()
-    let fillColor = this.generateColor()
-
     this._style = this._style || {
-      weight: 2,
-      radius: 2,
-      color: color,
-      opacity: 1,
-      fillColor: fillColor,
-      fillOpacity: 0.75,
-      fill: false
+      weight: 2.0,
+      radius: 2.0,
+      color: this.generateColor(),
+      opacity: 1.0,
+      fillColor: this.generateColor(),
+      fillOpacity: 1.0
     }
     return this._style
   }

@@ -139,8 +139,10 @@ const mutations = {
     Vue.delete(state[projectId].layers, layerId)
   },
   updateProjectLayer (state, {projectId, layer}) {
-    console.log('update project layer', arguments)
     Vue.set(state[projectId].layers, layer.id, layer)
+  },
+  updateProjectLayerStyle (state, {projectId, layerId, style}) {
+    Vue.set(state[projectId].layers[layerId], 'style', style)
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -235,6 +237,9 @@ const actions = {
   },
   updateProjectLayer ({ commit, state }, {projectId, layer}) {
     commit('updateProjectLayer', {projectId, layer})
+  },
+  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
+    commit('updateProjectLayerStyle', {projectId, layerId, style})
   },
   setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, layerId, aoi}) {
     commit('setGeoPackageAOI', {projectId, geopackageId, layerId, aoi})

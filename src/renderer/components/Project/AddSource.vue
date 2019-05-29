@@ -336,7 +336,6 @@
           }
         }
       },
-
       processFiles (files) {
         let file = files[0]
         let sourceToProcess = {

@@ -37,72 +37,7 @@ export default class GeoPackageLayer extends Layer {
       this.dao = this.geopackage.getFeatureDao(this.sourceLayerName)
       let gp = this.geopackage
       let tableName = this.sourceLayerName
-      let styleSources = {}
-      styleSources[this.name] = {
-        'type': 'vector',
-        'maxzoom': 18,
-        'tiles': [
-          '{z}-{x}-{y}'
-        ]
-      }
-
-      let style = {
-        'version': 8,
-        'name': 'Empty',
-        'sources': styleSources,
-        'glyphs': '/data/github/fonts/_output/{fontstack}/{range}.pbf',
-        'layers': [
-          {
-            'id': 'fill-style',
-            'type': 'fill',
-            'source': this.name,
-            'source-layer': this.name,
-            'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-            'paint': {
-              'fill-color': this.style.fillColor,
-              'fill-opacity': this.style.fillOpacity
-            }
-          },
-          {
-            'id': 'line-style',
-            'type': 'line',
-            'source': this.name,
-            'source-layer': this.name,
-            'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
-            'paint': {
-              'line-width': this.style.weight,
-              'line-color': this.style.color
-            }
-          },
-          {
-            'id': 'point-style',
-            'type': 'circle',
-            'source': this.name,
-            'source-layer': this.name,
-            'filter': ['match', ['geometry-type'], ['Point'], true, false],
-            'paint': {
-              'circle-color': this.style.fillColor,
-              'circle-stroke-color': this.style.color,
-              'circle-opacity': this.style.fillOpacity,
-              'circle-stroke-width': this.style.weight,
-              'circle-radius': this.style.weight
-            }
-          }
-          // ,
-          // {
-          //   'id': 'text-style',
-          //   'type': 'symbol',
-          //   'source': this.name,
-          //   'source-layer': this.name,
-          //   'layout': {
-          //     'text-field': ['to-string', ['get', 'label']],
-          //     'text-font': ['Open Sans Regular']
-          //   },
-          //   'paint': { }
-          // }
-        ]
-      }
-      this._vectorTileRenderer = new VectorTileRenderer(style, (x, y, z) => {
+      this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z) => {
         return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
       })
 
