@@ -167,8 +167,7 @@ export default class VectorTileRenderer {
         if (z === 0) {
           image.resize(width, height)
         }
-        const pngdata = await image.png()
-          .toBuffer()
+        const pngdata = await image.png().toBuffer()
         if (done) {
           done(null, pngdata)
         }

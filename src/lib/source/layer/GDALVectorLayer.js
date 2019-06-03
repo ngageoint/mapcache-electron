@@ -23,12 +23,10 @@ export default class GDALVectorLayer extends Layer {
 
     let name = this.name
     let extent = this.extent
-    let layer = this.layer
 
     this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z, map) => {
-      return this.getTile({x: x, y: y, z: z}, map, layer, extent, name)
+      return this.getTile({x: x, y: y, z: z}, map, extent, name)
     }, this._configuration.images)
-
     await this._vectorTileRenderer.init()
     await this.renderOverviewTile()
 
@@ -125,7 +123,7 @@ export default class GDALVectorLayer extends Layer {
   }
 
   async renderTile (coords, tileCanvas, done) {
-    this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
+    return this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
   get mapLayer () {
@@ -169,7 +167,29 @@ export default class GDALVectorLayer extends Layer {
     }
   }
 
-  getTile (coords, map, gdalLayer, extent, name) {
+  getTileFeatures (coords, extent) {
+    let {x, y, z} = coords
+    let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
+    let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
+      return []
+    }
+    let features = []
+    let featureMap = this.iterateFeaturesInBounds([
+      [tileLowerLeft[1], tileLowerLeft[0]],
+      [tileUpperRight[1], tileUpperRight[0]]
+    ], true)
+    for (let i = 0; i < featureMap.length; i++) {
+      let feature = featureMap[i]
+      if (feature) {
+        features.push(feature)
+      }
+    }
+    return features
+  }
+
+  getTile (coords, map, extent, name) {
     return new Promise((resolve, reject) => {
       let {x, y, z} = coords
 
@@ -182,31 +202,16 @@ export default class GDALVectorLayer extends Layer {
       }
 
       console.time('x ' + x + ' y ' + y + ' z ' + z)
-      let features = []
       let featureCollection = {
         type: 'FeatureCollection',
-        features: features
-      }
-
-      let featureMap = this.iterateFeaturesInBounds([
-        [tileLowerLeft[1], tileLowerLeft[0]],
-        [tileUpperRight[1], tileUpperRight[0]]
-      ], true)
-
-      console.log('featureMap.length', featureMap.length)
-      for (let i = 0; i < featureMap.length; i++) {
-        let feature = featureMap[i]
-        if (feature) {
-          // console.log('feature', feature)
-          features.push(feature)
-        }
+        features: this.getTileFeatures(coords, extent)
       }
 
       let tileBuffer = 8
       let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
-      var tile = tileIndex.getTile(z, x, y)
+      const tile = tileIndex.getTile(z, x, y)
 
-      var gjvt = {}
+      let gjvt = {}
       if (tile) {
         gjvt[name] = tile
       } else {

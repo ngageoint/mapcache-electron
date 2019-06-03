@@ -53,7 +53,6 @@ export default class XYZTileUtilities {
   }
 
   static calculateYTileRange (bbox, z) {
-    console.log('bbox', bbox)
     var south = XYZTileUtilities.lat2tile(bbox[0][0], z)
     var north = XYZTileUtilities.lat2tile(bbox[1][0], z)
     return {
@@ -74,15 +73,12 @@ export default class XYZTileUtilities {
   }
 
   static async iterateAllTilesInExtent (extent, minZoom, maxZoom, tileCallback) {
-    console.log('iterate all tiles', arguments)
     let stop = false
     minZoom = Number(minZoom)
     maxZoom = Number(maxZoom)
     for (let z = minZoom; z <= maxZoom && !stop; z++) {
       var yRange = XYZTileUtilities.calculateYTileRange(extent, z)
       var xRange = XYZTileUtilities.calculateXTileRange(extent, z)
-      console.log('yRange', yRange)
-      console.log('xRange', xRange)
       for (let x = xRange.min; x <= xRange.max && !stop; x++) {
         for (let y = yRange.min; y <= yRange.max && !stop; y++) {
           stop = await tileCallback({z, x, y})

@@ -46,9 +46,10 @@ const mutations = {
   setFeatureLayersShareBounds (state, {projectId, geopackageId, sharesBounds}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'featureLayersShareBounds', sharesBounds)
   },
-  updateGeopackageLayers (state, {projectId, geopackageId, imageryLayers, featureLayers}) {
+  updateGeopackageLayers (state, {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayers', imageryLayers)
     Vue.set(state[projectId].geopackages[geopackageId], 'featureLayers', featureLayers)
+    Vue.set(state[projectId].geopackages[geopackageId], 'featureToImageryLayers', featureToImageryLayers)
   },
   updateGeoPackageLayerIncluded (state, {projectId, geopackageId, group, layerId, included}) {
     Vue.set(state[projectId].geopackages[geopackageId][group][layerId], 'included', included)
@@ -71,6 +72,22 @@ const mutations = {
   },
   setGeoPackageLayerOptions (state, {projectId, geopackageId, layerId, options}) {
     Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
+  },
+  setFeatureImageryConversionAOI (state, {projectId, geopackageId, aoi}) {
+    console.log('aoi', aoi)
+    while (aoi[0][1] < -180) {
+      aoi[0][1] = aoi[0][1] + 360
+    }
+    while (aoi[0][1] > 180) {
+      aoi[0][1] = aoi[0][1] - 360
+    }
+    while (aoi[1][1] < -180) {
+      aoi[1][1] = aoi[1][1] + 360
+    }
+    while (aoi[1][1] > 180) {
+      aoi[1][1] = aoi[1][1] - 360
+    }
+    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
   },
   setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
     console.log('aoi', aoi)
@@ -98,36 +115,49 @@ const mutations = {
       Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
     }
   },
-  setMaxZoom (state, {projectId, geopackageId, layerId, maxZoom}) {
+  setFeatureImageryConversionMaxZoom (state, {projectId, geopackageId, maxZoom}) {
+    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'maxZoom', maxZoom)
+  },
+  setFeatureImageryConversionMinZoom (state, {projectId, geopackageId, minZoom}) {
+    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'minZoom', minZoom)
+  },
+  setImageryMaxZoom (state, {projectId, geopackageId, layerId, maxZoom}) {
     if (layerId) {
       if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
         Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'maxZoom', maxZoom)
-      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'maxZoom', maxZoom)
       }
     } else {
-      Vue.set(state[projectId].geopackages[geopackageId], 'maxZoom', maxZoom)
+      Vue.set(state[projectId].geopackages[geopackageId], 'imageryMaxZoom', maxZoom)
     }
   },
-  setMinZoom (state, {projectId, geopackageId, layerId, minZoom}) {
+  setImageryMinZoom (state, {projectId, geopackageId, layerId, minZoom}) {
     if (layerId) {
       if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
         Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'minZoom', minZoom)
-      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'minZoom', minZoom)
       }
     } else {
-      Vue.set(state[projectId].geopackages[geopackageId], 'minZoom', minZoom)
+      Vue.set(state[projectId].geopackages[geopackageId], 'imageryMinZoom', minZoom)
     }
   },
-  setLayerName (state, {projectId, geopackageId, layerId, layerName}) {
+  setFeatureImageryConversionLayerName (state, {projectId, geopackageId, layerName}) {
+    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'layerName', layerName)
+  },
+  setFeatureLayerName (state, {projectId, geopackageId, layerId, layerName}) {
     if (layerId) {
-      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'layerName', layerName)
-      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+      if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
         Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'layerName', layerName)
       }
     }
+  },
+  setImageryLayerName (state, {projectId, geopackageId, layerId, layerName}) {
+    if (layerId) {
+      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'layerName', layerName)
+      }
+    }
+  },
+  setFeatureImageryConversionLayerOrder (state, {projectId, geopackageId, layerOrder}) {
+    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'layerOrder', layerOrder)
   },
   setGeoPackageLocation (state, { projectId, geopackageId, fileName }) {
     Vue.set(state[projectId].geopackages[geopackageId], 'fileName', fileName)
@@ -181,6 +211,7 @@ const actions = {
 
     let imageryLayers = {}
     let featureLayers = {}
+    let featureToImageryLayers = {}
     for (const layerId in project.layers) {
       let layer = project.layers[layerId]
       if (layer.pane === 'tile' && !imageryLayers[layerId]) {
@@ -198,6 +229,12 @@ const actions = {
           name: layer.name,
           style: layer.style
         }
+        featureToImageryLayers[layerId] = {
+          id: layer.id,
+          included: layer.shown,
+          name: layer.name,
+          style: layer.style
+        }
       }
     }
 
@@ -210,6 +247,14 @@ const actions = {
       maxZoom: undefined,
       imageryLayers: imageryLayers,
       featureLayers: featureLayers,
+      featureToImageryLayers: featureToImageryLayers,
+      featureImageryConversion: {
+        name: 'Layer',
+        aoi: undefined,
+        minZoom: undefined,
+        maxZoom: undefined,
+        layerOrder: undefined
+      },
       step: 1
     }
     commit('addGeoPackage', {project, geopackage})
@@ -223,8 +268,8 @@ const actions = {
   setFeatureLayersShareBounds ({ commit, state }, {projectId, geopackageId, sharesBounds}) {
     commit('setFeatureLayersShareBounds', {projectId, geopackageId, sharesBounds})
   },
-  updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers}) {
-    commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers})
+  updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers}) {
+    commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers})
   },
   updateGeoPackageLayerIncluded ({ commit, state }, {projectId, geopackageId, group, layerId, included}) {
     commit('updateGeoPackageLayerIncluded', {projectId, geopackageId, group, layerId, included})
@@ -241,6 +286,9 @@ const actions = {
   updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
     commit('updateProjectLayerStyle', {projectId, layerId, style})
   },
+  setFeatureImageryConversionAOI ({ commit, state }, {projectId, geopackageId, aoi}) {
+    commit('setFeatureImageryConversionAOI', {projectId, geopackageId, aoi})
+  },
   setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, layerId, aoi}) {
     commit('setGeoPackageAOI', {projectId, geopackageId, layerId, aoi})
   },
@@ -253,14 +301,29 @@ const actions = {
   setGeoPackageLayerOptions ({ commit, state }, {projectId, geopackageId, layerId, options}) {
     commit('setGeoPackageLayerOptions', {projectId, geopackageId, layerId, options})
   },
-  setMinZoom ({ commit, state }, {projectId, geopackageId, layerId, minZoom}) {
-    commit('setMinZoom', {projectId, geopackageId, layerId, minZoom})
+  setFeatureImageryConversionMinZoom ({ commit, state }, {projectId, geopackageId, minZoom}) {
+    commit('setFeatureImageryConversionMinZoom', {projectId, geopackageId, minZoom})
   },
-  setMaxZoom ({ commit, state }, {projectId, geopackageId, layerId, maxZoom}) {
-    commit('setMaxZoom', {projectId, geopackageId, layerId, maxZoom})
+  setFeatureImageryConversionMaxZoom ({ commit, state }, {projectId, geopackageId, maxZoom}) {
+    commit('setFeatureImageryConversionMaxZoom', {projectId, geopackageId, maxZoom})
   },
-  setLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
-    commit('setLayerName', {projectId, geopackageId, layerId, layerName})
+  setImageryMinZoom ({ commit, state }, {projectId, geopackageId, layerId, minZoom}) {
+    commit('setImageryMinZoom', {projectId, geopackageId, layerId, minZoom})
+  },
+  setImageryMaxZoom ({ commit, state }, {projectId, geopackageId, layerId, maxZoom}) {
+    commit('setImageryMaxZoom', {projectId, geopackageId, layerId, maxZoom})
+  },
+  setFeatureImageryConversionLayerName ({ commit, state }, {projectId, geopackageId, layerName}) {
+    commit('setFeatureImageryConversionLayerName', {projectId, geopackageId, layerName})
+  },
+  setFeatureLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
+    commit('setFeatureLayerName', {projectId, geopackageId, layerId, layerName})
+  },
+  setImageryLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
+    commit('setImageryLayerName', {projectId, geopackageId, layerId, layerName})
+  },
+  setFeatureImageryConversionLayerOrder ({ commit, state }, {projectId, geopackageId, layerOrder}) {
+    commit('setFeatureImageryConversionLayerOrder', {projectId, geopackageId, layerOrder})
   },
   setGeoPackageLocation ({ commit, state }, {projectId, geopackageId, fileName}) {
     commit('setGeoPackageLocation', {projectId, geopackageId, fileName})

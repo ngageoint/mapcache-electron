@@ -6,7 +6,7 @@
         :next="next"
         :top="true"
         :disableNext="!atLeastOneLayer"
-        :steps="4">
+        :steps="5">
     </step-buttons>
 
     <div class="instruction-title">
@@ -44,6 +44,19 @@
               :geopackage="geopackage"/>
         </div>
       </div>
+      <div class="feature-layers">
+        <div class="layer-group-header">
+          Feature Layers for Conversion to Imagery Layer
+        </div>
+        <div v-for="featureToImageryLayer in featureToImageryLayers">
+          <layer-header
+            class="layer-header"
+            :projectId="project.id"
+            group="featureToImageryLayers"
+            :layer="featureToImageryLayer"
+            :geopackage="geopackage"/>
+        </div>
+      </div>
     </div>
 
     <step-buttons
@@ -51,7 +64,7 @@
         :next="next"
         :bottom="true"
         :disableNext="!atLeastOneLayer"
-        :steps="4">
+        :steps="5">
     </step-buttons>
 
   </div>
@@ -78,6 +91,8 @@
           return imageryLayer.included
         }) || Object.values(this.featureLayers).some((featureLayer) => {
           return featureLayer.included
+        }) || Object.values(this.featureToImageryLayers).some((layer) => {
+          return layer.included
         })
       }
     },
@@ -91,11 +106,20 @@
           projectId: this.project.id,
           imageryLayers: this.imageryLayers,
           featureLayers: this.featureLayers,
+          featureToImageryLayers: this.featureToImageryLayers,
           geopackageId: this.geopackage.id
         })
         let nextStep = this.geopackage.step + 1
-        if (!this.geopackage.imageryLayers || !Object.keys(this.geopackage.imageryLayers).length) {
-          nextStep = this.geopackage.step + 2
+        if (Object.values(this.imageryLayers).filter((layer) => {
+          return layer.included
+        }).length === 0) {
+          if (Object.values(this.featureLayers).filter((layer) => {
+            return layer.included
+          }).length === 0) {
+            nextStep += 2
+          } else {
+            nextStep += 1
+          }
         }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
@@ -107,6 +131,7 @@
     created: function () {
       this.imageryLayers = this.geopackage.imageryLayers || {}
       this.featureLayers = this.geopackage.featureLayers || {}
+      this.featureToImageryLayers = this.geopackage.featureToImageryLayers || {}
     }
   }
 </script>
@@ -119,25 +144,10 @@
   }
   .layer-header {
     border: 1px solid rgba(54, 62, 70, .5);
-    border-width: 1px;
     border-radius: 5px;
     height: 3em;
     margin-top: 1em;
     margin-bottom: 1em;
-  }
-  .layer-coordinates {
-    padding: 5px 10px;
-  }
-  .coordinate-container {
-    padding-top: 5px;
-  }
-  .coordinate-divider {
-    margin-left: 15px;
-    margin-right: 15px;
-  }
-  .layer__horizontal__divider {
-    height: 1px;
-    background: #ECECEC;
   }
 
   .instruction {
@@ -153,46 +163,5 @@
   .instruction-detail {
     font-size: .9em;
     text-align: left;
-  }
-
-  .instruction-buttons {
-    width: 100%;
-    display: flex;
-    flex-flow: row;
-    justify-content: center;
-  }
-
-  .instruction-buttons.top {
-    padding-bottom: 1em;
-  }
-
-  .instruction-buttons.bottom {
-    padding-top: 1em;
-  }
-
-  .step-indicators {
-    font-size: .5em;
-    line-height: 28px;
-    flex-grow: 1;
-  }
-
-  .step-button {
-    color: rgba(68, 152, 192, .95);
-    cursor: pointer;
-    font-size: 1.2em;
-    font-weight: bold;
-    width: 25%;
-  }
-
-  .step-button.back {
-    text-align: left;
-  }
-
-  .step-button.next {
-    text-align: right;
-  }
-
-  .current-step {
-    color: rgba(68, 152, 192, .95);
   }
 </style>

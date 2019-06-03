@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <edit-geo-package-name
         :geopackage="geopackageConfiguration"
         :project="project"/>
@@ -16,13 +15,17 @@
         v-if="geopackageConfiguration.step === 3"
         :project="project"
         :geopackage="geopackageConfiguration"/>
-    <creation-summary
+    <setup-features-to-imagery-layer
         v-if="geopackageConfiguration.step === 4"
         :project="project"
         :geopackage="geopackageConfiguration"/>
+    <creation-summary
+        v-if="geopackageConfiguration.step === 5"
+        :project="project"
+        :geopackage="geopackageConfiguration"/>
 
-    <div class="gp-button" @click.stop="cancel()">
-      <span>Cancel</span>
+    <div class="gp-button" @click.stop="cancelOrFinish">
+      <span>{{cancelOrFinishText}}</span>
     </div>
   </div>
 </template>
@@ -32,6 +35,7 @@
   import ChooseLayers from '../GeoPackage/ChooseLayers'
   import SetupImageryLayers from '../GeoPackage/SetupImageryLayers'
   import SetupFeatureLayers from '../GeoPackage/SetupFeatureLayers'
+  import SetupFeaturesToImageryLayer from '../GeoPackage/SetupFeaturesToImageryLayer'
   import CreationSummary from '../GeoPackage/CreationSummary'
   import EditGeoPackageName from '../GeoPackage/EditGeoPackageName'
 
@@ -43,6 +47,7 @@
       ChooseLayers,
       SetupImageryLayers,
       SetupFeatureLayers,
+      SetupFeaturesToImageryLayer,
       CreationSummary,
       EditGeoPackageName
     },
@@ -51,13 +56,21 @@
         geopackageConfiguration (state) {
           return state.Projects[this.project.id].geopackages[this.project.currentGeoPackage]
         }
-      })
+      }),
+      cancelOrFinishText () {
+        let text = 'Cancel'
+        let geopackage = this.project.geopackages[this.project.currentGeoPackage]
+        if (geopackage && geopackage.status && geopackage.status.creation === 'Completed') {
+          text = 'Finish'
+        }
+        return text
+      }
     },
     methods: {
       ...mapActions({
         setCurrentGeoPackage: 'Projects/setCurrentGeoPackage'
       }),
-      cancel () {
+      cancelOrFinish () {
         this.setCurrentGeoPackage({
           projectId: this.project.id,
           geopackageId: undefined

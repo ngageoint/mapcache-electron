@@ -4,6 +4,7 @@ import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 import GeoPackage from '@ngageoint/geopackage'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
+import proj4 from 'proj4'
 
 export default class GeoPackageLayer extends Layer {
   extent
@@ -40,12 +41,23 @@ export default class GeoPackageLayer extends Layer {
       this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z) => {
         return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
       })
-
       await this._vectorTileRenderer.init()
       await this.renderOverviewTile(coords)
     }
     this.count = this.dao.count()
     return this
+  }
+
+  getTileFeatures (coords, extent) {
+    let {x, y, z} = coords
+    let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
+    let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
+      return []
+    }
+
+    return GeoPackage.getGeoJSONFeaturesInTile(this.geopackage, this.sourceLayerName, x, y, z, true)
   }
 
   async renderTile (coords, tileCanvas, done) {

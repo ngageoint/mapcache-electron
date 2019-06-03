@@ -6,7 +6,7 @@
         :next="next"
         :top="true"
         :disableNext="!allLayersValid"
-        :steps="4">
+        :steps="5">
     </step-buttons>
 
     <div class="instruction-title">
@@ -41,8 +41,8 @@
 
       <div v-if="geopackage.featureLayersShareBounds === true">
         <feature-options
-            :projectId="project.id"
-            :geopackageId="geopackage.id"
+            :project="project"
+            :geopackage="geopackage"
             :options="geopackage">
         </feature-options>
       </div>
@@ -59,8 +59,8 @@
               {{featureLayer.name}}
             </div>
             <feature-options
-                :projectId="project.id"
-                :geopackageId="geopackage.id"
+                :project="project"
+                :geopackage="geopackage"
                 :options="featureLayer"
                 :layer="project.layers[featureLayer.id]">
             </feature-options>
@@ -75,7 +75,7 @@
         :next="next"
         :bottom="true"
         :disableNext="!allLayersValid"
-        :steps="4">
+        :steps="5">
     </step-buttons>
   </div>
 </template>
@@ -104,8 +104,10 @@
           if (!this.geopackage.featureLayers || !Object.values(this.geopackage.featureLayers).length) {
             return false
           }
-          return Object.values(this.geopackage.featureLayers).some((featureLayer) => {
-            return featureLayer.included && !!featureLayer.aoi
+          return Object.values(this.geopackage.featureLayers).filter((featureLayer) => {
+            return featureLayer.included
+          }).every((featureLayer) => {
+            return !!featureLayer.aoi
           })
         }
       }
@@ -122,18 +124,27 @@
           projectId: this.project.id,
           imageryLayers: this.geopackage.imageryLayers,
           featureLayers: this.geopackage.featureLayers,
+          featureToImageryLayers: this.geopackage.featureToImageryLayers,
           geopackageId: this.geopackage.id
         })
+        let nextStep = this.geopackage.step + 1
+        if (Object.values(this.geopackage.featureToImageryLayers).filter((layer) => {
+          return layer.included
+        }).length === 0) {
+          nextStep += 1
+        }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
-          step: this.geopackage.step + 1
+          step: nextStep
         })
       },
       back () {
         let previousStep = this.geopackage.step - 1
-        if (!this.geopackage.imageryLayers || !Object.keys(this.geopackage.imageryLayers).length) {
-          previousStep = this.geopackage.step - 2
+        if (Object.values(this.geopackage.imageryLayers).filter((layer) => {
+          return layer.included
+        }).length === 0) {
+          previousStep -= 1
         }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
@@ -165,31 +176,10 @@
     font-weight: bold;
     text-align: left;
   }
-  .layer-header {
-    border: 1px solid rgba(54, 62, 70, .5);
-    border-width: 1px;
-    border-radius: 5px;
-    height: 3em;
-    margin-top: 1em;
-    margin-bottom: 1em;
-  }
+
   .layer-name {
     font-size: 1.3em;
     font-weight: bold;
-  }
-  .layer-coordinates {
-    padding: 5px 10px;
-  }
-  .coordinate-container {
-    padding-top: 5px;
-  }
-  .coordinate-divider {
-    margin-left: 15px;
-    margin-right: 15px;
-  }
-  .layer__horizontal__divider {
-    height: 1px;
-    background: #ECECEC;
   }
 
   .instruction {
@@ -206,27 +196,6 @@
   .instruction-detail {
     font-size: .9em;
     text-align: left;
-  }
-
-  .instruction-buttons {
-    width: 100%;
-    display: flex;
-    flex-flow: row;
-    justify-content: center;
-  }
-
-  .instruction-buttons.top {
-    padding-bottom: 1em;
-  }
-
-  .instruction-buttons.bottom {
-    padding-top: 1em;
-  }
-
-  .step-indicators {
-    font-size: .5em;
-    line-height: 28px;
-    flex-grow: 1;
   }
 
   .step-button {
@@ -252,10 +221,6 @@
 
   .step-button.next {
     text-align: right;
-  }
-
-  .current-step {
-    color: rgba(68, 152, 192, .95);
   }
 
   .consolidated-config-chooser {

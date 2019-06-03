@@ -6,7 +6,7 @@
         :next="next"
         :top="true"
         :disableNext="!allLayersValid"
-        :steps="4">
+        :steps="5">
     </step-buttons>
 
     <div class="instruction-title">
@@ -42,8 +42,8 @@
 
       <div v-if="geopackage.imageryLayersShareBounds === true">
         <imagery-options
-            :projectId="project.id"
-            :geopackageId="geopackage.id"
+            :project="project"
+            :geopackage="geopackage"
             :options="geopackage">
         </imagery-options>
       </div>
@@ -60,8 +60,8 @@
               {{imageryLayer.name}}
             </div>
             <imagery-options
-                :projectId="project.id"
-                :geopackageId="geopackage.id"
+                :project="project"
+                :geopackage="geopackage"
                 :options="imageryLayer"
                 :layer="project.layers[imageryLayer.id]">
               </imagery-options>
@@ -76,7 +76,7 @@
         :next="next"
         :bottom="true"
         :disableNext="!allLayersValid"
-        :steps="4">
+        :steps="5">
     </step-buttons>
   </div>
 </template>
@@ -121,11 +121,20 @@
           projectId: this.project.id,
           imageryLayers: this.geopackage.imageryLayers,
           featureLayers: this.geopackage.featureLayers,
+          featureToImageryLayers: this.geopackage.featureToImageryLayers,
           geopackageId: this.geopackage.id
         })
         let nextStep = this.geopackage.step + 1
-        if (!this.geopackage.featureLayers || !Object.keys(this.geopackage.featureLayers).length) {
-          nextStep = this.geopackage.step + 2
+        if (Object.values(this.geopackage.featureLayers).filter((layer) => {
+          return layer.included
+        }).length === 0) {
+          if (Object.values(this.geopackage.featureToImageryLayers).filter((layer) => {
+            return layer.included
+          }).length === 0) {
+            nextStep += 2
+          } else {
+            nextStep += 1
+          }
         }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
@@ -164,31 +173,10 @@
     font-weight: bold;
     text-align: left;
   }
-  .layer-header {
-    border: 1px solid rgba(54, 62, 70, .5);
-    border-width: 1px;
-    border-radius: 5px;
-    height: 3em;
-    margin-top: 1em;
-    margin-bottom: 1em;
-  }
+
   .layer-name {
     font-size: 1.3em;
     font-weight: bold;
-  }
-  .layer-coordinates {
-    padding: 5px 10px;
-  }
-  .coordinate-container {
-    padding-top: 5px;
-  }
-  .coordinate-divider {
-    margin-left: 15px;
-    margin-right: 15px;
-  }
-  .layer__horizontal__divider {
-    height: 1px;
-    background: #ECECEC;
   }
 
   .instruction {
@@ -206,28 +194,6 @@
     font-size: .9em;
     text-align: left;
   }
-
-  .instruction-buttons {
-    width: 100%;
-    display: flex;
-    flex-flow: row;
-    justify-content: center;
-  }
-
-  .instruction-buttons.top {
-    padding-bottom: 1em;
-  }
-
-  .instruction-buttons.bottom {
-    padding-top: 1em;
-  }
-
-  .step-indicators {
-    font-size: .5em;
-    line-height: 28px;
-    flex-grow: 1;
-  }
-
   .step-button {
     color: rgba(68, 152, 192, .95);
     cursor: pointer;
@@ -251,10 +217,6 @@
 
   .step-button.next {
     text-align: right;
-  }
-
-  .current-step {
-    color: rgba(68, 152, 192, .95);
   }
 
   .consolidated-config-chooser {

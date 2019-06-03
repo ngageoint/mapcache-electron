@@ -34,7 +34,6 @@
         Set Bounds
       </a>
     </div>
-
     <div class="instruction">
 
       <div class="instruction-title">
@@ -73,48 +72,71 @@
 </template>
 
 <script>
-  import FloatLabels from 'float-labels.js'
   import BoundsUi from '../Project/BoundsUi'
   import { mapActions, mapState } from 'vuex'
+  import draggable from 'vuedraggable'
+  import XYZTileUtilities from '../../../lib/XYZTileUtilities'
 
   let editNameMode = false
 
   export default {
     props: {
       options: Object,
-      projectId: String,
-      geopackageId: String,
+      project: Object,
+      geopackage: Object,
       layer: Object
     },
     data () {
       return {
-        editNameMode
+        editNameMode,
+        enabled: true,
+        dragging: false
       }
     },
     components: {
-      BoundsUi
+      BoundsUi,
+      draggable
     },
     computed: {
       ...mapState({
         uiState (state) {
-          return state.UIState[this.projectId]
+          return state.UIState[this.project.id]
         },
         drawBoundsState (state) {
-          return state.UIState[this.projectId].drawBounds
+          return state.UIState[this.project.id].drawBounds
         },
         boundsBeingDrawn (state) {
-          return state.UIState[this.projectId].boundsBeingDrawn
+          return state.UIState[this.project.id].boundsBeingDrawn
         }
       }),
+      layerFeatureRadioButtonID () {
+        if (this.layerId) {
+          return this.layerId + '_feature'
+        } else {
+          return 'feature'
+        }
+      },
+      layerImageryRadioButtonID () {
+        if (this.layerId) {
+          return this.layerId + '_imagery'
+        } else {
+          return 'imagery'
+        }
+      },
+      tileCount () {
+        if (this.minZoomValue && this.maxZoomValue && this.aoi) {
+          return XYZTileUtilities.tileCountInExtent(this.aoi, Number(this.minZoomValue), Number(this.maxZoomValue))
+        }
+      },
       currentlyDrawingBounds () {
         let layer = this.layerId || 'featureAoi'
-        return this.drawBoundsState && this.drawBoundsState[this.geopackageId] && this.drawBoundsState[this.geopackageId][layer]
+        return this.drawBoundsState && this.drawBoundsState[this.geopackage.id] && this.drawBoundsState[this.geopackage.id][layer]
       },
       layerId () {
         return this.layer ? this.layer.id : undefined
       },
       layerNameValue () {
-        return this.options.layerName || (this.layer ? this.layer.name : 'Layer')
+        return this.options.layerName || this.geopackage.multiFeatureLayerName || (this.layer ? this.layer.name : 'Layer')
       },
       aoi: {
         get () {
@@ -123,12 +145,9 @@
         set (value) {
           if (value) {
             let layerId = this.layerId || 'featureAoi'
-            this.setGeoPackageAOI({projectId: this.projectId, geopackageId: this.geopackageId, layerId: layerId, aoi: value})
+            this.setGeoPackageAOI({projectId: this.project.id, geopackageId: this.geopackage.id, layerId: layerId, aoi: value})
           }
         }
-      },
-      layerBounds () {
-        return this.options.aoi
       }
     },
     methods: {
@@ -136,8 +155,12 @@
         activateDrawForGeoPackage: 'UIState/activateDrawForGeoPackage',
         deactivateDrawForGeoPackage: 'UIState/deactivateDrawForGeoPackage',
         setGeoPackageAOI: 'Projects/setGeoPackageAOI',
-        setLayerName: 'Projects/setLayerName'
+        setFeatureLayerName: 'Projects/setFeatureLayerName'
       }),
+      minZoomValid () {
+        console.log(this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue)
+        return this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue
+      },
       editLayerGeoPackageName () {
         this.editNameMode = true
         setTimeout(() => {
@@ -149,7 +172,7 @@
         console.log('this.layerId', this.layerId)
         let geopackageNameEdit = event.target.closest('.edit-name-container').querySelector('.project-name-edit')
         console.log('name value', geopackageNameEdit.value)
-        this.setLayerName({projectId: this.projectId, geopackageId: this.geopackageId, layerId: this.layerId, layerName: geopackageNameEdit.value})
+        this.setFeatureLayerName({projectId: this.project.id, geopackageId: this.geopackage.id, layerId: this.layerId, layerName: geopackageNameEdit.value})
       },
       cancelEditName () {
         this.editNameMode = false
@@ -157,26 +180,20 @@
       setBounds () {
         let layerId = this.layerId || 'featureAoi'
         this.deactivateDrawForGeoPackage({
-          projectId: this.projectId,
-          geopackageId: this.geopackageId,
+          projectId: this.project.id,
+          geopackageId: this.geopackage.id,
           layerId: layerId
         })
-        this.aoi = this.boundsBeingDrawn[this.geopackageId][layerId]
+        this.aoi = this.boundsBeingDrawn[this.geopackage.id][layerId]
       },
       drawBounds () {
         let layerId = this.layerId || 'featureAoi'
         this.activateDrawForGeoPackage({
-          projectId: this.projectId,
-          geopackageId: this.geopackageId,
+          projectId: this.project.id,
+          geopackageId: this.geopackage.id,
           layerId: layerId
         })
       }
-    },
-    mounted: function () {
-      let fl = new FloatLabels('.zoom-form', {
-        style: 1
-      })
-      console.log('fl', fl)
     }
   }
 </script>
@@ -197,10 +214,6 @@
     cursor: pointer;
     font-size: 1.2em;
     font-weight: bold;
-  }
-
-  .zoom-form {
-    padding-top: 1em;
   }
 
   .invalid-label .fl-label {
@@ -230,8 +243,8 @@
     margin-top: 1em;
   }
 
-  .save-name-button {
-    margin-right: 5px;
+  input[type=radio], p {
+    display: inline;
   }
 
   .project-name {

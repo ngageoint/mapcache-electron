@@ -2,14 +2,14 @@
 
   <div class="instruction">
     <div>
-      {{includedImageryLayers.length}} Imagery Layers, and {{includedFeatureLayers.length}} Feature Layers will be added to the GeoPackage
+      {{layerBreakdownMessage}}
     </div>
 
-    <div v-if="geopackage.imageryLayersShareBounds">
+    <div v-if="geopackage.imageryLayersShareBounds && includedImageryLayers.length > 0">
       All imagery layers will share the same bounds and will be created for zoom level {{geopackage.minZoom}} to {{geopackage.maxZoom}}
     </div>
 
-    <div v-if="!geopackage.imageryLayersShareBounds">
+    <div v-if="!geopackage.imageryLayersShareBounds && includedImageryLayers.length > 0">
       Each imagery layer has specific bounds and zoom levels.
       <div v-for="imageryLayer in includedImageryLayers" class="imagery-layer-summary">
         <span class="layer-name">{{imageryLayer.name}}</span>
@@ -17,11 +17,11 @@
       </div>
     </div>
 
-    <div v-if="geopackage.featureLayersShareBounds">
+    <div v-if="geopackage.featureLayersShareBounds && includedFeatureLayers.length > 0">
       All feature layers will share the same bounds
     </div>
 
-    <div v-if="!geopackage.featureLayersShareBounds">
+    <div v-if="!geopackage.featureLayersShareBounds && includedFeatureLayers.length > 0">
       Each feature layer has specific bounds.
       <div v-for="featureLayer in includedFeatureLayers" class="feature-layer-summary">
         <span class="layer-name">{{featureLayer.name}}</span>
@@ -60,8 +60,8 @@
         <hr/>
       </div>
 
-      <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.imageryLayers[layerId]">
-        <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId].name}}</span>
+      <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.imageryLayers[layerId] || layerId === geopackage.featureImageryConversion.name">
+        <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId] ? geopackage.imageryLayers[layerId].name : layerId}}</span>
         <div>
           <span class="layer-name">Total Tiles:</span>
           <span class="layer-info">{{layerStatus.totalTileCount}}</span>
@@ -107,6 +107,7 @@
         </div>
         <hr/>
       </div>
+
 
     </div>
   </div>
@@ -167,6 +168,24 @@
           }
         }
         return imageryLayers
+      },
+      layerBreakdownMessage () {
+        const numImageryLayers = this.includedImageryLayers.length
+        const numFeatureLayers = this.includedFeatureLayers.length
+        let message = ''
+        if (numImageryLayers > 0) {
+          message = message + numImageryLayers + ' Imagery Layers '
+        }
+        if (numFeatureLayers > 0) {
+          if (message.length > 0) {
+            message = message + ' and '
+          }
+          message = message + numFeatureLayers + ' Feature Layers '
+        }
+        if (message.length > 0) {
+          message = message + ' will be added to the GeoPackage.'
+        }
+        return message
       }
     },
     methods: {
@@ -187,23 +206,24 @@
         gp.go()
       },
       next () {
-        // this.updateGeopackageLayers({
-        //   projectId: this.project.id,
-        //   imageryLayers: this.imageryLayers,
-        //   featureLayers: this.featureLayers,
-        //   geopackageId: this.geopackage.id
-        // })
-        // this.setGeoPackageStepNumber({
-        //   projectId: this.project.id,
-        //   geopackageId: this.geopackage.id,
-        //   step: 3
-        // })
       },
       back () {
+        let previousStep = this.geopackage.step - 1
+        if (Object.values(this.geopackage.featureToImageryLayers).filter((layer) => {
+          return layer.included
+        }).length === 0) {
+          if (Object.values(this.geopackage.featureLayers).filter((layer) => {
+            return layer.included
+          }).length === 0) {
+            previousStep -= 2
+          } else {
+            previousStep -= 1
+          }
+        }
         this.setGeoPackageStepNumber({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
-          step: this.geopackage.step - 1
+          step: previousStep
         })
       }
     }
