@@ -51,7 +51,7 @@
       showDeleteGeoPackageConfirm () {
         this.showDeleteModal = true
       },
-      cancelOrFinish () {
+      cancel () {
         this.showDeleteModal = false
       },
       confirm () {

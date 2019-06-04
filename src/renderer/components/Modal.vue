@@ -36,7 +36,7 @@
       footer: String,
       showModal: Boolean,
       ok: Function,
-      cancelOrFinish: Function
+      cancel: Function
     }
   }
 </script>

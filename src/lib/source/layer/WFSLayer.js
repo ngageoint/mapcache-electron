@@ -107,13 +107,21 @@ export default class WFSLayer extends Layer {
 
   getFeaturesInLayer (layer) {
     return new Promise((resolve) => {
-      let url = this.filePath + '&request=GetFeature&typeNames=' + layer + '&outputFormat=application/json&srsName=crs:84'
-      request({
+      let options = {
         method: 'GET',
-        url: url,
+        url: this.filePath + '&request=GetFeature&typeNames=' + layer + '&outputFormat=application/json&srsName=crs:84',
         encoding: null,
         gzip: true
-      }, (error, response, body) => {
+      }
+      if (this.credentials) {
+        if (this.credentials.type === 'basic') {
+          if (!options.headers) {
+            options.headers = {}
+          }
+          options.headers['Authorization'] = this.credentials.authorization
+        }
+      }
+      request(options, (error, response, body) => {
         if (!error) {
           let featureCollection = JSON.parse(body)
           if (featureCollection && featureCollection.features) {
@@ -160,7 +168,8 @@ export default class WFSLayer extends Layer {
       overviewTilePath: this.overviewTilePath,
       count: this.count || 0,
       shown: this.shown || true,
-      style: this.style
+      style: this.style,
+      credentials: this.credentials
     }
   }
 

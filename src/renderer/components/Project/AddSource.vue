@@ -69,9 +69,29 @@
             <input
                 type="url"
                 id="link-input"
-                class="link-input"
+                class="text-input"
                 v-model="linkToValidate">
             </input>
+            <label for="auth-select">Authorization</label>
+            <select id="auth-select" name="authSelect" v-model="authSelection">
+              <option disabled>Authorization</option>
+              <option value="none">No Authorization</option>
+              <option value="basic">Basic</option>
+            </select>
+            <div id="basic-auth-div" class="provide-auth" v-if="authSelection === 'basic'">
+              <label id="username-input-label" for="username-input">Username</label>
+              <input
+                type="text"
+                id="username-input"
+                class="text-input"
+                v-model="username">
+              <label id="password-input-label" for="password-input">Password</label>
+              <input
+                type="password"
+                id="password-input"
+                class="text-input"
+                v-model="password">
+            </div>
             <div class="provide-link-buttons">
               <a @click.stop="validateLink">Add URL</a>
               |
@@ -122,6 +142,9 @@
   let layerSelection = []
   let error = null
   let showErrorModal = false
+  let authSelection = ''
+  let username = ''
+  let password = ''
 
   export default {
     props: {
@@ -136,7 +159,10 @@
         layerChoices,
         layerSelection,
         showErrorModal,
-        error
+        error,
+        authSelection,
+        username,
+        password
       }
     },
     components: {
@@ -178,62 +204,88 @@
             this.processUrl(this.linkToValidate)
           } else if (type === 'WMS') {
             let layers = []
-            const getCapabilitiesUri = this.linkToValidate + '&request=GetCapabilities'
-            console.log(getCapabilitiesUri)
-            let xml = await request({
+            let options = {
               method: 'GET',
-              uri: getCapabilitiesUri
-            })
-            let json = await this.xml2json(xml)
-            if (this.linkToValidate.indexOf('1.1.1') > 0) {
-              for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
-                const bbox = layer['LatLonBoundingBox'][0]['$']
-                const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-                layers.push({name: layer['Name'][0], extent: extent, wms: true})
-              }
-            } else if (this.linkToValidate.indexOf('1.3.0') > 0) {
-              for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
-                const bbox = layer['EX_GeographicBoundingBox'][0]
-                const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
-                layers.push({name: layer['Name'][0], extent: extent, wms: true})
+              uri: this.linkToValidate + '&request=GetCapabilities'
+            }
+            let credentials = this.getCredentials()
+            if (credentials) {
+              if (credentials.type === 'basic') {
+                if (!options.headers) {
+                  options.headers = {}
+                }
+                options.headers['Authorization'] = credentials.authorization
               }
             }
-            this.layerChoices = layers
-            this.layerSelectionVisible = true
+            try {
+              let xml = await request(options)
+              let json = await this.xml2json(xml)
+              if (this.linkToValidate.indexOf('1.1.1') > 0) {
+                for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                  const bbox = layer['LatLonBoundingBox'][0]['$']
+                  const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+                  layers.push({name: layer['Name'][0], extent: extent, wms: true})
+                }
+              } else if (this.linkToValidate.indexOf('1.3.0') > 0) {
+                for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                  const bbox = layer['EX_GeographicBoundingBox'][0]
+                  const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
+                  layers.push({name: layer['Name'][0], extent: extent, wms: true})
+                }
+              }
+              this.layerChoices = layers
+              this.layerSelectionVisible = true
+            } catch (error) {
+              this.error = error
+              this.showErrorModal = true
+            }
           } else if (type === 'WFS') {
             let layers = []
-            const getCapabilitiesUri = this.linkToValidate + '&request=GetCapabilities'
-            console.log(getCapabilitiesUri)
-            let xml = await request({
+            let options = {
               method: 'GET',
-              uri: getCapabilitiesUri
-            })
-            let json = await this.xml2json(xml)
-            if (this.linkToValidate.indexOf('1.0.0') > 0) {
-              for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
-                const bbox = layer['LatLongBoundingBox'][0]['$']
-                const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
-              }
-            } else if (this.linkToValidate.indexOf('1.1.0') > 0) {
-              for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
-                const bbox = layer['ows:WGS84BoundingBox'][0]
-                const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
-                const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
-                const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
-                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
-              }
-            } else if (this.linkToValidate.indexOf('2.0.0') > 0) {
-              for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
-                const bbox = layer['ows:WGS84BoundingBox'][0]
-                const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
-                const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
-                const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
-                layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+              uri: this.linkToValidate + '&request=GetCapabilities'
+            }
+            let credentials = this.getCredentials()
+            if (credentials) {
+              if (credentials.type === 'basic') {
+                if (!options.headers) {
+                  options.headers = {}
+                }
+                options.headers['Authorization'] = credentials.authorization
               }
             }
-            this.layerChoices = layers
-            this.layerSelectionVisible = true
+            try {
+              let xml = await request(options)
+              let json = await this.xml2json(xml)
+              if (this.linkToValidate.indexOf('1.0.0') > 0) {
+                for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                  const bbox = layer['LatLongBoundingBox'][0]['$']
+                  const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+                  layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+                }
+              } else if (this.linkToValidate.indexOf('1.1.0') > 0) {
+                for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                  const bbox = layer['ows:WGS84BoundingBox'][0]
+                  const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
+                  const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
+                  const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
+                  layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+                }
+              } else if (this.linkToValidate.indexOf('2.0.0') > 0) {
+                for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+                  const bbox = layer['ows:WGS84BoundingBox'][0]
+                  const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
+                  const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
+                  const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
+                  layers.push({name: layer['Name'][0], extent: extent, wfs: true})
+                }
+              }
+              this.layerChoices = layers
+              this.layerSelectionVisible = true
+            } catch (error) {
+              this.error = error
+              this.showErrorModal = true
+            }
           } else {
             this.error = 'Unsupported URL: ' + type
             this.showErrorModal = true
@@ -256,6 +308,7 @@
             },
             wms: this.layerSelection[0].wms,
             wfs: this.layerSelection[0].wfs,
+            credentials: this.getCredentials(),
             layers: this.layerSelection.slice()
           }
           processing.sources.push(sourceToProcess)
@@ -272,18 +325,20 @@
         remote.dialog.showOpenDialog({
           properties: ['openFile']
         }, (files) => {
-          let fileInfos = []
-          for (const file of files) {
-            let fileInfo = jetpack.inspect(file, {
-              times: true,
-              absolutePath: true
-            })
-            fileInfo.lastModified = fileInfo.modifyTime.getTime()
-            fileInfo.lastModifiedDate = fileInfo.modifyTime
-            fileInfo.path = fileInfo.absolutePath
-            fileInfos.push(fileInfo)
+          if (files) {
+            let fileInfos = []
+            for (const file of files) {
+              let fileInfo = jetpack.inspect(file, {
+                times: true,
+                absolutePath: true
+              })
+              fileInfo.lastModified = fileInfo.modifyTime.getTime()
+              fileInfo.lastModifiedDate = fileInfo.modifyTime
+              fileInfo.path = fileInfo.absolutePath
+              fileInfos.push(fileInfo)
+            }
+            this.processFiles(fileInfos)
           }
-          this.processFiles(fileInfos)
         })
       },
       onDragOver (ev) {
@@ -306,9 +361,9 @@
         try {
           let createdSource = null
           if (source.wms) {
-            createdSource = await SourceFactory.constructWMSSource(source.file.path, source.layers)
+            createdSource = await SourceFactory.constructWMSSource(source.file.path, source.layers, source.credentials)
           } else if (source.wfs) {
-            createdSource = await SourceFactory.constructWFSSource(source.file.path, source.layers)
+            createdSource = await SourceFactory.constructWFSSource(source.file.path, source.layers, source.credentials)
           } else {
             createdSource = await SourceFactory.constructSource(source.file.path)
           }
@@ -345,17 +400,29 @@
             name: file.name,
             size: file.size,
             type: file.type,
-            path: file.path
+            path: file.path,
+            credentials: file.credentials
           },
           status: undefined,
           error: undefined,
-          wms: false
+          wms: false,
+          wfs: false
         }
         processing.sources.push(sourceToProcess)
         console.log({file})
         setTimeout(() => {
           this.addSource(sourceToProcess)
         }, 0)
+      },
+      getCredentials () {
+        if (this.authSelection === 'basic') {
+          return {
+            type: 'basic',
+            authorization: 'Basic ' + btoa(this.username + ':' + this.password)
+          }
+        } else {
+          return undefined
+        }
       },
       processUrl (url) {
         this.processFiles([{
@@ -410,6 +477,11 @@
         style: 1
       })
       console.log('fl', fl)
+    },
+    updated: function () {
+      this.fl = new FloatLabels('.link-form', {
+        style: 1
+      })
     }
   }
 </script>
@@ -435,6 +507,10 @@
   }
 
   .provide-link-buttons {
+    margin-top: -10px;
+  }
+
+  .provide-auth {
     margin-top: -10px;
   }
 
@@ -473,7 +549,7 @@
     opacity: .7;
   }
 
-  .link-input {
+  .text-input {
     max-width: none;
   }
 

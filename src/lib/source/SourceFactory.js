@@ -19,13 +19,12 @@ export default class SourceFactory {
     return new XYZServerSource(parameterizedUrl)
   }
 
-  static async constructWMSSource (url, layers) {
-    // try to figure out what this thing is
-    return new WMSSource(url, layers)
+  static async constructWMSSource (url, layers, credentials) {
+    return new WMSSource(url, layers, credentials)
   }
 
-  static async constructWFSSource (url, layers) {
-    return new WFSSource(url, layers)
+  static async constructWFSSource (url, layers, credentials) {
+    return new WFSSource(url, layers, credentials)
   }
 
   static async constructSource (filePath) {

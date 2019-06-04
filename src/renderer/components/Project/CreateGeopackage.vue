@@ -24,7 +24,7 @@
         :project="project"
         :geopackage="geopackageConfiguration"/>
 
-    <div class="gp-button" @click.stop="cancelOrFinish">
+    <div class="gp-button" @click.stop="cancel">
       <span>{{cancelOrFinishText}}</span>
     </div>
   </div>
@@ -70,7 +70,7 @@
       ...mapActions({
         setCurrentGeoPackage: 'Projects/setCurrentGeoPackage'
       }),
-      cancelOrFinish () {
+      cancel () {
         this.setCurrentGeoPackage({
           projectId: this.project.id,
           geopackageId: undefined

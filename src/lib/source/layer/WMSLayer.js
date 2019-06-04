@@ -3,6 +3,7 @@ import * as Vendor from '../../vendor'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import request from 'request-promise-native'
+import superagent from 'superagent'
 
 export default class WMSLayer extends Layer {
   _extent
@@ -24,7 +25,8 @@ export default class WMSLayer extends Layer {
       layerType: 'WMS',
       overviewTilePath: this.overviewTilePath,
       style: this.style,
-      shown: this.shown || true
+      shown: this.shown || true,
+      credentials: this.credentials
     }
   }
 
@@ -57,9 +59,35 @@ export default class WMSLayer extends Layer {
       transparent: true,
       format: 'image/png'
     }
+    Vendor.L.TileLayer.WMSHeader = Vendor.L.TileLayer.WMS.extend({
+      initialize: function (url, options, headers) {
+        Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
+        this.headers = headers
+      },
+      createTile (coords, done) {
+        const url = this.getTileUrl(coords)
+        const img = document.createElement('img')
+        let getUrl = superagent.get(url)
 
-    this._mapLayer = Vendor.L.tileLayer.wms(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options)
-
+        for (let i = 0; i < this.headers.length; i++) {
+          getUrl = getUrl.set(this.headers[i].header, this.headers[i].value)
+        }
+        getUrl.responseType('blob')
+          .then((response) => {
+            img.src = URL.createObjectURL(response.body)
+            done(null, img)
+          })
+        return img
+      }
+    })
+    let wmsHeader = function (url, options, headers) {
+      return new Vendor.L.TileLayer.WMSHeader(url, options, headers)
+    }
+    const headers = []
+    if (this.credentials && this.credentials.type === 'basic') {
+      headers.push({ header: 'Authorization', value: this.credentials.authorization })
+    }
+    this._mapLayer = wmsHeader(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options, headers)
     this._mapLayer.id = this.id
     return this._mapLayer
   }
@@ -93,11 +121,19 @@ export default class WMSLayer extends Layer {
       referenceSystemName = 'crs'
     }
 
-    let url = this.filePath + '&request=GetMap&layers=' + this._configuration.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox
-    return request({
+    let options = {
       method: 'GET',
-      url: url,
+      url: this.filePath + '&request=GetMap&layers=' + this._configuration.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox,
       encoding: null
-    })
+    }
+    if (this.credentials) {
+      if (this.credentials.type === 'basic') {
+        if (!options.headers) {
+          options.headers = {}
+        }
+        options.headers['Authorization'] = this.credentials.authorization
+      }
+    }
+    return request(options)
   }
 }
