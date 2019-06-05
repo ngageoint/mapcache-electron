@@ -342,6 +342,12 @@
       },
       addFileClick (ev) {
         remote.dialog.showOpenDialog({
+          filters: [
+            {
+              name: 'All Files',
+              extensions: ['tif', 'gpkg', 'kml', 'kmz', 'geojson', 'json']
+            }
+          ],
           properties: ['openFile', 'multiSelections']
         }, (files) => {
           if (files) {
@@ -361,11 +367,17 @@
         })
       },
       onDragOver (ev) {
-        let item = ev.dataTransfer.items[0]
-        let kind = item.kind
-        let type = item.type
-        processing.dragging = ev.dataTransfer.items.length + ' ' + type + ' ' + kind
-        processing.dataDragOver = true
+        let items = Object.values(ev.dataTransfer.items)
+        let draggingText = items.length + ' Files:'
+        items.forEach((item) => {
+          let kind = item.kind
+          let type = item.type
+          draggingText += '\n\t' + type + ' ' + kind
+        })
+        if (!processing.dataDragOver) {
+          processing.dragging = draggingText
+          processing.dataDragOver = true
+        }
       },
       onDrop (ev) {
         processing.dragging = undefined
