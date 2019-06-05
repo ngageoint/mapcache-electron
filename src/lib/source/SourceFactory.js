@@ -1,5 +1,4 @@
 import path from 'path'
-import request from 'request-promise-native'
 import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
@@ -8,15 +7,8 @@ import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
 
 export default class SourceFactory {
-  static async constructUrlSource (parameterizedUrl) {
-    // this is x,y,z tile server
-    let url = parameterizedUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
-    let result = await request({
-      method: 'HEAD',
-      uri: url
-    })
-    console.log('result', result)
-    return new XYZServerSource(parameterizedUrl)
+  static async constructXYZSource (parameterizedUrl, credentials) {
+    return new XYZServerSource(parameterizedUrl, [], credentials)
   }
 
   static async constructWMSSource (url, layers, credentials) {
@@ -28,9 +20,6 @@ export default class SourceFactory {
   }
 
   static async constructSource (filePath) {
-    if (filePath.startsWith('http')) {
-      return SourceFactory.constructUrlSource(filePath)
-    }
     let type = path.extname(filePath).slice(1)
 
     console.log('Type: ', type)

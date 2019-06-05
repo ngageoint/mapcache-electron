@@ -56,7 +56,6 @@
           for (const layerId of added) {
             let layerConfig = value[layerId]
             let layer = LayerFactory.constructLayer(layerConfig)
-            console.log('initialize the layer')
             await layer.initialize()
             let mapLayer = layer.mapLayer
             mapLayer.addTo(this.map)
@@ -68,16 +67,12 @@
             let layerConfig = value[layerId]
             let oldLayerConfig = shownLayerConfigs[layerId]
 
-            console.log(layerConfig.style)
-            console.log(oldLayerConfig.style)
-
             if (!_.isEqual(layerConfig, oldLayerConfig)) {
               let existingMapLayer = shownMapLayers[layerId]
               existingMapLayer.remove()
               delete shownMapLayers[layerId]
               delete shownLayerConfigs[layerId]
               let layer = LayerFactory.constructLayer(layerConfig)
-              console.log('initialize the layer')
               await layer.initialize()
               let updateMapLayer = layer.mapLayer
               updateMapLayer.addTo(this.map)
@@ -90,18 +85,12 @@
       }
     },
     mounted: async function () {
-      console.log('Leaflet map mounted')
-
       this.map = vendor.L.map('map', {editable: true})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
       const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
         subdomains: ['1', '2', '3', '4']
       })
-      // const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-      //   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-      // })
-
       this.map.setView(defaultCenter, defaultZoom)
       osmbasemap.addTo(this.map)
 
@@ -112,7 +101,6 @@
         if (!layerConfig.shown) continue
 
         let layer = LayerFactory.constructLayer(layerConfig)
-        console.log('initialize the layer', layer)
         await layer.initialize()
         let mapLayer = layer.mapLayer
         mapLayer.addTo(this.map)

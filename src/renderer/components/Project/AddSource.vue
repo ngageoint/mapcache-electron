@@ -201,7 +201,26 @@
         const { type, error } = this.validateUrlSource(this.linkToValidate)
         if (error === null) {
           if (type === 'XYZ') {
-            this.processUrl(this.linkToValidate)
+            try {
+              let options = {
+                method: 'HEAD',
+                uri: this.linkToValidate.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
+              }
+              let credentials = this.getCredentials()
+              if (credentials) {
+                if (credentials.type === 'basic') {
+                  if (!options.headers) {
+                    options.headers = {}
+                  }
+                  options.headers['Authorization'] = credentials.authorization
+                }
+              }
+              await request(options)
+              this.processXYZUrl(this.linkToValidate)
+            } catch (error) {
+              this.error = error
+              this.showErrorModal = true
+            }
           } else if (type === 'WMS') {
             let layers = []
             let options = {
@@ -364,6 +383,8 @@
             createdSource = await SourceFactory.constructWMSSource(source.file.path, source.layers, source.credentials)
           } else if (source.wfs) {
             createdSource = await SourceFactory.constructWFSSource(source.file.path, source.layers, source.credentials)
+          } else if (source.xyz) {
+            createdSource = await SourceFactory.constructXYZSource(source.file.path, source.credentials)
           } else {
             createdSource = await SourceFactory.constructSource(source.file.path)
           }
@@ -400,13 +421,14 @@
             name: file.name,
             size: file.size,
             type: file.type,
-            path: file.path,
-            credentials: file.credentials
+            path: file.path
           },
           status: undefined,
           error: undefined,
           wms: false,
-          wfs: false
+          wfs: false,
+          xyz: file.xyz,
+          credentials: this.getCredentials()
         }
         processing.sources.push(sourceToProcess)
         console.log({file})
@@ -424,9 +446,10 @@
           return undefined
         }
       },
-      processUrl (url) {
+      processXYZUrl (url) {
         this.processFiles([{
-          path: url
+          path: url,
+          xyz: true
         }])
       },
       validateUrlSource (url) {
