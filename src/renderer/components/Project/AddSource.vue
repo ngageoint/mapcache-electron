@@ -342,7 +342,7 @@
       },
       addFileClick (ev) {
         remote.dialog.showOpenDialog({
-          properties: ['openFile']
+          properties: ['openFile', 'multiSelections']
         }, (files) => {
           if (files) {
             let fileInfos = []
@@ -370,7 +370,7 @@
       onDrop (ev) {
         processing.dragging = undefined
         processing.dataDragOver = false
-        this.processFiles(ev.dataTransfer.files)
+        this.processFiles(Object.values(ev.dataTransfer.files))
       },
       onDragLeave (ev) {
         processing.dataDragOver = false
@@ -413,28 +413,29 @@
         }
       },
       processFiles (files) {
-        let file = files[0]
-        let sourceToProcess = {
-          file: {
-            lastModified: file.lastModified,
-            lastModifiedDate: file.lastModifiedDate,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            path: file.path
-          },
-          status: undefined,
-          error: undefined,
-          wms: false,
-          wfs: false,
-          xyz: file.xyz,
-          credentials: this.getCredentials()
-        }
-        processing.sources.push(sourceToProcess)
-        console.log({file})
-        setTimeout(() => {
-          this.addSource(sourceToProcess)
-        }, 0)
+        files.forEach((file) => {
+          let sourceToProcess = {
+            file: {
+              lastModified: file.lastModified,
+              lastModifiedDate: file.lastModifiedDate,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              path: file.path
+            },
+            status: undefined,
+            error: undefined,
+            wms: false,
+            wfs: false,
+            xyz: file.xyz,
+            credentials: this.getCredentials()
+          }
+          processing.sources.push(sourceToProcess)
+          console.log({file})
+          setTimeout(() => {
+            this.addSource(sourceToProcess)
+          }, 0)
+        })
       },
       getCredentials () {
         if (this.authSelection === 'basic') {
