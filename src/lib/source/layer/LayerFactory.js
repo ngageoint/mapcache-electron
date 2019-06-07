@@ -4,6 +4,7 @@ import GDALVectorLayer from './GDALVectorLayer'
 import XYZServerLayer from './XYZServerLayer'
 import WMSLayer from './WMSLayer'
 import WFSLayer from './WFSLayer'
+import KMLGroundOverlayLayer from './KMLGroundOverlayLayer'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
@@ -20,6 +21,8 @@ export default class LayerFactory {
         return new WMSLayer(configuration)
       case 'WFS':
         return new WFSLayer(configuration)
+      case 'KMLGroundOverlay':
+        return new KMLGroundOverlayLayer(configuration)
     }
   }
 }

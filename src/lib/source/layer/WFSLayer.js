@@ -17,7 +17,7 @@ export default class WFSLayer extends Layer {
     this.count = this.features.length
     let name = this.name
     let extent = this.extent
-    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, extent, name)
     })
     await this._vectorTileRenderer.init()
@@ -193,7 +193,8 @@ export default class WFSLayer extends Layer {
       color: this.generateColor(),
       opacity: 1.0,
       fillColor: this.generateColor(),
-      fillOpacity: 1.0
+      fillOpacity: 1.0,
+      fillOutlineColor: this.generateColor()
     }
     return this._style
   }

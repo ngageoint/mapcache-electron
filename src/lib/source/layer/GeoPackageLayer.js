@@ -38,7 +38,7 @@ export default class GeoPackageLayer extends Layer {
       this.dao = this.geopackage.getFeatureDao(this.sourceLayerName)
       let gp = this.geopackage
       let tableName = this.sourceLayerName
-      this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z) => {
+      this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z) => {
         return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
       })
       await this._vectorTileRenderer.init()

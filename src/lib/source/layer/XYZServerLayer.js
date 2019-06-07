@@ -47,38 +47,43 @@ export default class XYZServerLayer extends Layer {
 
   get mapLayer () {
     if (this._mapLayer) return this._mapLayer
-    let TileLayerWithHeaders = Vendor.L.TileLayer.extend({
-      initialize: function (url, options, headers) {
-        Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
-        this.headers = headers
-      },
-      createTile (coords, done) {
-        const url = this.getTileUrl(coords)
-        const img = document.createElement('img')
-        let getUrl = superagent.get(url)
-
-        for (let i = 0; i < this.headers.length; i++) {
-          getUrl = getUrl.set(this.headers[i].header, this.headers[i].value)
-        }
-        getUrl.responseType('blob')
-          .then((response) => {
-            img.src = URL.createObjectURL(response.body)
-            done(null, img)
-          })
-        return img
-      }
-    })
-    let tileLayerWithHeaders = function (url, options, headers) {
-      return new TileLayerWithHeaders(url, options, headers)
+    let options = {
+      pane: this.configuration.pane === 'tile' ? 'tilePane' : 'overlayPane'
     }
     const headers = []
     if (this.credentials && this.credentials.type === 'basic') {
       headers.push({ header: 'Authorization', value: this.credentials.authorization })
     }
-    let options = {
-      pane: this.configuration.pane === 'tile' ? 'tilePane' : 'overlayPane'
+    if (headers.length > 0) {
+      let TileLayerWithHeaders = Vendor.L.TileLayer.extend({
+        initialize: function (url, options, headers) {
+          Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
+          this.headers = headers
+        },
+        createTile (coords, done) {
+          const url = this.getTileUrl(coords)
+          const img = document.createElement('img')
+          let getUrl = superagent.get(url)
+
+          for (let i = 0; i < this.headers.length; i++) {
+            getUrl = getUrl.set(this.headers[i].header, this.headers[i].value)
+          }
+          getUrl.responseType('blob')
+            .then((response) => {
+              img.src = URL.createObjectURL(response.body)
+              done(null, img)
+            })
+          return img
+        }
+      })
+      let tileLayerWithHeaders = function (url, options, headers) {
+        return new TileLayerWithHeaders(url, options, headers)
+      }
+
+      this._mapLayer = tileLayerWithHeaders(this.filePath, options, headers)
+    } else {
+      this._mapLayer = Vendor.L.tileLayer(this.filePath, options)
     }
-    this._mapLayer = tileLayerWithHeaders(this.filePath, options, headers)
     this._mapLayer.id = this.id
     return this._mapLayer
   }

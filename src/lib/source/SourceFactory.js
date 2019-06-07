@@ -3,6 +3,7 @@ import GDALSource from './GDALSource'
 import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
+import KMZSource from './KMZSource'
 import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
 
@@ -21,21 +22,26 @@ export default class SourceFactory {
 
   static async constructSource (filePath) {
     let type = path.extname(filePath).slice(1)
-
-    console.log('Type: ', type)
-    console.log('File: ', filePath)
     try {
+      let source = null
       switch (type) {
         case 'gpkg':
         case 'geopackage':
-          return new GeoPackageSource(filePath)
+          source = new GeoPackageSource(filePath)
+          break
         case 'kml':
-          let kmlSource = new KMLSource(filePath)
-          kmlSource.initialize()
-          return kmlSource
+          source = new KMLSource(filePath)
+          await source.initialize()
+          break
+        case 'kmz':
+          source = new KMZSource(filePath)
+          await source.initialize()
+          break
         default:
-          return new GDALSource(filePath)
+          source = new GDALSource(filePath)
+          break
       }
+      return source
     } catch (e) {
       console.log('Failed to open file ' + filePath, e)
       throw new Error('Failed to open file ' + filePath + ' ' + e.message)

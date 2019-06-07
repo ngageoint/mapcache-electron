@@ -4,10 +4,9 @@ import Mercator from '@mapbox/sphericalmercator'
 
 export default class VectorTileRenderer {
   _mapboxGLMap
-  constructor (style, name, getVectorTileProtobuf, images) {
+  constructor (style, mbStyle = undefined, name, getVectorTileProtobuf, images) {
     let map = this._mapboxGlMap = new MapboxGL.Map({
       request: async function (req, callback) {
-        // console.log('req', req)
         let split = req.url.split('-')
         let z = Number(split[0])
         let x = Number(split[1])
@@ -18,7 +17,7 @@ export default class VectorTileRenderer {
       ratio: 1
     })
     this.images = images
-    this.mbStyle = VectorTileRenderer.generateMbStyle(style, name)
+    this.mbStyle = mbStyle || VectorTileRenderer.generateMbStyle(style, name)
   }
 
   static generateMbStyle (style, name) {
@@ -43,7 +42,8 @@ export default class VectorTileRenderer {
           'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
           'paint': {
             'fill-color': style.fillColor,
-            'fill-opacity': style.fillOpacity
+            'fill-opacity': style.fillOpacity,
+            'fill-outline-color': style.fillOutlineColor
           }
         },
         {
@@ -77,13 +77,9 @@ export default class VectorTileRenderer {
 
   async init () {
     this._mapboxGlMap.load(this.mbStyle)
-
     if (this.images) {
       for (const image of this.images) {
         let imageData = await Sharp(image.filePath).raw().toBuffer()
-        // let imageData = fs.readFileSync(image.filePath)
-
-        // console.log('adding the image to the map', image.id)
         this._mapboxGlMap.addImage(image.id, imageData, {
           height: 16,
           width: 16,
@@ -92,7 +88,6 @@ export default class VectorTileRenderer {
         })
       }
     }
-    // console.log('Loading the style in the renderer')
   }
 
   waitForRenderer () {

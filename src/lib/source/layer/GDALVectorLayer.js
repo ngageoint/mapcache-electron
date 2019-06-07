@@ -24,7 +24,7 @@ export default class GDALVectorLayer extends Layer {
     let name = this.name
     let extent = this.extent
 
-    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.name, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, extent, name)
     }, this._configuration.images)
     await this._vectorTileRenderer.init()
@@ -107,15 +107,13 @@ export default class GDALVectorLayer extends Layer {
   }
 
   get style () {
-    let color = this.generateColor()
-    let fillColor = this.generateColor()
-
     this._style = this._style || {
       weight: 2,
       radius: 2,
-      color: color,
+      color: this.generateColor(),
       opacity: 1,
-      fillColor: fillColor,
+      fillColor: this.generateColor(),
+      fillOutlineColor: this.generateColor(),
       fillOpacity: 0.5,
       fill: false
     }

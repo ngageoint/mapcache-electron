@@ -19,6 +19,7 @@ export default class Layer {
     this.overviewTilePath = this.cacheFolder.dir(this.id).path('overviewTile.png')
     this.pane = configuration.pane
     this._style = this._configuration.style
+    this.mbStyle = this._configuration.mbStyle
     this.shown = this._configuration.shown || true
   }
 
@@ -40,7 +41,8 @@ export default class Layer {
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         overviewTilePath: this.overviewTilePath,
-        shown: this.shown || true
+        shown: this.shown || true,
+        mbStyle: this.mbStyle
       }
     }
   }

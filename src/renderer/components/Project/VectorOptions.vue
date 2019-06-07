@@ -16,6 +16,14 @@
         </div>
         <div class="flex-row">
           <div>
+            <label class="control-label">Fill Outline Color</label>
+            <div>
+              <colorpicker :color="fillOutlineColor" v-model="fillOutlineColor" />
+            </div>
+          </div>
+        </div>
+        <div class="flex-row">
+          <div>
             <label class="control-label">Line Color</label>
             <div>
               <colorpicker :color="color" v-model="color" />
@@ -58,6 +66,7 @@
       if (!this.layer.style) {
         return {
           fillColor: 'rgba(255, 0, 0, 1.0)',
+          fillOutlineColor: 'rgba(255, 0, 0, 1.0)',
           color: 'rgba(255, 0, 0, 1.0)',
           weight: 1.0,
           radius: 1.0
@@ -65,6 +74,7 @@
       }
       return {
         fillColor: this.layer.style.fillColor && this.layer.style.fillOpacity ? this.getRGBA(this.layer.style.fillColor, this.layer.style.fillOpacity) : 'rgba(255, 0, 0, 1.0)',
+        fillOutlineColor: this.layer.style.fillOutlineColor || 'rgba(255, 0, 0, 1.0)',
         color: this.layer.style.color && this.layer.style.opacity ? this.getRGBA(this.layer.style.color, this.layer.style.opacity) : 'rgba(255, 0, 0, 1.0)',
         weight: this.layer.style.weight || 1.0,
         radius: this.layer.style.radius || 1.0
@@ -77,6 +87,18 @@
           let style = Object.assign({}, this.layer.style)
           style.fillColor = color
           style.fillOpacity = opacity
+          this.updateProjectLayerStyle({
+            projectId: this.projectId,
+            layerId: this.layer.id,
+            style: style
+          })
+        }
+      }, 500)
+      this.debounceUpdateFillOutlineColor = _.debounce((val) => {
+        if (val) {
+          const {color} = this.parseColor(val)
+          let style = Object.assign({}, this.layer.style)
+          style.fillOutlineColor = color
           this.updateProjectLayerStyle({
             projectId: this.projectId,
             layerId: this.layer.id,
@@ -147,6 +169,9 @@
     watch: {
       fillColor (val) {
         this.debounceUpdateFillColor(val)
+      },
+      fillOutlineColor (val) {
+        this.debounceUpdateFillOutlineColor(val)
       },
       color (val) {
         this.debounceUpdateColor(val)
