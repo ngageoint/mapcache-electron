@@ -1,6 +1,6 @@
 import Source from './Source'
 import { DOMParser } from 'xmldom'
-import * as ToGeoJSON from '@tmcw/togeojson'
+import * as ToGeoJSON from '@caldwellc/togeojson'
 import GDALSource from './GDALSource'
 import fs from 'fs'
 import path from 'path'
@@ -8,8 +8,7 @@ import KMLUtilities from '../KMLUtilities'
 
 export default class KMLSource extends Source {
   async initialize () {
-    const kmlString = fs.readFileSync(this.filePath, 'utf8').replace(/<\/.*?:/mg, '</').replace(/<.*?:/mg, '<')
-    const kml = new DOMParser().parseFromString(kmlString)
+    const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
     let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir)
     this.groundOverlays = parsedKML.groundOverlays

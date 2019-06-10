@@ -19,7 +19,6 @@ export default class KMZSource extends Source {
       let filename = keys[i]
       await new Promise((resolve, reject) => {
         zip.file(filename).async('nodebuffer').then((content) => {
-          console.log(filename)
           let destinationFileName = filename === 'doc.kml' ? this.kmlFileName : filename
           let destinationFilePath = path.join(destinationFolder, destinationFileName)
           if (destinationFileName.endsWith('.kml')) {
