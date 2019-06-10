@@ -1,45 +1,47 @@
 import path from 'path'
 import KMLGroundOverlayLayer from './source/layer/KMLGroundOverlayLayer'
-import xml2js from 'xml2js'
-import { useNamespaces } from 'xpath'
+import { select } from 'xpath'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir) => {
-    const select = useNamespaces({'default': 'http://www.opengis.net/kml/2.2', 'gx': 'http://www.google.com/kml/ext/2.2', 'kml': 'http://www.opengis.net/kml/2.2', 'atom': 'http://www.w3.org/2005/Atom'})
     let parsedKML = {
       groundOverlays: [],
       documents: []
     }
-    let groundOverlayDOMs = select('//default:GroundOverlay', kmlDom)
+    let groundOverlayDOMs = kmlDom.getElementsByTagNameNS('*', 'GroundOverlay')
     for (let i = 0; i < groundOverlayDOMs.length; i++) {
       let groundOverlayDOM = groundOverlayDOMs[i]
-      let xml = await new Promise((resolve, reject) => {
-        new xml2js.Parser().parseString(groundOverlayDOM, function (err, json) {
-          if (err) reject(err)
-          resolve(json)
-        })
-      })
-      console.log(xml.GroundOverlay)
-      let iconPath = xml.GroundOverlay.Icon[0].href[0]
-      let fullFile = path.join(iconBaseDir, iconPath)
-      let east = xml.GroundOverlay.LatLonBox[0].east[0]
-      let north = xml.GroundOverlay.LatLonBox[0].north[0]
-      let west = xml.GroundOverlay.LatLonBox[0].west[0]
-      let south = xml.GroundOverlay.LatLonBox[0].south[0]
-      const extent = [Number(west), Number(south), Number(east), Number(north)]
-      parsedKML.groundOverlays.push(new KMLGroundOverlayLayer({sourceLayerName: name, filePath: fullFile, extent: extent}))
+      let name = 'Ground Overlay #' + i
+      try {
+        name = groundOverlayDOM.getElementsByTagNameNS('*', 'name')[0].childNodes[0].nodeValue
+      } catch (error) {
+        console.log(error)
+      }
+      try {
+        let iconPath = groundOverlayDOM.getElementsByTagNameNS('*', 'href')[0].childNodes[0].nodeValue
+        let fullFile = path.join(iconBaseDir, iconPath)
+        let east = groundOverlayDOM.getElementsByTagNameNS('*', 'east')[0].childNodes[0].nodeValue
+        let north = groundOverlayDOM.getElementsByTagNameNS('*', 'north')[0].childNodes[0].nodeValue
+        let west = groundOverlayDOM.getElementsByTagNameNS('*', 'west')[0].childNodes[0].nodeValue
+        let south = groundOverlayDOM.getElementsByTagNameNS('*', 'south')[0].childNodes[0].nodeValue
+        const extent = [Number(west), Number(south), Number(east), Number(north)]
+        console.log(name)
+        console.log(fullFile)
+        console.log(extent)
+        parsedKML.groundOverlays.push(new KMLGroundOverlayLayer({sourceLayerName: name, filePath: fullFile, extent: extent}))
+      } catch (error) {
+        console.log(error)
+      }
     }
 
-    let documentDOMs = select('//default:Document', kmlDom)
+    let documentDOMs = select('//*[local-name() = \'Document\']', kmlDom)
     for (let i = 0; i < documentDOMs.length; i++) {
       let xmlDoc = documentDOMs[i]
-      let xml = await new Promise((resolve, reject) => {
-        new xml2js.Parser().parseString(xmlDoc, function (err, json) {
-          if (err) reject(err)
-          resolve(json)
-        })
-      })
-      const name = xml.Document.name && xml.Document.name.length === 1 ? xml.Document.name[0] : 'Document #' + i
+      let name = 'Document #' + i
+      const nameNodes = xmlDoc.getElementsByTagNameNS('*', 'name')
+      if (nameNodes.length > 0) {
+        name = nameNodes[0].childNodes[0].nodeValue
+      }
       parsedKML.documents.push({name, xmlDoc})
     }
     return parsedKML

@@ -145,26 +145,6 @@ export default class GDALVectorLayer extends Layer {
     })
   }
 
-  createStyle (type, id, paint) {
-    let geomTypes = []
-    if (type === 'fill') {
-      geomTypes.push('Polygon')
-      geomTypes.push('MultiPolygon')
-    }
-    return {
-      'id': type + '-style-' + id,
-      'type': type,
-      'source': this.name,
-      'source-layer': this.name,
-      'filter': ['match', ['geometry-type'], geomTypes, true, false],
-      'paint': paint
-      // {
-      //   'fill-color': this.style.fillColor,
-      //   'fill-opacity': this.style.fillOpacity
-      // }
-    }
-  }
-
   getTileFeatures (coords, extent) {
     let {x, y, z} = coords
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)

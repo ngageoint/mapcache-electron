@@ -79,7 +79,7 @@ export default class VectorTileRenderer {
     this._mapboxGlMap.load(this.mbStyle)
     if (this.images) {
       for (const image of this.images) {
-        let imageData = await Sharp(image.filePath).raw().toBuffer()
+        let imageData = await Sharp(image.filePath).resize({width: 16, height: 16}).raw().toBuffer()
         this._mapboxGlMap.addImage(image.id, imageData, {
           height: 16,
           width: 16,
