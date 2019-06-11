@@ -77,6 +77,7 @@
               <option disabled>Authorization</option>
               <option value="none">No Authorization</option>
               <option value="basic">Basic</option>
+              <option value="bearer">Bearer Token</option>
             </select>
             <div id="basic-auth-div" class="provide-auth" v-if="authSelection === 'basic'">
               <label id="username-input-label" for="username-input">Username</label>
@@ -91,6 +92,14 @@
                 id="password-input"
                 class="text-input"
                 v-model="password">
+            </div>
+            <div id="bearer-auth-div" class="provide-auth" v-if="authSelection === 'bearer'">
+              <label id="token-input-label" for="token-input">Token</label>
+              <input
+                type="text"
+                id="token-input"
+                class="text-input"
+                v-model="token">
             </div>
             <div class="provide-link-buttons">
               <a @click.stop="validateLink">Add URL</a>
@@ -145,6 +154,7 @@
   let authSelection = ''
   let username = ''
   let password = ''
+  let token = ''
 
   export default {
     props: {
@@ -162,7 +172,8 @@
         error,
         authSelection,
         username,
-        password
+        password,
+        token
       }
     },
     components: {
@@ -208,7 +219,7 @@
               }
               let credentials = this.getCredentials()
               if (credentials) {
-                if (credentials.type === 'basic') {
+                if (credentials.type === 'basic' || credentials.type === 'bearer') {
                   if (!options.headers) {
                     options.headers = {}
                   }
@@ -229,7 +240,7 @@
             }
             let credentials = this.getCredentials()
             if (credentials) {
-              if (credentials.type === 'basic') {
+              if (credentials.type === 'basic' || credentials.type === 'bearer') {
                 if (!options.headers) {
                   options.headers = {}
                 }
@@ -266,7 +277,7 @@
             }
             let credentials = this.getCredentials()
             if (credentials) {
-              if (credentials.type === 'basic') {
+              if (credentials.type === 'basic' || credentials.type === 'bearer') {
                 if (!options.headers) {
                   options.headers = {}
                 }
@@ -345,7 +356,7 @@
           filters: [
             {
               name: 'All Files',
-              extensions: ['tif', 'gpkg', 'geopackage', 'kml', 'kmz', 'geojson', 'json']
+              extensions: ['tif', 'tiff', 'geotiff', 'gpkg', 'geopackage', 'kml', 'kmz', 'geojson', 'json']
             }
           ],
           properties: ['openFile', 'multiSelections']
@@ -454,6 +465,11 @@
           return {
             type: 'basic',
             authorization: 'Basic ' + btoa(this.username + ':' + this.password)
+          }
+        } else if (this.authSelection === 'bearer') {
+          return {
+            type: 'bearer',
+            authorization: 'Bearer ' + this.token
           }
         } else {
           return undefined

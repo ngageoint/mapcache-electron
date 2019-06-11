@@ -84,7 +84,7 @@ export default class WMSLayer extends Layer {
       return new Vendor.L.TileLayer.WMSHeader(url, options, headers)
     }
     const headers = []
-    if (this.credentials && this.credentials.type === 'basic') {
+    if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
       headers.push({ header: 'Authorization', value: this.credentials.authorization })
     }
     this._mapLayer = wmsHeader(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options, headers)

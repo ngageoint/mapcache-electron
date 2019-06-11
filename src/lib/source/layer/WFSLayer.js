@@ -114,7 +114,7 @@ export default class WFSLayer extends Layer {
         gzip: true
       }
       if (this.credentials) {
-        if (this.credentials.type === 'basic') {
+        if (this.credentials.type === 'basic' || this.credentials.type === 'bearer') {
           if (!options.headers) {
             options.headers = {}
           }
