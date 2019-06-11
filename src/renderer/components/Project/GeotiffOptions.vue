@@ -73,9 +73,9 @@
           if (!value) return
           let bands = value.split('-')
           let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstRedBand = Number(bands[0])
-          updatedLayer.dstGreenBand = Number(bands[1])
-          updatedLayer.dstBlueBand = Number(bands[2])
+          updatedLayer.dstRedBand = bands[0] === 'undefined' ? undefined : Number(bands[0])
+          updatedLayer.dstGreenBand = bands[1] === 'undefined' ? undefined : Number(bands[1])
+          updatedLayer.dstBlueBand = bands[2] === 'undefined' ? undefined : Number(bands[2])
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -88,51 +88,42 @@
           // Maybe Four Band
           presets.push({
             name: 'Natural Color',
-            value: 0,
-            bands: [1, 2, 3, undefined]
+            value: '1-2-3'
           })
           presets.push({
             name: 'Color Infrared',
-            value: 1,
-            bands: [4, 1, 2, undefined]
+            value: '4-1-2'
           })
         } else if (this.layer.srcBands.length === 11) {
           // Landsat 8
           presets.push({
             name: 'Natural Color',
-            value: 0,
-            bands: [4, 3, 2, undefined]
+            value: '4-3-2'
           })
           presets.push({
             name: 'Near Infrared',
-            value: 1,
-            bands: [5, undefined, undefined, undefined]
+            value: '5-undefined-undefined'
           })
           presets.push({
             name: 'False Color',
-            value: 2,
-            bands: [7, 5, 1, undefined]
+            value: '7-5-1'
           })
           presets.push({
             name: 'Clouds',
-            value: 3,
-            bands: [9, undefined, undefined, undefined]
+            value: '9-undefined-undefined'
           })
           presets.push({
             name: '5-6-4',
-            value: 4,
-            bands: [5, 6, 4, undefined]
+            value: '5-6-4'
           })
         } else if (this.layer.srcBands.length === 3) {
           presets.push({
             name: 'Natural Color',
-            value: '1-2-3',
-            bands: [1, 2, 3]
+            value: '1-2-3'
           })
           presets.push({
             name: 'Not Natural Color',
-            value: '2-1-3',
-            bands: [2, 1, 3]
+            value: '2-1-3'
           })
         }
         return presets
