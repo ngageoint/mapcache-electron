@@ -1,11 +1,12 @@
 import path from 'path'
-import KMLGroundOverlayLayer from './source/layer/KMLGroundOverlayLayer'
+import GeoTiffLayer from './source/layer/GeoTiffLayer'
+import GDALUtilities from './GDALUtilities'
 import { select } from 'xpath'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir) => {
     let parsedKML = {
-      groundOverlays: [],
+      geotiffs: [],
       documents: []
     }
     let groundOverlayDOMs = kmlDom.getElementsByTagNameNS('*', 'GroundOverlay')
@@ -28,7 +29,10 @@ export default class KMLUtilities {
         console.log(name)
         console.log(fullFile)
         console.log(extent)
-        parsedKML.groundOverlays.push(new KMLGroundOverlayLayer({sourceLayerName: name, filePath: fullFile, extent: extent}))
+        const geotiffFullFile = fullFile.substring(0, fullFile.lastIndexOf('.')) + '.tif'
+        if (GDALUtilities.translateToGeoTiff(fullFile, geotiffFullFile, extent)) {
+          parsedKML.geotiffs.push(new GeoTiffLayer({filePath: geotiffFullFile, shown: true}))
+        }
       } catch (error) {
         console.log(error)
       }

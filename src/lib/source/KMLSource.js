@@ -11,7 +11,7 @@ export default class KMLSource extends Source {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
     let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir)
-    this.groundOverlays = parsedKML.groundOverlays
+    this.geotiffs = parsedKML.geotiffs
     this.gdalSources = []
     let documents = parsedKML.documents
     if (documents.length === 0) {
@@ -165,7 +165,6 @@ export default class KMLSource extends Source {
 
   async retrieveLayers () {
     let layers = []
-
     for (let i = 0; i < this.gdalSources.length; i++) {
       let gdalSource = this.gdalSources[i]
       let gdalSourceLayers = await gdalSource.retrieveLayers()
@@ -173,8 +172,7 @@ export default class KMLSource extends Source {
         layers.push(layer)
       })
     }
-
-    this.groundOverlays.forEach((layer) => {
+    this.geotiffs.forEach((layer) => {
       layers.push(layer)
     })
     return layers
