@@ -145,7 +145,7 @@ export default class GeoTiffRenderer {
         if (this.layer.dstAlphaBand) {
           targetData[(i * 4) + 3] = a[i] / colorConstant
         } else {
-          targetData[(i * 4) + 3] = r[i] ? 255 : 0
+          targetData[(i * 4) + 3] = (r[i] || (!this.layer.dstGreenBand || g[i]) || (!this.layer.dstBlueBand || b[i])) ? 255 : 0
         }
       }
     } else if (this.layer.photometricInterpretation === 3) {
@@ -162,53 +162,44 @@ export default class GeoTiffRenderer {
         targetData[i * 4] = colorMap[mapIndex] / 65536 * 256
         targetData[(i * 4) + 1] = colorMap[mapIndex + greenOffset] / 65536 * 256
         targetData[(i * 4) + 2] = colorMap[mapIndex + blueOffset] / 65536 * 256
-        targetData[(i * 4) + 3] = this.layer.dstAlphaBand ? alphaBand[i] : colorBand[i] ? 255 : 0
+        targetData[(i * 4) + 3] = this.layer.dstAlphaBand ? alphaBand[i] : 255
       }
     } else if (this.layer.photometricInterpretation === 1) {
       // BlackIsZero === 1
-      let readOptions = {}
-      let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
-      let alphaBand = Array(width * height).fill(255)
+      const noDataValue = ds.bands.get(1).noDataValue
+      console.log(noDataValue)
+      let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, {})
+      let alphaBand = null
+      let alphaBandExists = false
       if (ds.bands.count() === 2) {
-        alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)
+        alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, {})
+        alphaBandExists = true
       }
-
-      for (let i = 0; i < greyBand.length; i++) {
-        targetData[i * 4] = greyBand[i]
-        targetData[(i * 4) + 1] = greyBand[i]
-        targetData[(i * 4) + 2] = greyBand[i]
-        if (ds.bands.count() === 2) {
-          targetData[(i * 4) + 3] = alphaBand[i]
-        } else if (greyBand[i]) {
-          targetData[(i * 4) + 3] = 255
-        }
+      for (let pos = 0, i = 0; pos < greyBand.length * 4; pos += 4, i++) {
+        targetData[pos] = greyBand[i]
+        targetData[pos + 1] = greyBand[i]
+        targetData[pos + 2] = greyBand[i]
+        targetData[pos + 3] = alphaBandExists ? alphaBand[i] : noDataValue && noDataValue === greyBand[i] ? 0 : 255
       }
     } else if (this.layer.photometricInterpretation === 0) {
       // WhiteIsZero === 0
-      let readOptions = {}
-      let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, readOptions)
-      let alphaBand = Array(width * height).fill(255)
+      let greyBand = ds.bands.get(1).pixels.read(0, 0, width, height, null, {})
+      let alphaBand = null
+      let alphaBandExists = false
       if (ds.bands.count() === 2) {
-        alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, readOptions)
+        alphaBand = ds.bands.get(2).pixels.read(0, 0, width, height, null, {})
+        alphaBandExists = true
       }
-
-      for (let i = 0; i < greyBand.length; i++) {
-        targetData[i * 4] = 255 - greyBand[i]
-        targetData[(i * 4) + 1] = 255 - greyBand[i]
-        targetData[(i * 4) + 2] = 255 - greyBand[i]
-        if (ds.bands.count() === 2) {
-          targetData[(i * 4) + 3] = alphaBand[i]
-        } else if (greyBand[i]) {
-          targetData[(i * 4) + 3] = 255
-        }
+      for (let pos = 0, i = 0; pos < greyBand.length * 4; pos += 4, i++) {
+        targetData[pos] = 255 - greyBand[i]
+        targetData[pos + 1] = 255 - greyBand[i]
+        targetData[pos + 2] = 255 - greyBand[i]
+        targetData[pos + 3] = alphaBandExists ? alphaBand[i] : 255
       }
     }
   }
 
   reproject (ds, epsgCode, tileCutline, srcCutline, srcBands, srcAlphaBand, dstBands, dstAlphaBand, width, height) {
-    // console.log('reproject arguments', arguments)
-    // colored-infrared bands = [4, 1, 2]
-    // RGB bands = [1, 2, 3]
     let tileExtent = tileCutline.getEnvelope()
     let targetSrs = gdal.SpatialReference.fromEPSG(epsgCode)
 
@@ -218,7 +209,16 @@ export default class GeoTiffRenderer {
       x: Math.max(tileExtent.maxX - tileExtent.minX) / width,
       y: Math.max(tileExtent.maxY - tileExtent.minY) / height
     }
-    let destination = gdal.open('memory', 'w', 'MEM', width, height, 4, ds.bands.get(1).dataType)
+
+    let numBands = ds.bands.count()
+    if (!dstAlphaBand) {
+      // no destination alpha band is set, we will add one for unset pixels
+      numBands += 1
+    }
+
+    const noDataValue = ds.bands.get(1).noDataValue
+
+    let destination = gdal.open('memory', 'w', 'MEM', width, height, numBands, ds.bands.get(1).dataType)
     destination.srs = targetSrs
     destination.geoTransform = [
       tileExtent.minX, tr.x, gt[2],
@@ -239,7 +239,17 @@ export default class GeoTiffRenderer {
     if (srcAlphaBand && dstAlphaBand) {
       options.srcAlphaBand = srcAlphaBand
       options.dstAlphaBand = dstAlphaBand
+    } else {
+      // again no dstAlphaBand was set, so specify band added
+      options.dstAlphaBand = numBands
     }
+
+    if (noDataValue) {
+      console.log('src has a nodata value of ' + noDataValue)
+      options.srcNodata = noDataValue
+      options.dstNodata = noDataValue
+    }
+
     gdal.reprojectImage(options)
 
     return destination

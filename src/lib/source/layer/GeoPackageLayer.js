@@ -71,7 +71,6 @@ export default class GeoPackageLayer extends Layer {
   async renderImageryTile (coords, tileCanvas, done) {
     let {x, y, z} = coords
     if (tileCanvas) {
-      console.log('tile Canvas is', tileCanvas)
       await GeoPackage.drawXYZTileInCanvas(this.geopackage, this.sourceLayerName, x, y, z, tileCanvas.width, tileCanvas.height, tileCanvas)
       if (done) {
         done(null, tileCanvas)
