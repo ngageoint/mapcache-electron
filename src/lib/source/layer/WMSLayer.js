@@ -74,7 +74,7 @@ export default class WMSLayer extends Layer {
         }
         getUrl.responseType('blob')
           .then((response) => {
-            img.src = URL.createObjectURL(response.body)
+            img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.body).toString('base64')
             done(null, img)
           })
         return img

@@ -101,7 +101,7 @@
   }
 
   .project-delete:hover {
-    border: 2px solid lightgrey;
+    border: 2px solid lightgray;
     border-radius: 10px;
   }
 

@@ -1,269 +1,407 @@
 <template>
-  <div v-if="showColorMapping">
+  <div>
     <div class="layer__face__stats">
       <p class="layer__face__stats__weight">
-        Color Mapping
-        <div class="flex-column option-block">
-          <div class="preset-select">
-            <select v-model="mappingPreset">
-              <!-- <option value="">Custom</option> -->
-              <option v-for="preset in colorPresets" :value="preset.value">{{preset.name}}</option>
-            </select>
+        Rendering Method
+      </p>
+      <div class="preset-select">
+        <select v-model="renderingMethod">
+          <!-- <option value="">Custom</option> -->
+          <option v-for="method in renderMethods" :value="method.value">{{method.name}}</option>
+        </select>
+      </div>
+    </div>
+    <div class="layer__horizontal__divider detail-divider"></div>
+    <div v-if="renderingMethod === 0">
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          Gray Scale Options
+          <div class="flex-column option-block">
+            Gray Band Options
+            <div class="preset-select gray-color">
+              <select v-model="grayBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
+              </select>
+              <div class="color-band-name">Gray</div>
+            </div>
+            <div class="flex-row option-block" v-if="grayBand >= 0">
+              <span class="text-box-label">Min</span>
+              <input type="number" class="text-box" v-model="grayBandMin"/>
+              <span class="text-box-label">Max</span>
+              <input type="number" class="text-box" v-model="grayBandMax"/>
+            </div>
+            <div>
+              Color Gradient
+              <div class="preset-select">
+                <select v-model="grayScaleColorGradient">
+                  <option value=0>White is Zero</option>
+                  <option value=1>Black is Zero</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              Stretch to Min/Max
+              <input type="checkbox" v-model="stretchToMinMax">
+            </div>
           </div>
-          <div class="color-flex flex-row">
-            <div class="color-select red-color">
-              <select v-model="redBandMapping">
-                <option value="None"></option>
-                <option v-for="n in this.layer.srcBands.length" :value="n">{{n}}</option>
+        </p>
+      </div>
+      <div class="layer__horizontal__divider detail-divider"></div>
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          Transparency Options
+        <div class="flex-row option-block">
+          <span class="text-box-label">
+            Global NO_DATA Value
+            <input type="checkbox" v-model="enableGlobalNoDataValue">
+          </span>
+          <input type="number" class="text-box" v-model="globalNoDataValue"/>
+        </div>
+        <div class="flex-column option-block">
+          Transparency Band
+          <div class="preset-select alpha-color">
+            <select v-model="alphaBand">
+              <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
+            </select>
+            <div class="color-band-name">Alpha</div>
+          </div>
+        </div>
+        </p>
+      </div>
+    </div>
+    <div v-else-if="renderingMethod === 1">
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          RGB Options
+          <div class="flex-column option-block">
+            Red Band Options
+            <div class="preset-select red-color">
+              <select v-model="redBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
               </select>
               <div class="color-band-name">Red</div>
             </div>
-            <div class="color-select green-color">
-              <select v-model="greenBandMapping">
-                <option value="None"></option>
-                <option v-for="n in this.layer.srcBands.length" :value="n">{{n}}</option>
+            <div class="flex-row option-block" v-if="redBand >= 0">
+              <span class="text-box-label">Min</span>
+              <input type="number" class="text-box" v-model="redBandMin"/>
+              <span class="text-box-label">Max</span>
+              <input type="number" class="text-box" v-model="redBandMax"/>
+            </div>
+          </div>
+          <div class="flex-column option-block">
+            Green Band Options
+            <div class="preset-select green-color">
+              <select v-model="greenBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
               </select>
               <div class="color-band-name">Green</div>
             </div>
-            <div class="color-select blue-color">
-              <select v-model="blueBandMapping">
-                <option value="None"></option>
-                <option v-for="n in this.layer.srcBands.length" :value="n">{{n}}</option>
+            <div class="flex-row option-block" v-if="greenBand >= 0">
+              <span class="text-box-label">Min</span>
+              <input type="number" class="text-box" v-model="greenBandMin"/>
+              <span class="text-box-label">Max</span>
+              <input type="number" class="text-box" v-model="greenBandMax"/>
+            </div>
+          </div>
+          <div class="flex-column option-block">
+            Blue Band Options
+            <div class="preset-select blue-color">
+              <select v-model="blueBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
               </select>
               <div class="color-band-name">Blue</div>
             </div>
+            <div class="flex-row option-block" v-if="blueBand >= 0">
+              <span class="text-box-label">Min</span>
+              <input type="number" class="text-box" v-model="blueBandMin"/>
+              <span class="text-box-label">Max</span>
+              <input type="number" class="text-box" v-model="blueBandMax"/>
+            </div>
+          </div>
+          <div>
+            Stretch to Min/Max
+            <input type="checkbox" v-model="stretchToMinMax">
+          </div>
+        </p>
+      </div>
+      <div class="layer__horizontal__divider detail-divider"></div>
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          Transparency Options
+          <div class="flex-row option-block">
+            <span class="text-box-label">
+              Global NO_DATA Value
+              <input type="checkbox" v-model="enableGlobalNoDataValue">
+            </span>
+            <input type="number" class="text-box" v-model="globalNoDataValue"/>
+          </div>
+          <div class="flex-column option-block">
+            Transparency Band
+            <div class="preset-select alpha-color">
+              <select v-model="alphaBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
+              </select>
+              <div class="color-band-name">Alpha</div>
+            </div>
+          </div>
+        </p>
+      </div>
+    </div>
+    <div v-else-if="renderingMethod === 2">
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          Color Palette Options
+        <div class="flex-column option-block">
+          Color Palette Band Options
+          <div class="preset-select palette-color">
+            <select v-model="paletteBand">
+              <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
+            </select>
+            <div class="color-band-name">Palette</div>
           </div>
         </div>
-      </p>
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
+  import _ from 'lodash'
 
   export default {
     data () {
       return {
-        colors: [{
-          name: 'Red',
-          value: 1
-        }, {
-          name: 'Green',
-          value: 2
-        }, {
-          name: 'Blue',
-          value: 3
-        }, {
-          name: 'Alpha',
-          value: 4
-        }]
+        globalNoDataValue: this.layer.globalNoDataValue
       }
+    },
+    created () {
+      this.debounceLayerField = _.debounce((value, key) => {
+        if (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer[key] = Number(value)
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      }, 500)
     },
     props: {
       layer: Object,
       projectId: String
     },
     computed: {
-      mappingPreset: {
-        get () {
-          return this.layer.dstRedBand + '-' + this.layer.dstGreenBand + '-' + this.layer.dstBlueBand
-        },
-        set (value) {
-          if (!value) return
-          let bands = value.split('-')
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstRedBand = bands[0] === 'undefined' ? undefined : Number(bands[0])
-          updatedLayer.dstGreenBand = bands[1] === 'undefined' ? undefined : Number(bands[1])
-          updatedLayer.dstBlueBand = bands[2] === 'undefined' ? undefined : Number(bands[2])
-          this.updateLayer({
-            projectId: this.projectId,
-            layer: updatedLayer
-          })
-        }
+      bandOptions () {
+        return this.layer.bandOptions
       },
-      colorPresets () {
-        let presets = []
-        if (this.layer.srcBands.length === 4) {
-          // Maybe Four Band
-          presets.push({
-            name: 'Natural Color',
-            value: '1-2-3'
-          })
-          presets.push({
-            name: 'Color Infrared',
-            value: '4-1-2'
-          })
-        } else if (this.layer.srcBands.length === 11) {
-          // Landsat 8
-          presets.push({
-            name: 'Natural Color',
-            value: '4-3-2'
-          })
-          presets.push({
-            name: 'Near Infrared',
-            value: '5-undefined-undefined'
-          })
-          presets.push({
-            name: 'False Color',
-            value: '7-5-1'
-          })
-          presets.push({
-            name: 'Clouds',
-            value: '9-undefined-undefined'
-          })
-          presets.push({
-            name: '5-6-4',
-            value: '5-6-4'
-          })
-        } else if (this.layer.srcBands.length === 3) {
-          presets.push({
-            name: 'Natural Color',
-            value: '1-2-3'
-          })
-          presets.push({
-            name: 'Not Natural Color',
-            value: '2-1-3'
-          })
-        }
-        return presets
-      },
-      bandMappings: {
+      renderingMethod: {
         get () {
-          let m = []
-          for (let i = 1; i <= this.layer.srcBands.length; i++) {
-            if (this.layer.dstRedBand === i) {
-              m.push(1)
-            } else if (this.layer.dstGreenBand === i) {
-              m.push(2)
-            } else if (this.layer.dstBlueBand === i) {
-              m.push(3)
-            } else if (this.layer.dstAlphaBand === i) {
-              m.push(4)
-            } else {
-              m.push(undefined)
-            }
-          }
-          return m
-        },
-        set (value) {
-          console.log('new value', value)
-        }
-      },
-      showColorMapping: {
-        get () {
-          return this.layer.srcBands.length >= 3
-        }
-      },
-      redBandMapping: {
-        get () {
-          return this.layer.dstRedBand
-        },
-        set (band) {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstRedBand = Number(band)
-          if (updatedLayer.dstGreenBand === band) {
-            updatedLayer.dstGreenBand = undefined
-          }
-          if (updatedLayer.dstBlueBand === band) {
-            updatedLayer.dstBlueBand = undefined
-          }
-          if (updatedLayer.dstAlphaBand === band) {
-            updatedLayer.dstAlphaBand = undefined
-          }
-          this.updateLayer({
-            projectId: this.projectId,
-            layer: updatedLayer
-          })
-        }
-      },
-      greenBandMapping: {
-        get () {
-          return this.layer.dstGreenBand
-        },
-        set (band) {
-          console.log('update the green band mapping')
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstGreenBand = Number(band)
-          if (updatedLayer.dstRedBand === band) {
-            updatedLayer.dstRedBand = undefined
-          }
-          if (updatedLayer.dstBlueBand === band) {
-            updatedLayer.dstBlueBand = undefined
-          }
-          if (updatedLayer.dstAlphaBand === band) {
-            updatedLayer.dstAlphaBand = undefined
-          }
-          this.updateLayer({
-            projectId: this.projectId,
-            layer: updatedLayer
-          })
-        }
-      },
-      blueBandMapping: {
-        get () {
-          return this.layer.dstBlueBand
-        },
-        set (band) {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstBlueBand = Number(band)
-          if (updatedLayer.dstRedBand === band) {
-            updatedLayer.dstRedBand = undefined
-          }
-          if (updatedLayer.dstGreenBand === band) {
-            updatedLayer.dstGreenBand = undefined
-          }
-          if (updatedLayer.dstAlphaBand === band) {
-            updatedLayer.dstAlphaBand = undefined
-          }
-          this.updateLayer({
-            projectId: this.projectId,
-            layer: updatedLayer
-          })
-        }
-      },
-      alphaBandMapping: {
-        get () {
-          return this.layer.dstAlphaBand
-        },
-        set (band) {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstAlphaBand = Number(band)
-          if (updatedLayer.dstRedBand === band) {
-            updatedLayer.dstRedBand = undefined
-          }
-          if (updatedLayer.dstGreenBand === band) {
-            updatedLayer.dstGreenBand = undefined
-          }
-          if (updatedLayer.dstBlueBand === band) {
-            updatedLayer.dstBlueBand = undefined
-          }
-          this.updateLayer({
-            projectId: this.projectId,
-            layer: updatedLayer
-          })
-        }
-      },
-      sourceAlphaBand: {
-        get () {
-          return this.layer.srcAlphaBand
+          return this.layer.renderingMethod
         },
         set (value) {
           let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.srcAlphaBand = value === '' ? undefined : Number(value)
+          updatedLayer.renderingMethod = value
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
           })
         }
       },
-      destinationAlphaBand: {
+      redBand: {
         get () {
-          return this.layer.dstAlphaBand
+          return this.layer.redBand
         },
         set (value) {
           let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.dstAlphaBand = value === '' ? undefined : Number(value)
+          updatedLayer.redBand = Number(value)
+          updatedLayer.redBandMin = this.layer.bandOptions[updatedLayer.redBand].min
+          updatedLayer.redBandMax = this.layer.bandOptions[updatedLayer.redBand].max
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      redBandMin: {
+        get () {
+          return this.layer.redBandMin
+        },
+        set (value) {
+          this.debounceLayerField(value, 'redBandMin')
+        }
+      },
+      redBandMax: {
+        get () {
+          return this.layer.redBandMax
+        },
+        set (value) {
+          this.debounceLayerField(value, 'redBandMax')
+        }
+      },
+      greenBand: {
+        get () {
+          return this.layer.greenBand
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.greenBand = Number(value)
+          updatedLayer.greenBandMin = this.layer.bandOptions[updatedLayer.greenBand].min
+          updatedLayer.greenBandMax = this.layer.bandOptions[updatedLayer.greenBand].max
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      greenBandMin: {
+        get () {
+          return this.layer.greenBandMin
+        },
+        set (value) {
+          this.debounceLayerField(value, 'greenBandMin')
+        }
+      },
+      greenBandMax: {
+        get () {
+          return this.layer.greenBandMax
+        },
+        set (value) {
+          this.debounceLayerField(value, 'greenBandMax')
+        }
+      },
+      blueBand: {
+        get () {
+          return this.layer.blueBand
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.blueBand = Number(value)
+          updatedLayer.blueBandMin = this.layer.bandOptions[updatedLayer.blueBand].min
+          updatedLayer.blueBandMax = this.layer.bandOptions[updatedLayer.blueBand].max
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      blueBandMin: {
+        get () {
+          return this.layer.blueBandMin
+        },
+        set (value) {
+          this.debounceLayerField(value, 'blueBandMin')
+        }
+      },
+      blueBandMax: {
+        get () {
+          return this.layer.blueBandMax
+        },
+        set (value) {
+          this.debounceLayerField(value, 'blueBandMax')
+        }
+      },
+      grayBand: {
+        get () {
+          return this.layer.grayBand
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.grayBand = Number(value)
+          updatedLayer.grayBandMin = this.layer.bandOptions[updatedLayer.grayBand].min
+          updatedLayer.grayBandMax = this.layer.bandOptions[updatedLayer.grayBand].max
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      grayBandMin: {
+        get () {
+          return this.layer.grayBandMin
+        },
+        set (value) {
+          this.debounceLayerField(value, 'grayBandMin')
+        }
+      },
+      grayBandMax: {
+        get () {
+          return this.layer.grayBandMax
+        },
+        set (value) {
+          this.debounceLayerField(value, 'grayBandMax')
+        }
+      },
+      paletteBand: {
+        get () {
+          return this.layer.paletteBand
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.paletteBand = Number(value)
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      alphaBand: {
+        get () {
+          return this.layer.alphaBand
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.alphaBand = Number(value)
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      grayScaleColorGradient: {
+        get () {
+          return this.layer.grayScaleColorGradient
+        },
+        set (value) {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.grayScaleColorGradient = Number(value)
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      enableGlobalNoDataValue: {
+        get () {
+          return this.layer.enableGlobalNoDataValue
+        },
+        set () {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.enableGlobalNoDataValue = !this.layer.enableGlobalNoDataValue
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
+      renderMethods () {
+        let methods = []
+        if (this.layer.colorMap) {
+          methods.push({name: 'Palette', value: 2})
+        } else {
+          methods.push({name: 'Gray Scale', value: 0})
+          methods.push({name: 'RGB', value: 1})
+        }
+        return methods
+      },
+      stretchToMinMax: {
+        get () {
+          return this.layer.stretchToMinMax
+        },
+        set () {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.stretchToMinMax = !this.layer.stretchToMinMax
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -275,77 +413,6 @@
       ...mapActions({
         updateLayer: 'Projects/updateProjectLayer'
       }),
-      bandMappingChange (band, value) {
-        let updatedLayer = Object.assign({}, this.layer)
-        switch (value) {
-          case 1:
-            updatedLayer.dstRedBand = Number(band)
-            if (updatedLayer.dstGreenBand === band) {
-              updatedLayer.dstGreenBand = undefined
-            }
-            if (updatedLayer.dstBlueBand === band) {
-              updatedLayer.dstBlueBand = undefined
-            }
-            if (updatedLayer.dstAlphaBand === band) {
-              updatedLayer.dstAlphaBand = undefined
-            }
-            break
-          case 2:
-            updatedLayer.dstGreenBand = Number(band)
-            if (updatedLayer.dstRedBand === band) {
-              updatedLayer.dstRedBand = undefined
-            }
-            if (updatedLayer.dstBlueBand === band) {
-              updatedLayer.dstBlueBand = undefined
-            }
-            if (updatedLayer.dstAlphaBand === band) {
-              updatedLayer.dstAlphaBand = undefined
-            }
-            break
-          case 3:
-            updatedLayer.dstBlueBand = Number(band)
-            if (updatedLayer.dstRedBand === band) {
-              updatedLayer.dstRedBand = undefined
-            }
-            if (updatedLayer.dstGreenBand === band) {
-              updatedLayer.dstGreenBand = undefined
-            }
-            if (updatedLayer.dstAlphaBand === band) {
-              updatedLayer.dstAlphaBand = undefined
-            }
-            break
-          case 4:
-            updatedLayer.dstAlphaBand = Number(band)
-            if (updatedLayer.dstRedBand === band) {
-              updatedLayer.dstRedBand = undefined
-            }
-            if (updatedLayer.dstGreenBand === band) {
-              updatedLayer.dstGreenBand = undefined
-            }
-            if (updatedLayer.dstBlueBand === band) {
-              updatedLayer.dstBlueBand = undefined
-            }
-            break
-          case '':
-            if (updatedLayer.dstRedBand === band) {
-              updatedLayer.dstRedBand = undefined
-            }
-            if (updatedLayer.dstGreenBand === band) {
-              updatedLayer.dstGreenBand = undefined
-            }
-            if (updatedLayer.dstBlueBand === band) {
-              updatedLayer.dstBlueBand = undefined
-            }
-            if (updatedLayer.dstAlphaBand === band) {
-              updatedLayer.dstAlphaBand = undefined
-            }
-            break
-        }
-        this.updateLayer({
-          projectId: this.projectId,
-          layer: updatedLayer
-        })
-      },
       zoomToExtent (extent) {
         console.log({extent})
         this.setProjectExtents({projectId: this.projectId, extents: extent})
@@ -357,6 +424,11 @@
       },
       openDetail () {
         this.expanded = !this.expanded
+      }
+    },
+    watch: {
+      globalNoDataValue (val) {
+        this.debounceLayerField(val, 'globalNoDataValue')
       }
     }
   }
@@ -393,7 +465,6 @@
     margin: 10px;
     color: #222;
   }
-
   .preset-select select {
     display: flex;
     flex-direction: row;
@@ -407,61 +478,9 @@
   .preset-select select:focus {
     outline: none;
   }
-  /* .preset-select {
-    width: 100%;
-  } */
-  .color-flex {
-    justify-content: center;
-  }
-  .color-chooser {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 50px;
-    width: 50px;
-    text-align: center;
-    border-radius: 25px;
-    border-width: 4px;
-    border-style: solid;
-    border-color: grey;
-    margin: 10px;
-  }
-  .color-band-number {
-    font-weight: bold;
-    font-size: 20px;
-    line-height: 20px;
-    padding-top: 3px;
-  }
   .color-band-name {
     font-size: 8px;
     text-align: center;
-  }
-
-  .color-select {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 60px;
-    width: 60px;
-    border-radius: 30px;
-    border-width: 4px;
-    border-style: solid;
-    margin: 10px;
-  }
-
-  .color-select select {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 20px;
-    border: none;
-    background: transparent;
-    width: 90%;
-    text-align-last: center;
-  }
-  .color-select select:focus {
-    outline: none;
   }
   .red-color, .red-color select {
     border-color: #C21807;
@@ -478,5 +497,22 @@
   .alpha-color, .alpha-color select {
     border-color: rgba(0, 0, 0, .3);
     color: rgba(0, 0, 0, .3);
+  }
+  .palette-color, .palette-color select {
+    border-color: black;
+    color: black;
+  }
+  .gray-color, .gray-color select {
+    border-color: gray;
+    color: gray;
+  }
+  .text-box {
+    height: 32px;
+    font-size: 15px;
+  }
+  .text-box-label {
+    font-size: 12px;
+    text-align: center;
+    padding: 8px;
   }
 </style>
