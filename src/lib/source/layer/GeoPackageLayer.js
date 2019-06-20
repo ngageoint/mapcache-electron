@@ -22,7 +22,8 @@ export default class GeoPackageLayer extends Layer {
     let proj = contentsDao.getProjection(contents)
     let ll = proj.inverse([contents.min_x, contents.min_y])
     let ur = proj.inverse([contents.max_x, contents.max_y])
-    this.extent = [ll[0], ll[1], ur[0], ur[1]]
+    let boundingBox = new GeoPackage.BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox('EPSG:3857', 'EPSG:4326')
+    this.extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
     let {width, height} = TileBoundingBoxUtils.determineImageDimensionsFromExtent(ll, ur)
     let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([this.extent[0], this.extent[1]], [this.extent[2], this.extent[3]])
     if (this.pane === 'tile') {

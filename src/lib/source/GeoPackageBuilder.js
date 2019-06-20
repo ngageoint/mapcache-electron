@@ -144,8 +144,6 @@ export default class GeoPackageBuilder {
             layerStatus.totalSize = totalSize
             layerStatus.remainingTime = ((time - layerStatus.startTime) / layerStatus.tilesComplete) * (layerStatus.totalTileCount - layerStatus.tilesComplete)
             this.dispatchStatusUpdate(status)
-          } else {
-            console.log('not yet...')
           }
           if (!base64) {
             return false
