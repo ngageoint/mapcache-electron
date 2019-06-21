@@ -35,6 +35,8 @@ export default class GeoTiffLayer extends Layer {
   alphaBand
   enableGlobalNoDataValue
   globalNoDataValue
+  enableGlobalOpacity
+  globalOpacity
   bandOptions
 
   static getMaxForDataType (datatype) {
@@ -103,10 +105,14 @@ export default class GeoTiffLayer extends Layer {
       this.alphaBand = this._configuration.alphaBand
       this.globalNoDataValue = this._configuration.globalNoDataValue
       this.enableGlobalNoDataValue = this._configuration.enableGlobalNoDataValue
+      this.globalOpacity = this._configuration.globalOpacity
+      this.enableGlobalOpacity = this._configuration.enableGlobalOpacity
       // available bands to assign
       this.bandOptions = this._configuration.bandOptions
     } else {
       this.enableGlobalNoDataValue = false
+      this.enableGlobalOpacity = false
+      this.globalOpacity = 0
       this.redBand = 0
       this.greenBand = 0
       this.blueBand = 0
@@ -281,7 +287,9 @@ export default class GeoTiffLayer extends Layer {
       paletteBand: this.paletteBand,
       bandOptions: this.bandOptions,
       globalNoDataValue: this.globalNoDataValue,
-      enableGlobalNoDataValue: this.enableGlobalNoDataValue
+      enableGlobalNoDataValue: this.enableGlobalNoDataValue,
+      globalOpacity: this.globalOpacity,
+      enableGlobalOpacity: this.enableGlobalOpacity
     }
   }
 

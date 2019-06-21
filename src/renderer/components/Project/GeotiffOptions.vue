@@ -52,13 +52,22 @@
           Transparency Options
         <div class="flex-row option-block">
           <span class="text-box-label">
-            Global NO_DATA Value
+            NO_DATA Value
             <input type="checkbox" v-model="enableGlobalNoDataValue">
           </span>
           <input type="number" class="text-box" v-model="globalNoDataValue"/>
         </div>
+        <div class="flex-row option-block">
+          <span class="text-box-label">
+            Opacity Mask
+            <input type="checkbox" v-model="enableGlobalOpacity">
+          </span>
+          <div style="flex: 1; padding: 8px; max-width: 180px;">
+            <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
+          </div>
+        </div>
         <div class="flex-column option-block">
-          Transparency Band
+          Alpha Band
           <div class="preset-select alpha-color">
             <select v-model="alphaBand">
               <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
@@ -130,13 +139,22 @@
           Transparency Options
           <div class="flex-row option-block">
             <span class="text-box-label">
-              Global NO_DATA Value
+              NO_DATA Value
               <input type="checkbox" v-model="enableGlobalNoDataValue">
             </span>
             <input type="number" class="text-box" v-model="globalNoDataValue"/>
           </div>
+          <div class="flex-row option-block">
+            <span class="text-box-label">
+              Opacity Mask
+              <input type="checkbox" v-model="enableGlobalOpacity">
+            </span>
+            <div style="flex: 1; padding: 8px; max-width: 180px;">
+              <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
+            </div>
+          </div>
           <div class="flex-column option-block">
-            Transparency Band
+            Alpha Band
             <div class="preset-select alpha-color">
               <select v-model="alphaBand">
                 <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
@@ -151,15 +169,30 @@
       <div class="layer__face__stats">
         <p class="layer__face__stats__weight">
           Color Palette Options
-        <div class="flex-column option-block">
-          Color Palette Band Options
-          <div class="preset-select palette-color">
-            <select v-model="paletteBand">
-              <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-            </select>
-            <div class="color-band-name">Palette</div>
+          <div class="flex-column option-block">
+            Color Palette Band Options
+            <div class="preset-select palette-color">
+              <select v-model="paletteBand">
+                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
+              </select>
+              <div class="color-band-name">Palette</div>
+            </div>
           </div>
-        </div>
+        </p>
+      </div>
+      <div class="layer__horizontal__divider detail-divider"></div>
+      <div class="layer__face__stats">
+        <p class="layer__face__stats__weight">
+          Transparency Options
+          <div class="flex-row option-block">
+              <span class="text-box-label">
+                Opacity Mask
+                <input type="checkbox" v-model="enableGlobalOpacity">
+              </span>
+            <div style="flex: 1; padding: 8px; max-width: 180px;">
+              <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
+            </div>
+          </div>
         </p>
       </div>
     </div>
@@ -169,24 +202,30 @@
 <script>
   import { mapActions } from 'vuex'
   import _ from 'lodash'
+  import VueSlider from 'vue-slider-component'
+  import 'vue-slider-component/theme/antd.css'
 
   export default {
     data () {
       return {
-        globalNoDataValue: this.layer.globalNoDataValue
+        globalNoDataValue: this.layer.globalNoDataValue,
+        globalOpacity: this.layer.globalOpacity
       }
     },
     created () {
       this.debounceLayerField = _.debounce((value, key) => {
         if (value) {
           let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer[key] = Number(value)
+          updatedLayer[key] = value
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
           })
         }
       }, 500)
+    },
+    components: {
+      VueSlider
     },
     props: {
       layer: Object,
@@ -385,6 +424,19 @@
           })
         }
       },
+      enableGlobalOpacity: {
+        get () {
+          return this.layer.enableGlobalOpacity
+        },
+        set () {
+          let updatedLayer = Object.assign({}, this.layer)
+          updatedLayer.enableGlobalOpacity = !this.layer.enableGlobalOpacity
+          this.updateLayer({
+            projectId: this.projectId,
+            layer: updatedLayer
+          })
+        }
+      },
       renderMethods () {
         let methods = []
         if (this.layer.colorMap) {
@@ -427,8 +479,11 @@
       }
     },
     watch: {
-      globalNoDataValue (val) {
-        this.debounceLayerField(val, 'globalNoDataValue')
+      globalNoDataValue (value) {
+        this.debounceLayerField(Number(value), 'globalNoDataValue')
+      },
+      globalOpacity (value) {
+        this.debounceLayerField(Number(value), 'globalOpacity')
       }
     }
   }
@@ -513,6 +568,9 @@
   .text-box-label {
     font-size: 12px;
     text-align: center;
-    padding: 8px;
+    padding-right: 8px;
+    padding-bottom: 8px;
+    padding-top: 8px;
+    margin-bottom: 8px;
   }
 </style>

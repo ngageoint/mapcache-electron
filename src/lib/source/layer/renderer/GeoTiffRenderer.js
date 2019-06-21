@@ -129,6 +129,9 @@ export default class GeoTiffRenderer {
               targetData[pos + 3] = 0
             }
           }
+          if (this.layer.enableGlobalOpacity) {
+            targetData[pos + 3] = targetData[pos + 3] * this.layer.globalOpacity / 100.0
+          }
         }
       }
     } else if (this.layer.renderingMethod === 1) {
@@ -179,6 +182,9 @@ export default class GeoTiffRenderer {
             targetData[(i * 4) + 3] = 0
           }
         }
+        if (this.layer.enableGlobalOpacity) {
+          targetData[(i * 4) + 3] = targetData[(i * 4) + 3] * this.layer.globalOpacity / 100.0
+        }
       }
     } else if (this.layer.renderingMethod === 2) {
       let colorMap = new Uint16Array(this.layer.colorMap.buffer)
@@ -193,6 +199,9 @@ export default class GeoTiffRenderer {
           targetData[(i * 4) + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
           targetData[(i * 4) + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
           targetData[(i * 4) + 3] = alphaBand[i]
+          if (this.layer.enableGlobalOpacity) {
+            targetData[(i * 4) + 3] = targetData[(i * 4) + 3] * this.layer.globalOpacity / 100.0
+          }
         }
       }
     }
