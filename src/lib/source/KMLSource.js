@@ -1,6 +1,6 @@
 import Source from './Source'
 import { DOMParser } from 'xmldom'
-import * as ToGeoJSON from '@caldwellc/togeojson'
+import * as ToGeoJSON from '@ccaldwell/togeojson'
 import GDALSource from './GDALSource'
 import fs from 'fs'
 import path from 'path'
