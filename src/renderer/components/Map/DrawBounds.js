@@ -5,7 +5,6 @@ export default {
   computed: {
     ...mapState({
       drawBounds (state) {
-        console.log('state', state.UIState[this.projectId].drawBounds)
         return state.UIState[this.projectId].drawBounds
       }
     })
@@ -29,6 +28,8 @@ export default {
             aoi = this.activeGeopackage.imageryLayers[key].aoi
           } else if (this.activeGeopackage.featureLayers[key]) {
             aoi = this.activeGeopackage.featureLayers[key].aoi
+          } else if (this.activeGeopackage.featureToImageryLayers[key]) {
+            aoi = this.activeGeopackage.featureToImageryLayers[key].aoi
           } else {
             aoi = this.activeGeopackage[key]
           }
@@ -55,7 +56,6 @@ export default {
   watch: {
     drawBounds: {
       handler (value, oldValue) {
-        console.log('draw bounds value changed', value)
         this.setupDrawing(value)
       },
       deep: true
@@ -63,8 +63,6 @@ export default {
   },
   mounted: function () {
     this.$nextTick(function () {
-      console.log('Draw Bounds mounted')
-
       this.setupDrawing(this.drawBounds)
     })
   }

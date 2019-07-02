@@ -71,8 +71,6 @@ export default class GeoPackageBuilder {
         let columnCount = 2
         for (const column of layerColumns.columns) {
           if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
-            // console.log('Pushing column', column)
-            // console.log('data type', GeoPackage.DataTypes.fromName(column.dataType))
             columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
           }
         }
@@ -80,7 +78,6 @@ export default class GeoPackageBuilder {
         await gp.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
         let iterator = await layer.iterateFeaturesInBounds(aoi)
         for (let feature of iterator) {
-          // console.log('adding feature', feature)
           GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.layerName || geopackageLayerConfig.name)
           layerStatus.featuresAdded++
           if (layerStatus.featuresAdded % 10 === 0) {
@@ -120,7 +117,6 @@ export default class GeoPackageBuilder {
       try {
         let layer = LayerFactory.constructLayer(layerConfig)
         await layer.initialize()
-        // console.log('Tile Layer')
         const contentsBounds = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
         const contentsSrsId = 3857
         const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
@@ -131,14 +127,11 @@ export default class GeoPackageBuilder {
         let time = Date.now()
         let currentTile
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
-          // console.log(`z: ${z} x: ${x} y: ${y}`)
           let base64 = await layer.renderImageryTile({x, y, z})
           tilesComplete++
           currentTile = {z, x, y}
-          // console.log('totalSize', totalSize)
           if (Date.now() - time > 1000) {
             time = Date.now()
-            // console.log('GO DISPATCH')
             layerStatus.tilesComplete = tilesComplete
             layerStatus.currentTile = currentTile
             layerStatus.totalSize = totalSize
@@ -153,7 +146,6 @@ export default class GeoPackageBuilder {
             return false
           }
           if (blankURL === base64) {
-            // console.log('IT IS BLANK')
             return false
           }
 
@@ -170,7 +162,6 @@ export default class GeoPackageBuilder {
                 let reader = new FileReader()
                 reader.addEventListener('loadend', function () {
                   totalSize += reader.result.byteLength
-                  // console.log('totalSize', totalSize)
                   gp.addTile(Buffer.from(reader.result), geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
                   resolve(false)
                 })
@@ -186,16 +177,14 @@ export default class GeoPackageBuilder {
         layerStatus.remainingTime = 0
         layerStatus.creation = 'Completed'
         this.dispatchStatusUpdate(status)
-        console.log('completed')
       } catch (error) {
         layerStatus.creation = 'Failed'
         layerStatus.error = error
         this.dispatchStatusUpdate(status)
-        console.log('failed')
       }
     }
 
-    // execute imagery to feature configuration
+    // execute feature to imagery configuration
     if (Object.values(this.config.featureToImageryLayers).filter((layer) => {
       return layer.included
     }).length > 0) {

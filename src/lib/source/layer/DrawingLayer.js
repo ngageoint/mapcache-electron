@@ -1,28 +1,84 @@
 import Layer from './Layer'
-import jetpack from 'fs-jetpack'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import geojsonvt from 'geojson-vt'
+import * as vendor from '../../../lib/vendor'
 import * as vtpbf from 'vt-pbf'
-import request from 'request-promise-native'
-import MapcacheMapLayer from '../../map/MapcacheMapLayer'
-import { bboxClip, booleanPointInPolygon, bboxPolygon } from '@turf/turf'
+import { bboxClip, booleanPointInPolygon, bboxPolygon, polygon, polygonToLine } from '@turf/turf'
+import geojsonExtent from '@mapbox/geojson-extent'
+import jetpack from 'fs-jetpack'
 
-export default class WFSLayer extends Layer {
-  _vectorTileRenderer
-
+export default class DrawingLayer extends Layer {
   async initialize () {
-    this.features = await this.getFeaturesInLayer(this._configuration.sourceLayerName)
+    this.features = this._configuration.features
     this.count = this.features.length
     let name = this.name
     let extent = this.extent
-    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, DrawingLayer.generateMbStyle(this.style, this.name), this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, extent, name)
     })
     await this._vectorTileRenderer.init()
     await this.renderOverviewTile()
     return this
+  }
+
+  static generateMbStyle (style, name) {
+    let styleSources = {}
+    styleSources[name] = {
+      'type': 'vector',
+      'maxzoom': 18,
+      'tiles': [
+        '{z}-{x}-{y}'
+      ]
+    }
+    return {
+      'version': 8,
+      'name': name,
+      'sources': styleSources,
+      'layers': [
+        {
+          'id': 'fill-style',
+          'type': 'fill',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+          'paint': {
+            'fill-color': style.fillColor,
+            'fill-opacity': style.fillOpacity
+          }
+        },
+        {
+          'id': 'line-style',
+          'type': 'line',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
+          'paint': {
+            'line-width': style.weight,
+            'line-color': style.color
+          },
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
+          }
+        },
+        {
+          'id': 'point-style',
+          'type': 'circle',
+          'source': name,
+          'source-layer': name,
+          'filter': ['match', ['geometry-type'], ['Point'], true, false],
+          'paint': {
+            'circle-color': style.fillColor,
+            'circle-stroke-color': style.color,
+            'circle-opacity': style.fillOpacity,
+            'circle-stroke-width': style.weight,
+            'circle-radius': ['get', 'radius']
+          }
+        }
+      ]
+    }
   }
 
   addFeatureProperties (feature, currentProperties) {
@@ -105,96 +161,38 @@ export default class WFSLayer extends Layer {
     }
   }
 
-  getFeaturesInLayer (layer) {
-    return new Promise((resolve) => {
-      let options = {
-        method: 'GET',
-        url: this.filePath + '&request=GetFeature&typeNames=' + layer + '&outputFormat=application/json&srsName=crs:84',
-        encoding: null,
-        gzip: true
-      }
-      if (this.credentials) {
-        if (this.credentials.type === 'basic' || this.credentials.type === 'bearer') {
-          if (!options.headers) {
-            options.headers = {}
-          }
-          options.headers['Authorization'] = this.credentials.authorization
-        }
-      }
-      request(options, (error, response, body) => {
-        if (!error) {
-          let featureCollection = JSON.parse(body)
-          if (featureCollection && featureCollection.features) {
-            let features = []
-            featureCollection.features.forEach((feature) => {
-              let splitType = ''
-              if (feature.geometry.type === 'MultiPolygon') {
-                splitType = 'Polygon'
-              } else if (feature.geometry.type === 'MultiLineString') {
-                splitType = 'LineString'
-              } else {
-                features.push(feature)
-                return
-              }
-              feature.geometry.coordinates.forEach((coords) => {
-                features.push({
-                  type: 'Feature',
-                  properties: feature.properties,
-                  geometry: {
-                    type: splitType,
-                    coordinates: coords
-                  }
-                })
-              })
-            })
-            resolve(features)
-          } else {
-            resolve([])
-          }
-        }
-      })
-    })
-  }
-
   get configuration () {
     return {
-      filePath: this.filePath,
-      sourceLayerName: this.sourceLayerName,
-      name: this.name,
+      filePath: this._configuration.name,
+      sourceLayerName: this._configuration.name,
+      name: this._configuration.name,
+      features: this._configuration.features,
       extent: this.extent,
       id: this.id,
       pane: 'vector',
-      layerType: 'WFS',
-      overviewTilePath: this.overviewTilePath,
-      count: this.count || 0,
+      layerType: 'Drawing',
+      count: this._configuration.features.length || 0,
       shown: this.shown || true,
-      style: this.style,
-      credentials: this.credentials
+      style: this.style
     }
   }
 
   get extent () {
-    if (this._configuration.extent) {
-      return this._configuration.extent
-    }
-    this._configuration.extent = [-180, -90, 180, 90]
-    return this._configuration.extent
-  }
-
-  generateColor () {
-    let color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-    return color.padEnd(7, '0')
+    return geojsonExtent({
+      type: 'FeatureCollection',
+      features: this._configuration.features
+    })
   }
 
   get style () {
     this._style = this._style || {
-      weight: 2.0,
       radius: 2.0,
-      color: this.generateColor(),
+      weight: 3,
+      color: '#3388ff',
       opacity: 1.0,
-      fillColor: this.generateColor(),
-      fillOpacity: 1.0,
-      fillOutlineColor: this.generateColor()
+      fillColor: '#3388ff',
+      fillOpacity: 0.2,
+      fillOutlineColor: '#3388ff'
     }
     return this._style
   }
@@ -237,7 +235,7 @@ export default class WFSLayer extends Layer {
 
       let featureCollection = {
         type: 'FeatureCollection',
-        features: this.getTileFeatures(coords, extent)
+        features: JSON.parse(JSON.stringify(this.getTileFeatures(coords, extent)))
       }
 
       let tileBuffer = 8
@@ -259,7 +257,23 @@ export default class WFSLayer extends Layer {
   iterateFeaturesInBounds (bounds) {
     const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
 
-    return this.features.map((feature) => {
+    let features = this._configuration.features.slice()
+    let polygonFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'polygon')
+    polygonFeatures.forEach(f => {
+      const poly = polygon(f.geometry.coordinates)
+      const line = polygonToLine(poly)
+      if (line.type.toLowerCase() === 'feature') {
+        line.id = Math.random().toString(36).substr(2, 9)
+        features.push(line)
+      } else if (line.type.toLowerCase() === 'featurecollection') {
+        line.features.forEach(feature => {
+          feature.id = Math.random().toString(36).substr(2, 9)
+          features.push(feature)
+        })
+      }
+    })
+
+    return features.map((feature) => {
       try {
         if (feature.geometry.type.toLowerCase() === 'point') {
           const bboxPoly = bboxPolygon(bbox)
@@ -283,6 +297,8 @@ export default class WFSLayer extends Layer {
               coordinates: coordinatesWithin
             }
           }
+        } else if (feature.geometry.type.toLowerCase() === 'linestring' || feature.geometry.type.toLowerCase() === 'multilinestring') {
+          return feature
         } else {
           let clipped = bboxClip(feature, bbox)
           if (clipped && clipped.geometry.coordinates.length > 0) {
@@ -304,6 +320,12 @@ export default class WFSLayer extends Layer {
     return this._vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
+  emptyVectorTile (name) {
+    const gjvt = {}
+    gjvt[name] = {features: []}
+    return vtpbf.fromGeojsonVt(gjvt)
+  }
+
   renderOverviewTile (coords) {
     let overviewTilePath = this.overviewTilePath
     if (jetpack.exists(this.overviewTilePath)) return
@@ -313,21 +335,30 @@ export default class WFSLayer extends Layer {
     })
   }
 
-  emptyVectorTile (name) {
-    const gjvt = {}
-    gjvt[name] = {features: []}
-    return vtpbf.fromGeojsonVt(gjvt)
-  }
-
   get mapLayer () {
-    if (this._mapLayer) return this._mapLayer
+    let style = this.style
+    if (style.radius) {
+      delete style.radius
+    }
 
-    this._mapLayer = new MapcacheMapLayer({
-      layer: this,
-      pane: this.pane === 'tile' ? 'tilePane' : 'overlayPane'
+    if (!this._mapLayer) {
+      this._mapLayer = new vendor.L.LayerGroup()
+      this._mapLayer.id = this.id
+    }
+    this._mapLayer.remove()
+    this._configuration.features.forEach(feature => {
+      if (feature.properties.radius) {
+        let styleCopy = Object.assign({}, style)
+        styleCopy.radius = feature.properties.radius
+        let layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], styleCopy)
+        layer.id = feature.id
+        this._mapLayer.addLayer(layer)
+      } else {
+        let layer = new vendor.L.GeoJSON(feature, { style })
+        layer.id = feature.id
+        this._mapLayer.addLayer(layer)
+      }
     })
-
-    this._mapLayer.id = this.id
     return this._mapLayer
   }
 }

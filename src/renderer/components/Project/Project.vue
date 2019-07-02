@@ -66,7 +66,8 @@
           style="width: 100%; height: 100%;"
           :active-geopackage="project.geopackages[project.currentGeoPackage]"
           :layer-configs="project.layers"
-          :project-id="project.id">
+          :project-id="project.id"
+          :project="project">
       </leaflet-map>
     </div>
   </div>

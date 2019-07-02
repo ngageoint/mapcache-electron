@@ -14,7 +14,7 @@
             </div>
           </div>
         </div>
-        <div class="flex-row">
+        <div class="flex-row" v-if="layer.layerType !== 'Drawing'">
           <div>
             <label class="control-label">Fill Outline Color</label>
             <div>
@@ -38,7 +38,7 @@
             </div>
           </div>
         </div>
-        <div class="flex-row">
+        <div class="flex-row" v-if="layer.layerType !== 'Drawing'">
           <div>
             <label class="control-label">Radius (px)</label>
             <div>

@@ -174,9 +174,9 @@
           if (this.geopackage.featureImageryConversion.layerOrder) {
             return this.geopackage.featureImageryConversion.layerOrder
           } else {
-            return Object.keys(this.geopackage.featureToImageryLayers).map((l, i) => {
+            return Object.values(this.geopackage.featureToImageryLayers).filter(layer => layer.included).map((layer, i) => {
               return {
-                name: this.project.layers[l].name,
+                name: layer.name,
                 id: i
               }
             })
@@ -226,11 +226,9 @@
         setFeatureImageryConversionLayerOrder: 'Projects/setFeatureImageryConversionLayerOrder'
       }),
       minZoomValid () {
-        console.log(this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue)
         return this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue
       },
       maxZoomValid () {
-        console.log(this.maxZoomValue <= 18 && this.maxZoomValue >= 0 && this.maxZoomValue >= this.minZoomValue)
         return this.maxZoomValue <= 18 && this.maxZoomValue >= 0 && this.maxZoomValue >= this.minZoomValue
       },
       editLayerGeoPackageName () {
@@ -242,7 +240,6 @@
       saveEditedName (event) {
         this.editNameMode = false
         let geopackageNameEdit = event.target.closest('.edit-name-container').querySelector('.project-name-edit')
-        console.log('name value', geopackageNameEdit.value)
         this.setFeatureImageryConversionLayerName({projectId: this.project.id, geopackageId: this.geopackage.id, layerName: geopackageNameEdit.value})
       },
       cancelEditName () {

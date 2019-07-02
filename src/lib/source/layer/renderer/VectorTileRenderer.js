@@ -55,6 +55,10 @@ export default class VectorTileRenderer {
           'paint': {
             'line-width': style.weight,
             'line-color': style.color
+          },
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
           }
         },
         {
@@ -141,8 +145,7 @@ export default class VectorTileRenderer {
         if (z === 0) {
           image.resize(width, height)
         }
-        const data = await image.raw()
-          .toBuffer()
+        const data = await image.raw().toBuffer()
         if (data) {
           let context = tileCanvas.getContext('2d')
           context.putImageData(new ImageData(new Uint8ClampedArray(data), width, height), 0, 0)

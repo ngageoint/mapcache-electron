@@ -194,7 +194,6 @@ const actions = {
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
-    console.log('adding project state')
     actions.openProject({ commit, state }, project)
   },
   setProjectName ({ commit, state }, {project, name}) {

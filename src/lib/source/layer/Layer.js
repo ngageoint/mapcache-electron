@@ -8,7 +8,6 @@ export default class Layer {
   credentials
   sourceLayerName
   name
-  mapLayers
   constructor (configuration = {}) {
     this._configuration = configuration
     this.id = this._configuration.id || createId()
