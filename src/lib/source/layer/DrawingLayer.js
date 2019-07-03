@@ -45,7 +45,8 @@ export default class DrawingLayer extends Layer {
           'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
           'paint': {
             'fill-color': style.fillColor,
-            'fill-opacity': style.fillOpacity
+            'fill-opacity': style.fillOpacity,
+            'fill-outline-color': 'rgba(0, 0, 0, 0)'
           }
         },
         {

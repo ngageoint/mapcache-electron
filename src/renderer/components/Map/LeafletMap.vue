@@ -35,6 +35,18 @@
   let layerSelectionVisible = false
   let layerChoices = []
 
+  function normalize (longitude) {
+    let lon = longitude
+    while (lon < -180) {
+      lon += 360
+    }
+    while (lon > 180) {
+      lon -= 360
+    }
+    console.log('normalizing ' + longitude + ' to ' + lon)
+    return lon
+  }
+
   export default {
     mixins: [
       ZoomToExtent,
@@ -76,6 +88,37 @@
         let feature = this.createdLayer.toGeoJSON()
         feature.id = Source.createId()
         feature.properties.radius = this.createdLayer._mRadius
+        switch (feature.geometry.type.toLowerCase()) {
+          case 'point': {
+            feature.geometry.coordinates[0] = normalize(feature.geometry.coordinates[0])
+            break
+          }
+          case 'linestring': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              feature.geometry.coordinates[i][0] = normalize(feature.geometry.coordinates[i][0])
+            }
+            break
+          }
+          case 'polygon':
+          case 'multilinestring': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
+                feature.geometry.coordinates[i][j][0] = normalize(feature.geometry.coordinates[i][j][0])
+              }
+            }
+            break
+          }
+          case 'multipolygon': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
+                for (let k = 0; k < feature.geometry.coordinates[i][j].length; k++) {
+                  feature.geometry.coordinates[i][j][k][0] = normalize(feature.geometry.coordinates[i][j][k][0])
+                }
+              }
+            }
+            break
+          }
+        }
         let drawingLayers = Object.values(this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing')
         if (this.layerSelection === 0) {
           let name = 'Drawing Layer ' + (drawingLayers.length + 1)
