@@ -62,10 +62,9 @@ export default class GeoTiffRenderer {
 
     let reprojectedFile = this.reproject(this.layer.ds, 3857, tileCutline, srcCutline, srcBands, dstBands, this.layer.alphaBand, tile.width, tile.height)
 
-    this.populateTargetData(targetData, reprojectedFile, tile.width, tile.height)
+    let result = this.populateTargetData(targetData, reprojectedFile, tile.width, tile.height, true)
 
     reprojectedFile.close()
-
     ctx.clearRect(0, 0, tile.width, tile.height)
     ctx.putImageData(target, 0, 0)
     setTimeout(() => {
@@ -73,7 +72,11 @@ export default class GeoTiffRenderer {
         done(null, tile)
       }
     }, 0)
-    return tile.toDataURL()
+    return {
+      canvas: tile,
+      hasAlpha: result.hasAlpha,
+      blank: result.blank
+    }
   }
 
   createRGBArrays (width, height) {
@@ -101,7 +104,11 @@ export default class GeoTiffRenderer {
     return stretchedValue
   }
 
-  populateTargetData (targetData, ds, width, height) {
+  populateTargetData (targetData, ds, width, height, log) {
+    let result = {
+      hasAlpha: false,
+      blank: true
+    }
     const alphaBandVal = this.layer.alphaBand || ds.bands.count()
     if (this.layer.renderingMethod === 0) {
       if (this.layer.grayBand > 0) {
@@ -127,10 +134,17 @@ export default class GeoTiffRenderer {
             // alpha was good, check if it is a no data though...
             if (targetData[pos] === noDataValue) {
               targetData[pos + 3] = 0
+              result.hasAlpha = true
+            } else if (targetData[pos + 3] === 0) {
+              result.hasAlpha = true
             }
           }
           if (this.layer.enableGlobalOpacity) {
             targetData[pos + 3] = targetData[pos + 3] * this.layer.globalOpacity / 100.0
+            result.hasAlpha = true
+          }
+          if (targetData[pos + 3] !== 0) {
+            result.blank = false
           }
         }
       }
@@ -180,10 +194,18 @@ export default class GeoTiffRenderer {
         if (targetData[(i * 4) + 3] !== 0) {
           if (targetData[i * 4] === redNoDataValue && targetData[(i * 4) + 1] === greenNoDataValue && targetData[(i * 4) + 2] === blueNoDataValue) {
             targetData[(i * 4) + 3] = 0
+            result.hasAlpha = true
           }
+        }
+        if (targetData[(i * 4) + 3] === 0) {
+          result.hasAlpha = true
         }
         if (this.layer.enableGlobalOpacity) {
           targetData[(i * 4) + 3] = targetData[(i * 4) + 3] * this.layer.globalOpacity / 100.0
+          result.hasAlpha = true
+        }
+        if (targetData[(i * 4) + 3] !== 0) {
+          result.blank = false
         }
       }
     } else if (this.layer.renderingMethod === 2) {
@@ -199,12 +221,20 @@ export default class GeoTiffRenderer {
           targetData[(i * 4) + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
           targetData[(i * 4) + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
           targetData[(i * 4) + 3] = alphaBand[i]
+          if (alphaBand[i] === 0) {
+            result.hasAlpha = true
+          }
           if (this.layer.enableGlobalOpacity) {
             targetData[(i * 4) + 3] = targetData[(i * 4) + 3] * this.layer.globalOpacity / 100.0
+            result.hasAlpha = true
+          }
+          if (targetData[(i * 4) + 3] !== 0) {
+            result.blank = false
           }
         }
       }
     }
+    return result
   }
 
   reproject (ds, epsgCode, tileCutline, srcCutline, srcBands, dstBands, alphaBand, width, height) {
