@@ -6,6 +6,8 @@ import marker2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 import LeafletEditable from 'leaflet-editable' // eslint-disable-line no-unused-vars
+import LeafletDraw from 'leaflet-draw' // eslint-disable-line no-unused-vars
+import 'leaflet-draw/dist/leaflet.draw.css' // eslint-disable-line no-unused-vars
 
 delete L.Icon.Default.prototype._getIconUrl
 

@@ -43,7 +43,6 @@
     while (lon > 180) {
       lon -= 360
     }
-    console.log('normalizing ' + longitude + ' to ' + lon)
     return lon
   }
 
@@ -79,7 +78,8 @@
     methods: {
       ...mapActions({
         addProjectLayer: 'Projects/addProjectLayer',
-        updateProjectLayer: 'Projects/updateProjectLayer'
+        updateProjectLayer: 'Projects/updateProjectLayer',
+        removeProjectLayer: 'Projects/removeProjectLayer'
       }),
       activateGeoPackageAOI () {
 
@@ -201,6 +201,7 @@
       }
     },
     mounted: async function () {
+      let _this = this
       this.map = vendor.L.map('map', {editable: true})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
@@ -209,12 +210,10 @@
       })
       this.map.setView(defaultCenter, defaultZoom)
       osmbasemap.addTo(this.map)
-      let _this = this
-
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
       this.map.on('layeradd', function (e) {
-        if (!this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
+        if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
             if (e.layer.editEnabled()) {
               e.layer.disableEdit()
@@ -222,37 +221,68 @@
               e.layer.enableEdit()
             }
           })
-          let layer = e.layer
-          e.layer.on('contextmenu', () => {
-            const deleteLayer = async () => {
-              let feature = layer.toGeoJSON()
-              if (!feature.id) {
-                feature.id = layer.id
-              }
-              let layerConfig = Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').find((layerConfig) => {
-                return layerConfig.features.findIndex(f => f.id === feature.id) >= 0
-              })
-              if (layerConfig) {
-                let newLayerConfig = Object.assign({}, layerConfig)
-                newLayerConfig.features = newLayerConfig.features.slice()
-                newLayerConfig.features.splice(newLayerConfig.features.findIndex(f => f.id === feature.id), 1)
-                let layer = LayerFactory.constructLayer(newLayerConfig)
-                await layer.initialize()
-                _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
-              }
-            }
-            let container = vendor.L.DomUtil.create('div')
-            let btn = vendor.L.DomUtil.create('button', '', container)
-            btn.setAttribute('type', 'button')
-            btn.innerHTML = 'Delete Shape'
-            vendor.L.DomEvent.on(btn, 'click', deleteLayer)
-            e.layer.bindPopup(container).openPopup()
-          })
         }
       })
 
-      this.map.on('editable:drawing:end', (e) => {
-        if (!this.isDrawingBounds) {
+      this.map.on('delete:enable', () => {
+        this.map.eachLayer((layer) => {
+          if (layer instanceof vendor.L.Path || layer instanceof vendor.L.Marker) {
+            layer.on('click', () => {
+              const deleteLayer = async () => {
+                let feature = layer.toGeoJSON()
+                if (!feature.id) {
+                  feature.id = layer.id
+                }
+                let layerConfig = Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').find((layerConfig) => {
+                  return layerConfig.features.findIndex(f => f.id === feature.id) >= 0
+                })
+                if (layerConfig) {
+                  let newLayerConfig = Object.assign({}, layerConfig)
+                  newLayerConfig.features = newLayerConfig.features.slice()
+                  newLayerConfig.features.splice(newLayerConfig.features.findIndex(f => f.id === feature.id), 1)
+                  if (newLayerConfig.features.length === 0) {
+                    _this.removeProjectLayer({projectId: _this.projectId, layerId: newLayerConfig.id})
+                  } else {
+                    let layer = LayerFactory.constructLayer(newLayerConfig)
+                    await layer.initialize()
+                    _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
+                  }
+                }
+              }
+              let popup = vendor.L.DomUtil.create('div', 'popup')
+              let popupHeader = vendor.L.DomUtil.create('div', 'popup_header', popup)
+              let popupBody = vendor.L.DomUtil.create('div', 'popup_body', popup)
+              let popupFooter = vendor.L.DomUtil.create('div', 'popup_footer ', popup)
+              let popupHeaderTitle = vendor.L.DomUtil.create('span', '', popupHeader)
+              popupHeaderTitle.innerHTML = 'Delete Drawing'
+              let popupBodyParagraph = vendor.L.DomUtil.create('p', '', popupBody)
+              popupBodyParagraph.innerHTML = 'Are you sure you want to delete this drawing?'
+              let confirmBtn = vendor.L.DomUtil.create('button', 'layer__request-btn', popupFooter)
+              vendor.L.DomUtil.addClass(confirmBtn, 'layer__request-btn__confirm')
+              confirmBtn.setAttribute('type', 'button')
+              confirmBtn.innerHTML = '<span class="layer__request-btn__text-1">Delete</span>'
+              vendor.L.DomEvent.on(confirmBtn, 'click', deleteLayer)
+              let cancelBtn = vendor.L.DomUtil.create('button', 'layer__request-btn', popupFooter)
+              cancelBtn.setAttribute('type', 'button')
+              cancelBtn.innerHTML = '<span class="layer__request-btn__text-1">Cancel</span>'
+              layer.bindPopup(popup).openPopup()
+              vendor.L.DomEvent.on(cancelBtn, 'click', () => {
+                layer.closePopup()
+              })
+            })
+          }
+        })
+      })
+      this.map.on('delete:disable', () => {
+        this.map.eachLayer((layer) => {
+          if (layer instanceof vendor.L.Path || layer instanceof vendor.L.Marker) {
+            layer.off('click')
+          }
+        })
+      })
+      this.map.on('editable:drawing:end', function (e) {
+        console.log('editable:drawing:end')
+        if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]
           Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').forEach((layerConfig) => {
@@ -325,8 +355,81 @@
   .leaflet-control-draw-circle {
     background: url('../../assets/circle.svg') no-repeat;
   }
-  .leaflet-control-draw-trash {
+  .leaflet-control-draw-trash-enabled {
+    background: url('../../assets/trash_red.svg') no-repeat;
+  }
+  .leaflet-control-draw-trash-disabled {
     background: url('../../assets/trash.svg') no-repeat;
+  }
+  .leaflet-control-disabled {
+    color: currentColor;
+    cursor: not-allowed;
+    opacity: 0.5;
+    text-decoration: none;
+  }
+  .layer__request-btn {
+    position: relative;
+    width: 10vh;
+    height: 40px;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: Roboto, sans-serif;
+    color: #FFFFFF;
+    outline: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0;
+    -webkit-transition: letter-spacing 0.3s;
+    transition: letter-spacing 0.3s;
+  }
+  .layer__request-btn__confirm {
+    background: #FF5555;
+    margin-right: 1vh;
+  }
+  .layer__request-btn__text-1 {
+    -webkit-transition: opacity 0.48s;
+    transition: opacity 0.48s;
+  }
+  .layer.req-active1 .layer__request-btn__text-1 {
+    opacity: 0;
+  }
+  .layer.req-active2 .layer__request-btn__text-1 {
+    display: none;
+  }
+  .layer__request-btn:hover {
+    letter-spacing: 5px;
+  }
+  .layer-style-container {
+    display: flex;
+    flex-direction: row;
+  }
+  .layer-style-type {
+    flex: 1;
+  }
+  .popup {
+    display: flex;
+    flex-direction: column;
+    min-height: 16vh;
+    min-width: 30vh;
+  }
+  .popup_body {
+    flex: 1 0 8vh;
+    font-family: Roboto, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .popup_header {
+    flex: 1 0 4vh;
+    font-family: Roboto, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .popup_footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex: 1 0 4vh;
   }
 
 </style>
