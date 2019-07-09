@@ -106,8 +106,8 @@ export default class GeoPackageBuilder {
         continue
       }
       let aoi = this.config.imageryLayersShareBounds ? this.config.imageryAoi : geopackageLayerConfig.aoi
-      let minZoom = Number(this.config.imageryLayersShareBounds ? this.config.minZoom : geopackageLayerConfig.minZoom)
-      let maxZoom = Number(this.config.imageryLayersShareBounds ? this.config.maxZoom : geopackageLayerConfig.maxZoom)
+      let minZoom = Number(this.config.imageryLayersShareBounds ? this.config.imageryMinZoom : geopackageLayerConfig.minZoom)
+      let maxZoom = Number(this.config.imageryLayersShareBounds ? this.config.imageryMaxZoom : geopackageLayerConfig.maxZoom)
       let layerConfig = this.project.layers[layerId]
       let layerStatus = {
         layerId,
