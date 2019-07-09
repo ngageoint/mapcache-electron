@@ -3,6 +3,9 @@ import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
 import store from '../../store'
 
+import imagemin from 'imagemin'
+import imageminPngquant from 'imagemin-pngquant'
+
 export default class GeoPackageBuilder {
   config
   project
@@ -24,7 +27,7 @@ export default class GeoPackageBuilder {
     let blankCanvas = document.createElement('canvas')
     blankCanvas.width = 256
     blankCanvas.height = 256
-    let blankURL = blankCanvas.toDataURL()
+    // let blankURL = blankCanvas.toDataURL()
 
     let status = {
       creation: 'Started',
@@ -131,53 +134,59 @@ export default class GeoPackageBuilder {
         let time = Date.now()
         let currentTile
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
-          // console.log(`z: ${z} x: ${x} y: ${y}`)
-          let base64 = await layer.renderImageryTile({x, y, z})
+          let result = await layer.renderImageryTile({x, y, z})
           tilesComplete++
           currentTile = {z, x, y}
-          // console.log('totalSize', totalSize)
           if (Date.now() - time > 1000) {
             time = Date.now()
-            // console.log('GO DISPATCH')
             layerStatus.tilesComplete = tilesComplete
             layerStatus.currentTile = currentTile
             layerStatus.totalSize = totalSize
             layerStatus.remainingTime = ((time - layerStatus.startTime) / layerStatus.tilesComplete) * (layerStatus.totalTileCount - layerStatus.tilesComplete)
             this.dispatchStatusUpdate(status)
           }
-          if (!base64) {
+          if (!result) {
             return false
           }
-          if (Buffer.isBuffer(base64)) {
-            gp.addTile(base64, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
+          if (Buffer.isBuffer(result)) {
+            gp.addTile(result, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
             return false
           }
-          if (blankURL === base64) {
-            // console.log('IT IS BLANK')
+          if (result.blank) {
             return false
           }
-
-          let canvas = document.createElement('canvas')
-          canvas.width = 256
-          canvas.height = 256
-          let ctx = canvas.getContext('2d')
-
           return new Promise((resolve, reject) => {
-            let image = new Image()
-            image.onload = () => {
-              ctx.drawImage(image, 0, 0)
-              canvas.toBlob((blob) => {
+            if (!result.hasAlpha) {
+              result.canvas.toBlob((blob) => {
                 let reader = new FileReader()
                 reader.addEventListener('loadend', function () {
                   totalSize += reader.result.byteLength
-                  // console.log('totalSize', totalSize)
                   gp.addTile(Buffer.from(reader.result), geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
                   resolve(false)
                 })
                 reader.readAsArrayBuffer(blob)
-              }, 'image/png', 1.0)
+              }, 'image/jpeg', 0.7)
+            } else {
+              result.canvas.toBlob((blob) => {
+                let reader = new FileReader()
+                reader.addEventListener('loadend', async function () {
+                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
+                    plugins: [
+                      imageminPngquant({
+                        speed: 8,
+                        quality: [0.5, 0.8]
+                      })
+                    ]
+                  })
+
+                  totalSize += buffer.length
+                  // console.log('totalSize', totalSize)
+                  gp.addTile(buffer, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
+                  resolve(false)
+                })
+                reader.readAsArrayBuffer(blob)
+              }, 'image/png')
             }
-            image.src = base64
           })
         })
         layerStatus.tilesComplete = layerStatus.totalTileCount
