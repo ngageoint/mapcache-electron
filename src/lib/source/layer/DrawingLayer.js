@@ -5,9 +5,10 @@ import proj4 from 'proj4'
 import geojsonvt from 'geojson-vt'
 import * as vendor from '../../../lib/vendor'
 import * as vtpbf from 'vt-pbf'
-import { bboxClip, booleanPointInPolygon, bboxPolygon, polygon, polygonToLine } from '@turf/turf'
+import { bboxClip, booleanPointInPolygon, bboxPolygon, polygon, polygonToLine, circle } from '@turf/turf'
 import geojsonExtent from '@mapbox/geojson-extent'
 import jetpack from 'fs-jetpack'
+// import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 
 export default class DrawingLayer extends Layer {
   async initialize () {
@@ -181,7 +182,7 @@ export default class DrawingLayer extends Layer {
   get extent () {
     return geojsonExtent({
       type: 'FeatureCollection',
-      features: this._configuration.features
+      features: this.getMapboxFeatureSet(this._configuration.features)
     })
   }
 
@@ -255,10 +256,14 @@ export default class DrawingLayer extends Layer {
     })
   }
 
-  iterateFeaturesInBounds (bounds) {
-    const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
-
-    let features = this._configuration.features.slice()
+  getMapboxFeatureSet (leafletFeatureSet) {
+    let features = leafletFeatureSet.slice()
+    let circleFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'point' && f.properties.radius !== undefined)
+    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'point' && f.properties.radius !== undefined))
+    circleFeatures.forEach(f => {
+      let circleFeature = circle(f.geometry.coordinates, f.properties.radius / 1000.0, {steps: 64})
+      features.push(circleFeature)
+    })
     let polygonFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'polygon')
     polygonFeatures.forEach(f => {
       const poly = polygon(f.geometry.coordinates)
@@ -273,8 +278,12 @@ export default class DrawingLayer extends Layer {
         })
       }
     })
+    return features
+  }
 
-    return features.map((feature) => {
+  iterateFeaturesInBounds (bounds) {
+    const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
+    return this.getMapboxFeatureSet(this._configuration.features).map((feature) => {
       try {
         if (feature.geometry.type.toLowerCase() === 'point') {
           const bboxPoly = bboxPolygon(bbox)
@@ -362,4 +371,16 @@ export default class DrawingLayer extends Layer {
     })
     return this._mapLayer
   }
+
+  // get mapLayer () {
+  //   if (this._mapLayer) return this._mapLayer
+  //
+  //   this._mapLayer = new MapcacheMapLayer({
+  //     layer: this,
+  //     pane: 'overlayPane'
+  //   })
+  //
+  //   this._mapLayer.id = this.id
+  //   return this._mapLayer
+  // }
 }
