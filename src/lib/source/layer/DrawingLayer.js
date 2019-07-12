@@ -58,6 +58,7 @@ export default class DrawingLayer extends Layer {
           'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
           'paint': {
             'line-width': style.weight,
+            'line-opacity': style.opacity,
             'line-color': style.color
           },
           'layout': {
