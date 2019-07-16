@@ -5,9 +5,10 @@ import proj4 from 'proj4'
 import geojsonvt from 'geojson-vt'
 import * as vendor from '../../../lib/vendor'
 import * as vtpbf from 'vt-pbf'
-import { bboxClip, booleanPointInPolygon, bboxPolygon, polygon, polygonToLine, circle } from '@turf/turf'
+import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf'
 import geojsonExtent from '@mapbox/geojson-extent'
 import jetpack from 'fs-jetpack'
+import MapboxUtilities from '../../MapboxUtilities'
 // import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 
 export default class DrawingLayer extends Layer {
@@ -16,72 +17,12 @@ export default class DrawingLayer extends Layer {
     this.count = this.features.length
     let name = this.name
     let extent = this.extent
-    this._vectorTileRenderer = new VectorTileRenderer(this.style, DrawingLayer.generateMbStyle(this.style, this.name), this.name, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, extent, name)
     })
     await this._vectorTileRenderer.init()
     await this.renderOverviewTile()
     return this
-  }
-
-  static generateMbStyle (style, name) {
-    let styleSources = {}
-    styleSources[name] = {
-      'type': 'vector',
-      'maxzoom': 18,
-      'tiles': [
-        '{z}-{x}-{y}'
-      ]
-    }
-    return {
-      'version': 8,
-      'name': name,
-      'sources': styleSources,
-      'layers': [
-        {
-          'id': 'fill-style',
-          'type': 'fill',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-          'paint': {
-            'fill-color': style.fillColor,
-            'fill-opacity': style.fillOpacity,
-            'fill-outline-color': 'rgba(0, 0, 0, 0)'
-          }
-        },
-        {
-          'id': 'line-style',
-          'type': 'line',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
-          'paint': {
-            'line-width': style.weight,
-            'line-opacity': style.opacity,
-            'line-color': style.color
-          },
-          'layout': {
-            'line-join': 'round',
-            'line-cap': 'round'
-          }
-        },
-        {
-          'id': 'point-style',
-          'type': 'circle',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Point'], true, false],
-          'paint': {
-            'circle-color': style.fillColor,
-            'circle-stroke-color': style.color,
-            'circle-opacity': style.fillOpacity,
-            'circle-stroke-width': style.weight,
-            'circle-radius': ['get', 'radius']
-          }
-        }
-      ]
-    }
   }
 
   addFeatureProperties (feature, currentProperties) {
@@ -183,20 +124,12 @@ export default class DrawingLayer extends Layer {
   get extent () {
     return geojsonExtent({
       type: 'FeatureCollection',
-      features: this.getMapboxFeatureSet(this._configuration.features)
+      features: MapboxUtilities.getMapboxFeatureCollectionForStyling(this._configuration.features)
     })
   }
 
   get style () {
-    this._style = this._style || {
-      radius: 2.0,
-      weight: 3,
-      color: '#3388ff',
-      opacity: 1.0,
-      fillColor: '#3388ff',
-      fillOpacity: 0.2,
-      fillOutlineColor: '#3388ff'
-    }
+    this._style = this._style || MapboxUtilities.defaultLeafletStyle()
     return this._style
   }
 
@@ -221,7 +154,7 @@ export default class DrawingLayer extends Layer {
         features.push(feature)
       }
     }
-    return features
+    return MapboxUtilities.getMapboxFeatureCollectionForStyling(features)
   }
 
   getTile (coords, map, extent, name) {
@@ -241,6 +174,8 @@ export default class DrawingLayer extends Layer {
         features: JSON.parse(JSON.stringify(this.getTileFeatures(coords, extent)))
       }
 
+      console.log(featureCollection)
+
       let tileBuffer = 8
       let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
       let tile = tileIndex.getTile(z, x, y)
@@ -257,38 +192,20 @@ export default class DrawingLayer extends Layer {
     })
   }
 
-  getMapboxFeatureSet (leafletFeatureSet) {
-    let features = leafletFeatureSet.slice()
-    let circleFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'point' && f.properties.radius !== undefined)
-    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'point' && f.properties.radius !== undefined))
-    circleFeatures.forEach(f => {
-      let circleFeature = circle(f.geometry.coordinates, f.properties.radius / 1000.0, {steps: 64})
-      features.push(circleFeature)
-    })
-    let polygonFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'polygon')
-    polygonFeatures.forEach(f => {
-      const poly = polygon(f.geometry.coordinates)
-      const line = polygonToLine(poly)
-      if (line.type.toLowerCase() === 'feature') {
-        line.id = Math.random().toString(36).substr(2, 9)
-        features.push(line)
-      } else if (line.type.toLowerCase() === 'featurecollection') {
-        line.features.forEach(feature => {
-          feature.id = Math.random().toString(36).substr(2, 9)
-          features.push(feature)
-        })
-      }
-    })
-    return features
-  }
-
   iterateFeaturesInBounds (bounds) {
     const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
-    return this.getMapboxFeatureSet(this._configuration.features).map((feature) => {
+    return this._configuration.features.map((feature) => {
       try {
         if (feature.geometry.type.toLowerCase() === 'point') {
           const bboxPoly = bboxPolygon(bbox)
-          if (booleanPointInPolygon(feature.geometry.coordinates, bboxPoly)) {
+          // this point is a circle, let's check to see if it will exist in the bounding box
+          if (feature.properties.radius) {
+            let circleFeature = circle(feature.geometry.coordinates, feature.properties.radius / 1000.0, {steps: 64})
+            let clipped = bboxClip(circleFeature, bbox)
+            if (clipped && clipped.geometry.coordinates.length > 0) {
+              return feature
+            }
+          } else if (booleanPointInPolygon(feature.geometry.coordinates, bboxPoly)) {
             return feature
           }
         } else if (feature.geometry.type.toLowerCase() === 'multipoint') {
@@ -313,12 +230,7 @@ export default class DrawingLayer extends Layer {
         } else {
           let clipped = bboxClip(feature, bbox)
           if (clipped && clipped.geometry.coordinates.length > 0) {
-            return {
-              type: 'Feature',
-              id: Math.random().toString(36).substr(2, 9),
-              properties: feature.properties,
-              geometry: clipped.geometry
-            }
+            return feature
           }
         }
       } catch (e) {
@@ -347,11 +259,7 @@ export default class DrawingLayer extends Layer {
   }
 
   get mapLayer () {
-    let style = this.style
-    if (style.radius) {
-      delete style.radius
-    }
-
+    let mapboxStyleValues = this.style
     if (!this._mapLayer) {
       this._mapLayer = new vendor.L.LayerGroup()
       this._mapLayer.id = this.id
@@ -359,13 +267,36 @@ export default class DrawingLayer extends Layer {
     this._mapLayer.remove()
     this._configuration.features.forEach(feature => {
       if (feature.properties.radius) {
-        let styleCopy = Object.assign({}, style)
-        styleCopy.radius = feature.properties.radius
-        let layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], styleCopy)
+        let style = {
+          radius: feature.properties.radius,
+          fillColor: mapboxStyleValues.circleColor,
+          fillOpacity: mapboxStyleValues.circleOpacity,
+          color: mapboxStyleValues.circleLineColor,
+          opacity: mapboxStyleValues.circleLineOpacity,
+          weight: mapboxStyleValues.circleLineWeight
+        }
+        let layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], style)
+        layer.id = feature.id
+        this._mapLayer.addLayer(layer)
+      } else if (feature.geometry.type.toLowerCase() === 'polygon' || feature.geometry.type.toLowerCase() === 'multipolygon') {
+        let style = {
+          radius: feature.properties.radius,
+          fillColor: mapboxStyleValues.polygonColor,
+          fillOpacity: mapboxStyleValues.polygonOpacity,
+          color: mapboxStyleValues.polygonLineColor,
+          opacity: mapboxStyleValues.polygonLineOpacity,
+          weight: mapboxStyleValues.polygonLineWeight
+        }
+        let layer = new vendor.L.GeoJSON(feature, { style: style })
         layer.id = feature.id
         this._mapLayer.addLayer(layer)
       } else {
-        let layer = new vendor.L.GeoJSON(feature, { style })
+        let style = {
+          color: mapboxStyleValues.lineColor,
+          opacity: mapboxStyleValues.lineOpacity,
+          weight: mapboxStyleValues.lineWeight
+        }
+        let layer = new vendor.L.GeoJSON(feature, { style: style })
         layer.id = feature.id
         this._mapLayer.addLayer(layer)
       }

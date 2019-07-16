@@ -1,6 +1,7 @@
 import MapboxGL from '@mapbox/mapbox-gl-native'
 import Sharp from 'sharp'
 import Mercator from '@mapbox/sphericalmercator'
+import MapboxUtilities from '../../../MapboxUtilities'
 
 export default class VectorTileRenderer {
   _mapboxGLMap
@@ -17,66 +18,8 @@ export default class VectorTileRenderer {
       ratio: 1
     })
     this.images = images
-    this.mbStyle = mbStyle || VectorTileRenderer.generateMbStyle(style, name)
-  }
-
-  static generateMbStyle (style, name) {
-    let styleSources = {}
-    styleSources[name] = {
-      'type': 'vector',
-      'maxzoom': 18,
-      'tiles': [
-        '{z}-{x}-{y}'
-      ]
-    }
-    return {
-      'version': 8,
-      'name': 'Empty',
-      'sources': styleSources,
-      'layers': [
-        {
-          'id': 'fill-style',
-          'type': 'fill',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-          'paint': {
-            'fill-color': style.fillColor,
-            'fill-opacity': style.fillOpacity,
-            'fill-outline-color': style.fillOutlineColor
-          }
-        },
-        {
-          'id': 'line-style',
-          'type': 'line',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
-          'paint': {
-            'line-width': style.weight,
-            'line-color': style.color
-          },
-          'layout': {
-            'line-join': 'round',
-            'line-cap': 'round'
-          }
-        },
-        {
-          'id': 'point-style',
-          'type': 'circle',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Point'], true, false],
-          'paint': {
-            'circle-color': style.fillColor,
-            'circle-stroke-color': style.color,
-            'circle-opacity': style.fillOpacity,
-            'circle-stroke-width': style.weight,
-            'circle-radius': style.radius
-          }
-        }
-      ]
-    }
+    this.mbStyle = mbStyle || MapboxUtilities.generateMbStyle(style, name)
+    console.log(this.mbStyle)
   }
 
   async init () {

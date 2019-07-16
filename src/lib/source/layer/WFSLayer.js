@@ -7,7 +7,8 @@ import geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
 import request from 'request-promise-native'
 import MapcacheMapLayer from '../../map/MapcacheMapLayer'
-import { bboxClip, booleanPointInPolygon, bboxPolygon } from '@turf/turf'
+import { booleanPointInPolygon, bboxPolygon } from '@turf/turf'
+import MapboxUtilities from '../../MapboxUtilities'
 
 export default class WFSLayer extends Layer {
   _vectorTileRenderer
@@ -181,21 +182,8 @@ export default class WFSLayer extends Layer {
     return this._configuration.extent
   }
 
-  generateColor () {
-    let color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-    return color.padEnd(7, '0')
-  }
-
   get style () {
-    this._style = this._style || {
-      weight: 2.0,
-      radius: 2.0,
-      color: this.generateColor(),
-      opacity: 1.0,
-      fillColor: this.generateColor(),
-      fillOpacity: 1.0,
-      fillOutlineColor: this.generateColor()
-    }
+    this._style = this._style || MapboxUtilities.defaultRandomColorStyle()
     return this._style
   }
 
@@ -220,7 +208,7 @@ export default class WFSLayer extends Layer {
         features.push(feature)
       }
     }
-    return features
+    return MapboxUtilities.getMapboxFeatureCollectionForStyling(features)
   }
 
   getTile (coords, map, extent, name) {
@@ -240,6 +228,7 @@ export default class WFSLayer extends Layer {
         features: this.getTileFeatures(coords, extent)
       }
 
+      console.log(featureCollection)
       let tileBuffer = 8
       let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
       let tile = tileIndex.getTile(z, x, y)
@@ -274,25 +263,19 @@ export default class WFSLayer extends Layer {
               coordinatesWithin.push(coordinate)
             }
           })
-          return {
-            type: 'Feature',
-            id: Math.random().toString(36).substr(2, 9),
-            properties: feature.properties,
-            geometry: {
-              type: 'MultiPoint',
-              coordinates: coordinatesWithin
-            }
-          }
-        } else {
-          let clipped = bboxClip(feature, bbox)
-          if (clipped && clipped.geometry.coordinates.length > 0) {
+          if (coordinatesWithin.length > 0) {
             return {
               type: 'Feature',
               id: Math.random().toString(36).substr(2, 9),
               properties: feature.properties,
-              geometry: clipped.geometry
+              geometry: {
+                type: 'MultiPoint',
+                coordinates: coordinatesWithin
+              }
             }
           }
+        } else {
+          return feature
         }
       } catch (e) {
         console.log(e)

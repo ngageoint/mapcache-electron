@@ -60,7 +60,7 @@
              <div class="layer-type-options">
                <hr/>
                <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
-               <vector-options v-if="layer.layerType === 'WFS' || layer.layerType === 'Drawing'" :layer="layer" :projectId="projectId"></vector-options>
+               <vector-options v-if="layer.pane === 'vector'" :layer="layer" :projectId="projectId"></vector-options>
              </div>
              <div class="layer-detail">
                <div class="layer__horizontal__divider detail-divider"></div>

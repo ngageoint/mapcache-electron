@@ -1,24 +1,15 @@
 <template>
   <div>
-
     <div class="layer__face__stats">
       <p class="layer__face__stats__weight">
-        Style Choices
+        Polygon Style Choices
       </p>
       <div class="container">
         <div class="flex-row">
           <div>
             <label class="control-label">Fill Color</label>
             <div>
-              <colorpicker :color="fillColor" v-model="fillColor" />
-            </div>
-          </div>
-        </div>
-        <div class="flex-row" v-if="layer.layerType !== 'Drawing'">
-          <div>
-            <label class="control-label">Fill Outline Color</label>
-            <div>
-              <colorpicker :color="fillOutlineColor" v-model="fillOutlineColor" />
+              <colorpicker :color="polygonColor" v-model="polygonColor" />
             </div>
           </div>
         </div>
@@ -26,23 +17,73 @@
           <div>
             <label class="control-label">Line Color</label>
             <div>
-              <colorpicker :color="color" v-model="color" />
+              <colorpicker :color="polygonLineColor" v-model="polygonLineColor" />
             </div>
           </div>
         </div>
         <div class="flex-row">
           <div>
-            <label class="control-label">Stroke Width (px)</label>
+            <label class="control-label">Line Width (px)</label>
             <div>
-              <numberpicker :number="weight" v-model="weight" />
+              <numberpicker :number="polygonLineWeight" v-model="polygonLineWeight" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="layer__face__stats__weight">
+        Line Style Choices
+      </p>
+      <div class="container">
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Color</label>
+            <div>
+              <colorpicker :color="lineColor" v-model="lineColor" />
+            </div>
+          </div>
+        </div>
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Width (px)</label>
+            <div>
+              <numberpicker :number="lineWeight" v-model="lineWeight" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="layer__face__stats__weight">
+        Circle/Point Style Choices
+      </p>
+      <div class="container">
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Fill Color</label>
+            <div>
+              <colorpicker :color="circleColor" v-model="circleColor" />
+            </div>
+          </div>
+        </div>
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Line Color</label>
+            <div>
+              <colorpicker :color="circleLineColor" v-model="circleLineColor" />
+            </div>
+          </div>
+        </div>
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Line Width (px)</label>
+            <div>
+              <numberpicker :number="circleLineWeight" v-model="circleLineWeight" />
             </div>
           </div>
         </div>
         <div class="flex-row" v-if="layer.layerType !== 'Drawing'">
           <div>
-            <label class="control-label">Radius (px)</label>
+            <label class="control-label">Point Radius (px)</label>
             <div>
-              <numberpicker :number="radius" v-model="radius" />
+              <numberpicker :number="circleRadiusInPixels" v-model="circleRadiusInPixels" />
             </div>
           </div>
         </div>
@@ -65,28 +106,36 @@
     data () {
       if (!this.layer.style) {
         return {
-          fillColor: 'rgba(255, 0, 0, 1.0)',
-          fillOutlineColor: 'rgba(255, 0, 0, 1.0)',
-          color: 'rgba(255, 0, 0, 1.0)',
-          weight: 1.0,
-          radius: 1.0
+          polygonColor: 'rgba(255, 0, 0, 1.0)',
+          polygonLineColor: 'rgba(255, 0, 0, 1.0)',
+          polygonLineWeight: 1.0,
+          circleColor: 'rgba(255, 0, 0, 1.0)',
+          circleLineColor: 'rgba(255, 0, 0, 1.0)',
+          circleLineWeight: 1.0,
+          circleRadiusInPixels: 5.0,
+          lineColor: 'rgba(255, 0, 0, 1.0)',
+          lineWeight: 1.0
         }
       }
       return {
-        fillColor: this.layer.style.fillColor && this.layer.style.fillOpacity ? this.getRGBA(this.layer.style.fillColor, this.layer.style.fillOpacity) : 'rgba(255, 0, 0, 1.0)',
-        fillOutlineColor: this.layer.style.fillOutlineColor || 'rgba(255, 0, 0, 1.0)',
-        color: this.layer.style.color && this.layer.style.opacity ? this.getRGBA(this.layer.style.color, this.layer.style.opacity) : 'rgba(255, 0, 0, 1.0)',
-        weight: this.layer.style.weight || 1.0,
-        radius: this.layer.style.radius || 1.0
+        polygonColor: this.layer.style.polygonColor && this.layer.style.polygonOpacity ? this.getRGBA(this.layer.style.polygonColor, this.layer.style.polygonOpacity) : 'rgba(255, 0, 0, 1.0)',
+        polygonLineColor: this.layer.style.polygonLineColor && this.layer.style.polygonLineOpacity ? this.getRGBA(this.layer.style.polygonLineColor, this.layer.style.polygonLineOpacity) : 'rgba(255, 0, 0, 1.0)',
+        polygonLineWeight: this.layer.style.polygonLineWeight || 1.0,
+        circleColor: this.layer.style.circleColor && this.layer.style.circleOpacity ? this.getRGBA(this.layer.style.circleColor, this.layer.style.circleOpacity) : 'rgba(255, 0, 0, 1.0)',
+        circleLineColor: this.layer.style.circleLineColor && this.layer.style.circleLineOpacity ? this.getRGBA(this.layer.style.circleLineColor, this.layer.style.circleLineOpacity) : 'rgba(255, 0, 0, 1.0)',
+        circleLineWeight: this.layer.style.circleLineWeight || 1.0,
+        circleRadiusInPixels: this.layer.style.circleRadiusInPixels || 5.0,
+        lineColor: this.layer.style.lineColor && this.layer.style.lineOpacity ? this.getRGBA(this.layer.style.lineColor, this.layer.style.lineOpacity) : 'rgba(255, 0, 0, 1.0)',
+        lineWeight: this.layer.style.lineWeight || 1.0
       }
     },
     created () {
-      this.debounceUpdateFillColor = _.debounce((val) => {
+      this.debounceColorOpacityInStyleField = _.debounce((colorField, opacityField, val) => {
         if (val) {
           const {color, opacity} = this.parseColor(val)
           let style = Object.assign({}, this.layer.style)
-          style.fillColor = color
-          style.fillOpacity = opacity
+          style[colorField] = color
+          style[opacityField] = opacity
           this.updateProjectLayerStyle({
             projectId: this.projectId,
             layerId: this.layer.id,
@@ -94,46 +143,10 @@
           })
         }
       }, 500)
-      this.debounceUpdateFillOutlineColor = _.debounce((val) => {
-        if (val) {
-          const {color} = this.parseColor(val)
-          let style = Object.assign({}, this.layer.style)
-          style.fillOutlineColor = color
-          this.updateProjectLayerStyle({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            style: style
-          })
-        }
-      }, 500)
-      this.debounceUpdateColor = _.debounce((val) => {
-        if (val) {
-          const {color, opacity} = this.parseColor(val)
-          let style = Object.assign({}, this.layer.style)
-          style.color = color
-          style.opacity = opacity
-          this.updateProjectLayerStyle({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            style: style
-          })
-        }
-      }, 500)
-      this.debounceUpdateWeight = _.debounce((val) => {
+      this.debounceFloatFieldInStyle = _.debounce((field, val) => {
         if (val) {
           let style = Object.assign({}, this.layer.style)
-          style.weight = parseFloat(val)
-          this.updateProjectLayerStyle({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            style: style
-          })
-        }
-      }, 500)
-      this.debounceUpdateRadius = _.debounce((val) => {
-        if (val) {
-          let style = Object.assign({}, this.layer.style)
-          style.radius = parseFloat(val)
+          style[field] = parseFloat(val)
           this.updateProjectLayerStyle({
             projectId: this.projectId,
             layerId: this.layer.id,
@@ -167,20 +180,32 @@
       }
     },
     watch: {
-      fillColor (val) {
-        this.debounceUpdateFillColor(val)
+      polygonColor (val) {
+        this.debounceColorOpacityInStyleField('polygonColor', 'polygonOpacity', val)
       },
-      fillOutlineColor (val) {
-        this.debounceUpdateFillOutlineColor(val)
+      polygonLineColor (val) {
+        this.debounceColorOpacityInStyleField('polygonLineColor', 'polygonLineOpacity', val)
       },
-      color (val) {
-        this.debounceUpdateColor(val)
+      polygonLineWeight (val) {
+        this.debounceFloatFieldInStyle('polygonLineWeight', val)
       },
-      weight (val) {
-        this.debounceUpdateWeight(val)
+      circleColor (val) {
+        this.debounceColorOpacityInStyleField('circleColor', 'circleOpacity', val)
       },
-      radius (val) {
-        this.debounceUpdateRadius(val)
+      circleLineColor (val) {
+        this.debounceColorOpacityInStyleField('circleLineColor', 'circleLineOpacity', val)
+      },
+      circleLineWeight (val) {
+        this.debounceFloatFieldInStyle('circleLineWeight', val)
+      },
+      circleRadiusInPixels (val) {
+        this.debounceFloatFieldInStyle('circleRadiusInPixels', val)
+      },
+      lineColor (val) {
+        this.debounceColorOpacityInStyleField('lineColor', 'lineOpacity', val)
+      },
+      lineWeight (val) {
+        this.debounceFloatFieldInStyle('lineWeight', val)
       }
     }
   }

@@ -4,7 +4,9 @@ import MapcacheMapLayer from '../../map/MapcacheMapLayer'
 import GeoPackage from '@ngageoint/geopackage'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
-import proj4 from 'proj4'
+import geojsonvt from 'geojson-vt'
+import vtpbf from 'vt-pbf'
+import MapboxUtilities from '../../MapboxUtilities'
 
 export default class GeoPackageLayer extends Layer {
   extent
@@ -18,11 +20,10 @@ export default class GeoPackageLayer extends Layer {
     this.geopackage = await GeoPackage.open(this.filePath)
     let contentsDao = this.geopackage.getContentsDao()
     let contents = contentsDao.queryForId(this.sourceLayerName)
-
     let proj = contentsDao.getProjection(contents)
     let ll = proj.inverse([contents.min_x, contents.min_y])
     let ur = proj.inverse([contents.max_x, contents.max_y])
-    let boundingBox = new GeoPackage.BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox('EPSG:3857', 'EPSG:4326')
+    let boundingBox = new GeoPackage.BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
     this.extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
     let {width, height} = TileBoundingBoxUtils.determineImageDimensionsFromExtent(ll, ur)
     let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([this.extent[0], this.extent[1]], [this.extent[2], this.extent[3]])
@@ -37,28 +38,31 @@ export default class GeoPackageLayer extends Layer {
       }
     } else if (this.pane === 'vector') {
       this.dao = this.geopackage.getFeatureDao(this.sourceLayerName)
-      let gp = this.geopackage
       let tableName = this.sourceLayerName
       this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z) => {
-        return GeoPackage.getVectorTileProtobuf(gp, tableName, x, y, z)
+        return GeoPackage.getGeoJSONFeaturesInTile(this.geopackage, tableName, x, y, z, true)
+          .then(function (features) {
+            let featureCollection = {
+              type: 'FeatureCollection',
+              features: MapboxUtilities.getMapboxFeatureCollectionForStyling(features)
+            }
+            const tileBuffer = 8
+            let tileIndex = geojsonvt(featureCollection, {buffer: tileBuffer * 8, maxZoom: z})
+            let tile = tileIndex.getTile(z, x, y)
+            let gjvt = {}
+            if (tile) {
+              gjvt[tableName] = tile
+            } else {
+              gjvt[tableName] = {features: []}
+            }
+            return vtpbf.fromGeojsonVt(gjvt)
+          })
       })
       await this._vectorTileRenderer.init()
       await this.renderOverviewTile(coords)
     }
     this.count = this.dao.count()
     return this
-  }
-
-  getTileFeatures (coords, extent) {
-    let {x, y, z} = coords
-    let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-    let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
-    let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
-    if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])) {
-      return []
-    }
-
-    return GeoPackage.getGeoJSONFeaturesInTile(this.geopackage, this.sourceLayerName, x, y, z, true)
   }
 
   async renderTile (coords, tileCanvas, done) {
@@ -148,15 +152,7 @@ export default class GeoPackageLayer extends Layer {
   }
 
   get style () {
-    this._style = this._style || {
-      weight: 2,
-      radius: 2,
-      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      opacity: 1,
-      fillColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      fillOpacity: 0.5,
-      fill: false
-    }
+    this._style = this._style || MapboxUtilities.defaultRandomColorStyle()
     return this._style
   }
 

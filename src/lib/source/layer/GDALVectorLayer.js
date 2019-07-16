@@ -8,6 +8,7 @@ import geojsonvt from 'geojson-vt'
 import * as vtpbf from 'vt-pbf'
 import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
 import VectorTileRenderer from './renderer/VectorTileRenderer'
+import MapboxUtilities from '../../MapboxUtilities'
 
 export default class GDALVectorLayer extends Layer {
   _vectorTileRenderer
@@ -24,7 +25,7 @@ export default class GDALVectorLayer extends Layer {
     let name = this.name
     let extent = this.extent
 
-    this._vectorTileRenderer = new VectorTileRenderer(this.style, this.mbStyle, this.name, (x, y, z, map) => {
+    this._vectorTileRenderer = new VectorTileRenderer(this.style, MapboxUtilities.generateMbStyle(this.style, this.name), this.name, (x, y, z, map) => {
       return this.getTile({x: x, y: y, z: z}, map, extent, name)
     }, this._configuration.images)
     await this._vectorTileRenderer.init()
@@ -101,22 +102,8 @@ export default class GDALVectorLayer extends Layer {
     return [currentEnvelope.minX, currentEnvelope.minY, currentEnvelope.maxX, currentEnvelope.maxY]
   }
 
-  generateColor () {
-    let color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-    return color.padEnd(7, '0')
-  }
-
   get style () {
-    this._style = this._style || {
-      weight: 2,
-      radius: 2,
-      color: this.generateColor(),
-      opacity: 1,
-      fillColor: this.generateColor(),
-      fillOutlineColor: this.generateColor(),
-      fillOpacity: 0.5,
-      fill: false
-    }
+    this._style = this._style || MapboxUtilities.defaultRandomColorStyle()
     return this._style
   }
 
@@ -164,7 +151,7 @@ export default class GDALVectorLayer extends Layer {
         features.push(feature)
       }
     }
-    return features
+    return MapboxUtilities.getMapboxFeatureCollectionForStyling(features)
   }
 
   getTile (coords, map, extent, name) {
