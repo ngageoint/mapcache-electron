@@ -1,7 +1,6 @@
 import Layer from '../Layer'
 import MapcacheMapLayer from '../../../map/MapcacheMapLayer'
 import * as vtpbf from 'vt-pbf'
-import geojsonvt from 'geojson-vt'
 import VectorTileRenderer from '../renderer/VectorTileRenderer'
 import geojsonExtent from '@mapbox/geojson-extent'
 import jetpack from 'fs-jetpack'
@@ -36,6 +35,14 @@ export default class VectorLayer extends Layer {
     }
   }
 
+  async updateStyle (style) {
+    if (this.editableStyle) {
+      this.style = style
+      this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
+      await this.vectorTileRenderer.updateStyle(this.mbStyle)
+    }
+  }
+
   get featureCollection () {
     throw new Error('Abstract method to be implemented in sublcass')
   }
@@ -63,7 +70,7 @@ export default class VectorLayer extends Layer {
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
       this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
-        return this.getTile({x: x, y: y, z: z}, map, this.extent, this.name)
+        return this.getTile({x: x, y: y, z: z})
       })
     }
     return this._vectorTileRenderer
@@ -71,7 +78,8 @@ export default class VectorLayer extends Layer {
 
   get tileIndex () {
     if (!this._tileIndex) {
-      this._tileIndex = geojsonvt(this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection, {buffer: 64, maxZoom: 18})
+      let featureCollection = this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection
+      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(featureCollection.features)
     }
     return this._tileIndex
   }
@@ -80,15 +88,17 @@ export default class VectorLayer extends Layer {
     return this.vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
 
-  getTile (coords, map, extent, name) {
+  getTile (coords) {
     return new Promise((resolve) => {
-      let tile = this.tileIndex.getTile(coords.z, coords.x, coords.y)
       let gjvt = {}
-      if (tile) {
-        gjvt[name] = tile
-      } else {
-        gjvt[name] = {features: []}
-      }
+      Object.keys(this._tileIndex).forEach(key => {
+        let tile = this.tileIndex[key].getTile(coords.z, coords.x, coords.y)
+        if (tile) {
+          gjvt[key] = tile
+        } else {
+          gjvt[key] = {features: []}
+        }
+      })
       resolve(vtpbf.fromGeojsonVt(gjvt))
     })
   }

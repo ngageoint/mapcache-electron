@@ -1,4 +1,5 @@
 import {circle, polygonToLine, polygon} from '@turf/turf'
+import geojsonvt from 'geojson-vt'
 
 export default class MapboxUtilities {
   static generateColor () {
@@ -43,75 +44,114 @@ export default class MapboxUtilities {
     }
   }
 
+  static generateTileIndexForMbStyling (features) {
+    let tileIndices = {}
+    tileIndices['fill-style-polygon'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'Polygon' && f.properties['sub-type'] === 2)
+    }, {buffer: 64, maxZoom: 18})
+    tileIndices['fill-style-circle'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'Polygon' && f.properties['sub-type'] === 1)
+    }, {buffer: 64, maxZoom: 18})
+    tileIndices['line-style-line'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'LineString' && f.properties['sub-type'] === 0)
+    }, {buffer: 64, maxZoom: 18})
+    tileIndices['line-style-polygon'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'LineString' && f.properties['sub-type'] === 2)
+    }, {buffer: 64, maxZoom: 18})
+    tileIndices['line-style-circle'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'LineString' && f.properties['sub-type'] === 1)
+    }, {buffer: 64, maxZoom: 18})
+    tileIndices['point-style'] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features.filter(f => f.geometry.type === 'Point')
+    }, {buffer: 64, maxZoom: 18})
+    return tileIndices
+  }
+
   static generateMbStyle (style, name) {
     let styleSources = {}
-    styleSources[name] = {
+    let source = {
       'type': 'vector',
       'maxzoom': 18,
       'tiles': [
         '{z}-{x}-{y}'
       ]
     }
+    let types = ['fill-style-polygon', 'fill-style-circle', 'line-style-line', 'line-style-polygon', 'line-style-circle', 'point-style']
+    types.forEach(type => {
+      styleSources[type] = source
+    })
     return {
       'version': 8,
       'name': name,
       'sources': styleSources,
       'layers': [
         {
-          'id': 'fill-style',
+          'id': 'fill-style-polygon',
           'type': 'fill',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+          'source': 'fill-style-polygon',
+          'source-layer': 'fill-style-polygon',
           'paint': {
-            'fill-color': [
-              'match',
-              ['get', 'sub-type'],
-              'circle', style.circleColor,
-              'polygon', style.polygonColor,
-              /* other */ '#3388ff'
-            ],
-            'fill-opacity': [
-              'match',
-              ['get', 'sub-type'],
-              'circle', style.circleOpacity,
-              'polygon', style.polygonOpacity,
-              /* other */ 1.0
-            ],
+            'fill-color': style.polygonColor,
+            'fill-opacity': style.polygonOpacity,
             'fill-outline-color': 'rgba(0, 0, 0, 0)'
           }
         },
         {
-          'id': 'line-style',
-          'type': 'line',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false],
+          'id': 'fill-style-circle',
+          'type': 'fill',
+          'source': name + '-polygon',
+          'source-layer': name + '-polygon',
           'paint': {
-            'line-width': [
-              'match',
-              ['get', 'sub-type'],
-              'circle', style.circleLineWeight,
-              'polygon', style.polygonLineWeight,
-              'line', style.lineWeight,
-              /* other */ 1.0
-            ],
-            'line-color': [
-              'match',
-              ['get', 'sub-type'],
-              'circle', style.circleLineColor,
-              'polygon', style.polygonLineColor,
-              'line', style.lineColor,
-              /* other */ '#3388ff'
-            ],
-            'line-opacity': [
-              'match',
-              ['get', 'sub-type'],
-              'circle', style.circleLineOpacity,
-              'polygon', style.polygonLineOpacity,
-              'line', style.lineOpacity,
-              /* other */ 1.0
-            ]
+            'fill-color': style.circleColor,
+            'fill-opacity': style.circleOpacity,
+            'fill-outline-color': 'rgba(0, 0, 0, 0)'
+          }
+        },
+        {
+          'id': 'line-style-line',
+          'type': 'line',
+          'source': 'line-style-line',
+          'source-layer': 'line-style-line',
+          'paint': {
+            'line-width': style.lineWeight,
+            'line-color': style.lineColor,
+            'line-opacity': style.lineOpacity
+          },
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
+          }
+        },
+        {
+          'id': 'line-style-circle',
+          'type': 'line',
+          'source': 'line-style-circle',
+          'source-layer': 'line-style-circle',
+          'paint': {
+            'line-width': style.circleLineWeight,
+            'line-color': style.circleLineColor,
+            'line-opacity': style.circleLineOpacity
+          },
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
+          }
+        },
+        {
+          'id': 'line-style-polygon',
+          'type': 'line',
+          'source': 'line-style-polygon',
+          'source-layer': 'line-style-polygon',
+          'paint': {
+            'line-width': style.polygonLineWeight,
+            'line-color': style.polygonLineColor,
+            'line-opacity': style.polygonLineOpacity
           },
           'layout': {
             'line-join': 'round',
@@ -121,9 +161,8 @@ export default class MapboxUtilities {
         {
           'id': 'point-style',
           'type': 'circle',
-          'source': name,
-          'source-layer': name,
-          'filter': ['match', ['geometry-type'], ['Point'], true, false],
+          'source': 'point-style',
+          'source-layer': 'point-style',
           'paint': {
             'circle-color': style.circleColor,
             'circle-opacity': style.circleOpacity,
@@ -199,21 +238,21 @@ export default class MapboxUtilities {
       }
     })
     features.filter(f => f.geometry.type.toLowerCase() === 'linestring').forEach(l => {
-      l.properties['sub-type'] = 'line'
+      l.properties['sub-type'] = 0 // line
     })
     let polygonFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'polygon')
     polygonFeatures.forEach(f => {
-      f.properties['sub-type'] = f.properties.isCircle ? 'circle' : 'polygon'
+      f.properties['sub-type'] = f.properties.isCircle ? 1 : 2
       const poly = polygon(f.geometry.coordinates)
       const line = polygonToLine(poly)
       if (line.type.toLowerCase() === 'feature') {
         line.id = Math.random().toString(36).substr(2, 9)
-        line.properties['sub-type'] = f.properties.isCircle ? 'circle' : 'polygon'
+        line.properties['sub-type'] = f.properties.isCircle ? 1 : 2
         features.push(line)
       } else if (line.type.toLowerCase() === 'featurecollection') {
         line.features.forEach(feature => {
           feature.id = Math.random().toString(36).substr(2, 9)
-          feature.properties['sub-type'] = f.properties.isCircle ? 'circle' : 'polygon'
+          feature.properties['sub-type'] = f.properties.isCircle ? 1 : 2
           features.push(feature)
         })
       }

@@ -30,6 +30,7 @@
   import _ from 'lodash'
   import Modal from '../Modal'
 
+  let shownLayers = {}
   let shownMapLayers = {}
   let shownLayerConfigs = {}
   let layerSelectionVisible = false
@@ -165,6 +166,7 @@
           for (const layerId of removed) {
             let mapLayer = shownMapLayers[layerId]
             mapLayer.remove()
+            delete shownLayers[layerId]
             delete shownMapLayers[layerId]
             delete shownLayerConfigs[layerId]
           }
@@ -175,6 +177,7 @@
             await layer.initialize()
             let mapLayer = layer.mapLayer
             mapLayer.addTo(this.map)
+            shownLayers[layerConfig.id] = layer
             shownMapLayers[mapLayer.id] = mapLayer
             shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
           }
@@ -183,14 +186,24 @@
             let layerConfig = value[layerId]
             let oldLayerConfig = shownLayerConfigs[layerId]
 
-            if (!_.isEqual(layerConfig, oldLayerConfig)) {
+            if (!_.isEqual(_.omit(layerConfig, ['style']), _.omit(oldLayerConfig, ['style']))) {
               let existingMapLayer = shownMapLayers[layerId]
               existingMapLayer.remove()
+              delete shownLayers[layerId]
               delete shownMapLayers[layerId]
               delete shownLayerConfigs[layerId]
               let layer = LayerFactory.constructLayer(layerConfig)
               await layer.initialize()
               let updateMapLayer = layer.mapLayer
+              updateMapLayer.addTo(this.map)
+              shownLayers[layerConfig.id] = layer
+              shownMapLayers[updateMapLayer.id] = updateMapLayer
+              shownLayerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+            } else if (!_.isEqual(layerConfig.style, oldLayerConfig.style)) {
+              await shownLayers[layerConfig.id].updateStyle(layerConfig.style)
+              let existingMapLayer = shownMapLayers[layerId]
+              existingMapLayer.remove()
+              let updateMapLayer = shownLayers[layerConfig.id].mapLayer
               updateMapLayer.addTo(this.map)
               shownMapLayers[updateMapLayer.id] = updateMapLayer
               shownLayerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
@@ -322,6 +335,7 @@
         await layer.initialize()
         let mapLayer = layer.mapLayer
         mapLayer.addTo(this.map)
+        shownLayers[mapLayer.id] = layer
         shownMapLayers[mapLayer.id] = mapLayer
         shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
       }

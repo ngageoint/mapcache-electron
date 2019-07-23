@@ -25,6 +25,11 @@ export default class VectorTileRenderer {
     this.initialized = false
   }
 
+  async updateStyle (mbStyle) {
+    this.mbStyle = mbStyle
+    this._mapboxGlMap.load(this.mbStyle)
+  }
+
   async init () {
     if (!this.initialized) {
       this._mapboxGlMap.load(this.mbStyle)
@@ -89,7 +94,6 @@ export default class VectorTileRenderer {
             channels: 4
           }
         })
-
         if (z === 0) {
           image.resize(width, height)
         }

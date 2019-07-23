@@ -6,8 +6,7 @@ export default class GDALVectorLayer extends VectorLayer {
   _features
 
   async initialize () {
-    gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
-    this.dataset = gdal.open(this.filePath)
+    this.openGdalFile()
     this.layer = this.dataset.layers.get(this.sourceLayerName)
     if (this.layer.name.startsWith('OGR')) {
       this.name = path.basename(this.filePath, path.extname(this.filePath))
@@ -18,6 +17,11 @@ export default class GDALVectorLayer extends VectorLayer {
     this._features = this.getFeaturesInLayer()
     await super.initialize()
     return this
+  }
+
+  openGdalFile () {
+    gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
+    this.dataset = gdal.open(this.filePath)
   }
 
   get configuration () {
