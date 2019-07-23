@@ -1,7 +1,7 @@
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import gdal from 'gdal'
-import GeoTiffLayer from '../GeoTiffLayer'
+import GeoTiffLayer from '../tile/GeoTiffLayer'
 
 var defs = require('../../../projection/proj4Defs')
 for (var name in defs) {

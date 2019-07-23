@@ -5,7 +5,7 @@ import path from 'path'
 import jetpack from 'fs-jetpack'
 import * as Settings from '../../src/lib/settings/Settings'
 import GDALSource from '../../src/lib/source/GDALSource'
-import GeoTiffLayer from '../../src/lib/source/layer/GeoTiffLayer'
+import GeoTiffLayer from '../../src/lib/source/layer/tile/GeoTiffLayer'
 
 describe('GDAL Source Tests', function () {
   let sandbox

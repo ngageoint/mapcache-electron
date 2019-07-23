@@ -218,6 +218,9 @@ export default class MapboxUtilities {
         })
       }
     })
-    return features
+    return {
+      type: 'FeatureCollection',
+      features: features
+    }
   }
 }

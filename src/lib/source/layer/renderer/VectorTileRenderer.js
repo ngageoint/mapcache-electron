@@ -1,11 +1,14 @@
 import MapboxGL from '@mapbox/mapbox-gl-native'
 import Sharp from 'sharp'
 import Mercator from '@mapbox/sphericalmercator'
-import MapboxUtilities from '../../../MapboxUtilities'
 
 export default class VectorTileRenderer {
-  _mapboxGLMap
-  constructor (style, mbStyle = undefined, name, getVectorTileProtobuf, images) {
+  _mapboxGlMap
+  images
+  mbStyle
+  initialized
+
+  constructor (mbStyle, getVectorTileProtobuf, images) {
     let map = this._mapboxGlMap = new MapboxGL.Map({
       request: async function (req, callback) {
         let split = req.url.split('-')
@@ -18,21 +21,23 @@ export default class VectorTileRenderer {
       ratio: 1
     })
     this.images = images
-    this.mbStyle = mbStyle || MapboxUtilities.generateMbStyle(style, name)
-    console.log(this.mbStyle)
+    this.mbStyle = mbStyle
+    this.initialized = false
   }
 
   async init () {
-    this._mapboxGlMap.load(this.mbStyle)
-    if (this.images) {
-      for (const image of this.images) {
-        let imageData = await Sharp(image.filePath).resize({width: 16, height: 16}).raw().toBuffer()
-        this._mapboxGlMap.addImage(image.id, imageData, {
-          height: 16,
-          width: 16,
-          pixelRatio: 1,
-          sdf: false
-        })
+    if (!this.initialized) {
+      this._mapboxGlMap.load(this.mbStyle)
+      if (this.images) {
+        for (const image of this.images) {
+          let imageData = await Sharp(image.filePath).resize({width: 16, height: 16}).raw().toBuffer()
+          this._mapboxGlMap.addImage(image.id, imageData, {
+            height: 16,
+            width: 16,
+            pixelRatio: 1,
+            sdf: false
+          })
+        }
       }
     }
   }

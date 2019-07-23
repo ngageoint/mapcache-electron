@@ -1,5 +1,5 @@
 import path from 'path'
-import GeoTiffLayer from './source/layer/GeoTiffLayer'
+import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
 import GDALUtilities from './GDALUtilities'
 import { select } from 'xpath'
 
@@ -26,12 +26,9 @@ export default class KMLUtilities {
         let west = groundOverlayDOM.getElementsByTagNameNS('*', 'west')[0].childNodes[0].nodeValue
         let south = groundOverlayDOM.getElementsByTagNameNS('*', 'south')[0].childNodes[0].nodeValue
         const extent = [Number(west), Number(south), Number(east), Number(north)]
-        console.log(name)
-        console.log(fullFile)
-        console.log(extent)
         const geotiffFullFile = fullFile.substring(0, fullFile.lastIndexOf('.')) + '.tif'
         if (GDALUtilities.translateToGeoTiff(fullFile, geotiffFullFile, extent)) {
-          parsedKML.geotiffs.push(new GeoTiffLayer({filePath: geotiffFullFile, shown: true}))
+          parsedKML.geotiffs.push(new GeoTiffLayer({filePath: geotiffFullFile, shown: true, sourceLayerName: name}))
         }
       } catch (error) {
         console.log(error)

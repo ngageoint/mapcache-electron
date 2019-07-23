@@ -1,5 +1,5 @@
 import Source from './Source'
-import WFSLayer from './layer/WFSLayer'
+import WFSLayer from './layer/vector/WFSLayer'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {

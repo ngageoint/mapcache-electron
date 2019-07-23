@@ -1,6 +1,7 @@
 import Source from './Source'
 import GeoPackage from '@ngageoint/geopackage'
-import GeoPackageLayer from './layer/GeoPackageLayer'
+import GeoPackageLayer from './layer/tile/GeoPackageLayer'
+import GeoPackageVectorLayer from './layer/vector/GeoPackageVectorLayer'
 
 export default class GeoPackageSource extends Source {
   async retrieveLayers () {
@@ -18,11 +19,10 @@ export default class GeoPackageSource extends Source {
     }
     let featureLayers = this.geopackage.getFeatureTables()
     for (const layer of featureLayers) {
-      this.layers.push(new GeoPackageLayer({
+      console.log('layer: ' + layer)
+      this.layers.push(new GeoPackageVectorLayer({
         filePath: this.filePath,
-        sourceLayerName: layer,
-        pane: 'vector',
-        shown: true
+        sourceLayerName: layer
       }))
     }
 

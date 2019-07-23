@@ -6,7 +6,7 @@ import jetpack from 'fs-jetpack'
 import * as Settings from '../../src/lib/settings/Settings'
 import SourceFactory from '../../src/lib/source/SourceFactory'
 import GDALSource from '../../src/lib/source/GDALSource'
-import GeoTiffLayer from '../../src/lib/source/layer/GeoTiffLayer'
+import GeoTiffLayer from '../../src/lib/source/layer/tile/GeoTiffLayer'
 
 describe('Source Factory Tests', function () {
   let sandbox

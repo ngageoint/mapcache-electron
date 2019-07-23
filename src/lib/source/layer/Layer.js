@@ -17,9 +17,10 @@ export default class Layer {
     this.name = this._configuration.name || this.sourceLayerName
     this.overviewTilePath = this.cacheFolder.dir(this.id).path('overviewTile.png')
     this.pane = configuration.pane
-    this._style = this._configuration.style
+    this.style = this._configuration.style
     this.mbStyle = this._configuration.mbStyle
     this.shown = this._configuration.shown || true
+    this.editableStyle = this._configuration.editableStyle !== undefined ? this._configuration.editableStyle : true
   }
 
   async initialize () {
@@ -41,7 +42,9 @@ export default class Layer {
         name: this.name,
         overviewTilePath: this.overviewTilePath,
         shown: this.shown || true,
-        mbStyle: this.mbStyle
+        style: this.style,
+        mbStyle: this.mbStyle,
+        editableStyle: this.editableStyle
       }
     }
   }

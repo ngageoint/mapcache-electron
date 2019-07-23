@@ -1,16 +1,18 @@
-import Layer from './Layer'
-import * as Vendor from '../../vendor'
-import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
+import Layer from '../Layer'
+import * as Vendor from '../../../vendor'
+import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import request from 'request-promise-native'
 import superagent from 'superagent'
 
 export default class WMSLayer extends Layer {
   _extent
-  _style
 
   async initialize () {
     this._extent = this.extent
+    this.style = this._configuration.style || {
+      opacity: 1
+    }
     return this
   }
 
@@ -36,13 +38,6 @@ export default class WMSLayer extends Layer {
     }
     this._configuration.extent = [-180, -90, 180, 90]
     return this._configuration.extent
-  }
-
-  get style () {
-    this._style = this._style || {
-      opacity: 1
-    }
-    return this._style
   }
 
   get mapLayer () {

@@ -5,7 +5,7 @@ import path from 'path'
 import jetpack from 'fs-jetpack'
 import * as Settings from '../../src/lib/settings/Settings'
 import GeoPackageSource from '../../src/lib/source/GeoPackageSource'
-import GeoPackageLayer from '../../src/lib/source/layer/GeoPackageLayer'
+import GeoPackageLayer from '../../src/lib/source/layer/tile/GeoPackageLayer'
 
 describe('GeoPackage Source Tests', function () {
   let sandbox

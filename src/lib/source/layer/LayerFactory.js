@@ -1,10 +1,11 @@
-import GeoTiffLayer from './GeoTiffLayer'
-import GeoPackageLayer from './GeoPackageLayer'
-import GDALVectorLayer from './GDALVectorLayer'
-import XYZServerLayer from './XYZServerLayer'
-import WMSLayer from './WMSLayer'
-import WFSLayer from './WFSLayer'
-import DrawingLayer from './DrawingLayer'
+import GeoTiffLayer from './tile/GeoTiffLayer'
+import GeoPackageVectorLayer from './vector/GeoPackageVectorLayer'
+import GeoPackageLayer from './tile/GeoPackageLayer'
+import GDALVectorLayer from './vector/GDALVectorLayer'
+import XYZServerLayer from './tile/XYZServerLayer'
+import WMSLayer from './tile/WMSLayer'
+import WFSLayer from './vector/WFSLayer'
+import DrawingLayer from './vector/DrawingLayer'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
@@ -13,6 +14,8 @@ export default class LayerFactory {
         return new GeoTiffLayer(configuration)
       case 'GeoPackage':
         return new GeoPackageLayer(configuration)
+      case 'GeoPackageVector':
+        return new GeoPackageVectorLayer(configuration)
       case 'GDALVector':
         return new GDALVectorLayer(configuration)
       case 'XYZServer':

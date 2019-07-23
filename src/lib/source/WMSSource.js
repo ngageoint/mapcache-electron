@@ -1,5 +1,5 @@
 import Source from './Source'
-import WMSLayer from './layer/WMSLayer'
+import WMSLayer from './layer/tile/WMSLayer'
 
 export default class WMSSource extends Source {
   async retrieveLayers () {

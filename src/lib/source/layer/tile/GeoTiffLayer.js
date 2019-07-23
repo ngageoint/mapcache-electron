@@ -1,12 +1,12 @@
 import jetpack from 'fs-jetpack'
-import TileBoundingBoxUtils from '../../tile/tileBoundingBoxUtils'
-import GeoTiffRenderer from './renderer/GeoTiffRenderer'
-import MapcacheMapLayer from '../../map/MapcacheMapLayer'
-import Layer from './Layer'
+import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
+import GeoTiffRenderer from '../renderer/GeoTiffRenderer'
+import MapcacheMapLayer from '../../../map/MapcacheMapLayer'
+import Layer from '../Layer'
 import * as GeoTIFF from 'geotiff'
 import * as GeoTIFFGlobals from 'geotiff/src/globals'
 import gdal from 'gdal'
-import * as Vendor from '../../vendor'
+import * as Vendor from '../../../vendor'
 
 export default class GeoTiffLayer extends Layer {
   _extent
@@ -71,6 +71,9 @@ export default class GeoTiffLayer extends Layer {
     console.log('opening in geotiff layer', this.filePath)
     // I cannot get this to work with the node-gdal library, not sure why
     // gdalinfo /vsis3/landsat-pds/c1/L8/139/045/LC08_L1TP_139045_20170304_20170316_01_T1/LC08_L1TP_139045_20170304_20170316_01_T1_B8.TIF
+    this.style = this._configuration.style || {
+      opacity: 1
+    }
     this.geotiff = await GeoTIFF.fromFile(this.filePath)
     this.image = await this.geotiff.getImage()
     this.fileDirectory = this.image.fileDirectory
@@ -312,13 +315,6 @@ export default class GeoTiffLayer extends Layer {
     let envelope = polygon.getEnvelope()
     this._configuration.extent = [envelope.minX, envelope.minY, envelope.maxX, envelope.maxY]
     return this._configuration.extent
-  }
-
-  get style () {
-    this._style = this._style || {
-      opacity: 1
-    }
-    return this._style
   }
 
   get mapLayer () {

@@ -1,5 +1,5 @@
 import Source from './Source'
-import XYZServerLayer from './layer/XYZServerLayer'
+import XYZServerLayer from './layer/tile/XYZServerLayer'
 
 export default class XYZSource extends Source {
   async retrieveLayers () {

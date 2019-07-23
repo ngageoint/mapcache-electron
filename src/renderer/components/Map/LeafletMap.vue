@@ -25,7 +25,7 @@
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import LeafletZoomIndicator from '../../../lib/map/LeafletZoomIndicator'
   import LeafletDraw from '../../../lib/map/LeafletDraw'
-  import DrawingLayer from '../../../lib/source/layer/DrawingLayer'
+  import DrawingLayer from '../../../lib/source/layer/vector/DrawingLayer'
   import Source from '../../../lib/source/Source'
   import _ from 'lodash'
   import Modal from '../Modal'
