@@ -1,34 +1,23 @@
-import Layer from '../Layer'
+import TileLayer from './TileLayer'
 import * as Vendor from '../../../vendor'
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
 import request from 'request-promise-native'
 import superagent from 'superagent'
+import jetpack from 'fs-jetpack'
 
-export default class WMSLayer extends Layer {
-  _extent
-
+export default class WMSLayer extends TileLayer {
   async initialize () {
-    this._extent = this.extent
-    this.style = this._configuration.style || {
-      opacity: 1
-    }
+    await super.initialize()
     return this
   }
 
   get configuration () {
     return {
-      filePath: this.filePath,
-      sourceLayerName: this.sourceLayerName,
-      name: this.name,
-      extent: this.extent,
-      id: this.id,
-      pane: 'tile',
-      layerType: 'WMS',
-      overviewTilePath: this.overviewTilePath,
-      style: this.style,
-      shown: this.shown || true,
-      credentials: this.credentials
+      ...super.configuration,
+      ...{
+        layerType: 'WMS'
+      }
     }
   }
 
@@ -44,12 +33,12 @@ export default class WMSLayer extends Layer {
     if (this._mapLayer) return this._mapLayer
 
     // call get capabilities and get the layers
-    let southWest = Vendor.L.latLng(this._configuration.extent[1], this._configuration.extent[0])
-    let northEast = Vendor.L.latLng(this._configuration.extent[3], this._configuration.extent[2])
+    let southWest = Vendor.L.latLng(this.extent[1], this.extent[0])
+    let northEast = Vendor.L.latLng(this.extent[3], this.extent[2])
     let bounds = Vendor.L.latLngBounds(southWest, northEast)
     // parse options...
     const options = {
-      layers: this._configuration.sourceLayerName,
+      layers: this.sourceLayerName,
       bounds: bounds,
       transparent: true,
       format: 'image/png'
@@ -87,13 +76,13 @@ export default class WMSLayer extends Layer {
     return this._mapLayer
   }
 
-  async renderImageryTile (coords, tile, done) {
+  async renderTile (coords, tile, done) {
     let {x, y, z} = coords
 
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
     let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
     let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
-    let fullExtent = this._extent
+    let fullExtent = this.extent
     if (!TileBoundingBoxUtils.tileIntersects(tileUpperRight, tileLowerLeft, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
       if (done) {
         return done(null, tile)
@@ -118,7 +107,7 @@ export default class WMSLayer extends Layer {
 
     let options = {
       method: 'GET',
-      url: this.filePath + '&request=GetMap&layers=' + this._configuration.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox,
+      url: this.filePath + '&request=GetMap&layers=' + this.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox,
       encoding: null
     }
     if (this.credentials) {
@@ -130,5 +119,26 @@ export default class WMSLayer extends Layer {
       }
     }
     return request(options)
+  }
+
+  async renderOverviewTile () {
+    let overviewTilePath = this.overviewTilePath
+    if (!jetpack.exists(overviewTilePath)) {
+      const fullExtent = this.extent
+      let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([fullExtent[0], fullExtent[1]], [fullExtent[2], fullExtent[3]])
+      let canvas = Vendor.L.DomUtil.create('canvas')
+      canvas.width = 256
+      canvas.height = 256
+      this.renderTile(coords, canvas, function (err, tile) {
+        if (err) console.log('err', err)
+        canvas.toBlob(function (blob) {
+          let reader = new FileReader()
+          reader.addEventListener('loadend', function () {
+            jetpack.write(overviewTilePath, Buffer.from(reader.result))
+          })
+          reader.readAsArrayBuffer(blob)
+        })
+      })
+    }
   }
 }

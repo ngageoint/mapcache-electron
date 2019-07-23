@@ -130,7 +130,7 @@ export default class GeoPackageBuilder {
         let time = Date.now()
         let currentTile
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
-          let result = await layer.renderImageryTile({x, y, z})
+          let result = await layer.renderTile({x, y, z})
           tilesComplete++
           currentTile = {z, x, y}
           if (Date.now() - time > 1000) {

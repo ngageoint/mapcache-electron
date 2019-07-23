@@ -1,47 +1,29 @@
 import request from 'request-promise-native'
-import Layer from '../Layer'
+import TileLayer from './TileLayer'
 import * as Vendor from '../../../vendor'
 import superagent from 'superagent'
+import jetpack from 'fs-jetpack'
+import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 
-export default class XYZServerLayer extends Layer {
-  _extent
-
+export default class XYZServerLayer extends TileLayer {
   async initialize () {
-    this._extent = this.extent
-    this.style = this._configuration.style || {
-      opacity: 1
-    }
+    await super.initialize()
     return this
   }
 
   get configuration () {
     return {
-      filePath: this.filePath,
-      sourceLayerName: this.sourceLayerName,
-      name: this.name,
-      extent: this.extent,
-      id: this.id,
-      pane: 'tile',
-      layerType: 'XYZServer',
-      overviewTilePath: this.overviewTilePath,
-      style: this.style,
-      shown: this.shown || true,
-      credentials: this.credentials
+      ...super.configuration,
+      ...{
+        layerType: 'XYZServer'
+      }
     }
-  }
-
-  get extent () {
-    if (this._configuration.extent) {
-      return this._configuration.extent
-    }
-    this._configuration.extent = [-180, -90, 180, 90]
-    return this._configuration.extent
   }
 
   get mapLayer () {
     if (this._mapLayer) return this._mapLayer
     let options = {
-      pane: this.configuration.pane === 'tile' ? 'tilePane' : 'overlayPane'
+      pane: 'tilePane'
     }
     const headers = []
     if (this.credentials && this.credentials.type === 'basic') {
@@ -81,7 +63,15 @@ export default class XYZServerLayer extends Layer {
     return this._mapLayer
   }
 
-  async renderImageryTile (coords, tileCanvas, done) {
+  get extent () {
+    if (this._configuration.extent) {
+      return this._configuration.extent
+    }
+    this._configuration.extent = [-180, -90, 180, 90]
+    return this._configuration.extent
+  }
+
+  async renderTile (coords, tileCanvas, done) {
     if (!tileCanvas) {
       tileCanvas = document.createElement('canvas')
       tileCanvas.width = 256
@@ -103,5 +93,26 @@ export default class XYZServerLayer extends Layer {
       }
     }
     return request(options)
+  }
+
+  async renderOverviewTile () {
+    let overviewTilePath = this.overviewTilePath
+    if (!jetpack.exists(overviewTilePath)) {
+      const fullExtent = this.extent
+      let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([fullExtent[0], fullExtent[1]], [fullExtent[2], fullExtent[3]])
+      let canvas = Vendor.L.DomUtil.create('canvas')
+      canvas.width = 256
+      canvas.height = 256
+      this.renderTile(coords, canvas, function (err, tile) {
+        if (err) console.log('err', err)
+        canvas.toBlob(function (blob) {
+          let reader = new FileReader()
+          reader.addEventListener('loadend', function () {
+            jetpack.write(overviewTilePath, Buffer.from(reader.result))
+          })
+          reader.readAsArrayBuffer(blob)
+        })
+      })
+    }
   }
 }
