@@ -24,8 +24,8 @@
         :project="project"
         :geopackage="geopackageConfiguration"/>
 
-    <div class="gp-button" @click.stop="cancel">
-      <span>{{cancelOrFinishText}}</span>
+    <div class="gp-button" @click.stop="action">
+      <span>{{actionText}}</span>
     </div>
   </div>
 </template>
@@ -38,6 +38,7 @@
   import SetupFeaturesToImageryLayer from '../GeoPackage/SetupFeaturesToImageryLayer'
   import CreationSummary from '../GeoPackage/CreationSummary'
   import EditGeoPackageName from '../GeoPackage/EditGeoPackageName'
+  import GeoPackageBuilder from '../../../lib/source/GeoPackageBuilder'
 
   export default {
     props: {
@@ -57,24 +58,60 @@
           return state.Projects[this.project.id].geopackages[this.project.currentGeoPackage]
         }
       }),
-      cancelOrFinishText () {
-        let text = 'Cancel'
+      actionText () {
+        let text = 'Close'
         let geopackage = this.project.geopackages[this.project.currentGeoPackage]
-        if (geopackage && geopackage.status && geopackage.status.creation === 'Completed') {
-          text = 'Finish'
+        if (geopackage) {
+          if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.COMPLETED) {
+            text = 'Finish'
+          } else if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.STARTED) {
+            text = 'Stop Build'
+          } else if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.CANCELLED) {
+            text = 'Reset'
+          } else if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.PENDING_CANCEL) {
+            text = 'Cancelling...'
+          }
         }
         return text
       }
     },
     methods: {
       ...mapActions({
-        setCurrentGeoPackage: 'Projects/setCurrentGeoPackage'
+        setCurrentGeoPackage: 'Projects/setCurrentGeoPackage',
+        setGeoPackageBuildMode: 'Projects/setGeoPackageBuildMode',
+        setGeoPackageStatusReset: 'Projects/setGeoPackageStatusReset'
       }),
-      cancel () {
-        this.setCurrentGeoPackage({
-          projectId: this.project.id,
-          geopackageId: undefined
-        })
+      action () {
+        let geopackage = this.project.geopackages[this.project.currentGeoPackage]
+        let close = true
+        if (geopackage) {
+          if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.STARTED) {
+            this.setGeoPackageBuildMode({
+              projectId: this.project.id,
+              geopackageId: this.project.currentGeoPackage,
+              buildMode: GeoPackageBuilder.BUILD_MODES.PENDING_CANCEL
+            })
+            close = false
+          } else if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.CANCELLED) {
+            this.setGeoPackageStatusReset({
+              projectId: this.project.id,
+              geopackageId: this.project.currentGeoPackage
+            })
+            close = false
+          } else if (geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.PENDING_CANCEL) {
+            close = false
+          }
+        }
+        if (close) {
+          this.setGeoPackageStatusReset({
+            projectId: this.project.id,
+            geopackageId: this.project.currentGeoPackage
+          })
+          this.setCurrentGeoPackage({
+            projectId: this.project.id,
+            geopackageId: undefined
+          })
+        }
       }
     }
   }
@@ -122,6 +159,16 @@
   padding: .2em;
   color: rgba(255, 255, 255, .95);
   background-color: rgba(68, 152, 192, .95);
+  cursor: pointer;
+  margin-top: 1em;
+}
+.gp-button-disabled {
+  border-color: rgba(54, 62, 70, .27);
+  border-width: 1px;
+  border-radius: 4px;
+  padding: .2em;
+  color: rgba(255, 255, 255, .35);
+  background-color: rgba(68, 152, 192, .35);
   cursor: pointer;
   margin-top: 1em;
 }

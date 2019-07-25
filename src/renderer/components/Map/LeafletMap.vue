@@ -294,7 +294,6 @@
         })
       })
       this.map.on('editable:drawing:end', function (e) {
-        console.log('editable:drawing:end')
         if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]

@@ -25,7 +25,7 @@
       </a>
       <a v-if="!currentlyDrawingBounds && layer && layer.extent"
          class="bounds-button"
-         @click.stop="aoi = [[layer.extent[1], layer.extent[0]], [layer.extent[3], layer.extent[2]]]">
+         @click.stop="setExtentToLayerBounds()">
         Use Layer Bounds
       </a>
       <a v-if="currentlyDrawingBounds"
@@ -158,7 +158,6 @@
         setFeatureLayerName: 'Projects/setFeatureLayerName'
       }),
       minZoomValid () {
-        console.log(this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue)
         return this.minZoomValue >= 0 && this.minZoomValue <= 18 && this.minZoomValue <= this.maxZoomValue
       },
       editLayerGeoPackageName () {
@@ -169,9 +168,7 @@
       },
       saveEditedName (event) {
         this.editNameMode = false
-        console.log('this.layerId', this.layerId)
         let geopackageNameEdit = event.target.closest('.edit-name-container').querySelector('.project-name-edit')
-        console.log('name value', geopackageNameEdit.value)
         this.setFeatureLayerName({projectId: this.project.id, geopackageId: this.geopackage.id, layerId: this.layerId, layerName: geopackageNameEdit.value})
       },
       cancelEditName () {
@@ -193,6 +190,9 @@
           geopackageId: this.geopackage.id,
           layerId: layerId
         })
+      },
+      setExtentToLayerBounds () {
+        this.aoi = [[this.layer.extent[1], this.layer.extent[0]], [this.layer.extent[3], this.layer.extent[2]]]
       }
     }
   }

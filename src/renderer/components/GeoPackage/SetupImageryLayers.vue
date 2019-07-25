@@ -103,7 +103,6 @@
           return !!this.geopackage.imageryAoi
         } else {
           return Object.values(this.geopackage.imageryLayers).some((imageryLayer) => {
-            console.log('imageryLayer.minZoom', imageryLayer.minZoom)
             return imageryLayer.included && (!!imageryLayer.aoi && imageryLayer.minZoom !== undefined && !isNaN(Number(imageryLayer.minZoom)) && imageryLayer.maxZoom !== undefined && !isNaN(Number(imageryLayer.maxZoom)))
           })
         }

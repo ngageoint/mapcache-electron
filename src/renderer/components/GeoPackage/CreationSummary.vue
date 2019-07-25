@@ -44,24 +44,40 @@
     </step-buttons>
 
     <div
-        v-if="geopackage.fileName"
+        v-if="geopackage.fileName && geopackage.buildMode === undefined"
         class="gp-save-location-button"
         @click.stop="createGeoPackage()">
       <span>Create The GeoPackage</span>
     </div>
 
     <div class="status" v-if="geopackage.status">
+      <div>
+        <span class="layer-name">Overall Status:</span>
+        <span class="layer-info">{{geopackage.status.creation}}</span>
+      </div>
       <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.featureLayers[layerId]">
         <span class="layer-name">Layer: {{geopackage.featureLayers[layerId].name}}</span>
         <div>
+          <span class="layer-name">Layer Status:</span>
+          <span class="layer-info">{{layerStatus.creation}}</span>
+        </div>
+        <div>
           <span class="layer-name">Features Added:</span>
           <span class="layer-info">{{layerStatus.featuresAdded}}</span>
+        </div>
+        <div v-if="layerStatus.error">
+          <span class="layer-name">Error:</span>
+          <span class="layer-info">{{layerStatus.error}}</span>
         </div>
         <hr/>
       </div>
 
       <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.imageryLayers[layerId] || layerId === geopackage.featureImageryConversion.name">
         <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId] ? geopackage.imageryLayers[layerId].name : layerId}}</span>
+        <div>
+          <span class="layer-name">Layer Status:</span>
+          <span class="layer-info">{{layerStatus.creation}}</span>
+        </div>
         <div>
           <span class="layer-name">Total Tiles:</span>
           <span class="layer-info">{{layerStatus.totalTileCount}}</span>
@@ -122,6 +138,16 @@
   import GeoPackageBuilder from '../../../lib/source/GeoPackageBuilder'
 
   export default {
+    data: function () {
+      return {
+        geopackageBuilder: new GeoPackageBuilder(this.geopackage, this.project)
+      }
+    },
+    updated: function () {
+      if (this.geopackage && this.geopackage.buildMode === GeoPackageBuilder.BUILD_MODES.PENDING_CANCEL) {
+        this.geopackageBuilder.setCancelled()
+      }
+    },
     props: {
       geopackage: Object,
       project: Object
@@ -191,7 +217,8 @@
     methods: {
       ...mapActions({
         setGeoPackageStepNumber: 'Projects/setGeoPackageStepNumber',
-        setGeoPackageLocation: 'Projects/setGeoPackageLocation'
+        setGeoPackageLocation: 'Projects/setGeoPackageLocation',
+        setGeoPackageBuildMode: 'Projects/setGeoPackageBuildMode'
       }),
       chooseSaveLocation () {
         remote.dialog.showSaveDialog((fileName) => {
@@ -202,8 +229,7 @@
         })
       },
       createGeoPackage () {
-        let gp = new GeoPackageBuilder(this.geopackage, this.project)
-        gp.go()
+        this.geopackageBuilder.go()
       },
       next () {
       },

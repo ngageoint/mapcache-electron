@@ -192,7 +192,7 @@ export default class VectorLayer extends Layer {
 
   iterateFeaturesInBounds (bounds) {
     const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
-    return this._configuration.features.map((feature) => {
+    return this.featureCollection.features.map((feature) => {
       try {
         if (feature.geometry.type.toLowerCase() === 'point') {
           const bboxPoly = bboxPolygon(bbox)
@@ -234,6 +234,6 @@ export default class VectorLayer extends Layer {
       } catch (e) {
         console.log(e)
       }
-    })
+    }).filter(feature => feature !== undefined)
   }
 }

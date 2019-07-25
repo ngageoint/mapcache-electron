@@ -33,7 +33,6 @@ export default class KMZSource extends Source {
       })
     }
     this.filePath = path.join(destinationFolder, this.kmlFileName)
-    console.log(this.filePath)
     this.kmlSource = new KMLSource(this.filePath, this.sourceId)
     await this.kmlSource.initialize()
   }

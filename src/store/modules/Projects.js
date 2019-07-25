@@ -37,6 +37,13 @@ const mutations = {
     }
     Vue.set(state[project.id], 'currentGeoPackage', geopackage.id)
   },
+  setGeoPackageBuildMode (state, {projectId, geopackageId, buildMode}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'buildMode', buildMode)
+  },
+  setGeoPackageStatusReset (state, {projectId, geopackageId}) {
+    Vue.delete(state[projectId].geopackages[geopackageId], 'status')
+    Vue.delete(state[projectId].geopackages[geopackageId], 'buildMode')
+  },
   setCurrentGeoPackage (state, {projectId, geopackageId}) {
     Vue.set(state[projectId], 'currentGeoPackage', geopackageId)
   },
@@ -74,7 +81,10 @@ const mutations = {
     Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
   },
   setFeatureImageryConversionAOI (state, {projectId, geopackageId, aoi}) {
-    console.log('aoi', aoi)
+    aoi[0][0] = Number(aoi[0][0].toFixed(10))
+    aoi[0][1] = Number(aoi[0][1].toFixed(10))
+    aoi[1][0] = Number(aoi[1][0].toFixed(10))
+    aoi[1][1] = Number(aoi[1][1].toFixed(10))
     while (aoi[0][1] < -180) {
       aoi[0][1] = aoi[0][1] + 360
     }
@@ -90,7 +100,10 @@ const mutations = {
     Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
   },
   setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
-    console.log('aoi', aoi)
+    aoi[0][0] = Number(aoi[0][0].toFixed(10))
+    aoi[0][1] = Number(aoi[0][1].toFixed(10))
+    aoi[1][0] = Number(aoi[1][0].toFixed(10))
+    aoi[1][1] = Number(aoi[1][1].toFixed(10))
     while (aoi[0][1] < -180) {
       aoi[0][1] = aoi[0][1] + 360
     }
@@ -330,13 +343,17 @@ const actions = {
   setGeoPackageStatus ({ commit, state }, {projectId, geopackageId, status}) {
     commit('setGeoPackageStatus', {projectId, geopackageId, status})
   },
+  setGeoPackageBuildMode ({ commit, state }, {projectId, geopackageId, buildMode}) {
+    commit('setGeoPackageBuildMode', {projectId, geopackageId, buildMode})
+  },
+  setGeoPackageStatusReset ({ commit, state }, {projectId, geopackageId}) {
+    commit('setGeoPackageStatusReset', {projectId, geopackageId})
+  },
   deleteProject ({ commit, state }, project) {
     commit('deleteProject', project)
     commit('UIState/deleteProject', project.id, {root: true})
   },
   deleteGeoPackage ({ commit, state }, {projectId, geopackageId}) {
-    console.log({projectId})
-    console.log({geopackageId})
     commit('deleteGeoPackage', {projectId, geopackageId})
   },
   openProject ({ commit, state }, project) {

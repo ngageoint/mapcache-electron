@@ -201,9 +201,7 @@
       },
       saveEditedName (event) {
         this.editNameMode = false
-        console.log('this.layerId', this.layerId)
         let geopackageNameEdit = event.target.closest('.edit-name-container').querySelector('.project-name-edit')
-        console.log('name value', geopackageNameEdit.value)
         this.setImageryLayerName({projectId: this.project.id, geopackageId: this.geopackage.id, layerId: this.layerId, layerName: geopackageNameEdit.value, isForFeatureLayer: false})
       },
       cancelEditName () {

@@ -30,7 +30,6 @@ export default {
   },
   mounted: function () {
     this.$nextTick(function () {
-      console.log('Zoom To Extent mounted')
       let extent = this.extents
       this.map.fitBounds([
         [extent[1], extent[0]],

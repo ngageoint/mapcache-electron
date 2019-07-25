@@ -109,7 +109,6 @@ export default class LeafletDraw extends vendor.L.Control {
     }
 
     map.on('editable:drawing:commit', () => {
-      console.log('editable:drawing:commit')
       _this.enableDrawingLinks()
       _this.enableEditingLinks()
     })

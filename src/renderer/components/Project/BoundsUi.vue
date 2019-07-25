@@ -1,6 +1,6 @@
 <template>
   <div :class="{'coordinate-container': !mini, 'mini': mini}">
-    
+
     <div v-if="mini" class="mini">
       LL: {{lowerLeft[0] | latitude}}, {{lowerLeft[1] | longitude}} UR: {{upperRight[0] | latitude}}, {{upperRight[1] | longitude}}
     </div>
@@ -24,10 +24,10 @@
       mini: Boolean
     },
     filters: {
-      latitude: function (value) {
+      longitude: function (value) {
         return value.toFixed(3) + '°' + (value < 0 ? ' W' : ' E')
       },
-      longitude: function (value) {
+      latitude: function (value) {
         return value.toFixed(3) + '°' + (value < 0 ? ' S' : ' N')
       }
     },

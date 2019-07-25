@@ -19,7 +19,6 @@ export default class GeoPackageSource extends Source {
     }
     let featureLayers = this.geopackage.getFeatureTables()
     for (const layer of featureLayers) {
-      console.log('layer: ' + layer)
       this.layers.push(new GeoPackageVectorLayer({
         filePath: this.filePath,
         sourceLayerName: layer

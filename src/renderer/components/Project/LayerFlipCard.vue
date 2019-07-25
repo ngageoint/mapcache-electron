@@ -152,7 +152,7 @@
       },
       bounds () {
         if (this.layer.extent) {
-          return [[this.layer.extent[0], this.layer.extent[1]], [this.layer.extent[2], this.layer.extent[3]]]
+          return [[this.layer.extent[1], this.layer.extent[0]], [this.layer.extent[3], this.layer.extent[2]]]
         }
       }
     },

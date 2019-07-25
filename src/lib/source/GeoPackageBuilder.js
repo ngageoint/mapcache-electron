@@ -2,17 +2,30 @@ import GeoPackage from '@ngageoint/geopackage'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
 import store from '../../store'
-
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
+import CanvasUtilities from '../CanvasUtilities'
+import fs from 'fs'
 
 export default class GeoPackageBuilder {
   config
   project
+  cancelled
+  static BUILD_MODES = {
+    STARTED: 0,
+    PENDING_CANCEL: 1,
+    CANCELLED: 2,
+    COMPLETED: 3
+  }
 
   constructor (config, project) {
     this.config = config
     this.project = project
+    this.cancelled = false
+  }
+
+  setCancelled = () => {
+    this.cancelled = true
   }
 
   dispatchStatusUpdate (status) {
@@ -23,14 +36,23 @@ export default class GeoPackageBuilder {
     })
   }
 
+  dispatchBuildMode (buildMode) {
+    store.dispatch('Projects/setGeoPackageBuildMode', {
+      projectId: this.project.id,
+      geopackageId: this.config.id,
+      buildMode: buildMode
+    })
+  }
+
   async go () {
+    this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.STARTED)
     let blankCanvas = document.createElement('canvas')
     blankCanvas.width = 256
     blankCanvas.height = 256
     // let blankURL = blankCanvas.toDataURL()
 
     let status = {
-      creation: 'Started',
+      creation: 'Building...',
       layerStatus: {}
     }
 
@@ -40,6 +62,9 @@ export default class GeoPackageBuilder {
 
     // execute feature configurations
     for (const layerId in this.config.featureLayers) {
+      if (this.cancelled) {
+        break
+      }
       let geopackageLayerConfig = this.config.featureLayers[layerId]
       if (!geopackageLayerConfig.included) {
         continue
@@ -81,25 +106,35 @@ export default class GeoPackageBuilder {
         await gp.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
         let iterator = await layer.iterateFeaturesInBounds(aoi)
         for (let feature of iterator) {
+          if (this.cancelled) {
+            break
+          }
           GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.layerName || geopackageLayerConfig.name)
           layerStatus.featuresAdded++
           if (layerStatus.featuresAdded % 10 === 0) {
             this.dispatchStatusUpdate(status)
           }
         }
+        if (this.cancelled) {
+          break
+        }
         layerStatus.creation = 'Completed'
         this.dispatchStatusUpdate(status)
       } catch (error) {
         layerStatus.creation = 'Failed'
-        layerStatus.error = error
+        layerStatus.error = error.message
+        console.log(error)
         this.dispatchStatusUpdate(status)
       }
     }
 
     // execute imagery configurations
     for (const layerId in this.config.imageryLayers) {
+      if (this.cancelled) {
+        break
+      }
       let geopackageLayerConfig = this.config.imageryLayers[layerId]
-      if (!geopackageLayerConfig.included) {
+      if (!geopackageLayerConfig.included || this.cancelled) {
         continue
       }
       let aoi = this.config.imageryLayersShareBounds ? this.config.imageryAoi : geopackageLayerConfig.aoi
@@ -116,7 +151,6 @@ export default class GeoPackageBuilder {
       }
       status.layerStatus[layerId] = layerStatus
       this.dispatchStatusUpdate(status)
-
       try {
         let layer = LayerFactory.constructLayer(layerConfig)
         await layer.initialize()
@@ -130,6 +164,9 @@ export default class GeoPackageBuilder {
         let time = Date.now()
         let currentTile
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
+          if (this.cancelled) {
+            return false
+          }
           let result = await layer.renderTile({x, y, z})
           tilesComplete++
           currentTile = {z, x, y}
@@ -185,6 +222,9 @@ export default class GeoPackageBuilder {
             }
           })
         })
+        if (this.cancelled) {
+          break
+        }
         layerStatus.tilesComplete = layerStatus.totalTileCount
         layerStatus.currentTile = currentTile
         layerStatus.totalSize = totalSize
@@ -193,15 +233,14 @@ export default class GeoPackageBuilder {
         this.dispatchStatusUpdate(status)
       } catch (error) {
         layerStatus.creation = 'Failed'
-        layerStatus.error = error
+        layerStatus.error = error.message
         this.dispatchStatusUpdate(status)
       }
     }
 
+    let includedFeatureToImageryLayers = Object.values(this.config.featureToImageryLayers).filter(l => l.included)
     // execute feature to imagery configuration
-    if (Object.values(this.config.featureToImageryLayers).filter((layer) => {
-      return layer.included
-    }).length > 0) {
+    if (includedFeatureToImageryLayers.length > 0 && !this.cancelled) {
       const layerId = this.config.featureImageryConversion.name
       let aoi = this.config.featureImageryConversion.aoi
       let minZoom = this.config.featureImageryConversion.minZoom
@@ -217,21 +256,11 @@ export default class GeoPackageBuilder {
       status.layerStatus[layerId] = layerStatus
       this.dispatchStatusUpdate(status)
       try {
-        const layerList = Object.keys(this.config.featureToImageryLayers).map((l) => {
-          return this.config.featureToImageryLayers[l]
-        })
-        const layersToInclude = layerList.filter((layer) => {
-          return layer.included
-        }).map((layer) => {
-          return this.project.layers[layer.id]
-        })
-        // Get Ordered Initialized Layers
+        const layersToInclude = includedFeatureToImageryLayers.map(l => this.project.layers[l.id])
         const orderedLayersToInclude = []
         if (this.config.featureImageryConversion.layerOrder) {
           this.config.featureImageryConversion.layerOrder.forEach((l) => {
-            const layerConfig = layersToInclude.find((layer) => {
-              return layer.name === l.name
-            })
+            const layerConfig = layersToInclude.find(layer => layer.name === l.name)
             if (layerConfig) {
               orderedLayersToInclude.push(LayerFactory.constructLayer(layerConfig))
             }
@@ -240,11 +269,6 @@ export default class GeoPackageBuilder {
           layersToInclude.forEach((l) => {
             orderedLayersToInclude.push(LayerFactory.constructLayer(l))
           })
-        }
-
-        for (let i = 0; i < orderedLayersToInclude.length; i++) {
-          const layer = orderedLayersToInclude[i]
-          await layer.initialize()
         }
 
         // Iterate over each layer and generate dem tiles! Use the style too dawg!
@@ -257,7 +281,18 @@ export default class GeoPackageBuilder {
         let totalSize = 0
         let time = Date.now()
         let currentTile
+
+        for (let i = 0; i < orderedLayersToInclude.length; i++) {
+          if (this.cancelled) {
+            break
+          }
+          await orderedLayersToInclude[i].initialize()
+        }
+
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
+          if (this.cancelled) {
+            return false
+          }
           currentTile = {z, x, y}
           let canvas = document.createElement('canvas')
           canvas.width = 256
@@ -282,15 +317,37 @@ export default class GeoPackageBuilder {
             })
           }
           await new Promise((resolve) => {
-            canvas.toBlob((blob) => {
-              const reader = new FileReader()
-              reader.addEventListener('loadend', function () {
-                totalSize += reader.result.byteLength
-                gp.addTile(Buffer.from(reader.result), layerId, z, y, x)
-                resolve(false)
-              })
-              reader.readAsArrayBuffer(blob)
-            }, 'image/png', 1.0)
+            if (CanvasUtilities.hasTransparentPixels(canvas)) {
+              canvas.toBlob((blob) => {
+                const reader = new FileReader()
+                reader.addEventListener('loadend', function () {
+                  totalSize += reader.result.byteLength
+                  gp.addTile(Buffer.from(reader.result), layerId, z, y, x)
+                  resolve(false)
+                })
+                reader.readAsArrayBuffer(blob)
+              }, 'image/jpeg', 0.7)
+            } else {
+              canvas.toBlob((blob) => {
+                let reader = new FileReader()
+                reader.addEventListener('loadend', async function () {
+                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
+                    plugins: [
+                      imageminPngquant({
+                        speed: 8,
+                        quality: [0.5, 0.8]
+                      })
+                    ]
+                  })
+
+                  totalSize += buffer.length
+                  // console.log('totalSize', totalSize)
+                  gp.addTile(buffer, layerId, z, y, x)
+                  resolve(false)
+                })
+                reader.readAsArrayBuffer(blob)
+              }, 'image/png')
+            }
           })
           tilesComplete++
           if (Date.now() - time > 1000) {
@@ -302,19 +359,33 @@ export default class GeoPackageBuilder {
             this.dispatchStatusUpdate(status)
           }
         })
-        layerStatus.tilesComplete = layerStatus.totalTileCount
-        layerStatus.currentTile = currentTile
-        layerStatus.totalSize = totalSize
-        layerStatus.remainingTime = 0
-        layerStatus.creation = 'Completed'
-        this.dispatchStatusUpdate(status)
+        if (!this.cancelled) {
+          layerStatus.tilesComplete = layerStatus.totalTileCount
+          layerStatus.currentTile = currentTile
+          layerStatus.totalSize = totalSize
+          layerStatus.remainingTime = 0
+          layerStatus.creation = 'Completed'
+          this.dispatchStatusUpdate(status)
+        }
       } catch (error) {
         layerStatus.creation = 'Failed'
-        layerStatus.error = error
+        layerStatus.error = error.message
         this.dispatchStatusUpdate(status)
       }
     }
-    status.creation = 'Completed'
-    this.dispatchStatusUpdate(status)
+    if (this.cancelled) {
+      this.cancelled = false
+      fs.unlinkSync(this.config.fileName)
+      status.creation = 'Cancelled'
+      Object.values(status.layerStatus).filter(s => s.creation === 'Started').forEach(s => {
+        s.creation = 'Cancelled'
+      })
+      this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.CANCELLED)
+      this.dispatchStatusUpdate(status)
+    } else {
+      status.creation = 'Completed'
+      this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.COMPLETED)
+      this.dispatchStatusUpdate(status)
+    }
   }
 }

@@ -11,7 +11,6 @@ const getters = {
 
 const mutations = {
   addProjectState (state, {projectId}) {
-    console.log('adding a project state for projectId', projectId)
     Vue.set(state, projectId, {
       extents: [-180, -90, 180, 90],
       drawBounds: {},
@@ -26,7 +25,6 @@ const mutations = {
     Vue.delete(state, projectId)
   },
   activateDrawForGeoPackage (state, {projectId, geopackageId, layerId}) {
-    console.log('Activate', arguments)
     if (state[projectId].drawBounds[geopackageId]) {
       if (layerId) {
         Vue.set(state[projectId].drawBounds[geopackageId], layerId, true)

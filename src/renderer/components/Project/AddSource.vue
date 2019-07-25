@@ -420,8 +420,6 @@
 
           this.clearProcessing(source)
         } catch (e) {
-          console.log('source', source)
-          console.log('setting source error to', e)
           source.error = e.toString()
           throw e
         }
@@ -457,7 +455,7 @@
           console.log({file})
           setTimeout(() => {
             this.addSource(sourceToProcess)
-          }, 0)
+          }, 100)
         })
       },
       getCredentials () {
