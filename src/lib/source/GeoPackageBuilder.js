@@ -35,7 +35,6 @@ export default class GeoPackageBuilder {
       status
     })
   }
-
   dispatchBuildMode (buildMode) {
     store.dispatch('Projects/setGeoPackageBuildMode', {
       projectId: this.project.id,
@@ -45,21 +44,13 @@ export default class GeoPackageBuilder {
   }
 
   async go () {
-    this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.STARTED)
-    let blankCanvas = document.createElement('canvas')
-    blankCanvas.width = 256
-    blankCanvas.height = 256
-    // let blankURL = blankCanvas.toDataURL()
-
     let status = {
       creation: 'Building...',
       layerStatus: {}
     }
-
+    this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.STARTED)
     this.dispatchStatusUpdate(status)
-
     let gp = await GeoPackage.create(this.config.fileName)
-
     // execute feature configurations
     for (const layerId in this.config.featureLayers) {
       if (this.cancelled) {

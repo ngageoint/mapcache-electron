@@ -30,9 +30,9 @@
   import _ from 'lodash'
   import Modal from '../Modal'
 
-  let shownLayers = {}
+  let initializedLayers = {}
   let shownMapLayers = {}
-  let shownLayerConfigs = {}
+  let layerConfigs = {}
   let layerSelectionVisible = false
   let layerChoices = []
 
@@ -155,58 +155,78 @@
       layerConfigs: {
         async handler (value, oldValue) {
           let currentLayerIds = Object.keys(value)
-          let existingLayerIds = Object.keys(shownMapLayers)
-          // layers that have been removed from the list or are no longer being shown
-          let removed = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) < 0 || !value[i].shown)
+          let existingLayerIds = Object.keys(initializedLayers)
+          // layers that have been removed from the list
+          let removed = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) < 0)
           // layers that have been added and are being shown
-          let added = currentLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0 && value[i].shown)
+          let added = currentLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0)
           // layers that still exist may have changed. check if the rgb has changed...
-          let same = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) >= 0 && value[i].shown)
-
+          let same = existingLayerIds.filter((i) => currentLayerIds.indexOf(i) >= 0)
+          let map = this.map
           for (const layerId of removed) {
             let mapLayer = shownMapLayers[layerId]
-            mapLayer.remove()
-            delete shownLayers[layerId]
+            if (mapLayer) {
+              mapLayer.remove()
+            }
+            delete initializedLayers[layerId]
             delete shownMapLayers[layerId]
-            delete shownLayerConfigs[layerId]
+            delete layerConfigs[layerId]
           }
 
           for (const layerId of added) {
             let layerConfig = value[layerId]
             let layer = LayerFactory.constructLayer(layerConfig)
-            await layer.initialize()
-            let mapLayer = layer.mapLayer
-            mapLayer.addTo(this.map)
-            shownLayers[layerConfig.id] = layer
-            shownMapLayers[mapLayer.id] = mapLayer
-            shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+            layer.initialize().then(function () {
+              let mapLayer = layer.mapLayer
+              mapLayer.addTo(map)
+              initializedLayers[layerConfig.id] = layer
+              shownMapLayers[mapLayer.id] = mapLayer
+              layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+            })
           }
 
           for (const layerId of same) {
             let layerConfig = value[layerId]
-            let oldLayerConfig = shownLayerConfigs[layerId]
+            let oldLayerConfig = layerConfigs[layerId]
 
-            if (!_.isEqual(_.omit(layerConfig, ['style']), _.omit(oldLayerConfig, ['style']))) {
+            if (!_.isEqual(_.omit(layerConfig, ['style', 'shown']), _.omit(oldLayerConfig, ['style', 'shown']))) {
               let existingMapLayer = shownMapLayers[layerId]
               existingMapLayer.remove()
-              delete shownLayers[layerId]
+              delete initializedLayers[layerId]
               delete shownMapLayers[layerId]
-              delete shownLayerConfigs[layerId]
+              delete layerConfigs[layerId]
               let layer = LayerFactory.constructLayer(layerConfig)
-              await layer.initialize()
-              let updateMapLayer = layer.mapLayer
-              updateMapLayer.addTo(this.map)
-              shownLayers[layerConfig.id] = layer
-              shownMapLayers[updateMapLayer.id] = updateMapLayer
-              shownLayerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+              layer.initialize().then(function () {
+                let updateMapLayer = layer.mapLayer
+                updateMapLayer.addTo(map)
+                initializedLayers[layerConfig.id] = layer
+                shownMapLayers[updateMapLayer.id] = updateMapLayer
+                layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+              })
             } else if (!_.isEqual(layerConfig.style, oldLayerConfig.style)) {
-              await shownLayers[layerConfig.id].updateStyle(layerConfig.style)
-              let existingMapLayer = shownMapLayers[layerId]
-              existingMapLayer.remove()
-              let updateMapLayer = shownLayers[layerConfig.id].mapLayer
-              updateMapLayer.addTo(this.map)
-              shownMapLayers[updateMapLayer.id] = updateMapLayer
-              shownLayerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+              initializedLayers[layerConfig.id].updateStyle(layerConfig.style).then(function () {
+                let existingMapLayer = shownMapLayers[layerId]
+                existingMapLayer.remove()
+                let updateMapLayer = initializedLayers[layerConfig.id].mapLayer
+                updateMapLayer.addTo(map)
+                shownMapLayers[updateMapLayer.id] = updateMapLayer
+                layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+              })
+            } else if (!_.isEqual(layerConfig.shown, oldLayerConfig.shown)) {
+              // shown state has changed
+              if (layerConfig.shown) {
+                let mapLayer = initializedLayers[layerConfig.id].mapLayer
+                mapLayer.addTo(this.map)
+                shownMapLayers[mapLayer.id] = mapLayer
+                layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+              } else {
+                let mapLayer = shownMapLayers[layerId]
+                if (mapLayer) {
+                  mapLayer.remove()
+                }
+                delete shownMapLayers[layerId]
+                layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+              }
             }
           }
         },
@@ -257,8 +277,10 @@
                     _this.removeProjectLayer({projectId: _this.projectId, layerId: newLayerConfig.id})
                   } else {
                     let layer = LayerFactory.constructLayer(newLayerConfig)
-                    await layer.initialize()
-                    _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
+                    let _this = this
+                    layer.initialize().then(function () {
+                      _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
+                    })
                   }
                 }
               }
@@ -322,8 +344,10 @@
             newLayerConfig.features.splice(newLayerConfig.features.findIndex(f => f.id === feature.id), 1)
             newLayerConfig.features.push(feature)
             let layer = LayerFactory.constructLayer(newLayerConfig)
-            await layer.initialize()
-            this.updateProjectLayer({projectId: this.projectId, layer: layer.configuration})
+            let _this = this
+            layer.initialize().then(function () {
+              _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
+            })
           }
         }
       })
@@ -331,12 +355,14 @@
         let layerConfig = this.layerConfigs[layerId]
         if (!layerConfig.shown) continue
         let layer = LayerFactory.constructLayer(layerConfig)
-        await layer.initialize()
-        let mapLayer = layer.mapLayer
-        mapLayer.addTo(this.map)
-        shownLayers[mapLayer.id] = layer
-        shownMapLayers[mapLayer.id] = mapLayer
-        shownLayerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+        let map = this.map
+        layer.initialize().then(function () {
+          let mapLayer = layer.mapLayer
+          mapLayer.addTo(map)
+          initializedLayers[mapLayer.id] = layer
+          shownMapLayers[mapLayer.id] = mapLayer
+          layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+        })
       }
       this.setupDrawing(this.drawBounds)
       if (this.activeGeopackage) {

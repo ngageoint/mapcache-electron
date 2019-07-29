@@ -411,14 +411,21 @@
           } else {
             createdSource = await SourceFactory.constructSource(source.file.path)
           }
-          let layers = await createdSource.retrieveLayers()
-          for (const layer of layers) {
-            await layer.initialize()
-            let config = layer.configuration
-            this.addProjectLayer({project: this.project, layerId: layer.id, config: config})
-          }
-
-          this.clearProcessing(source)
+          let _this = this
+          createdSource.retrieveLayers().then(function (layers) {
+            let promises = []
+            for (const layer of layers) {
+              promises.push(layer.initialize())
+            }
+            Promise.all(promises.map(p => p.catch(() => null))).then(function (initializedLayers) {
+              initializedLayers.forEach(function (initializedLayer) {
+                if (initializedLayer !== null) {
+                  _this.addProjectLayer({project: _this.project, layerId: initializedLayer.id, config: initializedLayer.configuration})
+                  _this.clearProcessing(source)
+                }
+              })
+            })
+          })
         } catch (e) {
           source.error = e.toString()
           throw e
@@ -452,7 +459,6 @@
             credentials: this.getCredentials()
           }
           processing.sources.push(sourceToProcess)
-          console.log({file})
           setTimeout(() => {
             this.addSource(sourceToProcess)
           }, 100)

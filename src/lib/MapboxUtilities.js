@@ -177,8 +177,8 @@ export default class MapboxUtilities {
   }
   static getMapboxFeatureCollectionForStyling = (featureSet) => {
     let features = featureSet.slice()
-    let multiPointFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'multipoint')
-    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'multipoint'))
+    let multiPointFeatures = features.filter(f => f.geometry.type === 'MultiPoint')
+    features = features.filter(f => !(f.geometry.type === 'MultiPoint'))
     multiPointFeatures.forEach(f => {
       f.geometry.coordinates.forEach(c => {
         features.push({
@@ -193,8 +193,8 @@ export default class MapboxUtilities {
       })
     })
 
-    let multiLineString = features.filter(f => f.geometry.type.toLowerCase() === 'multilinestring')
-    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'multilinestring'))
+    let multiLineString = features.filter(f => f.geometry.type === 'MultiLineString')
+    features = features.filter(f => !(f.geometry.type === 'MultiLineString'))
     multiLineString.forEach(f => {
       f.geometry.coordinates.forEach(c => {
         features.push({
@@ -209,8 +209,8 @@ export default class MapboxUtilities {
       })
     })
 
-    let multiPolygon = features.filter(f => f.geometry.type.toLowerCase() === 'multipolygon')
-    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'multipolygon'))
+    let multiPolygon = features.filter(f => f.geometry.type === 'MultiPolygon')
+    features = features.filter(f => !(f.geometry.type === 'MultiPolygon'))
     multiPolygon.forEach(f => {
       f.geometry.coordinates.forEach(c => {
         features.push({
@@ -225,8 +225,8 @@ export default class MapboxUtilities {
       })
     })
 
-    let circleFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'point')
-    features = features.filter(f => !(f.geometry.type.toLowerCase() === 'point'))
+    let circleFeatures = features.filter(f => f.geometry.type === 'Point')
+    features = features.filter(f => !(f.geometry.type === 'Point'))
     circleFeatures.forEach(f => {
       let radius = f.properties.radius
       if (radius) {
@@ -237,10 +237,10 @@ export default class MapboxUtilities {
         features.push(f)
       }
     })
-    features.filter(f => f.geometry.type.toLowerCase() === 'linestring').forEach(l => {
+    features.filter(f => f.geometry.type === 'LineString').forEach(l => {
       l.properties['sub-type'] = 0 // line
     })
-    let polygonFeatures = features.filter(f => f.geometry.type.toLowerCase() === 'polygon')
+    let polygonFeatures = features.filter(f => f.geometry.type === 'Polygon')
     polygonFeatures.forEach(f => {
       f.properties['sub-type'] = f.properties.isCircle ? 1 : 2
       const poly = polygon(f.geometry.coordinates)

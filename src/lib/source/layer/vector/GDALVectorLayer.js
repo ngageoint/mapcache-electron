@@ -3,25 +3,41 @@ import gdal from 'gdal'
 import path from 'path'
 
 export default class GDALVectorLayer extends VectorLayer {
+  _dataset
+  _layer
   _features
+  _extent
 
   async initialize () {
     this.openGdalFile()
-    if (this.layer.name.startsWith('OGR')) {
+    if (this._layer.name.startsWith('OGR')) {
       this.name = path.basename(this.filePath, path.extname(this.filePath))
     } else {
-      this.name = this.layer.name
+      this.name = this._layer.name
     }
     this.removeMultiFeatures()
     this._features = this.getFeaturesInLayer()
+    this._extent = this._configuration.extent || this.extent
     await super.initialize()
     return this
   }
 
   openGdalFile () {
     gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
-    this.dataset = gdal.open(this.filePath)
-    this.layer = this.dataset.layers.get(this.sourceLayerName)
+    this._dataset = gdal.open(this.filePath)
+    this._layer = this._dataset.layers.get(this.sourceLayerName)
+  }
+
+  get extent () {
+    if (!this._extent) {
+      let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+      let toNative = new gdal.CoordinateTransformation(this._layer.srs, wgs84)
+      let extentPoly = this._layer.getExtent().toPolygon()
+      extentPoly.transform(toNative)
+      let currentEnvelope = extentPoly.getEnvelope()
+      this._extent = [currentEnvelope.minX, currentEnvelope.minY, currentEnvelope.maxX, currentEnvelope.maxY]
+    }
+    return this._extent
   }
 
   get configuration () {
@@ -42,21 +58,21 @@ export default class GDALVectorLayer extends VectorLayer {
 
   getFeaturesInLayer () {
     let wgs84 = gdal.SpatialReference.fromEPSG(4326)
-    let toNative = new gdal.CoordinateTransformation(this.layer.srs, wgs84)
-    return this.layer.features.map((feature) => {
+    let toNative = new gdal.CoordinateTransformation(this._layer.srs, wgs84)
+
+    return this._layer.features.map((feature) => {
       try {
-        let projected = feature.clone()
-        let geom = projected.getGeometry()
-        if (!this.layer.srs.isSame(wgs84)) {
+        let geom = feature.getGeometry().clone()
+        if (!this._layer.srs.isSame(wgs84)) {
           geom.transform(toNative)
         }
-        let geojson = geom.toObject()
         return {
           type: 'Feature',
           properties: feature.fields.toObject(),
-          geometry: geojson
+          geometry: geom.toObject()
         }
       } catch (e) {
+        console.log(e)
       }
     }).filter(feature => feature !== undefined)
   }
@@ -69,24 +85,35 @@ export default class GDALVectorLayer extends VectorLayer {
     if (fullFile === this.filePath) {
       return
     }
-    let outds = gdal.open(fullFile, 'w', 'GeoJSON')
-    let outLayer = outds.layers.create(this.sourceLayerName, this.layer.srs, gdal.wkbPolygon)
-    this.layer.features.forEach(feature => {
+    gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
+    let newDataset = gdal.open(fullFile, 'w', 'GeoJSON')
+    let newLayer = newDataset.layers.create(this.sourceLayerName, this._layer.srs, gdal.wkbPolygon)
+    this._layer.features.forEach((feature) => {
       let geom = feature.getGeometry()
-      if (geom.name === 'MULTIPOLYGON' || geom.name === 'MULTILINESTRING') {
+      let props = feature.fields.toObject()
+      let propKeys = Object.keys(props)
+      if (geom.name.toUpperCase() === 'MULTIPOLYGON' || geom.name.toUpperCase() === 'MULTILINESTRING') {
         let children = geom.children
-        children.forEach((child, i) => {
-          let newFeature = feature.clone()
-          newFeature.setGeometry(child)
-          outLayer.features.add(newFeature)
+        let count = children.count()
+        if (count > 0) {
           expanded = true
-        })
+        }
+        for (let i = 0; i < count; i++) {
+          const child = children.get(i)
+          let newFeature = new gdal.Feature(this._layer)
+          newFeature.setGeometry(child)
+          propKeys.forEach((prop) => {
+            newFeature.fields.set(prop, props[prop])
+          })
+          newLayer.features.add(newFeature)
+        }
       } else {
-        outLayer.features.add(feature)
+        newLayer.features.add(feature)
       }
     })
-    outds.close()
+    newDataset.close()
     if (expanded) {
+      this._dataset.close()
       this.filePath = fullFile
       this.openGdalFile()
     } else {
@@ -96,8 +123,8 @@ export default class GDALVectorLayer extends VectorLayer {
 
   iterateFeaturesInBounds (bounds, buffer) {
     let wgs84 = gdal.SpatialReference.fromEPSG(4326)
-    let fromNative = new gdal.CoordinateTransformation(wgs84, this.layer.srs)
-    let toNative = new gdal.CoordinateTransformation(this.layer.srs, wgs84)
+    let fromNative = new gdal.CoordinateTransformation(wgs84, this._layer.srs)
+    let toNative = new gdal.CoordinateTransformation(this._layer.srs, wgs84)
     let envelope = new gdal.Envelope({
       minX: bounds[0][1],
       maxX: bounds[1][1],
@@ -110,15 +137,15 @@ export default class GDALVectorLayer extends VectorLayer {
       bufferDistance = ((bounds[1][1] - bounds[0][1]) / 256) * 32
     }
     let filter = envelope.toPolygon().buffer(bufferDistance, 0).getEnvelope().toPolygon()
-    if (!this.layer.srs.isSame(wgs84)) {
+    if (!this._layer.srs.isSame(wgs84)) {
       filter.transform(fromNative)
     }
-    this.layer.setSpatialFilter(filter)
-    let featureMap = this.layer.features.map((feature) => {
+    this._layer.setSpatialFilter(filter)
+    let featureMap = this._layer.features.map((feature) => {
       try {
         let projected = feature.clone()
         let geom = projected.getGeometry()
-        if (!this.layer.srs.isSame(wgs84)) {
+        if (!this._layer.srs.isSame(wgs84)) {
           geom.transform(toNative)
         }
         if (envelope.toPolygon().within(geom)) {
@@ -136,7 +163,7 @@ export default class GDALVectorLayer extends VectorLayer {
 
       }
     }).filter(feature => feature !== undefined)
-    this.layer.setSpatialFilter(null)
+    this._layer.setSpatialFilter(null)
 
     return featureMap
   }

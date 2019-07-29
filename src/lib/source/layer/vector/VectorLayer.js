@@ -8,9 +8,15 @@ import MapboxUtilities from '../../../MapboxUtilities'
 import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf/index'
 
 export default class VectorLayer extends Layer {
+  _extent
   _mapLayer
   _vectorTileRenderer
   _tileIndex
+
+  constructor (configuration = {}) {
+    super(configuration)
+    this._extent = configuration.extent
+  }
 
   async initialize () {
     if (!this.style) {
@@ -19,7 +25,8 @@ export default class VectorLayer extends Layer {
     if (this.editableStyle || !this.mbStyle) {
       this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
     }
-    await this.tileIndex
+    let featureCollection = this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection
+    this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(featureCollection.features)
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
   }
@@ -76,14 +83,6 @@ export default class VectorLayer extends Layer {
     return this._vectorTileRenderer
   }
 
-  get tileIndex () {
-    if (!this._tileIndex) {
-      let featureCollection = this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection
-      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(featureCollection.features)
-    }
-    return this._tileIndex
-  }
-
   async renderTile (coords, tileCanvas, done) {
     return this.vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
   }
@@ -92,7 +91,7 @@ export default class VectorLayer extends Layer {
     return new Promise((resolve) => {
       let gjvt = {}
       Object.keys(this._tileIndex).forEach(key => {
-        let tile = this.tileIndex[key].getTile(coords.z, coords.x, coords.y)
+        let tile = this._tileIndex[key].getTile(coords.z, coords.x, coords.y)
         if (tile) {
           gjvt[key] = tile
         } else {
