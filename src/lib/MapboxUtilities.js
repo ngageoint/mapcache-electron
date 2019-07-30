@@ -73,6 +73,15 @@ export default class MapboxUtilities {
     return tileIndices
   }
 
+  static generateTileIndex (name, features) {
+    let tileIndices = {}
+    tileIndices[name] = geojsonvt({
+      type: 'FeatureCollection',
+      features: features
+    }, {buffer: 64, maxZoom: 18})
+    return tileIndices
+  }
+
   static generateMbStyle (style, name) {
     let styleSources = {}
     let source = {
@@ -105,8 +114,8 @@ export default class MapboxUtilities {
         {
           'id': 'fill-style-circle',
           'type': 'fill',
-          'source': name + '-polygon',
-          'source-layer': name + '-polygon',
+          'source': 'fill-style-circle',
+          'source-layer': 'fill-style-circle',
           'paint': {
             'fill-color': style.circleColor,
             'fill-opacity': style.circleOpacity,

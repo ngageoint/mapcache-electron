@@ -21,6 +21,7 @@ export default class Layer {
     this.mbStyle = this._configuration.mbStyle
     this.shown = this._configuration.shown || true
     this.editableStyle = this._configuration.editableStyle !== undefined ? this._configuration.editableStyle : true
+    this.images = this._configuration.images
   }
 
   async initialize () {
@@ -44,7 +45,8 @@ export default class Layer {
         shown: this.shown || true,
         style: this.style,
         mbStyle: this.mbStyle,
-        editableStyle: this.editableStyle
+        editableStyle: this.editableStyle,
+        images: this.images
       }
     }
   }

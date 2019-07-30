@@ -175,42 +175,47 @@
 
           for (const layerId of added) {
             let layerConfig = value[layerId]
-            let layer = LayerFactory.constructLayer(layerConfig)
-            layer.initialize().then(function () {
-              let mapLayer = layer.mapLayer
-              mapLayer.addTo(map)
-              initializedLayers[layerConfig.id] = layer
-              shownMapLayers[mapLayer.id] = mapLayer
-              layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
-            })
+            if (layerConfig.shown) {
+              let layer = LayerFactory.constructLayer(layerConfig)
+              layer.initialize().then(function () {
+                let mapLayer = layer.mapLayer
+                mapLayer.addTo(map)
+                initializedLayers[layerConfig.id] = layer
+                shownMapLayers[mapLayer.id] = mapLayer
+                layerConfigs[mapLayer.id] = _.cloneDeep(layerConfig)
+              })
+            }
           }
 
           for (const layerId of same) {
             let layerConfig = value[layerId]
             let oldLayerConfig = layerConfigs[layerId]
-
             if (!_.isEqual(_.omit(layerConfig, ['style', 'shown']), _.omit(oldLayerConfig, ['style', 'shown']))) {
-              let existingMapLayer = shownMapLayers[layerId]
-              existingMapLayer.remove()
-              delete initializedLayers[layerId]
-              delete shownMapLayers[layerId]
-              delete layerConfigs[layerId]
-              let layer = LayerFactory.constructLayer(layerConfig)
-              layer.initialize().then(function () {
-                let updateMapLayer = layer.mapLayer
-                updateMapLayer.addTo(map)
-                initializedLayers[layerConfig.id] = layer
-                shownMapLayers[updateMapLayer.id] = updateMapLayer
-                layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
-              })
-            } else if (!_.isEqual(layerConfig.style, oldLayerConfig.style)) {
-              initializedLayers[layerConfig.id].updateStyle(layerConfig.style).then(function () {
+              if (layerConfig.shown) {
                 let existingMapLayer = shownMapLayers[layerId]
                 existingMapLayer.remove()
-                let updateMapLayer = initializedLayers[layerConfig.id].mapLayer
-                updateMapLayer.addTo(map)
-                shownMapLayers[updateMapLayer.id] = updateMapLayer
-                layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+                delete initializedLayers[layerId]
+                delete shownMapLayers[layerId]
+                delete layerConfigs[layerId]
+                let layer = LayerFactory.constructLayer(layerConfig)
+                layer.initialize().then(function () {
+                  let updateMapLayer = layer.mapLayer
+                  updateMapLayer.addTo(map)
+                  initializedLayers[layerConfig.id] = layer
+                  shownMapLayers[updateMapLayer.id] = updateMapLayer
+                  layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+                })
+              }
+            } else if (!_.isEqual(layerConfig.style, oldLayerConfig.style)) {
+              initializedLayers[layerConfig.id].updateStyle(layerConfig.style).then(function () {
+                if (layerConfig.shown) {
+                  let existingMapLayer = shownMapLayers[layerId]
+                  existingMapLayer.remove()
+                  let updateMapLayer = initializedLayers[layerConfig.id].mapLayer
+                  updateMapLayer.addTo(map)
+                  shownMapLayers[updateMapLayer.id] = updateMapLayer
+                  layerConfigs[updateMapLayer.id] = _.cloneDeep(layerConfig)
+                }
               })
             } else if (!_.isEqual(layerConfig.shown, oldLayerConfig.shown)) {
               // shown state has changed

@@ -22,11 +22,16 @@ export default class VectorLayer extends Layer {
     if (!this.style) {
       this.style = MapboxUtilities.defaultRandomColorStyle()
     }
-    if (this.editableStyle || !this.mbStyle) {
+    if (!this.mbStyle) {
       this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
     }
-    let featureCollection = this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection
-    this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(featureCollection.features)
+    console.log(JSON.parse(JSON.stringify(this.mbStyle)))
+    if (this.editableStyle) {
+      this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
+      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features).features)
+    } else {
+      this._tileIndex = MapboxUtilities.generateTileIndex(this.name, this.featureCollection.features)
+    }
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
   }
@@ -78,7 +83,7 @@ export default class VectorLayer extends Layer {
     if (!this._vectorTileRenderer) {
       this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
         return this.getTile({x: x, y: y, z: z})
-      })
+      }, this.images)
     }
     return this._vectorTileRenderer
   }
