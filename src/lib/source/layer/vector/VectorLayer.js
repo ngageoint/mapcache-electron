@@ -25,7 +25,6 @@ export default class VectorLayer extends Layer {
     if (!this.mbStyle) {
       this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
     }
-    console.log(JSON.parse(JSON.stringify(this.mbStyle)))
     if (this.editableStyle) {
       this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
       this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features).features)

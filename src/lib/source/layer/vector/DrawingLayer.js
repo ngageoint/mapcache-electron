@@ -28,6 +28,10 @@ export default class DrawingLayer extends VectorLayer {
     }
   }
 
+  async updateStyle (style) {
+    this.style = style
+  }
+
   /**
    * Overwrite VectorLayer.mapLayer since we want to render drawings as features, not tiles
    */
@@ -38,7 +42,7 @@ export default class DrawingLayer extends VectorLayer {
       this._mapLayer.id = this.id
     }
     this._mapLayer.remove()
-    this._configuration.features.forEach(feature => {
+    this.featureCollection.features.forEach(feature => {
       if (feature.properties.radius) {
         let style = {
           radius: feature.properties.radius,

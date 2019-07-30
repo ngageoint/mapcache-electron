@@ -184,7 +184,8 @@
     },
     methods: {
       ...mapActions({
-        addProjectLayer: 'Projects/addProjectLayer'
+        addProjectLayer: 'Projects/addProjectLayer',
+        addProjectLayers: 'Projects/addProjectLayers'
       }),
       provideLink () {
         this.linkInputVisible = true
@@ -418,12 +419,14 @@
               promises.push(layer.initialize())
             }
             Promise.all(promises.map(p => p.catch(() => null))).then(function (initializedLayers) {
+              let projectLayers = []
               initializedLayers.forEach(function (initializedLayer) {
                 if (initializedLayer !== null) {
-                  _this.addProjectLayer({project: _this.project, layerId: initializedLayer.id, config: initializedLayer.configuration})
-                  _this.clearProcessing(source)
+                  projectLayers.push({project: _this.project, layerId: initializedLayer.id, config: initializedLayer.configuration})
                 }
               })
+              _this.clearProcessing(source)
+              _this.addProjectLayers({projectLayers})
             })
           })
         } catch (e) {

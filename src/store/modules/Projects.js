@@ -31,6 +31,11 @@ const mutations = {
   addProjectLayer (state, {project, layerId, config}) {
     Vue.set(state[project.id].layers, layerId, config)
   },
+  addProjectLayers (state, {projectLayers}) {
+    projectLayers.forEach(layer => {
+      Vue.set(state[layer.project.id].layers, layer.layerId, layer.config)
+    })
+  },
   addGeoPackage (state, {project, geopackage}) {
     if (!state[project.id].geopackages[geopackage.id]) {
       Vue.set(state[project.id].geopackages, geopackage.id, geopackage)
@@ -214,6 +219,9 @@ const actions = {
   },
   addProjectLayer ({ commit, state }, {project, layerId, config}) {
     commit('addProjectLayer', {project, layerId, config})
+  },
+  addProjectLayers ({ commit, state }, {projectLayers}) {
+    commit('addProjectLayers', {projectLayers})
   },
   addGeoPackage ({ commit, state }, {project}) {
     let name = project.name + ' GeoPackage'
