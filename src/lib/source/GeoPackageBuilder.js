@@ -279,7 +279,6 @@ export default class GeoPackageBuilder {
           }
           await orderedLayersToInclude[i].initialize()
         }
-
         await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
           if (this.cancelled) {
             return false
@@ -307,39 +306,41 @@ export default class GeoPackageBuilder {
               })
             })
           }
-          await new Promise((resolve) => {
-            if (!CanvasUtilities.hasTransparentPixels(canvas)) {
-              canvas.toBlob((blob) => {
-                const reader = new FileReader()
-                reader.addEventListener('loadend', function () {
-                  totalSize += reader.result.byteLength
-                  gp.addTile(Buffer.from(reader.result), layerId, z, y, x)
-                  resolve(false)
-                })
-                reader.readAsArrayBuffer(blob)
-              }, 'image/jpeg', 0.7)
-            } else {
-              canvas.toBlob((blob) => {
-                let reader = new FileReader()
-                reader.addEventListener('loadend', async function () {
-                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
-                    plugins: [
-                      imageminPngquant({
-                        speed: 8,
-                        quality: [0.5, 0.8]
-                      })
-                    ]
-                  })
+          if (!CanvasUtilities.isBlank(canvas)) {
+            await new Promise((resolve) => {
+              if (CanvasUtilities.hasTransparentPixels(canvas)) {
+                canvas.toBlob((blob) => {
+                  let reader = new FileReader()
+                  reader.addEventListener('loadend', async function () {
+                    const buffer = await imagemin.buffer(Buffer.from(reader.result), {
+                      plugins: [
+                        imageminPngquant({
+                          speed: 8,
+                          quality: [0.5, 0.8]
+                        })
+                      ]
+                    })
 
-                  totalSize += buffer.length
-                  // console.log('totalSize', totalSize)
-                  gp.addTile(buffer, layerId, z, y, x)
-                  resolve(false)
-                })
-                reader.readAsArrayBuffer(blob)
-              }, 'image/png')
-            }
-          })
+                    totalSize += buffer.length
+                    // console.log('totalSize', totalSize)
+                    gp.addTile(buffer, layerId, z, y, x)
+                    resolve(false)
+                  })
+                  reader.readAsArrayBuffer(blob)
+                }, 'image/png')
+              } else {
+                canvas.toBlob((blob) => {
+                  const reader = new FileReader()
+                  reader.addEventListener('loadend', function () {
+                    totalSize += reader.result.byteLength
+                    gp.addTile(Buffer.from(reader.result), layerId, z, y, x)
+                    resolve(false)
+                  })
+                  reader.readAsArrayBuffer(blob)
+                }, 'image/jpeg', 0.7)
+              }
+            })
+          }
           tilesComplete++
           if (Date.now() - time > 1000) {
             time = Date.now()
