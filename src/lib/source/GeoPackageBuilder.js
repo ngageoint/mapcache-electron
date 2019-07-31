@@ -308,7 +308,7 @@ export default class GeoPackageBuilder {
             })
           }
           await new Promise((resolve) => {
-            if (CanvasUtilities.hasTransparentPixels(canvas)) {
+            if (!CanvasUtilities.hasTransparentPixels(canvas)) {
               canvas.toBlob((blob) => {
                 const reader = new FileReader()
                 reader.addEventListener('loadend', function () {
