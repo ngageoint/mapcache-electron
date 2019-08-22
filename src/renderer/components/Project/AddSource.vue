@@ -230,7 +230,7 @@
               await request(options)
               this.processXYZUrl(this.linkToValidate)
             } catch (error) {
-              this.error = error
+              this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
               this.showErrorModal = true
             }
           } else if (type === 'WMS') {
@@ -267,7 +267,7 @@
               this.layerChoices = layers
               this.layerSelectionVisible = true
             } catch (error) {
-              this.error = error
+              this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
               this.showErrorModal = true
             }
           } else if (type === 'WFS') {
@@ -314,7 +314,7 @@
               this.layerChoices = layers
               this.layerSelectionVisible = true
             } catch (error) {
-              this.error = error
+              this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
               this.showErrorModal = true
             }
           } else {
@@ -324,6 +324,11 @@
         } else {
           this.error = error
           this.showErrorModal = true
+        }
+        if (!this.showErrorModal) {
+          console.log('hide link input')
+          this.linkInputVisible = false
+          this.linkToValidate = ''
         }
       },
       cancelLayerImport () {
@@ -347,6 +352,7 @@
             this.addSource(sourceToProcess)
             this.layerChoices = []
             this.layerSelectionVisible = false
+            this.linkInputVisible = false
             this.linkToValidate = ''
             this.layerSelection = []
           }, 0)
@@ -548,7 +554,7 @@
 <style scoped>
 
   @import '~float-labels.js/dist/float-labels.css';
-  @import "~vue-multiselect/dist/vue-multiselect.min.css";
+  @import '~vue-multiselect/dist/vue-multiselect.min.css';
 
   .link-form {
     margin-top: 1em;

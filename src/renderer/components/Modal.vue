@@ -16,7 +16,7 @@
 
           <div class="modal-footer">
             {{footer}}
-            <button v-if="ok" class="modal-default-button" @click.stop="ok()">
+            <button v-if="ok" class="modal-default-button" @click.stop="ok()" ref="ok">
               OK
             </button>
             <button v-if="cancel" class="modal-default-button" @click.stop="cancel()">
@@ -37,6 +37,9 @@
       showModal: Boolean,
       ok: Function,
       cancel: Function
+    },
+    mounted () {
+      this.$nextTick(() => this.$refs.ok.focus())
     }
   }
 </script>
