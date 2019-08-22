@@ -10,7 +10,7 @@ export default class KMLSource extends Source {
   async initialize () {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir)
+    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder.path())
     this.geotiffs = parsedKML.geotiffs
     this.gdalSources = []
     let documents = parsedKML.documents
@@ -41,7 +41,7 @@ export default class KMLSource extends Source {
         let images = []
         let styleHashes = {}
         let fileName = name + '.geojson'
-        let filePath = this.sourceCacheFolder.dir(sourceId).file(fileName).path()
+        let filePath = this.sourceCacheFolder.file(fileName).path()
         let fullFile = path.join(filePath, fileName)
 
         converted.features.forEach((feature, index) => {
@@ -128,7 +128,7 @@ export default class KMLSource extends Source {
               })
               if (feature.properties.icon) {
                 images.push({
-                  filePath: path.join(originalFileDir, feature.properties.icon),
+                  filePath: path.join(originalFileDir, path.basename(feature.properties.icon)),
                   id: feature.properties.styleHash
                 })
                 style.layers.push({
@@ -149,15 +149,12 @@ export default class KMLSource extends Source {
             }
           }
         })
-
         let convertedString = JSON.stringify(converted)
         fs.writeFileSync(fullFile, convertedString)
-
         let gdalSource = new GDALSource(fullFile, sourceId)
         gdalSource.images = images
         gdalSource.mbStyle = style
         gdalSource.doNotOverwriteMbStyle = true
-
         this.gdalSources.push(gdalSource)
       }
     })

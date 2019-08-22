@@ -418,10 +418,10 @@
             for (const layer of layers) {
               promises.push(layer.initialize())
             }
-            Promise.all(promises.map(p => p.catch(() => null))).then(function (initializedLayers) {
+            Promise.all(promises.map(p => p.catch((e) => console.error(e)))).then(function (initializedLayers) {
               let projectLayers = []
               initializedLayers.forEach(function (initializedLayer) {
-                if (initializedLayer !== null) {
+                if (initializedLayer !== undefined && initializedLayer !== null) {
                   projectLayers.push({project: _this.project, layerId: initializedLayer.id, config: initializedLayer.configuration})
                 }
               })
