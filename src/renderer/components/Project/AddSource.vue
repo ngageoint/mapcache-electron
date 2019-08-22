@@ -63,7 +63,7 @@
 
 
       <div v-show="linkInputVisible">
-        <form class="link-form">
+        <form class="link-form" v-on:submit.prevent="validateLink">
           <span class="provide-link-text">
             <label for="link-input">Link from web</label>
             <input
