@@ -245,7 +245,7 @@
     },
     mounted: async function () {
       let _this = this
-      this.map = vendor.L.map('map', {editable: true})
+      this.map = vendor.L.map('map', {editable: true, attributionControl: false})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
       const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
