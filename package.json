@@ -1,6 +1,6 @@
 {
   "name": "MapCache",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "author": "Dan Barela <daniel.barela@gmail.com>",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "license": null,
@@ -9,7 +9,7 @@
     "copyResources": "mkdir -p build && cp -R buildResources/* build",
     "build": "npm run copyResources && node .electron-vue/build.js && electron-builder",
     "build-windows": "npm run copyResources && node .electron-vue/build.js && electron-builder --win portable nsis",
-    "build-mac": "npm run copyResources && node .electron-vue/build.js && electron-builder --mac",
+    "build-mac": "npm run copyResources && node --max-old-space-size=8192 .electron-vue/build.js && electron-builder --mac",
     "build-linux": "npm run copyResources && node .electron-vue/build.js && electron-builder --linux",
     "build:dir": "node .electron-vue/build.js && electron-builder --dir",
     "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
@@ -27,7 +27,7 @@
     "test": "npm run clean-test && npm run unit && npm run report",
     "report": "nyc report",
     "clean-test": "rm -rf ./.test_run; rm -rf ./.nyc_output; rm -rf ./docs/coverage",
-    "postinstall": "npm run lint:fix",
+    "postinstall": "electron-builder install-app-deps",
     "rebuild": "electron-rebuild -w better-sqlite3 gdal @mapbox/mapbox-gl-native"
   },
   "nyc": {
@@ -58,6 +58,7 @@
   "build": {
     "productName": "MapCache",
     "appId": "mil.nga.mapcache",
+    "asar": false,
     "directories": {
       "output": "build"
     },
