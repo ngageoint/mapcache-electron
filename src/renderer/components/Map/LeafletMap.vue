@@ -73,7 +73,8 @@
         layerSelectionVisible,
         layerChoices,
         layerSelection: 0,
-        lastCreatedFeature: null
+        lastCreatedFeature: null,
+        deleteEnabled: false
       }
     },
     methods: {
@@ -144,7 +145,7 @@
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
       },
-      addLayer (layerConfig, map) {
+      addLayer (layerConfig, map, deleteEnabled) {
         layerConfigs[layerConfig.id] = _.cloneDeep(layerConfig)
         let layer = LayerFactory.constructLayer(layerConfig)
         layer.initialize().then(function () {
@@ -152,6 +153,9 @@
             let mapLayer = layer.mapLayer
             mapLayer.addTo(map)
             shownMapLayers[layerConfig.id] = mapLayer
+            if (deleteEnabled) {
+              map.fire('delete:enable')
+            }
           }
           initializedLayers[layerConfig.id] = layer
         })
@@ -189,7 +193,7 @@
           updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0).forEach(layerId => {
             let layerConfig = updatedLayerConfigs[layerId]
             _this.removeLayer(layerId)
-            _this.addLayer(layerConfig, map)
+            _this.addLayer(layerConfig, map, _this.deleteEnabled)
           })
 
           // see if any of the layers have changed
@@ -200,7 +204,7 @@
             if (!_.isEqual(_.omit(updatedLayerConfig, ['style', 'shown']), _.omit(oldLayerConfig, ['style', 'shown']))) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               _this.removeLayer(layerId)
-              _this.addLayer(updatedLayerConfig, map)
+              _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
             } else if (!_.isEqual(updatedLayerConfig.style, oldLayerConfig.style) && updatedLayerConfig.pane === 'vector') {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               if (updatedLayerConfig.layerType !== 'Drawing') {
@@ -220,14 +224,14 @@
                 })
               } else {
                 _this.removeLayer(layerId)
-                _this.addLayer(updatedLayerConfig, map)
+                _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
               }
             } else if (!_.isEqual(updatedLayerConfig.shown, oldLayerConfig.shown)) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               // display it
               if (updatedLayerConfig.shown) {
                 let mapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
-                mapLayer.addTo(this.map)
+                mapLayer.addTo(map)
                 shownMapLayers[updatedLayerConfig.id] = mapLayer
               } else {
                 // hide it
@@ -267,6 +271,7 @@
         }
       })
       this.map.on('delete:enable', () => {
+        this.deleteEnabled = true
         this.map.eachLayer((layer) => {
           if (layer instanceof vendor.L.Path || layer instanceof vendor.L.Marker) {
             layer.on('click', () => {
@@ -318,6 +323,7 @@
         })
       })
       this.map.on('delete:disable', () => {
+        this.deleteEnabled = false
         this.map.eachLayer((layer) => {
           if (layer instanceof vendor.L.Path || layer instanceof vendor.L.Marker) {
             layer.off('click')
@@ -361,7 +367,7 @@
         }
       })
       for (const layerId in this.layerConfigs) {
-        this.addLayer(this.layerConfigs[layerId], this.map)
+        this.addLayer(this.layerConfigs[layerId], this.map, false)
       }
       this.setupDrawing(this.drawBounds)
       if (this.activeGeopackage) {
