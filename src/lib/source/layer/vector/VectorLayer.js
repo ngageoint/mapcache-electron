@@ -27,9 +27,9 @@ export default class VectorLayer extends Layer {
     }
     if (this.editableStyle) {
       this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
-      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features).features)
+      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(this.tileIndexFeatureCollection.features)
     } else {
-      this._tileIndex = MapboxUtilities.generateTileIndex(this.name, this.featureCollection.features)
+      this._tileIndex = MapboxUtilities.generateTileIndex(this.name, this.tileIndexFeatureCollection.features)
     }
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
@@ -56,6 +56,10 @@ export default class VectorLayer extends Layer {
 
   get featureCollection () {
     throw new Error('Abstract method to be implemented in sublcass')
+  }
+
+  get tileIndexFeatureCollection () {
+    return this.featureCollection
   }
 
   get count () {

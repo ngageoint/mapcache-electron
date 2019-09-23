@@ -1,4 +1,5 @@
 import GeoPackage from '@ngageoint/geopackage'
+import FeatureTableStyles from '@ngageoint/geopackage/lib/extension/style/featureTableStyles'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
 import store from '../../store'
@@ -6,6 +7,8 @@ import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import CanvasUtilities from '../CanvasUtilities'
 import fs from 'fs'
+import { circle } from '@turf/turf'
+import _ from 'lodash'
 
 export default class GeoPackageBuilder {
   config
@@ -95,16 +98,88 @@ export default class GeoPackageBuilder {
         }
         let bb = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0])
         await gp.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
+        let featureTableName = geopackageLayerConfig.layerName || geopackageLayerConfig.name
+
+        var featureTableStyles = null
+        var circleStyleRow = null
+        if (layer.style !== null && layer.style !== undefined) {
+          await gp.getFeatureStyleExtension().getOrCreateExtension(featureTableName)
+          await gp.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+          await gp.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+          featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+          await featureTableStyles.createTableStyleRelationship()
+          await featureTableStyles.createTableIconRelationship()
+          await featureTableStyles.createStyleRelationship()
+
+          let polygonStyleRow = featureTableStyles.getStyleDao().newRow()
+          polygonStyleRow.setColor(layer.style.polygonLineColor, layer.style.polygonLineOpacity)
+          polygonStyleRow.setFillColor(layer.style.polygonColor, layer.style.polygonOpacity)
+          polygonStyleRow.setWidth(layer.style.polygonLineWeight)
+
+          circleStyleRow = featureTableStyles.getStyleDao().newRow()
+          circleStyleRow.setColor(layer.style.circleLineColor, layer.style.circleLineOpacity)
+          circleStyleRow.setFillColor(layer.style.circleColor, layer.style.circleOpacity)
+          circleStyleRow.setWidth(layer.style.circleLineWeight)
+
+          let lineStringStyleRow = featureTableStyles.getStyleDao().newRow()
+          lineStringStyleRow.setColor(layer.style.lineColor, layer.style.lineOpacity)
+          lineStringStyleRow.setWidth(layer.style.lineWeight)
+
+          let pointStyleRow = featureTableStyles.getStyleDao().newRow()
+          pointStyleRow.setColor(layer.style.pointColor, layer.style.pointOpacity)
+          pointStyleRow.setFillColor(layer.style.pointColor, layer.style.pointOpacity)
+          pointStyleRow.setWidth(Math.round(layer.style.pointRadiusInPixels * 2.0))
+
+          if (layer.style.pointIconOrStyle === 'icon') {
+            let pointIconRow = featureTableStyles.getIconDao().newRow()
+            pointIconRow.setData(Buffer.from(layer.style.pointIcon.url.split(',')[1], 'base64'))
+            pointIconRow.setContentType('image/png')
+            pointIconRow.setWidth(layer.style.pointIcon.width)
+            pointIconRow.setHeight(layer.style.pointIcon.height)
+            pointIconRow.setAnchorU(layer.style.pointIcon.anchor_u)
+            pointIconRow.setAnchorV(layer.style.pointIcon.anchor_v)
+            await featureTableStyles.setTableIcon('Point', pointIconRow)
+            await featureTableStyles.setTableIcon('MultiPoint', pointIconRow)
+          }
+
+          await featureTableStyles.setTableStyle('Polygon', polygonStyleRow)
+          await featureTableStyles.setTableStyle('LineString', lineStringStyleRow)
+          await featureTableStyles.setTableStyle('Point', pointStyleRow)
+          await featureTableStyles.setTableStyle('MultiPolygon', polygonStyleRow)
+          await featureTableStyles.setTableStyle('MultiLineString', lineStringStyleRow)
+          await featureTableStyles.setTableStyle('MultiPoint', pointStyleRow)
+        }
+
         let iterator = await layer.iterateFeaturesInBounds(aoi)
         for (let feature of iterator) {
           if (this.cancelled) {
             break
           }
-          GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, geopackageLayerConfig.layerName || geopackageLayerConfig.name)
+          let radius = feature.properties.radius
+          if (!_.isNil(layer.style)) {
+            if (radius && layerConfig.layerType === 'Drawing') {
+              let circleFeature = circle(feature.geometry.coordinates, radius / 1000.0, {steps: 64})
+              let featureRowId = GeoPackage.addGeoJSONFeatureToGeoPackage(gp, circleFeature, featureTableName)
+              await featureTableStyles.setStyle(featureRowId, 'Polygon', circleStyleRow)
+              await featureTableStyles.setStyle(featureRowId, 'MultiPolygon', circleStyleRow)
+            } else {
+              GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
+            }
+          } else {
+            GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
+          }
           layerStatus.featuresAdded++
           if (layerStatus.featuresAdded % 10 === 0) {
             this.dispatchStatusUpdate(status)
           }
+        }
+        var featureDao = gp.getFeatureDao(featureTableName)
+        var fti = featureDao.featureTableIndex
+        if (fti) {
+          fti.getTableIndex()
+          await fti.index()
+        } else {
+          console.log('unable to index features')
         }
         if (this.cancelled) {
           break

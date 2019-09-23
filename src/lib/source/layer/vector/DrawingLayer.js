@@ -28,6 +28,10 @@ export default class DrawingLayer extends VectorLayer {
     }
   }
 
+  get tileIndexFeatureCollection () {
+    return MapboxUtilities.getMapboxFeatureCollectionForStyling(this.features)
+  }
+
   async updateStyle (style) {
     this.style = style
   }
@@ -43,6 +47,7 @@ export default class DrawingLayer extends VectorLayer {
     }
     this._mapLayer.remove()
     this.featureCollection.features.forEach(feature => {
+      let layer
       if (feature.properties.radius) {
         let style = {
           radius: feature.properties.radius,
@@ -52,9 +57,7 @@ export default class DrawingLayer extends VectorLayer {
           opacity: mapboxStyleValues.circleLineOpacity,
           weight: mapboxStyleValues.circleLineWeight
         }
-        let layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], style)
-        layer.id = feature.id
-        this._mapLayer.addLayer(layer)
+        layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], style)
       } else if (feature.geometry.type.toLowerCase() === 'polygon' || feature.geometry.type.toLowerCase() === 'multipolygon') {
         let style = {
           radius: feature.properties.radius,
@@ -64,19 +67,39 @@ export default class DrawingLayer extends VectorLayer {
           opacity: mapboxStyleValues.polygonLineOpacity,
           weight: mapboxStyleValues.polygonLineWeight
         }
-        let layer = new vendor.L.GeoJSON(feature, { style: style })
-        layer.id = feature.id
-        this._mapLayer.addLayer(layer)
+        layer = new vendor.L.GeoJSON(feature, { style: style })
+      } else if (feature.geometry.type.toLowerCase() === 'point') {
+        if (this.style.pointIconOrStyle === 'icon' && mapboxStyleValues.pointIcon !== undefined && mapboxStyleValues.pointIcon !== null) {
+          let icon = vendor.L.icon({
+            iconUrl: mapboxStyleValues.pointIcon.url,
+            iconSize: [mapboxStyleValues.pointIcon.width, mapboxStyleValues.pointIcon.height], // size of the icon
+            iconAnchor: [Math.round(mapboxStyleValues.pointIcon.anchor_u * mapboxStyleValues.pointIcon.width), Math.round(mapboxStyleValues.pointIcon.anchor_v * mapboxStyleValues.pointIcon.height)] // point of the icon which will correspond to marker's location
+          })
+          layer = vendor.L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], { icon: icon })
+        } else {
+          let style = {
+            radius: mapboxStyleValues.pointRadiusInPixels,
+            fillColor: mapboxStyleValues.pointColor,
+            fillOpacity: mapboxStyleValues.pointOpacity,
+            color: mapboxStyleValues.pointColor,
+            opacity: mapboxStyleValues.pointOpacity,
+            weight: 0
+          }
+          layer = new vendor.L.GeoJSON(feature, {
+            pointToLayer: function (feature, latlng) {
+              return vendor.L.circleMarker(latlng, style)
+            }})
+        }
       } else {
         let style = {
           color: mapboxStyleValues.lineColor,
           opacity: mapboxStyleValues.lineOpacity,
           weight: mapboxStyleValues.lineWeight
         }
-        let layer = new vendor.L.GeoJSON(feature, { style: style })
-        layer.id = feature.id
-        this._mapLayer.addLayer(layer)
+        layer = new vendor.L.GeoJSON(feature, { style: style })
       }
+      layer.id = feature.id
+      this._mapLayer.addLayer(layer)
     })
     return this._mapLayer
   }

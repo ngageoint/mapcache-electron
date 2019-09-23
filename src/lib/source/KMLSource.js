@@ -155,6 +155,7 @@ export default class KMLSource extends Source {
         gdalSource.images = images
         gdalSource.mbStyle = style
         gdalSource.doNotOverwriteMbStyle = true
+        gdalSource.editableStyle = false
         this.gdalSources.push(gdalSource)
       }
     })

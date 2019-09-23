@@ -35,15 +35,25 @@ export default class VectorTileRenderer {
       this._mapboxGlMap.load(this.mbStyle)
       if (this.images) {
         for (const image of this.images) {
-          let imageData = await Sharp(image.filePath).resize({width: 16, height: 16}).raw().toBuffer()
-          this._mapboxGlMap.addImage(image.id, imageData, {
-            height: 16,
-            width: 16,
-            pixelRatio: 1,
-            sdf: false
-          })
+          if (image.filePath) {
+            let imageData = await Sharp(image.filePath).resize({width: 16, height: 16}).raw().toBuffer()
+            this._mapboxGlMap.addImage(image.id, imageData, {
+              height: 16,
+              width: 16,
+              pixelRatio: 1,
+              sdf: false
+            })
+          } else if (image.data) {
+            this._mapboxGlMap.addImage(image.id, image.data.data, {
+              height: image.height,
+              width: image.width,
+              pixelRatio: 1,
+              sdf: false
+            })
+          }
         }
       }
+      this.initialized = true
     }
   }
 

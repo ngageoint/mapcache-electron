@@ -14,6 +14,10 @@ class WindowLauncher {
     let windowOptions = mainWindowState.retrieveState()
     windowOptions.title = 'MapCache'
     windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
+    windowOptions.webPreferences = {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
     this.mainWindow = new BrowserWindow(windowOptions)
     mainWindowState.track(this.mainWindow)
     this.mainWindow.loadURL(winURL)
@@ -39,6 +43,10 @@ class WindowLauncher {
 
     const projectWindowState = new WindowState('project-' + projectId)
     let windowOptions = projectWindowState.retrieveState()
+    windowOptions.webPreferences = {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
     let projectWindow = new BrowserWindow(windowOptions)
     projectWindowState.track(projectWindow)
 

@@ -325,16 +325,18 @@
           this.error = error
           this.showErrorModal = true
         }
-        if (!this.showErrorModal) {
-          console.log('hide link input')
-          this.linkInputVisible = false
-          this.linkToValidate = ''
-        }
+      },
+      resetAuth () {
+        this.authSelection = 'none'
+        this.password = ''
+        this.username = ''
+        this.token = ''
       },
       cancelLayerImport () {
         this.layerChoices = []
         this.layerSelectionVisible = false
         this.linkToValidate = ''
+        this.resetAuth()
       },
       confirmLayerImport () {
         if (this.layerSelection.length > 0) {
@@ -355,6 +357,7 @@
             this.linkInputVisible = false
             this.linkToValidate = ''
             this.layerSelection = []
+            this.resetAuth()
           }, 0)
         }
       },

@@ -1,12 +1,14 @@
 import VectorLayer from './VectorLayer'
 import gdal from 'gdal'
 import path from 'path'
+import MapboxUtilities from '../../../MapboxUtilities'
 
 export default class GDALVectorLayer extends VectorLayer {
   _dataset
   _layer
   _features
   _extent
+  _tileIndexFeatures
 
   async initialize () {
     this.openGdalFile()
@@ -17,6 +19,11 @@ export default class GDALVectorLayer extends VectorLayer {
     }
     this.removeMultiFeatures()
     this._features = this.getFeaturesInLayer()
+    if (this.editableStyle) {
+      this._tileIndexFeatures = MapboxUtilities.getMapboxFeatureCollectionForStyling(this._features).features
+    } else {
+      this._tileIndexFeatures = this._features
+    }
     this._extent = this._configuration.extent || this.extent
     await super.initialize()
     return this
@@ -53,6 +60,13 @@ export default class GDALVectorLayer extends VectorLayer {
     return {
       type: 'FeatureCollection',
       features: this._features
+    }
+  }
+
+  get tileIndexFeatureCollection () {
+    return {
+      type: 'FeatureCollection',
+      features: this._tileIndexFeatures
     }
   }
 

@@ -17,7 +17,7 @@ export default class GDALSource extends Source {
     this.dataset = gdal.open(this.filePath, 'r') //, 'KMLSUPEROVERLAY')
     this.layers = []
     this.dataset.layers.forEach((layer, index) => {
-      this.layers.push(new GDALVectorLayer({filePath: this.filePath, sourceLayerName: layer.name, shown: true, mbStyle: this.mbStyle, images: this.images, doNotOverwriteMbStyle: this.doNotOverwriteMbStyle, editableStyle: !this.doNotOverwriteMbStyle}))
+      this.layers.push(new GDALVectorLayer({filePath: this.filePath, sourceLayerName: layer.name, shown: true, mbStyle: this.mbStyle, images: this.images, doNotOverwriteMbStyle: this.doNotOverwriteMbStyle, editableStyle: this.editableStyle}))
     })
     if (this.dataset.driver.description === 'GTiff') {
       this.layers.push(new GeoTiffLayer({filePath: this.filePath, shown: true}))
