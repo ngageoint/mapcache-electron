@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import {app, BrowserWindow, Menu, shell} from 'electron'
 import WindowState from './WindowState'
 import path from 'path'
 
@@ -9,6 +9,9 @@ class WindowLauncher {
     const winURL = process.env.NODE_ENV === 'development'
       ? `http://localhost:9080`
       : `file://${__dirname}/index.html`
+
+    const menu = Menu.buildFromTemplate(this.getMenuTemplate())
+    Menu.setApplicationMenu(menu)
 
     const mainWindowState = new WindowState('main')
     let windowOptions = mainWindowState.retrieveState()
@@ -31,8 +34,6 @@ class WindowLauncher {
     this.mainWindow.on('closed', () => {
       this.mainWindow = null
     })
-    const menuTemplate = this.getMenuTemplate()
-    const menu = Menu.buildFromTemplate(menuTemplate)
     this.mainWindow.setMenu(menu)
   }
 
@@ -95,70 +96,101 @@ class WindowLauncher {
       }
     ]
 
-    // const fileSubmenu = [
-    //   {
-    //     label: 'New Project',
-    //     accelerator: 'CmdOrCtrl+N',
-    //     click: function (item, focusedWindow) {
-    //       // Projects.newProject()
-    //     }
-    //   }
-    // ]
-
     const template = [
-      // {
-      //   label: 'File',
-      //   submenu: fileSubmenu
-      // },
-      // {
-      //   label: 'Edit',
-      //   submenu: [
-      //     { label: 'Undo', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
-      //     { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
-      //     { type: 'separator' },
-      //     { label: 'Cut', accelerator: 'CmdOrCtrl+X', role: 'cut' },
-      //     { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
-      //     { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
-      //     { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
-      //   ]
-      // },
       {
         label: 'View',
         submenu: viewSubmenu
       },
       {
-        label: 'Window',
         role: 'window',
         submenu: [
-          { label: 'Minimize', accelerator: 'CmdOrCtrl+M', role: 'minimize' },
-          { label: 'Close', accelerator: 'CmdOrCtrl+W', role: 'close' }
+          {
+            role: 'minimize'
+          },
+          {
+            role: 'close'
+          }
+        ]
+      },
+      {
+        role: 'help',
+        submenu: [
+          {
+            label: 'Learn More',
+            click () {
+              shell.openExternal('https://github.com/ngageoint/mapcache-electron')
+            }
+          },
+          {
+            label: 'Documentation',
+            click () {
+              shell.openExternal(
+                `https://github.com/ngageoint/mapcache-electron/blob/0.0.7/README.md`
+              )
+            }
+          }
         ]
       }
     ]
 
     if (process.platform === 'darwin') {
-      const name = app.getName()
       template.unshift({
-        label: name,
+        label: 'MapCache',
         submenu: [
-          { label: 'About ' + name, role: 'about' },
-          { type: 'separator' },
-          { label: 'Services', role: 'services', submenu: [] },
-          { type: 'separator' },
-          { label: 'Hide ' + name, accelerator: 'Command+H', role: 'hide' },
-          { label: 'Hide Others', accelerator: 'Command+Shift+H', role: 'hideothers' },
-          { label: 'Show All', role: 'unhide' },
-          { type: 'separator' },
-          { label: 'Quit', accelerator: 'Command+Q', click: function () { app.quit() } }
+          {
+            role: 'about'
+          },
+          {
+            type: 'separator'
+          },
+          {
+            role: 'services',
+            submenu: []
+          },
+          {
+            type: 'separator'
+          },
+          {
+            role: 'hide'
+          },
+          {
+            role: 'hideothers'
+          },
+          {
+            role: 'unhide'
+          },
+          {
+            type: 'separator'
+          },
+          {
+            role: 'quit'
+          }
         ]
       })
-      const windowMenu = template.find(function (m) { return m.role === 'window' })
-      if (windowMenu) {
-        windowMenu.submenu.push(
-          { type: 'separator' },
-          { label: 'Bring All to Front', role: 'front' }
-        )
-      }
+      template[2].submenu = [
+        {
+          role: 'close'
+        },
+        {
+          role: 'minimize'
+        },
+        {
+          role: 'zoom'
+        },
+        {
+          type: 'separator'
+        },
+        {
+          role: 'front'
+        }
+      ]
+    } else {
+      template.unshift({
+        label: 'File',
+        submenu: [{
+          role: 'quit'
+        }]
+      })
     }
 
     return template
