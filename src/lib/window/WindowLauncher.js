@@ -35,6 +35,8 @@ class WindowLauncher {
       this.mainWindow = null
     })
     this.mainWindow.setMenu(menu)
+    const ses = this.mainWindow.webContents.session
+    console.log(ses.getUserAgent())
   }
 
   launchProjectWindow (projectId) {
@@ -98,6 +100,14 @@ class WindowLauncher {
 
     const template = [
       {
+        label: 'Edit',
+        submenu: [
+          {role: 'copy'},
+          {role: 'paste'},
+          {role: 'selectall'}
+        ]
+      },
+      {
         label: 'View',
         submenu: viewSubmenu
       },
@@ -125,7 +135,7 @@ class WindowLauncher {
             label: 'Documentation',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/0.0.7/README.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/0.0.8/README.md`
               )
             }
           }
@@ -167,7 +177,7 @@ class WindowLauncher {
           }
         ]
       })
-      template[2].submenu = [
+      template[3].submenu = [
         {
           role: 'close'
         },

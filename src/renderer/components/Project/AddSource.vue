@@ -216,7 +216,10 @@
             try {
               let options = {
                 method: 'HEAD',
-                uri: this.linkToValidate.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
+                uri: this.linkToValidate.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0'),
+                headers: {
+                  'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+                }
               }
               let credentials = this.getCredentials()
               if (credentials) {
@@ -237,7 +240,10 @@
             let layers = []
             let options = {
               method: 'GET',
-              uri: this.linkToValidate + '&request=GetCapabilities'
+              uri: this.linkToValidate + '&request=GetCapabilities',
+              headers: {
+                'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+              }
             }
             let credentials = this.getCredentials()
             if (credentials) {
@@ -274,7 +280,10 @@
             let layers = []
             let options = {
               method: 'GET',
-              uri: this.linkToValidate + '&request=GetCapabilities'
+              uri: this.linkToValidate + '&request=GetCapabilities',
+              headers: {
+                'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+              }
             }
             let credentials = this.getCredentials()
             if (credentials) {

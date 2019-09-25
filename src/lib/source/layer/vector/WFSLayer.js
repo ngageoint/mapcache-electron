@@ -1,6 +1,7 @@
 import VectorLayer from './VectorLayer'
 import request from 'request-promise-native'
 import MapboxUtilities from '../../../MapboxUtilities'
+import { remote } from 'electron'
 
 export default class WFSLayer extends VectorLayer {
   _features
@@ -40,7 +41,10 @@ export default class WFSLayer extends VectorLayer {
         method: 'GET',
         url: this.filePath + '&request=GetFeature&typeNames=' + layer + '&outputFormat=application/json&srsName=crs:84',
         encoding: null,
-        gzip: true
+        gzip: true,
+        headers: {
+          'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+        }
       }
       if (this.credentials) {
         if (this.credentials.type === 'basic' || this.credentials.type === 'bearer') {

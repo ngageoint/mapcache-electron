@@ -4,6 +4,7 @@ import GDALUtilities from './GDALUtilities'
 import { select } from 'xpath'
 import fs from 'fs'
 import request from 'request'
+import { remote } from 'electron'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir) => {
@@ -27,7 +28,10 @@ export default class KMLUtilities {
           let options = {
             method: 'GET',
             uri: iconPath,
-            encoding: null
+            encoding: null,
+            headers: {
+              'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+            }
           }
           try {
             let fullFile = path.join(sourceCacheDir, path.basename(iconPath))

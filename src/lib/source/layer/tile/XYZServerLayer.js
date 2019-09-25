@@ -3,6 +3,7 @@ import TileLayer from './TileLayer'
 import * as Vendor from '../../../vendor'
 import superagent from 'superagent'
 import jetpack from 'fs-jetpack'
+import { remote } from 'electron'
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 
 export default class XYZServerLayer extends TileLayer {
@@ -82,7 +83,10 @@ export default class XYZServerLayer extends TileLayer {
     let options = {
       method: 'GET',
       url: this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y),
-      encoding: null
+      encoding: null,
+      headers: {
+        'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+      }
     }
     if (this.credentials) {
       if (this.credentials.type === 'basic') {

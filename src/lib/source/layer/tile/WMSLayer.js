@@ -5,6 +5,7 @@ import proj4 from 'proj4'
 import request from 'request-promise-native'
 import superagent from 'superagent'
 import jetpack from 'fs-jetpack'
+import { remote } from 'electron'
 
 export default class WMSLayer extends TileLayer {
   async initialize () {
@@ -108,7 +109,10 @@ export default class WMSLayer extends TileLayer {
     let options = {
       method: 'GET',
       url: this.filePath + '&request=GetMap&layers=' + this.sourceLayerName + '&width=256&height=256&format=image/png&transparent=true&' + referenceSystemName + '=crs:84&bbox=' + bbox,
-      encoding: null
+      encoding: null,
+      headers: {
+        'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
+      }
     }
     if (this.credentials) {
       if (this.credentials.type === 'basic') {
