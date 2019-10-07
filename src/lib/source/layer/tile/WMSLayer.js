@@ -71,6 +71,7 @@ export default class WMSLayer extends TileLayer {
     const headers = []
     if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
       headers.push({ header: 'Authorization', value: this.credentials.authorization })
+      headers.push({ header: 'User-Agent', value: remote.getCurrentWebContents().session.getUserAgent() })
     }
     this._mapLayer = wmsHeader(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options, headers)
     this._mapLayer.id = this.id
