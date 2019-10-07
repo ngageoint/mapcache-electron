@@ -1,14 +1,12 @@
 import VectorLayer from './VectorLayer'
 import gdal from 'gdal'
 import path from 'path'
-import MapboxUtilities from '../../../MapboxUtilities'
 
 export default class GDALVectorLayer extends VectorLayer {
   _dataset
   _layer
   _features
   _extent
-  _tileIndexFeatures
 
   async initialize () {
     this.openGdalFile()
@@ -19,11 +17,6 @@ export default class GDALVectorLayer extends VectorLayer {
     }
     this.removeMultiFeatures()
     this._features = this.getFeaturesInLayer()
-    if (this.editableStyle) {
-      this._tileIndexFeatures = MapboxUtilities.getMapboxFeatureCollectionForStyling(this._features).features
-    } else {
-      this._tileIndexFeatures = this._features
-    }
     this._extent = this._configuration.extent || this.extent
     await super.initialize()
     return this
@@ -63,13 +56,6 @@ export default class GDALVectorLayer extends VectorLayer {
     }
   }
 
-  get tileIndexFeatureCollection () {
-    return {
-      type: 'FeatureCollection',
-      features: this._tileIndexFeatures
-    }
-  }
-
   getFeaturesInLayer () {
     let wgs84 = gdal.SpatialReference.fromEPSG(4326)
     let toNative = new gdal.CoordinateTransformation(this._layer.srs, wgs84)
@@ -82,6 +68,7 @@ export default class GDALVectorLayer extends VectorLayer {
         }
         return {
           type: 'Feature',
+          id: feature.fid,
           properties: feature.fields.toObject(),
           geometry: geom.toObject()
         }

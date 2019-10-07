@@ -1,15 +1,12 @@
 import VectorLayer from './VectorLayer'
 import request from 'request-promise-native'
-import MapboxUtilities from '../../../MapboxUtilities'
 import { remote } from 'electron'
 
 export default class WFSLayer extends VectorLayer {
   _features
-  _featureCollectionForTileIndex
 
   async initialize () {
     this._features = await this.getFeaturesInLayer(this._configuration.sourceLayerName)
-    this._featureCollectionForTileIndex = MapboxUtilities.getMapboxFeatureCollectionForStyling(this._features)
 
     await super.initialize()
     return this
@@ -29,10 +26,6 @@ export default class WFSLayer extends VectorLayer {
       type: 'FeatureCollection',
       features: this._features
     }
-  }
-
-  get tileIndexFeatureCollection () {
-    return this._featureCollectionForTileIndex
   }
 
   getFeaturesInLayer (layer) {

@@ -5,6 +5,9 @@ import GDALSource from './GDALSource'
 import fs from 'fs'
 import path from 'path'
 import KMLUtilities from '../KMLUtilities'
+import VectorStyleUtilities from '../VectorStyleUtilities'
+import * as ImageUtils from '@ngageoint/geopackage/lib/tiles/imageUtils'
+import _ from 'lodash'
 
 export default class KMLSource extends Source {
   async initialize () {
@@ -18,147 +21,95 @@ export default class KMLSource extends Source {
       // no documents found, let's try the whole document
       documents.push({name: path.basename(this.filePath, path.extname(this.filePath)), xmlDoc: kml})
     }
-    documents.forEach((kmlDoc) => {
+    for (let kmlDoc of documents) {
       const sourceId = Source.createId()
       const name = kmlDoc.name
       const converted = ToGeoJSON.kml(kmlDoc.xmlDoc)
+      converted.features.forEach((feature, index) => {
+        feature.id = index
+      })
       if (converted.features.length > 0) {
-        let styleSources = {}
-        styleSources[name] = {
-          'type': 'vector',
-          'maxzoom': 18,
-          'tiles': [
-            '{z}-{x}-{y}'
-          ]
-        }
-        let style = {
-          'version': 8,
-          'name': 'Empty',
-          'sources': styleSources,
-          'layers': [
-          ]
-        }
-        let images = []
-        let styleHashes = {}
         let fileName = name + '.geojson'
         let filePath = this.sourceCacheFolder.file(fileName).path()
         let fullFile = path.join(filePath, fileName)
-
-        converted.features.forEach((feature, index) => {
-          if (!feature.properties.styleHash) {
-            feature.properties.styleHash = '-' + index
-          }
-          if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-            let styleId = feature.properties.styleHash + '-line'
-            if (!styleHashes[styleId]) {
-              styleHashes[styleId] = true
-              style.layers.push({
-                'id': styleId,
-                'type': 'line',
-                'source': name,
-                'source-layer': name,
-                'filter': ['match',
-                  ['get', 'styleHash'],
-                  feature.properties.styleHash,
-                  true, false],
-                'paint': {
-                  'line-width': feature.properties['stroke-width'] || 1,
-                  'line-color': feature.properties['stroke'],
-                  'line-opacity': feature.properties['stroke-opacity'] || 1
-                }
-              })
-            }
-          } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-            let styleId = feature.properties.styleHash + '-fill'
-            if (!styleHashes[styleId]) {
-              styleHashes[styleId] = true
-
-              style.layers.push({
-                'id': styleId + '-outline',
-                'type': 'line',
-                'source': name,
-                'source-layer': name,
-                'filter': ['match',
-                  ['get', 'styleHash'],
-                  feature.properties.styleHash,
-                  true, false],
-                'paint': {
-                  'line-width': feature.properties['stroke-width'],
-                  'line-color': feature.properties['stroke'],
-                  'line-opacity': feature.properties['stroke-opacity']
-                }
-              })
-
-              style.layers.push({
-                'id': styleId,
-                'type': 'fill',
-                'source': name,
-                'source-layer': name,
-                'filter': ['match',
-                  ['get', 'styleHash'],
-                  feature.properties.styleHash,
-                  true, false],
-                'paint': {
-                  'fill-color': feature.properties['fill'],
-                  'fill-opacity': feature.properties['fill-opacity'],
-                  'fill-outline-color': feature.properties['stroke']
-                }
-              })
-            }
-          } else if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') {
-            let styleId = feature.properties.styleHash + '-circle'
-            if (!styleHashes[styleId]) {
-              styleHashes[styleId] = true
-              style.layers.push({
-                'id': styleId,
-                'type': 'circle',
-                'source': name,
-                'source-layer': name,
-                'filter': ['match',
-                  ['get', 'styleHash'],
-                  feature.properties.styleHash,
-                  true, false],
-                'paint': {
-                  'circle-color': feature.properties['fill'],
-                  'circle-stroke-color': feature.properties['stroke'],
-                  'circle-opacity': feature.properties['fill-opacity'] || 0,
-                  'circle-stroke-width': feature.properties['stroke-width'],
-                  'circle-radius': feature.properties['stroke-width'] || 0
-                }
-              })
-              if (feature.properties.icon) {
-                images.push({
-                  filePath: path.join(originalFileDir, path.basename(feature.properties.icon)),
-                  id: feature.properties.styleHash
-                })
-                style.layers.push({
-                  'id': styleId + '-symbol',
-                  'type': 'symbol',
-                  'source': name,
-                  'source-layer': name,
-                  'filter': ['match',
-                    ['get', 'styleHash'],
-                    feature.properties.styleHash,
-                    true, false],
-                  'layout': {
-                    'icon-image': feature.properties.styleHash,
-                    'icon-allow-overlap': true
-                  }
-                })
-              }
-            }
-          }
-        })
+        let style = await this.generateStyleForKML(converted.features, originalFileDir)
         let convertedString = JSON.stringify(converted)
         fs.writeFileSync(fullFile, convertedString)
         let gdalSource = new GDALSource(fullFile, sourceId)
-        gdalSource.images = images
-        gdalSource.mbStyle = style
-        gdalSource.doNotOverwriteMbStyle = true
-        gdalSource.editableStyle = false
+        gdalSource.editableStyle = true
+        gdalSource.style = style
         this.gdalSources.push(gdalSource)
       }
-    })
+    }
+  }
+
+  getStyleFromFeature (feature) {
+    let style = {
+      width: 0,
+      color: '#000000',
+      opacity: 1.0,
+      fillColor: '#000000',
+      fillOpacity: 1.0
+    }
+    if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
+      style.width = feature.properties['stroke-width']
+      style.color = feature.properties['stroke']
+      style.opacity = feature.properties['stroke-opacity']
+    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+      style.width = feature.properties['stroke-width']
+      style.color = feature.properties['stroke']
+      style.opacity = feature.properties['stroke-opacity']
+      style.fillColor = feature.properties['fill']
+      style.fillOpacity = feature.properties['fill-opacity']
+    } else if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') {
+      style.width = feature.properties['stroke-width']
+      style.color = feature.properties['stroke']
+      style.opacity = feature.properties['stroke-opacity']
+    }
+    return style
+  }
+
+  async generateStyleForKML (features, originalFileDir) {
+    let layerStyle = VectorStyleUtilities.defaultRandomColorStyle()
+    let fileIcons = {}
+    for (let feature of features) {
+      layerStyle.features[feature.id] = {
+        icon: layerStyle.default.icons[feature.geometry.type],
+        style: layerStyle.default.styles[feature.geometry.type],
+        iconOrStyle: layerStyle.default.iconOrStyle[feature.geometry.type]
+      }
+      if (feature.properties.icon) {
+        let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+        if (_.isNil(fileIcons[iconFile])) {
+          let image = ImageUtils.getImageSize(iconFile)
+          let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
+          fileIcons[iconFile] = {
+            url: dataUrl,
+            width: image.width,
+            height: image.height,
+            anchor_x: image.width / 2.0,
+            anchor_y: image.height / 2.0,
+            anchorSelection: 6 // anchored to center
+          }
+        }
+        let icon = fileIcons[iconFile]
+        let iconHash = VectorStyleUtilities.hashCode(icon)
+        if (_.isNil(layerStyle.iconRowMap[iconHash])) {
+          layerStyle.iconRowMap[iconHash] = icon
+        }
+        layerStyle.features[feature.id].icon = iconHash
+        layerStyle.features[feature.id].iconOrStyle = 'icon'
+      } else {
+        let style = this.getStyleFromFeature(feature)
+        let styleHash = VectorStyleUtilities.hashCode(style)
+        if (_.isNil(layerStyle.styleRowMap[styleHash])) {
+          layerStyle.styleRowMap[styleHash] = style
+        }
+        layerStyle.features[feature.id].style = styleHash
+        layerStyle.features[feature.id].iconOrStyle = 'style'
+      }
+    }
+    return layerStyle
   }
 
   async retrieveLayers () {

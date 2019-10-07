@@ -15,10 +15,9 @@ export default class Layer {
     this.credentials = this._configuration.credentials
     this.sourceLayerName = this._configuration.sourceLayerName || defaultLayerName(this.filePath)
     this.name = this._configuration.name || this.sourceLayerName
-    this.overviewTilePath = this.cacheFolder.dir(this.id).path('overviewTile.png')
+    this.overviewTilePath = this.cacheFolder.path('overviewTile.png')
     this.pane = configuration.pane
     this.style = this._configuration.style
-    this.mbStyle = this._configuration.mbStyle
     this.shown = this._configuration.shown || true
     this.editableStyle = this._configuration.editableStyle !== undefined ? this._configuration.editableStyle : true
     this.images = this._configuration.images
@@ -44,7 +43,6 @@ export default class Layer {
         overviewTilePath: this.overviewTilePath,
         shown: this.shown || true,
         style: this.style,
-        mbStyle: this.mbStyle,
         editableStyle: this.editableStyle,
         images: this.images
       }

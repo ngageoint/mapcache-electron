@@ -19,7 +19,7 @@ export default class LeafletDraw extends vendor.L.Control {
     this._polyLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-polygon', container)
     this._rectLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-rectangle', container)
     this._linestringLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-linestring', container)
-    this._circleLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-circle', container)
+    // this._circleLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-circle', container)
     this._trashLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-trash-disabled', container)
 
     this._trashOnClick = () => {
@@ -55,7 +55,7 @@ export default class LeafletDraw extends vendor.L.Control {
       }
     })
     map.addHandler('deleteFeatures', vendor.L.DeleteHandler)
-    this._drawingLinks = [this._pointLink, this._polyLink, this._rectLink, this._linestringLink, this._circleLink]
+    this._drawingLinks = [this._pointLink, this._polyLink, this._rectLink, this._linestringLink]
     this.disableDrawingLinks = () => {
       _this._drawingLinks.forEach(link => {
         link.onclick = undefined
@@ -90,11 +90,11 @@ export default class LeafletDraw extends vendor.L.Control {
         _this.disableEditingLinks()
         map.editTools.startPolyline()
       }
-      _this._circleLink.onclick = () => {
-        _this.disableDrawingLinks()
-        _this.disableEditingLinks()
-        map.editTools.startCircle()
-      }
+      // _this._circleLink.onclick = () => {
+      //   _this.disableDrawingLinks()
+      //   _this.disableEditingLinks()
+      //   map.editTools.startCircle()
+      // }
     }
 
     this.enableEditingLinks = () => {

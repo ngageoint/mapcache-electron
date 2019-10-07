@@ -1,6 +1,7 @@
 import Vue from 'vue'
 // import UIState from './UIState'
 import WindowLauncher from '../../lib/window/WindowLauncher'
+// import _ from 'lodash'
 
 function createId () {
   function s4 () {
@@ -189,8 +190,36 @@ const mutations = {
   updateProjectLayer (state, {projectId, layer}) {
     Vue.set(state[projectId].layers, layer.id, layer)
   },
-  updateProjectLayerStyle (state, {projectId, layerId, style}) {
-    Vue.set(state[projectId].layers[layerId], 'style', style)
+  updateProjectLayerFeatureSelection (state, {projectId, layerId, featureSelection}) {
+    Vue.set(state[projectId].layers[layerId], 'featureSelection', featureSelection)
+  },
+  setProjectLayerFeatureStyle (state, {projectId, layerId, featureId, styleId}) {
+    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'style', styleId)
+  },
+  setProjectLayerFeatureIcon (state, {projectId, layerId, featureId, iconId}) {
+    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'icon', iconId)
+  },
+  setIconOrStyleName (state, {projectId, layerId, iconOrStyle, id, name}) {
+    if (iconOrStyle === 'icon') {
+      Vue.set(state[projectId].layers[layerId].style.iconRowMap[id], 'name', name)
+    } else {
+      Vue.set(state[projectId].layers[layerId].style.styleRowMap[id], 'name', name)
+    }
+  },
+  updateProjectLayerStyleMaxFeatures (state, {projectId, layerId, maxFeatures}) {
+    Vue.set(state[projectId].layers[layerId].style, 'maxFeatures', maxFeatures)
+  },
+  updateProjectLayerStyle (state, {projectId, layerId, styleId, style}) {
+    Vue.set(state[projectId].layers[layerId].style.styleRowMap, styleId, style)
+  },
+  updateProjectLayerIcon (state, {projectId, layerId, iconId, icon}) {
+    Vue.set(state[projectId].layers[layerId].style.iconRowMap, iconId, icon)
+  },
+  updateProjectLayerFeatureIconOrStyle (state, {projectId, layerId, featureId, geometryType, iconOrStyle}) {
+    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'iconOrStyle', iconOrStyle)
+  },
+  updateProjectLayerDefaultIconOrStyle (state, {projectId, layerId, geometryType, iconOrStyle}) {
+    Vue.set(state[projectId].layers[layerId].style.default.iconOrStyle, geometryType, iconOrStyle)
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -303,8 +332,32 @@ const actions = {
   updateProjectLayer ({ commit, state }, {projectId, layer}) {
     commit('updateProjectLayer', {projectId, layer})
   },
-  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
-    commit('updateProjectLayerStyle', {projectId, layerId, style})
+  updateProjectLayerFeatureSelection ({ commit, state }, {projectId, layerId, featureSelection}) {
+    commit('updateProjectLayerFeatureSelection', {projectId, layerId, featureSelection})
+  },
+  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, styleId, style}) {
+    commit('updateProjectLayerStyle', {projectId, layerId, styleId, style})
+  },
+  updateProjectLayerIcon ({ commit, state }, {projectId, layerId, iconId, icon}) {
+    commit('updateProjectLayerIcon', {projectId, layerId, iconId, icon})
+  },
+  updateProjectLayerStyleMaxFeatures ({ commit, state }, {projectId, layerId, maxFeatures}) {
+    commit('updateProjectLayerStyleMaxFeatures', {projectId, layerId, maxFeatures})
+  },
+  setProjectLayerFeatureStyle ({ commit, state }, {projectId, layerId, featureId, styleId}) {
+    commit('setProjectLayerFeatureStyle', {projectId, layerId, featureId, styleId})
+  },
+  setProjectLayerFeatureIcon ({ commit, state }, {projectId, layerId, featureId, iconId}) {
+    commit('setProjectLayerFeatureIcon', {projectId, layerId, featureId, iconId})
+  },
+  setIconOrStyleName ({ commit, state }, {projectId, layerId, iconOrStyle, id, name}) {
+    commit('setIconOrStyleName', {projectId, layerId, iconOrStyle, id, name})
+  },
+  updateProjectLayerFeatureIconOrStyle ({ commit, state }, {projectId, layerId, featureId, geometryType, iconOrStyle}) {
+    commit('updateProjectLayerFeatureIconOrStyle', {projectId, layerId, featureId, geometryType, iconOrStyle})
+  },
+  updateProjectLayerDefaultIconOrStyle ({ commit, state }, {projectId, layerId, geometryType, iconOrStyle}) {
+    commit('updateProjectLayerDefaultIconOrStyle', {projectId, layerId, geometryType, iconOrStyle})
   },
   setFeatureImageryConversionAOI ({ commit, state }, {projectId, geopackageId, aoi}) {
     commit('setFeatureImageryConversionAOI', {projectId, geopackageId, aoi})

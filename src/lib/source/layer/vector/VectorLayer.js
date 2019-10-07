@@ -1,36 +1,38 @@
 import Layer from '../Layer'
 import MapcacheMapLayer from '../../../map/MapcacheMapLayer'
 import * as vtpbf from 'vt-pbf'
-import VectorTileRenderer from '../renderer/VectorTileRenderer'
+import GPKGVectorTileRenderer from '../renderer/GPKGVectorTileRenderer'
 import geojsonExtent from '@mapbox/geojson-extent'
 import jetpack from 'fs-jetpack'
-import MapboxUtilities from '../../../MapboxUtilities'
+import VectorStyleUtilities from '../../../VectorStyleUtilities'
 import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf/index'
+import GeoPackageVectorUtilities from '../../../GeoPackageVectorUtilities'
+import fs from 'fs'
 
 export default class VectorLayer extends Layer {
   _extent
   _mapLayer
   _vectorTileRenderer
   _tileIndex
+  _geopackageFileName
 
   constructor (configuration = {}) {
     super(configuration)
     this._extent = configuration.extent
+    this._geopackageFileName = configuration.geopackageFileName || this.cacheFolder.path('internal_geopackage.gpkg')
   }
 
   async initialize () {
     if (!this.style) {
-      this.style = MapboxUtilities.defaultRandomColorStyle()
+      this.style = VectorStyleUtilities.defaultRandomColorStyle()
     }
-    if (!this.mbStyle) {
-      this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
+
+    let exists = fs.existsSync(this._geopackageFileName)
+    // on style updates, update the geopackage properly... i suppose...
+    if (!exists) {
+      await GeoPackageVectorUtilities.buildGeoPackageForLayer(this, this._geopackageFileName)
     }
-    if (this.editableStyle) {
-      this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
-      this._tileIndex = MapboxUtilities.generateTileIndexForMbStyling(this.tileIndexFeatureCollection.features)
-    } else {
-      this._tileIndex = MapboxUtilities.generateTileIndex(this.name, this.tileIndexFeatureCollection.features)
-    }
+
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
   }
@@ -41,7 +43,8 @@ export default class VectorLayer extends Layer {
       ...{
         pane: 'vector',
         extent: this.extent,
-        count: this.count || 0
+        count: this.count || 0,
+        geopackageFileName: this._geopackageFileName
       }
     }
   }
@@ -49,25 +52,19 @@ export default class VectorLayer extends Layer {
   async updateStyle (style) {
     if (this.editableStyle) {
       this.style = style
-      this.mbStyle = MapboxUtilities.generateMbStyle(this.style, this.name)
-      await this.vectorTileRenderer.updateStyle(this.mbStyle)
+      await this.vectorTileRenderer.updateStyle(this)
     }
   }
 
   get featureCollection () {
     throw new Error('Abstract method to be implemented in sublcass')
   }
-
-  get tileIndexFeatureCollection () {
-    return this.featureCollection
-  }
-
   get count () {
     return this.featureCollection.features.length
   }
 
   get extent () {
-    let featureCollection = this.editableStyle ? MapboxUtilities.getMapboxFeatureCollectionForStyling(this.featureCollection.features) : this.featureCollection
+    let featureCollection = this.featureCollection
     return geojsonExtent(featureCollection)
   }
 
@@ -84,9 +81,7 @@ export default class VectorLayer extends Layer {
 
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
-      this._vectorTileRenderer = new VectorTileRenderer(this.mbStyle, (x, y, z, map) => {
-        return this.getTile({x: x, y: y, z: z})
-      }, this.images)
+      this._vectorTileRenderer = new GPKGVectorTileRenderer(this._geopackageFileName, this.name, this.style.maxFeatures)
     }
     return this._vectorTileRenderer
   }
