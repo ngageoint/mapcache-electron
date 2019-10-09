@@ -1,6 +1,6 @@
 import Vue from 'vue'
-// import UIState from './UIState'
 import WindowLauncher from '../../lib/window/WindowLauncher'
+import _ from 'lodash'
 
 function createId () {
   function s4 () {
@@ -105,32 +105,34 @@ const mutations = {
     Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
   },
   setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
-    aoi[0][0] = Number(aoi[0][0].toFixed(10))
-    aoi[0][1] = Number(aoi[0][1].toFixed(10))
-    aoi[1][0] = Number(aoi[1][0].toFixed(10))
-    aoi[1][1] = Number(aoi[1][1].toFixed(10))
-    while (aoi[0][1] < -180) {
-      aoi[0][1] = aoi[0][1] + 360
-    }
-    while (aoi[0][1] > 180) {
-      aoi[0][1] = aoi[0][1] - 360
-    }
-    while (aoi[1][1] < -180) {
-      aoi[1][1] = aoi[1][1] + 360
-    }
-    while (aoi[1][1] > 180) {
-      aoi[1][1] = aoi[1][1] - 360
-    }
-    if (layerId) {
-      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'aoi', aoi)
-      } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'aoi', aoi)
-      } else {
-        Vue.set(state[projectId].geopackages[geopackageId], layerId, aoi)
+    if (!_.isNil(aoi) && aoi.length === 2) {
+      aoi[0][0] = Number(aoi[0][0].toFixed(10))
+      aoi[0][1] = Number(aoi[0][1].toFixed(10))
+      aoi[1][0] = Number(aoi[1][0].toFixed(10))
+      aoi[1][1] = Number(aoi[1][1].toFixed(10))
+      while (aoi[0][1] < -180) {
+        aoi[0][1] = aoi[0][1] + 360
       }
-    } else {
-      Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
+      while (aoi[0][1] > 180) {
+        aoi[0][1] = aoi[0][1] - 360
+      }
+      while (aoi[1][1] < -180) {
+        aoi[1][1] = aoi[1][1] + 360
+      }
+      while (aoi[1][1] > 180) {
+        aoi[1][1] = aoi[1][1] - 360
+      }
+      if (layerId) {
+        if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
+          Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'aoi', aoi)
+        } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
+          Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'aoi', aoi)
+        } else {
+          Vue.set(state[projectId].geopackages[geopackageId], layerId, aoi)
+        }
+      } else {
+        Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
+      }
     }
   },
   setFeatureImageryConversionMaxZoom (state, {projectId, geopackageId, maxZoom}) {
