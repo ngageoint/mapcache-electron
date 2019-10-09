@@ -1,7 +1,5 @@
 import Vue from 'vue'
-// import UIState from './UIState'
 import WindowLauncher from '../../lib/window/WindowLauncher'
-// import _ from 'lodash'
 
 function createId () {
   function s4 () {
@@ -190,6 +188,24 @@ const mutations = {
   updateProjectLayer (state, {projectId, layer}) {
     Vue.set(state[projectId].layers, layer.id, layer)
   },
+  updateProjectLayerStyle (state, {projectId, layerId, style}) {
+    Vue.set(state[projectId].layers[layerId], 'style', style)
+  },
+  updateProjectLayerStyleMaxFeatures (state, {projectId, layerId, maxFeatures}) {
+    Vue.set(state[projectId].layers[layerId].style, 'maxFeatures', maxFeatures)
+  },
+  updateProjectLayerStyleRow (state, {projectId, layerId, styleId, style}) {
+    Vue.set(state[projectId].layers[layerId].style.styleRowMap, styleId, style)
+  },
+  updateProjectLayerIconRow (state, {projectId, layerId, iconId, icon}) {
+    Vue.set(state[projectId].layers[layerId].style.iconRowMap, iconId, icon)
+  },
+  updateProjectLayerFeatureIconOrStyle (state, {projectId, layerId, featureId, iconOrStyle}) {
+    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'iconOrStyle', iconOrStyle)
+  },
+  updateProjectLayerDefaultIconOrStyle (state, {projectId, layerId, geometryType, iconOrStyle}) {
+    Vue.set(state[projectId].layers[layerId].style.default.iconOrStyle, geometryType, iconOrStyle)
+  },
   updateProjectLayerFeatureSelection (state, {projectId, layerId, featureSelection}) {
     Vue.set(state[projectId].layers[layerId], 'featureSelection', featureSelection)
   },
@@ -205,21 +221,6 @@ const mutations = {
     } else {
       Vue.set(state[projectId].layers[layerId].style.styleRowMap[id], 'name', name)
     }
-  },
-  updateProjectLayerStyleMaxFeatures (state, {projectId, layerId, maxFeatures}) {
-    Vue.set(state[projectId].layers[layerId].style, 'maxFeatures', maxFeatures)
-  },
-  updateProjectLayerStyle (state, {projectId, layerId, styleId, style}) {
-    Vue.set(state[projectId].layers[layerId].style.styleRowMap, styleId, style)
-  },
-  updateProjectLayerIcon (state, {projectId, layerId, iconId, icon}) {
-    Vue.set(state[projectId].layers[layerId].style.iconRowMap, iconId, icon)
-  },
-  updateProjectLayerFeatureIconOrStyle (state, {projectId, layerId, featureId, geometryType, iconOrStyle}) {
-    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'iconOrStyle', iconOrStyle)
-  },
-  updateProjectLayerDefaultIconOrStyle (state, {projectId, layerId, geometryType, iconOrStyle}) {
-    Vue.set(state[projectId].layers[layerId].style.default.iconOrStyle, geometryType, iconOrStyle)
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -332,14 +333,17 @@ const actions = {
   updateProjectLayer ({ commit, state }, {projectId, layer}) {
     commit('updateProjectLayer', {projectId, layer})
   },
+  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
+    commit('updateProjectLayerStyle', {projectId, layerId, style})
+  },
   updateProjectLayerFeatureSelection ({ commit, state }, {projectId, layerId, featureSelection}) {
     commit('updateProjectLayerFeatureSelection', {projectId, layerId, featureSelection})
   },
-  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, styleId, style}) {
-    commit('updateProjectLayerStyle', {projectId, layerId, styleId, style})
+  updateProjectLayerStyleRow ({ commit, state }, {projectId, layerId, styleId, style}) {
+    commit('updateProjectLayerStyleRow', {projectId, layerId, styleId, style})
   },
-  updateProjectLayerIcon ({ commit, state }, {projectId, layerId, iconId, icon}) {
-    commit('updateProjectLayerIcon', {projectId, layerId, iconId, icon})
+  updateProjectLayerIconRow ({ commit, state }, {projectId, layerId, iconId, icon}) {
+    commit('updateProjectLayerIconRow', {projectId, layerId, iconId, icon})
   },
   updateProjectLayerStyleMaxFeatures ({ commit, state }, {projectId, layerId, maxFeatures}) {
     commit('updateProjectLayerStyleMaxFeatures', {projectId, layerId, maxFeatures})
@@ -353,8 +357,8 @@ const actions = {
   setIconOrStyleName ({ commit, state }, {projectId, layerId, iconOrStyle, id, name}) {
     commit('setIconOrStyleName', {projectId, layerId, iconOrStyle, id, name})
   },
-  updateProjectLayerFeatureIconOrStyle ({ commit, state }, {projectId, layerId, featureId, geometryType, iconOrStyle}) {
-    commit('updateProjectLayerFeatureIconOrStyle', {projectId, layerId, featureId, geometryType, iconOrStyle})
+  updateProjectLayerFeatureIconOrStyle ({ commit, state }, {projectId, layerId, featureId, iconOrStyle}) {
+    commit('updateProjectLayerFeatureIconOrStyle', {projectId, layerId, featureId, iconOrStyle})
   },
   updateProjectLayerDefaultIconOrStyle ({ commit, state }, {projectId, layerId, geometryType, iconOrStyle}) {
     commit('updateProjectLayerDefaultIconOrStyle', {projectId, layerId, geometryType, iconOrStyle})

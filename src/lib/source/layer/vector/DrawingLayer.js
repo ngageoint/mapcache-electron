@@ -43,21 +43,10 @@ export default class DrawingLayer extends VectorLayer {
     }
     this._mapLayer.remove()
     this.featureCollection.features.forEach(feature => {
-      let featureStyle = _.isNil(this.style.features[feature.id]) ? this.style.default.styles[feature.geometry.type] : this.style.features[feature.id].style
+      let featureStyle = _.isNil(this.style.features[feature.id]) ? this.style.styleRowMap[this.style.default.styles[feature.geometry.type]] : this.style.styleRowMap[this.style.features[feature.id].style]
       let iconOrStyle = _.isNil(this.style.features[feature.id]) ? this.style.default.iconOrStyle[feature.geometry.type] : this.style.features[feature.id].iconOrStyle
-      let featureIcon = _.isNil(this.style.features[feature.id]) ? this.style.default.icons[feature.geometry.type] : this.style.features[feature.id].icon
+      let featureIcon = _.isNil(this.style.features[feature.id]) ? this.style.iconRowMap[this.style.default.icons[feature.geometry.type]] : this.style.iconRowMap[this.style.features[feature.id].icon]
       let layer
-      // if (feature.properties.radius) {
-      //   let style = {
-      //     radius: feature.properties.radius,
-      //     fillColor: mapboxStyleValues.circleColor,
-      //     fillOpacity: mapboxStyleValues.circleOpacity,
-      //     color: mapboxStyleValues.circleLineColor,
-      //     opacity: mapboxStyleValues.circleLineOpacity,
-      //     weight: mapboxStyleValues.circleLineWeight
-      //   }
-      //   layer = new vendor.L.Circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], style)
-      // } else
       if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
         let style = {
           fillColor: featureStyle.fillColor,

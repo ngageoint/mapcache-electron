@@ -155,6 +155,7 @@ export default class GeoPackageBuilder {
           if (feature.properties) {
             feature.properties.id = undefined
           }
+          console.log('adding feature ' + feature.id)
           let featureRowId = GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
           if (!_.isNil(layer.style.features[feature.id])) {
             if (layer.style.features[feature.id].iconOrStyle === 'icon') {

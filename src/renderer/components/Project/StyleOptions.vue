@@ -14,14 +14,14 @@
         <div class="flex-row" v-if="allowSwitchBetweenIconAndStyle && (geometryType === 'Point' || geometryType === 'MultiPoint')">
           <div>
             <label>
-              <input type="radio" v-model="useIconorStyle" value="icon"> Icon
+              <input type="radio" v-model="useIconOrStyle" value="icon"> Icon
             </label>
             <label>
-              <input type="radio" v-model="useIconorStyle" value="style"> Style
+              <input type="radio" v-model="useIconOrStyle" value="style"> Style
             </label>
           </div>
         </div>
-        <div class="flex-row" v-if="useIconorStyle === 'icon'">
+        <div class="flex-row" v-if="useIconOrStyle === 'icon'">
           <div>
             <label class="control-label">Point Icon</label>
             <img class="icon" :src="icon.url" @click.stop="getIconClick"/>
@@ -37,7 +37,7 @@
             </div>
           </div>
         </div>
-        <div v-if="useIconorStyle === 'style'">
+        <div v-if="useIconOrStyle === 'style'">
           <div class="flex-row">
             <div>
               <label class="control-label">Color</label>
@@ -101,7 +101,7 @@
           let style = Object.assign({}, this.layer.style.styleRowMap[this.styleId])
           style[colorField] = color
           style[opacityField] = Number(opacity)
-          this.updateProjectLayerStyle({
+          this.updateProjectLayerStyleRow({
             projectId: this.projectId,
             layerId: this.layer.id,
             styleId: this.styleId,
@@ -113,7 +113,7 @@
         if (val) {
           let style = Object.assign({}, this.layer.style.styleRowMap[this.styleId])
           style[field] = parseFloat(val)
-          this.updateProjectLayerStyle({
+          this.updateProjectLayerStyleRow({
             projectId: this.projectId,
             layerId: this.layer.id,
             styleId: this.styleId,
@@ -128,11 +128,12 @@
       'editstylename': EditStyleName
     },
     computed: {
-      useIconorStyle: {
+      useIconOrStyle: {
         get () {
           return this.iconOrStyle
         },
         set (val) {
+          console.log(val)
           this.updateProjectLayerDefaultIconOrStyle({
             projectId: this.projectId,
             layerId: this.layer.id,
@@ -194,7 +195,7 @@
         set (value) {
           let updatedIcon = Object.assign({}, this.layer.style.iconRowMap[this.iconId])
           updatedIcon.anchorSelection = value
-          this.updateProjectLayerIcon({
+          this.updateProjectLayerIconRow({
             projectId: this.projectId,
             layerId: this.layer.id,
             iconId: this.iconId,
@@ -220,8 +221,8 @@
     methods: {
       ...mapActions({
         updateProjectLayerDefaultIconOrStyle: 'Projects/updateProjectLayerDefaultIconOrStyle',
-        updateProjectLayerStyle: 'Projects/updateProjectLayerStyle',
-        updateProjectLayerIcon: 'Projects/updateProjectLayerIcon'
+        updateProjectLayerStyleRow: 'Projects/updateProjectLayerStyleRow',
+        updateProjectLayerIconRow: 'Projects/updateProjectLayerIconRow'
       }),
       getAnchorUV (anchorLocation) {
         let result = {}
@@ -261,7 +262,7 @@
         icon.anchor_u = result.anchor_u
         icon.anchor_v = result.anchor_v
         icon.anchorSelection = anchorLocation
-        this.updateProjectLayerIcon({
+        this.updateProjectLayerIconRow({
           projectId: this.projectId,
           layerId: this.layer.id,
           iconId: this.iconId,
@@ -304,7 +305,7 @@
                 name: path.basename(fileInfo.path)
               }
               console.log('new icon url: ' + url)
-              this.updateProjectLayerIcon({
+              this.updateProjectLayerIconRow({
                 projectId: this.projectId,
                 layerId: this.layer.id,
                 iconId: this.iconId,

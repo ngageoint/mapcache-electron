@@ -8,6 +8,9 @@ import VectorStyleUtilities from '../../../VectorStyleUtilities'
 import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf/index'
 import GeoPackageVectorUtilities from '../../../GeoPackageVectorUtilities'
 import fs from 'fs'
+import GeoPackage from '@ngageoint/geopackage'
+import store from '../../../../store'
+import _ from 'lodash'
 
 export default class VectorLayer extends Layer {
   _extent
@@ -15,6 +18,7 @@ export default class VectorLayer extends Layer {
   _vectorTileRenderer
   _tileIndex
   _geopackageFileName
+  _geopackage
 
   constructor (configuration = {}) {
     super(configuration)
@@ -26,13 +30,11 @@ export default class VectorLayer extends Layer {
     if (!this.style) {
       this.style = VectorStyleUtilities.defaultRandomColorStyle()
     }
-
     let exists = fs.existsSync(this._geopackageFileName)
-    // on style updates, update the geopackage properly... i suppose...
     if (!exists) {
       await GeoPackageVectorUtilities.buildGeoPackageForLayer(this, this._geopackageFileName)
     }
-
+    this._geopackage = await GeoPackage.open(this._geopackageFileName)
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
   }
@@ -52,7 +54,23 @@ export default class VectorLayer extends Layer {
   async updateStyle (style) {
     if (this.editableStyle) {
       this.style = style
-      await this.vectorTileRenderer.updateStyle(this)
+      try {
+        let newStyle = await GeoPackageVectorUtilities.updateStyle(this._geopackage, this)
+        if (!_.isNil(newStyle)) {
+          console.log(this.id)
+          store.dispatch('Projects/updateProjectLayerStyle', {
+            projectId: this.projectId,
+            layerId: this.id,
+            style: newStyle
+          })
+        } else {
+          this._geopackage = await GeoPackage.open(this._geopackageFileName)
+          await this.vectorTileRenderer.setGeoPackage(this._geopackage)
+          this.vectorTileRenderer.setMaxFeaturesPerTile(this.style.maxFeatures)
+        }
+      } catch (err) {
+        console.log(err)
+      }
     }
   }
 
@@ -81,7 +99,7 @@ export default class VectorLayer extends Layer {
 
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
-      this._vectorTileRenderer = new GPKGVectorTileRenderer(this._geopackageFileName, this.name, this.style.maxFeatures)
+      this._vectorTileRenderer = new GPKGVectorTileRenderer(this._geopackage, this.name, this.style.maxFeatures)
     }
     return this._vectorTileRenderer
   }

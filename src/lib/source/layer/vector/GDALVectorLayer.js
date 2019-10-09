@@ -157,6 +157,7 @@ export default class GDALVectorLayer extends VectorLayer {
 
         return {
           type: 'Feature',
+          id: feature.fid,
           properties: feature.fields.toObject(),
           geometry: geojson
         }

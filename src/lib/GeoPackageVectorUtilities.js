@@ -42,6 +42,7 @@ export default class GeoPackageVectorUtilities {
         await featureTableStyles.createTableStyleRelationship()
         await featureTableStyles.createTableIconRelationship()
         await featureTableStyles.createStyleRelationship()
+        await featureTableStyles.createIconRelationship()
 
         let polyStyle = layer.style.styleRowMap[layer.style.default.styles['Polygon']]
         let polygonStyleRow = featureTableStyles.getStyleDao().newRow()
@@ -161,13 +162,14 @@ export default class GeoPackageVectorUtilities {
   }
 
   static async updateStyle (gp, layer) {
+    let styleOrIconRowIdsChanged = false
     const featureTableName = layer.name
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
     var oldFeatureStyles = featureTableStyles.getTableFeatureStyles()
     var oldTableStyles = oldFeatureStyles.getStyles()
     var oldTableIcons = oldFeatureStyles.getIcons()
 
-    let newStyle = layer.style
+    let newStyle = _.cloneDeep(layer.style)
     // update polygon table style if it changed
     let polyStyle = newStyle.styleRowMap[newStyle.default.styles['Polygon']]
     let polyStyleRow = !_.isNil(oldTableStyles) ? oldTableStyles.getStyle('Polygon') : undefined
@@ -196,10 +198,10 @@ export default class GeoPackageVectorUtilities {
       await featureTableStyles.setTableStyle('MultiLineString', lineStringStyleRow)
     }
     // update point table icon or style if it changed
-    if (layer.style.default.iconOrStyle['Point'] === 'icon') {
+    if (newStyle.default.iconOrStyle['Point'] === 'icon') {
       featureTableStyles.deleteTableStyle('Point')
       featureTableStyles.deleteTableStyle('MultiPoint')
-      let pointIcon = layer.style.iconRowMap[layer.style.default.icons['Point']]
+      let pointIcon = newStyle.iconRowMap[newStyle.default.icons['Point']]
       let pointIconRow = !_.isNil(oldTableIcons) ? oldTableIcons.getIcon('Point') : undefined
       if (!_.isNil(pointIconRow)) {
         if (pointIconRow.getData() !== Buffer.from(pointIcon.url.split(',')[1], 'base64') ||
@@ -244,7 +246,7 @@ export default class GeoPackageVectorUtilities {
           await featureTableStyles.setTableStyle('MultiPoint', pointStyleRow)
         }
       } else {
-        let pointStyle = layer.style.styleRowMap[layer.style.default.styles['Point']]
+        let pointStyle = newStyle.styleRowMap[newStyle.default.styles['Point']]
         let pointStyleRow = featureTableStyles.getStyleDao().newRow()
         pointStyleRow.setColor(pointStyle.color, pointStyle.opacity)
         pointStyleRow.setWidth(pointStyle.width)
@@ -254,7 +256,7 @@ export default class GeoPackageVectorUtilities {
     }
 
     let styleDao = featureTableStyles.getStyleDao()
-    let styleIds = featureTableStyles.getAllStyleIds()
+    let styleIds = featureTableStyles.getAllStyleIds().map(n => Number(n))
     let currentStyleIds = Object.keys(newStyle.styleRowMap).map(n => Number(n))
     // remove the defaults first
     _.remove(currentStyleIds, function (val) {
@@ -289,20 +291,22 @@ export default class GeoPackageVectorUtilities {
     for (let currentStyleIdIdx in currentStyleIds) {
       let currentStyle = currentStyleIds[currentStyleIdIdx]
       // check if the style exists in the geopackage
-      if (styleIds.indexOf(currentStyle) === -1) {
+      if (_.isNil(styleIds) || styleIds.indexOf(currentStyle) === -1) {
         let style = newStyle.styleRowMap[currentStyle]
         let styleRow = featureTableStyles.getStyleDao().newRow()
         styleRow.setColor(style.color, style.opacity)
         styleRow.setFillColor(style.fillColor, style.fillOpacity)
         styleRow.setWidth(style.width)
         let styleRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
-        delete layer.style.styleRowMap[currentStyle]
-        layer.style.styleRowMap[styleRowId] = style
+        delete newStyle.styleRowMap[currentStyle]
+        newStyle.styleRowMap[styleRowId] = style
+        styleOrIconRowIdsChanged = true
       }
     }
 
     let iconDao = featureTableStyles.getIconDao()
-    let iconIds = featureTableStyles.getAllIconIds()
+    let iconIds = featureTableStyles.getAllIconIds().map(n => Number(n))
+    console.log(iconIds)
     let currentIconIds = Object.keys(newStyle.iconRowMap).map(n => Number(n))
     // remove the defaults first
     _.remove(currentIconIds, function (val) {
@@ -338,7 +342,7 @@ export default class GeoPackageVectorUtilities {
     for (let currentIconIdIdx in currentIconIds) {
       let currentIcon = currentIconIds[currentIconIdIdx]
       // check if the style exists in the geopackage
-      if (iconIds.indexOf(currentIcon) === -1) {
+      if (_.isNil(iconIds) || iconIds.indexOf(currentIcon) === -1) {
         let icon = newStyle.iconRowMap[currentIcon]
         let iconRow = featureTableStyles.getIconDao().newRow()
         iconRow.setData(Buffer.from(icon.url.split(',')[1], 'base64'))
@@ -348,9 +352,15 @@ export default class GeoPackageVectorUtilities {
         iconRow.setAnchorU(icon.anchor_u)
         iconRow.setAnchorV(icon.anchor_v)
         let iconRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
-        delete layer.style.iconRowMap[currentIcon]
-        layer.style.iconRowMap[iconRowId] = icon
+        delete newStyle.iconRowMap[currentIcon]
+        newStyle.iconRowMap[iconRowId] = icon
+        styleOrIconRowIdsChanged = true
       }
+    }
+    if (styleOrIconRowIdsChanged) {
+      return newStyle
+    } else {
+      return null
     }
   }
 }

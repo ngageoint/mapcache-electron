@@ -1,10 +1,7 @@
-import GeoPackage from '@ngageoint/geopackage'
 import FeatureTiles from '@ngageoint/geopackage/lib/tiles/features/index'
 import NumberFeaturesTile from '@ngageoint/geopackage/lib/tiles/features/custom/numberFeaturesTile'
-import GeoPackageVectorUtilities from '../../../GeoPackageVectorUtilities'
 
 export default class GPKGVectorTileRenderer {
-  geopackageFileName
   geopackage
   initialized
   featureTableName
@@ -12,32 +9,34 @@ export default class GPKGVectorTileRenderer {
   featureTile
   maxFeatures
 
-  constructor (geopackageFileName, featureTableName, maxFeatures) {
-    this.geopackageFileName = geopackageFileName
+  constructor (geopackage, featureTableName, maxFeatures) {
+    this.geopackage = geopackage
     this.featureTableName = featureTableName
     this.initialized = false
     this.maxFeatures = maxFeatures
   }
 
   async init () {
-    if (!this.initialized) {
-      this.geopackage = await GeoPackage.open(this.geopackageFileName)
-      this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
-      this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
-      this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
-      this.featureTile.setMaxFeaturesPerTile(this.maxFeatures)
-      this.initialized = true
-    }
+    this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
+    this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
+    this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
+    this.featureTile.setMaxFeaturesPerTile(this.maxFeatures)
   }
 
-  async updateStyle (layer) {
-    await GeoPackageVectorUtilities.updateStyle(this.geopackage, layer)
-    this.initialized = false
-    this.maxFeatures = layer.style.maxFeatures
+  async setGeoPackage (geopackage) {
+    this.geopackage = geopackage
     await this.init()
   }
 
-  // TODO: need to figure out a faster method for updating style of geopackage...
+  async setMaxFeaturesPerTile (maxFeatures) {
+    if (maxFeatures > 0) {
+      this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
+      this.featureTile.setMaxFeaturesPerTile(maxFeatures)
+    } else {
+      this.featureTile.setMaxFeaturesTileDraw(undefined)
+      this.featureTile.setMaxFeaturesPerTile(undefined)
+    }
+  }
 
   async renderVectorTile (coords, tileCanvas, done) {
     let {x, y, z} = coords
