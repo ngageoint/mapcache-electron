@@ -154,7 +154,7 @@
         return this.layer ? this.layer.id : undefined
       },
       layerNameValue () {
-        return this.options.layerName || this.geopackage.multiImageryLayerName || (this.layer ? this.layer.name : 'Layer')
+        return this.options.layerName || this.geopackage.multiImageryLayerName || (this.layer ? this.layer.displayName : 'Layer')
       },
       minZoomValue: {
         get () {

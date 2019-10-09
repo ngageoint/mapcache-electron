@@ -176,7 +176,7 @@
           } else {
             return Object.values(this.geopackage.featureToImageryLayers).filter(layer => layer.included).map((layer, i) => {
               return {
-                name: layer.name,
+                name: layer.displayName || layer.name,
                 id: i
               }
             })

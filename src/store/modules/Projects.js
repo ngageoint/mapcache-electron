@@ -28,6 +28,32 @@ const mutations = {
   setProjectName (state, {project, name}) {
     state[project.id].name = name
   },
+  setLayerDisplayName (state, {projectId, layerId, displayName}) {
+    if (!_.isNil(state[projectId].geopackages)) {
+      let keys = Object.keys(state[projectId].geopackages)
+      for (let i = 0; i < keys.length; i++) {
+        let geopackageId = keys[i]
+        let geopackage = _.cloneDeep(state[projectId].geopackages[geopackageId])
+        let update = false
+        if (!_.isNil(geopackage.imageryLayers[layerId])) {
+          geopackage.imageryLayers[layerId].displayName = displayName
+          update = true
+        }
+        if (!_.isNil(geopackage.featureLayers[layerId])) {
+          geopackage.featureLayers[layerId].displayName = displayName
+          update = true
+        }
+        if (!_.isNil(geopackage.featureToImageryLayers[layerId])) {
+          geopackage.featureToImageryLayers[layerId].displayName = displayName
+          update = true
+        }
+        if (update) {
+          Vue.set(state[projectId].geopackages, geopackageId, geopackage)
+        }
+      }
+    }
+    Vue.set(state[projectId].layers[layerId], 'displayName', displayName)
+  },
   addProjectLayer (state, {project, layerId, config}) {
     Vue.set(state[project.id].layers, layerId, config)
   },
@@ -219,6 +245,9 @@ const actions = {
   setProjectName ({ commit, state }, {project, name}) {
     commit('setProjectName', {project, name})
   },
+  setLayerDisplayName ({ commit, state }, {projectId, layerId, displayName}) {
+    commit('setLayerDisplayName', {projectId, layerId, displayName})
+  },
   addProjectLayer ({ commit, state }, {project, layerId, config}) {
     commit('addProjectLayer', {project, layerId, config})
   },
@@ -241,6 +270,7 @@ const actions = {
           id: layer.id,
           included: layer.shown,
           name: layer.name,
+          displayName: layer.displayName || layer.name,
           style: layer.style
         }
       }
@@ -249,12 +279,14 @@ const actions = {
           id: layer.id,
           included: layer.shown,
           name: layer.name,
+          displayName: layer.displayName || layer.name,
           style: layer.style
         }
         featureToImageryLayers[layerId] = {
           id: layer.id,
           included: layer.shown,
           name: layer.name,
+          displayName: layer.displayName || layer.name,
           style: layer.style
         }
       }

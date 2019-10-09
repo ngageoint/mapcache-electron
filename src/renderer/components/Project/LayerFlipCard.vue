@@ -7,7 +7,7 @@
          <div class="layer__face__colored-side"></div>
          <div class="layer__face__header fill-background-color">
            <div class="layer__face__source-name contrast-text">
-             {{layer.name.length > 40 ? layer.name.substring(0, 37) + "..." : layer.name}}
+             <edit-layer-display-name :projectId="projectId" :layer="layer"/>
            </div>
            <div class="layer-checked contrast-svg-always" @click.stop="toggleProjectLayer({projectId: projectId, layerId: layer.id})">
              <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
@@ -91,6 +91,7 @@
   import GeotiffOptions from './GeotiffOptions'
   import { mapActions, mapState } from 'vuex'
   import VectorOptions from './VectorOptions'
+  import EditLayerDisplayName from './EditLayerDisplayName'
 
   let expanded = false
 
@@ -122,7 +123,8 @@
       VectorOptions,
       TransitionExpand,
       BoundsUi,
-      GeotiffOptions
+      GeotiffOptions,
+      EditLayerDisplayName
     },
     data () {
       return {
