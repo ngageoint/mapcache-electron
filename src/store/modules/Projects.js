@@ -86,23 +86,25 @@ const mutations = {
     Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
   },
   setFeatureImageryConversionAOI (state, {projectId, geopackageId, aoi}) {
-    aoi[0][0] = Number(aoi[0][0].toFixed(10))
-    aoi[0][1] = Number(aoi[0][1].toFixed(10))
-    aoi[1][0] = Number(aoi[1][0].toFixed(10))
-    aoi[1][1] = Number(aoi[1][1].toFixed(10))
-    while (aoi[0][1] < -180) {
-      aoi[0][1] = aoi[0][1] + 360
+    if (!_.isNil(aoi) && aoi.length === 2) {
+      aoi[0][0] = Number(aoi[0][0].toFixed(10))
+      aoi[0][1] = Number(aoi[0][1].toFixed(10))
+      aoi[1][0] = Number(aoi[1][0].toFixed(10))
+      aoi[1][1] = Number(aoi[1][1].toFixed(10))
+      while (aoi[0][1] < -180) {
+        aoi[0][1] = aoi[0][1] + 360
+      }
+      while (aoi[0][1] > 180) {
+        aoi[0][1] = aoi[0][1] - 360
+      }
+      while (aoi[1][1] < -180) {
+        aoi[1][1] = aoi[1][1] + 360
+      }
+      while (aoi[1][1] > 180) {
+        aoi[1][1] = aoi[1][1] - 360
+      }
+      Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
     }
-    while (aoi[0][1] > 180) {
-      aoi[0][1] = aoi[0][1] - 360
-    }
-    while (aoi[1][1] < -180) {
-      aoi[1][1] = aoi[1][1] + 360
-    }
-    while (aoi[1][1] > 180) {
-      aoi[1][1] = aoi[1][1] - 360
-    }
-    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
   },
   setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
     if (!_.isNil(aoi) && aoi.length === 2) {

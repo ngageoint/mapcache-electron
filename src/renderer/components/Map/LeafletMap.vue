@@ -260,7 +260,7 @@
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
       this.map.on('layeradd', function (e) {
-        if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
+        if (!_this.isDrawingBounds && !this.r && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
             if (e.layer.editEnabled()) {
               e.layer.disableEdit()
@@ -331,7 +331,7 @@
         })
       })
       this.map.on('editable:drawing:end', function (e) {
-        if (!_this.isDrawingBounds) {
+        if (!_this.isDrawingBounds && !_this.r) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]
           Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').forEach((layerConfig) => {
@@ -343,7 +343,7 @@
         }
       })
       this.map.on('editable:disable', async (e) => {
-        if (!this.isDrawingBounds) {
+        if (!this.isDrawingBounds && !this.r) {
           let feature = e.layer.toGeoJSON()
           if (!feature.id) {
             feature.id = e.layer.id
