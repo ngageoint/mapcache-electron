@@ -525,6 +525,17 @@
             } else {
               error = 'WMS version not provided. Valid versions [1.1.1, 1.3.0] should be used.'
             }
+            // if they provided the service, ensure it is upper case
+            const serviceIdx = url.toLowerCase().indexOf('service=')
+            if (serviceIdx > 0) {
+              let service = url.toLowerCase().substring(serviceIdx + 8)
+              if (service.indexOf('&') > 0) {
+                service = service.substring(0, service.indexOf('&'))
+              }
+              if (service === 'wms') {
+                this.linkToValidate = url.replace('service=wms', 'service=WMS')
+              }
+            }
             type = 'WMS'
           } else if (url.toLowerCase().indexOf('wfs') > 0) {
             const versionIdx = url.toLowerCase().indexOf('version=')
@@ -538,6 +549,17 @@
               }
             } else {
               error = 'WFS version not provided. Valid versions [2.0.0, 1.1.0, 1.0.0] should be used.'
+            }
+            // if they provided the service, ensure it is upper case
+            const serviceIdx = url.toLowerCase().indexOf('service=')
+            if (serviceIdx > 0) {
+              let service = url.toLowerCase().substring(serviceIdx + 8)
+              if (service.indexOf('&') > 0) {
+                service = service.substring(0, service.indexOf('&'))
+              }
+              if (service === 'wfs') {
+                this.linkToValidate = url.replace('service=wfs', 'service=WFS')
+              }
             }
             type = 'WFS'
           } else {
