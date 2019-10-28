@@ -19,8 +19,9 @@ export default class Layer {
     this.pane = configuration.pane
     this.style = this._configuration.style
     this.shown = this._configuration.shown || true
-    this.editableStyle = this._configuration.editableStyle !== undefined ? this._configuration.editableStyle : true
     this.images = this._configuration.images
+    this.sourceFilePath = this._configuration.sourceFilePath
+    this.sourceType = this._configuration.sourceType
   }
 
   async initialize () {
@@ -43,7 +44,6 @@ export default class Layer {
         overviewTilePath: this.overviewTilePath,
         shown: this.shown || true,
         style: this.style,
-        editableStyle: this.editableStyle,
         images: this.images
       }
     }

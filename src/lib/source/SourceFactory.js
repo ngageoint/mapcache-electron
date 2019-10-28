@@ -39,8 +39,6 @@ export default class SourceFactory {
           break
         default:
           source = new GDALSource(filePath)
-          source.editableStyle = true
-          source.doNotOverwriteMbStyle = false
           break
       }
       return source

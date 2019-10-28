@@ -1,67 +1,44 @@
 <template>
-  <div>
-    <div class="layer__face__stats">
-      <editstylename v-if="allowStyleNameEditing"
-                     :name="name"
-                     :icon-or-style="iconOrStyle"
-                     :icon-or-style-id="id"
-                     :layer-id="layer.id"
-                     :project-id="projectId"/>
-      <p class="layer__face__stats__weight" v-if="!allowStyleNameEditing">
-        {{name}}
-      </p>
-      <div class="container">
-        <div class="flex-row" v-if="allowSwitchBetweenIconAndStyle && (geometryType === 'Point' || geometryType === 'MultiPoint')">
+  <div class="layer__face__stats">
+    <editstylename v-if="allowStyleNameEditing"
+                   :name="name"
+                   icon-or-style="style"
+                   :icon-or-style-id="styleRow.getId() + ''"
+                   :layer-id="layer.id"
+                   :project-id="projectId"/>
+    <p class="layer__face__stats__weight" v-if="!allowStyleNameEditing">
+      {{name}}
+    </p>
+    <div class="container">
+      <div>
+        <div class="flex-row">
           <div>
-            <label>
-              <input type="radio" v-model="useIconOrStyle" value="icon"> Icon
-            </label>
-            <label>
-              <input type="radio" v-model="useIconOrStyle" value="style"> Style
-            </label>
-          </div>
-        </div>
-        <div class="flex-row" v-if="useIconOrStyle === 'icon'">
-          <div>
-            <label class="control-label">Point Icon</label>
-            <img class="icon" :src="icon.url" @click.stop="getIconClick"/>
-            <div class="layer__face__stats">
-              <p class="layer__face__stats__weight">
-                Anchor
-              </p>
-              <div class="preset-select">
-                <select v-model="anchorSelection">
-                  <option v-for="anchorLoc in anchorLocations" :value="anchorLoc.value">{{anchorLoc.name}}</option>
-                </select>
-              </div>
+            <label class="control-label">Color</label>
+            <div>
+              <colorpicker :color="color" v-model="color" />
             </div>
           </div>
         </div>
-        <div v-if="useIconOrStyle === 'style'">
-          <div class="flex-row">
+        <div class="flex-row" v-if="geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined">
+          <div>
+            <label class="control-label">Fill Color</label>
             <div>
-              <label class="control-label">Color</label>
-              <div>
-                <colorpicker :color="color" v-model="color" />
-              </div>
+              <colorpicker :color="fillColor" v-model="fillColor" />
             </div>
           </div>
-          <div class="flex-row" v-if="geometryType === 'Polygon' || geometryType === 'MultiPolygon'">
+        </div>
+        <div class="flex-row">
+          <div>
+            <label class="control-label">Width (px)</label>
             <div>
-              <label class="control-label">Fill Color</label>
-              <div>
-                <colorpicker :color="fillColor" v-model="fillColor" />
-              </div>
+              <numberpicker :number="width" v-model="width" />
             </div>
           </div>
-          <div class="flex-row">
-            <div>
-              <label class="control-label">Width (px)</label>
-              <div>
-                <numberpicker :number="width" v-model="width" />
-              </div>
-            </div>
-          </div>
+        </div>
+        <div v-if="deletable">
+          <button type="button" class="layer__request-btn" @click.stop="deleteStyle()">
+            <span class="layer__request-btn__text-1">Delete Style</span>
+          </button>
         </div>
       </div>
     </div>
@@ -72,53 +49,83 @@
   import { mapActions } from 'vuex'
   import ColorPicker from './ColorPicker'
   import NumberPicker from './NumberPicker'
-  import { remote } from 'electron'
-  import jetpack from 'fs-jetpack'
-  import fs from 'fs'
   import _ from 'lodash'
-  import path from 'path'
   import EditStyleName from './EditStyleName'
 
   export default {
     props: {
       defaultName: String,
       allowStyleNameEditing: Boolean,
+      deletable: Boolean,
       geometryType: String,
-      iconOrStyle: String,
-      styleId: String,
-      iconId: String,
+      styleRow: Object,
       layer: Object,
-      projectId: String,
-      allowSwitchBetweenIconAndStyle: {
-        type: Boolean,
-        default: false
-      }
+      projectId: String
     },
     created () {
-      this.debounceColorOpacityInStyleField = _.debounce((colorField, opacityField, val) => {
+      this.debounceColorOpacity = _.debounce((val) => {
         if (val) {
           const {color, opacity} = this.parseColor(val)
-          let style = Object.assign({}, this.layer.style.styleRowMap[this.styleId])
-          style[colorField] = color
-          style[opacityField] = Number(opacity)
-          this.updateProjectLayerStyleRow({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            styleId: this.styleId,
-            style: style
-          })
+          if (this.styleRow.getHexColor() !== color || this.styleRow.getOpacity() !== opacity) {
+            let styleRow = {
+              id: this.styleRow.getId(),
+              name: this.styleRow.getName(),
+              description: this.styleRow.getDescription(),
+              color: color,
+              opacity: Number(opacity),
+              fillColor: this.styleRow.getFillHexColor(),
+              fillOpacity: this.styleRow.getFillOpacity(),
+              width: this.styleRow.getWidth()
+            }
+            this.updateProjectLayerStyleRow({
+              projectId: this.projectId,
+              layerId: this.layer.id,
+              styleRow: styleRow
+            })
+          }
         }
       }, 500)
-      this.debounceFloatFieldInStyle = _.debounce((field, val) => {
+      this.debounceFillColorOpacity = _.debounce((val) => {
         if (val) {
-          let style = Object.assign({}, this.layer.style.styleRowMap[this.styleId])
-          style[field] = parseFloat(val)
-          this.updateProjectLayerStyleRow({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            styleId: this.styleId,
-            style: style
-          })
+          const {color, opacity} = this.parseColor(val)
+          if (this.styleRow.getFillHexColor() !== color || this.styleRow.getFillOpacity() !== opacity) {
+            let styleRow = {
+              id: this.styleRow.getId(),
+              name: this.styleRow.getName(),
+              description: this.styleRow.getDescription(),
+              color: this.styleRow.getHexColor(),
+              opacity: this.styleRow.getOpacity(),
+              fillColor: color,
+              fillOpacity: Number(opacity),
+              width: this.styleRow.getWidth()
+            }
+            this.updateProjectLayerStyleRow({
+              projectId: this.projectId,
+              layerId: this.layer.id,
+              styleRow: styleRow
+            })
+          }
+        }
+      }, 500)
+      this.debounceWidth = _.debounce((val) => {
+        if (val) {
+          if (this.styleRow.getWidth() !== val) {
+            let styleRow = {
+              id: this.styleRow.getId(),
+              name: this.styleRow.getName(),
+              description: this.styleRow.getDescription(),
+              color: this.styleRow.getHexColor(),
+              opacity: this.styleRow.getOpacity(),
+              fillColor: this.styleRow.getFillHexColor(),
+              fillOpacity: this.styleRow.getFillOpacity(),
+              width: parseFloat(val)
+            }
+            this.updateProjectLayerStyleRow({
+              projectId: this.projectId,
+              layerId: this.layer.id,
+              styleRow: styleRow
+            })
+          }
         }
       }, 500)
     },
@@ -128,193 +135,39 @@
       'editstylename': EditStyleName
     },
     computed: {
-      useIconOrStyle: {
-        get () {
-          return this.iconOrStyle
-        },
-        set (val) {
-          console.log(val)
-          this.updateProjectLayerDefaultIconOrStyle({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            geometryType: this.geometryType,
-            iconOrStyle: val
-          })
-        }
-      },
-      id: function () {
-        return !_.isNil(this.styleId) ? this.styleId : this.iconId
-      },
-      style: function () {
-        return !_.isNil(this.styleId) ? Object.assign({}, this.layer.style.styleRowMap[this.styleId]) : undefined
-      },
       color: {
         get () {
-          return !_.isNil(this.styleId)
-            ? this.getRGBA(this.layer.style.styleRowMap[this.styleId].color, this.layer.style.styleRowMap[this.styleId].opacity)
-            : undefined
+          return this.getRGBA(this.styleRow.getHexColor(), this.styleRow.getOpacity())
         },
         set (val) {
-          this.debounceColorOpacityInStyleField('color', 'opacity', val)
+          this.debounceColorOpacity(val)
         }
       },
       fillColor: {
         get () {
-          return !_.isNil(this.styleId)
-            ? this.getRGBA(this.layer.style.styleRowMap[this.styleId].fillColor, this.layer.style.styleRowMap[this.styleId].fillOpacity)
-            : undefined
+          return this.getRGBA(this.styleRow.getFillHexColor(), this.styleRow.getFillOpacity())
         },
         set (val) {
-          this.debounceColorOpacityInStyleField('fillColor', 'fillOpacity', val)
+          this.debounceFillColorOpacity(val)
         }
       },
       width: {
         get () {
-          return !_.isNil(this.styleId) ? this.layer.style.styleRowMap[this.styleId].width : undefined
+          return this.styleRow.getWidth()
         },
         set (val) {
-          this.debounceFloatFieldInStyle('width', val)
+          this.debounceWidth(val)
         }
-      },
-      icon: function () {
-        return !_.isNil(this.iconId) ? Object.assign({}, this.layer.style.iconRowMap[this.iconId]) : undefined
       },
       name: function () {
-        return !_.isNil(this.styleId)
-          ? !_.isNil(this.layer.style.styleRowMap[this.styleId].name)
-            ? this.layer.style.styleRowMap[this.styleId].name
-            : this.defaultName
-          : !_.isNil(this.layer.style.iconRowMap[this.iconId].name)
-            ? this.layer.style.iconRowMap[this.iconId].name
-            : this.defaultName
-      },
-      anchorSelection: {
-        get () {
-          return this.icon.anchorSelection || 0
-        },
-        set (value) {
-          let updatedIcon = Object.assign({}, this.layer.style.iconRowMap[this.iconId])
-          updatedIcon.anchorSelection = value
-          this.updateProjectLayerIconRow({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            iconId: this.iconId,
-            icon: updatedIcon
-          })
-          this.updateIconAnchor(value)
-        }
-      },
-      anchorLocations () {
-        let anchorLocations = []
-        anchorLocations.push({name: 'Bottom Center', value: 0})
-        anchorLocations.push({name: 'Bottom Left', value: 1})
-        anchorLocations.push({name: 'Bottom Right', value: 2})
-        anchorLocations.push({name: 'Top Center', value: 3})
-        anchorLocations.push({name: 'Top Left', value: 4})
-        anchorLocations.push({name: 'Top Right', value: 5})
-        anchorLocations.push({name: 'Center', value: 6})
-        anchorLocations.push({name: 'Center Left', value: 7})
-        anchorLocations.push({name: 'Center Right', value: 8})
-        return anchorLocations
+        return this.styleRow.getName()
       }
     },
     methods: {
       ...mapActions({
-        updateProjectLayerDefaultIconOrStyle: 'Projects/updateProjectLayerDefaultIconOrStyle',
         updateProjectLayerStyleRow: 'Projects/updateProjectLayerStyleRow',
-        updateProjectLayerIconRow: 'Projects/updateProjectLayerIconRow'
+        deleteProjectLayerStyleRow: 'Projects/deleteProjectLayerStyleRow'
       }),
-      getAnchorUV (anchorLocation) {
-        let result = {}
-        if (anchorLocation === 0) {
-          result.anchor_u = 0.5
-          result.anchor_v = 1.0
-        } else if (anchorLocation === 1) {
-          result.anchor_u = 0
-          result.anchor_v = 1.0
-        } else if (anchorLocation === 2) {
-          result.anchor_u = 1.0
-          result.anchor_v = 1.0
-        } else if (anchorLocation === 3) {
-          result.anchor_u = 0.5
-          result.anchor_v = 0
-        } else if (anchorLocation === 4) {
-          result.anchor_u = 0
-          result.anchor_v = 0
-        } else if (anchorLocation === 5) {
-          result.anchor_u = 1.0
-          result.anchor_v = 0
-        } else if (anchorLocation === 6) {
-          result.anchor_u = 0.5
-          result.anchor_v = 0.5
-        } else if (anchorLocation === 7) {
-          result.anchor_u = 0
-          result.anchor_v = 0.5
-        } else if (anchorLocation === 8) {
-          result.anchor_u = 1.0
-          result.anchor_v = 0.5
-        }
-        return result
-      },
-      updateIconAnchor (anchorLocation) {
-        let icon = Object.assign({}, this.layer.style.iconRowMap[this.iconId])
-        let result = this.getAnchorUV(anchorLocation)
-        icon.anchor_u = result.anchor_u
-        icon.anchor_v = result.anchor_v
-        icon.anchorSelection = anchorLocation
-        this.updateProjectLayerIconRow({
-          projectId: this.projectId,
-          layerId: this.layer.id,
-          iconId: this.iconId,
-          icon: icon
-        })
-      },
-      getIconClick (ev) {
-        remote.dialog.showOpenDialog({
-          filters: [
-            {
-              name: 'All Files',
-              extensions: ['jpeg', 'jpg', 'gif', 'png']
-            }
-          ],
-          properties: ['openFile']
-        }, async (files) => {
-          if (files) {
-            for (const file of files) {
-              let fileInfo = jetpack.inspect(file, {
-                times: true,
-                absolutePath: true
-              })
-              fileInfo.lastModified = fileInfo.modifyTime.getTime()
-              fileInfo.lastModifiedDate = fileInfo.modifyTime
-              fileInfo.path = fileInfo.absolutePath
-              let url = 'data:image/png;base64,' + fs.readFileSync(fileInfo.path).toString('base64')
-              const pointImage = await new Promise(function (resolve) {
-                var image = new Image()
-                image.onload = () => { resolve(image) }
-                image.src = url
-              })
-              let result = this.getAnchorUV(this.anchorSelection)
-              let icon = {
-                url: url,
-                width: pointImage.width,
-                height: pointImage.height,
-                anchor_u: result.anchor_u,
-                anchor_v: result.anchor_v,
-                anchorSelection: this.anchorSelection,
-                name: path.basename(fileInfo.path)
-              }
-              console.log('new icon url: ' + url)
-              this.updateProjectLayerIconRow({
-                projectId: this.projectId,
-                layerId: this.layer.id,
-                iconId: this.iconId,
-                icon: icon
-              })
-            }
-          }
-        })
-      },
       parseColor (val) {
         let color = '#FFFFFF'
         let opacity = 1.0
@@ -329,6 +182,13 @@
       },
       getRGBA (color, opacity) {
         return 'rgba(' + parseInt(color.substring(1, 3), 16) + ' ,' + parseInt(color.substring(3, 5), 16) + ' ,' + parseInt(color.substring(5, 7), 16) + ' ,' + opacity + ')'
+      },
+      deleteStyle () {
+        this.deleteProjectLayerStyleRow({
+          projectId: this.projectId,
+          layerId: this.layer.id,
+          styleId: this.styleRow.getId()
+        })
       }
     }
   }
@@ -353,19 +213,6 @@
     margin-left: 10px;
     margin-bottom: 10px;
   }
-  .icon {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 5px;
-    width: 64px;
-    height: 64px;
-    display: block;
-    object-fit: contain;
-    cursor: pointer;
-  }
-  .icon:hover {
-    box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-  }
   .preset-select {
     display:flex;
     flex-direction: column;
@@ -387,6 +234,38 @@
   }
   .preset-select select:focus {
     outline: none;
+  }
+  .layer__request-btn__text-1 {
+    -webkit-transition: opacity 0.48s;
+    transition: opacity 0.48s;
+  }
+  .layer.req-active1 .layer__request-btn__text-1 {
+    opacity: 0;
+  }
+  .layer.req-active2 .layer__request-btn__text-1 {
+    display: none;
+  }
+  .layer__request-btn:hover {
+    letter-spacing: 5px;
+  }
+
+  /* Style buttons */
+  .layer__request-btn {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin-bottom: 10px;
+    background-color: #C00;
+    text-transform: uppercase;
+    font-size: 16px;
+    color: #FFF;
+    outline: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0;
+    -webkit-transition: letter-spacing 0.3s;
+    transition: letter-spacing 0.3s;
   }
 
 </style>

@@ -432,6 +432,7 @@
           }
           let _this = this
           createdSource.retrieveLayers().then(function (layers) {
+            console.log('here')
             let promises = []
             for (const layer of layers) {
               promises.push(layer.initialize())

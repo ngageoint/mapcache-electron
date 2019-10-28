@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import WindowLauncher from '../../lib/window/WindowLauncher'
+import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
 
 function createId () {
   function s4 () {
@@ -192,16 +193,25 @@ const mutations = {
     Vue.set(state[projectId].layers[layerId], 'style', style)
   },
   updateProjectLayerStyleMaxFeatures (state, {projectId, layerId, maxFeatures}) {
-    Vue.set(state[projectId].layers[layerId].style, 'maxFeatures', maxFeatures)
+    Vue.set(state[projectId].layers[layerId], 'maxFeatures', maxFeatures)
   },
-  updateProjectLayerStyleRow (state, {projectId, layerId, styleId, style}) {
-    Vue.set(state[projectId].layers[layerId].style.styleRowMap, styleId, style)
+  createProjectLayerStyleRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
   },
-  updateProjectLayerIconRow (state, {projectId, layerId, iconId, icon}) {
-    Vue.set(state[projectId].layers[layerId].style.iconRowMap, iconId, icon)
+  createProjectLayerIconRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
   },
-  updateProjectLayerFeatureIconOrStyle (state, {projectId, layerId, featureId, iconOrStyle}) {
-    Vue.set(state[projectId].layers[layerId].style.features[featureId], 'iconOrStyle', iconOrStyle)
+  updateProjectLayerStyleRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
+  },
+  updateProjectLayerIconRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
+  },
+  deleteProjectLayerStyleRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
+  },
+  deleteProjectLayerIconRow (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
   },
   updateProjectLayerDefaultIconOrStyle (state, {projectId, layerId, geometryType, iconOrStyle}) {
     Vue.set(state[projectId].layers[layerId].style.default.iconOrStyle, geometryType, iconOrStyle)
@@ -214,13 +224,6 @@ const mutations = {
   },
   setProjectLayerFeatureIcon (state, {projectId, layerId, featureId, iconId}) {
     Vue.set(state[projectId].layers[layerId].style.features[featureId], 'icon', iconId)
-  },
-  setIconOrStyleName (state, {projectId, layerId, iconOrStyle, id, name}) {
-    if (iconOrStyle === 'icon') {
-      Vue.set(state[projectId].layers[layerId].style.iconRowMap[id], 'name', name)
-    } else {
-      Vue.set(state[projectId].layers[layerId].style.styleRowMap[id], 'name', name)
-    }
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -339,11 +342,42 @@ const actions = {
   updateProjectLayerFeatureSelection ({ commit, state }, {projectId, layerId, featureSelection}) {
     commit('updateProjectLayerFeatureSelection', {projectId, layerId, featureSelection})
   },
-  updateProjectLayerStyleRow ({ commit, state }, {projectId, layerId, styleId, style}) {
-    commit('updateProjectLayerStyleRow', {projectId, layerId, styleId, style})
+  createProjectLayerStyleRow ({ commit, state }, {projectId, layerId}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.createStyleRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName).then(function () {
+      commit('createProjectLayerStyleRow', {projectId, layerId})
+    })
   },
-  updateProjectLayerIconRow ({ commit, state }, {projectId, layerId, iconId, icon}) {
-    commit('updateProjectLayerIconRow', {projectId, layerId, iconId, icon})
+  createProjectLayerIconRow ({ commit, state }, {projectId, layerId}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.createIconRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName).then(function () {
+      commit('createProjectLayerIconRow', {projectId, layerId})
+    })
+  },
+  updateProjectLayerStyleRow ({ commit, state }, {projectId, layerId, styleRow}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.updateStyleRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, styleRow).then(function () {
+      commit('updateProjectLayerStyleRow', {projectId, layerId})
+    })
+  },
+  updateProjectLayerIconRow ({ commit, state }, {projectId, layerId, iconRow}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.updateIconRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, iconRow).then(function () {
+      commit('updateProjectLayerIconRow', {projectId, layerId})
+    })
+  },
+  deleteProjectLayerStyleRow ({ commit, state }, {projectId, layerId, styleId}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.deleteStyleRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, styleId).then(function () {
+      commit('deleteProjectLayerStyleRow', {projectId, layerId})
+    })
+  },
+  deleteProjectLayerIconRow ({ commit, state }, {projectId, layerId, iconId}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    console.log(layerConfiguration)
+    GeoPackageUtilities.deleteIconRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, iconId).then(function () {
+      commit('deleteProjectLayerIconRow', {projectId, layerId})
+    })
   },
   updateProjectLayerStyleMaxFeatures ({ commit, state }, {projectId, layerId, maxFeatures}) {
     commit('updateProjectLayerStyleMaxFeatures', {projectId, layerId, maxFeatures})
@@ -353,12 +387,6 @@ const actions = {
   },
   setProjectLayerFeatureIcon ({ commit, state }, {projectId, layerId, featureId, iconId}) {
     commit('setProjectLayerFeatureIcon', {projectId, layerId, featureId, iconId})
-  },
-  setIconOrStyleName ({ commit, state }, {projectId, layerId, iconOrStyle, id, name}) {
-    commit('setIconOrStyleName', {projectId, layerId, iconOrStyle, id, name})
-  },
-  updateProjectLayerFeatureIconOrStyle ({ commit, state }, {projectId, layerId, featureId, iconOrStyle}) {
-    commit('updateProjectLayerFeatureIconOrStyle', {projectId, layerId, featureId, iconOrStyle})
   },
   updateProjectLayerDefaultIconOrStyle ({ commit, state }, {projectId, layerId, geometryType, iconOrStyle}) {
     commit('updateProjectLayerDefaultIconOrStyle', {projectId, layerId, geometryType, iconOrStyle})

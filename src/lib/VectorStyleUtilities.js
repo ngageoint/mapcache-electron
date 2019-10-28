@@ -11,7 +11,7 @@ export default class VectorStyleUtilities {
       height: 41,
       anchor_u: 0.5,
       anchor_v: 1.0,
-      anchorSelection: 0
+      name: 'Default Icon'
     }
   }
 
@@ -37,25 +37,39 @@ export default class VectorStyleUtilities {
         '-1': {
           color: '#3388FF',
           opacity: 1.0,
-          width: 2.0
+          width: 2.0,
+          name: 'Default Point Style'
         },
         '-2': {
           color: '#3388FF',
           opacity: 1.0,
-          width: 3.0
+          width: 3.0,
+          name: 'Default LineString Style'
         },
         '-3': {
           color: '#3388FF',
           opacity: 1.0,
           fillColor: '#3388FF',
           fillOpacity: 0.2,
-          width: 3.0
+          width: 3.0,
+          name: 'Default Polygon Style'
         }
       },
       iconRowMap: {
         '-1': VectorStyleUtilities.getDefaultIcon()
       },
       maxFeatures: 100
+    }
+  }
+
+  static randomStyle () {
+    return {
+      color: VectorStyleUtilities.generateColor(),
+      opacity: 1.0,
+      fillColor: VectorStyleUtilities.generateColor(),
+      fillOpacity: 0.2,
+      width: 3.0,
+      name: 'New Style'
     }
   }
 
@@ -81,19 +95,22 @@ export default class VectorStyleUtilities {
         '-1': {
           color: VectorStyleUtilities.generateColor(),
           opacity: 1.0,
-          width: 2.0
+          width: 2.0,
+          name: 'Default Point Style'
         },
         '-2': {
           color: VectorStyleUtilities.generateColor(),
           opacity: 1.0,
-          width: 3.0
+          width: 3.0,
+          name: 'Default LineString Style'
         },
         '-3': {
           color: VectorStyleUtilities.generateColor(),
           opacity: 1.0,
           fillColor: VectorStyleUtilities.generateColor(),
           fillOpacity: 0.2,
-          width: 3.0
+          width: 3.0,
+          name: 'Default Polygon Style'
         }
       },
       iconRowMap: {

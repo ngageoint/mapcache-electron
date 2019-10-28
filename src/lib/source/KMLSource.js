@@ -1,13 +1,15 @@
 import Source from './Source'
 import { DOMParser } from 'xmldom'
 import * as ToGeoJSON from '@ccaldwell/togeojson'
-import GDALSource from './GDALSource'
 import fs from 'fs'
 import path from 'path'
 import KMLUtilities from '../KMLUtilities'
 import VectorStyleUtilities from '../VectorStyleUtilities'
 import * as ImageUtils from '@ngageoint/geopackage/lib/tiles/imageUtils'
 import _ from 'lodash'
+import GeoPackageUtilities from '../GeoPackageUtilities'
+import VectorLayer from './layer/vector/VectorLayer'
+import { userDataDir } from '../settings/Settings'
 
 export default class KMLSource extends Source {
   async initialize () {
@@ -15,30 +17,32 @@ export default class KMLSource extends Source {
     let originalFileDir = path.dirname(this.filePath)
     let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder.path())
     this.geotiffs = parsedKML.geotiffs
-    this.gdalSources = []
+    this.vectorLayers = []
     let documents = parsedKML.documents
     if (documents.length === 0) {
       // no documents found, let's try the whole document
       documents.push({name: path.basename(this.filePath, path.extname(this.filePath)), xmlDoc: kml})
     }
     for (let kmlDoc of documents) {
-      const sourceId = Source.createId()
       const name = kmlDoc.name
-      const converted = ToGeoJSON.kml(kmlDoc.xmlDoc)
-      converted.features.forEach((feature, index) => {
+      const featureCollection = ToGeoJSON.kml(kmlDoc.xmlDoc)
+      featureCollection.features.forEach((feature, index) => {
         feature.id = index
       })
-      if (converted.features.length > 0) {
-        let fileName = name + '.geojson'
-        let filePath = this.sourceCacheFolder.file(fileName).path()
+      if (featureCollection.features.length > 0) {
+        let id = Source.createId()
+        let fileName = name + '.gpkg'
+        let filePath = userDataDir().dir(id).file(fileName).path()
         let fullFile = path.join(filePath, fileName)
-        let style = await this.generateStyleForKML(converted.features, originalFileDir)
-        let convertedString = JSON.stringify(converted)
-        fs.writeFileSync(fullFile, convertedString)
-        let gdalSource = new GDALSource(fullFile, sourceId)
-        gdalSource.editableStyle = true
-        gdalSource.style = style
-        this.gdalSources.push(gdalSource)
+        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir)
+        await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, style)
+        this.vectorLayers.push(new VectorLayer({
+          id: id,
+          geopackageFilePath: fullFile,
+          sourceFilePath: this.filePath,
+          sourceLayerName: name,
+          sourceType: 'KML'
+        }))
       }
     }
   }
@@ -49,7 +53,8 @@ export default class KMLSource extends Source {
       color: '#000000',
       opacity: 1.0,
       fillColor: '#000000',
-      fillOpacity: 1.0
+      fillOpacity: 1.0,
+      name: 'KML Style'
     }
     if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
       style.width = feature.properties['stroke-width']
@@ -72,6 +77,7 @@ export default class KMLSource extends Source {
   async generateStyleForKML (features, originalFileDir) {
     let layerStyle = VectorStyleUtilities.defaultRandomColorStyle()
     let fileIcons = {}
+    let iconNumber = 1
     for (let feature of features) {
       layerStyle.features[feature.id] = {
         icon: layerStyle.default.icons[feature.geometry.type],
@@ -89,8 +95,10 @@ export default class KMLSource extends Source {
             height: image.height,
             anchor_x: image.width / 2.0,
             anchor_y: image.height / 2.0,
-            anchorSelection: 6 // anchored to center
+            anchorSelection: 6, // anchored to center
+            name: 'Icon #' + iconNumber
           }
+          iconNumber++
         }
         let icon = fileIcons[iconFile]
         let iconHash = VectorStyleUtilities.hashCode(icon)
@@ -114,12 +122,9 @@ export default class KMLSource extends Source {
 
   async retrieveLayers () {
     let layers = []
-    for (let i = 0; i < this.gdalSources.length; i++) {
-      let gdalSource = this.gdalSources[i]
-      let gdalSourceLayers = await gdalSource.retrieveLayers()
-      gdalSourceLayers.forEach((layer) => {
-        layers.push(layer)
-      })
+    console.log('retrieve layers')
+    for (let i = 0; i < this.vectorLayers.length; i++) {
+      layers.push(this.vectorLayers[i])
     }
     this.geotiffs.forEach((layer) => {
       layers.push(layer)

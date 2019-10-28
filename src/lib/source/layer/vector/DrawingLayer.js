@@ -2,12 +2,20 @@ import VectorLayer from './VectorLayer'
 import * as vendor from '../../../vendor'
 import VectorStyleUtilities from '../../../VectorStyleUtilities'
 import _ from 'lodash'
+import GeoPackageUtilities from '../../../GeoPackageUtilities'
+import path from 'path'
+import fs from 'fs'
+import geojsonExtent from '@mapbox/geojson-extent'
 
 export default class DrawingLayer extends VectorLayer {
   async initialize () {
     this.features = this._configuration.features
-    if (!this.style) {
-      this.style = VectorStyleUtilities.defaultLeafletStyle()
+    let fileName = this.name + '.gpkg'
+    let filePath = this.cacheFolder.file(fileName).path()
+    let fullFile = path.join(filePath, fileName)
+    this._geopackageFilePath = fullFile
+    if (!fs.existsSync(fullFile)) {
+      await GeoPackageUtilities.buildGeoPackage(fullFile, this.name, this.featureCollection, VectorStyleUtilities.defaultLeafletStyle())
     }
     await super.initialize()
     return this
@@ -29,10 +37,6 @@ export default class DrawingLayer extends VectorLayer {
     }
   }
 
-  async updateStyle (style) {
-    this.style = style
-  }
-
   /**
    * Overwrite VectorLayer.mapLayer since we want to render drawings as features, not tiles
    */
@@ -43,34 +47,33 @@ export default class DrawingLayer extends VectorLayer {
     }
     this._mapLayer.remove()
     this.featureCollection.features.forEach(feature => {
-      let featureStyle = _.isNil(this.style.features[feature.id]) ? this.style.styleRowMap[this.style.default.styles[feature.geometry.type]] : this.style.styleRowMap[this.style.features[feature.id].style]
-      let iconOrStyle = _.isNil(this.style.features[feature.id]) ? this.style.default.iconOrStyle[feature.geometry.type] : this.style.features[feature.id].iconOrStyle
-      let featureIcon = _.isNil(this.style.features[feature.id]) ? this.style.iconRowMap[this.style.default.icons[feature.geometry.type]] : this.style.iconRowMap[this.style.features[feature.id].icon]
+      let styleRow = GeoPackageUtilities.getFeatureStyleRow(this._geopackage, this.sourceLayerName, feature.id, feature.geometry.type)
       let layer
       if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
         let style = {
-          fillColor: featureStyle.fillColor,
-          fillOpacity: featureStyle.fillOpacity,
-          color: featureStyle.color,
-          opacity: featureStyle.opacity,
-          weight: featureStyle.width
+          fillColor: styleRow.getFillHexColor(),
+          fillOpacity: styleRow.getFillOpacity(),
+          color: styleRow.getHexColor(),
+          opacity: styleRow.getOpacity(),
+          weight: styleRow.getWidth()
         }
         layer = new vendor.L.GeoJSON(feature, { style: style })
       } else if (feature.geometry.type === 'Point') {
-        if (iconOrStyle === 'icon') {
+        let iconRow = GeoPackageUtilities.getFeatureIconRow(this._geopackage, this.sourceLayerName, feature.id, feature.geometry.type)
+        if (!_.isNil(iconRow)) {
           let icon = vendor.L.icon({
-            iconUrl: featureIcon.url,
-            iconSize: [featureIcon.width, featureIcon.height], // size of the icon
-            iconAnchor: [Math.round(featureIcon.anchor_u * featureIcon.width), Math.round(featureIcon.anchor_v * featureIcon.height)] // point of the icon which will correspond to marker's location
+            iconUrl: 'data:' + iconRow.getContentType() + ';base64,' + iconRow.getData().toString('base64'),
+            iconSize: [iconRow.getWidth(), iconRow.getHeight()], // size of the icon
+            iconAnchor: [Math.round(iconRow.getAnchorU() * iconRow.getWidth()), Math.round(iconRow.getAnchorV() * iconRow.getHeight())] // point of the icon which will correspond to marker's location
           })
           layer = vendor.L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], { icon: icon })
         } else {
           let style = {
-            fillColor: featureStyle.color,
-            fillOpacity: featureStyle.opacity,
-            color: featureStyle.color,
-            opacity: featureStyle.opacity,
-            weight: featureStyle.width
+            fillColor: styleRow.getFillHexColor(),
+            fillOpacity: styleRow.getFillOpacity(),
+            color: styleRow.getHexColor(),
+            opacity: styleRow.getOpacity(),
+            weight: styleRow.getWidth()
           }
           layer = new vendor.L.GeoJSON(feature, {
             pointToLayer: function (feature, latlng) {
@@ -79,9 +82,9 @@ export default class DrawingLayer extends VectorLayer {
         }
       } else {
         let style = {
-          color: featureStyle.color,
-          opacity: featureStyle.opacity,
-          weight: featureStyle.width
+          color: styleRow.getHexColor(),
+          opacity: styleRow.getOpacity(),
+          weight: styleRow.getWidth()
         }
         layer = new vendor.L.GeoJSON(feature, { style: style })
       }
@@ -89,5 +92,10 @@ export default class DrawingLayer extends VectorLayer {
       this._mapLayer.addLayer(layer)
     })
     return this._mapLayer
+  }
+
+  get extent () {
+    let featureCollection = this.featureCollection
+    return geojsonExtent(featureCollection)
   }
 }

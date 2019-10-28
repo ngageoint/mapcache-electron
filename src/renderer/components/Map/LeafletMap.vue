@@ -201,31 +201,10 @@
             let updatedLayerConfig = updatedLayerConfigs[layerId]
             let oldLayerConfig = layerConfigs[layerId]
             // something other than style or shown changed, let's completely refresh it...
-            if (!_.isEqual(_.omit(updatedLayerConfig, ['style', 'shown']), _.omit(oldLayerConfig, ['style', 'shown']))) {
+            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown']))) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               _this.removeLayer(layerId)
               _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
-            } else if (!_.isEqual(updatedLayerConfig.style, oldLayerConfig.style) && updatedLayerConfig.pane === 'vector') {
-              layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
-              if (updatedLayerConfig.layerType !== 'Drawing') {
-                // only style has changed, let's just update style
-                initializedLayers[updatedLayerConfig.id].updateStyle(updatedLayerConfig.style).then(function () {
-                  // remove layer from map if it is currently being shown
-                  let mapLayer = shownMapLayers[layerId]
-                  if (mapLayer) {
-                    mapLayer.remove()
-                  }
-                  // if layer is set to be shown, display it on the map
-                  if (updatedLayerConfig.shown) {
-                    let updateMapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
-                    updateMapLayer.addTo(map)
-                    shownMapLayers[updatedLayerConfig.id] = updateMapLayer
-                  }
-                })
-              } else {
-                _this.removeLayer(layerId)
-                _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
-              }
             } else if (!_.isEqual(updatedLayerConfig.shown, oldLayerConfig.shown)) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               // display it
@@ -240,6 +219,24 @@
                   mapLayer.remove()
                   delete shownMapLayers[layerId]
                 }
+              }
+            } else if ((!_.isEqual(updatedLayerConfig.layerKey, oldLayerConfig.layerKey) || !_.isEqual(updatedLayerConfig.maxFeatures, oldLayerConfig.maxFeatures)) && updatedLayerConfig.pane === 'vector') {
+              layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
+              if (updatedLayerConfig.layerType !== 'Drawing') {
+                // only style has changed, let's just update style
+                initializedLayers[updatedLayerConfig.id].updateStyle(updatedLayerConfig.maxFeatures).then(function () {
+                  // remove layer from map if it is currently being shown
+                  let mapLayer = shownMapLayers[layerId]
+                  if (mapLayer) {
+                    mapLayer.remove()
+                  }
+                  // if layer is set to be shown, display it on the map
+                  if (updatedLayerConfig.shown) {
+                    let updateMapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
+                    updateMapLayer.addTo(map)
+                    shownMapLayers[updatedLayerConfig.id] = updateMapLayer
+                  }
+                })
               }
             }
           })

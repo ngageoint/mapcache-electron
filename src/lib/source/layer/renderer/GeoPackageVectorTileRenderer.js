@@ -1,9 +1,8 @@
 import FeatureTiles from '@ngageoint/geopackage/lib/tiles/features/index'
 import NumberFeaturesTile from '@ngageoint/geopackage/lib/tiles/features/custom/numberFeaturesTile'
 
-export default class GPKGVectorTileRenderer {
+export default class GeoPackageVectorTileRenderer {
   geopackage
-  initialized
   featureTableName
   featureDao
   featureTile
@@ -12,7 +11,6 @@ export default class GPKGVectorTileRenderer {
   constructor (geopackage, featureTableName, maxFeatures) {
     this.geopackage = geopackage
     this.featureTableName = featureTableName
-    this.initialized = false
     this.maxFeatures = maxFeatures
   }
 
@@ -23,21 +21,11 @@ export default class GPKGVectorTileRenderer {
     this.featureTile.setMaxFeaturesPerTile(this.maxFeatures)
   }
 
-  async setGeoPackage (geopackage) {
+  async styleChanged (geopackage, maxFeatures) {
     this.geopackage = geopackage
+    this.maxFeatures = maxFeatures
     await this.init()
   }
-
-  async setMaxFeaturesPerTile (maxFeatures) {
-    if (maxFeatures > 0) {
-      this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
-      this.featureTile.setMaxFeaturesPerTile(maxFeatures)
-    } else {
-      this.featureTile.setMaxFeaturesTileDraw(undefined)
-      this.featureTile.setMaxFeaturesPerTile(undefined)
-    }
-  }
-
   async renderVectorTile (coords, tileCanvas, done) {
     let {x, y, z} = coords
     if (tileCanvas) {

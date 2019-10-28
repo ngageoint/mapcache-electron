@@ -1,42 +1,53 @@
 import Layer from '../Layer'
 import MapcacheMapLayer from '../../../map/MapcacheMapLayer'
 import * as vtpbf from 'vt-pbf'
-import GPKGVectorTileRenderer from '../renderer/GPKGVectorTileRenderer'
-import geojsonExtent from '@mapbox/geojson-extent'
+import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
 import jetpack from 'fs-jetpack'
-import VectorStyleUtilities from '../../../VectorStyleUtilities'
 import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf/index'
-import GeoPackageVectorUtilities from '../../../GeoPackageVectorUtilities'
-import fs from 'fs'
-import GeoPackage from '@ngageoint/geopackage'
-import store from '../../../../store'
-import _ from 'lodash'
+import GeoPackage, {BoundingBox} from '@ngageoint/geopackage'
 
+/**
+ * VectorLayer is a 'Layer' within MapCache that is displayed on a map.
+ * The VectorLayer uses the GeoPackage FeatureTiles API as an XYZ Tile Service to display
+ * styled vector data from the GeoPackage on the map. The GeoPackage should be setup to contain
+ * the feature collection of the data source as well as any user/source defined styling.
+ */
 export default class VectorLayer extends Layer {
   _extent
   _mapLayer
   _vectorTileRenderer
   _tileIndex
-  _geopackageFileName
+  _geopackageFilePath
   _geopackage
+  _features
+  _layerKey
+  _maxFeatures
+  _featureDao
 
   constructor (configuration = {}) {
     super(configuration)
     this._extent = configuration.extent
-    this._geopackageFileName = configuration.geopackageFileName || this.cacheFolder.path('internal_geopackage.gpkg')
+    this._geopackageFilePath = configuration.geopackageFilePath
+    this._layerKey = configuration.layerKey || 0
+    this._maxFeatures = configuration.maxFeatures || 250
   }
 
   async initialize () {
-    if (!this.style) {
-      this.style = VectorStyleUtilities.defaultRandomColorStyle()
-    }
-    let exists = fs.existsSync(this._geopackageFileName)
-    if (!exists) {
-      await GeoPackageVectorUtilities.buildGeoPackageForLayer(this, this._geopackageFileName)
-    }
-    this._geopackage = await GeoPackage.open(this._geopackageFileName)
+    this._geopackage = await GeoPackage.open(this._geopackageFilePath)
+    this._featureDao = this._geopackage.getFeatureDao(this.sourceLayerName)
+    this._features = (await GeoPackage.getGeoJSONFeaturesInTile(this._geopackage, this.sourceLayerName, 0, 0, 0, true)).map(f => {
+      f.type = 'Feature'
+      return f
+    })
     await this.vectorTileRenderer.init()
     await this.renderOverviewTile()
+    return this
+  }
+
+  async updateStyle (maxFeatures) {
+    this._geopackage = await GeoPackage.open(this._geopackageFilePath)
+    this._maxFeatures = maxFeatures
+    await this.vectorTileRenderer.styleChanged(this._geopackage, maxFeatures)
   }
 
   get configuration () {
@@ -44,46 +55,35 @@ export default class VectorLayer extends Layer {
       ...super.configuration,
       ...{
         pane: 'vector',
+        layerType: 'Vector',
         extent: this.extent,
         count: this.count || 0,
-        geopackageFileName: this._geopackageFileName
-      }
-    }
-  }
-
-  async updateStyle (style) {
-    if (this.editableStyle) {
-      this.style = style
-      try {
-        let newStyle = await GeoPackageVectorUtilities.updateStyle(this._geopackage, this)
-        if (!_.isNil(newStyle)) {
-          console.log(this.id)
-          store.dispatch('Projects/updateProjectLayerStyle', {
-            projectId: this.projectId,
-            layerId: this.id,
-            style: newStyle
-          })
-        } else {
-          this._geopackage = await GeoPackage.open(this._geopackageFileName)
-          await this.vectorTileRenderer.setGeoPackage(this._geopackage)
-          this.vectorTileRenderer.setMaxFeaturesPerTile(this.style.maxFeatures)
-        }
-      } catch (err) {
-        console.log(err)
+        geopackageFilePath: this._geopackageFilePath,
+        layerKey: this._layerKey,
+        maxFeatures: this._maxFeatures
       }
     }
   }
 
   get featureCollection () {
-    throw new Error('Abstract method to be implemented in sublcass')
+    return {
+      type: 'FeatureCollection',
+      features: this._features
+    }
   }
   get count () {
-    return this.featureCollection.features.length
+    return this._featureDao.getCount()
   }
 
   get extent () {
-    let featureCollection = this.featureCollection
-    return geojsonExtent(featureCollection)
+    if (!this._extent) {
+      let contentsDao = this._geopackage.getContentsDao()
+      let contents = contentsDao.queryForId(this.sourceLayerName)
+      let proj = contentsDao.getProjection(contents)
+      let boundingBox = new GeoPackage.BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
+      this._extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
+    }
+    return this._extent
   }
 
   get mapLayer () {
@@ -99,7 +99,7 @@ export default class VectorLayer extends Layer {
 
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
-      this._vectorTileRenderer = new GPKGVectorTileRenderer(this._geopackage, this.name, this.style.maxFeatures)
+      this._vectorTileRenderer = new GeoPackageVectorTileRenderer(this._geopackage, this.name, this._maxFeatures)
     }
     return this._vectorTileRenderer
   }
@@ -211,49 +211,63 @@ export default class VectorLayer extends Layer {
   }
 
   iterateFeaturesInBounds (bounds) {
-    const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
-    return this.featureCollection.features.map((feature) => {
+    if (this._dao.isIndexed()) {
+      let bb = new BoundingBox(bounds[0][1], bounds[1][1], bounds[0][0], bounds[1][0])
+      let features = []
       try {
-        if (feature.geometry.type.toLowerCase() === 'point') {
-          const bboxPoly = bboxPolygon(bbox)
-          // this point is a circle, let's check to see if it will exist in the bounding box
-          if (feature.properties.radius) {
-            let circleFeature = circle(feature.geometry.coordinates, feature.properties.radius / 1000.0, {steps: 64})
-            let clipped = bboxClip(circleFeature, bbox)
+        let iterator = this._dao.queryForGeoJSONIndexedFeaturesWithBoundingBox(bb, true)
+        for (const feature of iterator) {
+          features.push(feature)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+      return features
+    } else {
+      const bbox = [bounds[0][1], bounds[0][0], bounds[1][1], bounds[1][0]]
+      return this.featureCollection.features.map((feature) => {
+        try {
+          if (feature.geometry.type.toLowerCase() === 'point') {
+            const bboxPoly = bboxPolygon(bbox)
+            // this point is a circle, let's check to see if it will exist in the bounding box
+            if (feature.properties.radius) {
+              let circleFeature = circle(feature.geometry.coordinates, feature.properties.radius / 1000.0, {steps: 64})
+              let clipped = bboxClip(circleFeature, bbox)
+              if (clipped && clipped.geometry.coordinates.length > 0) {
+                return feature
+              }
+            } else if (booleanPointInPolygon(feature.geometry.coordinates, bboxPoly)) {
+              return feature
+            }
+          } else if (feature.geometry.type.toLowerCase() === 'multipoint') {
+            const bboxPoly = bboxPolygon(bbox)
+            let coordinatesWithin = []
+            feature.geometry.coordinates.forEach((coordinate) => {
+              if (booleanPointInPolygon(coordinate, bboxPoly)) {
+                coordinatesWithin.push(coordinate)
+              }
+            })
+            return {
+              type: 'Feature',
+              id: Math.random().toString(36).substr(2, 9),
+              properties: feature.properties,
+              geometry: {
+                type: 'MultiPoint',
+                coordinates: coordinatesWithin
+              }
+            }
+          } else if (feature.geometry.type.toLowerCase() === 'linestring' || feature.geometry.type.toLowerCase() === 'multilinestring') {
+            return feature
+          } else {
+            let clipped = bboxClip(feature, bbox)
             if (clipped && clipped.geometry.coordinates.length > 0) {
               return feature
             }
-          } else if (booleanPointInPolygon(feature.geometry.coordinates, bboxPoly)) {
-            return feature
           }
-        } else if (feature.geometry.type.toLowerCase() === 'multipoint') {
-          const bboxPoly = bboxPolygon(bbox)
-          let coordinatesWithin = []
-          feature.geometry.coordinates.forEach((coordinate) => {
-            if (booleanPointInPolygon(coordinate, bboxPoly)) {
-              coordinatesWithin.push(coordinate)
-            }
-          })
-          return {
-            type: 'Feature',
-            id: Math.random().toString(36).substr(2, 9),
-            properties: feature.properties,
-            geometry: {
-              type: 'MultiPoint',
-              coordinates: coordinatesWithin
-            }
-          }
-        } else if (feature.geometry.type.toLowerCase() === 'linestring' || feature.geometry.type.toLowerCase() === 'multilinestring') {
-          return feature
-        } else {
-          let clipped = bboxClip(feature, bbox)
-          if (clipped && clipped.geometry.coordinates.length > 0) {
-            return feature
-          }
+        } catch (e) {
+          console.log(e)
         }
-      } catch (e) {
-        console.log(e)
-      }
-    }).filter(feature => feature !== undefined)
+      }).filter(feature => feature !== undefined)
+    }
   }
 }
