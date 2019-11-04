@@ -68,7 +68,6 @@ export default class GeoPackageUtilities {
         let pointIcon = style.iconRowMap[style.default.icons['Point']]
         let pointIconRow = featureTableStyles.getIconDao().newRow()
         pointIconRow.setData(Buffer.from(pointIcon.url.split(',')[1], 'base64'))
-        console.log(pointIcon.url.substring(pointIcon.url.indexOf(':') + 1, pointIcon.url.indexOf(';')))
         pointIconRow.setContentType(pointIcon.url.substring(pointIcon.url.indexOf(':') + 1, pointIcon.url.indexOf(';')))
         pointIconRow.setWidth(pointIcon.width)
         pointIconRow.setHeight(pointIcon.height)
@@ -151,6 +150,7 @@ export default class GeoPackageUtilities {
     } catch (error) {
       console.log(error)
     }
+    return gp
   }
 
   static getLayerColumns (featureCollection) {
@@ -241,6 +241,7 @@ export default class GeoPackageUtilities {
       fti.getTableIndex()
       await fti.index()
     }
+    return geoPackageCopy
   }
 
   static getLayerColumnsFromGeoPackage (featureDao) {
@@ -330,14 +331,42 @@ export default class GeoPackageUtilities {
     return featureTableStyles.getTableIcon(geometryType)
   }
 
-  static async getFeatureIds (geopackageFileName, featureTableName) {
+  static getIconById (gp, featureTableName, id) {
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    return featureTableStyles.getIconDao().queryForId(id)
+  }
+
+  static getTableIconId (gp, featureTableName, geometryType) {
+    let id = -1
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    let icon = featureTableStyles.getTableIcon(geometryType)
+    if (!_.isNil(icon)) {
+      id = icon.getId()
+    }
+    return id
+  }
+
+  static getFeatureIds (gp, featureTableName) {
     let featureIds = []
-    let gp = await GeoPackage.open(geopackageFileName)
     let featureDao = gp.getFeatureDao(featureTableName)
     featureDao.queryForAll().forEach(f => {
       featureIds.push(f.id)
     })
     return featureIds
+  }
+
+  static getFeatureStyle (gp, featureTableName, featureRowId) {
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    let featureDao = gp.getFeatureDao(featureTableName)
+    let feature = featureDao.queryForId(featureRowId)
+    return featureTableStyles.getFeatureStyleExtension().getStyle(featureTableName, featureRowId, _.isNil(feature) ? null : feature.getGeometryType(), false)
+  }
+
+  static getFeatureIcon (gp, featureTableName, featureRowId) {
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    let featureDao = gp.getFeatureDao(featureTableName)
+    let feature = featureDao.queryForId(featureRowId)
+    return featureTableStyles.getFeatureStyleExtension().getIcon(featureTableName, featureRowId, _.isNil(feature) ? null : feature.getGeometryType(), false)
   }
 
   static getFeatureStyleRows (gp, featureTableName) {
@@ -368,6 +397,19 @@ export default class GeoPackageUtilities {
       }
     })
     return iconRows
+  }
+
+  static async usePointIconDefault (geopackageFileName, featureTableName, usePointIconDefault, iconRowId) {
+    console.log('usePointIcon: ' + usePointIconDefault + ' - ' + iconRowId)
+    let gp = await GeoPackage.open(geopackageFileName)
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    if (usePointIconDefault) {
+      let iconRow = featureTableStyles.getIconDao().queryForId(iconRowId)
+      await featureTableStyles.setTableIcon('Point', iconRow)
+    } else {
+      // Delete icon relationship
+      featureTableStyles.deleteTableIcon('Point')
+    }
   }
 
   static async updateStyleRow (geopackageFileName, featureTableName, styleRow) {
@@ -425,7 +467,7 @@ export default class GeoPackageUtilities {
     iconRow.setHeight(icon.height)
     iconRow.setAnchorU(icon.anchor_u)
     iconRow.setAnchorV(icon.anchor_v)
-    iconRow.setName(icon.name)
+    iconRow.setName('New Icon')
     featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
   }
 
@@ -436,22 +478,56 @@ export default class GeoPackageUtilities {
   }
 
   static async deleteIconRow (geopackageFileName, featureTableName, iconId) {
-    console.log(geopackageFileName)
-    console.log(featureTableName)
-    console.log(iconId)
     let gp = await GeoPackage.open(geopackageFileName)
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
     featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
   }
 
   static getFeatureStyleRow (gp, featureTableName, featureId, geometryType) {
+    let styleRow = null
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
-    return featureTableStyles.getFeatureStyleExtension().getStyle(featureTableName, featureId, geometryType, true)
+    let featureStyle = featureTableStyles.getFeatureStyle(featureId, geometryType)
+    if (!_.isNil(featureStyle)) {
+      styleRow = featureStyle.getStyle()
+    }
+    return styleRow
   }
 
   static getFeatureIconRow (gp, featureTableName, featureId, geometryType) {
+    let iconRow = null
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
-    return featureTableStyles.getFeatureStyleExtension().getIcon(featureTableName, featureId, geometryType, true)
+    let featureStyle = featureTableStyles.getFeatureStyle(featureId, geometryType)
+    if (!_.isNil(featureStyle)) {
+      iconRow = featureStyle.getIcon()
+    }
+    return iconRow
+  }
+
+  static async setFeatureStyle (geopackageFileName, featureTableName, featureId, styleId) {
+    let gp = await GeoPackage.open(geopackageFileName)
+    let featureDao = gp.getFeatureDao(featureTableName)
+    let feature = featureDao.queryForId(featureId)
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    if (styleId === -1) {
+      return featureTableStyles.getFeatureStyleExtension().setStyle(featureTableName, featureId, feature.getGeometryType(), null)
+    } else {
+      let style = featureTableStyles.getStyleDao().queryForId(styleId)
+      return featureTableStyles.getFeatureStyleExtension().setStyle(featureTableName, featureId, feature.getGeometryType(), style)
+    }
+  }
+
+  static async setFeatureIcon (geopackageFileName, featureTableName, featureId, iconId) {
+    let gp = await GeoPackage.open(geopackageFileName)
+    let featureDao = gp.getFeatureDao(featureTableName)
+    let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
+    let feature = featureDao.queryForId(featureId)
+    if (iconId === -1) {
+      return featureTableStyles.getFeatureStyleExtension().setIcon(featureTableName, featureId, feature.getGeometryType(), null)
+    } else {
+      let icon = featureTableStyles.getIconDao().queryForId(iconId)
+      console.log(feature.getGeometryType())
+      return featureTableStyles.getFeatureStyleExtension().setIcon(featureTableName, featureId, feature.getGeometryType(), icon)
+    }
   }
 
   static async updateFeatureRow (geopackageFileName, featureTableName, featureRowId, feature) {
@@ -487,5 +563,15 @@ export default class GeoPackageUtilities {
     let gp = await GeoPackage.open(geopackageFileName)
     let featureDao = gp.getFeatureDao(featureTableName)
     featureDao.deleteById(featureRowId)
+  }
+
+  static async getBoundingBoxForFeature (geopackageFileName, featureTableName, featureRowId) {
+    let gp = await GeoPackage.open(geopackageFileName)
+    let feature = GeoPackage.getFeature(gp, featureTableName, featureRowId)
+    return geojsonExtent(feature)
+  }
+
+  static hasTablePointIcon (gp, featureTableName) {
+    return !_.isNil(new FeatureTableStyles(gp, featureTableName).getTableIcon('Point'))
   }
 }

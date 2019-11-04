@@ -24,13 +24,14 @@ export default class GeoPackageSource extends Source {
       let fileName = layer + '.gpkg'
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)
-      await GeoPackageUtilities.copyGeoPackageFeatureLayerAndStyles(this.filePath, fullFile, layer)
+      let gp = await GeoPackageUtilities.copyGeoPackageFeatureLayerAndStyles(this.filePath, fullFile, layer)
       this.layers.push(new VectorLayer({
         id: this.sourceId,
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer,
-        sourceType: 'GeoPackage'
+        sourceType: 'GeoPackage',
+        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
       }))
     }
 

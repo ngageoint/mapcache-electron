@@ -29,6 +29,7 @@
   import Source from '../../../lib/source/Source'
   import _ from 'lodash'
   import Modal from '../Modal'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
   let initializedLayers = {}
   let shownMapLayers = {}
@@ -201,7 +202,7 @@
             let updatedLayerConfig = updatedLayerConfigs[layerId]
             let oldLayerConfig = layerConfigs[layerId]
             // something other than style or shown changed, let's completely refresh it...
-            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown']))) {
+            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               _this.removeLayer(layerId)
               _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
@@ -238,6 +239,22 @@
                   }
                 })
               }
+            } else if (!_.isEqual(updatedLayerConfig.styleAssignmentFeature, oldLayerConfig.styleAssignmentFeature) && updatedLayerConfig.pane === 'vector') {
+              layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
+              GeoPackageUtilities.getBoundingBoxForFeature(updatedLayerConfig.geopackageFilePath, updatedLayerConfig.sourceLayerName, updatedLayerConfig.styleAssignmentFeature).then(function (extent) {
+                map.fitBounds([
+                  [extent[1], extent[0]],
+                  [extent[3], extent[2]]
+                ])
+              })
+            } else if (!_.isEqual(updatedLayerConfig.iconAssignmentFeature, oldLayerConfig.iconAssignmentFeature) && updatedLayerConfig.pane === 'vector') {
+              layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
+              GeoPackageUtilities.getBoundingBoxForFeature(updatedLayerConfig.geopackageFilePath, updatedLayerConfig.sourceLayerName, updatedLayerConfig.iconAssignmentFeature).then(function (extent) {
+                map.fitBounds([
+                  [extent[1], extent[0]],
+                  [extent[3], extent[2]]
+                ])
+              })
             }
           })
         },

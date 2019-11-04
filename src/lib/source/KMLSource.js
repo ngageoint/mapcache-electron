@@ -35,13 +35,14 @@ export default class KMLSource extends Source {
         let filePath = userDataDir().dir(id).file(fileName).path()
         let fullFile = path.join(filePath, fileName)
         let style = await this.generateStyleForKML(featureCollection.features, originalFileDir)
-        await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, style)
+        let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, style)
         this.vectorLayers.push(new VectorLayer({
           id: id,
           geopackageFilePath: fullFile,
           sourceFilePath: this.filePath,
           sourceLayerName: name,
-          sourceType: 'KML'
+          sourceType: 'KML',
+          tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
         }))
       }
     }

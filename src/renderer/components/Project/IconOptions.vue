@@ -1,23 +1,33 @@
 <template>
-  <div class="layer__face__stats">
-    <editstylename v-if="allowStyleNameEditing"
-                   :name="name"
-                   icon-or-style="icon"
-                   :icon-or-style-id="iconRow.getId() + ''"
-                   :layer-id="layer.id"
-                   :project-id="projectId"/>
-    <p class="layer__face__stats__weight" v-if="!allowStyleNameEditing">
-      {{name}}
-    </p>
-    <div class="container">
+  <expandablecard>
+    <div slot="card-header">
+      <div class="flex-row">
+        <div class="subtitle-card">
+          <p>
+            {{name + (showId ? ' (' + iconRow.getId() + ')' : '')}}
+          </p>
+        </div>
+        <img class="icon-box" :src="iconUrl"/>
+      </div>
+    </div>
+    <div slot="card-expanded-body">
+      <div class="flex-row">
+        <div v-if="allowStyleNameEditing">
+          <label class="control-label">Name</label>
+          <div>
+            <input
+              type="text"
+              class="text-box"
+              v-model="name"/>
+          </div>
+        </div>
+      </div>
       <div class="flex-row">
         <div>
           <label class="control-label">Icon</label>
           <img class="icon" :src="iconUrl" @click.stop="getIconClick"/>
         </div>
       </div>
-    </div>
-    <div class="container">
       <div class="flex-row">
         <div>
           <label class="control-label">Anchor</label>
@@ -27,24 +37,25 @@
             </select>
           </div>
         </div>
+        <div>
+          <div v-if="deletable" class="delete-button" @click.stop="deleteIcon()">
+            <font-awesome-icon icon="trash" class="danger" size="2x"/>
+          </div>
+        </div>
       </div>
     </div>
-    <div v-if="deletable">
-      <button type="button" class="layer__request-btn" @click.stop="deleteIcon()">
-        <span class="layer__request-btn__text-1">Delete Icon</span>
-      </button>
-    </div>
-  </div>
+  </expandablecard>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
   import NumberPicker from './NumberPicker'
+  import ExpandableCard from '../Card/ExpandableCard'
   import { remote } from 'electron'
   import jetpack from 'fs-jetpack'
   import fs from 'fs'
   import path from 'path'
-  import EditStyleName from './EditStyleName'
+  import _ from 'lodash'
 
   export default {
     props: {
@@ -54,15 +65,43 @@
       geometryType: String,
       iconRow: Object,
       layer: Object,
-      projectId: String
+      projectId: String,
+      showId: Boolean,
+      isTableIcon: Boolean
+    },
+    created () {
+      this.debounceName = _.debounce((val) => {
+        if (this.iconRow.getName() !== val) {
+          let iconRow = {
+            id: this.iconRow.getId(),
+            data: this.iconRow.getData(),
+            width: this.iconRow.getWidth(),
+            height: this.iconRow.getHeight(),
+            anchorU: this.iconRow.getAnchorU(),
+            anchorV: this.iconRow.getAnchorV(),
+            name: val,
+            contentType: this.iconRow.getContentType()
+          }
+          this.updateProjectLayerIconRow({
+            projectId: this.projectId,
+            layerId: this.layer.id,
+            iconRow: iconRow
+          })
+        }
+      }, 500)
     },
     components: {
       'numberpicker': NumberPicker,
-      'editstylename': EditStyleName
+      'expandablecard': ExpandableCard
     },
     computed: {
-      name: function () {
-        return this.iconRow.getName()
+      name: {
+        get () {
+          return this.iconRow.getName()
+        },
+        set (val) {
+          this.debounceName(val)
+        }
       },
       anchorSelection: {
         get () {
@@ -231,7 +270,7 @@
                 height: uploadedImage.height,
                 anchorU: result.anchorU,
                 anchorV: result.anchorV,
-                name: path.basename(fileInfo.path),
+                name: this.isTableIcon ? this.iconRow.getName() : path.basename(fileInfo.path),
                 contentType: 'image/' + extension
               }
               this.updateProjectLayerIconRow({
@@ -247,24 +286,23 @@
   }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+  @import '~float-labels.js/dist/float-labels.css';
+  .subtitle-card {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
+  }
+  .subtitle-card p {
+    color: #000;
+    font-size: 16px;
+    font-weight: normal;
+  }
   .flex-row {
     display: flex;
     flex-direction: row;
-  }
-  .layer__face__stats {
-    color: #777;
-    text-transform: uppercase;
-    font-size: 12px
-  }
-  .layer__face__stats p {
-    font-size: 15px;
-    color: #777;
-    font-weight: bold;
-  }
-  .flex-row {
-    margin-left: 10px;
-    margin-bottom: 10px;
+    justify-content: space-between;
+    align-items: center;
   }
   .icon {
     border: 1px solid #ddd;
@@ -276,6 +314,14 @@
     object-fit: contain;
     cursor: pointer;
   }
+  .icon-box {
+    border: 1px solid #ffffff00;
+    border-radius: 4px;
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+    margin: 0.25rem;
+  }
   .icon:hover {
     box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
   }
@@ -283,15 +329,14 @@
     display:flex;
     flex-direction: column;
     justify-content: center;
-    border-width: 4px;
+    border-width: 1px;
     border-style: solid;
-    color: #222;
   }
   .preset-select select {
     display: flex;
     flex-direction: row;
-    font-weight: bold;
-    font-size: 20px;
+    font-weight: normal;
+    font-size: 14px;
     border: none;
     background: transparent;
     width: 100%;
@@ -300,37 +345,23 @@
   .preset-select select:focus {
     outline: none;
   }
-  .layer__request-btn__text-1 {
-    -webkit-transition: opacity 0.48s;
-    transition: opacity 0.48s;
+  .text-box {
+    height: 32px;
+    font-size: 14px;
   }
-  .layer.req-active1 .layer__request-btn__text-1 {
-    opacity: 0;
+  .control-label {
+    font-size: 12px;
+    color: #000;
   }
-  .layer.req-active2 .layer__request-btn__text-1 {
-    display: none;
+  .danger {
+    color: #d50000;
   }
-  .layer__request-btn:hover {
-    letter-spacing: 5px;
+  .danger:hover {
+    color: #9b0000;
   }
-
-  /* Style buttons */
-  .layer__request-btn {
-    position: relative;
-    width: 100%;
-    height: 24px;
-    margin-bottom: 10px;
-    background-color: #C00;
-    text-transform: uppercase;
-    font-size: 16px;
-    color: #FFF;
-    outline: none;
-    border: none;
-    border-radius: 4px;
+  .delete-button {
+    padding-top: 1.5rem;
+    margin-right: .25rem;
     cursor: pointer;
-    letter-spacing: 0;
-    -webkit-transition: letter-spacing 0.3s;
-    transition: letter-spacing 0.3s;
   }
-
 </style>

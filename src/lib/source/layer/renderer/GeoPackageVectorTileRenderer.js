@@ -19,6 +19,7 @@ export default class GeoPackageVectorTileRenderer {
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
     this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
     this.featureTile.setMaxFeaturesPerTile(this.maxFeatures)
+    this.featureTile.setIconCacheSize(1000)
   }
 
   async styleChanged (geopackage, maxFeatures) {
@@ -27,18 +28,15 @@ export default class GeoPackageVectorTileRenderer {
     await this.init()
   }
   async renderVectorTile (coords, tileCanvas, done) {
+    console.time(JSON.stringify(coords))
     let {x, y, z} = coords
     if (tileCanvas) {
-      let imgSrc = await this.featureTile.drawTile(x, y, z)
-      let image = new Image()
-      image.onload = function () {
-        tileCanvas.getContext('2d').drawImage(image, 0, 0)
+      this.featureTile.drawTile(x, y, z, tileCanvas).then(() => {
+        console.timeEnd(JSON.stringify(coords))
         if (done) {
           done(null, tileCanvas)
         }
-        return tileCanvas
-      }
-      image.src = imgSrc
+      })
     } else {
       let image = await this.featureTile.drawTile(x, y, z)
       if (done) {

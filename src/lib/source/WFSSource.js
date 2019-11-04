@@ -14,13 +14,14 @@ export default class WFSSource extends Source {
       let fileName = layer.name + '.gpkg'
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)
-      await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
+      let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
       this.geopackageLayers.push(new VectorLayer({
         id: this.sourceId,
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer.name,
-        sourceType: 'WFS'
+        sourceType: 'WFS',
+        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
       }))
     }
     return this.geopackageLayers

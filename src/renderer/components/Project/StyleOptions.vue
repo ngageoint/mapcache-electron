@@ -1,48 +1,58 @@
 <template>
-  <div class="layer__face__stats">
-    <editstylename v-if="allowStyleNameEditing"
-                   :name="name"
-                   icon-or-style="style"
-                   :icon-or-style-id="styleRow.getId() + ''"
-                   :layer-id="layer.id"
-                   :project-id="projectId"/>
-    <p class="layer__face__stats__weight" v-if="!allowStyleNameEditing">
-      {{name}}
-    </p>
-    <div class="container">
-      <div>
-        <div class="flex-row">
+  <expandablecard>
+    <div slot="card-header">
+      <div class="flex-row">
+        <div class="subtitle-card">
+          <p>
+            {{name + (showId ? ' (' + styleRow.getId() + ')' : '')}}
+          </p>
+        </div>
+        <div class="color-box" :style="{backgroundColor: ((geometryType === 'Polygon' || geometryType === 'MultiPolygon') ? fillColor : color)}"></div>
+      </div>
+    </div>
+    <div slot="card-expanded-body">
+      <div class="flex-row">
+        <div v-if="allowStyleNameEditing">
+          <label class="control-label">Name</label>
           <div>
-            <label class="control-label">Color</label>
-            <div>
-              <colorpicker :color="color" v-model="color" />
-            </div>
+            <input
+              type="text"
+              class="text-box"
+              v-model="name"/>
           </div>
         </div>
-        <div class="flex-row" v-if="geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined">
+      </div>
+      <div class="flex-row">
+        <div>
+          <label class="control-label">Color</label>
           <div>
-            <label class="control-label">Fill Color</label>
-            <div>
-              <colorpicker :color="fillColor" v-model="fillColor" />
-            </div>
+            <colorpicker :color="color" v-model="color" />
           </div>
         </div>
-        <div class="flex-row">
+      </div>
+      <div class="flex-row" v-if="geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined">
+        <div>
+          <label class="control-label">Fill Color</label>
           <div>
-            <label class="control-label">Width (px)</label>
-            <div>
-              <numberpicker :number="width" v-model="width" />
-            </div>
+            <colorpicker :color="fillColor" v-model="fillColor" />
           </div>
         </div>
-        <div v-if="deletable">
-          <button type="button" class="layer__request-btn" @click.stop="deleteStyle()">
-            <span class="layer__request-btn__text-1">Delete Style</span>
-          </button>
+      </div>
+      <div class="flex-row">
+        <div>
+          <label class="control-label">Width (px)</label>
+          <div>
+            <numberpicker :number="width" v-model="width" />
+          </div>
+        </div>
+        <div>
+          <div v-if="deletable" class="delete-button" @click.stop="deleteStyle()">
+            <font-awesome-icon icon="trash" class="danger" size="2x"/>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </expandablecard>
 </template>
 
 <script>
@@ -50,7 +60,7 @@
   import ColorPicker from './ColorPicker'
   import NumberPicker from './NumberPicker'
   import _ from 'lodash'
-  import EditStyleName from './EditStyleName'
+  import ExpandableCard from '../Card/ExpandableCard'
 
   export default {
     props: {
@@ -60,7 +70,8 @@
       geometryType: String,
       styleRow: Object,
       layer: Object,
-      projectId: String
+      projectId: String,
+      showId: Boolean
     },
     created () {
       this.debounceColorOpacity = _.debounce((val) => {
@@ -83,6 +94,25 @@
               styleRow: styleRow
             })
           }
+        }
+      }, 500)
+      this.debounceName = _.debounce((val) => {
+        if (this.styleRow.getName() !== val) {
+          let styleRow = {
+            id: this.styleRow.getId(),
+            name: val,
+            description: this.styleRow.getDescription(),
+            color: this.styleRow.getHexColor(),
+            opacity: this.styleRow.getOpacity(),
+            fillColor: this.styleRow.getFillHexColor(),
+            fillOpacity: this.styleRow.getFillOpacity(),
+            width: this.styleRow.getWidth()
+          }
+          this.updateProjectLayerStyleRow({
+            projectId: this.projectId,
+            layerId: this.layer.id,
+            styleRow: styleRow
+          })
         }
       }, 500)
       this.debounceFillColorOpacity = _.debounce((val) => {
@@ -132,9 +162,17 @@
     components: {
       'colorpicker': ColorPicker,
       'numberpicker': NumberPicker,
-      'editstylename': EditStyleName
+      'expandablecard': ExpandableCard
     },
     computed: {
+      name: {
+        get () {
+          return this.styleRow.getName()
+        },
+        set (val) {
+          this.debounceName(val)
+        }
+      },
       color: {
         get () {
           return this.getRGBA(this.styleRow.getHexColor(), this.styleRow.getOpacity())
@@ -158,9 +196,6 @@
         set (val) {
           this.debounceWidth(val)
         }
-      },
-      name: function () {
-        return this.styleRow.getName()
       }
     },
     methods: {
@@ -195,77 +230,47 @@
 </script>
 
 <style scoped>
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-  }
-  .layer__face__stats {
-    color: #777;
-    text-transform: uppercase;
-    font-size: 12px
-  }
-  .layer__face__stats p {
-    font-size: 15px;
-    color: #777;
-    font-weight: bold;
-  }
-  .flex-row {
-    margin-left: 10px;
-    margin-bottom: 10px;
-  }
-  .preset-select {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    border-width: 4px;
-    border-style: solid;
-    margin: 10px;
-    color: #222;
-  }
-  .preset-select select {
-    display: flex;
-    flex-direction: row;
-    font-weight: bold;
-    font-size: 20px;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align-last: center;
-  }
-  .preset-select select:focus {
-    outline: none;
-  }
-  .layer__request-btn__text-1 {
-    -webkit-transition: opacity 0.48s;
-    transition: opacity 0.48s;
-  }
-  .layer.req-active1 .layer__request-btn__text-1 {
-    opacity: 0;
-  }
-  .layer.req-active2 .layer__request-btn__text-1 {
-    display: none;
-  }
-  .layer__request-btn:hover {
-    letter-spacing: 5px;
-  }
-
-  /* Style buttons */
-  .layer__request-btn {
-    position: relative;
-    width: 100%;
-    height: 24px;
-    margin-bottom: 10px;
-    background-color: #C00;
-    text-transform: uppercase;
-    font-size: 16px;
-    color: #FFF;
-    outline: none;
-    border: none;
+  .color-box {
+    border: 1px solid #ddd;
     border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 0;
-    -webkit-transition: letter-spacing 0.3s;
-    transition: letter-spacing 0.3s;
+    background-color: white;
+    margin: 0.25rem;
+    width: 2rem;
+    height: 2rem;
   }
-
+  .subtitle-card {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
+  }
+  .subtitle-card p {
+    color: #000;
+    font-size: 16px;
+    font-weight: normal;
+  }
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .delete-button {
+    padding-top: 1.5rem;
+    margin-right: .25rem;
+    cursor: pointer;
+  }
+  .text-box {
+    height: 32px;
+    font-size: 14px;
+  }
+  .control-label {
+    font-size: 12px;
+    color: #000;
+  }
+  .danger {
+    color: #d50000;
+  }
+  .danger:hover {
+    color: #9b0000;
+  }
 </style>
