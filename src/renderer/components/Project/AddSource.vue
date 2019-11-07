@@ -258,13 +258,13 @@
               let xml = await request(options)
               let json = await this.xml2json(xml)
               if (this.linkToValidate.indexOf('1.1.1') > 0) {
-                for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer']) {
                   const bbox = layer['LatLonBoundingBox'][0]['$']
                   const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
                   layers.push({name: layer['Name'][0], extent: extent, wms: true})
                 }
               } else if (this.linkToValidate.indexOf('1.3.0') > 0) {
-                for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
+                for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer']) {
                   const bbox = layer['EX_GeographicBoundingBox'][0]
                   const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
                   layers.push({name: layer['Name'][0], extent: extent, wms: true})
