@@ -74,6 +74,7 @@ export default class VectorLayer extends Layer {
       features: this._features
     }
   }
+
   get count () {
     return this._featureDao.getCount()
   }
@@ -214,11 +215,11 @@ export default class VectorLayer extends Layer {
   }
 
   iterateFeaturesInBounds (bounds) {
-    if (this._dao.isIndexed()) {
+    if (this._featureDao.isIndexed()) {
       let bb = new BoundingBox(bounds[0][1], bounds[1][1], bounds[0][0], bounds[1][0])
       let features = []
       try {
-        let iterator = this._dao.queryForGeoJSONIndexedFeaturesWithBoundingBox(bb, true)
+        let iterator = this._featureDao.queryForGeoJSONIndexedFeaturesWithBoundingBox(bb, true)
         for (const feature of iterator) {
           features.push(feature)
         }

@@ -201,6 +201,12 @@ const mutations = {
   updateLayerKey (state, {projectId, layerId}) {
     Vue.set(state[projectId].layers[layerId], 'layerKey', state[projectId].layers[layerId].layerKey + 1)
   },
+  updateLayerFeatureCount (state, {projectId, layerId, count}) {
+    Vue.set(state[projectId].layers[layerId], 'count', count)
+  },
+  updateLayerExtent (state, {projectId, layerId, extent}) {
+    Vue.set(state[projectId].layers[layerId], 'extent', extent)
+  },
   updateStyleAssignmentFeature (state, {projectId, layerId, styleAssignmentFeature}) {
     Vue.set(state[projectId].layers[layerId], 'styleAssignmentFeature', styleAssignmentFeature)
   },
@@ -374,6 +380,29 @@ const actions = {
     console.log(layerConfiguration)
     GeoPackageUtilities.deleteIconRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, iconId).then(function () {
       commit('updateLayerKey', {projectId, layerId})
+    })
+  },
+  deleteProjectLayerFeatureRow ({ commit, state }, {projectId, layerId, featureId}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.deleteFeatureRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, featureId).then(function (result) {
+      commit('updateLayerKey', {projectId, layerId})
+      commit('updateLayerFeatureCount', {projectId, layerId, count: result.count})
+      commit('updateLayerExtent', {projectId, layerId, extent: result.extent})
+    })
+  },
+  addProjectLayerFeatureRow ({ commit, state }, {projectId, layerId, feature}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.createFeatureRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, feature).then(function (result) {
+      commit('updateLayerKey', {projectId, layerId})
+      commit('updateLayerFeatureCount', {projectId, layerId, count: result.count})
+      commit('updateLayerExtent', {projectId, layerId, extent: result.extent})
+    })
+  },
+  updateProjectLayerFeatureRow ({ commit, state }, {projectId, layerId, featureRowId, feature}) {
+    let layerConfiguration = state[projectId].layers[layerId]
+    GeoPackageUtilities.updateFeatureRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, featureRowId, feature).then(function (result) {
+      commit('updateLayerKey', {projectId, layerId})
+      commit('updateLayerExtent', {projectId, layerId, extent: result.extent})
     })
   },
   updateProjectLayerStyleMaxFeatures ({ commit, state }, {projectId, layerId, maxFeatures}) {

@@ -73,7 +73,7 @@
                 v-model="linkToValidate">
             </input>
             <label for="auth-select">Authorization</label>
-            <select id="auth-select" name="authSelect" v-model="authSelection">
+            <select id="auth-select" name="authSelect" v-model="authSelection" style="margin-bottom: 0;">
               <option disabled>Authorization</option>
               <option value="none">No Authorization</option>
               <option value="basic">Basic</option>
@@ -101,7 +101,7 @@
                 class="text-input"
                 v-model="token">
             </div>
-            <div class="provide-link-buttons">
+            <div style="margin-top: 14px;">
               <a @click.stop="validateLink">Add URL</a>
               |
               <a @click.stop="cancelProvideLink">Cancel</a>
@@ -582,14 +582,6 @@
   .provide-link-text a {
     color: rgba(68, 152, 192, .95);
     cursor: pointer;
-  }
-
-  .provide-link-buttons {
-    margin-top: -10px;
-  }
-
-  .provide-auth {
-    margin-top: -10px;
   }
 
   .file-icons {

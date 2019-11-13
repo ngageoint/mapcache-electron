@@ -28,11 +28,11 @@ export default class GeoPackageVectorTileRenderer {
     await this.init()
   }
   async renderVectorTile (coords, tileCanvas, done) {
-    console.time(JSON.stringify(coords))
+    // console.time(JSON.stringify(coords))
     let {x, y, z} = coords
     if (tileCanvas) {
       this.featureTile.drawTile(x, y, z, tileCanvas).then(() => {
-        console.timeEnd(JSON.stringify(coords))
+        // console.timeEnd(JSON.stringify(coords))
         if (done) {
           done(null, tileCanvas)
         }

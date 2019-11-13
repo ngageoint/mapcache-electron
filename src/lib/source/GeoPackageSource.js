@@ -31,7 +31,7 @@ export default class GeoPackageSource extends Source {
         sourceFilePath: this.filePath,
         sourceLayerName: layer,
         sourceType: 'GeoPackage',
-        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
+        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, layer, 'Point')
       }))
     }
 

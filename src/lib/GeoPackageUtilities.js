@@ -1,10 +1,8 @@
-import GeoPackage, {DataTypes, GeometryData} from '@ngageoint/geopackage'
+import GeoPackage, {BoundingBox, DataTypes} from '@ngageoint/geopackage'
 import FeatureTableStyles from '@ngageoint/geopackage/lib/extension/style/featureTableStyles'
 import _ from 'lodash'
 import geojsonExtent from '@mapbox/geojson-extent'
 import VectorStyleUtilities from './VectorStyleUtilities'
-import * as wkx from 'wkx'
-import * as reproject from '@ngageoint/geopackage/static/geopackage'
 
 export default class GeoPackageUtilities {
   static async buildGeoPackage (fileName, featureTableName, featureCollection, style = VectorStyleUtilities.defaultRandomColorStyle()) {
@@ -219,29 +217,97 @@ export default class GeoPackageUtilities {
     await geoPackageCopy.getFeatureStyleExtension().getOrCreateExtension(featureTableName)
     await geoPackageCopy.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
     await geoPackageCopy.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+
     let featureTableStylesCopy = new FeatureTableStyles(geoPackageCopy, featureTableName)
     await featureTableStylesCopy.createTableStyleRelationship()
     await featureTableStylesCopy.createTableIconRelationship()
     await featureTableStylesCopy.createStyleRelationship()
     await featureTableStylesCopy.createIconRelationship()
-    // copy table styles
+    // copy all styles, icons and relationships
+    featureTableStyles.getStyleDao().queryForAll().forEach(result => {
+      featureTableStylesCopy.getStyleDao().create(result)
+    })
+    featureTableStyles.getIconDao().queryForAll().forEach(result => {
+      featureTableStylesCopy.getIconDao().create(result)
+    })
     await featureTableStylesCopy.setTableFeatureStyles(featureTableStyles.getTableFeatureStyles())
+
     // create feature table and copy all rows into that table as well as copying any feature styles/icons
     let featureDaoCopy = geoPackageCopy.getFeatureDao(featureTableName)
     let each = featureDao.queryForEach()
     for (let row of each) {
-      await featureDaoCopy.create(featureDao.getRow(row))
-      let featureRowId = row.getId()
-      let featureRowStyles = featureTableStyles.getFeatureStyles(featureRowId)
-      await featureTableStylesCopy.setFeatureStyles(featureRowId, featureRowStyles)
+      if (!_.isNil(row)) {
+        let featureRowId = featureDaoCopy.create(featureDao.getRow(row))
+        let featureRowStyles = featureTableStyles.getFeatureStyles(row.id)
+        await featureTableStylesCopy.setFeatureStyles(featureRowId, featureRowStyles)
+      }
     }
-
     var fti = featureDaoCopy.featureTableIndex
     if (fti) {
       fti.getTableIndex()
       await fti.index()
     }
     return geoPackageCopy
+  }
+
+  static async copyGeoPackageFeaturesAndStylesForBoundingBox (geoPackage, geoPackageTarget, sourceFeatureTableName, targetFeatureTableName, bounds) {
+    let featureDao = geoPackage.getFeatureDao(sourceFeatureTableName)
+    let featureTableStyles = new FeatureTableStyles(geoPackage, sourceFeatureTableName)
+    let bb = new BoundingBox(bounds[0][1], bounds[1][1], bounds[0][0], bounds[1][0])
+    let featuresAdded = 0
+    // setup the columns for the feature table
+    let layerColumns = GeoPackageUtilities.getLayerColumnsFromGeoPackage(featureDao)
+    const FeatureColumn = GeoPackage.FeatureColumn
+    let geometryColumns = new GeoPackage.GeometryColumns()
+    geometryColumns.table_name = targetFeatureTableName
+    geometryColumns.column_name = layerColumns.geom.name
+    geometryColumns.geometry_type_name = 'GEOMETRYCOLLECTION'
+    geometryColumns.z = 0
+    geometryColumns.m = 0
+    let columns = []
+    columns.push(FeatureColumn.createPrimaryKeyColumnWithIndexAndName(0, layerColumns.id.name))
+    columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, 'GEOMETRYCOLLECTION', false, null))
+    let columnCount = 2
+    for (const column of layerColumns.columns) {
+      if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
+        columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
+      }
+    }
+    await geoPackageTarget.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
+    await geoPackageTarget.getFeatureStyleExtension().getOrCreateExtension(targetFeatureTableName)
+    await geoPackageTarget.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+    await geoPackageTarget.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+
+    let featureTableStylesTarget = new FeatureTableStyles(geoPackageTarget, targetFeatureTableName)
+    await featureTableStylesTarget.createTableStyleRelationship()
+    await featureTableStylesTarget.createTableIconRelationship()
+    await featureTableStylesTarget.createStyleRelationship()
+    await featureTableStylesTarget.createIconRelationship()
+    // copy all styles, icons and relationships
+    featureTableStyles.getStyleDao().queryForAll().forEach(result => {
+      featureTableStylesTarget.getStyleDao().create(result)
+    })
+    featureTableStyles.getIconDao().queryForAll().forEach(result => {
+      featureTableStylesTarget.getIconDao().create(result)
+    })
+    await featureTableStylesTarget.setTableFeatureStyles(featureTableStyles.getTableFeatureStyles())
+    // create feature table and copy all rows into that table as well as copying any feature styles/icons
+    let featureDaoTarget = geoPackageTarget.getFeatureDao(targetFeatureTableName)
+    let iterator = featureDao.fastQueryBoundingBox(bb, 'EPSG:4326')
+    for (const row of iterator) {
+      if (!_.isNil(row)) {
+        let featureRowId = featureDaoTarget.create(row)
+        let featureRowStyles = featureTableStyles.getFeatureStyles(row.values.id)
+        await featureTableStylesTarget.setFeatureStyles(featureRowId, featureRowStyles)
+        featuresAdded++
+      }
+    }
+    var fti = featureDaoTarget.featureTableIndex
+    if (fti) {
+      fti.getTableIndex()
+      await fti.index()
+    }
+    return featuresAdded
   }
 
   static getLayerColumnsFromGeoPackage (featureDao) {
@@ -533,45 +599,48 @@ export default class GeoPackageUtilities {
   static async updateFeatureRow (geopackageFileName, featureTableName, featureRowId, feature) {
     let gp = await GeoPackage.open(geopackageFileName)
     let featureDao = gp.getFeatureDao(featureTableName)
-    var srs = featureDao.getSrs()
-    var featureRow = featureDao.newRow()
-    var geometryData = new GeometryData()
-    geometryData.setSrsId(srs.srs_id)
-    if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
-      feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+    featureDao.deleteById(featureRowId)
+    GeoPackage.addGeoJSONFeatureToGeoPackageAndIndex(gp, feature, featureTableName)
+    let featureCollection = {
+      type: 'FeatureCollection',
+      features: (await GeoPackage.getGeoJSONFeaturesInTile(gp, featureTableName, 0, 0, 0, true)).map(f => {
+        f.type = 'Feature'
+        return f
+      })
     }
-
-    var featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-    var geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-    geometryData.setGeometry(geometry)
-    featureRow.setGeometry(geometryData)
-    for (var propertyKey in feature.properties) {
-      if (feature.properties.hasOwnProperty(propertyKey)) {
-        featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
-      }
-    }
-    featureRow.setId(featureRowId)
-    featureDao.update(featureRow)
+    return {extent: geojsonExtent(featureCollection)}
   }
 
   static async createFeatureRow (geopackageFileName, featureTableName, feature) {
     let gp = await GeoPackage.open(geopackageFileName)
-    GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
+    GeoPackage.addGeoJSONFeatureToGeoPackageAndIndex(gp, feature, featureTableName)
+    let featureCollection = {
+      type: 'FeatureCollection',
+      features: (await GeoPackage.getGeoJSONFeaturesInTile(gp, featureTableName, 0, 0, 0, true)).map(f => {
+        f.type = 'Feature'
+        return f
+      })
+    }
+    return {count: featureCollection.features.length, extent: geojsonExtent(featureCollection)}
   }
 
   static async deleteFeatureRow (geopackageFileName, featureTableName, featureRowId) {
     let gp = await GeoPackage.open(geopackageFileName)
     let featureDao = gp.getFeatureDao(featureTableName)
     featureDao.deleteById(featureRowId)
+    let featureCollection = {
+      type: 'FeatureCollection',
+      features: (await GeoPackage.getGeoJSONFeaturesInTile(gp, featureTableName, 0, 0, 0, true)).map(f => {
+        f.type = 'Feature'
+        return f
+      })
+    }
+    return {count: featureCollection.features.length, extent: geojsonExtent(featureCollection)}
   }
 
   static async getBoundingBoxForFeature (geopackageFileName, featureTableName, featureRowId) {
     let gp = await GeoPackage.open(geopackageFileName)
     let feature = GeoPackage.getFeature(gp, featureTableName, featureRowId)
     return geojsonExtent(feature)
-  }
-
-  static hasTablePointIcon (gp, featureTableName) {
-    return !_.isNil(new FeatureTableStyles(gp, featureTableName).getTableIcon('Point'))
   }
 }

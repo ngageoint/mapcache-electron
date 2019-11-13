@@ -27,6 +27,9 @@
     <div class="gp-button" @click.stop="action">
       <span>{{actionText}}</span>
     </div>
+    <div class="gp-button" @click.stop="exit">
+      <span>{{"Exit GeoPackage"}}</span>
+    </div>
   </div>
 </template>
 
@@ -112,6 +115,16 @@
             geopackageId: undefined
           })
         }
+      },
+      exit () {
+        this.setGeoPackageStatusReset({
+          projectId: this.project.id,
+          geopackageId: this.project.currentGeoPackage
+        })
+        this.setCurrentGeoPackage({
+          projectId: this.project.id,
+          geopackageId: undefined
+        })
       }
     }
   }

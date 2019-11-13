@@ -30,6 +30,9 @@
   import _ from 'lodash'
   import Modal from '../Modal'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import VectorStyleUtilities from '../../../lib/VectorStyleUtilities'
+  import { userDataDir } from '../../../lib/settings/Settings'
+  import path from 'path'
 
   let initializedLayers = {}
   let shownMapLayers = {}
@@ -81,8 +84,10 @@
     methods: {
       ...mapActions({
         addProjectLayer: 'Projects/addProjectLayer',
-        updateProjectLayer: 'Projects/updateProjectLayer',
-        removeProjectLayer: 'Projects/removeProjectLayer'
+        removeProjectLayer: 'Projects/removeProjectLayer',
+        addProjectLayerFeatureRow: 'Projects/addProjectLayerFeatureRow',
+        deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
+        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow'
       }),
       activateGeoPackageAOI () {
 
@@ -125,19 +130,31 @@
         let drawingLayers = Object.values(this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing')
         if (this.layerSelection === 0) {
           let name = 'Drawing Layer ' + (drawingLayers.length + 1)
-          let layer = new DrawingLayer({name: name, sourceLayerName: name, features: [feature]})
+          let id = Source.createId()
+          let fileName = name + '.gpkg'
+          let filePath = userDataDir().dir(id).file(fileName).path()
+          let fullFile = path.join(filePath, fileName)
+          let featureCollection = {
+            type: 'FeatureCollection',
+            features: [feature]
+          }
+          let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, VectorStyleUtilities.defaultLeafletStyle())
+          let layer = new DrawingLayer({
+            id: id,
+            name: name,
+            geopackageFilePath: fullFile,
+            sourceFilePath: this.filePath,
+            sourceLayerName: name,
+            sourceType: 'Drawing',
+            tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
+          })
           await layer.initialize()
           let config = layer.configuration
           this.addProjectLayer({project: this.project, layerId: layer.id, config: config})
         } else {
           let drawingConfig = drawingLayers.find(drawingLayer => drawingLayer.id === this.layerSelection)
           if (drawingConfig) {
-            let newDrawingConfig = Object.assign({}, drawingConfig)
-            newDrawingConfig.features = drawingConfig.features.slice()
-            newDrawingConfig.features.push(feature)
-            let layer = LayerFactory.constructLayer(newDrawingConfig)
-            await layer.initialize()
-            this.updateProjectLayer({projectId: this.projectId, layer: layer.configuration})
+            this.addProjectLayerFeatureRow({projectId: this.projectId, layerId: drawingConfig.id, feature: feature})
           }
         }
         this.layerSelectionVisible = false
@@ -201,7 +218,7 @@
           updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) >= 0).forEach(layerId => {
             let updatedLayerConfig = updatedLayerConfigs[layerId]
             let oldLayerConfig = layerConfigs[layerId]
-            // something other than style or shown changed, let's completely refresh it...
+            // something other than layerKey, maxFeatures, shown, or feature assignments changed
             if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               _this.removeLayer(layerId)
@@ -223,22 +240,20 @@
               }
             } else if ((!_.isEqual(updatedLayerConfig.layerKey, oldLayerConfig.layerKey) || !_.isEqual(updatedLayerConfig.maxFeatures, oldLayerConfig.maxFeatures)) && updatedLayerConfig.pane === 'vector') {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
-              if (updatedLayerConfig.layerType !== 'Drawing') {
-                // only style has changed, let's just update style
-                initializedLayers[updatedLayerConfig.id].updateStyle(updatedLayerConfig.maxFeatures).then(function () {
-                  // remove layer from map if it is currently being shown
-                  let mapLayer = shownMapLayers[layerId]
-                  if (mapLayer) {
-                    mapLayer.remove()
-                  }
-                  // if layer is set to be shown, display it on the map
-                  if (updatedLayerConfig.shown) {
-                    let updateMapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
-                    updateMapLayer.addTo(map)
-                    shownMapLayers[updatedLayerConfig.id] = updateMapLayer
-                  }
-                })
-              }
+              // only style has changed, let's just update style
+              initializedLayers[updatedLayerConfig.id].updateStyle(updatedLayerConfig.maxFeatures).then(function () {
+                // remove layer from map if it is currently being shown
+                let mapLayer = shownMapLayers[layerId]
+                if (mapLayer) {
+                  mapLayer.remove()
+                }
+                // if layer is set to be shown, display it on the map
+                if (updatedLayerConfig.shown) {
+                  let updateMapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
+                  updateMapLayer.addTo(map)
+                  shownMapLayers[updatedLayerConfig.id] = updateMapLayer
+                }
+              })
             } else if (!_.isEqual(updatedLayerConfig.styleAssignmentFeature, oldLayerConfig.styleAssignmentFeature) && updatedLayerConfig.pane === 'vector') {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               GeoPackageUtilities.getBoundingBoxForFeature(updatedLayerConfig.geopackageFilePath, updatedLayerConfig.sourceLayerName, updatedLayerConfig.styleAssignmentFeature).then(function (extent) {
@@ -294,22 +309,12 @@
                 if (!feature.id) {
                   feature.id = layer.id
                 }
-                let layerConfig = Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').find((layerConfig) => {
-                  return layerConfig.features.findIndex(f => f.id === feature.id) >= 0
-                })
-                if (layerConfig) {
-                  let newLayerConfig = Object.assign({}, layerConfig)
-                  newLayerConfig.features = newLayerConfig.features.slice()
-                  newLayerConfig.features.splice(newLayerConfig.features.findIndex(f => f.id === feature.id), 1)
-                  if (newLayerConfig.features.length === 0) {
-                    _this.removeProjectLayer({projectId: _this.projectId, layerId: newLayerConfig.id})
-                  } else {
-                    let layer = LayerFactory.constructLayer(newLayerConfig)
-                    let _this = this
-                    layer.initialize().then(function () {
-                      _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
-                    })
-                  }
+                let layerId = feature.properties.layerId
+                let featureId = feature.properties.featureId
+                if (!_.isNil(layerId) && !_.isNil(featureId)) {
+                  delete feature.properties.layerId
+                  delete feature.properties.featureId
+                  _this.deleteProjectLayerFeatureRow({projectId: _this.projectId, layerId: layerId, featureId: featureId})
                 }
               }
               let popup = vendor.L.DomUtil.create('div', 'popup')
@@ -345,6 +350,7 @@
         })
       })
       this.map.on('editable:drawing:end', function (e) {
+        console.log('editable:disable')
         if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]
@@ -357,26 +363,19 @@
         }
       })
       this.map.on('editable:disable', async (e) => {
+        console.log('editable:disable')
         if (!this.isDrawingBounds) {
           let feature = e.layer.toGeoJSON()
           if (!feature.id) {
             feature.id = e.layer.id
           }
+          let layerId = feature.properties.layerId
+          let featureId = feature.properties.featureId
           feature.properties.radius = e.layer._mRadius
-          // find feature in layers and update it...
-          let layerConfig = Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').find((layerConfig) => {
-            return layerConfig.features.findIndex(f => f.id === feature.id) >= 0
-          })
-          if (layerConfig) {
-            let newLayerConfig = Object.assign({}, layerConfig)
-            newLayerConfig.features = newLayerConfig.features.slice()
-            newLayerConfig.features.splice(newLayerConfig.features.findIndex(f => f.id === feature.id), 1)
-            newLayerConfig.features.push(feature)
-            let layer = LayerFactory.constructLayer(newLayerConfig)
-            let _this = this
-            layer.initialize().then(function () {
-              _this.updateProjectLayer({projectId: _this.projectId, layer: layer.configuration})
-            })
+          if (!_.isNil(layerId) && !_.isNil(featureId)) {
+            delete feature.properties.layerId
+            delete feature.properties.featureId
+            _this.updateProjectLayerFeatureRow({projectId: _this.projectId, layerId: layerId, featureRowId: featureId, feature: feature})
           }
         }
       })

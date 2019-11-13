@@ -17,9 +17,10 @@
             class="project-name-edit"
             id="project-name-edit"
             :value="geopackage.name"
-            @keydown.enter.prevent="saveEditedName">
+            @keydown.enter.prevent="saveEditedName"
+            style="margin-bottom: 0;">
         </input>
-        <div class="provide-link-buttons">
+        <div style="margin-top: 14px;">
           <a @click.stop="saveEditedName">Save</a>
           |
           <a @click.stop="cancelEditName">Cancel</a>
@@ -96,10 +97,6 @@
 .provide-link-text a {
   color: rgba(68, 152, 192, .95);
   cursor: pointer;
-}
-
-.provide-link-buttons {
-  margin-top: -10px;
 }
 
 .link-form {

@@ -1,5 +1,4 @@
 import GeoPackage from '@ngageoint/geopackage'
-import FeatureTableStyles from '@ngageoint/geopackage/lib/extension/style/featureTableStyles'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
 import store from '../../store'
@@ -7,7 +6,7 @@ import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import CanvasUtilities from '../CanvasUtilities'
 import fs from 'fs'
-import _ from 'lodash'
+import GeoPackageUtilities from '../GeoPackageUtilities'
 
 export default class GeoPackageBuilder {
   config
@@ -76,133 +75,9 @@ export default class GeoPackageBuilder {
         let layerConfig = this.project.layers[layerId]
         let layer = LayerFactory.constructLayer(layerConfig)
         await layer.initialize()
-        // get the vectors in the bounds
-        let layerColumns = layer.getLayerColumns()
-        const FeatureColumn = GeoPackage.FeatureColumn
-        let geometryColumns = new GeoPackage.GeometryColumns()
-        geometryColumns.table_name = geopackageLayerConfig.layerName || geopackageLayerConfig.name
-        geometryColumns.column_name = layerColumns.geom.name
-        geometryColumns.geometry_type_name = 'GEOMETRYCOLLECTION'
-        geometryColumns.z = 0
-        geometryColumns.m = 0
-
-        let columns = []
-        columns.push(FeatureColumn.createPrimaryKeyColumnWithIndexAndName(0, layerColumns.id.name))
-        columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, 'GEOMETRYCOLLECTION', false, null))
-        let columnCount = 2
-        for (const column of layerColumns.columns) {
-          if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
-            columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
-          }
-        }
-        let bb = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0])
-        await gp.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
-        let featureTableName = geopackageLayerConfig.layerName || geopackageLayerConfig.name
-
-        var featureTableStyles = null
-        if (!_.isNil(layer.style)) {
-          await gp.getFeatureStyleExtension().getOrCreateExtension(featureTableName)
-          await gp.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
-          await gp.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
-          featureTableStyles = new FeatureTableStyles(gp, featureTableName)
-          await featureTableStyles.createTableStyleRelationship()
-          await featureTableStyles.createTableIconRelationship()
-          await featureTableStyles.createStyleRelationship()
-
-          let polyStyle = layer.style.styleRowMap[layer.style.default.styles['Polygon']]
-          let polygonStyleRow = featureTableStyles.getStyleDao().newRow()
-          polygonStyleRow.setColor(polyStyle.color, polyStyle.opacity)
-          polygonStyleRow.setFillColor(polyStyle.fillColor, polyStyle.fillOpacity)
-          polygonStyleRow.setWidth(polyStyle.width)
-
-          let lineStyle = layer.style.styleRowMap[layer.style.default.styles['LineString']]
-          let lineStringStyleRow = featureTableStyles.getStyleDao().newRow()
-          lineStringStyleRow.setColor(lineStyle.color, lineStyle.opacity)
-          lineStringStyleRow.setWidth(lineStyle.width)
-
-          let pointStyle = layer.style.styleRowMap[layer.style.default.styles['Point']]
-          let pointStyleRow = featureTableStyles.getStyleDao().newRow()
-          pointStyleRow.setColor(pointStyle.color, pointStyle.opacity)
-          pointStyleRow.setWidth(pointStyle.width)
-
-          if (layer.style.default.iconOrStyle['Point'] === 'icon') {
-            let pointIcon = layer.style.iconRowMap[layer.style.default.icons['Point']]
-            let pointIconRow = featureTableStyles.getIconDao().newRow()
-            pointIconRow.setData(Buffer.from(pointIcon.url.split(',')[1], 'base64'))
-            pointIconRow.setContentType('image/png')
-            pointIconRow.setWidth(pointIcon.width)
-            pointIconRow.setHeight(pointIcon.height)
-            pointIconRow.setAnchorU(pointIcon.anchor_u)
-            pointIconRow.setAnchorV(pointIcon.anchor_v)
-            await featureTableStyles.setTableIcon('Point', pointIconRow)
-            await featureTableStyles.setTableIcon('MultiPoint', pointIconRow)
-          }
-
-          await featureTableStyles.setTableStyle('Polygon', polygonStyleRow)
-          await featureTableStyles.setTableStyle('LineString', lineStringStyleRow)
-          await featureTableStyles.setTableStyle('Point', pointStyleRow)
-          await featureTableStyles.setTableStyle('MultiPolygon', polygonStyleRow)
-          await featureTableStyles.setTableStyle('MultiLineString', lineStringStyleRow)
-          await featureTableStyles.setTableStyle('MultiPoint', pointStyleRow)
-        }
-        let icons = {}
-        let styles = {}
-        let iterator = await layer.iterateFeaturesInBounds(aoi)
-        for (let feature of iterator) {
-          if (this.cancelled) {
-            break
-          }
-          if (feature.properties) {
-            feature.properties.id = undefined
-          }
-          console.log('adding feature ' + feature.id)
-          let featureRowId = GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
-          if (!_.isNil(layer.style.features[feature.id])) {
-            if (layer.style.features[feature.id].iconOrStyle === 'icon') {
-              let featureIcon = layer.style.iconRowMap[layer.style.features[feature.id].icon]
-              let featureIconRow = icons[layer.style.features[feature.id].icon]
-              if (_.isNil(featureIconRow)) {
-                featureIconRow = featureTableStyles.getIconDao().newRow()
-                featureIconRow.setData(Buffer.from(featureIcon.url.split(',')[1], 'base64'))
-                featureIconRow.setContentType('image/png')
-                featureIconRow.setWidth(featureIcon.width)
-                featureIconRow.setHeight(featureIcon.height)
-                featureIconRow.setAnchorU(featureIcon.anchor_u)
-                featureIconRow.setAnchorV(featureIcon.anchor_v)
-              }
-              await featureTableStyles.setIcon(featureRowId, feature.geometry.type, featureIconRow)
-              icons[layer.style.features[feature.id].icon] = featureIconRow
-            } else {
-              let featureStyle = layer.style.styleRowMap[layer.style.features[feature.id].style]
-              let featureStyleRow = styles[layer.style.features[feature.id].style]
-              if (_.isNil(featureStyleRow)) {
-                featureStyleRow = featureTableStyles.getStyleDao().newRow()
-                featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
-                featureStyleRow.setWidth(featureStyle.width)
-                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                  featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
-                }
-              }
-              await featureTableStyles.setStyle(featureRowId, feature.geometry.type, featureStyleRow)
-              styles[layer.style.features[feature.id].style] = featureStyleRow
-            }
-          }
-          layerStatus.featuresAdded++
-          if (layerStatus.featuresAdded % 10 === 0) {
-            this.dispatchStatusUpdate(status)
-          }
-        }
-        var featureDao = gp.getFeatureDao(featureTableName)
-        var fti = featureDao.featureTableIndex
-        if (fti) {
-          fti.getTableIndex()
-          await fti.index()
-        } else {
-          console.log('unable to index features')
-        }
-        if (this.cancelled) {
-          break
-        }
+        let sourceFeatureTableName = layer.sourceLayerName || layer.name
+        let targetFeatureTableName = geopackageLayerConfig.layerName || geopackageLayerConfig.name
+        layerStatus.featuresAdded = await GeoPackageUtilities.copyGeoPackageFeaturesAndStylesForBoundingBox(layer._geopackage, gp, sourceFeatureTableName, targetFeatureTableName, aoi)
         layerStatus.creation = 'Completed'
         this.dispatchStatusUpdate(status)
       } catch (error) {
@@ -386,7 +261,7 @@ export default class GeoPackageBuilder {
           // iterate over each feature layer and render the x,y,z tile for that feature
           for (let i = 0; i < orderedLayersToInclude.length; i++) {
             await new Promise((resolve, reject) => {
-              orderedLayersToInclude[i].renderTile(currentTile, null, (err, buffer) => {
+              orderedLayersToInclude[i].renderTile(currentTile, null, (err, image) => {
                 if (err) {
                   reject(err)
                 } else {
@@ -395,7 +270,7 @@ export default class GeoPackageBuilder {
                     ctx.drawImage(img, 0, 0)
                     resolve()
                   }
-                  img.src = 'data:image/png;base64,' + btoa(String.fromCharCode.apply(null, buffer))
+                  img.src = image
                 }
               })
             })
