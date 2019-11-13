@@ -49,7 +49,7 @@ export default class Layer {
         style: this.style,
         images: this.images,
         sourceFilePath: this.sourceFilePath,
-        sourceType: this.sourceType,
+        sourceType: this.sourceType
       }
     }
   }
