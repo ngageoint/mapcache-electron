@@ -57,7 +57,7 @@
         <div class="imagery-layers">
           <div v-for="imageryLayer in geopackage.imageryLayers" v-if="imageryLayer.included">
             <div class="layer-name">
-              {{imageryLayer.name}}
+              {{imageryLayer.displayName}}
             </div>
             <imagery-options
                 :project="project"

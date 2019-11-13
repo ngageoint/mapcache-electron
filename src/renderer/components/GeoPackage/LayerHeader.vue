@@ -2,7 +2,7 @@
   <div :style="cssProps" class="layer__face__header fill-background-color">
 
     <div class="layer__face__source-name contrast-text">
-      {{layer.name.length > 20 ? layer.name.substring(0, 17) + "..." : layer.name}}
+      {{layer.displayName.length > 20 ? layer.displayName.substring(0, 17) + "..." : layer.displayName}}
     </div>
 
     <div class="layer-checked contrast-svg-always" @click.stop="layerClicked()">

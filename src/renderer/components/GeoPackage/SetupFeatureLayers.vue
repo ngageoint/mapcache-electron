@@ -56,7 +56,7 @@
         <div class="feature-layers">
           <div v-for="featureLayer in geopackage.featureLayers" v-if="featureLayer.included">
             <div class="layer-name">
-              {{featureLayer.name}}
+              {{featureLayer.displayName}}
             </div>
             <feature-options
                 :project="project"

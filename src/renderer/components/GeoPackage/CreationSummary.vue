@@ -12,7 +12,7 @@
     <div v-if="!geopackage.imageryLayersShareBounds && includedImageryLayers.length > 0">
       Each imagery layer has specific bounds and zoom levels.
       <div v-for="imageryLayer in includedImageryLayers" class="imagery-layer-summary">
-        <span class="layer-name">{{imageryLayer.name}}</span>
+        <span class="layer-name">{{imageryLayer.displayName}}</span>
         <span class="layer-info">{{imageryLayer.minZoom}} - {{imageryLayer.maxZoom}}</span>
       </div>
     </div>
@@ -24,7 +24,7 @@
     <div v-if="!geopackage.featureLayersShareBounds && includedFeatureLayers.length > 0">
       Each feature layer has specific bounds.
       <div v-for="featureLayer in includedFeatureLayers" class="feature-layer-summary">
-        <span class="layer-name">{{featureLayer.name}}</span>
+        <span class="layer-name">{{featureLayer.displayName}}</span>
         <span class="layer-info">
           <bounds-ui :mini="true" :bounds="featureLayer.aoi"/>
         </span>
@@ -56,7 +56,7 @@
         <span class="layer-info">{{geopackage.status.creation}}</span>
       </div>
       <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.featureLayers[layerId]">
-        <span class="layer-name">Layer: {{geopackage.featureLayers[layerId].name}}</span>
+        <span class="layer-name">Layer: {{geopackage.featureLayers[layerId].displayName}}</span>
         <div>
           <span class="layer-name">Layer Status:</span>
           <span class="layer-info">{{layerStatus.creation}}</span>
@@ -73,7 +73,7 @@
       </div>
 
       <div class="layer-status" v-for="(layerStatus, layerId) in geopackage.status.layerStatus" v-if="geopackage.imageryLayers[layerId] || layerId === geopackage.featureImageryConversion.name">
-        <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId] ? geopackage.imageryLayers[layerId].name : layerId}}</span>
+        <span class="layer-name">Layer: {{geopackage.imageryLayers[layerId] ? geopackage.imageryLayers[layerId].displayName : layerId}}</span>
         <div>
           <span class="layer-name">Layer Status:</span>
           <span class="layer-info">{{layerStatus.creation}}</span>

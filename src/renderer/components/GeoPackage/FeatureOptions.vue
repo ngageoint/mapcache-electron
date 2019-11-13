@@ -137,7 +137,7 @@
         return this.layer ? this.layer.id : undefined
       },
       layerNameValue () {
-        return this.options.layerName || this.geopackage.multiFeatureLayerName || (this.layer ? this.layer.name : 'Layer')
+        return this.options.layerName || this.geopackage.multiFeatureLayerName || (this.layer ? this.layer.displayName : 'Layer')
       },
       aoi: {
         get () {

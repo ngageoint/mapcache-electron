@@ -8,6 +8,7 @@ export default class Layer {
   credentials
   sourceLayerName
   name
+  displayName
   constructor (configuration = {}) {
     this._configuration = configuration
     this.id = this._configuration.id || createId()
@@ -22,6 +23,7 @@ export default class Layer {
     this.images = this._configuration.images
     this.sourceFilePath = this._configuration.sourceFilePath
     this.sourceType = this._configuration.sourceType
+    this.displayName = this._configuration.displayName || this.name
   }
 
   async initialize () {
@@ -41,10 +43,13 @@ export default class Layer {
         credentials: this.credentials,
         sourceLayerName: this.sourceLayerName,
         name: this.name,
+        displayName: this.displayName,
         overviewTilePath: this.overviewTilePath,
         shown: this.shown || true,
         style: this.style,
-        images: this.images
+        images: this.images,
+        sourceFilePath: this.sourceFilePath,
+        sourceType: this.sourceType,
       }
     }
   }
