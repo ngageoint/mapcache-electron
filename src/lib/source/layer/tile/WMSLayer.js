@@ -62,6 +62,9 @@ export default class WMSLayer extends TileLayer {
             img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.body).toString('base64')
             done(null, img)
           })
+          .catch((err) => {
+            console.error(err)
+          })
         return img
       }
     })
@@ -71,8 +74,10 @@ export default class WMSLayer extends TileLayer {
     const headers = []
     if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
       headers.push({ header: 'Authorization', value: this.credentials.authorization })
+      headers.push({ header: 'User-Agent', value: remote.getCurrentWebContents().session.getUserAgent() })
     }
-    this._mapLayer = wmsHeader(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options, headers)
+    this._mapLayer = wmsHeader(this.filePath, options, headers)
+    // this._mapLayer = wmsHeader(this.filePath.substring(0, this.filePath.indexOf('?') + 1), options, headers)
     this._mapLayer.id = this.id
     return this._mapLayer
   }

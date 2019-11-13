@@ -15,7 +15,9 @@ export default {
     }),
     setupDrawing (drawBounds) {
       if (this.r) {
+        this.r.disableEdit()
         this.map.removeLayer(this.r)
+        this.r = undefined
       }
       // find the newly activated drawing
       if (!this.activeGeopackage) return
@@ -30,6 +32,8 @@ export default {
             aoi = this.activeGeopackage.featureLayers[key].aoi
           } else if (this.activeGeopackage.featureToImageryLayers[key]) {
             aoi = this.activeGeopackage.featureToImageryLayers[key].aoi
+          } else if (key === 'featureImageryConversionAoi' && this.activeGeopackage.featureImageryConversion.aoi) {
+            aoi = this.activeGeopackage.featureImageryConversion.aoi
           } else {
             aoi = this.activeGeopackage[key]
           }
