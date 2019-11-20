@@ -286,8 +286,7 @@
   }
 </script>
 
-<style scoped lang="scss">
-  @import '~float-labels.js/dist/float-labels.css';
+<style>
   .subtitle-card {
     display: inline-block;
     vertical-align: middle;

@@ -14,9 +14,10 @@
             class="layer-name-edit"
             id="layer-name-edit"
             :value="initialDisplayName"
-            @keydown.enter.prevent="saveEditedName">
+            @keydown.enter.prevent="saveEditedName"
+            style="margin-bottom: 0;">
         </input>
-        <div class="provide-link-buttons">
+        <div style="margin-top: 14px;">
           <a @click.stop="saveEditedName">Save</a>
           |
           <a @click.stop="cancelEditName">Cancel</a>

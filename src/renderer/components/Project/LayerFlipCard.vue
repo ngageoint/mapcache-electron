@@ -25,7 +25,7 @@
                </div>
              </div>
              <div class="layer-action-buttons">
-               <p class="zoom-to contrast-svg" @click.stop="zoomToExtent(layer.extent)"><font-awesome-icon icon="crosshairs" title="ZoomTo" size="lg"/></p>
+               <p class="zoom-to contrast-svg" @click.stop="zoomToExtent(layer.extent)"><font-awesome-icon class="action-svg" icon="crosshairs" title="ZoomTo" size="lg"/></p>
              </div>
            </div>
            <div class="path-container">
@@ -427,6 +427,9 @@
   margin-left: 10px;
   cursor: pointer;
   margin-bottom: 10px;
+}
+.action-svg {
+  cursor: pointer;
 }
 
 </style>
