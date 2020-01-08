@@ -68,7 +68,7 @@
           <v-card-title>
             Rendering Order
           </v-card-title>
-          <div class="ml-2 mr-2" v-if="layerOrder.length > 1">
+          <div class="ml-2 mr-2" v-if="layerOrder.length > 0">
             <draggable
               v-model="layerOrder"
               class="list-group"
@@ -83,6 +83,9 @@
               </div>
             </draggable>
           </div>
+          <v-card-text v-if="layerOrder.length === 0">
+            Select layers to specify rendering order
+          </v-card-text>
           <v-card-title>
             Bounding Box and Zoom
           </v-card-title>
