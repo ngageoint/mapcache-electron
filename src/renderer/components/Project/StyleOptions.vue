@@ -31,7 +31,7 @@
             <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" v-model="width" />
           </v-col>
           <v-col cols="2">
-            <v-row no-gutters class="justify-end" align="center">
+            <v-row v-if="deletable" no-gutters class="justify-end" align="center">
               <font-awesome-icon class="delete-button danger" @click.stop="deleteStyle()" icon="trash" size="2x"/>
             </v-row>
           </v-col>

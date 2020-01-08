@@ -651,23 +651,13 @@ export default class GeoPackageUtilities {
   }
 
   static getFeatureStyleRow (gp, featureTableName, featureId, geometryType) {
-    let styleRow = null
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
-    let featureStyle = featureTableStyles.getFeatureStyle(featureId, geometryType)
-    if (!_.isNil(featureStyle)) {
-      styleRow = featureStyle.getStyle()
-    }
-    return styleRow
+    return featureTableStyles.getFeatureStyleExtension().getStyle(featureTableName, featureId, geometryType, false)
   }
 
   static getFeatureIconRow (gp, featureTableName, featureId, geometryType) {
-    let iconRow = null
     let featureTableStyles = new FeatureTableStyles(gp, featureTableName)
-    let featureStyle = featureTableStyles.getFeatureStyle(featureId, geometryType)
-    if (!_.isNil(featureStyle)) {
-      iconRow = featureStyle.getIcon()
-    }
-    return iconRow
+    return featureTableStyles.getFeatureStyleExtension().getIcon(featureTableName, featureId, geometryType, false)
   }
 
   static async setFeatureStyle (geopackageFileName, featureTableName, featureId, styleId) {

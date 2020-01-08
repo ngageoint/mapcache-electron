@@ -13,6 +13,9 @@ export default class DrawingMapLayer {
       let styleRow = GeoPackageUtilities.getFeatureStyleRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, feature.geometry.type)
       let layer
       if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        if (_.isNil(styleRow)) {
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+        }
         let style = {
           fillColor: styleRow.getFillHexColor(),
           fillOpacity: styleRow.getFillOpacity(),
@@ -23,6 +26,13 @@ export default class DrawingMapLayer {
         layer = new vendor.L.GeoJSON(feature, {style: style})
       } else if (feature.geometry.type === 'Point') {
         let iconRow = GeoPackageUtilities.getFeatureIconRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, feature.geometry.type)
+        if (_.isNil(iconRow) && _.isNil(styleRow)) {
+          iconRow = GeoPackageUtilities.getTableIcon(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+        }
+        if (_.isNil(styleRow)) {
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+        }
+
         if (!_.isNil(iconRow)) {
           let icon = vendor.L.icon({
             iconUrl: 'data:' + iconRow.getContentType() + ';base64,' + iconRow.getData().toString('base64'),
@@ -31,7 +41,7 @@ export default class DrawingMapLayer {
           })
           layer = vendor.L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {icon: icon})
           layer.feature = feature
-        } else {
+        } else if (!_.isNil(styleRow)) {
           let style = {
             fillColor: styleRow.getFillHexColor(),
             fillOpacity: styleRow.getFillOpacity(),
