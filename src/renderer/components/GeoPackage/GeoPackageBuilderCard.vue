@@ -77,7 +77,6 @@
     data () {
       return {
         BUILD_MODES: GeoPackageBuilder.BUILD_MODES,
-        overallStatusMessage: null,
         confirmOverwrite: false
       }
     },
@@ -96,6 +95,17 @@
           }
         }
         return status
+      },
+      overallStatusMessage () {
+        let message = ''
+        if (this.geopackage.buildMode === this.BUILD_MODES.FAILED) {
+          message = this.geopackage.fileName + ' Failed'
+        } else if (this.geopackage.buildMode === this.BUILD_MODES.COMPLETED) {
+          message = 'Completed building ' + this.geopackage.fileName
+        } else {
+          message = 'Building ' + this.geopackage.fileName
+        }
+        return message
       }
     },
     methods: {
@@ -115,7 +125,6 @@
       },
       build () {
         // let _this = this
-        this.overallStatusMessage = 'Building ' + this.geopackage.fileName
         this.$electron.ipcRenderer.send('build_geopackage', {project: this.project, geopackage: this.geopackage})
         this.$electron.ipcRenderer.once('build_geopackage_completed_' + this.geopackage.id, (event, result) => {
           if (result.error) {
@@ -137,20 +146,6 @@
           geopackageId: this.geopackage.id,
           status: null
         })
-      }
-    },
-    watch: {
-      geopackage: {
-        handler (geopackage, oldValue) {
-          if (geopackage.buildMode === this.BUILD_MODES.FAILED) {
-            this.overallStatusMessage = geopackage.fileName + ' Failed'
-          } else if (geopackage.buildMode === this.BUILD_MODES.COMPLETED) {
-            this.overallStatusMessage = 'Completed building ' + geopackage.fileName
-          } else {
-            this.overallStatusMessage = 'Building ' + geopackage.fileName
-          }
-        },
-        deep: true
       }
     }
   }
