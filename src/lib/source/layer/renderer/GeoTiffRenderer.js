@@ -23,7 +23,7 @@ export default class GeoTiffRenderer {
 
     var gt = this.layer.ds.geoTransform
     if (gt[2] !== 0 || gt[4] !== 0) {
-      return done()
+      return done(null, tile)
     }
 
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)

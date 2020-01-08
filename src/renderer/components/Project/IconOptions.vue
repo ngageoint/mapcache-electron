@@ -1,66 +1,55 @@
 <template>
-  <expandablecard>
+  <expandable-card>
     <div slot="card-header">
-      <div class="flex-row">
-        <div class="subtitle-card">
-          <p>
-            {{name + (showId ? ' (' + iconRow.getId() + ')' : '')}}
-          </p>
-        </div>
-        <img class="icon-box" :src="iconUrl"/>
-      </div>
+      <v-row no-gutters class="justify-space-between" align="center">
+        <v-col cols="10" class="align-center">
+          <view-edit-text :editing-disabled="!allowIconNameEditing" :value="iconRow.getName()" :appendedText="showId ? ' (' + iconRow.getId() + ')' : ''" font-size="16px" font-weight="500" label="Icon Name" :on-save="saveName"/>
+        </v-col>
+        <v-col cols="2">
+          <v-row no-gutters class="justify-end" align="center">
+            <img class="icon-box" :src="iconUrl"/>
+          </v-row>
+        </v-col>
+      </v-row>
     </div>
     <div slot="card-expanded-body">
-      <div class="flex-row">
-        <div v-if="allowStyleNameEditing">
-          <label class="control-label">Name</label>
-          <div>
-            <input
-              type="text"
-              class="text-box"
-              v-model="name"/>
-          </div>
-        </div>
-      </div>
-      <div class="flex-row">
-        <div>
-          <label class="control-label">Icon</label>
-          <img class="icon" :src="iconUrl" @click.stop="getIconClick"/>
-        </div>
-      </div>
-      <div class="flex-row">
-        <div>
-          <label class="control-label">Anchor</label>
-          <div class="preset-select">
-            <select v-model="anchorSelection">
-              <option v-for="anchorLoc in anchorLocations" :value="anchorLoc.value">{{anchorLoc.name}}</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div v-if="deletable" class="delete-button" @click.stop="deleteIcon()">
-            <font-awesome-icon icon="trash" class="danger" size="2x"/>
-          </div>
-        </div>
+      <div class="icon-options">
+        <v-container>
+          <v-row no-gutters class="icon-row">
+            <v-col cols="10">
+              <label class="v-label v-label--active theme--light v-label--active fs12">Icon</label>
+              <img class="icon" :src="iconUrl" @click.stop="getIconClick"/>
+            </v-col>
+          </v-row>
+          <v-row no-gutters class="justify-space-between">
+            <v-col cols="10">
+              <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
+            </v-col>
+            <v-col cols="2">
+              <v-row no-gutters class="justify-end" align="center">
+                <font-awesome-icon class="delete-button danger" @click.stop="deleteIcon()" icon="trash" size="2x"/>
+              </v-row>
+            </v-col>
+          </v-row>
+        </v-container>
       </div>
     </div>
-  </expandablecard>
+  </expandable-card>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
-  import NumberPicker from './NumberPicker'
   import ExpandableCard from '../Card/ExpandableCard'
+  import ViewEditText from '../Common/ViewEditText'
   import { remote } from 'electron'
   import jetpack from 'fs-jetpack'
   import fs from 'fs'
   import path from 'path'
-  import _ from 'lodash'
 
   export default {
     props: {
       defaultName: String,
-      allowStyleNameEditing: Boolean,
+      allowIconNameEditing: Boolean,
       deletable: Boolean,
       geometryType: String,
       iconRow: Object,
@@ -69,40 +58,11 @@
       showId: Boolean,
       isTableIcon: Boolean
     },
-    created () {
-      this.debounceName = _.debounce((val) => {
-        if (this.iconRow.getName() !== val) {
-          let iconRow = {
-            id: this.iconRow.getId(),
-            data: this.iconRow.getData(),
-            width: this.iconRow.getWidth(),
-            height: this.iconRow.getHeight(),
-            anchorU: this.iconRow.getAnchorU(),
-            anchorV: this.iconRow.getAnchorV(),
-            name: val,
-            contentType: this.iconRow.getContentType()
-          }
-          this.updateProjectLayerIconRow({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            iconRow: iconRow
-          })
-        }
-      }, 500)
-    },
     components: {
-      'numberpicker': NumberPicker,
-      'expandablecard': ExpandableCard
+      ExpandableCard,
+      ViewEditText
     },
     computed: {
-      name: {
-        get () {
-          return this.iconRow.getName()
-        },
-        set (val) {
-          this.debounceName(val)
-        }
-      },
       anchorSelection: {
         get () {
           return this.getAnchorLocation(this.iconRow.getAnchorU(), this.iconRow.getAnchorV())
@@ -134,15 +94,15 @@
       },
       anchorLocations () {
         let anchorLocations = []
-        anchorLocations.push({name: 'Bottom Center', value: 0})
-        anchorLocations.push({name: 'Bottom Left', value: 1})
-        anchorLocations.push({name: 'Bottom Right', value: 2})
-        anchorLocations.push({name: 'Top Center', value: 3})
-        anchorLocations.push({name: 'Top Left', value: 4})
-        anchorLocations.push({name: 'Top Right', value: 5})
-        anchorLocations.push({name: 'Center', value: 6})
-        anchorLocations.push({name: 'Center Left', value: 7})
-        anchorLocations.push({name: 'Center Right', value: 8})
+        anchorLocations.push({text: 'Bottom Center', value: 0})
+        anchorLocations.push({text: 'Bottom Left', value: 1})
+        anchorLocations.push({text: 'Bottom Right', value: 2})
+        anchorLocations.push({text: 'Top Center', value: 3})
+        anchorLocations.push({text: 'Top Left', value: 4})
+        anchorLocations.push({text: 'Top Right', value: 5})
+        anchorLocations.push({text: 'Center', value: 6})
+        anchorLocations.push({text: 'Center Left', value: 7})
+        anchorLocations.push({text: 'Center Right', value: 8})
         return anchorLocations
       }
     },
@@ -153,6 +113,25 @@
       }),
       deleteIcon () {
         this.deleteProjectLayerIconRow({projectId: this.projectId, layerId: this.layer.id, iconId: this.iconRow.getId()})
+      },
+      saveName (val) {
+        if (this.iconRow.getName() !== val) {
+          let iconRow = {
+            id: this.iconRow.getId(),
+            data: this.iconRow.getData(),
+            width: this.iconRow.getWidth(),
+            height: this.iconRow.getHeight(),
+            anchorU: this.iconRow.getAnchorU(),
+            anchorV: this.iconRow.getAnchorV(),
+            name: val,
+            contentType: this.iconRow.getContentType()
+          }
+          this.updateProjectLayerIconRow({
+            projectId: this.projectId,
+            layerId: this.layer.id,
+            iconRow: iconRow
+          })
+        }
       },
       getAnchorUV (anchorLocation) {
         let result = {}
@@ -252,7 +231,7 @@
               fileInfo.lastModified = fileInfo.modifyTime.getTime()
               fileInfo.lastModifiedDate = fileInfo.modifyTime
               fileInfo.path = fileInfo.absolutePath
-              let extension = path.extname(fileInfo.path)
+              let extension = path.extname(fileInfo.path).slice(1)
               if (extension === 'jpg') {
                 extension = 'jpeg'
               }
@@ -288,30 +267,12 @@
 
 <style>
   .subtitle-card {
-    display: inline-block;
-    vertical-align: middle;
-    line-height: normal;
-  }
-  .subtitle-card p {
     color: #000;
     font-size: 16px;
-    font-weight: normal;
+    font-weight: 500;
   }
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .icon {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 5px;
-    width: 64px;
-    height: 64px;
-    display: block;
-    object-fit: contain;
-    cursor: pointer;
+  .icon-options {
+    margin: 0 8px 0;
   }
   .icon-box {
     border: 1px solid #ffffff00;
@@ -321,32 +282,21 @@
     object-fit: contain;
     margin: 0.25rem;
   }
+  .icon {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px;
+    width: 64px;
+    height: 64px;
+    display: block;
+    object-fit: contain;
+    cursor: pointer;
+  }
   .icon:hover {
     box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
   }
-  .preset-select {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    border-width: 1px;
-    border-style: solid;
-  }
-  .preset-select select {
-    display: flex;
-    flex-direction: row;
-    font-weight: normal;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align-last: center;
-  }
-  .preset-select select:focus {
-    outline: none;
-  }
-  .text-box {
-    height: 32px;
-    font-size: 14px;
+  .icon-row {
+    margin-bottom: 16px;
   }
   .control-label {
     font-size: 12px;
@@ -359,8 +309,10 @@
     color: #9b0000;
   }
   .delete-button {
-    padding-top: 1.5rem;
     margin-right: .25rem;
     cursor: pointer;
+  }
+  .fs12 {
+    font-size: 12px;
   }
 </style>

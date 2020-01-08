@@ -10,6 +10,7 @@ import _ from 'lodash'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
 import { userDataDir } from '../settings/Settings'
+import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class KMLSource extends Source {
   async initialize () {
@@ -30,7 +31,7 @@ export default class KMLSource extends Source {
         feature.id = index
       })
       if (featureCollection.features.length > 0) {
-        let id = Source.createId()
+        let id = UniqueIDUtilities.createUniqueID()
         let fileName = name + '.gpkg'
         let filePath = userDataDir().dir(id).file(fileName).path()
         let fullFile = path.join(filePath, fileName)

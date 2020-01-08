@@ -1,56 +1,42 @@
 <template>
   <expandablecard>
     <div slot="card-header">
-      <div class="flex-row">
-        <div class="subtitle-card">
-          <p>
-            {{name + (showId ? ' (' + styleRow.getId() + ')' : '')}}
-          </p>
-        </div>
-        <div class="color-box" :style="{backgroundColor: ((geometryType === 'Polygon' || geometryType === 'MultiPolygon') ? fillColor : color)}"></div>
-      </div>
+      <v-row no-gutters class="justify-space-between" align="center">
+        <v-col cols="10" class="align-center">
+          <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.getId() + ')' : ''" font-size="16px" font-weight="500" label="Style Name" :on-save="saveName"/>
+        </v-col>
+        <v-col cols="2">
+          <v-row no-gutters class="justify-end" align="center">
+            <div class="color-box" :style="{backgroundColor: ((geometryType === 'Polygon' || geometryType === 'MultiPolygon') ? fillColor : color)}"></div>
+          </v-row>
+        </v-col>
+      </v-row>
     </div>
     <div slot="card-expanded-body">
-      <div class="flex-row">
-        <div v-if="allowStyleNameEditing">
-          <label class="control-label">Name</label>
-          <div>
-            <input
-              type="text"
-              class="text-box"
-              v-model="name"/>
-          </div>
-        </div>
-      </div>
-      <div class="flex-row">
-        <div>
-          <label class="control-label">Color</label>
-          <div>
+      <v-container>
+        <v-row no-gutters class="mb-2">
+          <v-col cols="10">
+            <label class="v-label v-label--active theme--light v-label--active fs12">Color</label>
             <colorpicker :color="color" v-model="color" />
-          </div>
-        </div>
-      </div>
-      <div class="flex-row" v-if="geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined">
-        <div>
-          <label class="control-label">Fill Color</label>
-          <div>
+          </v-col>
+        </v-row>
+        <v-row v-if="(geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined) && styleRow.getFillHexColor() !== null && styleRow.getFillOpacity() !== null" no-gutters class="mb-2">
+          <v-col cols="10">
+            <label class="v-label v-label--active theme--light v-label--active fs12">Fill Color</label>
             <colorpicker :color="fillColor" v-model="fillColor" />
-          </div>
-        </div>
-      </div>
-      <div class="flex-row">
-        <div>
-          <label class="control-label">Width (px)</label>
-          <div>
-            <numberpicker :number="width" v-model="width" />
-          </div>
-        </div>
-        <div>
-          <div v-if="deletable" class="delete-button" @click.stop="deleteStyle()">
-            <font-awesome-icon icon="trash" class="danger" size="2x"/>
-          </div>
-        </div>
-      </div>
+          </v-col>
+        </v-row>
+        <v-row no-gutters class="justify-space-between" align="center">
+          <v-col cols="10" class="align-center">
+            <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" v-model="width" />
+          </v-col>
+          <v-col cols="2">
+            <v-row no-gutters class="justify-end" align="center">
+              <font-awesome-icon class="delete-button danger" @click.stop="deleteStyle()" icon="trash" size="2x"/>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-container>
     </div>
   </expandablecard>
 </template>
@@ -61,6 +47,7 @@
   import NumberPicker from './NumberPicker'
   import _ from 'lodash'
   import ExpandableCard from '../Card/ExpandableCard'
+  import ViewEditText from '../Common/ViewEditText'
 
   export default {
     props: {
@@ -94,25 +81,6 @@
               styleRow: styleRow
             })
           }
-        }
-      }, 500)
-      this.debounceName = _.debounce((val) => {
-        if (this.styleRow.getName() !== val) {
-          let styleRow = {
-            id: this.styleRow.getId(),
-            name: val,
-            description: this.styleRow.getDescription(),
-            color: this.styleRow.getHexColor(),
-            opacity: this.styleRow.getOpacity(),
-            fillColor: this.styleRow.getFillHexColor(),
-            fillOpacity: this.styleRow.getFillOpacity(),
-            width: this.styleRow.getWidth()
-          }
-          this.updateProjectLayerStyleRow({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            styleRow: styleRow
-          })
         }
       }, 500)
       this.debounceFillColorOpacity = _.debounce((val) => {
@@ -162,17 +130,10 @@
     components: {
       'colorpicker': ColorPicker,
       'numberpicker': NumberPicker,
-      'expandablecard': ExpandableCard
+      'expandablecard': ExpandableCard,
+      ViewEditText
     },
     computed: {
-      name: {
-        get () {
-          return this.styleRow.getName()
-        },
-        set (val) {
-          this.debounceName(val)
-        }
-      },
       color: {
         get () {
           return this.getRGBA(this.styleRow.getHexColor(), this.styleRow.getOpacity())
@@ -203,6 +164,25 @@
         updateProjectLayerStyleRow: 'Projects/updateProjectLayerStyleRow',
         deleteProjectLayerStyleRow: 'Projects/deleteProjectLayerStyleRow'
       }),
+      saveName (val) {
+        if (this.styleRow.getName() !== val) {
+          let styleRow = {
+            id: this.styleRow.getId(),
+            name: val,
+            description: this.styleRow.getDescription(),
+            color: this.styleRow.getHexColor(),
+            opacity: this.styleRow.getOpacity(),
+            fillColor: this.styleRow.getFillHexColor(),
+            fillOpacity: this.styleRow.getFillOpacity(),
+            width: this.styleRow.getWidth()
+          }
+          this.updateProjectLayerStyleRow({
+            projectId: this.projectId,
+            layerId: this.layer.id,
+            styleRow: styleRow
+          })
+        }
+      },
       parseColor (val) {
         let color = '#FFFFFF'
         let opacity = 1.0
@@ -242,8 +222,6 @@
     display: inline-block;
     vertical-align: middle;
     line-height: normal;
-  }
-  .subtitle-card p {
     color: #000;
     font-size: 16px;
     font-weight: normal;
@@ -255,13 +233,8 @@
     align-items: center;
   }
   .delete-button {
-    padding-top: 1.5rem;
     margin-right: .25rem;
     cursor: pointer;
-  }
-  .text-box {
-    height: 32px;
-    font-size: 14px;
   }
   .control-label {
     font-size: 12px;
@@ -272,5 +245,8 @@
   }
   .danger:hover {
     color: #9b0000;
+  }
+  .fs12 {
+    font-size: 12px;
   }
 </style>

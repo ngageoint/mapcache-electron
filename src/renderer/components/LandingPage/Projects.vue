@@ -3,28 +3,46 @@
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
 
-        <li class="project" @click="newProject()">
+        <li class="project" @click="onClickNewProject">
           <div class="project-thumb">
             <font-awesome-icon class="new-project-icon" icon="plus" size="2x"/>
           </div>
           <div class="project-thumb-name">Create A New Project</div>
         </li>
 
-        <li v-for="project in projects" :key="project.id" @click="openProject(project)" class="project">
+        <li v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)" class="project">
           <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>
           </div>
-          <div class="project-thumb-name">{{project.name}}</div>
+          <p class="project-thumb-name">{{project.name}}</p>
         </li>
 
+        <v-dialog
+          v-model="dialog"
+          persistent
+          class="padding-top"
+          width="400">
+          <v-card
+            color="#426e91" dark>
+            <v-card-text
+              class="padding-top">
+              {{dialogText}}
+              <v-progress-linear
+                indeterminate
+                color="white"
+                class="mb-0">
+              </v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
       </ul>
     </div>
   </div>
 </template>
 
 <script>
-  import { mapState, mapActions, mapGetters } from 'Vuex'
+  import { mapState, mapActions } from 'Vuex'
 
   export default {
     computed: {
@@ -32,17 +50,36 @@
         projects: state => {
           return state.Projects
         }
-      }),
-      ...mapGetters({
-        getNewProject: 'Projects/getNewProject'
       })
+    },
+    data () {
+      return {
+        dialog: false,
+        dialogText: ''
+      }
     },
     methods: {
       ...mapActions({
         newProject: 'Projects/newProject',
         deleteProject: 'Projects/deleteProject',
         openProject: 'Projects/openProject'
-      })
+      }),
+      onClickNewProject () {
+        this.dialogText = 'Loading New Project...'
+        this.dialog = true
+        this.newProject()
+        this.$electron.ipcRenderer.once('show-project-completed', () => {
+          this.dialog = false
+        })
+      },
+      onClickOpenProject (project) {
+        this.dialogText = 'Loading ' + project.name + '...'
+        this.dialog = true
+        this.openProject(project)
+        this.$electron.ipcRenderer.once('show-project-completed', () => {
+          this.dialog = false
+        })
+      }
     }
   }
 </script>
@@ -50,9 +87,13 @@
 <style scoped>
 
   .project-container {
-    overflow-y: scroll;
+    overflow-y: auto;
     height: 100vh;
     overflow-x: hidden;
+  }
+
+  .padding-top {
+    padding-top: 12px !important;
   }
 
   .projects {
@@ -78,13 +119,21 @@
     color: white;
     text-align: center;
     font-size: 2em;
+    cursor: pointer;
+  }
+
+  .project-thumb:hover {
+    background: rgb(100, 100, 100);
   }
 
   .project-thumb-name {
+    max-width: 12em;
     text-align: center;
-    font-weight: 300;
+    font-weight: 700;
     font-size: 1em;
-    color: rgba(255, 255, 255, .87)
+    color: rgba(255, 255, 255, .87);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .project-thumb-icon {

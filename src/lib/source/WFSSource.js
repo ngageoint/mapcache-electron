@@ -5,18 +5,22 @@ import path from 'path'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
 import _ from 'lodash'
+import GeoServiceUtilities from '../GeoServiceUtilities'
+import {userDataDir} from '../settings/Settings'
+import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {
     this.geopackageLayers = []
     for (const layer of this.layers) {
+      let sourceId = UniqueIDUtilities.createUniqueID()
       let featureCollection = await this.getFeatureCollectionInLayer(layer.name)
       let fileName = layer.name + '.gpkg'
-      let filePath = this.sourceCacheFolder.file(fileName).path()
+      let filePath = userDataDir().dir(sourceId).file(fileName).path()
       let fullFile = path.join(filePath, fileName)
       let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
       this.geopackageLayers.push(new VectorLayer({
-        id: this.sourceId,
+        id: sourceId,
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer.name,
@@ -31,7 +35,7 @@ export default class WFSSource extends Source {
     return new Promise((resolve) => {
       let options = {
         method: 'GET',
-        url: this.filePath + '&request=GetFeature&typeNames=' + layer + '&outputFormat=application/json&srsName=crs:84',
+        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84'),
         encoding: null,
         gzip: true,
         headers: {

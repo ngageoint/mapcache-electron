@@ -1,18 +1,17 @@
 <template>
-  <div class="card">
-    <div class="clickable" v-on:click="toggle()">
-      <div class="flex-row">
-        <div class="clickable" @click.stop="toggle()">
-          <font-awesome-icon icon="chevron-down" class="expand-collapse" size="lg" v-if="!expanded"/>
-          <font-awesome-icon icon="chevron-up" class="expand-collapse" size="lg" v-if="expanded"/>
-        </div>
-        <div class="full-width">
+  <v-card class="card">
+    <v-container class="pa-0 ma-0 clickable" @click.stop="toggle()">
+      <v-row no-gutters="">
+        <v-col align-self="center" cols="1" class="clickable" @click.stop="toggle()">
+          <font-awesome-icon :icon="(expanded ? 'chevron-up' : 'chevron-down')" class="expand-collapse" size="lg"/>
+        </v-col>
+        <v-col cols="11">
           <slot name="card-header">
             default collapsed card
           </slot>
-        </div>
-      </div>
-    </div>
+        </v-col>
+      </v-row>
+    </v-container>
     <transition-expand>
       <div v-show="expanded">
         <slot name="card-expanded-body">
@@ -20,20 +19,27 @@
         </slot>
       </div>
     </transition-expand>
-  </div>
+  </v-card>
 </template>
 
 <script>
-  import TransitionExpand from '../../TransitionExpand'
+  import TransitionExpand from './TransitionExpand'
   export default {
+    props: {
+      initiallyExpanded: Boolean,
+      onExpandCollapse: Function
+    },
     data () {
       return {
-        expanded: false
+        expanded: this.initiallyExpanded || false
       }
     },
     methods: {
       toggle () {
         this.expanded = !this.expanded
+        if (this.onExpandCollapse) {
+          this.onExpandCollapse()
+        }
       }
     },
     components: {
@@ -45,14 +51,10 @@
 <style scoped>
   .card {
     background-color: white;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+    padding: 8px;
     min-height: 3rem;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    margin: 0.25rem;
-  }
-  .full-width {
-    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 8px;
   }
   .flex-row {
     display: flex;
@@ -64,7 +66,7 @@
   }
   .expand-collapse {
     color: darkgray;
-    margin-right: 0.5rem;
+    margin-right: 8px;
   }
   .expand-collapse:hover {
     color: black;

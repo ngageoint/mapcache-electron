@@ -1,280 +1,217 @@
 import GeoPackage from '@ngageoint/geopackage'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
-import store from '../../store'
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import CanvasUtilities from '../CanvasUtilities'
-import fs from 'fs'
 import GeoPackageUtilities from '../GeoPackageUtilities'
+import _ from 'lodash'
+import fs from 'fs'
 
 export default class GeoPackageBuilder {
   config
   project
-  cancelled
+
   static BUILD_MODES = {
     STARTED: 0,
-    PENDING_CANCEL: 1,
-    CANCELLED: 2,
-    COMPLETED: 3
+    FAILED: 1,
+    COMPLETED: 2
   }
 
-  constructor (config, project) {
+  constructor (config, project, store) {
     this.config = config
     this.project = project
-    this.cancelled = false
-  }
-
-  setCancelled = () => {
-    this.cancelled = true
+    this.store = store
   }
 
   dispatchStatusUpdate (status) {
-    store.dispatch('Projects/setGeoPackageStatus', {
+    this.store.dispatch('Projects/setGeoPackageStatus', {
       projectId: this.project.id,
       geopackageId: this.config.id,
       status
     })
   }
   dispatchBuildMode (buildMode) {
-    store.dispatch('Projects/setGeoPackageBuildMode', {
+    this.store.dispatch('Projects/setGeoPackageBuildMode', {
       projectId: this.project.id,
       geopackageId: this.config.id,
       buildMode: buildMode
     })
   }
 
-  async go () {
-    let status = {
-      creation: 'Building...',
-      layerStatus: {}
-    }
-    this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.STARTED)
-    this.dispatchStatusUpdate(status)
-    let gp = await GeoPackage.create(this.config.fileName)
-    // execute feature configurations
-    for (const layerId in this.config.featureLayers) {
-      if (this.cancelled) {
-        break
-      }
-      let geopackageLayerConfig = this.config.featureLayers[layerId]
-      if (!geopackageLayerConfig.included) {
-        continue
-      }
-      let layerStatus = {
-        layerId,
-        creation: 'Started',
-        featuresAdded: 0,
-        remainingTime: 0,
-        startTime: Date.now()
-      }
-      status.layerStatus[layerId] = layerStatus
-      this.dispatchStatusUpdate(status)
-      try {
-        let aoi = this.config.featureLayersShareBounds ? this.config.featureAoi : geopackageLayerConfig.aoi
-        let layerConfig = this.project.layers[layerId]
-        let layer = LayerFactory.constructLayer(layerConfig)
-        await layer.initialize()
-        let sourceFeatureTableName = layer.sourceLayerName || layer.name
-        let targetFeatureTableName = geopackageLayerConfig.layerName || geopackageLayerConfig.name
-        layerStatus.featuresAdded = await GeoPackageUtilities.copyGeoPackageFeaturesAndStylesForBoundingBox(layer._geopackage, gp, sourceFeatureTableName, targetFeatureTableName, aoi)
-        layerStatus.creation = 'Completed'
-        this.dispatchStatusUpdate(status)
-      } catch (error) {
-        layerStatus.creation = 'Failed'
-        layerStatus.error = error.message
-        console.log(error)
-        this.dispatchStatusUpdate(status)
+  async getFeaturesInBounds (geopackage, vectorConfiguration) {
+    let numberOfFeatures = 0
+    if (vectorConfiguration.boundingBox) {
+      for (let i = 0; i < vectorConfiguration.vectorLayers.length; i++) {
+        let vectorLayer = geopackage.vectorLayers[vectorConfiguration.vectorLayers[i]]
+        if (vectorLayer.geopackageFilePath) {
+          numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(vectorLayer.geopackageFilePath, vectorLayer.sourceLayerName, vectorConfiguration.boundingBox)
+        }
       }
     }
+    return numberOfFeatures
+  }
 
-    // execute imagery configurations
-    for (const layerId in this.config.imageryLayers) {
-      if (this.cancelled) {
-        break
+  async go () {
+    let result = {}
+    try {
+      let status = {
+        configurationExecuting: null,
+        configurationStatus: {}
       }
-      let geopackageLayerConfig = this.config.imageryLayers[layerId]
-      if (!geopackageLayerConfig.included || this.cancelled) {
-        continue
-      }
-      let aoi = this.config.imageryLayersShareBounds ? this.config.imageryAoi : geopackageLayerConfig.aoi
-      let minZoom = Number(this.config.imageryLayersShareBounds ? this.config.imageryMinZoom : geopackageLayerConfig.minZoom)
-      let maxZoom = Number(this.config.imageryLayersShareBounds ? this.config.imageryMaxZoom : geopackageLayerConfig.maxZoom)
-      let layerConfig = this.project.layers[layerId]
-      let layerStatus = {
-        layerId,
-        totalTileCount: XYZTileUtilities.tileCountInExtent(aoi, minZoom, maxZoom),
-        creation: 'Started',
-        totalSize: 0,
-        remainingTime: 0,
-        startTime: Date.now()
-      }
-      status.layerStatus[layerId] = layerStatus
+      this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.STARTED)
       this.dispatchStatusUpdate(status)
-      try {
-        let layer = LayerFactory.constructLayer(layerConfig)
-        await layer.initialize()
-        const contentsBounds = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
-        const contentsSrsId = 3857
-        const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
-        const tileMatrixSetSrsId = 3857
-        await GeoPackage.createStandardWebMercatorTileTable(gp, geopackageLayerConfig.layerName || geopackageLayerConfig.name, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
-        let tilesComplete = 0
-        let totalSize = 0
-        let time = Date.now()
-        let currentTile
-        await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
-          if (this.cancelled) {
-            return false
-          }
-          let result = await layer.renderTile({x, y, z})
-          tilesComplete++
-          currentTile = {z, x, y}
-          if (Date.now() - time > 1000) {
-            time = Date.now()
-            layerStatus.tilesComplete = tilesComplete
-            layerStatus.currentTile = currentTile
-            layerStatus.totalSize = totalSize
-            layerStatus.remainingTime = ((time - layerStatus.startTime) / layerStatus.tilesComplete) * (layerStatus.totalTileCount - layerStatus.tilesComplete)
+
+      if (fs.existsSync(this.config.fileName)) {
+        try {
+          fs.unlinkSync(this.config.fileName)
+        } catch (error) {
+          console.error(error)
+        }
+      }
+
+      let gp = await GeoPackage.create(this.config.fileName)
+
+      // iterate over vector configurations
+      for (const vectorConfigIdx in this.config.vectorConfigurations) {
+        const vectorConfig = this.config.vectorConfigurations[vectorConfigIdx]
+        status.configurationExecuting = vectorConfig.id
+        status.configurationStatus[vectorConfig.id] = {
+          id: vectorConfig.id,
+          configurationName: vectorConfig.configurationName,
+          creation: 'Started',
+          featuresAdded: 0,
+          featuresToAdd: await this.getFeaturesInBounds(this.config, vectorConfig),
+          indexing: false,
+          type: 'vector',
+          error: null
+        }
+        this.dispatchStatusUpdate(status)
+
+        for (let index in vectorConfig.vectorLayers) {
+          let vectorLayer = vectorConfig.vectorLayers[index]
+          try {
+            let layerConfig = this.project.layers[vectorLayer]
+            let sourceFeatureTableName = layerConfig.sourceLayerName
+            let targetFeatureTableName = layerConfig.sourceLayerName
+            let geoPackageSource = await GeoPackage.open(layerConfig.geopackageFilePath)
+            status.configurationStatus[vectorConfig.id].featuresAdded += await GeoPackageUtilities.copyGeoPackageFeaturesAndStylesForBoundingBox(geoPackageSource, gp, sourceFeatureTableName, targetFeatureTableName, vectorConfig.boundingBox)
+            this.dispatchStatusUpdate(status)
+            if (vectorConfig.indexed) {
+              status.configurationStatus[vectorConfig.id].indexing = true
+              this.dispatchStatusUpdate(status)
+              await GeoPackageUtilities.indexFeatureTable(gp, targetFeatureTableName)
+              status.configurationStatus[vectorConfig.id].indexing = false
+              this.dispatchStatusUpdate(status)
+            }
+          } catch (error) {
+            console.error(error)
+            status.configurationStatus[vectorConfig.id].creation = 'Failed'
+            status.configurationStatus[vectorConfig.id].error = error.message
             this.dispatchStatusUpdate(status)
           }
-          if (!result) {
-            return false
-          }
-          if (Buffer.isBuffer(result)) {
-            gp.addTile(result, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
-            return false
-          }
-          if (result.blank) {
-            return false
-          }
-          return new Promise((resolve, reject) => {
-            if (!result.hasAlpha) {
-              result.canvas.toBlob((blob) => {
-                let reader = new FileReader()
-                reader.addEventListener('loadend', function () {
-                  totalSize += reader.result.byteLength
-                  gp.addTile(Buffer.from(reader.result), geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
-                  resolve(false)
-                })
-                reader.readAsArrayBuffer(blob)
-              }, 'image/jpeg', 0.7)
-            } else {
-              result.canvas.toBlob((blob) => {
-                let reader = new FileReader()
-                reader.addEventListener('loadend', async function () {
-                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
-                    plugins: [
-                      imageminPngquant({
-                        speed: 8,
-                        quality: [0.5, 0.8]
-                      })
-                    ]
-                  })
-
-                  totalSize += buffer.length
-                  // console.log('totalSize', totalSize)
-                  gp.addTile(buffer, geopackageLayerConfig.layerName || geopackageLayerConfig.name, z, y, x)
-                  resolve(false)
-                })
-                reader.readAsArrayBuffer(blob)
-              }, 'image/png')
-            }
-          })
-        })
-        if (this.cancelled) {
-          break
         }
-        layerStatus.tilesComplete = layerStatus.totalTileCount
-        layerStatus.currentTile = currentTile
-        layerStatus.totalSize = totalSize
-        layerStatus.remainingTime = 0
-        layerStatus.creation = 'Completed'
-        this.dispatchStatusUpdate(status)
-      } catch (error) {
-        layerStatus.creation = 'Failed'
-        layerStatus.error = error.message
+        status.configurationStatus[vectorConfig.id].creation = 'Completed'
         this.dispatchStatusUpdate(status)
       }
-    }
 
-    let includedFeatureToImageryLayers = Object.values(this.config.featureToImageryLayers).filter(l => l.included)
-    // execute feature to imagery configuration
-    if (includedFeatureToImageryLayers.length > 0 && !this.cancelled) {
-      const layerId = this.config.featureImageryConversion.name
-      let aoi = this.config.featureImageryConversion.aoi
-      let minZoom = this.config.featureImageryConversion.minZoom
-      let maxZoom = this.config.featureImageryConversion.maxZoom
-      let layerStatus = {
-        layerId,
-        totalTileCount: XYZTileUtilities.tileCountInExtent(aoi, minZoom, maxZoom),
-        creation: 'Started',
-        totalSize: 0,
-        remainingTime: 0,
-        startTime: Date.now()
-      }
-      status.layerStatus[layerId] = layerStatus
-      this.dispatchStatusUpdate(status)
-      try {
-        const layersToInclude = includedFeatureToImageryLayers.map(l => this.project.layers[l.id])
-        const orderedLayersToInclude = []
-        if (this.config.featureImageryConversion.layerOrder) {
-          this.config.featureImageryConversion.layerOrder.forEach((l) => {
-            const layerConfig = layersToInclude.find(layer => layer.name === l.name)
-            if (layerConfig) {
-              orderedLayersToInclude.push(LayerFactory.constructLayer(layerConfig))
-            }
-          })
-        } else {
-          layersToInclude.forEach((l) => {
-            orderedLayersToInclude.push(LayerFactory.constructLayer(l))
-          })
+      // iterate over tile configurations
+      for (const tileConfigIdx in this.config.tileConfigurations) {
+        const tileConfig = this.config.tileConfigurations[tileConfigIdx]
+        let boundingBox = tileConfig.boundingBox
+        let minZoom = tileConfig.minZoom
+        let maxZoom = tileConfig.maxZoom
+        status.configurationExecuting = tileConfig.id
+        status.configurationStatus[tileConfig.id] = {
+          id: tileConfig.id,
+          configurationName: tileConfig.configurationName,
+          creation: 'Preparing Layers',
+          tilesAdded: 0,
+          error: null,
+          type: 'tile',
+          tilesToAdd: XYZTileUtilities.tileCountInExtent(boundingBox, minZoom, maxZoom)
         }
+        this.dispatchStatusUpdate(status)
 
-        // Iterate over each layer and generate dem tiles! Use the style too dawg!
-        const contentsBounds = new GeoPackage.BoundingBox(aoi[0][1], aoi[1][1], aoi[0][0], aoi[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
+        const contentsBounds = new GeoPackage.BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
+        console.log(contentsBounds)
         const contentsSrsId = 3857
         const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
         const tileMatrixSetSrsId = 3857
-        await GeoPackage.createStandardWebMercatorTileTable(gp, layerId, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
-        let tilesComplete = 0
-        let totalSize = 0
-        let time = Date.now()
-        let currentTile
+        await GeoPackage.createStandardWebMercatorTileTable(gp, tileConfig.tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
 
-        for (let i = 0; i < orderedLayersToInclude.length; i++) {
-          if (this.cancelled) {
-            break
-          }
-          await orderedLayersToInclude[i].initialize()
+        let layers = []
+        for (let index in tileConfig.tileLayers) {
+          let tileLayerId = tileConfig.tileLayers[index]
+          let layerConfig = this.project.layers[tileLayerId]
+          let layer = LayerFactory.constructLayer(layerConfig)
+          layers.push(await layer.initialize())
         }
-        await XYZTileUtilities.iterateAllTilesInExtent(aoi, minZoom, maxZoom, async ({z, x, y}) => {
-          if (this.cancelled) {
-            return false
+        for (let index in tileConfig.vectorLayers) {
+          let vectorLayerId = tileConfig.vectorLayers[index]
+          let layerConfig = _.cloneDeep(this.project.layers[vectorLayerId])
+          layerConfig.maxFeatures = Number.MAX_SAFE_INTEGER
+          let layer = LayerFactory.constructLayer(layerConfig)
+          layers.push(await layer.initialize())
+        }
+        // sort layers into rendering order
+        let sortedLayers = []
+        for (let index in tileConfig.renderingOrder) {
+          let layer = tileConfig.renderingOrder[index]
+          let layerIdx = layers.findIndex(l => l.id === layer.id)
+          if (layerIdx > -1) {
+            sortedLayers.push(layers[layerIdx])
           }
-          currentTile = {z, x, y}
+        }
+
+        // update status to generating tiles
+        status.configurationStatus[tileConfig.id].creation = 'Building Tiles'
+        this.dispatchStatusUpdate(status)
+        let time = Date.now()
+        await XYZTileUtilities.iterateAllTilesInExtent(boundingBox, minZoom, maxZoom, async ({z, x, y}) => {
+          // setup canvas that we will draw each layer into
           let canvas = document.createElement('canvas')
           canvas.width = 256
           canvas.height = 256
           let ctx = canvas.getContext('2d')
           ctx.clearRect(0, 0, canvas.width, canvas.height)
-          // iterate over each feature layer and render the x,y,z tile for that feature
-          for (let i = 0; i < orderedLayersToInclude.length; i++) {
+
+          // iterate over each layer and generate the tile for that layer
+          for (let i = 0; i < sortedLayers.length; i++) {
             await new Promise((resolve, reject) => {
-              orderedLayersToInclude[i].renderTile(currentTile, null, (err, image) => {
+              let layer = sortedLayers[i]
+              layer.renderTile({x, y, z}, null, (err, result) => {
                 if (err) {
+                  console.error(err)
                   reject(err)
-                } else {
-                  let img = new Image()
-                  img.onload = () => {
-                    ctx.drawImage(img, 0, 0)
-                    resolve()
+                } else if (!_.isNil(result)) {
+                  try {
+                    let image
+                    // result could be a buffer, a canvas, or a data url (string)
+                    if (Buffer.isBuffer(result)) {
+                      image = URL.createObjectURL(result)
+                    } else if (typeof result === 'string') {
+                      image = result
+                    } else {
+                      image = result.toDataURL()
+                    }
+                    let img = new Image()
+                    img.onload = () => {
+                      ctx.drawImage(img, 0, 0)
+                      resolve()
+                    }
+                    img.src = image
+                  } catch (error) {
+                    console.error(error)
+                    reject(error)
                   }
-                  img.src = image
+                } else {
+                  resolve()
                 }
               })
             })
           }
+          // look at merged canvas
           if (!CanvasUtilities.isBlank(canvas)) {
             await new Promise((resolve) => {
               if (CanvasUtilities.hasTransparentPixels(canvas)) {
@@ -289,10 +226,7 @@ export default class GeoPackageBuilder {
                         })
                       ]
                     })
-
-                    totalSize += buffer.length
-                    // console.log('totalSize', totalSize)
-                    gp.addTile(buffer, layerId, z, y, x)
+                    gp.addTile(buffer, tileConfig.tableName, z, y, x)
                     resolve(false)
                   })
                   reader.readAsArrayBuffer(blob)
@@ -301,8 +235,7 @@ export default class GeoPackageBuilder {
                 canvas.toBlob((blob) => {
                   const reader = new FileReader()
                   reader.addEventListener('loadend', function () {
-                    totalSize += reader.result.byteLength
-                    gp.addTile(Buffer.from(reader.result), layerId, z, y, x)
+                    gp.addTile(Buffer.from(reader.result), tileConfig.tableName, z, y, x)
                     resolve(false)
                   })
                   reader.readAsArrayBuffer(blob)
@@ -310,43 +243,20 @@ export default class GeoPackageBuilder {
               }
             })
           }
-          tilesComplete++
+          status.configurationStatus[tileConfig.id].tilesAdded += 1
           if (Date.now() - time > 1000) {
             time = Date.now()
-            layerStatus.tilesComplete = tilesComplete
-            layerStatus.currentTile = currentTile
-            layerStatus.totalSize = totalSize
-            layerStatus.remainingTime = ((time - layerStatus.startTime) / layerStatus.tilesComplete) * (layerStatus.totalTileCount - layerStatus.tilesComplete)
             this.dispatchStatusUpdate(status)
           }
         })
-        if (!this.cancelled) {
-          layerStatus.tilesComplete = layerStatus.totalTileCount
-          layerStatus.currentTile = currentTile
-          layerStatus.totalSize = totalSize
-          layerStatus.remainingTime = 0
-          layerStatus.creation = 'Completed'
-          this.dispatchStatusUpdate(status)
-        }
-      } catch (error) {
-        layerStatus.creation = 'Failed'
-        layerStatus.error = error.message
-        this.dispatchStatusUpdate(status)
       }
-    }
-    if (this.cancelled) {
-      this.cancelled = false
-      fs.unlinkSync(this.config.fileName)
-      status.creation = 'Cancelled'
-      Object.values(status.layerStatus).filter(s => s.creation === 'Started').forEach(s => {
-        s.creation = 'Cancelled'
-      })
-      this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.CANCELLED)
       this.dispatchStatusUpdate(status)
-    } else {
-      status.creation = 'Completed'
       this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.COMPLETED)
-      this.dispatchStatusUpdate(status)
+    } catch (error) {
+      this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.FAILED)
+      console.error(error)
+      result.error = error
     }
+    return result
   }
 }

@@ -1,16 +1,7 @@
 import Vue from 'vue'
 import WindowLauncher from '../../lib/window/WindowLauncher'
 import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-import _ from 'lodash'
-
-function createId () {
-  function s4 () {
-    return new Date().getTime()
-      .toString(16)
-      .substring(1)
-  }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
-}
+import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
 
 const state = {
 }
@@ -24,35 +15,34 @@ const getters = {
 const mutations = {
   pushProjectToProjects (state, project) {
     Vue.set(state, project.id, project)
-    console.log('state', state)
   },
   setProjectName (state, {project, name}) {
     state[project.id].name = name
   },
   setLayerDisplayName (state, {projectId, layerId, displayName}) {
-    if (!_.isNil(state[projectId].geopackages)) {
-      let keys = Object.keys(state[projectId].geopackages)
-      for (let i = 0; i < keys.length; i++) {
-        let geopackageId = keys[i]
-        let geopackage = _.cloneDeep(state[projectId].geopackages[geopackageId])
-        let update = false
-        if (!_.isNil(geopackage.imageryLayers[layerId])) {
-          geopackage.imageryLayers[layerId].displayName = displayName
-          update = true
-        }
-        if (!_.isNil(geopackage.featureLayers[layerId])) {
-          geopackage.featureLayers[layerId].displayName = displayName
-          update = true
-        }
-        if (!_.isNil(geopackage.featureToImageryLayers[layerId])) {
-          geopackage.featureToImageryLayers[layerId].displayName = displayName
-          update = true
-        }
-        if (update) {
-          Vue.set(state[projectId].geopackages, geopackageId, geopackage)
-        }
-      }
-    }
+    // if (!_.isNil(state[projectId].geopackages)) {
+    //   let keys = Object.keys(state[projectId].geopackages)
+    //   for (let i = 0; i < keys.length; i++) {
+    //     let geopackageId = keys[i]
+    //     let geopackage = _.cloneDeep(state[projectId].geopackages[geopackageId])
+    //     let update = false
+    //     if (!_.isNil(geopackage.imageryLayers[layerId])) {
+    //       geopackage.imageryLayers[layerId].displayName = displayName
+    //       update = true
+    //     }
+    //     if (!_.isNil(geopackage.featureLayers[layerId])) {
+    //       geopackage.featureLayers[layerId].displayName = displayName
+    //       update = true
+    //     }
+    //     if (!_.isNil(geopackage.featureToImageryLayers[layerId])) {
+    //       geopackage.featureToImageryLayers[layerId].displayName = displayName
+    //       update = true
+    //     }
+    //     if (update) {
+    //       Vue.set(state[projectId].geopackages, geopackageId, geopackage)
+    //     }
+    //   }
+    // }
     Vue.set(state[projectId].layers[layerId], 'displayName', displayName)
   },
   addProjectLayer (state, {project, layerId, config}) {
@@ -67,7 +57,6 @@ const mutations = {
     if (!state[project.id].geopackages[geopackage.id]) {
       Vue.set(state[project.id].geopackages, geopackage.id, geopackage)
     }
-    Vue.set(state[project.id], 'currentGeoPackage', geopackage.id)
   },
   setGeoPackageBuildMode (state, {projectId, geopackageId, buildMode}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'buildMode', buildMode)
@@ -76,137 +65,93 @@ const mutations = {
     Vue.delete(state[projectId].geopackages[geopackageId], 'status')
     Vue.delete(state[projectId].geopackages[geopackageId], 'buildMode')
   },
-  setCurrentGeoPackage (state, {projectId, geopackageId}) {
-    Vue.set(state[projectId], 'currentGeoPackage', geopackageId)
+  addGeoPackageTileConfiguration (state, {projectId, geopackageId, tileConfiguration}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations, tileConfiguration.id, tileConfiguration)
   },
-  setImageryLayersShareBounds (state, {projectId, geopackageId, sharesBounds}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayersShareBounds', sharesBounds)
+  setGeoPackageTileTableName (state, {projectId, geopackageId, configId, tableName}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'tableName', tableName)
   },
-  setFeatureLayersShareBounds (state, {projectId, geopackageId, sharesBounds}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'featureLayersShareBounds', sharesBounds)
+  setGeoPackageTileConfigurationName (state, {projectId, geopackageId, configId, configurationName}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'configurationName', configurationName)
   },
-  updateGeopackageLayers (state, {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'imageryLayers', imageryLayers)
-    Vue.set(state[projectId].geopackages[geopackageId], 'featureLayers', featureLayers)
-    Vue.set(state[projectId].geopackages[geopackageId], 'featureToImageryLayers', featureToImageryLayers)
+  setGeoPackageTileConfigurationTileLayers (state, {projectId, geopackageId, configId, tileLayers}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'tileLayers', tileLayers)
   },
-  updateGeoPackageLayerIncluded (state, {projectId, geopackageId, group, layerId, included}) {
-    Vue.set(state[projectId].geopackages[geopackageId][group][layerId], 'included', included)
+  setGeoPackageTileConfigurationVectorLayers (state, {projectId, geopackageId, configId, vectorLayers}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'vectorLayers', vectorLayers)
   },
-  toggleEditGeoPackage (state, {project, geopackageId}) {
-    if (state[project.id].currentGeoPackage === geopackageId) {
-      Vue.delete(state[project.id], 'currentGeoPackage')
-    } else {
-      Vue.set(state[project.id], 'currentGeoPackage', geopackageId)
-    }
+  setGeoPackageTileConfigurationBoundingBox (state, {projectId, geopackageId, configId, boundingBox}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'boundingBox', boundingBox)
+  },
+  setGeoPackageTileConfigurationRenderingOrder (state, {projectId, geopackageId, configId, renderingOrder}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'renderingOrder', renderingOrder)
+  },
+  toggleGeoPackageTileConfigurationBoundingBoxEditing (state, {projectId, geopackageId, configId, enabled}) {
+    Object.values(state[projectId].geopackages).forEach(gp => {
+      Object.values(gp.tileConfigurations).forEach(vc => {
+        if (vc.boundingBoxEditingEnabled) {
+          Vue.set(state[projectId].geopackages[gp.id].tileConfigurations[vc.id], 'boundingBoxEditingEnabled', false)
+        }
+      })
+      Object.values(gp.vectorConfigurations).forEach(tc => {
+        if (tc.boundingBoxEditingEnabled) {
+          Vue.set(state[projectId].geopackages[gp.id].vectorConfigurations[tc.id], 'boundingBoxEditingEnabled', false)
+        }
+      })
+    })
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'boundingBoxEditingEnabled', enabled)
+  },
+  setGeoPackageTileConfigurationMinZoom (state, {projectId, geopackageId, configId, minZoom}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'minZoom', minZoom)
+  },
+  setGeoPackageTileConfigurationMaxZoom (state, {projectId, geopackageId, configId, maxZoom}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'maxZoom', maxZoom)
+  },
+  deleteGeoPackageTileConfiguration (state, {projectId, geopackageId, configId}) {
+    Vue.delete(state[projectId].geopackages[geopackageId].tileConfigurations, configId)
+  },
+  addGeoPackageVectorConfiguration (state, {projectId, geopackageId, vectorConfiguration}) {
+    Vue.set(state[projectId].geopackages[geopackageId].vectorConfigurations, vectorConfiguration.id, vectorConfiguration)
+  },
+  setGeoPackageVectorConfigurationName (state, {projectId, geopackageId, configId, configurationName}) {
+    Vue.set(state[projectId].geopackages[geopackageId].vectorConfigurations[configId], 'configurationName', configurationName)
+  },
+  setGeoPackageVectorConfigurationVectorLayers (state, {projectId, geopackageId, configId, vectorLayers}) {
+    Vue.set(state[projectId].geopackages[geopackageId].vectorConfigurations[configId], 'vectorLayers', vectorLayers)
+  },
+  setGeoPackageVectorConfigurationBoundingBox (state, {projectId, geopackageId, configId, boundingBox}) {
+    Vue.set(state[projectId].geopackages[geopackageId].vectorConfigurations[configId], 'boundingBox', boundingBox)
+  },
+  toggleGeoPackageVectorConfigurationBoundingBoxEditing (state, {projectId, geopackageId, configId, enabled}) {
+    // when enabling bounding box editing for a configuration, we will need to first disable boundingBoxEditingEnabled for other configurations
+    Object.values(state[projectId].geopackages).forEach(gp => {
+      Object.values(gp.vectorConfigurations).forEach(vc => {
+        if (vc.boundingBoxEditingEnabled) {
+          Vue.set(state[projectId].geopackages[gp.id].vectorConfigurations[vc.id], 'boundingBoxEditingEnabled', false)
+        }
+      })
+      Object.values(gp.tileConfigurations).forEach(tc => {
+        if (tc.boundingBoxEditingEnabled) {
+          Vue.set(state[projectId].geopackages[gp.id].tileConfigurations[tc.id], 'boundingBoxEditingEnabled', false)
+        }
+      })
+    })
+    Vue.set(state[projectId].geopackages[geopackageId].vectorConfigurations[configId], 'boundingBoxEditingEnabled', enabled)
+  },
+  deleteGeoPackageVectorConfiguration (state, {projectId, geopackageId, configId}) {
+    Vue.delete(state[projectId].geopackages[geopackageId].vectorConfigurations, configId)
   },
   toggleProjectLayer (state, {projectId, layerId}) {
     Vue.set(state[projectId].layers[layerId], 'shown', !state[projectId].layers[layerId].shown)
   },
-  setGeoPackageStepNumber (state, {projectId, geopackageId, step}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'step', step)
+  expandProjectLayer (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'expanded', !state[projectId].layers[layerId].expanded)
+  },
+  expandGeoPackageConfiguration (state, {projectId, geopackageId}) {
+    Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
   },
   setGeoPackageName (state, {projectId, geopackageId, name}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'name', name)
-  },
-  setGeoPackageLayerOptions (state, {projectId, geopackageId, layerId, options}) {
-    Vue.set(state[projectId].geopackages[geopackageId].layerOptions, layerId, options)
-  },
-  setFeatureImageryConversionAOI (state, {projectId, geopackageId, aoi}) {
-    if (!_.isNil(aoi) && aoi.length === 2) {
-      aoi[0][0] = Number(aoi[0][0].toFixed(10))
-      aoi[0][1] = Number(aoi[0][1].toFixed(10))
-      aoi[1][0] = Number(aoi[1][0].toFixed(10))
-      aoi[1][1] = Number(aoi[1][1].toFixed(10))
-      while (aoi[0][1] < -180) {
-        aoi[0][1] = aoi[0][1] + 360
-      }
-      while (aoi[0][1] > 180) {
-        aoi[0][1] = aoi[0][1] - 360
-      }
-      while (aoi[1][1] < -180) {
-        aoi[1][1] = aoi[1][1] + 360
-      }
-      while (aoi[1][1] > 180) {
-        aoi[1][1] = aoi[1][1] - 360
-      }
-      Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'aoi', aoi)
-    }
-  },
-  setGeoPackageAOI (state, {projectId, geopackageId, layerId, aoi}) {
-    if (!_.isNil(aoi) && aoi.length === 2) {
-      aoi[0][0] = Number(aoi[0][0].toFixed(10))
-      aoi[0][1] = Number(aoi[0][1].toFixed(10))
-      aoi[1][0] = Number(aoi[1][0].toFixed(10))
-      aoi[1][1] = Number(aoi[1][1].toFixed(10))
-      while (aoi[0][1] < -180) {
-        aoi[0][1] = aoi[0][1] + 360
-      }
-      while (aoi[0][1] > 180) {
-        aoi[0][1] = aoi[0][1] - 360
-      }
-      while (aoi[1][1] < -180) {
-        aoi[1][1] = aoi[1][1] + 360
-      }
-      while (aoi[1][1] > 180) {
-        aoi[1][1] = aoi[1][1] - 360
-      }
-      if (layerId) {
-        if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-          Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'aoi', aoi)
-        } else if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
-          Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'aoi', aoi)
-        } else {
-          Vue.set(state[projectId].geopackages[geopackageId], layerId, aoi)
-        }
-      } else {
-        Vue.set(state[projectId].geopackages[geopackageId], 'aoi', aoi)
-      }
-    }
-  },
-  setFeatureImageryConversionMaxZoom (state, {projectId, geopackageId, maxZoom}) {
-    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'maxZoom', maxZoom)
-  },
-  setFeatureImageryConversionMinZoom (state, {projectId, geopackageId, minZoom}) {
-    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'minZoom', minZoom)
-  },
-  setImageryMaxZoom (state, {projectId, geopackageId, layerId, maxZoom}) {
-    if (layerId) {
-      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'maxZoom', maxZoom)
-      }
-    } else {
-      Vue.set(state[projectId].geopackages[geopackageId], 'imageryMaxZoom', maxZoom)
-    }
-  },
-  setImageryMinZoom (state, {projectId, geopackageId, layerId, minZoom}) {
-    if (layerId) {
-      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'minZoom', minZoom)
-      }
-    } else {
-      Vue.set(state[projectId].geopackages[geopackageId], 'imageryMinZoom', minZoom)
-    }
-  },
-  setFeatureImageryConversionLayerName (state, {projectId, geopackageId, layerName}) {
-    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'layerName', layerName)
-  },
-  setFeatureLayerName (state, {projectId, geopackageId, layerId, layerName}) {
-    if (layerId) {
-      if (state[projectId].geopackages[geopackageId].featureLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].featureLayers[layerId], 'layerName', layerName)
-      }
-    }
-  },
-  setImageryLayerName (state, {projectId, geopackageId, layerId, layerName}) {
-    if (layerId) {
-      if (state[projectId].geopackages[geopackageId].imageryLayers[layerId]) {
-        Vue.set(state[projectId].geopackages[geopackageId].imageryLayers[layerId], 'layerName', layerName)
-      }
-    }
-  },
-  setFeatureImageryConversionLayerOrder (state, {projectId, geopackageId, layerOrder}) {
-    Vue.set(state[projectId].geopackages[geopackageId].featureImageryConversion, 'layerOrder', layerOrder)
   },
   setGeoPackageLocation (state, { projectId, geopackageId, fileName }) {
     Vue.set(state[projectId].geopackages[geopackageId], 'fileName', fileName)
@@ -255,12 +200,11 @@ const mutations = {
 const actions = {
   newProject ({ dispatch, commit, state }) {
     let project = {
-      id: createId(),
+      id: UniqueIDUtilities.createUniqueID(),
       name: 'New Project',
       layerCount: 0,
       layers: {},
-      geopackages: {},
-      currentGeoPackage: undefined
+      geopackages: {}
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
@@ -279,18 +223,16 @@ const actions = {
     commit('addProjectLayers', {projectLayers})
   },
   addGeoPackage ({ commit, state }, {project}) {
-    let name = project.name + ' GeoPackage'
+    let name = project.name + ' GeoPackage Configuration'
     if (Object.keys(project.geopackages).length) {
       name += ' ' + Object.keys(project.geopackages).length
     }
-
-    let imageryLayers = {}
-    let featureLayers = {}
-    let featureToImageryLayers = {}
+    let tileLayers = {}
+    let vectorLayers = {}
     for (const layerId in project.layers) {
       let layer = project.layers[layerId]
-      if (layer.pane === 'tile' && !imageryLayers[layerId]) {
-        imageryLayers[layerId] = {
+      if (layer.pane === 'tile' && !tileLayers[layerId]) {
+        tileLayers[layerId] = {
           id: layer.id,
           included: layer.shown,
           name: layer.name,
@@ -298,71 +240,133 @@ const actions = {
           style: layer.style
         }
       }
-      if (layer.pane === 'vector' && !featureLayers[layerId]) {
-        featureLayers[layerId] = {
+      if (layer.pane === 'vector' && !vectorLayers[layerId]) {
+        vectorLayers[layerId] = {
           id: layer.id,
           included: layer.shown,
           name: layer.name,
           displayName: layer.displayName || layer.name,
-          style: layer.style
-        }
-        featureToImageryLayers[layerId] = {
-          id: layer.id,
-          included: layer.shown,
-          name: layer.name,
-          displayName: layer.displayName || layer.name,
-          style: layer.style
+          style: layer.style,
+          geopackageFilePath: layer.geopackageFilePath,
+          sourceLayerName: layer.sourceLayerName
         }
       }
     }
 
     let geopackage = {
-      id: createId(),
+      id: UniqueIDUtilities.createUniqueID(),
       name: name,
+      expanded: true,
+      vectorConfigurations: {},
+      tileConfigurations: {},
       layers: Object.keys(project.layers),
-      aoi: undefined,
-      minZoom: undefined,
-      maxZoom: undefined,
-      imageryLayers: imageryLayers,
-      featureLayers: featureLayers,
-      featureToImageryLayers: featureToImageryLayers,
-      featureImageryConversion: {
-        name: 'Layer',
-        aoi: undefined,
-        minZoom: undefined,
-        maxZoom: undefined,
-        layerOrder: undefined
-      },
-      step: 1
+      tileLayers: tileLayers,
+      vectorLayers: vectorLayers
     }
     commit('addGeoPackage', {project, geopackage})
   },
-  setCurrentGeoPackage ({ commit, state }, {projectId, geopackageId}) {
-    commit('setCurrentGeoPackage', {projectId, geopackageId})
+  addGeoPackageTileConfiguration ({ commit, state }, {projectId, geopackageId}) {
+    let count = 1
+    let tableName = 'Tile Table #' + count
+    while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.tableName === tableName) !== -1) {
+      count++
+      tableName = 'Tile Table #' + count
+    }
+    count = 1
+    let configName = 'Tile Configuration #' + count
+    while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.configurationName === configName) !== -1) {
+      count++
+      configName = 'Tile Configuration #' + count
+    }
+    let tileConfiguration = {
+      id: UniqueIDUtilities.createUniqueID(),
+      type: 'tile',
+      configurationName: configName,
+      tableName: tableName,
+      tileLayers: [],
+      vectorLayers: [],
+      renderingOrder: [],
+      minZoom: 1,
+      maxZoom: 1,
+      boundingBox: undefined,
+      boundingBoxEditingEnabled: false
+    }
+    commit('addGeoPackageTileConfiguration', {projectId, geopackageId, tileConfiguration})
   },
-  setImageryLayersShareBounds ({ commit, state }, {projectId, geopackageId, sharesBounds}) {
-    commit('setImageryLayersShareBounds', {projectId, geopackageId, sharesBounds})
+  setGeoPackageTileConfigurationName ({ commit, state }, {projectId, geopackageId, configId, configurationName}) {
+    commit('setGeoPackageTileConfigurationName', {projectId, geopackageId, configId, configurationName})
   },
-  setFeatureLayersShareBounds ({ commit, state }, {projectId, geopackageId, sharesBounds}) {
-    commit('setFeatureLayersShareBounds', {projectId, geopackageId, sharesBounds})
+  setGeoPackageTileTableName ({ commit, state }, {projectId, geopackageId, configId, tableName}) {
+    commit('setGeoPackageTileTableName', {projectId, geopackageId, configId, tableName})
   },
-  updateGeopackageLayers ({ commit, state }, {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers}) {
-    commit('updateGeopackageLayers', {projectId, geopackageId, imageryLayers, featureLayers, featureToImageryLayers})
+  setGeoPackageTileConfigurationTileLayers ({ commit, state }, {projectId, geopackageId, configId, tileLayers}) {
+    commit('setGeoPackageTileConfigurationTileLayers', {projectId, geopackageId, configId, tileLayers})
   },
-  updateGeoPackageLayerIncluded ({ commit, state }, {projectId, geopackageId, group, layerId, included}) {
-    commit('updateGeoPackageLayerIncluded', {projectId, geopackageId, group, layerId, included})
+  setGeoPackageTileConfigurationVectorLayers ({ commit, state }, {projectId, geopackageId, configId, vectorLayers}) {
+    commit('setGeoPackageTileConfigurationVectorLayers', {projectId, geopackageId, configId, vectorLayers})
+  },
+  setGeoPackageTileConfigurationBoundingBox ({ commit, state }, {projectId, geopackageId, configId, boundingBox}) {
+    commit('setGeoPackageTileConfigurationBoundingBox', {projectId, geopackageId, configId, boundingBox})
+  },
+  setGeoPackageTileConfigurationRenderingOrder ({ commit, state }, {projectId, geopackageId, configId, renderingOrder}) {
+    commit('setGeoPackageTileConfigurationRenderingOrder', {projectId, geopackageId, configId, renderingOrder})
+  },
+  setGeoPackageTileConfigurationMinZoom ({ commit, state }, {projectId, geopackageId, configId, minZoom}) {
+    commit('setGeoPackageTileConfigurationMinZoom', {projectId, geopackageId, configId, minZoom})
+  },
+  setGeoPackageTileConfigurationMaxZoom ({ commit, state }, {projectId, geopackageId, configId, maxZoom}) {
+    commit('setGeoPackageTileConfigurationMaxZoom', {projectId, geopackageId, configId, maxZoom})
+  },
+  toggleGeoPackageTileConfigurationBoundingBoxEditing ({ commit, state }, {projectId, geopackageId, configId, enabled}) {
+    commit('toggleGeoPackageTileConfigurationBoundingBoxEditing', {projectId, geopackageId, configId, enabled})
+  },
+  deleteGeoPackageTileConfiguration ({ commit, state }, {projectId, geopackageId, configId}) {
+    commit('deleteGeoPackageTileConfiguration', {projectId, geopackageId, configId})
+  },
+  addGeoPackageVectorConfiguration ({ commit, state }, {projectId, geopackageId}) {
+    let count = 1
+    let configName = 'Vector Configuration #' + count
+    while (Object.values(state[projectId].geopackages[geopackageId].vectorConfigurations).findIndex(config => config.configurationName === configName) !== -1) {
+      count++
+      configName = 'Vector Configuration #' + count
+    }
+    let vectorConfiguration = {
+      id: UniqueIDUtilities.createUniqueID(),
+      type: 'vector',
+      configurationName: configName,
+      vectorLayers: [],
+      boundingBox: undefined,
+      boundingBoxEditingEnabled: false,
+      indexed: true
+    }
+    commit('addGeoPackageVectorConfiguration', {projectId, geopackageId, vectorConfiguration})
+  },
+  setGeoPackageVectorConfigurationName ({ commit, state }, {projectId, geopackageId, configId, configurationName}) {
+    commit('setGeoPackageVectorConfigurationName', {projectId, geopackageId, configId, configurationName})
+  },
+  setGeoPackageVectorConfigurationVectorLayers ({ commit, state }, {projectId, geopackageId, configId, vectorLayers}) {
+    commit('setGeoPackageVectorConfigurationVectorLayers', {projectId, geopackageId, configId, vectorLayers})
+  },
+  setGeoPackageVectorConfigurationBoundingBox ({ commit, state }, {projectId, geopackageId, configId, boundingBox}) {
+    commit('setGeoPackageVectorConfigurationBoundingBox', {projectId, geopackageId, configId, boundingBox})
+  },
+  toggleGeoPackageVectorConfigurationBoundingBoxEditing ({ commit, state }, {projectId, geopackageId, configId, enabled}) {
+    commit('toggleGeoPackageVectorConfigurationBoundingBoxEditing', {projectId, geopackageId, configId, enabled})
+  },
+  deleteGeoPackageVectorConfiguration ({ commit, state }, {projectId, geopackageId, configId}) {
+    commit('deleteGeoPackageVectorConfiguration', {projectId, geopackageId, configId})
   },
   toggleProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('toggleProjectLayer', {projectId, layerId})
   },
+  expandProjectLayer ({ commit, state }, {projectId, layerId}) {
+    commit('expandProjectLayer', {projectId, layerId})
+  },
+  expandGeoPackageConfiguration ({ commit, state }, {projectId, geopackageId}) {
+    commit('expandGeoPackageConfiguration', {projectId, geopackageId})
+  },
   removeProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('removeProjectLayer', {projectId, layerId})
-  },
-  updateProjectLayer ({ commit, state }, {projectId, layer}) {
-    commit('updateProjectLayer', {projectId, layer})
-  },
-  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
-    commit('updateProjectLayerStyle', {projectId, layerId, style})
   },
   updateStyleAssignmentFeature ({ commit, state }, {projectId, layerId, styleAssignmentFeature}) {
     commit('updateStyleAssignmentFeature', {projectId, layerId, styleAssignmentFeature})
@@ -414,7 +418,6 @@ const actions = {
   },
   deleteProjectLayerIconRow ({ commit, state }, {projectId, layerId, iconId}) {
     let layerConfiguration = state[projectId].layers[layerId]
-    console.log(layerConfiguration)
     GeoPackageUtilities.deleteIconRow(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, iconId).then(function () {
       commit('updateLayerKey', {projectId, layerId})
     })
@@ -447,49 +450,12 @@ const actions = {
   },
   updateProjectLayerUsePointIconDefault ({ commit, state }, {projectId, layerId, usePointIconDefault}) {
     let layerConfiguration = state[projectId].layers[layerId]
-    console.log(layerConfiguration)
     GeoPackageUtilities.usePointIconDefault(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName, usePointIconDefault, layerConfiguration.tablePointIconRowId).then(function () {
       commit('updateLayerKey', {projectId, layerId})
     })
   },
-  setFeatureImageryConversionAOI ({ commit, state }, {projectId, geopackageId, aoi}) {
-    commit('setFeatureImageryConversionAOI', {projectId, geopackageId, aoi})
-  },
-  setGeoPackageAOI ({ commit, state }, {projectId, geopackageId, layerId, aoi}) {
-    commit('setGeoPackageAOI', {projectId, geopackageId, layerId, aoi})
-  },
-  setGeoPackageStepNumber ({ commit, state }, {projectId, geopackageId, step}) {
-    commit('setGeoPackageStepNumber', {projectId, geopackageId, step})
-  },
   setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {
     commit('setGeoPackageName', {projectId, geopackageId, name})
-  },
-  setGeoPackageLayerOptions ({ commit, state }, {projectId, geopackageId, layerId, options}) {
-    commit('setGeoPackageLayerOptions', {projectId, geopackageId, layerId, options})
-  },
-  setFeatureImageryConversionMinZoom ({ commit, state }, {projectId, geopackageId, minZoom}) {
-    commit('setFeatureImageryConversionMinZoom', {projectId, geopackageId, minZoom})
-  },
-  setFeatureImageryConversionMaxZoom ({ commit, state }, {projectId, geopackageId, maxZoom}) {
-    commit('setFeatureImageryConversionMaxZoom', {projectId, geopackageId, maxZoom})
-  },
-  setImageryMinZoom ({ commit, state }, {projectId, geopackageId, layerId, minZoom}) {
-    commit('setImageryMinZoom', {projectId, geopackageId, layerId, minZoom})
-  },
-  setImageryMaxZoom ({ commit, state }, {projectId, geopackageId, layerId, maxZoom}) {
-    commit('setImageryMaxZoom', {projectId, geopackageId, layerId, maxZoom})
-  },
-  setFeatureImageryConversionLayerName ({ commit, state }, {projectId, geopackageId, layerName}) {
-    commit('setFeatureImageryConversionLayerName', {projectId, geopackageId, layerName})
-  },
-  setFeatureLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
-    commit('setFeatureLayerName', {projectId, geopackageId, layerId, layerName})
-  },
-  setImageryLayerName ({ commit, state }, {projectId, geopackageId, layerId, layerName}) {
-    commit('setImageryLayerName', {projectId, geopackageId, layerId, layerName})
-  },
-  setFeatureImageryConversionLayerOrder ({ commit, state }, {projectId, geopackageId, layerOrder}) {
-    commit('setFeatureImageryConversionLayerOrder', {projectId, geopackageId, layerOrder})
   },
   setGeoPackageLocation ({ commit, state }, {projectId, geopackageId, fileName}) {
     commit('setGeoPackageLocation', {projectId, geopackageId, fileName})
@@ -511,7 +477,13 @@ const actions = {
     commit('deleteGeoPackage', {projectId, geopackageId})
   },
   openProject ({ commit, state }, project) {
-    WindowLauncher.launchProjectWindow(project.id)
+    WindowLauncher.showProject(project.id)
+  },
+  updateProjectLayer ({ commit, state }, {projectId, layer}) {
+    commit('updateProjectLayer', {projectId, layer})
+  },
+  updateProjectLayerStyle ({ commit, state }, {projectId, layerId, style}) {
+    commit('updateProjectLayerStyle', {projectId, layerId, style})
   }
 }
 

@@ -1,7 +1,8 @@
 import { userDataDir } from '../settings/Settings'
+import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class Source {
-  constructor (filePath, layers = [], credentials = {}, sourceId = Source.createId()) {
+  constructor (filePath, layers = [], credentials = {}, sourceId = UniqueIDUtilities.createUniqueID()) {
     this.sourceId = sourceId
     this.filePath = filePath
     this.layers = layers
@@ -12,20 +13,7 @@ export default class Source {
     return userDataDir().dir(this.sourceId)
   }
 
-  get mapLayer () {
-    throw new Error('Abstract method must be implemented in subclass')
-  }
-
   async initialize () {
     throw new Error('Abstract method must be implemented in subclass')
-  }
-
-  static createId () {
-    function s4 () {
-      return new Date().getTime()
-        .toString(16)
-        .substring(1)
-    }
-    return s4()
   }
 }

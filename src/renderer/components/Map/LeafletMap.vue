@@ -1,24 +1,27 @@
 <template>
-  <div id="map" style="width: 100%; height: 100%;">
+  <div id="map" style="width: 100%; height: 100%; z-index: 0;">
     <modal
       v-if="layerSelectionVisible"
-      header="Select Drawing Layer"
-      footer="Confirm Selection"
-      :ok="confirmLayerSelection">
+      header="Drawing Layer Selection"
+      card-text="Select layer for the drawn feature."
+      ok-text="Ok"
+      cancel-text="Cancel"
+      :ok="confirmLayerSelection"
+      :cancel="cancelDrawing">
       <div slot="body">
-        <label for="layerSelect">Select Drawing Layer</label>
-        <select id="layerSelect" v-model="layerSelection">
-          <option v-for="choice in layerChoices" v-bind:value="choice.value">
-            {{ choice.text }}
-          </option>
-        </select>
+        <v-row>
+          <v-col cols="12">
+            <v-select v-model="layerSelection" :items="layerChoices" label="Select Layer" dense>
+            </v-select>
+          </v-col>
+        </v-row>
       </div>
     </modal>
   </div>
 </template>
 
 <script>
-  import { mapActions, mapState } from 'vuex'
+  import { mapActions } from 'vuex'
   import * as vendor from '../../../lib/vendor'
   import ZoomToExtent from './ZoomToExtent'
   import DrawBounds from './DrawBounds'
@@ -26,19 +29,21 @@
   import LeafletZoomIndicator from '../../../lib/map/LeafletZoomIndicator'
   import LeafletDraw from '../../../lib/map/LeafletDraw'
   import DrawingLayer from '../../../lib/source/layer/vector/DrawingLayer'
-  import Source from '../../../lib/source/Source'
   import _ from 'lodash'
   import Modal from '../Modal'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import VectorStyleUtilities from '../../../lib/VectorStyleUtilities'
   import { userDataDir } from '../../../lib/settings/Settings'
   import path from 'path'
+  import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
+  import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
 
   let initializedLayers = {}
   let shownMapLayers = {}
   let layerConfigs = {}
   let layerSelectionVisible = false
   let layerChoices = []
+  let mapLayers = {}
 
   function normalize (longitude) {
     let lon = longitude
@@ -58,16 +63,14 @@
     ],
     props: {
       layerConfigs: Object,
-      activeGeopackage: Object,
+      geopackages: Object,
       projectId: String,
       project: Object
     },
     computed: {
-      ...mapState({
-        isDrawingBounds (state) {
-          return state.UIState[this.projectId].activeCount > 0
-        }
-      })
+      isDrawingBounds () {
+        return !_.isNil(this.r)
+      }
     },
     components: {
       Modal
@@ -89,12 +92,17 @@
         deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
         updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow'
       }),
-      activateGeoPackageAOI () {
-
+      getMapLayerForLayer (layer) {
+        if (_.isNil(mapLayers[layer.id])) {
+          console.log('constructing the layer...')
+          console.log(layer)
+          mapLayers[layer.id] = LeafletMapLayerFactory.constructMapLayer(layer)
+        }
+        return mapLayers[layer.id]
       },
       async confirmLayerSelection () {
         let feature = this.createdLayer.toGeoJSON()
-        feature.id = Source.createId()
+        feature.id = UniqueIDUtilities.createUniqueID()
         feature.properties.radius = this.createdLayer._mRadius
         switch (feature.geometry.type.toLowerCase()) {
           case 'point': {
@@ -130,7 +138,7 @@
         let drawingLayers = Object.values(this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing')
         if (this.layerSelection === 0) {
           let name = 'Drawing Layer ' + (drawingLayers.length + 1)
-          let id = Source.createId()
+          let id = UniqueIDUtilities.createUniqueID()
           let fileName = name + '.gpkg'
           let filePath = userDataDir().dir(id).file(fileName).path()
           let fullFile = path.join(filePath, fileName)
@@ -163,12 +171,21 @@
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
       },
+      cancelDrawing () {
+        this.layerSelectionVisible = false
+        this.layerChoices = []
+        this.layerSelection = 0
+        this.map.removeLayer(this.createdLayer)
+        this.createdLayer = null
+      },
       addLayer (layerConfig, map, deleteEnabled) {
+        console.log('adding layer...')
         layerConfigs[layerConfig.id] = _.cloneDeep(layerConfig)
         let layer = LayerFactory.constructLayer(layerConfig)
+        let _this = this
         layer.initialize().then(function () {
           if (layerConfig.shown) {
-            let mapLayer = layer.mapLayer
+            let mapLayer = _this.getMapLayerForLayer(layer)
             mapLayer.addTo(map)
             shownMapLayers[layerConfig.id] = mapLayer
             if (deleteEnabled) {
@@ -185,16 +202,11 @@
           mapLayer.remove()
         }
         delete shownMapLayers[layerId]
+        delete mapLayers[layerId]
         delete initializedLayers[layerId]
       }
     },
     watch: {
-      drawBounds: {
-        handler (value, oldValue) {
-          this.setupDrawing(value)
-        },
-        deep: true
-      },
       layerConfigs: {
         async handler (updatedLayerConfigs, oldValue) {
           let _this = this
@@ -219,7 +231,7 @@
             let updatedLayerConfig = updatedLayerConfigs[layerId]
             let oldLayerConfig = layerConfigs[layerId]
             // something other than layerKey, maxFeatures, shown, or feature assignments changed
-            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
+            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature', 'expanded']), _.omit(oldLayerConfig, ['layerKey', 'maxFeatures', 'shown', 'styleAssignmentFeature', 'iconAssignmentFeature', 'expanded']))) {
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               _this.removeLayer(layerId)
               _this.addLayer(updatedLayerConfig, map, _this.deleteEnabled)
@@ -227,7 +239,7 @@
               layerConfigs[updatedLayerConfig.id] = _.cloneDeep(updatedLayerConfig)
               // display it
               if (updatedLayerConfig.shown) {
-                let mapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
+                let mapLayer = _this.getMapLayerForLayer(initializedLayers[updatedLayerConfig.id])
                 mapLayer.addTo(map)
                 shownMapLayers[updatedLayerConfig.id] = mapLayer
               } else {
@@ -236,6 +248,7 @@
                 if (mapLayer) {
                   mapLayer.remove()
                   delete shownMapLayers[layerId]
+                  delete mapLayers[layerId]
                 }
               }
             } else if ((!_.isEqual(updatedLayerConfig.layerKey, oldLayerConfig.layerKey) || !_.isEqual(updatedLayerConfig.maxFeatures, oldLayerConfig.maxFeatures)) && updatedLayerConfig.pane === 'vector') {
@@ -247,9 +260,11 @@
                 if (mapLayer) {
                   mapLayer.remove()
                 }
+                delete mapLayers[layerId]
+                delete shownMapLayers[layerId]
                 // if layer is set to be shown, display it on the map
                 if (updatedLayerConfig.shown) {
-                  let updateMapLayer = initializedLayers[updatedLayerConfig.id].mapLayer
+                  let updateMapLayer = _this.getMapLayerForLayer(initializedLayers[updatedLayerConfig.id])
                   updateMapLayer.addTo(map)
                   shownMapLayers[updatedLayerConfig.id] = updateMapLayer
                 }
@@ -274,6 +289,45 @@
           })
         },
         deep: true
+      },
+      geopackages: {
+        handler (updatedGeoPackages, oldValue) {
+          let config
+          Object.values(updatedGeoPackages).forEach(gp => {
+            // check vector configs
+            let editingConfigIdx = Object.values(gp.vectorConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
+            if (editingConfigIdx > -1) {
+              config = Object.values(gp.vectorConfigurations)[editingConfigIdx]
+              if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
+                if (config.boundingBox) {
+                  this.map.fitBounds([
+                    [config.boundingBox[0][0], config.boundingBox[0][1]],
+                    [config.boundingBox[1][0], config.boundingBox[1][1]]
+                  ])
+                }
+                this.enableBoundingBoxDrawing(gp, config)
+              }
+            }
+            // check tile configs
+            editingConfigIdx = Object.values(gp.tileConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
+            if (editingConfigIdx > -1) {
+              config = Object.values(gp.tileConfigurations)[editingConfigIdx]
+              if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
+                if (config.boundingBox) {
+                  this.map.fitBounds([
+                    [config.boundingBox[0][0], config.boundingBox[0][1]],
+                    [config.boundingBox[1][0], config.boundingBox[1][1]]
+                  ])
+                }
+                this.enableBoundingBoxDrawing(gp, config)
+              }
+            }
+          })
+          if (_.isNil(config)) {
+            this.disableBoundingBoxDrawing()
+          }
+        },
+        deep: true
       }
     },
     mounted: async function () {
@@ -289,7 +343,7 @@
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
       this.map.on('layeradd', function (e) {
-        if (!_this.isDrawingBounds && !this.r && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
+        if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
             if (e.layer.editEnabled()) {
               e.layer.disableEdit()
@@ -351,11 +405,11 @@
       })
       this.map.on('editable:drawing:end', function (e) {
         console.log('editable:disable')
-        if (!_this.isDrawingBounds && !_this.r) {
+        if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]
           Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').forEach((layerConfig) => {
-            layers.push({text: layerConfig.name, value: layerConfig.id})
+            layers.push({text: layerConfig.displayName ? layerConfig.displayName : layerConfig.name, value: layerConfig.id})
           })
           _this.createdLayer = e.layer
           _this.layerChoices = layers
@@ -364,7 +418,7 @@
       })
       this.map.on('editable:disable', async (e) => {
         console.log('editable:disable')
-        if (!this.isDrawingBounds && !this.r) {
+        if (!this.isDrawingBounds) {
           let feature = e.layer.toGeoJSON()
           if (!feature.id) {
             feature.id = e.layer.id
@@ -381,10 +435,6 @@
       })
       for (const layerId in this.layerConfigs) {
         this.addLayer(this.layerConfigs[layerId], this.map, false)
-      }
-      this.setupDrawing(this.drawBounds)
-      if (this.activeGeopackage) {
-        this.activateGeoPackageAOI()
       }
     }
   }
@@ -487,6 +537,9 @@
     flex-direction: row;
     justify-content: flex-end;
     flex: 1 0 4vh;
+  }
+  .leaflet-control a {
+    color: black !important;
   }
 
 </style>

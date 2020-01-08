@@ -1,10 +1,7 @@
-import jetpack from 'fs-jetpack'
-import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import GeoTiffRenderer from '../renderer/GeoTiffRenderer'
 import TileLayer from './TileLayer'
 import * as GeoTIFF from 'geotiff'
 import gdal from 'gdal'
-import * as Vendor from '../../../vendor'
 import GDALUtilities from '../../../GDALUtilities'
 
 export default class GeoTiffLayer extends TileLayer {
@@ -306,26 +303,5 @@ export default class GeoTiffLayer extends TileLayer {
 
   async renderTile (coords, tileCanvas, done) {
     return this.renderer.renderTile(coords, tileCanvas, done)
-  }
-
-  async renderOverviewTile () {
-    let overviewTilePath = this.overviewTilePath
-    if (!jetpack.exists(overviewTilePath)) {
-      var fullExtent = this.extent
-      let coords = TileBoundingBoxUtils.determineXYZTileInsideExtent([fullExtent[0], fullExtent[1]], [fullExtent[2], fullExtent[3]])
-      let canvas = Vendor.L.DomUtil.create('canvas')
-      canvas.width = 256
-      canvas.height = 256
-      this.renderTile(coords, canvas, function (err, tile) {
-        if (err) console.log('err', err)
-        canvas.toBlob(function (blob) {
-          var reader = new FileReader()
-          reader.addEventListener('loadend', function () {
-            jetpack.write(overviewTilePath, Buffer.from(reader.result))
-          })
-          reader.readAsArrayBuffer(blob)
-        })
-      })
-    }
   }
 }

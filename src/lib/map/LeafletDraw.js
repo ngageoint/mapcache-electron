@@ -113,6 +113,15 @@ export default class LeafletDraw extends vendor.L.Control {
       _this.enableEditingLinks()
     })
 
+    map.on('boundingBoxDisabled', () => {
+      _this.enableDrawingLinks()
+      _this.enableEditingLinks()
+    })
+    map.on('boundingBoxEnabled', () => {
+      _this.disableDrawingLinks()
+      _this.disableEditingLinks()
+    })
+
     this.enableDrawingLinks()
     this.enableEditingLinks()
 

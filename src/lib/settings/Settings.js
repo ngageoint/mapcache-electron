@@ -1,7 +1,6 @@
-import { remote } from 'electron'
+import { remote, app } from 'electron'
 import jetpack from 'fs-jetpack'
 
 export const userDataDir = () => {
-  const app = remote.app
-  return jetpack.cwd(app.getPath('userData'))
+  return jetpack.cwd((remote ? remote.app : app).getPath('userData'))
 }

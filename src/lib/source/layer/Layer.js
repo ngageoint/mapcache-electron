@@ -1,5 +1,5 @@
 import path from 'path'
-import { userDataDir } from '../../settings/Settings'
+import UniqueIDUtilities from '../../UniqueIDUtilities'
 
 export default class Layer {
   _configuration
@@ -11,27 +11,24 @@ export default class Layer {
   displayName
   constructor (configuration = {}) {
     this._configuration = configuration
-    this.id = this._configuration.id || createId()
+    this.id = this._configuration.id || UniqueIDUtilities.createUniqueID()
     this.filePath = this._configuration.filePath
     this.credentials = this._configuration.credentials
     this.sourceLayerName = this._configuration.sourceLayerName || defaultLayerName(this.filePath)
     this.name = this._configuration.name || this.sourceLayerName
-    this.overviewTilePath = this.cacheFolder.path('overviewTile.png')
     this.pane = configuration.pane
     this.style = this._configuration.style
     this.shown = this._configuration.shown || true
+    this.expanded = this._configuration.expanded || true
     this.images = this._configuration.images
     this.sourceFilePath = this._configuration.sourceFilePath
     this.sourceType = this._configuration.sourceType
     this.displayName = this._configuration.displayName || this.name
+    this.layerType = this._configuration.layerType
   }
 
   async initialize () {
     throw new Error('Abstract method to be implemented in sublcass')
-  }
-
-  get cacheFolder () {
-    return userDataDir().dir(this.id)
   }
 
   get configuration () {
@@ -44,8 +41,8 @@ export default class Layer {
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         displayName: this.displayName,
-        overviewTilePath: this.overviewTilePath,
         shown: this.shown || true,
+        expanded: this.expanded || true,
         style: this.style,
         images: this.images,
         sourceFilePath: this.sourceFilePath,
@@ -53,15 +50,6 @@ export default class Layer {
       }
     }
   }
-}
-
-function createId () {
-  function s4 () {
-    return new Date().getTime()
-      .toString(16)
-      .substring(1)
-  }
-  return s4()
 }
 
 function defaultLayerName (filePath) {

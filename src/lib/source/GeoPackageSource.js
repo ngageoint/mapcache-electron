@@ -4,6 +4,7 @@ import GeoPackageLayer from './layer/tile/GeoPackageLayer'
 import VectorLayer from './layer/vector/VectorLayer'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import path from 'path'
+import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class GeoPackageSource extends Source {
   async retrieveLayers () {
@@ -21,12 +22,13 @@ export default class GeoPackageSource extends Source {
     }
     let featureLayers = this.geopackage.getFeatureTables()
     for (const layer of featureLayers) {
+      console.log('feature table: ' + layer)
       let fileName = layer + '.gpkg'
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)
       let gp = await GeoPackageUtilities.copyGeoPackageFeatureLayerAndStyles(this.filePath, fullFile, layer)
       this.layers.push(new VectorLayer({
-        id: this.sourceId,
+        id: UniqueIDUtilities.createUniqueID(),
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer,

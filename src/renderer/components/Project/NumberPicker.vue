@@ -1,25 +1,36 @@
 <template>
-  <div class="number-picker" ref="numberpicker">
-    <div>
-      <input type="number" class="text-box"  v-model="numberValue" @input="updateFromInput" step=".1"/>
-    </div>
-  </div>
+  <v-text-field v-model="numberValue" type="number" :label="label" @input="updateFromInput" :step="step" :min="min" :max="max"></v-text-field>
 </template>
 
 <script>
+  import _ from 'lodash'
+
   export default {
-    props: ['number'],
+    props: {
+      number: Number,
+      label: String,
+      step: Number,
+      min: Number,
+      max: Number
+    },
     data () {
       return {
-        numberValue: 0.0
+        numberValue: this.number || 250
       }
-    },
-    mounted () {
-      this.setNumber(this.number || 0.0)
     },
     methods: {
       setNumber (number) {
-        this.numberValue = number
+        if (!_.isNil(this.min)) {
+          if (this.numberValue < this.min) {
+            this.numberValue = this.min
+          }
+        } else if (!_.isNil(this.max)) {
+          if (this.numberValue > this.max) {
+            this.numberValue = this.max
+          }
+        } else {
+          this.numberValue = number
+        }
       },
       updateFromInput () {
         this.setNumber(this.numberValue)
@@ -36,8 +47,4 @@
 </script>
 
 <style scoped>
-  .text-box {
-      height: 32px;
-      font-size: 15px;
-  }
 </style>

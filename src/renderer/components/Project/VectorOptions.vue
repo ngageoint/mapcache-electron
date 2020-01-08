@@ -3,41 +3,38 @@
     <expandablecard>
       <div slot="card-header">
         <div class="title-card">
-          <p>
-            Feature Tile Settings
-          </p>
+          Feature Tile Settings
         </div>
       </div>
       <div slot="card-expanded-body">
-        <div class="subtitle-card">
-          <label class="control-label">Max Features</label>
-          <div>
-            <numberpicker :number="maxFeatures" v-model="maxFeatures" />
-          </div>
-        </div>
+        <v-container fluid>
+          <v-row no-gutters>
+            <v-col cols="12">
+              <div class="subtitle-card">
+                <numberpicker :number="Number(maxFeatures)" label="Max Features" :step="Number(10)" v-model="maxFeatures" :min="Number(0)" />
+              </div>
+            </v-col>
+          </v-row>
+        </v-container>
       </div>
     </expandablecard>
     <div v-if="!loading">
       <expandablecard>
         <div slot="card-header">
           <div class="title-card">
-            <p>
-              Default Styles and Icons
-            </p>
+            Default Styles and Icons
           </div>
         </div>
         <div slot="card-expanded-body">
           <card>
             <div slot="card">
               <div class="subtitle-card">
-                <p>
-                  Default Point Style/Icon
-                </p>
+                Default Point Style/Icon
               </div>
-              <div class="flex-row">
+              <v-row no-gutters>
                 <input type="checkbox" :id="layer.id" name="set-name" class="switch-input" v-model="usePointIconDefault">
                 <label :for="layer.id" class="switch-label">Use <span class="toggle--on">Icon</span><span class="toggle--off">Style</span></label>
-              </div>
+              </v-row>
               <styleoptions
                       v-if="!usePointIconDefault && tablePointStyleRow"
                       defaultName="Point Style"
@@ -51,7 +48,7 @@
               <iconoptions
                       v-if="usePointIconDefault && tablePointIconRow"
                       defaultName="Point Icon"
-                      :allowStyleNameEditing="false"
+                      :allowIconNameEditing="false"
                       geometry-type="Point"
                       :icon-row="tablePointIconRow"
                       :layer="layer"
@@ -82,120 +79,108 @@
       </expandablecard>
       <expandablecard>
         <div slot="card-header">
-          <div class="flex-row">
-            <div class="title-card">
-              <p>
-                Feature Styles
-              </p>
-            </div>
-            <div class="add-button" @click.stop="addFeatureStyle()">
-              <font-awesome-icon icon="plus-circle" class="new" size="2x"/>
-            </div>
-          </div>
+          <v-row class="justify-space-between" no-gutters>
+            <v-col cols="10" class="title-card">
+              {{'Feature Styles (' + Object.keys(featureStyleRows).length + ')'}}
+            </v-col>
+            <v-col cols="2">
+              <v-row no-gutters class="justify-end">
+                <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addFeatureStyle()"/>
+              </v-row>
+            </v-col>
+          </v-row>
         </div>
         <div slot="card-expanded-body">
-          <ul style="list-style-type:none">
-            <li v-for="styleRow in featureStyleRows">
-              <styleoptions
-                      :deletable="true"
-                      :defaultName="styleRow.getId() + ''"
-                      :allowStyleNameEditing="true"
-                      :style-row="styleRow"
-                      :layer="layer"
-                      :project-id="projectId"
-                      :show-id="true"/>
-            </li>
-          </ul>
+          <styleoptions
+            v-for="styleRow in featureStyleRows"
+            :key="'style_' + styleRow.getId()"
+            :deletable="true"
+            :defaultName="styleRow.getId() + ''"
+            :allowStyleNameEditing="true"
+            :style-row="styleRow"
+            :layer="layer"
+            :project-id="projectId"
+            :show-id="true"/>
           <expandablecard v-if="Object.keys(featureStyleRows).length > 0">
             <div slot="card-header">
-              <div class="subtitle-card">
-                <p>
-                  Feature Style Assignment
-                </p>
-              </div>
+              <v-row no-gutters class="subtitle-card">
+                <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">
+                  <v-row no-gutters class="full-width">
+                    <v-col class="title-edit align-center" cols="12">
+                      <p>Feature Style Assignment</p>
+                    </v-col>
+                  </v-row>
+                </v-card-title>
+              </v-row>
             </div>
             <div slot="card-expanded-body">
-              <div class="flex-row">
-                <div class="flex-row">
-                  <div class="preset-select">
-                    <label class="control-label">Feature</label>
-                    <select v-model="styleAssignmentFeature">
-                      <option value="-1">Select Feature</option>
-                      <option v-for="feature in features" :value="feature">{{feature}}</option>
-                    </select>
-                  </div>
-                  <div class="preset-select">
-                    <label class="control-label">Style</label>
-                    <select v-model="featureStyleSelection">
-                      <option :value="-1">Use Defaults</option>
-                      <option v-for="style in featureStyleRows" :value="style.getId()">{{style.getName() + ' (' + style.getId() + ')'}}</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+              <v-container fluid>
+                <v-row>
+                  <v-col cols="12">
+                    <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details>
+                    </v-select>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details>
+                    </v-select>
+                  </v-col>
+                </v-row>
+              </v-container>
             </div>
           </expandablecard>
         </div>
       </expandablecard>
       <expandablecard>
         <div slot="card-header">
-          <div class="flex-row">
-            <div class="title-card">
-              <p>
-                Feature Icons
-              </p>
-            </div>
-            <div class="add-button" @click.stop="addFeatureIcon()">
-              <font-awesome-icon icon="plus-circle" class="new" size="2x"/>
-            </div>
-          </div>
+          <v-row class="justify-space-between" no-gutters>
+            <v-col cols="10" class="title-card">
+              {{'Feature Icons (' + Object.keys(featureIconRows).length + ')'}}
+            </v-col>
+            <v-col cols="2">
+              <v-row no-gutters class="justify-end">
+                <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addFeatureIcon()"/>
+              </v-row>
+            </v-col>
+          </v-row>
         </div>
         <div slot="card-expanded-body">
-          <ul style="list-style-type:none">
-            <li v-for="iconRow in featureIconRows">
-              <iconoptions
-                :deletable="true"
-                :defaultName="iconRow.getId() + ''"
-                :allowStyleNameEditing="true"
-                geometry-type="Point"
-                :icon-row="iconRow"
-                :layer="layer"
-                :project-id="projectId"
-                :show-id="true"
-                :is-table-icon="false"/>
-            </li>
-          </ul>
+          <iconoptions
+            v-for="iconRow in featureIconRows"
+            :key="'icon' + iconRow.getId()"
+            :deletable="true"
+            :defaultName="iconRow.getId() + ''"
+            :allowIconNameEditing="true"
+            geometry-type="Point"
+            :icon-row="iconRow"
+            :layer="layer"
+            :project-id="projectId"
+            :show-id="true"
+            :is-table-icon="false"/>
           <expandablecard v-if="Object.keys(featureIconRows).length > 0">
             <div slot="card-header">
-              <div class="subtitle-card">
-                <p>
-                  Feature Icon Assignment
-                </p>
-              </div>
+              <v-row no-gutters class="subtitle-card">
+                <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">
+                  <v-row no-gutters class="full-width">
+                    <v-col class="title-edit align-center" cols="12">
+                      <p>Feature Icon Assignment</p>
+                    </v-col>
+                  </v-row>
+                </v-card-title>
+              </v-row>
             </div>
             <div slot="card-expanded-body">
-              <div class="flex-row">
-                <div class="flex-row">
-                  <div>
-                    <label class="control-label">Feature</label>
-                    <div class="preset-select">
-                      <select v-model="iconAssignmentFeature">
-                        <option value="-1">Select Feature</option>
-                        <option v-for="feature in features" :value="feature">{{feature}}</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="control-label">Icon</label>
-                    <div class="preset-select">
-                      <select v-model="featureIconSelection">
-                        <option value="-1">Use Defaults</option>
-                        <option v-for="icon in featureIconRows" :value="icon.getId()">{{icon.getName() + ' (' + icon.getId() + ')'}}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <v-container fluid>
+                <v-row>
+                  <v-col cols="12">
+                    <v-select v-model="iconAssignmentFeature" :items="featureItems" label="Feature" dense hide-details>
+                    </v-select>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details>
+                    </v-select>
+                  </v-col>
+                </v-row>
+              </v-container>
             </div>
           </expandablecard>
         </div>
@@ -212,7 +197,6 @@
   import _ from 'lodash'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import GeoPackage from '@ngageoint/geopackage'
-  import Modal from '../Modal'
   import Card from '../Card/Card'
   import ExpandableCard from '../Card/ExpandableCard'
 
@@ -232,6 +216,9 @@
         tablePolygonStyleRow: null,
         featureStyleRows: null,
         featureIconRows: null,
+        featureItems: null,
+        styleItems: null,
+        iconItems: null,
         features: [],
         featureStyleSelection: -1,
         featureIconSelection: -1,
@@ -242,7 +229,6 @@
       'styleoptions': StyleOptions,
       'iconoptions': IconOptions,
       'numberpicker': NumberPicker,
-      'modal': Modal,
       'card': Card,
       'expandablecard': ExpandableCard
     },
@@ -265,7 +251,8 @@
     computed: {
       maxFeatures: {
         get () {
-          return this.layer.maxFeatures
+          console.log('max features: ' + _.isNil(this.layer.maxFeatures) ? 250 : this.layer.maxFeatures)
+          return _.isNil(this.layer.maxFeatures) ? 250 : this.layer.maxFeatures
         },
         set (val) {
           this.debounceUpdateMaxFeatures(val)
@@ -273,7 +260,7 @@
       },
       styleAssignmentFeature: {
         get () {
-          return this.layer.styleAssignmentFeature || '-1'
+          return this.layer.styleAssignmentFeature || -1
         },
         set (value) {
           this.updateStyleAssignmentFeature({
@@ -285,7 +272,7 @@
       },
       iconAssignmentFeature: {
         get () {
-          return this.layer.iconAssignmentFeature || '-1'
+          return this.layer.iconAssignmentFeature || -1
         },
         set (value) {
           this.updateIconAssignmentFeature({
@@ -350,9 +337,26 @@
         }
         this.tableLineStringStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'LineString')
         this.tablePolygonStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'Polygon')
-        this.featureStyleRows = GeoPackageUtilities.getFeatureStyleRows(gp, featureTableName)
-        this.featureIconRows = GeoPackageUtilities.getFeatureIconRows(gp, featureTableName)
         this.features = GeoPackageUtilities.getFeatureIds(gp, this.layer.sourceLayerName)
+        this.featureItems = [{text: 'Select Feature', value: -1}]
+        for (let featureIdx in this.features) {
+          let featureId = this.features[featureIdx]
+          this.featureItems.push({text: featureId, value: Number(featureId)})
+        }
+        let featureStyleRows = GeoPackageUtilities.getFeatureStyleRows(gp, featureTableName)
+        this.styleItems = [{text: 'Use Defaults', value: -1}]
+        for (let styleId in featureStyleRows) {
+          let style = featureStyleRows[styleId]
+          this.styleItems.push({text: style.getName() + ' (' + style.getId() + ')', value: style.getId()})
+        }
+        this.featureStyleRows = featureStyleRows
+        let featureIconRows = GeoPackageUtilities.getFeatureIconRows(gp, featureTableName)
+        this.iconItems = [{text: 'Use Defaults', value: -1}]
+        for (let iconId in featureIconRows) {
+          let icon = featureIconRows[iconId]
+          this.iconItems.push({text: icon.getName() + ' (' + icon.getId() + ')', value: icon.getId()})
+        }
+        this.featureIconRows = featureIconRows
         this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
         this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
       }
@@ -432,12 +436,6 @@
     display: inline-block;
     vertical-align: middle;
     line-height: normal;
-  }
-  .control-label {
-    font-size: 12px;
-    color: #000;
-  }
-  .subtitle-card p, label {
     color: #000;
     font-size: 16px;
     font-weight: normal;
@@ -446,30 +444,6 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-  }
-  .preset-select {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    border-width: 1px;
-    border-style: solid;
-    margin: 0.25rem;
-  }
-  .preset-select select {
-    display: flex;
-    flex-direction: row;
-    font-weight: normal;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align-last: center;
-  }
-  .preset-select select:focus {
-    outline: none;
-  }
-  .add-button {
-    cursor: pointer;
   }
   .switch-input {
     display: none;
@@ -532,11 +506,30 @@
   .switch-input:checked + .switch-label .toggle--off {
     display: none;
   }
-  .new {
+  .add-button {
     color: #2962ff;
     margin-right: 0.25rem;
   }
-  .new:hover {
+  .add-button:hover {
     color: #0039cb;
+    cursor: pointer;
+  }
+  .title-edit {
+    min-width: 0;
+    display: inherit;
+    overflow: hidden;
+  }
+  .title-edit p {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0 !important;
+  }
+  .fs-16 {
+    font-size: 16px;
+  }
+  .fw-500 {
+    font-weight: 500;
   }
 </style>

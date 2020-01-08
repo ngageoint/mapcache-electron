@@ -1,9 +1,13 @@
 import {app, BrowserWindow, Menu, shell} from 'electron'
 import WindowState from './WindowState'
 import path from 'path'
+import _ from 'lodash'
 
 class WindowLauncher {
   mainWindow
+  projectWindow
+  loadingWindow
+  isShuttingDown = false
 
   launchMainWindow () {
     const winURL = process.env.NODE_ENV === 'development'
@@ -21,44 +25,85 @@ class WindowLauncher {
       nodeIntegration: true,
       contextIsolation: false
     }
+    windowOptions.show = false
     this.mainWindow = new BrowserWindow(windowOptions)
+    this.mainWindow.setMenu(menu)
+    // this.mainWindow.toggleDevTools()
     mainWindowState.track(this.mainWindow)
     this.mainWindow.loadURL(winURL)
-
+    this.mainWindow.on('ready-to-show', () => {
+      this.loadingWindow.hide()
+      this.mainWindow.show()
+    })
     this.mainWindow.on('close', () => {
-      if (BrowserWindow.getAllWindows().length === 1) {
-        app.quit()
-      }
+      this.isShuttingDown = true
+      app.quit()
     })
-
-    this.mainWindow.on('closed', () => {
-      this.mainWindow = null
-    })
-    this.mainWindow.setMenu(menu)
-    const ses = this.mainWindow.webContents.session
-    console.log(ses.getUserAgent())
   }
 
-  launchProjectWindow (projectId) {
+  launchLoaderWindow () {
     const winURL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:9080/?id=${projectId}#/project`
-      : `file://${__dirname}/index.html?id=${projectId}#project`
-
-    const projectWindowState = new WindowState('project-' + projectId)
-    let windowOptions = projectWindowState.retrieveState()
-    windowOptions.webPreferences = {
-      nodeIntegration: true,
-      contextIsolation: false
+      ? `http://localhost:9080/static/loader.html`
+      : `file://${__dirname}/../../../static/loader.html`
+    let windowOptions = {
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      },
+      frame: false,
+      width: 264,
+      height: 264,
+      transparent: true
     }
-    let projectWindow = new BrowserWindow(windowOptions)
-    projectWindowState.track(projectWindow)
+    this.loadingWindow = new BrowserWindow(windowOptions)
+    this.loadingWindow.loadURL(winURL)
+  }
 
-    projectWindow.loadURL(winURL)
-    projectWindow.on('closed', () => {
-      projectWindow = null
+  launchProjectWindow () {
+    let windowOptions = {
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      },
+      show: false,
+      width: 1000,
+      height: 800
+    }
+    this.projectWindow = new BrowserWindow(windowOptions)
+    this.projectWindow.on('close', (e) => {
+      if (!this.isShuttingDown) {
+        e.preventDefault()
+        this.projectWindow.hide()
+        this.mainWindow.show()
+      }
     })
+  }
 
-    this.mainWindow.close()
+  showProject (projectId) {
+    try {
+      const winURL = process.env.NODE_ENV === 'development'
+        ? `http://localhost:9080/?id=${projectId}#/project`
+        : `file://${__dirname}/index.html?id=${projectId}#project`
+
+      const projectWindowState = new WindowState('project-' + projectId)
+      let windowState = _.clone(projectWindowState.retrieveState())
+      if (windowState) {
+        if (windowState.width && windowState.height) {
+          this.projectWindow.setSize(windowState.width, windowState.height)
+        }
+      }
+      projectWindowState.track(this.projectWindow)
+      this.projectWindow.loadURL(winURL)
+      this.projectWindow.on('ready-to-show', () => {
+        this.projectWindow.show()
+        this.mainWindow.send('show-project-completed')
+        setTimeout(() => {
+          this.mainWindow.hide()
+        }, 250)
+      })
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   getMenuTemplate () {

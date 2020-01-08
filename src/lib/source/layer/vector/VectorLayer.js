@@ -1,8 +1,6 @@
 import Layer from '../Layer'
-import MapcacheMapLayer from '../../../map/MapcacheMapLayer'
 import * as vtpbf from 'vt-pbf'
 import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
-import jetpack from 'fs-jetpack'
 import {bboxClip, booleanPointInPolygon, bboxPolygon, circle} from '@turf/turf/index'
 import GeoPackage, {BoundingBox} from '@ngageoint/geopackage'
 
@@ -14,7 +12,6 @@ import GeoPackage, {BoundingBox} from '@ngageoint/geopackage'
  */
 export default class VectorLayer extends Layer {
   _extent
-  _mapLayer
   _vectorTileRenderer
   _tileIndex
   _geopackageFilePath
@@ -42,7 +39,6 @@ export default class VectorLayer extends Layer {
       return f
     })
     await this.vectorTileRenderer.init()
-    await this.renderOverviewTile()
     return this
   }
 
@@ -90,17 +86,6 @@ export default class VectorLayer extends Layer {
     return this._extent
   }
 
-  get mapLayer () {
-    if (!this._mapLayer) {
-      this._mapLayer = new MapcacheMapLayer({
-        layer: this,
-        pane: 'overlayPane'
-      })
-      this._mapLayer.id = this.id
-    }
-    return this._mapLayer
-  }
-
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
       this._vectorTileRenderer = new GeoPackageVectorTileRenderer(this._geopackage, this.name, this._maxFeatures)
@@ -124,15 +109,6 @@ export default class VectorLayer extends Layer {
         }
       })
       resolve(vtpbf.fromGeojsonVt(gjvt))
-    })
-  }
-
-  renderOverviewTile () {
-    let overviewTilePath = this.overviewTilePath
-    if (jetpack.exists(this.overviewTilePath)) return
-    this.renderTile({x: 0, y: 0, z: 0}, null, function (err, imageData) {
-      if (err) throw err
-      jetpack.write(overviewTilePath, imageData)
     })
   }
 

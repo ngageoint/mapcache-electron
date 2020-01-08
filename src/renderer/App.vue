@@ -1,7 +1,9 @@
 <template>
-  <div id="app">
-    <router-view></router-view>
-  </div>
+  <v-app id="app">
+    <v-content>
+      <router-view></router-view>
+    </v-content>
+  </v-app>
 </template>
 
 <script>
@@ -20,6 +22,9 @@
     rgba(0, 0, 0, 0.87) 100%
   ), url("./assets/nasa_earth.png") bottom right no-repeat;
   background-size: cover;
+}
 
+html {
+  overflow: hidden;
 }
 </style>

@@ -1,8 +1,7 @@
 <template>
-  <div id="project" class="container">
+  <div id="project" class="project-container">
     <div class="admin-actions">
       <div class="admin-actions-content">
-
         <div
             class="admin-action"
             :class="{'admin-action-selected': !geopackagesShowing}"
@@ -29,42 +28,42 @@
         id="source-drop-zone"
         class="project-sidebar"
         v-if="!geopackagesShowing">
-
-      <edit-project-name :project="project"/>
+      <v-card class="project-name-card">
+        <view-edit-text :value="project.name" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
+      </v-card>
 
       <add-source :project="project"/>
 
-      <div class="source-container">
-        <layer-flip-card
-            v-for="sourceLayer in project.layers"
-            :key="sourceLayer.id"
-            class="sources"
-            :layer="sourceLayer"
-            :projectId="project.id"/>
-
-      </div>
+      <layer-flip-card
+              v-for="sourceLayer in project.layers"
+              :key="sourceLayer.id"
+              class="sources"
+              :layer="sourceLayer"
+              :projectId="project.id"/>
     </div>
-    <div
-        class="project-sidebar"
-        v-if="geopackagesShowing">
-      <div v-if="!project.currentGeoPackage">
-        <a class="pull-right create-gp-button"
-            @click.stop="addGeoPackage({project})">
-          Create New GeoPackage
-        </a>
+    <div class="sidebar-fab-wrapper"
+         v-if="geopackagesShowing">
+      <div
+        class="project-sidebar">
         <geo-package-card
-            v-for="geopackage in project.geopackages"
-            :key="geopackage.id"
-            :geopackage="geopackage"
-            :project="project"/>
+          v-for="geopackage in project.geopackages"
+          :key="geopackage.id"
+          :geopackage="geopackage"
+          :project="project"/>
       </div>
-      <create-geopackage v-if="project.currentGeoPackage" :project="project"/>
+      <v-btn
+        class="bottom-right"
+        dark
+        fab
+        color="blue"
+        @click.stop="addGeoPackage({project})">
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
     </div>
-
     <div class="work-area">
       <leaflet-map
           style="width: 100%; height: 100%;"
-          :active-geopackage="project.geopackages[project.currentGeoPackage]"
+          :geopackages="project.geopackages"
           :layer-configs="project.layers"
           :project-id="project.id"
           :project="project">
@@ -77,10 +76,9 @@
   import { mapGetters, mapActions, mapState } from 'vuex'
 
   import LayerFlipCard from './LayerFlipCard'
-  import CreateGeopackage from './CreateGeopackage'
   import LeafletMap from '../Map/LeafletMap'
   import AddSource from './AddSource'
-  import EditProjectName from './EditProjectName'
+  import ViewEditText from '../Common/ViewEditText'
   import GeoPackageCard from './GeoPackageCard'
 
   let options = {
@@ -105,14 +103,14 @@
     },
     components: {
       LayerFlipCard,
-      CreateGeopackage,
       LeafletMap,
       AddSource,
-      EditProjectName,
+      ViewEditText,
       GeoPackageCard
     },
     methods: {
       ...mapActions({
+        setProjectName: 'Projects/setProjectName',
         addProjectLayer: 'Projects/addProjectLayer',
         addGeoPackage: 'Projects/addGeoPackage',
         addProjectState: 'UIState/addProjectState'
@@ -122,6 +120,9 @@
       },
       showGeoPackages () {
         options.geopackagesShowing = true
+      },
+      saveProjectName (val) {
+        this.setProjectName({project: this.project, name: val})
       }
     },
     mounted: function () {
@@ -134,71 +135,60 @@
 </script>
 
 <style scoped>
-
   #project {
     font-family: sans-serif;
     color: rgba(255, 255, 255, .87);
   }
-
-  .container {
+  .project-name-card {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 16px;
+  }
+  .project-container {
     display:flex;
     flex-direction: row;
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
     overflow: hidden;
   }
-
   .pull-right {
     text-align: center;
     width: 49%;
     display: inline-block;
   }
-
   .pull-left {
     text-align: left;
     width: 50%;
     display: inline-block;
   }
-
   .work-area {
     flex: 1;
     /* background: #FAFAFA; */
   }
-
   .tab-bar {
     width: 30px;
     display: flex;
     flex-direction: column;
   }
-
   .vertical-text {
     transform: rotate(270deg);
   }
-
   .admin-actions {
     background: linear-gradient(to right, rgba(80, 80, 80, 0.3) 93%, transparent 40%) no-repeat;
     display: flex;
     flex-direction: column;
   }
-
   .admin-actions-content {
     overflow: auto;
   }
-
   .admin-badge {
     position: relative;
   }
-
   .admin-content {
     flex: 1;
     overflow: auto;
   }
-
   .admin-action {
     position: relative;
-    padding: 25px;
+    padding: 25px 35px 25px 25px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -207,7 +197,6 @@
     color: rgba(255, 255, 255, 0.65);
     cursor: pointer;
   }
-
   .admin-action-arrow-left {
     position: absolute;
     right: 0;
@@ -217,24 +206,28 @@
     border-bottom: 10px solid transparent;
     border-right:10px solid white;
   }
-
   .admin-action .fa {
     font-size: 30px;
     margin-bottom: 8px;
   }
-
   .admin-action .fa-mobile-phone {
     font-size: 46px;
     margin-bottom: 0;
    }
-
   .admin-action-selected {
     color: rgba(255, 255, 255, .96);
     background-color: #444;
     -webkit-clip-path: polygon(100% 50%, 93% 40%, 93% 0%, 0% 0%, 0% 100%, 93% 100%, 93% 60%);
     clip-path: polygon(100% 50%, 93% 40%, 93% 0%, 0% 0%, 0% 100%, 93% 100%, 93% 60%);
   }
-
+  .sidebar-fab-wrapper {
+    position: relative;
+    min-width: 380px;
+    max-width: 500px;
+    width: 30vw;
+    height: 100vh;
+    overflow: hidden;
+  }
   .project-sidebar {
     padding: 15px;
     padding-left: 10px;
@@ -243,34 +236,25 @@
     max-width: 500px;
     width: 30vw;
     height: 100vh;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
-
   .section-name {
     font-size: 1.3em;
     font-weight: bold;
     margin-bottom: 10px;
     text-align: left;
   }
-
-  .create-gp-button {
-    border-color: rgba(54, 62, 70, .87);
-    border-width: 1px;
-    border-radius: 4px;
-    padding: .2em;
-    color: rgba(255, 255, 255, .95);
-    background-color: rgba(68, 152, 192, .95);
-    cursor: pointer;
-    font-weight: bold;
-  }
-
   .sources {
     list-style: none;
     text-align: left;
   }
-
   .sources li.checked {
     list-style: url('../../assets/check.png');
+  }
+  .bottom-right {
+    position: absolute;
+    right: 32px;
+    bottom: 32px;
   }
 
 </style>
