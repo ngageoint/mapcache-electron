@@ -132,10 +132,8 @@ export default class GeoPackageBuilder {
           tilesToAdd: XYZTileUtilities.tileCountInExtent(boundingBox, minZoom, maxZoom)
         }
         this.dispatchStatusUpdate(status)
-
-        const contentsBounds = new GeoPackage.BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0]).projectBoundingBox('EPSG:4326', 'EPSG:3857')
-        console.log(contentsBounds)
-        const contentsSrsId = 3857
+        const contentsBounds = new GeoPackage.BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
+        const contentsSrsId = 4326
         const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
         const tileMatrixSetSrsId = 3857
         await GeoPackage.createStandardWebMercatorTileTable(gp, tileConfig.tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)

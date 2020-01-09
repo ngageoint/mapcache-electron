@@ -221,6 +221,7 @@ export default class GeoPackageUtilities {
         columns.push(FeatureColumn.createColumnWithIndex(columnCount++, column.name, GeoPackage.DataTypes.fromName(column.dataType), column.notNull, column.defaultValue))
       }
     }
+    // TODO pull SRS from the feature dao of the source geopackage
     let extent = GeoPackageUtilities.getGeoPackageExtent(geoPackage, featureTableName)
     let bb = new GeoPackage.BoundingBox(extent[0], extent[2], extent[1], extent[3])
     await geoPackageCopy.createFeatureTableWithGeometryColumns(geometryColumns, bb, 4326, columns)
