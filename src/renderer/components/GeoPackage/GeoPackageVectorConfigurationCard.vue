@@ -47,7 +47,7 @@
                 <v-icon>{{vectorConfiguration.boundingBoxEditingEnabled ? 'mdi-stop' : 'mdi-crop-free'}}</v-icon>
               </v-btn>
             </div>
-            <v-row no-gutters class="mb-2">
+            <v-row no-gutters class="mb-2" v-if="layersToInclude.length > 0">
               <v-chip
                 class="mr-2"
                 @click="setBoundingBoxToDataExtent"

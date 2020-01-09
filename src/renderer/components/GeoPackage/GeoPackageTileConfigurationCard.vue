@@ -97,7 +97,7 @@
                 <v-icon>{{tileConfiguration.boundingBoxEditingEnabled ? 'mdi-stop' : 'mdi-crop-free'}}</v-icon>
               </v-btn>
             </div>
-            <v-row no-gutters class="mb-2">
+            <v-row no-gutters class="mb-2" v-if="tileLayersToInclude.length > 0 || vectorLayersToInclude.length > 0">
               <v-chip
                 class="mr-2"
                 @click="setBoundingBoxToDataExtent"

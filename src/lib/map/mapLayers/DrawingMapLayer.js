@@ -58,6 +58,9 @@ export default class DrawingMapLayer {
           })
         }
       } else {
+        if (_.isNil(styleRow)) {
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+        }
         let style = {
           color: styleRow.getHexColor(),
           opacity: styleRow.getOpacity(),
