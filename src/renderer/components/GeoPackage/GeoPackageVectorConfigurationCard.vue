@@ -9,7 +9,7 @@
             :ok="confirm"
             :cancel="cancel">
     </modal>
-    <expandable-card>
+    <expandable-card  class="sub-card">
       <div slot="card-header">
         <v-row no-gutters class="justify-space-between" align="center">
           <v-col cols="12" class="align-center">

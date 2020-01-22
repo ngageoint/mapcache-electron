@@ -7,51 +7,46 @@
       :ok="build"
       :cancel="doNotBuild">
     </modal>
-    <card>
-      <div slot="card">
-        <v-card-title>
-          <view-edit-text :editing-disabled="true" font-color="#000000" font-size="1em" font-weight="500" value="GeoPackage Build"/>
-        </v-card-title>
-        <v-card-text>
-          <v-row align="center" class="justify-start" no-gutters v-if="geopackage.buildMode === null || geopackage.buildMode === undefined">
-            <v-btn class="align-self-start" @click.stop="checkGeoPackageExists">Execute Build</v-btn>
-          </v-row>
-          <v-row no-gutters>
-            <v-card v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
-              <v-progress-linear :active="true"
-                                 :indeterminate="true"
-                                 color="light-blue"
-                                 v-if="geopackage.buildMode === BUILD_MODES.STARTED"
-              ></v-progress-linear>
-              <v-card-title>
-                <p>{{overallStatusMessage}}</p>
-              </v-card-title>
-              <v-card-text>
-                <div v-if="geopackage.buildMode === BUILD_MODES.STARTED">
-                  <p v-if="configurationStatus">{{'Working on ' + configurationStatus.name}}</p>
-                  <p v-if="configurationStatus">{{configurationStatus.message}}</p>
+    <div slot="card">
+      <v-card-text>
+        <v-row align="center" class="justify-start" no-gutters v-if="geopackage.buildMode === null || geopackage.buildMode === undefined">
+          <v-btn class="align-self-start" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
+        </v-row>
+        <v-row no-gutters>
+          <v-card v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
+            <v-progress-linear :active="true"
+                               :indeterminate="true"
+                               color="light-blue"
+                               v-if="geopackage.buildMode === BUILD_MODES.STARTED"
+            ></v-progress-linear>
+            <v-card-title>
+              <p>{{overallStatusMessage}}</p>
+            </v-card-title>
+            <v-card-text>
+              <div v-if="geopackage.buildMode === BUILD_MODES.STARTED">
+                <p v-if="configurationStatus">{{'Working on ' + configurationStatus.name}}</p>
+                <p v-if="configurationStatus">{{configurationStatus.message}}</p>
+              </div>
+              <div v-if="geopackage.buildMode === BUILD_MODES.FAILED">
+                <div @click="cancelOrComplete" class="card__header__close-btn"></div>
+                <div class="card__face__source-error-name contrast-text">
+                  Error - {{geopackage.status}}
                 </div>
-                <div v-if="geopackage.buildMode === BUILD_MODES.FAILED">
-                  <div @click="cancelOrComplete" class="card__header__close-btn"></div>
-                  <div class="card__face__source-error-name contrast-text">
-                    Error - {{geopackage.status}}
-                  </div>
-                </div>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn
-                  @click="cancelOrComplete"
-                  color="light darken-1"
-                  text>
-                  {{geopackage.buildMode === BUILD_MODES.STARTED ? 'Cancel Build' : 'Close'}}
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-row>
-        </v-card-text>
-      </div>
-    </card>
+              </div>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                @click="cancelOrComplete"
+                color="light darken-1"
+                text>
+                {{geopackage.buildMode === BUILD_MODES.STARTED ? 'Cancel' : 'Close'}}
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-row>
+      </v-card-text>
+    </div>
   </div>
 </template>
 

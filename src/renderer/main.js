@@ -7,6 +7,7 @@ import { far } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Verte from 'verte'
 import vuetify from './vuetify.js' // path to vuetify export
+import '../styles/app.css'
 
 import App from './App'
 import router from './router'

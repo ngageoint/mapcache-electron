@@ -9,7 +9,7 @@
       :ok="confirm"
       :cancel="cancel">
     </modal>
-    <expandable-card>
+    <expandable-card class="sub-card">
       <div slot="card-header">
         <v-row no-gutters class="justify-space-between" align="center">
           <v-col cols="12" class="align-center">
@@ -23,19 +23,19 @@
             <view-edit-text value="Tile Table Name" font-color="#000000" font-size="1em" font-weight="500" :editing-disabled="true"/>
           </v-card-title>
           <v-card-text class="pt-0 mt-0">
-            <div class="flex-container ma-2 pa-2" :style="{justifyContent: 'start'}">
-              <v-text-field label="Tile Table Name" v-model="tableName" hide-details/>
-            </div>
+						<v-row no-gutters>
+	            <v-text-field label="" v-model="tableName" hide-details/>
+						</v-row>
           </v-card-text>
           <v-card-title>
-            Tile Layer Selection
+            Tile Layers
           </v-card-title>
           <v-card-text>
             <v-row no-gutters>
               <v-select
                 v-model="tileLayersToInclude"
                 :items="tileLayers"
-                label="Tile Layers"
+                label="Choose one or more tile layer"
                 multiple
                 dense
                 item-text="name"
@@ -47,14 +47,14 @@
             </v-row>
           </v-card-text>
           <v-card-title>
-            Vector Layer Selection
+            Vector Layers
           </v-card-title>
           <v-card-text>
             <v-row no-gutters>
               <v-select
                 v-model="vectorLayersToInclude"
                 :items="vectorLayers"
-                label="Vector Layers"
+                label="Choose one or more vector layers"
                 multiple
                 dense
                 item-text="name"

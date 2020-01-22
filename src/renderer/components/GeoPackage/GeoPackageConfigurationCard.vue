@@ -9,57 +9,60 @@
         :ok="confirm"
         :cancel="cancel">
     </modal>
-    <geo-package-file-configuration-card
+
+    <v-row class="justify-space-between title-card" no-gutters>
+      <v-col cols="10">
+        <v-row v-if="Object.keys(geopackage.tileConfigurations).length == 1" no-gutters class="justify-start">
+          <h3>{{Object.keys(geopackage.tileConfigurations).length + ' Tile Configuration'}}</h3>
+        </v-row>
+				<v-row v-if="Object.keys(geopackage.tileConfigurations).length != 1" no-gutters class="justify-start">
+          <h3>{{Object.keys(geopackage.tileConfigurations).length + ' Tile Configurations'}}</h3>
+        </v-row>
+      </v-col>
+      <v-col cols="2">
+        <v-row no-gutters class="justify-end">
+          <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addTileConfiguration()"/>
+        </v-row>
+      </v-col>
+    </v-row>
+
+    <geo-package-tile-configuration-card
+      v-for="tileConfig in geopackage.tileConfigurations"
+      :key="'tile-config-' + tileConfig.id"
+      :project="project"
+      :geopackage="geopackage"
+      :tile-configuration="tileConfig"/>
+
+    <v-row class="justify-space-between title-card" no-gutters>
+      <v-col cols="10">
+        <v-row v-if="Object.keys(geopackage.vectorConfigurations).length == 1" no-gutters class="justify-start">
+          <h3>{{Object.keys(geopackage.vectorConfigurations).length + ' Vector Configuration'}}</h3>
+        </v-row>
+				<v-row v-if="Object.keys(geopackage.vectorConfigurations).length != 1" no-gutters class="justify-start">
+          <h3>{{Object.keys(geopackage.vectorConfigurations).length + ' Vector Configurations'}}</h3>
+        </v-row>
+      </v-col>
+      <v-col cols="2">
+        <v-row no-gutters class="justify-end">
+          <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addVectorConfiguration()"/>
+        </v-row>
+      </v-col>
+    </v-row>
+
+		<geo-package-vector-configuration-card
+			v-for="vectorConfig in geopackage.vectorConfigurations"
+			:key="'vector-config-' + vectorConfig.id"
+			:project="project"
+			:geopackage="geopackage"
+			:vector-configuration="vectorConfig"/>
+
+
+		<v-divider class="section-divider"></v-divider>
+
+		<geo-package-file-configuration-card
       :project-id="project.id"
       :geopackage="geopackage"/>
-    <expandable-card>
-      <div slot="card-header">
-        <v-row class="justify-space-between" no-gutters>
-          <v-col cols="10" class="title-card">
-            <v-row no-gutters class="justify-start">
-              {{'Tile Configurations (' + Object.keys(geopackage.tileConfigurations).length + ')'}}
-            </v-row>
-          </v-col>
-          <v-col cols="2">
-            <v-row no-gutters class="justify-end">
-              <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addTileConfiguration()"/>
-            </v-row>
-          </v-col>
-        </v-row>
-      </div>
-      <div slot="card-expanded-body">
-        <geo-package-tile-configuration-card
-          v-for="tileConfig in geopackage.tileConfigurations"
-          :key="'tile-config-' + tileConfig.id"
-          :project="project"
-          :geopackage="geopackage"
-          :tile-configuration="tileConfig"/>
-      </div>
-    </expandable-card>
-    <expandable-card>
-      <div slot="card-header">
-        <v-row class="justify-space-between" no-gutters>
-          <v-col cols="10" class="title-card">
-            <v-row no-gutters class="justify-start">
-              {{'Vector Configurations (' + Object.keys(geopackage.vectorConfigurations).length + ')'}}
-            </v-row>
-          </v-col>
-          <v-col cols="2">
-            <v-row no-gutters class="justify-end">
-              <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addVectorConfiguration()"/>
-            </v-row>
-          </v-col>
-        </v-row>
-      </div>
-      <div slot="card-expanded-body">
-        <geo-package-vector-configuration-card
-          v-for="vectorConfig in geopackage.vectorConfigurations"
-          :key="'vector-config-' + vectorConfig.id"
-          :project="project"
-          :geopackage="geopackage"
-          :vector-configuration="vectorConfig"/>
-      </div>
-    </expandable-card>
+
     <geo-package-builder-card
       :project="project"
       :geopackage="geopackage"/>
@@ -151,7 +154,7 @@
 <style scoped>
 .title-card {
   color: #000;
-  font-size: 1.25em;
+	padding-top: 1.6em;
 }
 .subtitle-card {
   display: inline-block;
@@ -188,5 +191,9 @@
 .add-button:hover {
   color: #0039cb;
   cursor: pointer;
+}
+
+.section-divider {
+	margin: 1.6rem 0;
 }
 </style>

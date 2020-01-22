@@ -267,16 +267,16 @@ const actions = {
   },
   addGeoPackageTileConfiguration ({ commit, state }, {projectId, geopackageId}) {
     let count = 1
-    let tableName = 'Tile Table #' + count
+    let tableName = 'TileTable' + count
     while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.tableName === tableName) !== -1) {
       count++
-      tableName = 'Tile Table #' + count
+      tableName = 'TileTable' + count
     }
     count = 1
-    let configName = 'Tile Configuration #' + count
+    let configName = 'Tile Configuration ' + count
     while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.configurationName === configName) !== -1) {
       count++
-      configName = 'Tile Configuration #' + count
+      configName = 'Tile Configuration ' + count
     }
     let tileConfiguration = {
       id: UniqueIDUtilities.createUniqueID(),

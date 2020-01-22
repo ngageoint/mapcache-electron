@@ -1,20 +1,13 @@
 <template>
   <div>
-    <card>
-      <div slot="card">
-        <v-card-title class="pt-0 pb-0 mt-0 mb-0">
-          <view-edit-text value="File Configuration" font-color="#000000" font-size="1em" font-weight="500" :editing-disabled="true"/>
-        </v-card-title>
-        <v-card-text class="pt-0 pb-0 mt-0 mb-0">
-          <div class="flex-container ma-2 pa-2" :style="{justifyContent: 'start'}">
-            <v-text-field label="File Save Location" readonly :value="geopackage.fileName ? geopackage.fileName : 'Location Not Specified'"/>
-            <v-btn text icon color="black" @click.stop="chooseSaveLocation">
-              <v-icon>mdi-content-save</v-icon>
-            </v-btn>
-          </div>
-        </v-card-text>
+    <v-card-text class="pt-0 pb-0 mt-0 mb-0">
+      <div class="flex-container ma-2 pa-2" :style="{justifyContent: 'start'}">
+        <v-text-field label="File Save Location" readonly :value="geopackage.fileName ? geopackage.fileName : 'Location Not Specified'"/>
+        <v-btn text icon color="black" @click.stop="chooseSaveLocation">
+          <v-icon>mdi-content-save</v-icon>
+        </v-btn>
       </div>
-    </card>
+    </v-card-text>
   </div>
 </template>
 
