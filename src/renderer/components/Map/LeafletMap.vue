@@ -379,14 +379,13 @@
               popupHeaderTitle.innerHTML = 'Delete Drawing'
               let popupBodyParagraph = vendor.L.DomUtil.create('p', '', popupBody)
               popupBodyParagraph.innerHTML = 'Are you sure you want to delete this drawing?'
-              let confirmBtn = vendor.L.DomUtil.create('button', 'layer__request-btn', popupFooter)
-              vendor.L.DomUtil.addClass(confirmBtn, 'layer__request-btn__confirm')
+              let confirmBtn = vendor.L.DomUtil.create('button', 'mr-4 v-btn v-btn--contained theme--light v-size--default error', popupFooter)
               confirmBtn.setAttribute('type', 'button')
-              confirmBtn.innerHTML = '<span class="layer__request-btn__text-1">Delete</span>'
+              confirmBtn.innerHTML = '<span class="v-btn__content">Delete</span>'
               vendor.L.DomEvent.on(confirmBtn, 'click', deleteLayer)
-              let cancelBtn = vendor.L.DomUtil.create('button', 'layer__request-btn', popupFooter)
+              let cancelBtn = vendor.L.DomUtil.create('button', 'mr-4 v-btn v-btn--contained theme--light v-size--default light', popupFooter)
               cancelBtn.setAttribute('type', 'button')
-              cancelBtn.innerHTML = '<span class="layer__request-btn__text-1">Cancel</span>'
+              cancelBtn.innerHTML = '<span class="v-btn__content">Cancel</span>'
               layer.bindPopup(popup).openPopup()
               vendor.L.DomEvent.on(cancelBtn, 'click', () => {
                 layer.closePopup()

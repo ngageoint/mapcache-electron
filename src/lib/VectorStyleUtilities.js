@@ -1,7 +1,8 @@
-// import {circle, polygonToLine, polygon} from '@turf/turf'
+import crypto from 'crypto'
+
 export default class VectorStyleUtilities {
   static generateColor () {
-    return ('#' + Math.floor(Math.random() * 16777215).toString(16)).padEnd(7, '0').toUpperCase()
+    return ('#' + crypto.randomBytes(32).toString('hex').slice(0, 6)).toUpperCase()
   }
 
   static getDefaultIcon () {
