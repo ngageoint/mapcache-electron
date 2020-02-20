@@ -2,6 +2,8 @@ import {app, BrowserWindow, Menu, shell} from 'electron'
 import WindowState from './WindowState'
 import path from 'path'
 import _ from 'lodash'
+import { download } from 'electron-dl'
+import fileUrl from 'file-url'
 
 class WindowLauncher {
   mainWindow
@@ -77,6 +79,14 @@ class WindowLauncher {
         this.mainWindow.show()
       }
     })
+  }
+
+  downloadURL = async (url) => {
+    try {
+      await download(this.projectWindow, fileUrl(url))
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   showProject (projectId) {

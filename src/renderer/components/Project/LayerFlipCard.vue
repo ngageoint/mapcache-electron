@@ -3,12 +3,15 @@
     <div slot="card-header">
       <v-container fluid class="pa-0 ma-0">
         <v-row class="align-center" no-gutters>
-          <v-col cols="11">
+          <v-col :cols="layer.pane === 'vector' ? 9 : 11">
             <view-edit-text :value="initialDisplayName" font-size="1.25em" font-weight="700" label="Layer Name" :on-save="saveLayerName"/>
           </v-col>
-          <v-col cols="1">
-            <v-row class="justify-end" no-gutters>
-              <div class="layer-checked contrast-svg-always" @click.stop="toggleProjectLayer({projectId: projectId, layerId: layer.id})">
+          <v-col :cols="layer.pane === 'vector' ? 3 : 1">
+            <v-row class="align-center justify-end mr-1" no-gutters>
+              <v-btn v-if="layer.pane === 'vector'" icon color="black" @click.stop="downloadGeoPackage">
+                <v-icon>mdi-download</v-icon>
+              </v-btn>
+              <div class="contrast-svg-always" @click.stop="toggleProjectLayer({projectId: projectId, layerId: layer.id})">
                 <font-awesome-icon v-show="layer.shown" icon="check-square" size="lg"/>
                 <font-awesome-icon v-show="!layer.shown" :icon="['far', 'square']" size="lg"/>
               </div>
@@ -178,6 +181,14 @@
       },
       saveLayerName (val) {
         this.setLayerDisplayName({projectId: this.projectId, layerId: this.layer.id, displayName: val})
+      },
+      downloadGeoPackage () {
+        try {
+          console.log('sending request to download ' + this.layer.geopackageFilePath)
+          this.$electron.ipcRenderer.send('quick_download_geopackage', { url: this.layer.geopackageFilePath })
+        } catch (error) {
+          console.log(error)
+        }
       }
     }
   }

@@ -39,6 +39,9 @@ ipcMain.on('build_geopackage', (event, payload) => {
 ipcMain.on('cancel_geopackage_build', (event, payload) => {
   WorkerPool.cancelGeoPackageBuild(payload.geopackage)
 })
+ipcMain.on('quick_download_geopackage', (event, payload) => {
+  WindowLauncher.downloadURL(payload.url)
+})
 app.on('window-all-closed', () => {
   WindowLauncher.launchMainWindow()
 })

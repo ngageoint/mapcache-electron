@@ -1,8 +1,8 @@
 <template>
-  <v-card class="card">
+  <v-card class="pa-2 card">
     <v-container class="pa-0 ma-0 clickable" @click.stop="toggle()">
-      <v-row no-gutters="">
-        <v-col align-self="center" cols="1" class="clickable" @click.stop="toggle()">
+      <v-row no-gutters>
+        <v-col align-self="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
           <font-awesome-icon :icon="(expanded ? 'chevron-up' : 'chevron-down')" class="expand-collapse" size="lg"/>
         </v-col>
         <v-col cols="11">
@@ -51,7 +51,6 @@
 <style scoped>
   .card {
     background-color: white;
-    padding: 8px;
     min-height: 3rem;
     margin-top: 8px;
     margin-bottom: 8px;
