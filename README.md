@@ -7,6 +7,18 @@ If you'd like to contribute to this project, please make a pull request. We'll r
 
 Software source code previously released under an open source license and then modified by NGA staff is considered a "joint work" (see 17 USC § 101); it is partially copyrighted, partially public domain, and as a whole is protected by the copyrights of the non-government authors and must be released according to the terms of the original open source license.
 
+### Build and Run ###
+Required:
+* Node 8.11.2
+* Xcode 11.3 or greater
+
+To build and run:
+* npm install
+* npm run rebuild (this will build gdal, canvas, and some other deps)
+* npm run dev (run locally in development mode)
+* npm run build-mac (build a stand alone mac app) 
+
+
 ## License
 
 The MIT License (MIT)
