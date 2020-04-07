@@ -2,7 +2,7 @@
 <div id="project-holder" class="project-holder">
   <div id="project-name">
     <v-card class="project-name-card">
-      <view-edit-text :value="project.name" :fontColor="titleColor" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
+      <view-edit-text :value="project.name" :fontColor="titleColor" :darkMode="true" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
     </v-card>
   </div>
   <div id="project" class="project-container">

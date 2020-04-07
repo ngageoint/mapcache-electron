@@ -10,7 +10,7 @@
     </div>
     <v-row v-if="editMode" @click.stop="onClick">
       <v-card-text>
-        <v-text-field :id="id" :label="label" v-model="editedValue" hide-details/>
+        <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" />
       </v-card-text>
       <v-container class="pa-0">
        <v-card-actions>
@@ -18,12 +18,13 @@
          <v-btn
                  text
                  color="light darken-1"
+                 :dark="this.darkMode"
                  @click.stop="cancel">
            {{"Cancel"}}
          </v-btn>
          <v-btn
-                 text
-                 color="primary darken-1"
+                 color="info"
+                 :dark="this.darkMode"
                  @click.stop="save">
            {{"Save"}}
          </v-btn>
@@ -41,6 +42,10 @@
       label: String,
       value: String,
       onSave: Function,
+      darkMode: {
+        type: Boolean,
+        default: false
+      },
       fontSize: {
         type: String,
         default: '16px'
