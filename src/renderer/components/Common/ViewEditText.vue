@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="pa-0 ma-0">
     <div v-if="!editMode" class="flex-container title-edit" :style="{justifyContent: justify}">
-      <p :style="{fontSize: this.fontSize, fontWeight: this.fontWeight, fontColor: this.fontColor}">
+      <p :style="{fontSize: this.fontSize, fontWeight: this.fontWeight, color: this.fontColor}">
         {{value + appendedText}}
       </p>
       <v-btn text icon :color="fontColor" @click.stop="editValue" v-if="!editingDisabled">

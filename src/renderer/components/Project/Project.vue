@@ -1,4 +1,10 @@
 <template>
+<div id="project-holder" class="project-holder">
+  <div id="project-name">
+    <v-card class="project-name-card">
+      <view-edit-text :value="project.name" :fontColor="titleColor" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
+    </v-card>
+  </div>
   <div id="project" class="project-container">
     <div class="admin-actions">
       <div class="admin-actions-content">
@@ -28,9 +34,6 @@
         id="source-drop-zone"
         class="project-sidebar"
         v-if="!geopackagesShowing">
-      <v-card class="project-name-card">
-        <view-edit-text :value="project.name" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
-      </v-card>
 
       <add-source :project="project"/>
 
@@ -70,6 +73,7 @@
       </leaflet-map>
     </div>
   </div>
+</div>
 </template>
 
 <script>
@@ -82,7 +86,8 @@
   import GeoPackageCard from './GeoPackageCard'
 
   let options = {
-    geopackagesShowing: false
+    geopackagesShowing: false,
+    titleColor: '#ffffff'
   }
 
   export default {
@@ -139,9 +144,13 @@
     font-family: sans-serif;
     color: rgba(255, 255, 255, .87);
   }
+  .project-holder {
+    display:flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
   .project-name-card {
-    margin-top: 8px;
-    margin-bottom: 8px;
+    background: transparent 100%;
     padding: 16px;
   }
   .project-container {
