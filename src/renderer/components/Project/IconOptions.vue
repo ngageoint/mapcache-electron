@@ -1,5 +1,5 @@
 <template>
-  <expandable-card>
+  <expandable-card class="mb-2">
     <div slot="card-header">
       <v-row no-gutters class="justify-space-between" align="center">
         <v-col cols="10" class="align-center">

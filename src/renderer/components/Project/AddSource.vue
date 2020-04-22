@@ -1,5 +1,5 @@
 <template>
-  <card>
+  <card class="mb-2">
     <div slot="card">
      <modal
        v-if="layerSelectionVisible"

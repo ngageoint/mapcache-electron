@@ -1,6 +1,6 @@
 <template>
   <div>
-    <expandablecard>
+    <expandablecard class="mb-2">
       <div slot="card-header">
         <div class="title-card">
           Feature Tile Settings
@@ -19,14 +19,14 @@
       </div>
     </expandablecard>
     <div v-if="!loading">
-      <expandablecard>
+      <expandablecard class="mb-2">
         <div slot="card-header">
           <div class="title-card">
             Default Styles and Icons
           </div>
         </div>
         <div slot="card-expanded-body">
-          <card>
+          <card class="mb-2">
             <div slot="card">
               <div class="subtitle-card">
                 Default Point Style/Icon
@@ -77,7 +77,7 @@
                   :show-id="false"/>
         </div>
       </expandablecard>
-      <expandablecard>
+      <expandablecard class="mb-2">
         <div slot="card-header">
           <v-row class="justify-space-between" no-gutters>
             <v-col cols="10" class="title-card">
@@ -101,7 +101,7 @@
             :layer="layer"
             :project-id="projectId"
             :show-id="true"/>
-          <expandablecard v-if="Object.keys(featureStyleRows).length > 0">
+          <expandablecard class="mb-2" v-if="Object.keys(featureStyleRows).length > 0">
             <div slot="card-header">
               <v-row no-gutters class="subtitle-card">
                 <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">
@@ -130,7 +130,7 @@
           </expandablecard>
         </div>
       </expandablecard>
-      <expandablecard>
+      <expandablecard class="mb-2">
         <div slot="card-header">
           <v-row class="justify-space-between" no-gutters>
             <v-col cols="10" class="title-card">
@@ -156,7 +156,7 @@
             :project-id="projectId"
             :show-id="true"
             :is-table-icon="false"/>
-          <expandablecard v-if="Object.keys(featureIconRows).length > 0">
+          <expandablecard class="mb-2" v-if="Object.keys(featureIconRows).length > 0">
             <div slot="card-header">
               <v-row no-gutters class="subtitle-card">
                 <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">

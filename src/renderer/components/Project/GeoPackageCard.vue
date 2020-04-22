@@ -1,5 +1,5 @@
 <template>
-  <expandable-card  :initially-expanded="geopackage.expanded" :on-expand-collapse="expandCollapseGeoPackageConfiguration">
+  <expandable-card class="mb-2" :initially-expanded="geopackage.expanded" :on-expand-collapse="expandCollapseGeoPackageConfiguration">
     <div slot="card-header">
       <v-row no-gutters class="mr-1">
         <v-col cols="12">

@@ -13,7 +13,7 @@
           <v-btn class="align-self-start" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
         </v-row>
         <v-row no-gutters>
-          <v-card v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
+          <v-card class="mb-2" v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
             <v-progress-linear :active="true"
                                :indeterminate="true"
                                color="light-blue"

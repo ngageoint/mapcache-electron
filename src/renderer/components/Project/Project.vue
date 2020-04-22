@@ -1,9 +1,13 @@
 <template>
 <div id="project-holder" class="project-holder">
   <div id="project-name">
-    <v-card class="project-name-card">
-      <view-edit-text :value="project.name" :fontColor="titleColor" :darkMode="true" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
-    </v-card>
+    <v-container>
+      <v-row>
+        <v-col>
+          <view-edit-text compact :value="project.name" :fontColor="titleColor" :darkMode="true" font-size="1.5em" font-weight="bold" label="Project Name" :on-save="saveProjectName" justify="center"/>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
   <div id="project" class="project-container">
     <div class="admin-actions">
@@ -55,7 +59,7 @@
           :project="project"/>
       </div>
       <v-btn
-        class="bottom-right"
+        class="sidebar-fab"
         dark
         fab
         color="blue"
@@ -149,6 +153,11 @@
     flex-direction: column;
     overflow: hidden;
   }
+  #project-name {
+    min-height: 10vh;
+    display: flex;
+    align-items: center;
+  }
   .project-name-card {
     background: transparent 100%;
     padding: 16px;
@@ -157,6 +166,7 @@
     display:flex;
     flex-direction: row;
     overflow: hidden;
+    min-height: 90vh;
   }
   .pull-right {
     text-align: center;
@@ -234,17 +244,16 @@
     min-width: 380px;
     max-width: 500px;
     width: 30vw;
-    height: 100vh;
+    max-height: 90vh;
     overflow: hidden;
   }
   .project-sidebar {
-    padding: 15px;
-    padding-left: 10px;
+    padding: 0 15px 10px 10px;
     text-align: center;
     min-width: 380px;
     max-width: 500px;
     width: 30vw;
-    height: 100vh;
+    max-height: 90vh;
     overflow-y: auto;
   }
   .section-name {
@@ -260,10 +269,10 @@
   .sources li.checked {
     list-style: url('../../assets/check.png');
   }
-  .bottom-right {
+  .sidebar-fab {
     position: absolute;
-    right: 32px;
-    bottom: 32px;
+    right: 24px;
+    bottom: 24px;
   }
 
 </style>

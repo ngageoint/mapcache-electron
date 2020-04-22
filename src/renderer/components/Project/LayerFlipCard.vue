@@ -1,5 +1,5 @@
 <template>
-  <expandable-card :initially-expanded="layer.expanded" :on-expand-collapse="expandCollapseProjectLayer">
+  <expandable-card class="mb-2" :initially-expanded="layer.expanded" :on-expand-collapse="expandCollapseProjectLayer">
     <div slot="card-header">
       <v-container fluid class="pa-0 ma-0">
         <v-row class="align-center" no-gutters>
@@ -62,7 +62,7 @@
             </div>
           </div>
         </div>
-        <expandable-card>
+        <expandable-card class="mb-2">
           <div slot="card-header">
             <div class="title-card">
               Style Options

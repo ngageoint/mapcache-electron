@@ -15,7 +15,6 @@
   import { mapActions } from 'vuex'
   import { remote } from 'electron'
   import ViewEditText from '../Common/ViewEditText'
-  import Card from '../Card/Card'
 
   export default {
     props: {
@@ -23,7 +22,6 @@
       geopackage: Object
     },
     components: {
-      Card,
       ViewEditText
     },
     data () {

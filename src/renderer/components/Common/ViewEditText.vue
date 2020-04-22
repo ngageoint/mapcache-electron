@@ -8,7 +8,7 @@
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
     </div>
-    <v-row v-if="editMode" @click.stop="onClick">
+    <v-row v-if="editMode && !compact" @click.stop="onClick">
       <v-card-text>
         <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" />
       </v-card-text>
@@ -31,6 +31,27 @@
        </v-card-actions>
       </v-container>
     </v-row>
+    <v-row v-if="editMode && compact" @click.stop="onClick">
+      <v-col offset="3" cols="5" class="pa-0">
+        <v-text-field dense :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" />
+      </v-col>
+      <v-col cols="3" class="pa-0 pl-2">
+        <v-btn
+          class="pr-2"
+          text
+          color="light darken-1"
+          :dark="this.darkMode"
+          @click.stop="cancel">
+          {{"Cancel"}}
+        </v-btn>
+        <v-btn
+          color="info"
+          :dark="this.darkMode"
+          @click.stop="save">
+          {{"Save"}}
+        </v-btn>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -42,6 +63,10 @@
       label: String,
       value: String,
       onSave: Function,
+      compact: {
+        type: Boolean,
+        default: false
+      },
       darkMode: {
         type: Boolean,
         default: false

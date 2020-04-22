@@ -10,7 +10,7 @@
         :cancel="cancel">
     </modal>
 
-    <v-row class="justify-space-between title-card" no-gutters>
+    <v-row class="justify-space-between title-card pb-1" no-gutters>
       <v-col cols="10">
         <v-row v-if="Object.keys(geopackage.tileConfigurations).length == 1" no-gutters class="justify-start">
           <h3>{{Object.keys(geopackage.tileConfigurations).length + ' Tile Configuration'}}</h3>
@@ -33,7 +33,7 @@
       :geopackage="geopackage"
       :tile-configuration="tileConfig"/>
 
-    <v-row class="justify-space-between title-card" no-gutters>
+    <v-row class="justify-space-between title-card pb-1" no-gutters>
       <v-col cols="10">
         <v-row v-if="Object.keys(geopackage.vectorConfigurations).length == 1" no-gutters class="justify-start">
           <h3>{{Object.keys(geopackage.vectorConfigurations).length + ' Vector Configuration'}}</h3>
@@ -79,7 +79,6 @@
 <script>
   import { mapActions } from 'vuex'
   import ViewEditText from '../Common/ViewEditText'
-  import ExpandableCard from '../Card/ExpandableCard'
   import GeoPackageFileConfigurationCard from './GeoPackageFileConfigurationCard'
   import GeoPackageTileConfigurationCard from './GeoPackageTileConfigurationCard'
   import GeoPackageVectorConfigurationCard from './GeoPackageVectorConfigurationCard'
@@ -92,7 +91,6 @@
       geopackage: Object
     },
     components: {
-      ExpandableCard,
       ViewEditText,
       GeoPackageFileConfigurationCard,
       GeoPackageTileConfigurationCard,

@@ -52,8 +52,6 @@
   .card {
     background-color: white;
     min-height: 3rem;
-    margin-top: 8px;
-    margin-bottom: 8px;
   }
   .flex-row {
     display: flex;
