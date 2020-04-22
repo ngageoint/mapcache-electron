@@ -11,6 +11,7 @@ import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
 import { userDataDir } from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
+import http from 'http'
 
 export default class KMLSource extends Source {
   async initialize () {
@@ -27,9 +28,6 @@ export default class KMLSource extends Source {
     for (let kmlDoc of documents) {
       const name = kmlDoc.name
       const featureCollection = ToGeoJSON.kml(kmlDoc.xmlDoc)
-      featureCollection.features.forEach((feature, index) => {
-        feature.id = index
-      })
       if (featureCollection.features.length > 0) {
         let id = UniqueIDUtilities.createUniqueID()
         let fileName = name + '.gpkg'
@@ -89,16 +87,49 @@ export default class KMLSource extends Source {
       if (feature.properties.icon) {
         let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
-          let image = ImageUtils.getImageSize(iconFile)
-          let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
-          fileIcons[iconFile] = {
-            url: dataUrl,
-            width: image.width,
-            height: image.height,
-            anchor_x: image.width / 2.0,
-            anchor_y: image.height / 2.0,
-            anchorSelection: 6, // anchored to center
-            name: 'Icon #' + iconNumber
+          // it is a url, go try to get the image..
+          if (feature.properties.icon.startsWith('http')) {
+            const file = fs.createWriteStream(iconFile)
+            await new Promise((resolve) => {
+              http.get(feature.properties.icon, (response) => {
+                if (response.statusCode === 200) {
+                  response.pipe(file)
+                  file.on('finish', () => {
+                    file.close()
+                    resolve()
+                  })
+                } else {
+                  fs.unlinkSync(iconFile)
+                  console.log(response.statusCode + ' Error')
+                  resolve()
+                }
+              }).on('error', (err) => {
+                fs.unlinkSync(iconFile)
+                console.error(err)
+                resolve()
+              })
+            })
+          }
+
+          if (fs.existsSync(iconFile)) {
+            try {
+              let image = ImageUtils.getImageSize(iconFile)
+              let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
+              fileIcons[iconFile] = {
+                url: dataUrl,
+                width: image.width,
+                height: image.height,
+                anchor_x: image.width / 2.0,
+                anchor_y: image.height / 2.0,
+                anchorSelection: 6, // anchored to center
+                name: 'Icon #' + iconNumber
+              }
+            } catch (exception) {
+              console.error(exception)
+              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
+            }
+          } else {
+            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
           }
           iconNumber++
         }
