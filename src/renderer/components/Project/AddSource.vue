@@ -406,7 +406,7 @@
           filters: [
             {
               name: 'All Files',
-              extensions: ['tif', 'tiff', 'geotiff', 'gpkg', 'geopackage', 'kml', 'kmz', 'geojson', 'json']
+              extensions: ['tif', 'tiff', 'geotiff', 'gpkg', 'geopackage', 'kml', 'kmz', 'geojson', 'json', 'shp']
             }
           ],
           properties: ['openFile', 'multiSelections']
