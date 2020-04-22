@@ -99,6 +99,11 @@ export default class GeoPackageUtilities {
       for (let feature of iterator) {
         if (feature.properties) {
           feature.properties.id = undefined
+          _.keys(feature.properties).forEach(key => {
+            if (_.isObject(feature.properties[key])) {
+              delete feature.properties[key]
+            }
+          })
         }
         let featureRowId = GeoPackage.addGeoJSONFeatureToGeoPackage(gp, feature, featureTableName)
         if (!_.isNil(style.features[feature.id])) {
