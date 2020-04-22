@@ -29,6 +29,11 @@ export default class KMLSource extends Source {
       const name = kmlDoc.name
       const featureCollection = ToGeoJSON.kml(kmlDoc.xmlDoc)
       if (featureCollection.features.length > 0) {
+        for (let feature of featureCollection.features) {
+          if (_.isNil(feature.id)) {
+            feature.id = UniqueIDUtilities.createUniqueID()
+          }
+        }
         let id = UniqueIDUtilities.createUniqueID()
         let fileName = name + '.gpkg'
         let filePath = userDataDir().dir(id).file(fileName).path()
