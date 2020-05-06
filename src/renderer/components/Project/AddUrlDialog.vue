@@ -52,7 +52,7 @@
       map = vendor.L.map('add-url-map')
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
-      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
+      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {
         subdomains: ['1', '2', '3', '4']
       })
       // const basemap = vendor.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {

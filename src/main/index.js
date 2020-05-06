@@ -26,13 +26,11 @@ ipcMain.on('process_source', (event, payload) => {
   })
 })
 ipcMain.on('cancel_process_source', (event, payload) => {
-  console.log(payload)
   WorkerPool.cancelProcessSource(payload.id)
 })
 ipcMain.on('build_geopackage', (event, payload) => {
   const id = payload.geopackage.id
   WorkerPool.executeBuildGeoPackage(payload).then(function (result) {
-    console.log(result)
     event.sender.send('build_geopackage_completed_' + id, result)
   })
 })

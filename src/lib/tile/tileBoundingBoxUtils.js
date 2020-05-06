@@ -1,4 +1,6 @@
 import proj4 from 'proj4'
+import { intersect, bbox } from '@turf/turf'
+import _ from 'lodash'
 var defs = require('../projection/proj4Defs')
 for (var name in defs) {
   if (defs[name]) {
@@ -9,16 +11,38 @@ for (var name in defs) {
 export default class TileBoundingBoxUtils {
   static WEB_MERCATOR_HALF_WORLD_WIDTH = proj4('EPSG:4326', 'EPSG:3857').forward([180, 0])[0]
 
+  static getBoundingBoxFromExtents (extentsArray) {
+    if (extentsArray.length === 0) {
+      return null
+    }
+    let mergedExtent = extentsArray[0]
+    extentsArray.forEach(extent => {
+      if (_.isNil(mergedExtent)) {
+        mergedExtent = extent
+      } else {
+        mergedExtent[0] = Math.min(mergedExtent[0], extent[0])
+        mergedExtent[1] = Math.min(mergedExtent[1], extent[1])
+        mergedExtent[2] = Math.max(mergedExtent[2], extent[2])
+        mergedExtent[3] = Math.max(mergedExtent[3], extent[3])
+      }
+    })
+    return [[mergedExtent[1], mergedExtent[0]], [mergedExtent[3], mergedExtent[2]]]
+  }
+
+  static intersection (boundingBoxA, boundingBoxB) {
+    return bbox(intersect(boundingBoxA.toGeoJSON().geometry, boundingBoxB.toGeoJSON().geometry))
+  }
+
   /**
- * Get the Web Mercator tile bounding box from the Standard Maps API tile
- * coordinates and zoom level
- *
- *  @param x    x
- *  @param y    y
- *  @param zoom zoom level
- *
- *  @return web mercator bounding box
- */
+   * Get the Web Mercator tile bounding box from the Standard Maps API tile
+   * coordinates and zoom level
+   *
+   *  @param x    x
+   *  @param y    y
+   *  @param zoom zoom level
+   *
+   *  @return web mercator bounding box
+   */
   static getWebMercatorBoundingBoxFromXYZ (x, y, zoom, options) {
     var tilesPerSide = TileBoundingBoxUtils.tilesPerSideWithZoom(zoom)
     var tileSize = TileBoundingBoxUtils.tileSizeWithTilesPerSide(tilesPerSide)

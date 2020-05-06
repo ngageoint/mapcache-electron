@@ -1,5 +1,4 @@
-import FeatureTiles from '@ngageoint/geopackage/lib/tiles/features/index'
-import NumberFeaturesTile from '@ngageoint/geopackage/lib/tiles/features/custom/numberFeaturesTile'
+import { FeatureTiles, NumberFeaturesTile } from '@ngageoint/geopackage'
 
 export default class GeoPackageVectorTileRenderer {
   geopackage
@@ -17,9 +16,9 @@ export default class GeoPackageVectorTileRenderer {
   async init () {
     this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
-    this.featureTile.setMaxFeaturesTileDraw(new NumberFeaturesTile())
-    this.featureTile.setMaxFeaturesPerTile(this.maxFeatures)
-    this.featureTile.setIconCacheSize(1000)
+    this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
+    this.featureTile.maxFeaturesPerTile = this.maxFeatures
+    this.featureTile.iconCacheSize = 1000
   }
 
   async styleChanged (geopackage, maxFeatures) {

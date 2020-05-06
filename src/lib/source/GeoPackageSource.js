@@ -1,5 +1,5 @@
 import Source from './Source'
-import GeoPackage from '@ngageoint/geopackage'
+import { GeoPackageAPI } from '@ngageoint/geopackage'
 import GeoPackageLayer from './layer/tile/GeoPackageLayer'
 import VectorLayer from './layer/vector/VectorLayer'
 import GeoPackageUtilities from '../GeoPackageUtilities'
@@ -8,7 +8,7 @@ import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class GeoPackageSource extends Source {
   async retrieveLayers () {
-    this.geopackage = await GeoPackage.open(this.filePath)
+    this.geopackage = await GeoPackageAPI.open(this.filePath)
 
     this.layers = []
     let tileLayers = this.geopackage.getTileTables()
@@ -28,7 +28,6 @@ export default class GeoPackageSource extends Source {
     }
     let featureLayers = this.geopackage.getFeatureTables()
     for (const layer of featureLayers) {
-      console.log('feature table: ' + layer)
       let fileName = layer + '.gpkg'
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)

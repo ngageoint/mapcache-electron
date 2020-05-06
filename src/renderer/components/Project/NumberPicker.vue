@@ -1,45 +1,43 @@
 <template>
-  <v-text-field v-model="numberValue" type="number" :label="label" @input="updateFromInput" :step="step" :min="min" :max="max"></v-text-field>
+  <v-text-field v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keypress="handleKeyPress($event, arrowsOnly)"/>
 </template>
 
 <script>
-  import _ from 'lodash'
-
   export default {
     props: {
       number: Number,
       label: String,
       step: Number,
       min: Number,
-      max: Number
+      max: Number,
+      arrowsOnly: {
+        type: Boolean,
+        default: false
+      }
     },
-    data () {
-      return {
-        numberValue: this.number || 250
+    computed: {
+      numberValue: {
+        get () {
+          return this.number
+        },
+        set (val) {
+          if (val) {
+            let updatedNumber = Number(val)
+            if (updatedNumber < this.min) {
+              updatedNumber = this.min
+            } else if (updatedNumber > this.max) {
+              updatedNumber = this.max
+            }
+            this.$emit('update-number', updatedNumber)
+          }
+        }
       }
     },
     methods: {
-      setNumber (number) {
-        if (!_.isNil(this.min)) {
-          if (this.numberValue < this.min) {
-            this.numberValue = this.min
-          }
-        } else if (!_.isNil(this.max)) {
-          if (this.numberValue > this.max) {
-            this.numberValue = this.max
-          }
-        } else {
-          this.numberValue = number
-        }
-      },
-      updateFromInput () {
-        this.setNumber(this.numberValue)
-      }
-    },
-    watch: {
-      numberValue (val) {
-        if (val) {
-          this.$emit('input', val)
+      handleKeyPress: (evt, arrowsOnly) => {
+        if (arrowsOnly) {
+          evt.preventDefault()
+          evt.stopPropagation()
         }
       }
     }

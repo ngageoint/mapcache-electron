@@ -5,7 +5,6 @@ import DefaultMapLayer from './DefaultMapLayer'
 
 export default class LayerFactory {
   static constructMapLayer (layerModel) {
-    console.log(layerModel.layerType)
     switch (layerModel.layerType) {
       case 'Drawing':
         return DrawingMapLayer.constructMapLayer(layerModel)

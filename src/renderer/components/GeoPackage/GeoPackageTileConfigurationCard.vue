@@ -89,7 +89,6 @@
           <v-card-title>
             Bounding Box and Zoom
           </v-card-title>
-
           <v-container class="mt-0 mb-0">
             <div class="flex-container" :style="{justifyContent: 'start'}">
               <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText" clearable @click.clear="resetBoundingBox"/>
@@ -102,17 +101,23 @@
                 class="mr-2"
                 @click="setBoundingBoxToDataExtent"
               >
-                Use Extent of All Layers
+                Use extent of all layers
               </v-chip>
             </v-row>
             <v-row no-gutters>
-              <number-picker :number="Number(tileConfiguration.minZoom)" label="Min Zoom" :min="Number(1)" :max="Number(18)" :step="Number(1)" v-model="minZoom" />
+              <number-picker :number="Number(tileConfiguration.minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
             </v-row>
             <v-row no-gutters>
-              <number-picker :number="Number(tileConfiguration.maxZoom)" label="Max Zoom" :min="Number(1)" :max="Number(18)" :step="Number(1)" v-model="maxZoom" />
+              <number-picker :number="Number(tileConfiguration.maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
             </v-row>
             <v-row no-gutters>
-              <p>{{'Number of Tiles: ' + numberOfTilesToGenerate()}}</p>
+              <p>{{'Number of tiles: ' + numberOfTilesToGenerate()}}</p>
+            </v-row>
+            <v-row no-gutters v-if="numberOfTilesToGenerate() > tilesToGenerateWarningThreshold && !tileConfiguration.tileScaling">
+              <p style="color: red">{{'This configuration may generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or lowering the maximum zoom level.'}}</p>
+            </v-row>
+            <v-row no-gutters>
+              <v-checkbox v-model="tileScaling" label="Enable tile scaling"/>
             </v-row>
           </v-container>
         </v-container>
@@ -131,11 +136,11 @@
   import ViewEditText from '../Common/ViewEditText'
   import ExpandableCard from '../Card/ExpandableCard'
   import Modal from '../Modal'
-  // import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import _ from 'lodash'
   import NumberPicker from '../Project/NumberPicker'
-  import XYZTileUtilities from '../../../lib/XYZTileUtilities'
   import draggable from 'vuedraggable'
+  import TileBoundingBoxUtils from '../../../lib/tile/tileBoundingBoxUtils'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
   export default {
     props: {
@@ -152,7 +157,8 @@
     },
     data () {
       return {
-        showDeleteModal: false
+        showDeleteModal: false,
+        tilesToGenerateWarningThreshold: 1000
       }
     },
     computed: {
@@ -179,29 +185,16 @@
           })
         }
       },
-      minZoom: {
+      tileScaling: {
         get () {
-          return this.tileConfiguration.minZoom
+          return this.tileConfiguration.tileScaling
         },
         set (val) {
-          this.setGeoPackageTileConfigurationMinZoom({
+          this.setGeoPackageTileConfigurationTileScaling({
             projectId: this.project.id,
             geopackageId: this.geopackage.id,
             configId: this.tileConfiguration.id,
-            minZoom: val
-          })
-        }
-      },
-      maxZoom: {
-        get () {
-          return this.tileConfiguration.maxZoom
-        },
-        set (val) {
-          this.setGeoPackageTileConfigurationMaxZoom({
-            projectId: this.project.id,
-            geopackageId: this.geopackage.id,
-            configId: this.tileConfiguration.id,
-            maxZoom: val
+            tileScaling: val
           })
         }
       },
@@ -229,8 +222,6 @@
             configId: this.tileConfiguration.id,
             tileLayers: val.map(v => v.value).filter(v => !_.isNil(v))
           })
-          console.log('renderingOrder')
-          console.log(this.tileConfiguration.renderingOrder)
           let availableLayers = newTileLayers
             .map((layerId) => this.geopackage.tileLayers[layerId])
             .concat(this.tileConfiguration.vectorLayers
@@ -315,6 +306,7 @@
         setGeoPackageTileTableName: 'Projects/setGeoPackageTileTableName',
         setGeoPackageTileConfigurationTileLayers: 'Projects/setGeoPackageTileConfigurationTileLayers',
         setGeoPackageTileConfigurationVectorLayers: 'Projects/setGeoPackageTileConfigurationVectorLayers',
+        setGeoPackageTileConfigurationTileScaling: 'Projects/setGeoPackageTileConfigurationTileScaling',
         setGeoPackageTileConfigurationMinZoom: 'Projects/setGeoPackageTileConfigurationMinZoom',
         setGeoPackageTileConfigurationMaxZoom: 'Projects/setGeoPackageTileConfigurationMaxZoom',
         setGeoPackageTileConfigurationBoundingBox: 'Projects/setGeoPackageTileConfigurationBoundingBox',
@@ -327,6 +319,22 @@
       },
       cancel () {
         this.showDeleteModal = false
+      },
+      updateMinZoom (val) {
+        this.setGeoPackageTileConfigurationMinZoom({
+          projectId: this.project.id,
+          geopackageId: this.geopackage.id,
+          configId: this.tileConfiguration.id,
+          minZoom: val
+        })
+      },
+      updateMaxZoom (val) {
+        this.setGeoPackageTileConfigurationMaxZoom({
+          projectId: this.project.id,
+          geopackageId: this.geopackage.id,
+          configId: this.tileConfiguration.id,
+          maxZoom: val
+        })
       },
       confirm () {
         this.showDeleteModal = false
@@ -366,30 +374,15 @@
       setBoundingBoxToDataExtent () {
         let extents = this.tileConfiguration.vectorLayers.map(vectorLayer => this.project.layers[vectorLayer].extent)
         extents = extents.concat(this.tileConfiguration.tileLayers.map(tileLayer => this.project.layers[tileLayer].extent))
-        let boundingBox
-        extents.forEach(extent => {
-          if (_.isNil(boundingBox)) {
-            boundingBox = extent
-          } else {
-            boundingBox[0] = Math.min(boundingBox[0], extent[0])
-            boundingBox[1] = Math.min(boundingBox[1], extent[1])
-            boundingBox[2] = Math.max(boundingBox[2], extent[2])
-            boundingBox[3] = Math.max(boundingBox[3], extent[3])
-          }
-        })
         this.setGeoPackageTileConfigurationBoundingBox({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
           configId: this.tileConfiguration.id,
-          boundingBox: [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
+          boundingBox: TileBoundingBoxUtils.getBoundingBoxFromExtents(extents)
         })
       },
       numberOfTilesToGenerate () {
-        if (this.tileConfiguration.minZoom && this.tileConfiguration.maxZoom && this.tileConfiguration.boundingBox) {
-          return XYZTileUtilities.tileCountInExtent(this.tileConfiguration.boundingBox, Number(this.tileConfiguration.minZoom), Number(this.tileConfiguration.maxZoom))
-        } else {
-          return 0
-        }
+        return GeoPackageUtilities.tileConfigurationEstimatedWork(this.project, this.tileConfiguration).estimatedNumberOfTiles
       }
     }
   }

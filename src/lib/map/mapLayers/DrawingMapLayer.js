@@ -35,9 +35,9 @@ export default class DrawingMapLayer {
 
         if (!_.isNil(iconRow)) {
           let icon = vendor.L.icon({
-            iconUrl: 'data:' + iconRow.getContentType() + ';base64,' + iconRow.getData().toString('base64'),
-            iconSize: [iconRow.getWidth(), iconRow.getHeight()], // size of the icon
-            iconAnchor: [Math.round(iconRow.getAnchorU() * iconRow.getWidth()), Math.round(iconRow.getAnchorV() * iconRow.getHeight())] // point of the icon which will correspond to marker's location
+            iconUrl: 'data:' + iconRow.contentType + ';base64,' + iconRow.data.toString('base64'),
+            iconSize: [iconRow.width, iconRow.height], // size of the icon
+            iconAnchor: [Math.round(iconRow.anchorU * iconRow.width), Math.round(iconRow.anchorV * iconRow.height)] // point of the icon which will correspond to marker's location
           })
           layer = vendor.L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {icon: icon})
           layer.feature = feature

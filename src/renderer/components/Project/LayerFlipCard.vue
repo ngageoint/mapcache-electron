@@ -184,10 +184,9 @@
       },
       downloadGeoPackage () {
         try {
-          console.log('sending request to download ' + this.layer.geopackageFilePath)
           this.$electron.ipcRenderer.send('quick_download_geopackage', { url: this.layer.geopackageFilePath })
         } catch (error) {
-          console.log(error)
+          console.error(error)
         }
       }
     }

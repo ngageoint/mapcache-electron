@@ -1,7 +1,7 @@
 import Layer from '../Layer'
 import * as vtpbf from 'vt-pbf'
 import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
-import GeoPackage from '@ngageoint/geopackage'
+import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
 
 /**
  * VectorLayer is a 'Layer' within MapCache that is displayed on a map.
@@ -31,9 +31,9 @@ export default class VectorLayer extends Layer {
   }
 
   async initialize () {
-    this._geopackage = await GeoPackage.open(this._geopackageFilePath)
+    this._geopackage = await GeoPackageAPI.open(this._geopackageFilePath)
     this._featureDao = this._geopackage.getFeatureDao(this.sourceLayerName)
-    this._features = (await GeoPackage.getGeoJSONFeaturesInTile(this._geopackage, this.sourceLayerName, 0, 0, 0, true)).map(f => {
+    this._features = (await this._geopackage.getGeoJSONFeaturesInTile(this.sourceLayerName, 0, 0, 0, true)).map(f => {
       f.type = 'Feature'
       return f
     })
@@ -42,7 +42,7 @@ export default class VectorLayer extends Layer {
   }
 
   async updateStyle (maxFeatures) {
-    this._geopackage = await GeoPackage.open(this._geopackageFilePath)
+    this._geopackage = await GeoPackageAPI.open(this._geopackageFilePath)
     this._maxFeatures = maxFeatures
     await this.vectorTileRenderer.styleChanged(this._geopackage, maxFeatures)
   }
@@ -76,10 +76,10 @@ export default class VectorLayer extends Layer {
 
   get extent () {
     if (!this._extent) {
-      let contentsDao = this._geopackage.getContentsDao()
+      let contentsDao = this._geopackage.contentsDao
       let contents = contentsDao.queryForId(this.sourceLayerName)
       let proj = contentsDao.getProjection(contents)
-      let boundingBox = new GeoPackage.BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
+      let boundingBox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
       this._extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
     }
     return this._extent

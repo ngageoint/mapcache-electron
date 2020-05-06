@@ -72,11 +72,35 @@ export default class XYZTileUtilities {
     return tiles
   }
 
+  static tileCountInExtentForZoomLevels (extent, zoomLevels) {
+    var tiles = 0
+    zoomLevels.forEach(zoom => {
+      var yRange = XYZTileUtilities.calculateYTileRange(extent, zoom)
+      var xRange = XYZTileUtilities.calculateXTileRange(extent, zoom)
+      tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
+    })
+    return tiles
+  }
+
   static async iterateAllTilesInExtent (extent, minZoom, maxZoom, tileCallback) {
     let stop = false
     minZoom = Number(minZoom)
     maxZoom = Number(maxZoom)
     for (let z = minZoom; z <= maxZoom && !stop; z++) {
+      var yRange = XYZTileUtilities.calculateYTileRange(extent, z)
+      var xRange = XYZTileUtilities.calculateXTileRange(extent, z)
+      for (let x = xRange.min; x <= xRange.max && !stop; x++) {
+        for (let y = yRange.min; y <= yRange.max && !stop; y++) {
+          stop = await tileCallback({z, x, y})
+        }
+      }
+    }
+  }
+
+  static async iterateAllTilesInExtentForZoomLevels (extent, zoomLevels, tileCallback) {
+    let stop = false
+    for (let i = 0; i <= zoomLevels.length && !stop; i++) {
+      let z = zoomLevels[i]
       var yRange = XYZTileUtilities.calculateYTileRange(extent, z)
       var xRange = XYZTileUtilities.calculateXTileRange(extent, z)
       for (let x = xRange.min; x <= xRange.max && !stop; x++) {

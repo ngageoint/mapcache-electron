@@ -74,6 +74,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.samplesPerPixel = this.fileDirectory.SamplesPerPixel
     this.bitsPerSample = this.fileDirectory.BitsPerSample
     this.ds = gdal.open(this.filePath)
+    this.naturalWebMercatorZoom = GDALUtilities.getWebMercatorZoomLevelForGeoTIFF(this.ds)
     this.colorMap = this.fileDirectory.ColorMap
     if (this._configuration.bandOptions) {
       this.stretchToMinMax = this._configuration.stretchToMinMax
@@ -275,7 +276,8 @@ export default class GeoTiffLayer extends TileLayer {
         globalNoDataValue: this.globalNoDataValue,
         enableGlobalNoDataValue: this.enableGlobalNoDataValue,
         globalOpacity: this.globalOpacity,
-        enableGlobalOpacity: this.enableGlobalOpacity
+        enableGlobalOpacity: this.enableGlobalOpacity,
+        naturalWebMercatorZoom: this.naturalWebMercatorZoom
       }
     }
   }

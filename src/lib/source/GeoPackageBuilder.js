@@ -1,4 +1,4 @@
-import GeoPackage from '@ngageoint/geopackage'
+import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
 import LayerFactory from './layer/LayerFactory'
 import XYZTileUtilities from '../XYZTileUtilities'
 import imagemin from 'imagemin'
@@ -70,7 +70,7 @@ export default class GeoPackageBuilder {
         }
       }
 
-      let gp = await GeoPackage.create(this.config.fileName)
+      let gp = await GeoPackageAPI.create(this.config.fileName)
 
       // iterate over vector configurations
       for (const vectorConfigIdx in this.config.vectorConfigurations) {
@@ -94,7 +94,7 @@ export default class GeoPackageBuilder {
             let layerConfig = this.project.layers[vectorLayer]
             let sourceFeatureTableName = layerConfig.sourceLayerName
             let targetFeatureTableName = layerConfig.sourceLayerName
-            let geoPackageSource = await GeoPackage.open(layerConfig.geopackageFilePath)
+            let geoPackageSource = await GeoPackageAPI.open(layerConfig.geopackageFilePath)
             status.configurationStatus[vectorConfig.id].featuresAdded += await GeoPackageUtilities.copyGeoPackageFeaturesAndStylesForBoundingBox(geoPackageSource, gp, sourceFeatureTableName, targetFeatureTableName, vectorConfig.boundingBox)
             this.dispatchStatusUpdate(status)
             if (vectorConfig.indexed) {
@@ -118,9 +118,11 @@ export default class GeoPackageBuilder {
       // iterate over tile configurations
       for (const tileConfigIdx in this.config.tileConfigurations) {
         const tileConfig = this.config.tileConfigurations[tileConfigIdx]
-        let boundingBox = tileConfig.boundingBox
         let minZoom = tileConfig.minZoom
         let maxZoom = tileConfig.maxZoom
+
+        const { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.tileConfigurationEstimatedWork(this.project, tileConfig)
+
         status.configurationExecuting = tileConfig.id
         status.configurationStatus[tileConfig.id] = {
           id: tileConfig.id,
@@ -129,14 +131,21 @@ export default class GeoPackageBuilder {
           tilesAdded: 0,
           error: null,
           type: 'tile',
-          tilesToAdd: XYZTileUtilities.tileCountInExtent(boundingBox, minZoom, maxZoom)
+          tilesToAdd: estimatedNumberOfTiles
         }
+
         this.dispatchStatusUpdate(status)
-        const contentsBounds = new GeoPackage.BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
+        const contentsBounds = new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
         const contentsSrsId = 4326
-        const matrixSetBounds = new GeoPackage.BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
+        const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
         const tileMatrixSetSrsId = 3857
-        await GeoPackage.createStandardWebMercatorTileTable(gp, tileConfig.tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+        await gp.createStandardWebMercatorTileTable(tileConfig.tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+
+        if (!_.isNil(tileScaling)) {
+          const tileScalingExtension = gp.getTileScalingExtension(tileConfig.tableName)
+          await tileScalingExtension.getOrCreateExtension()
+          tileScalingExtension.createOrUpdate(tileScaling)
+        }
 
         let layers = []
         for (let index in tileConfig.tileLayers) {
@@ -166,7 +175,7 @@ export default class GeoPackageBuilder {
         status.configurationStatus[tileConfig.id].creation = 'Building Tiles'
         this.dispatchStatusUpdate(status)
         let time = Date.now()
-        await XYZTileUtilities.iterateAllTilesInExtent(boundingBox, minZoom, maxZoom, async ({z, x, y}) => {
+        await XYZTileUtilities.iterateAllTilesInExtentForZoomLevels(boundingBox, zoomLevels, async ({z, x, y}) => {
           // setup canvas that we will draw each layer into
           let canvas = document.createElement('canvas')
           canvas.width = 256

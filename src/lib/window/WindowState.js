@@ -27,8 +27,6 @@ export default class WindowState {
       this.windowState = this.window.getBounds()
     }
     this.windowState.isMaximized = this.window.isMaximized()
-    console.log('this.windowName', this.windowName)
-    console.log('saving the state', this.windowState)
     Settings.set(`windowState.${this.windowName}`, this.windowState)
   }
 

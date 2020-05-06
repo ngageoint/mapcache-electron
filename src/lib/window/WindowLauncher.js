@@ -85,7 +85,7 @@ class WindowLauncher {
     try {
       await download(this.projectWindow, fileUrl(url))
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 

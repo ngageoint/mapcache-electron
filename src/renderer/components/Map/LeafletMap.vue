@@ -94,8 +94,6 @@
       }),
       getMapLayerForLayer (layer) {
         if (_.isNil(mapLayers[layer.id])) {
-          console.log('constructing the layer...')
-          console.log(layer)
           mapLayers[layer.id] = LeafletMapLayerFactory.constructMapLayer(layer)
         }
         return mapLayers[layer.id]
@@ -103,7 +101,9 @@
       async confirmLayerSelection () {
         let feature = this.createdLayer.toGeoJSON()
         feature.id = UniqueIDUtilities.createUniqueID()
-        feature.properties.radius = this.createdLayer._mRadius
+        if (!_.isNil(this.createdLayer._mRadius)) {
+          feature.properties.radius = this.createdLayer._mRadius
+        }
         switch (feature.geometry.type.toLowerCase()) {
           case 'point': {
             feature.geometry.coordinates[0] = normalize(feature.geometry.coordinates[0])
@@ -179,7 +179,6 @@
         this.createdLayer = null
       },
       addLayer (layerConfig, map, deleteEnabled) {
-        console.log('adding layer...')
         layerConfigs[layerConfig.id] = _.cloneDeep(layerConfig)
         let layer = LayerFactory.constructLayer(layerConfig)
         let _this = this
@@ -335,7 +334,7 @@
       this.map = vendor.L.map('map', {editable: true, attributionControl: false})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 4
-      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.geointservices.io/tiles/default/{z}/{x}/{y}.png', {
+      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {
         subdomains: ['1', '2', '3', '4']
       })
       this.map.setView(defaultCenter, defaultZoom)
@@ -403,7 +402,6 @@
         })
       })
       this.map.on('editable:drawing:end', function (e) {
-        console.log('editable:disable')
         if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
           let layers = [{text: 'New Layer', value: 0}]
@@ -416,7 +414,6 @@
         }
       })
       this.map.on('editable:disable', async (e) => {
-        console.log('editable:disable')
         if (!this.isDrawingBounds) {
           let feature = e.layer.toGeoJSON()
           if (!feature.id) {
@@ -424,7 +421,9 @@
           }
           let layerId = feature.properties.layerId
           let featureId = feature.properties.featureId
-          feature.properties.radius = e.layer._mRadius
+          if (!_.isNil(e.layer._mRadius)) {
+            feature.properties.radius = e.layer._mRadius
+          }
           if (!_.isNil(layerId) && !_.isNil(featureId)) {
             delete feature.properties.layerId
             delete feature.properties.featureId

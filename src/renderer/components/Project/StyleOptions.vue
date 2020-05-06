@@ -3,7 +3,7 @@
     <div slot="card-header">
       <v-row no-gutters class="justify-space-between" align="center">
         <v-col cols="10" class="align-center">
-          <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.getId() + ')' : ''" font-size="16px" font-weight="500" label="Style Name" :on-save="saveName"/>
+          <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.id + ')' : ''" font-size="16px" font-weight="500" label="Style Name" :on-save="saveName"/>
         </v-col>
         <v-col cols="2">
           <v-row no-gutters class="justify-end" align="center">
@@ -28,7 +28,7 @@
         </v-row>
         <v-row no-gutters class="justify-space-between" align="center">
           <v-col cols="10" class="align-center">
-            <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" v-model="width" />
+            <numberpicker :number="styleRow.getWidth()" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" @update-number="updateWidth" />
           </v-col>
           <v-col cols="2">
             <v-row v-if="deletable" no-gutters class="justify-end" align="center">
@@ -66,7 +66,7 @@
           const {color, opacity} = this.parseColor(val)
           if (this.styleRow.getHexColor() !== color || this.styleRow.getOpacity() !== opacity) {
             let styleRow = {
-              id: this.styleRow.getId(),
+              id: this.styleRow.id,
               name: this.styleRow.getName(),
               description: this.styleRow.getDescription(),
               color: color,
@@ -88,7 +88,7 @@
           const {color, opacity} = this.parseColor(val)
           if (this.styleRow.getFillHexColor() !== color || this.styleRow.getFillOpacity() !== opacity) {
             let styleRow = {
-              id: this.styleRow.getId(),
+              id: this.styleRow.id,
               name: this.styleRow.getName(),
               description: this.styleRow.getDescription(),
               color: this.styleRow.getHexColor(),
@@ -109,7 +109,7 @@
         if (val) {
           if (this.styleRow.getWidth() !== val) {
             let styleRow = {
-              id: this.styleRow.getId(),
+              id: this.styleRow.id,
               name: this.styleRow.getName(),
               description: this.styleRow.getDescription(),
               color: this.styleRow.getHexColor(),
@@ -149,14 +149,6 @@
         set (val) {
           this.debounceFillColorOpacity(val)
         }
-      },
-      width: {
-        get () {
-          return this.styleRow.getWidth()
-        },
-        set (val) {
-          this.debounceWidth(val)
-        }
       }
     },
     methods: {
@@ -164,10 +156,13 @@
         updateProjectLayerStyleRow: 'Projects/updateProjectLayerStyleRow',
         deleteProjectLayerStyleRow: 'Projects/deleteProjectLayerStyleRow'
       }),
+      updateWidth (val) {
+        this.debounceWidth(val)
+      },
       saveName (val) {
         if (this.styleRow.getName() !== val) {
           let styleRow = {
-            id: this.styleRow.getId(),
+            id: this.styleRow.id,
             name: val,
             description: this.styleRow.getDescription(),
             color: this.styleRow.getHexColor(),
@@ -202,7 +197,7 @@
         this.deleteProjectLayerStyleRow({
           projectId: this.projectId,
           layerId: this.layer.id,
-          styleId: this.styleRow.getId()
+          styleId: this.styleRow.id
         })
       }
     }
