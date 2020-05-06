@@ -28,8 +28,8 @@
           let initLayer = await layers[i].initialize()
           projectLayers.push({project: project, layerId: initLayer.id, config: initLayer.configuration})
         } catch (error) {
-          console.log('unable to initialize layer: ' + layers[i].sourceLayerName)
-          console.log(error)
+          console.error('unable to initialize layer: ' + layers[i].sourceLayerName)
+          console.error(error)
         }
       }
     } catch (e) {

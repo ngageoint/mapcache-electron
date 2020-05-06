@@ -16,7 +16,7 @@ export default class GDALUtilities {
       copyDataset.close()
     } catch (error) {
       success = false
-      console.log(error)
+      console.error(error)
     }
     return success
   }
@@ -54,6 +54,29 @@ export default class GDALUtilities {
 
     coordinateCorners.push([coordinateCorners[0][0], coordinateCorners[0][1]])
     return coordinateCorners
+  }
+
+  /**
+   * Determine Web Mercator Zoom Level for a geotiff dataset (opened using node-gdal).
+   * @param ds
+   * @returns {number}
+   */
+  static getWebMercatorZoomLevelForGeoTIFF (ds) {
+    let size = ds.rasterSize
+    let geotransform = ds.geoTransform
+    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+    let coordTransform = new gdal.CoordinateTransformation(ds.srs, wgs84)
+    let uLWgs84 = coordTransform.transformPoint({
+      x: geotransform[0],
+      y: geotransform[3]
+    })
+    let uRWgs84 = coordTransform.transformPoint({
+      x: geotransform[0] + size.x * geotransform[1],
+      y: geotransform[3] + size.x * geotransform[4]
+    })
+    const pixelWidthInDeg = (uRWgs84.x - uLWgs84.x) / ds.rasterSize.x
+    const tileWidthInDeg = 256.0 * pixelWidthInDeg
+    return Math.ceil(Math.log(360.0 / tileWidthInDeg) / Math.log(2))
   }
 
   static gdalInfo (ds, image) {

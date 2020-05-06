@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import KMLUtilities from '../KMLUtilities'
 import VectorStyleUtilities from '../VectorStyleUtilities'
-import * as ImageUtils from '@ngageoint/geopackage/lib/tiles/imageUtils'
+import { imageSize } from 'image-size'
 import _ from 'lodash'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
@@ -105,7 +105,6 @@ export default class KMLSource extends Source {
                   })
                 } else {
                   fs.unlinkSync(iconFile)
-                  console.log(response.statusCode + ' Error')
                   resolve()
                 }
               }).on('error', (err) => {
@@ -118,7 +117,7 @@ export default class KMLSource extends Source {
 
           if (fs.existsSync(iconFile)) {
             try {
-              let image = ImageUtils.getImageSize(iconFile)
+              let image = imageSize(iconFile)
               let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
               fileIcons[iconFile] = {
                 url: dataUrl,
@@ -160,7 +159,6 @@ export default class KMLSource extends Source {
 
   async retrieveLayers () {
     let layers = []
-    console.log('retrieve layers')
     for (let i = 0; i < this.vectorLayers.length; i++) {
       layers.push(this.vectorLayers[i])
     }

@@ -466,13 +466,8 @@
         updateLayer: 'Projects/updateProjectLayer'
       }),
       zoomToExtent (extent) {
-        console.log({extent})
         this.setProjectExtents({projectId: this.projectId, extents: extent})
         this.$emit('zoom-to', extent)
-      },
-      colorChanged (colorHex, layerId) {
-        console.log('source', this.source)
-        console.log('color changed arguments', arguments)
       },
       openDetail () {
         this.expanded = !this.expanded

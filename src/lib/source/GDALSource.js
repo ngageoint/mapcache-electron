@@ -15,7 +15,6 @@ export default class GDALSource extends Source {
   }
 
   async retrieveLayers () {
-    console.log('getting layers')
     gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
     this.dataset = gdal.open(this.filePath, 'r') //, 'KMLSUPEROVERLAY')
     this.layers = []

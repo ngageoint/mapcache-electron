@@ -3,7 +3,7 @@
     <div slot="card-header">
       <v-row no-gutters class="justify-space-between" align="center">
         <v-col cols="10" class="align-center">
-          <view-edit-text :editing-disabled="!allowIconNameEditing" :value="iconRow.getName()" :appendedText="showId ? ' (' + iconRow.getId() + ')' : ''" font-size="16px" font-weight="500" label="Icon Name" :on-save="saveName"/>
+          <view-edit-text :editing-disabled="!allowIconNameEditing" :value="iconRow.name" :appendedText="showId ? ' (' + iconRow.id + ')' : ''" font-size="16px" font-weight="500" label="Icon Name" :on-save="saveName"/>
         </v-col>
         <v-col cols="2">
           <v-row no-gutters class="justify-end" align="center">
@@ -65,19 +65,19 @@
     computed: {
       anchorSelection: {
         get () {
-          return this.getAnchorLocation(this.iconRow.getAnchorU(), this.iconRow.getAnchorV())
+          return this.getAnchorLocation(this.iconRow.anchorU, this.iconRow.anchorV)
         },
         set (value) {
           let result = this.getAnchorUV(value)
           let iconRow = {
-            id: this.iconRow.getId(),
-            data: this.iconRow.getData(),
-            width: this.iconRow.getWidth(),
-            height: this.iconRow.getHeight(),
+            id: this.iconRow.id,
+            data: this.iconRow.data,
+            width: this.iconRow.width,
+            height: this.iconRow.height,
             anchorU: result.anchorU,
             anchorV: result.anchorV,
-            name: this.iconRow.getName(),
-            contentType: this.iconRow.getContentType()
+            name: this.iconRow.name,
+            contentType: this.iconRow.contentType
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
@@ -89,7 +89,7 @@
       },
       iconUrl: {
         get () {
-          return 'data:' + this.iconRow.getContentType() + ';base64,' + this.iconRow.getData().toString('base64')
+          return 'data:' + this.iconRow.contentType + ';base64,' + this.iconRow.data.toString('base64')
         }
       },
       anchorLocations () {
@@ -112,19 +112,19 @@
         deleteProjectLayerIconRow: 'Projects/deleteProjectLayerIconRow'
       }),
       deleteIcon () {
-        this.deleteProjectLayerIconRow({projectId: this.projectId, layerId: this.layer.id, iconId: this.iconRow.getId()})
+        this.deleteProjectLayerIconRow({projectId: this.projectId, layerId: this.layer.id, iconId: this.iconRow.id})
       },
       saveName (val) {
-        if (this.iconRow.getName() !== val) {
+        if (this.iconRow.name !== val) {
           let iconRow = {
-            id: this.iconRow.getId(),
-            data: this.iconRow.getData(),
-            width: this.iconRow.getWidth(),
-            height: this.iconRow.getHeight(),
-            anchorU: this.iconRow.getAnchorU(),
-            anchorV: this.iconRow.getAnchorV(),
+            id: this.iconRow.id,
+            data: this.iconRow.data,
+            width: this.iconRow.width,
+            height: this.iconRow.height,
+            anchorU: this.iconRow.anchorU,
+            anchorV: this.iconRow.anchorV,
             name: val,
-            contentType: this.iconRow.getContentType()
+            contentType: this.iconRow.contentType
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
@@ -197,14 +197,14 @@
       updateIconAnchor (anchorLocation) {
         let result = this.getAnchorUV(anchorLocation)
         let iconRow = {
-          id: this.iconRow.getId(),
-          data: this.iconRow.getData(),
-          width: this.iconRow.getWidth(),
-          height: this.iconRow.getHeight(),
+          id: this.iconRow.id,
+          data: this.iconRow.data,
+          width: this.iconRow.width,
+          height: this.iconRow.height,
           anchorU: result.anchorU,
           anchorV: result.anchorV,
-          name: this.iconRow.getName(),
-          contentType: this.iconRow.getContentType()
+          name: this.iconRow.name,
+          contentType: this.iconRow.contentType
         }
         this.updateProjectLayerIconRow({
           projectId: this.projectId,
@@ -243,13 +243,13 @@
               })
               let result = this.getAnchorUV(this.anchorSelection)
               let iconRow = {
-                id: this.iconRow.getId(),
+                id: this.iconRow.id,
                 data: Buffer.from(url.split(',')[1], 'base64'),
                 width: uploadedImage.width,
                 height: uploadedImage.height,
                 anchorU: result.anchorU,
                 anchorV: result.anchorV,
-                name: this.isTableIcon ? this.iconRow.getName() : path.basename(fileInfo.path),
+                name: this.isTableIcon ? this.iconRow.name : path.basename(fileInfo.path),
                 contentType: 'image/' + extension
               }
               this.updateProjectLayerIconRow({

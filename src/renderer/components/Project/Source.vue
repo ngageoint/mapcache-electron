@@ -35,10 +35,6 @@
       toggleLayer (layer) {
         this.$emit('toggle-layer', layer)
       },
-      colorChanged (colorHex, layerId) {
-        console.log('source', this.source)
-        console.log('color changed arguments', arguments)
-      },
       deleteLayer (layer) {
         let layerIndex = this.source.layers.findIndex(function (sourceLayer) {
           return sourceLayer.id === layer.id

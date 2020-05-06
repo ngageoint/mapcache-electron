@@ -19,7 +19,7 @@ export default class KMLUtilities {
       try {
         name = groundOverlayDOM.getElementsByTagNameNS('*', 'name')[0].childNodes[0].nodeValue
       } catch (error) {
-        console.log(error)
+        console.error(error)
       }
       try {
         let iconPath = groundOverlayDOM.getElementsByTagNameNS('*', 'href')[0].childNodes[0].nodeValue
@@ -87,7 +87,7 @@ export default class KMLUtilities {
           }
         }
       } catch (error) {
-        console.log(error)
+        console.error(error)
       }
     }
 

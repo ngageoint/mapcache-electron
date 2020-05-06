@@ -43,7 +43,6 @@ export default class SourceFactory {
       }
       return source
     } catch (e) {
-      console.log('Failed to open file ' + filePath, e)
       throw new Error('Failed to open file ' + filePath + ' ' + e.message)
     }
   }

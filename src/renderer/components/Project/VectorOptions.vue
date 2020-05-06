@@ -11,7 +11,7 @@
           <v-row no-gutters>
             <v-col cols="12">
               <div class="subtitle-card">
-                <numberpicker :number="Number(maxFeatures)" label="Max Features" :step="Number(10)" v-model="maxFeatures" :min="Number(0)" />
+                <numberpicker :number="Number(layer.maxFeatures)" label="Max Features" :step="Number(10)" @update-number="updateMaxFeatures" :min="Number(0)" />
               </div>
             </v-col>
           </v-row>
@@ -90,12 +90,12 @@
             </v-col>
           </v-row>
         </div>
-        <div slot="card-expanded-body">
+        <div slot="card-expanded-body" class="mt-2">
           <styleoptions
             v-for="styleRow in featureStyleRows"
-            :key="'style_' + styleRow.getId()"
+            :key="'style_' + styleRow.id"
             :deletable="true"
-            :defaultName="styleRow.getId() + ''"
+            :defaultName="styleRow.id + ''"
             :allowStyleNameEditing="true"
             :style-row="styleRow"
             :layer="layer"
@@ -143,12 +143,12 @@
             </v-col>
           </v-row>
         </div>
-        <div slot="card-expanded-body">
+        <div slot="card-expanded-body" class="mt-2">
           <iconoptions
             v-for="iconRow in featureIconRows"
-            :key="'icon' + iconRow.getId()"
+            :key="'icon' + iconRow.id"
             :deletable="true"
-            :defaultName="iconRow.getId() + ''"
+            :defaultName="iconRow.id + ''"
             :allowIconNameEditing="true"
             geometry-type="Point"
             :icon-row="iconRow"
@@ -196,7 +196,7 @@
   import NumberPicker from './NumberPicker'
   import _ from 'lodash'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-  import GeoPackage from '@ngageoint/geopackage'
+  import { GeoPackageAPI } from '@ngageoint/geopackage'
   import Card from '../Card/Card'
   import ExpandableCard from '../Card/ExpandableCard'
 
@@ -249,15 +249,6 @@
       })
     },
     computed: {
-      maxFeatures: {
-        get () {
-          console.log('max features: ' + _.isNil(this.layer.maxFeatures) ? 250 : this.layer.maxFeatures)
-          return _.isNil(this.layer.maxFeatures) ? 250 : this.layer.maxFeatures
-        },
-        set (val) {
-          this.debounceUpdateMaxFeatures(val)
-        }
-      },
       styleAssignmentFeature: {
         get () {
           return this.layer.styleAssignmentFeature || -1
@@ -294,6 +285,9 @@
         createProjectLayerIconRow: 'Projects/createProjectLayerIconRow',
         updateProjectLayerUsePointIconDefault: 'Projects/updateProjectLayerUsePointIconDefault'
       }),
+      updateMaxFeatures (val) {
+        this.debounceUpdateMaxFeatures(val)
+      },
       addFeatureStyle () {
         this.createProjectLayerStyleRow({
           projectId: this.projectId,
@@ -327,7 +321,7 @@
         }
       },
       async getStyle () {
-        let gp = await GeoPackage.open(this.layer.geopackageFilePath)
+        let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
         let featureTableName = this.layer.sourceLayerName
         this.tablePointStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'Point')
         this.tablePointIconRow = GeoPackageUtilities.getTableIcon(gp, featureTableName, 'Point')
@@ -347,14 +341,14 @@
         this.styleItems = [{text: 'Use Defaults', value: -1}]
         for (let styleId in featureStyleRows) {
           let style = featureStyleRows[styleId]
-          this.styleItems.push({text: style.getName() + ' (' + style.getId() + ')', value: style.getId()})
+          this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
         }
         this.featureStyleRows = featureStyleRows
         let featureIconRows = GeoPackageUtilities.getFeatureIconRows(gp, featureTableName)
         this.iconItems = [{text: 'Use Defaults', value: -1}]
         for (let iconId in featureIconRows) {
           let icon = featureIconRows[iconId]
-          this.iconItems.push({text: icon.getName() + ' (' + icon.getId() + ')', value: icon.getId()})
+          this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
         }
         this.featureIconRows = featureIconRows
         this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
@@ -402,13 +396,13 @@
       },
       styleAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackage.open(this.layer.geopackageFilePath)
+          let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
           this.determineStyleForStyleAssignment(gp, newValue)
         }
       },
       iconAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackage.open(this.layer.geopackageFilePath)
+          let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
           this.determineIconForIconAssignment(gp, newValue)
         }
       },

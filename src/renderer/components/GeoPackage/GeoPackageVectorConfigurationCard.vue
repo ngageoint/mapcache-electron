@@ -91,7 +91,6 @@
     },
     created () {
       let _this = this
-      console.log(this.vectorConfiguration)
       this.getFeaturesInBounds().then(function (result) {
         _this.featuresInBounds = result
       })

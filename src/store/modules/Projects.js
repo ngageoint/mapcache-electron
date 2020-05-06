@@ -101,10 +101,31 @@ const mutations = {
     })
     Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'boundingBoxEditingEnabled', enabled)
   },
+  setGeoPackageTileConfigurationTileScaling (state, {projectId, geopackageId, configId, tileScaling}) {
+    Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'tileScaling', tileScaling)
+  },
   setGeoPackageTileConfigurationMinZoom (state, {projectId, geopackageId, configId, minZoom}) {
+    if (minZoom < 0) {
+      minZoom = 0
+    }
+    if (minZoom > 20) {
+      minZoom = 20
+    }
+    if (minZoom > state[projectId].geopackages[geopackageId].tileConfigurations[configId].maxZoom) {
+      Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'maxZoom', minZoom)
+    }
     Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'minZoom', minZoom)
   },
   setGeoPackageTileConfigurationMaxZoom (state, {projectId, geopackageId, configId, maxZoom}) {
+    if (maxZoom < 0) {
+      maxZoom = 0
+    }
+    if (maxZoom > 20) {
+      maxZoom = 20
+    }
+    if (maxZoom < state[projectId].geopackages[geopackageId].tileConfigurations[configId].minZoom) {
+      Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'minZoom', maxZoom)
+    }
     Vue.set(state[projectId].geopackages[geopackageId].tileConfigurations[configId], 'maxZoom', maxZoom)
   },
   deleteGeoPackageTileConfiguration (state, {projectId, geopackageId, configId}) {
@@ -286,8 +307,9 @@ const actions = {
       tileLayers: [],
       vectorLayers: [],
       renderingOrder: [],
-      minZoom: 1,
-      maxZoom: 1,
+      minZoom: 0,
+      maxZoom: 0,
+      tileScaling: false,
       boundingBox: undefined,
       boundingBoxEditingEnabled: false
     }
@@ -310,6 +332,9 @@ const actions = {
   },
   setGeoPackageTileConfigurationRenderingOrder ({ commit, state }, {projectId, geopackageId, configId, renderingOrder}) {
     commit('setGeoPackageTileConfigurationRenderingOrder', {projectId, geopackageId, configId, renderingOrder})
+  },
+  setGeoPackageTileConfigurationTileScaling ({ commit, state }, {projectId, geopackageId, configId, tileScaling}) {
+    commit('setGeoPackageTileConfigurationTileScaling', {projectId, geopackageId, configId, tileScaling})
   },
   setGeoPackageTileConfigurationMinZoom ({ commit, state }, {projectId, geopackageId, configId, minZoom}) {
     commit('setGeoPackageTileConfigurationMinZoom', {projectId, geopackageId, configId, minZoom})
