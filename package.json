@@ -92,7 +92,7 @@
       "target": [
         "portable"
       ],
-      "icon": "build/icons/icon.ico"
+      "icon": "build/icons/icon.png"
     },
     "nsis": {
       "oneClick": false,
