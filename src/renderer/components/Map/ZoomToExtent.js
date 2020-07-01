@@ -36,10 +36,10 @@ export default {
         [extent[3], extent[2]]
       ])
 
-      this.map.on('moveend', () => {
-        let bounds = this.map.getBounds()
-        this.setProjectExtents({projectId: this.projectId, extents: [bounds.getEast(), bounds.getSouth(), bounds.getWest(), bounds.getNorth()]})
-      }, this)
+      // this.map.on('moveend', () => {
+      //   let bounds = this.map.getBounds()
+      //   this.setProjectExtents({projectId: this.projectId, extents: [bounds.getEast(), bounds.getSouth(), bounds.getWest(), bounds.getNorth()]})
+      // }, this)
     })
   }
 }

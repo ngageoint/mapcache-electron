@@ -17,7 +17,7 @@
   import { mapActions } from 'vuex'
   import ExpandableCard from '../Card/ExpandableCard'
   import ViewEditText from '../Common/ViewEditText'
-  import GeoPackageConfigurationCard from '../GeoPackage/GeoPackageConfigurationCard'
+  import GeoPackageConfigurationCard from '../GeoPackageBuilder/GeoPackageConfigurationCard'
   export default {
     props: {
       project: Object,

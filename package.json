@@ -153,6 +153,7 @@
     "verte": "0.0.7",
     "vt-pbf": "^3.1.1",
     "vue": "^2.5.16",
+    "vue-async-computed": "^3.8.2",
     "vue-color": "^2.7.0",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",

@@ -8,10 +8,13 @@ import {
   TileScalingType, TileScaling
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
+import path from 'path'
+import fs from 'fs'
 import geojsonExtent from '@mapbox/geojson-extent'
 import VectorStyleUtilities from './VectorStyleUtilities'
 import XYZTileUtilities from './XYZTileUtilities'
 import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
+import UniqueIDUtilities from './UniqueIDUtilities'
 
 export default class GeoPackageUtilities {
   static async createGeoPackageTableStyles (featureTableStyles, style) {
@@ -60,6 +63,81 @@ export default class GeoPackageUtilities {
       await featureTableStyles.setTableIcon('Point', pointIconRow)
       await featureTableStyles.setTableIcon('MultiPoint', pointIconRow)
     }
+  }
+
+  static async getOrCreateGeoPackageForApp (filePath) {
+    if (!fs.existsSync(filePath)) {
+      await GeoPackageAPI.create(filePath)
+    }
+    const gp = await GeoPackageAPI.open(filePath)
+    const filename = path.basename(filePath)
+    const geopackage = {
+      id: UniqueIDUtilities.createUniqueID(),
+      name: filename.substring(0, filename.indexOf(path.extname(filename))),
+      path: filePath,
+      expanded: true,
+      layersVisible: false,
+      tables: {
+        features: {},
+        tiles: {},
+        attributes: {}
+      }
+    }
+
+    const tables = gp.getTables()
+    tables.features.forEach(table => {
+      geopackage.tables.features[table] = {
+        tableVisible: false,
+        expanded: false
+      }
+    })
+    tables.tiles.forEach(table => {
+      geopackage.tables.tiles[table] = {
+        tableVisible: false,
+        expanded: false
+      }
+    })
+    tables.attributes.forEach(table => {
+      geopackage.tables.attributes[table] = {
+        tableVisible: false,
+        expanded: false
+      }
+    })
+
+    return geopackage
+  }
+
+  static async getTileTables (filePath) {
+    return GeoPackageAPI.open(filePath).then(gp => {
+      console.log(gp.contentsDao.isTableExists())
+      return gp.getTileTables()
+    })
+  }
+
+  static async getFeatureTables (filePath) {
+    return GeoPackageAPI.open(filePath).then(gp => {
+      console.log(gp.contentsDao.isTableExists())
+      return gp.getFeatureTables()
+    })
+  }
+
+  static async getTables (filePath) {
+    return GeoPackageAPI.open(filePath).then(gp => {
+      return gp.getTables()
+    })
+  }
+
+  static async getDetails (filePath) {
+    return GeoPackageAPI.open(filePath).then(gp => {
+      let spatialReferenceSystems = gp.spatialReferenceSystemDao.queryForAll().map(result => gp.spatialReferenceSystemDao.createObject(result))
+      return {
+        featureTableCount: gp.getTables().features.length,
+        tileTableCount: gp.getTables().tiles.length,
+        path: filePath,
+        srsCount: spatialReferenceSystems.length,
+        spatialReferenceSystems
+      }
+    })
   }
 
   static async buildGeoPackage (fileName, featureTableName, featureCollection, style = VectorStyleUtilities.defaultRandomColorStyle()) {

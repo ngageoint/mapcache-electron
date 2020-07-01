@@ -41,6 +41,9 @@
   let initializedLayers = {}
   let shownMapLayers = {}
   let layerConfigs = {}
+  let initializedGeoPackageTables = {}
+  let shownGeoPackageTables = {}
+  // let geopackages = {}
   let layerSelectionVisible = false
   let layerChoices = []
   let mapLayers = {}
@@ -203,6 +206,40 @@
         delete shownMapLayers[layerId]
         delete mapLayers[layerId]
         delete initializedLayers[layerId]
+      },
+      addGeoPackageTileTable (geopackage, map, tableName) {
+        let layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+        let _this = this
+        layer.initialize().then(function () {
+          if (geopackage.tables.tiles[tableName].tableVisible) {
+            let mapLayer = _this.getMapLayerForLayer(layer)
+            mapLayer.addTo(map)
+            if (!shownGeoPackageTables[geopackage.id]) {
+              shownGeoPackageTables[geopackage.id] = {
+                tileTables: {},
+                featureTables: {}
+              }
+            }
+            shownGeoPackageTables[geopackage.id].tileTables[tableName] = mapLayer
+          }
+          if (!initializedGeoPackageTables[geopackage.id]) {
+            initializedGeoPackageTables[geopackage.id] = {
+              tileTables: {},
+              featureTables: {}
+            }
+          }
+          initializedGeoPackageTables[geopackage.id].tileTables[tableName] = layer
+        })
+      },
+      removeGeoPackageTileTable (geopackage, map, tableName) {
+        const layerId = geopackage.id + '_tile_' + tableName
+        let mapLayer = shownGeoPackageTables[geopackage.id].tileTables[tableName]
+        if (mapLayer) {
+          mapLayer.remove()
+        }
+        delete shownGeoPackageTables[geopackage.id].tileTables[tableName]
+        delete mapLayers[layerId]
+        delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
       }
     },
     watch: {
@@ -291,40 +328,56 @@
       },
       geopackages: {
         handler (updatedGeoPackages, oldValue) {
-          let config
-          Object.values(updatedGeoPackages).forEach(gp => {
-            // check vector configs
-            let editingConfigIdx = Object.values(gp.vectorConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
-            if (editingConfigIdx > -1) {
-              config = Object.values(gp.vectorConfigurations)[editingConfigIdx]
-              if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
-                if (config.boundingBox) {
-                  this.map.fitBounds([
-                    [config.boundingBox[0][0], config.boundingBox[0][1]],
-                    [config.boundingBox[1][0], config.boundingBox[1][1]]
-                  ])
-                }
-                this.enableBoundingBoxDrawing(gp, config)
-              }
-            }
-            // check tile configs
-            editingConfigIdx = Object.values(gp.tileConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
-            if (editingConfigIdx > -1) {
-              config = Object.values(gp.tileConfigurations)[editingConfigIdx]
-              if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
-                if (config.boundingBox) {
-                  this.map.fitBounds([
-                    [config.boundingBox[0][0], config.boundingBox[0][1]],
-                    [config.boundingBox[1][0], config.boundingBox[1][1]]
-                  ])
-                }
-                this.enableBoundingBoxDrawing(gp, config)
-              }
-            }
-          })
-          if (_.isNil(config)) {
-            this.disableBoundingBoxDrawing()
-          }
+          // // TODO: handle displaying content for each table in a geopackage...
+          // let _this = this
+          // let map = this.map
+          // let updatedGeoPackageKeys = Object.keys(updatedGeoPackages)
+          // let existingGeoPackageKeys = Object.keys(geopackages)
+          // // remove geopackages that were removed
+          // existingGeoPackageKeys.filter((i) => updatedGeoPackageKeys.indexOf(i) < 0).forEach(layerId => {
+          //   _this.removeLayer(layerId)
+          // })
+          //
+          // // new layer configs
+          // updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0).forEach(layerId => {
+          //   let layerConfig = updatedLayerConfigs[layerId]
+          //   _this.removeLayer(layerId)
+          //   _this.addLayer(layerConfig, map, _this.deleteEnabled)
+          // })
+          // let config
+          // Object.values(updatedGeoPackages).forEach(gp => {
+          //   // check vector configs
+          //   let editingConfigIdx = Object.values(gp.vectorConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
+          //   if (editingConfigIdx > -1) {
+          //     config = Object.values(gp.vectorConfigurations)[editingConfigIdx]
+          //     if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
+          //       if (config.boundingBox) {
+          //         this.map.fitBounds([
+          //           [config.boundingBox[0][0], config.boundingBox[0][1]],
+          //           [config.boundingBox[1][0], config.boundingBox[1][1]]
+          //         ])
+          //       }
+          //       this.enableBoundingBoxDrawing(gp, config)
+          //     }
+          //   }
+          //   // check tile configs
+          //   editingConfigIdx = Object.values(gp.tileConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
+          //   if (editingConfigIdx > -1) {
+          //     config = Object.values(gp.tileConfigurations)[editingConfigIdx]
+          //     if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
+          //       if (config.boundingBox) {
+          //         this.map.fitBounds([
+          //           [config.boundingBox[0][0], config.boundingBox[0][1]],
+          //           [config.boundingBox[1][0], config.boundingBox[1][1]]
+          //         ])
+          //       }
+          //       this.enableBoundingBoxDrawing(gp, config)
+          //     }
+          //   }
+          // })
+          // if (_.isNil(config)) {
+          //   this.disableBoundingBoxDrawing()
+          // }
         },
         deep: true
       }
@@ -333,7 +386,7 @@
       let _this = this
       this.map = vendor.L.map('map', {editable: true, attributionControl: false})
       const defaultCenter = [39.658748, -104.843165]
-      const defaultZoom = 4
+      const defaultZoom = 3
       const osmbasemap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {
         subdomains: ['1', '2', '3', '4']
       })

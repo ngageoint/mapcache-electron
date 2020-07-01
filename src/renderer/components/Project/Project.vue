@@ -1,5 +1,79 @@
 <template>
 <div id="project-holder" class="project-holder">
+  <v-layout row justify-center>
+    <v-dialog v-model="dialog" max-width="300">
+      <v-card class="text-center">
+        <v-card-title class="headline">
+          <v-container class="pa-0 ma-0">
+            <v-row no-gutters>
+              <v-col class="align-center">
+                New GeoPackage
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-divider class="mt-2 mb-2"/>
+            </v-row>
+          </v-container>
+        </v-card-title>
+        <v-card-text>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="createNewGeoPackage">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <v-icon color="black">mdi-plus-box-outline</v-icon>
+                      </v-col>
+                      <v-col cols="8">
+                        Create New
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mt-4 mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="displayURLModal">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <v-icon color="black">mdi-cloud-download-outline</v-icon>
+                      </v-col>
+                      <v-col cols="8">
+                        Download from URL
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="importGeoPackage">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <v-icon color="black">mdi-file-document-outline</v-icon>
+                      </v-col>
+                      <v-col cols="8">
+                        Import from File
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+  </v-layout>
   <div id="project-name">
     <v-container>
       <v-row>
@@ -13,25 +87,23 @@
     <div class="admin-actions">
       <div class="admin-actions-content">
         <div
-            class="admin-action"
-            :class="{'admin-action-selected': !geopackagesShowing}"
-            @click.stop="showLayers()">
-          <div class="admin-badge">
-            <font-awesome-icon icon="layer-group" size="2x"/>
-          </div>
-          <div>Layers</div>
-        </div>
-
-        <div
-            class="admin-action"
-            :class="{'admin-action-selected': geopackagesShowing}"
-            @click.stop="showGeoPackages()">
+          class="admin-action"
+          :class="{'admin-action-selected': geopackagesShowing}"
+          @click.stop="showGeoPackages()">
           <div class="admin-badge">
             <font-awesome-icon icon="archive" size="2x"/>
           </div>
           <div>GeoPackages</div>
         </div>
-
+        <div
+          class="admin-action"
+          :class="{'admin-action-selected': !geopackagesShowing}"
+          @click.stop="showLayers()">
+          <div class="admin-badge">
+            <font-awesome-icon icon="layer-group" size="2x"/>
+          </div>
+          <div>Layers</div>
+        </div>
       </div>
     </div>
     <div
@@ -48,22 +120,42 @@
               :layer="sourceLayer"
               :projectId="project.id"/>
     </div>
-    <div class="sidebar-fab-wrapper"
-         v-if="geopackagesShowing">
-      <div
-        class="project-sidebar">
+    <div class="sidebar-fab-wrapper" v-if="geopackagesShowing">
+      <v-container class="project-sidebar" v-if="Object.keys(project.geopackages).length > 0">
         <geo-package-card
           v-for="geopackage in project.geopackages"
           :key="geopackage.id"
           :geopackage="geopackage"
-          :project="project"/>
-      </div>
+          :projectId="project.id"/>
+      </v-container>
+      <v-container class="project-sidebar" v-if="Object.keys(project.geopackages).length === 0">
+        <v-row class="align-bottom" no-gutters>
+          <v-col>
+            <card>
+              <div slot="card">
+                <v-container class="ma-2 align-end">
+                  <v-row class="pa-0" no-gutters>
+                    <v-col class="pa-0 align-center">
+                      <h5 class="align-self-center"style="color: #9A9E9E">No GeoPackage files found</h5>
+                    </v-col>
+                  </v-row>
+                  <v-row class="pa-0" no-gutters>
+                    <v-col class="pa-0 align-center">
+                      <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </div>
+            </card>
+          </v-col>
+        </v-row>
+      </v-container>
       <v-btn
         class="sidebar-fab"
         dark
         fab
-        color="blue"
-        @click.stop="addGeoPackage({project})">
+        color="#3b779a"
+        @click.stop="dialog = true">
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </div>
@@ -82,16 +174,22 @@
 
 <script>
   import { mapGetters, mapActions, mapState } from 'vuex'
+  import jetpack from 'fs-jetpack'
+  import { remote } from 'electron'
 
   import LayerFlipCard from './LayerFlipCard'
   import LeafletMap from '../Map/LeafletMap'
   import AddSource from './AddSource'
   import ViewEditText from '../Common/ViewEditText'
-  import GeoPackageCard from './GeoPackageCard'
+  import GeoPackageCard from '../GeoPackage/GeoPackageCard'
+  import Modal from '../Modal'
+  import Card from '../Card/Card'
+  import FileUtilities from '../../../lib/FileUtilities'
 
   let options = {
-    geopackagesShowing: false,
-    titleColor: '#ffffff'
+    geopackagesShowing: true,
+    titleColor: '#ffffff',
+    dialog: false
   }
 
   export default {
@@ -115,7 +213,9 @@
       LeafletMap,
       AddSource,
       ViewEditText,
-      GeoPackageCard
+      GeoPackageCard,
+      Modal,
+      Card
     },
     methods: {
       ...mapActions({
@@ -132,6 +232,40 @@
       },
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})
+      },
+      createNewGeoPackage () {
+        this.dialog = false
+        remote.dialog.showSaveDialog((filePath) => {
+          if (!filePath.endsWith('.gpkg')) {
+            filePath = filePath + '.gpkg'
+          }
+          this.addGeoPackage({projectId: this.project.id, filePath})
+        })
+      },
+      importGeoPackage () {
+        remote.dialog.showOpenDialog({
+          filters: [
+            {
+              name: 'GeoPackage Extensions',
+              extensions: ['gpkg', 'geopackage']
+            }
+          ],
+          properties: ['openFile']
+        }, (files) => {
+          if (files) {
+            let fileInfo = jetpack.inspect(files[0], {
+              times: true,
+              absolutePath: true
+            })
+            this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath, fileSize: FileUtilities.toHumanReadable(fileInfo.size)})
+          }
+        })
+        this.dialog = false
+      },
+      displayURLModal () {
+        // TODO:
+        console.log('url geopackage')
+        this.dialog = false
       }
     },
     mounted: function () {
@@ -254,6 +388,7 @@
     max-width: 500px;
     width: 30vw;
     max-height: 90vh;
+    min-height: 90vh;
     overflow-y: auto;
   }
   .section-name {
@@ -272,7 +407,16 @@
   .sidebar-fab {
     position: absolute;
     right: 24px;
-    bottom: 24px;
+    bottom: 30px;
+  }
+  .align-bottom {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 15px;
+    padding-left: 10px;
+    padding-bottom: 20px;
+    width: 100%;
   }
 
 </style>

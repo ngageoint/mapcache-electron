@@ -60,7 +60,7 @@ export default {
 <style>
 .expand-enter-active,
 .expand-leave-active {
-  transition: height 1s ease-in-out;
+  transition: height 150ms ease-in-out;
   overflow: hidden;
 }
 .expand-enter,

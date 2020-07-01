@@ -12,7 +12,7 @@ const getters = {
 const mutations = {
   addProjectState (state, {projectId}) {
     Vue.set(state, projectId, {
-      extents: [-180, -90, 180, 90],
+      extents: [-53.4, -79.1, 53.64, 79.1],
       drawBounds: {},
       boundsBeingDrawn: {},
       activeCount: 0

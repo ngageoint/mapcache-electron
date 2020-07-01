@@ -1,8 +1,8 @@
 <template>
   <v-card class="pa-2 card">
     <v-container class="pa-0 ma-0 clickable" @click.stop="toggle()">
-      <v-row no-gutters>
-        <v-col align-self="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
+      <v-row no-gutters justify="center">
+        <v-col align-self="center" justify="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
           <font-awesome-icon :icon="(expanded ? 'chevron-up' : 'chevron-down')" class="expand-collapse" size="lg"/>
         </v-col>
         <v-col cols="11">
@@ -51,15 +51,11 @@
 <style scoped>
   .card {
     background-color: white;
-    min-height: 3rem;
   }
   .flex-row {
     display: flex;
     flex-direction: row;
     align-items: center;
-  }
-  .clickable:hover {
-    cursor: pointer;
   }
   .expand-collapse {
     color: darkgray;

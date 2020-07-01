@@ -1,3 +1,24 @@
 .sub-card {
 	background: #f0f0f0 !important;
 }
+.v-label {
+	font-size: 14px;
+}
+.header {
+	color: #000;
+}
+.detail {
+	color: dimgray;
+}
+.clickable {
+	cursor: pointer;
+}
+.clickable:hover {
+	cursor: pointer;
+}
+.accent {
+	color: #3b779a;
+}
+.v-input--selection-controls {
+	margin-top: 0;
+}
