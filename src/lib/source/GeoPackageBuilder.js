@@ -195,9 +195,7 @@ export default class GeoPackageBuilder {
                   try {
                     let image
                     // result could be a buffer, a canvas, or a data url (string)
-                    if (Buffer.isBuffer(result)) {
-                      image = URL.createObjectURL(result)
-                    } else if (typeof result === 'string') {
+                    if (typeof result === 'string') {
                       image = result
                     } else {
                       image = result.toDataURL()
@@ -207,10 +205,14 @@ export default class GeoPackageBuilder {
                       ctx.drawImage(img, 0, 0)
                       resolve()
                     }
+                    img.onerror = (error) => {
+                      console.log(error)
+                      resolve()
+                    }
                     img.src = image
                   } catch (error) {
                     console.error(error)
-                    reject(error)
+                    resolve()
                   }
                 } else {
                   resolve()

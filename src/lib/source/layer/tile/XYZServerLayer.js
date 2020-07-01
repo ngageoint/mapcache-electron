@@ -39,7 +39,8 @@ export default class XYZServerLayer extends TileLayer {
       encoding: null,
       headers: {
         'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
-      }
+      },
+      resolveWithFullResponse: true
     }
     if (this.credentials) {
       if (this.credentials.type === 'basic') {
@@ -49,6 +50,8 @@ export default class XYZServerLayer extends TileLayer {
         options.headers['Authorization'] = this.credentials.authorization
       }
     }
-    return request(options)
+    const result = await request(options)
+    done(null, 'data:' + result.headers['content-type'] + ';base64,' + Buffer.from(result.body).toString('base64'))
+    return result.body
   }
 }
