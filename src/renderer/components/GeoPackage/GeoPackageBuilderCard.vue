@@ -10,7 +10,8 @@
     <div slot="card">
       <v-card-text>
         <v-row align="center" class="justify-start" no-gutters v-if="geopackage.buildMode === null || geopackage.buildMode === undefined">
-          <v-btn class="align-self-start" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
+          <div v-if="fileUnnamed" color="red">{{fileNeededMessage}}</div>
+          <v-btn class="align-self-start" :disabled="fileUnnamed == 1" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
         </v-row>
         <v-row no-gutters>
           <v-card class="mb-2" v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
@@ -72,7 +73,8 @@
     data () {
       return {
         BUILD_MODES: GeoPackageBuilder.BUILD_MODES,
-        confirmOverwrite: false
+        confirmOverwrite: false,
+        fileLocationSelected: false
       }
     },
     computed: {
@@ -101,6 +103,15 @@
           message = 'Building ' + this.geopackage.fileName
         }
         return message
+      },
+      fileNeededMessage () {
+        // Message to display when a file name hasn't been selected for the GeoPackage file export
+        let fileNameMessage = '* Cannot export until file name is selected'
+        return fileNameMessage
+      },
+      fileUnnamed () {
+        // Returns true if the File Location for the export hasn't been chosen yet
+        return this.geopackage.fileName === null || this.geopackage.fileName === undefined
       }
     },
     methods: {
