@@ -739,6 +739,20 @@ export default class GeoPackageUtilities {
     return featureDao.featureTableIndex.countWithGeometryEnvelope(new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0]).buildEnvelope())
   }
 
+  // Return true if every tile layer in the given geopackage has a bounding box
+  static tileLayersHaveBoundingBoxes (geoPackage) {
+    let haveBoundingBoxes = true
+    for (const [key, value] of Object.entries(geoPackage.tileConfigurations)) {
+      if (value.boundingBox === undefined) {
+        haveBoundingBoxes = false
+      }
+      if (key === undefined) {
+        console.log('no boundingbox for $[key]')
+      }
+    }
+    return haveBoundingBoxes
+  }
+
   static tileConfigurationEstimatedWork (project, tileConfiguration) {
     const results = {
       estimatedNumberOfTiles: 0,

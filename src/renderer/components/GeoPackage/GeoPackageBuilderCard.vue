@@ -10,8 +10,10 @@
     <div slot="card">
       <v-card-text>
         <v-row align="center" class="justify-start" no-gutters v-if="geopackage.buildMode === null || geopackage.buildMode === undefined">
-          <div v-if="fileUnnamed" color="red">{{fileNeededMessage}}</div>
-          <v-btn class="align-self-start" :disabled="fileUnnamed == 1" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
+          <div v-if="isFileUnnamed">{{fileNeededMessage}}</div>
+          <div v-if="hasBoundingBox != true"> {{boundingBoxMissing}}</div>
+          <!-- <div>{{this.geopackage}}</div> -->
+          <v-btn class="align-self-start" :disabled="isFileUnnamed == 1 || hasBoundingBox != true" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
         </v-row>
         <v-row no-gutters>
           <v-card class="mb-2" v-if="geopackage.buildMode !== null && geopackage.buildMode !== undefined">
@@ -59,6 +61,7 @@
   import store from '../../../store'
   import fs from 'fs'
   import Modal from '../Modal'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
   export default {
     props: {
@@ -109,9 +112,16 @@
         let fileNameMessage = '* Cannot export until file name is selected'
         return fileNameMessage
       },
-      fileUnnamed () {
+      boundingBoxMissing () {
+        return 'Tile Layers are missing a bounding box'
+      },
+      isFileUnnamed () {
         // Returns true if the File Location for the export hasn't been chosen yet
         return this.geopackage.fileName === null || this.geopackage.fileName === undefined
+      },
+      hasBoundingBox () {
+        // Verify that this geopackage has a bounding box for all of it's tile layers
+        return GeoPackageUtilities.tileLayersHaveBoundingBoxes(this.geopackage)
       }
     },
     methods: {
