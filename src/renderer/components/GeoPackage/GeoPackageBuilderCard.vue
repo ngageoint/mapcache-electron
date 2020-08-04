@@ -12,7 +12,6 @@
         <v-row align="center" class="justify-start" no-gutters v-if="geopackage.buildMode === null || geopackage.buildMode === undefined">
           <div v-if="isFileUnnamed">{{fileNeededMessage}}</div>
           <div v-if="hasBoundingBox != true"> {{boundingBoxMissing}}</div>
-          <!-- <div>{{this.geopackage}}</div> -->
           <v-btn class="align-self-start" :disabled="isFileUnnamed == 1 || hasBoundingBox != true" @click.stop="checkGeoPackageExists">Export GeoPackage</v-btn>
         </v-row>
         <v-row no-gutters>
@@ -109,11 +108,12 @@
       },
       fileNeededMessage () {
         // Message to display when a file name hasn't been selected for the GeoPackage file export
-        let fileNameMessage = '* Cannot export until file name is selected'
+        let fileNameMessage = '* Cannot export until file location is selected'
         return fileNameMessage
       },
       boundingBoxMissing () {
-        return 'Tile Layers are missing a bounding box'
+        // Message to display when a tile configuration doesn't have a bounding box defined
+        return '* Tile Layers are missing a bounding box'
       },
       isFileUnnamed () {
         // Returns true if the File Location for the export hasn't been chosen yet

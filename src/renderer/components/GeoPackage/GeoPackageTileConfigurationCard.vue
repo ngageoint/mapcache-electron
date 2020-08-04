@@ -91,7 +91,10 @@
           </v-card-title>
           <v-container class="mt-0 mb-0">
             <div class="flex-container" :style="{justifyContent: 'start'}">
-              <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText" clearable @click.clear="resetBoundingBox"/>
+              <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText"/>
+              <v-btn text icon :disabled="!tileConfiguration.boundingBox" @click.stop="resetBoundingBox">
+                <v-icon>{{'mdi-backspace-outline'}}</v-icon>
+              </v-btn>
               <v-btn text icon :color="tileConfiguration.boundingBoxEditingEnabled ? 'red' : 'black'" @click.stop="editBoundingBox">
                 <v-icon>{{tileConfiguration.boundingBoxEditingEnabled ? 'mdi-stop' : 'mdi-crop-free'}}</v-icon>
               </v-btn>

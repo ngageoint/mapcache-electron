@@ -743,11 +743,11 @@ export default class GeoPackageUtilities {
   static tileLayersHaveBoundingBoxes (geoPackage) {
     let haveBoundingBoxes = true
     for (const [key, value] of Object.entries(geoPackage.tileConfigurations)) {
-      if (value.boundingBox === undefined) {
+      if (value.boundingBox === undefined || value.boundingBox === null) {
         haveBoundingBoxes = false
       }
       if (key === undefined) {
-        console.log('no boundingbox for $[key]')
+        console.info('invalid bounding box key found while checking for valid bboxes in tileconfigurations')
       }
     }
     return haveBoundingBoxes
