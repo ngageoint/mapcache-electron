@@ -42,7 +42,11 @@
           </v-card-title>
           <v-container class="mt-0 mb-0">
             <div class="flex-container" :style="{justifyContent: 'start'}">
-              <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText" clearable @click.clear="resetBoundingBox"/>
+              <!-- <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText" clearable @click.clear="resetBoundingBox"/> -->
+              <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText"/>
+              <v-btn text icon :disabled="!vectorConfiguration.boundingBox" @click.stop="resetBoundingBox">
+                <v-icon>{{'mdi-backspace-outline'}}</v-icon>
+              </v-btn>
               <v-btn text icon :color="vectorConfiguration.boundingBoxEditingEnabled ? 'red' : 'black'" @click.stop="editBoundingBox">
                 <v-icon>{{vectorConfiguration.boundingBoxEditingEnabled ? 'mdi-stop' : 'mdi-crop-free'}}</v-icon>
               </v-btn>
@@ -167,10 +171,10 @@
         this.setGeoPackageVectorConfigurationBoundingBox({
           projectId: this.project.id,
           geopackageId: this.geopackage.id,
-          configId: this.tileConfiguration.id,
+          configId: this.vectorConfiguration.id,
           boundingBox: null
         })
-        if (this.tileConfiguration.boundingBoxEditingEnabled) {
+        if (this.vectorConfiguration.boundingBoxEditingEnabled) {
           this.editBoundingBox()
         }
       },
