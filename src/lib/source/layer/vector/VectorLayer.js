@@ -1,7 +1,7 @@
 import Layer from '../Layer'
 import * as vtpbf from 'vt-pbf'
 import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
-import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
+import GeoPackageUtilities from '../../../GeoPackageUtilities'
 
 /**
  * VectorLayer is a 'Layer' within MapCache that is displayed on a map.
@@ -14,11 +14,9 @@ export default class VectorLayer extends Layer {
   _vectorTileRenderer
   _tileIndex
   _geopackageFilePath
-  _geopackage
   _features
   _layerKey
   _maxFeatures
-  _featureDao
   _tablePointIconRowId
 
   constructor (configuration = {}) {
@@ -31,20 +29,20 @@ export default class VectorLayer extends Layer {
   }
 
   async initialize () {
-    this._geopackage = await GeoPackageAPI.open(this._geopackageFilePath)
-    this._featureDao = this._geopackage.getFeatureDao(this.sourceLayerName)
-    this._features = (await this._geopackage.getGeoJSONFeaturesInTile(this.sourceLayerName, 0, 0, 0, true)).map(f => {
-      f.type = 'Feature'
-      return f
-    })
+    this._features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(this._geopackageFilePath, this.sourceLayerName)
     await this.vectorTileRenderer.init()
     return this
   }
 
+  close () {
+    if (this._vectorTileRenderer) {
+      this._vectorTileRenderer.close()
+    }
+  }
+
   async updateStyle (maxFeatures) {
-    this._geopackage = await GeoPackageAPI.open(this._geopackageFilePath)
     this._maxFeatures = maxFeatures
-    await this.vectorTileRenderer.styleChanged(this._geopackage, maxFeatures)
+    await this.vectorTileRenderer.styleChanged(maxFeatures)
   }
 
   get configuration () {
@@ -71,23 +69,19 @@ export default class VectorLayer extends Layer {
   }
 
   get count () {
-    return this._featureDao.getCount()
+    return this._features.length
   }
 
   get extent () {
     if (!this._extent) {
-      let contentsDao = this._geopackage.contentsDao
-      let contents = contentsDao.queryForId(this.sourceLayerName)
-      let proj = contentsDao.getProjection(contents)
-      let boundingBox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
-      this._extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
+      this._extent = GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
     }
     return this._extent
   }
 
   get vectorTileRenderer () {
     if (!this._vectorTileRenderer) {
-      this._vectorTileRenderer = new GeoPackageVectorTileRenderer(this._geopackage, this.name, this._maxFeatures)
+      this._vectorTileRenderer = new GeoPackageVectorTileRenderer(this._geopackageFilePath, this.name, this._maxFeatures)
     }
     return this._vectorTileRenderer
   }

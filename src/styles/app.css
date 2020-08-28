@@ -22,3 +22,13 @@
 .v-input--selection-controls {
 	margin-top: 0;
 }
+.card-button {
+	width: 70px;
+}
+.detail-bg {
+	background-color: rgba(226, 233, 236, 0.71);
+}
+.detail-section-margins-and-padding {
+	padding: 8px 20px;
+	margin: 8px -8px -8px -12px;
+}

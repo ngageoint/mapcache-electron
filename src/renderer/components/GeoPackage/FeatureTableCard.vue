@@ -8,7 +8,7 @@
               {{tableName}}
             </p>
           </v-col>
-          <v-col offset="2" cols="2" justify="center">
+          <v-col offset="2" cols="2" justify="center" @click.stop="">
             <v-switch
               @click.stop=""
               class="v-label detail"

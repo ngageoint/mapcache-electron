@@ -71,6 +71,7 @@ export default class DrawingMapLayer {
       layer.id = feature.id
       mapLayer.addLayer(layer)
     })
+    drawingModel.close()
     return mapLayer
   }
 }

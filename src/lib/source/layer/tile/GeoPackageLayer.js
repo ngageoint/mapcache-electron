@@ -46,4 +46,16 @@ export default class GeoPackageLayer extends TileLayer {
       return image
     }
   }
+
+  close () {
+    if (this.geopackage) {
+      try {
+        this.geopackage.close()
+      } catch (error) {
+        console.error(error)
+      }
+      this.geopackage = undefined
+      this.dao = undefined
+    }
+  }
 }

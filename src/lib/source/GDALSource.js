@@ -52,14 +52,14 @@ export default class GDALSource extends Source {
       let fileName = name + '.gpkg'
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)
-      let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection)
+      await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection)
       this.layers.push(new VectorLayer({
         id: this.sourceId,
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: name,
         sourceType: 'GDAL',
-        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
+        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, 'Point')
       }))
     }
     if (this.dataset.driver.description === 'GTiff') {

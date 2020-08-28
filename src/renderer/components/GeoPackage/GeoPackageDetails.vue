@@ -2,7 +2,7 @@
   <v-container class="detail ma-0 pa-0 mt-2">
     <v-row no-gutters class="mb-2">
       <v-col cols="12">
-        <p class="ma-0 pa-0">Size: {{size}}</p>
+        <p class="ma-0 pa-0">Size: {{details.size}}</p>
       </v-col>
     </v-row>
     <v-row no-gutters class="mb-2">
@@ -70,9 +70,6 @@
       geopackage: Object
     },
     computed: {
-      size () {
-        return this.geopackage.size
-      },
       path () {
         return this.geopackage.path
       }

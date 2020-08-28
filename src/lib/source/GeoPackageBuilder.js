@@ -54,6 +54,7 @@ export default class GeoPackageBuilder {
 
   async go () {
     let result = {}
+    let gp
     try {
       let status = {
         configurationExecuting: null,
@@ -70,7 +71,7 @@ export default class GeoPackageBuilder {
         }
       }
 
-      let gp = await GeoPackageAPI.create(this.config.fileName)
+      gp = await GeoPackageAPI.create(this.config.fileName)
 
       // iterate over vector configurations
       for (const vectorConfigIdx in this.config.vectorConfigurations) {
@@ -89,18 +90,19 @@ export default class GeoPackageBuilder {
         this.dispatchStatusUpdate(status)
 
         for (let index in vectorConfig.vectorLayers) {
+          let geoPackageSource
           let vectorLayer = vectorConfig.vectorLayers[index]
           try {
             let layerConfig = this.project.layers[vectorLayer]
             let sourceFeatureTableName = layerConfig.sourceLayerName
             let targetFeatureTableName = layerConfig.sourceLayerName
-            let geoPackageSource = await GeoPackageAPI.open(layerConfig.geopackageFilePath)
+            geoPackageSource = await GeoPackageAPI.open(layerConfig.geopackageFilePath)
             status.configurationStatus[vectorConfig.id].featuresAdded += await GeoPackageUtilities.copyGeoPackageFeaturesAndStylesForBoundingBox(geoPackageSource, gp, sourceFeatureTableName, targetFeatureTableName, vectorConfig.boundingBox)
             this.dispatchStatusUpdate(status)
             if (vectorConfig.indexed) {
               status.configurationStatus[vectorConfig.id].indexing = true
               this.dispatchStatusUpdate(status)
-              await GeoPackageUtilities.indexFeatureTable(gp, targetFeatureTableName)
+              await GeoPackageUtilities._indexFeatureTable(gp, targetFeatureTableName)
               status.configurationStatus[vectorConfig.id].indexing = false
               this.dispatchStatusUpdate(status)
             }
@@ -109,6 +111,13 @@ export default class GeoPackageBuilder {
             status.configurationStatus[vectorConfig.id].creation = 'Failed'
             status.configurationStatus[vectorConfig.id].error = error.message
             this.dispatchStatusUpdate(status)
+          }
+          if (!_.isNil(geoPackageSource)) {
+            try {
+              geoPackageSource.close()
+            } catch (error) {
+              console.error(error)
+            }
           }
         }
         status.configurationStatus[vectorConfig.id].creation = 'Completed'
@@ -265,6 +274,13 @@ export default class GeoPackageBuilder {
       this.dispatchBuildMode(GeoPackageBuilder.BUILD_MODES.FAILED)
       console.error(error)
       result.error = error
+    }
+    if (!_.isNil(gp)) {
+      try {
+        gp.close()
+      } catch (error) {
+        console.error(error)
+      }
     }
     return result
   }

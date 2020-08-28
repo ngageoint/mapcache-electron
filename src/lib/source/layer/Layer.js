@@ -31,6 +31,10 @@ export default class Layer {
     throw new Error('Abstract method to be implemented in sublcass')
   }
 
+  close () {
+
+  }
+
   get configuration () {
     return {
       ...this._configuration,

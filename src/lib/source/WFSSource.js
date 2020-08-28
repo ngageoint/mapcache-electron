@@ -8,6 +8,7 @@ import _ from 'lodash'
 import GeoServiceUtilities from '../GeoServiceUtilities'
 import {userDataDir} from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
+import { GeometryType } from '@ngageoint/geopackage'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {
@@ -18,14 +19,14 @@ export default class WFSSource extends Source {
       let fileName = layer.name + '.gpkg'
       let filePath = userDataDir().dir(sourceId).file(fileName).path()
       let fullFile = path.join(filePath, fileName)
-      let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
+      await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
       this.geopackageLayers.push(new VectorLayer({
         id: sourceId,
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer.name,
         sourceType: 'WFS',
-        tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, layer.name, 'Point')
+        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer.name, GeometryType.nameFromType(GeometryType.POINT))
       }))
     }
     return this.geopackageLayers

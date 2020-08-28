@@ -43,7 +43,7 @@
   let layerConfigs = {}
   let initializedGeoPackageTables = {}
   let shownGeoPackageTables = {}
-  // let geopackages = {}
+  let geopackages = {}
   let layerSelectionVisible = false
   let layerChoices = []
   let mapLayers = {}
@@ -149,7 +149,7 @@
             type: 'FeatureCollection',
             features: [feature]
           }
-          let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, VectorStyleUtilities.defaultLeafletStyle())
+          await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, VectorStyleUtilities.defaultLeafletStyle())
           let layer = new DrawingLayer({
             id: id,
             name: name,
@@ -157,7 +157,7 @@
             sourceFilePath: this.filePath,
             sourceLayerName: name,
             sourceType: 'Drawing',
-            tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
+            tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, 'Point')
           })
           await layer.initialize()
           let config = layer.configuration
@@ -205,7 +205,32 @@
         }
         delete shownMapLayers[layerId]
         delete mapLayers[layerId]
+        const layer = initializedLayers[layerId]
+        if (layer.hasOwnProperty('close')) {
+          layer.close()
+        }
         delete initializedLayers[layerId]
+      },
+      addGeoPackage (geopackage, map) {
+        geopackages[geopackage.id] = _.cloneDeep(geopackage)
+        _.keys(geopackage.tables.tiles).forEach(tableName => {
+          this.addGeoPackageTileTable(geopackage, map, tableName)
+        })
+        _.keys(geopackage.tables.features).forEach(tableName => {
+          this.addGeoPackageFeatureTable(geopackage, map, tableName)
+        })
+      },
+      removeGeoPackage (geopackageId) {
+        const geopackage = geopackages[geopackageId]
+        if (!_.isNil(geopackage)) {
+          _.keys(geopackage.tables.tiles).forEach(tileTable => {
+            this.removeGeoPackageTileTable(geopackage, tileTable)
+          })
+          _.keys(geopackage.tables.features).forEach(tableName => {
+            this.removeGeoPackageFeatureTable(geopackage, tableName)
+          })
+          delete geopackages[geopackageId]
+        }
       },
       addGeoPackageTileTable (geopackage, map, tableName) {
         let layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
@@ -231,15 +256,66 @@
           initializedGeoPackageTables[geopackage.id].tileTables[tableName] = layer
         })
       },
-      removeGeoPackageTileTable (geopackage, map, tableName) {
+      removeGeoPackageTileTable (geopackage, tableName) {
         const layerId = geopackage.id + '_tile_' + tableName
-        let mapLayer = shownGeoPackageTables[geopackage.id].tileTables[tableName]
+        if (!_.isNil(shownGeoPackageTables[geopackage.id])) {
+          let mapLayer = shownGeoPackageTables[geopackage.id].tileTables[tableName]
+          if (mapLayer) {
+            mapLayer.remove()
+          }
+          delete shownGeoPackageTables[geopackage.id].tileTables[tableName]
+        }
+        delete mapLayers[layerId]
+        const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+        if (layer.hasOwnProperty('close')) {
+          layer.close()
+        }
+        delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+      },
+      addGeoPackageFeatureTable (geopackage, map, tableName) {
+        let layer = LayerFactory.constructLayer({
+          id: geopackage.id + '_feature_' + tableName,
+          geopackageFilePath: geopackage.path,
+          sourceFilePath: geopackage.path,
+          sourceLayerName: tableName,
+          sourceType: 'GeoPackage',
+          layerType: 'Vector'
+        })
+        let _this = this
+        layer.initialize().then(function () {
+          if (geopackage.tables.features[tableName].tableVisible) {
+            let mapLayer = _this.getMapLayerForLayer(layer)
+            mapLayer.addTo(map)
+            if (!shownGeoPackageTables[geopackage.id]) {
+              shownGeoPackageTables[geopackage.id] = {
+                tileTables: {},
+                featureTables: {}
+              }
+            }
+            shownGeoPackageTables[geopackage.id].featureTables[tableName] = mapLayer
+          }
+          if (!initializedGeoPackageTables[geopackage.id]) {
+            initializedGeoPackageTables[geopackage.id] = {
+              tileTables: {},
+              featureTables: {}
+            }
+          }
+          initializedGeoPackageTables[geopackage.id].featureTables[tableName] = layer
+        })
+      },
+      removeGeoPackageFeatureTable (geopackage, tableName) {
+        const layerId = geopackage.id + '_feature_' + tableName
+        let mapLayer = shownGeoPackageTables[geopackage.id].featureTables[tableName]
         if (mapLayer) {
           mapLayer.remove()
         }
-        delete shownGeoPackageTables[geopackage.id].tileTables[tableName]
+        delete shownGeoPackageTables[geopackage.id].featureTables[tableName]
         delete mapLayers[layerId]
-        delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+        const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
+        if (layer.hasOwnProperty('close')) {
+          layer.close()
+        }
+        delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
       }
     },
     watch: {
@@ -328,22 +404,55 @@
       },
       geopackages: {
         handler (updatedGeoPackages, oldValue) {
-          // // TODO: handle displaying content for each table in a geopackage...
-          // let _this = this
-          // let map = this.map
-          // let updatedGeoPackageKeys = Object.keys(updatedGeoPackages)
-          // let existingGeoPackageKeys = Object.keys(geopackages)
-          // // remove geopackages that were removed
-          // existingGeoPackageKeys.filter((i) => updatedGeoPackageKeys.indexOf(i) < 0).forEach(layerId => {
-          //   _this.removeLayer(layerId)
-          // })
-          //
-          // // new layer configs
-          // updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0).forEach(layerId => {
-          //   let layerConfig = updatedLayerConfigs[layerId]
-          //   _this.removeLayer(layerId)
-          //   _this.addLayer(layerConfig, map, _this.deleteEnabled)
-          // })
+          // TODO: handle displaying content for each table in a geopackage...
+          let _this = this
+          let map = this.map
+          let updatedGeoPackageKeys = Object.keys(updatedGeoPackages)
+          let existingGeoPackageKeys = Object.keys(geopackages)
+          // remove geopackages that were removed
+          existingGeoPackageKeys.filter((i) => updatedGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
+            _this.removeGeoPackage(geoPackageId)
+          })
+
+          // new layer configs
+          updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
+            _this.removeGeoPackage(geoPackageId)
+            _this.addGeoPackage(updatedGeoPackages[geoPackageId], map)
+          })
+
+          // TODO: check for updated layers...
+          updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) >= 0).forEach(geoPackageId => {
+            let updatedGeoPackage = updatedGeoPackages[geoPackageId]
+            let oldGeoPackage = geopackages[geoPackageId]
+            // check if the tables have changed
+            if (!_.isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
+              // determine if a table's visibility was enabled
+              const featureTablesToZoomTo = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && oldGeoPackage.tables.features.hasOwnProperty(table) && !oldGeoPackage.tables.features[table].tableVisible)
+              const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)
+              _this.removeGeoPackage(geoPackageId)
+              _this.addGeoPackage(updatedGeoPackage, map)
+              if (featureTablesToZoomTo.length > 0) {
+                GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, featureTablesToZoomTo[0]).then(function (extent) {
+                  if (!_.isNil(extent)) {
+                    map.fitBounds([
+                      [extent[1], extent[0]],
+                      [extent[3], extent[2]]
+                    ])
+                  }
+                })
+              } else if (tileTablesToZoomTo.length > 0) {
+                GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, tileTablesToZoomTo[0]).then(function (extent) {
+                  if (!_.isNil(extent)) {
+                    map.fitBounds([
+                      [extent[1], extent[0]],
+                      [extent[3], extent[2]]
+                    ])
+                  }
+                })
+              }
+            }
+          })
+          // -----------------------------------------------
           // let config
           // Object.values(updatedGeoPackages).forEach(gp => {
           //   // check vector configs
@@ -487,6 +596,30 @@
       for (const layerId in this.layerConfigs) {
         this.addLayer(this.layerConfigs[layerId], this.map, false)
       }
+    },
+    beforeDestroy: function () {
+      _.keys(initializedGeoPackageTables).forEach(geopackageId => {
+        _.keys(initializedGeoPackageTables[geopackageId].featureTables).forEach(table => {
+          let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
+          if (layer.hasOwnProperty('close')) {
+            layer.close()
+          }
+        })
+        _.keys(initializedGeoPackageTables[geopackageId].tileTables).forEach(table => {
+          let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
+          if (layer.hasOwnProperty('close')) {
+            layer.close()
+          }
+        })
+      })
+      _.keys(initializedGeoPackageTables).forEach(geopackageId => {
+        _.keys(initializedLayers[geopackageId]).forEach(id => {
+          let layer = initializedLayers[geopackageId][id]
+          if (layer.hasOwnProperty('close')) {
+            layer.close()
+          }
+        })
+      })
     }
   }
 </script>

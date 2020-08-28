@@ -302,7 +302,7 @@
       },
       determineStyleForStyleAssignment (gp, featureId) {
         if (featureId !== -1) {
-          let featureStyle = GeoPackageUtilities.getFeatureStyle(gp, this.layer.sourceLayerName, featureId)
+          let featureStyle = GeoPackageUtilities._getFeatureStyle(gp, this.layer.sourceLayerName, featureId)
           if (_.isNil(featureStyle)) {
             this.featureStyleSelection = -1
           } else {
@@ -312,7 +312,7 @@
       },
       determineIconForIconAssignment (gp, featureId) {
         if (featureId !== -1) {
-          let featureIcon = GeoPackageUtilities.getFeatureIcon(gp, this.layer.sourceLayerName, featureId)
+          let featureIcon = GeoPackageUtilities._getFeatureIcon(gp, this.layer.sourceLayerName, featureId)
           if (_.isNil(featureIcon)) {
             this.featureIconSelection = -1
           } else {
@@ -322,37 +322,46 @@
       },
       async getStyle () {
         let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
-        let featureTableName = this.layer.sourceLayerName
-        this.tablePointStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'Point')
-        this.tablePointIconRow = GeoPackageUtilities.getTableIcon(gp, featureTableName, 'Point')
-        this.usePointIconDefault = !_.isNil(this.tablePointIconRow)
-        if (!this.usePointIconDefault) {
-          this.tablePointIconRow = GeoPackageUtilities.getIconById(gp, featureTableName, this.layer.tablePointIconRowId)
+        try {
+          let featureTableName = this.layer.sourceLayerName
+          this.tablePointStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'Point')
+          this.tablePointIconRow = GeoPackageUtilities._getTableIcon(gp, featureTableName, 'Point')
+          this.usePointIconDefault = !_.isNil(this.tablePointIconRow)
+          if (!this.usePointIconDefault) {
+            this.tablePointIconRow = GeoPackageUtilities._getIconById(gp, featureTableName, this.layer.tablePointIconRowId)
+          }
+          this.tableLineStringStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'LineString')
+          this.tablePolygonStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'Polygon')
+          this.features = GeoPackageUtilities._getFeatureIds(gp, this.layer.sourceLayerName)
+          this.featureItems = [{text: 'Select Feature', value: -1}]
+          for (let featureIdx in this.features) {
+            let featureId = this.features[featureIdx]
+            this.featureItems.push({text: featureId, value: Number(featureId)})
+          }
+          let featureStyleRows = GeoPackageUtilities._getFeatureStyleRows(gp, featureTableName)
+          this.styleItems = [{text: 'Use Defaults', value: -1}]
+          for (let styleId in featureStyleRows) {
+            let style = featureStyleRows[styleId]
+            this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
+          }
+          this.featureStyleRows = featureStyleRows
+          let featureIconRows = GeoPackageUtilities._getFeatureIconRows(gp, featureTableName)
+          this.iconItems = [{text: 'Use Defaults', value: -1}]
+          for (let iconId in featureIconRows) {
+            let icon = featureIconRows[iconId]
+            this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
+          }
+          this.featureIconRows = featureIconRows
+          this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
+          this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
+        } catch (error) {
+          console.error(error)
         }
-        this.tableLineStringStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'LineString')
-        this.tablePolygonStyleRow = GeoPackageUtilities.getTableStyle(gp, featureTableName, 'Polygon')
-        this.features = GeoPackageUtilities.getFeatureIds(gp, this.layer.sourceLayerName)
-        this.featureItems = [{text: 'Select Feature', value: -1}]
-        for (let featureIdx in this.features) {
-          let featureId = this.features[featureIdx]
-          this.featureItems.push({text: featureId, value: Number(featureId)})
+        try {
+          gp.close()
+        } catch (error) {
+          console.error(error)
         }
-        let featureStyleRows = GeoPackageUtilities.getFeatureStyleRows(gp, featureTableName)
-        this.styleItems = [{text: 'Use Defaults', value: -1}]
-        for (let styleId in featureStyleRows) {
-          let style = featureStyleRows[styleId]
-          this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
-        }
-        this.featureStyleRows = featureStyleRows
-        let featureIconRows = GeoPackageUtilities.getFeatureIconRows(gp, featureTableName)
-        this.iconItems = [{text: 'Use Defaults', value: -1}]
-        for (let iconId in featureIconRows) {
-          let icon = featureIconRows[iconId]
-          this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
-        }
-        this.featureIconRows = featureIconRows
-        this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
-        this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
       }
     },
     watch: {

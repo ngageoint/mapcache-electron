@@ -165,7 +165,7 @@
         <v-row no-gutters>
           <v-col>
             <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-              {{geopackage.size}}
+              {{size}}
             </p>
           </v-col>
         </v-row>
@@ -186,7 +186,7 @@
         <v-row no-gutters class="pt-2" justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 mr-1 clickable" :elevation="hover ? 4 : 1" @click.stop="detailDialog = true">
+              <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="detailDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-information-outline</v-icon>
@@ -200,7 +200,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-pencil-outline</v-icon>
@@ -214,7 +214,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-content-copy</v-icon>
@@ -228,7 +228,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 clickable" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
+              <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-trash-can-outline</v-icon>
@@ -338,6 +338,9 @@
         set (value) {
           this.setGeoPackageLayersVisible({projectId: this.projectId, geopackageId: this.geopackage.id, visible: value})
         }
+      },
+      size () {
+        return GeoPackageUtilities.getGeoPackageFileSize(this.geopackage.path)
       }
     },
     asyncComputed: {
@@ -347,7 +350,6 @@
             if (_.isNil(result)) {
               return []
             }
-            console.log(result)
             return result
           })
         },
@@ -370,6 +372,7 @@
       },
       rename () {
         this.renameDialog = false
+        this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
         this.renameGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id, name: this.renamedGeoPackage})
       },
       copy () {
@@ -385,5 +388,4 @@
 </script>
 
 <style scoped>
-
 </style>

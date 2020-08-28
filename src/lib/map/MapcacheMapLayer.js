@@ -15,4 +15,8 @@ export default class MapcacheMapLayer extends vendor.L.GridLayer {
     }
     return tile
   }
+
+  close () {
+    this.layer.close()
+  }
 }

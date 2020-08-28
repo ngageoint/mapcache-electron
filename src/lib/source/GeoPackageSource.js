@@ -32,14 +32,14 @@ export default class GeoPackageSource extends Source {
       let filePath = this.sourceCacheFolder.file(fileName).path()
       let fullFile = path.join(filePath, fileName)
       try {
-        let gp = await GeoPackageUtilities.copyGeoPackageFeatureLayerAndStyles(this.filePath, fullFile, layer)
+        await GeoPackageUtilities.copyGeoPackageFeatureLayerAndStyles(this.filePath, fullFile, layer)
         this.layers.push(new VectorLayer({
           id: UniqueIDUtilities.createUniqueID(),
           geopackageFilePath: fullFile,
           sourceFilePath: this.filePath,
           sourceLayerName: layer,
           sourceType: 'GeoPackage',
-          tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, layer, 'Point')
+          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer, 'Point')
         }))
       } catch (error) {
         console.error('Unable to import feature table: ' + layer)
