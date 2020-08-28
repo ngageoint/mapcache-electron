@@ -117,9 +117,13 @@ export default class GeoPackageUtilities {
 
     const tables = gp.getTables()
     tables.features.forEach(table => {
+      const featureDao = gp.getFeatureDao(table)
+      const description = gp.getTableContents(table).description
       geopackage.tables.features[table] = {
         tableVisible: false,
-        expanded: false
+        expanded: false,
+        featureCount: featureDao.count(),
+        description: _.isNil(description) || description.length === 0 ? 'None' : description
       }
     })
     tables.tiles.forEach(table => {

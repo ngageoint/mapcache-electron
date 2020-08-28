@@ -266,11 +266,14 @@
           delete shownGeoPackageTables[geopackage.id].tileTables[tableName]
         }
         delete mapLayers[layerId]
-        const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
-        if (layer.hasOwnProperty('close')) {
-          layer.close()
+
+        if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
+          const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+          if (layer.hasOwnProperty('close')) {
+            layer.close()
+          }
+          delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
         }
-        delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
       },
       addGeoPackageFeatureTable (geopackage, map, tableName) {
         let layer = LayerFactory.constructLayer({
@@ -305,17 +308,21 @@
       },
       removeGeoPackageFeatureTable (geopackage, tableName) {
         const layerId = geopackage.id + '_feature_' + tableName
-        let mapLayer = shownGeoPackageTables[geopackage.id].featureTables[tableName]
-        if (mapLayer) {
-          mapLayer.remove()
+        if (!_.isNil(shownGeoPackageTables[geopackage.id])) {
+          let mapLayer = shownGeoPackageTables[geopackage.id].featureTables[tableName]
+          if (mapLayer) {
+            mapLayer.remove()
+          }
+          delete shownGeoPackageTables[geopackage.id].featureTables[tableName]
         }
-        delete shownGeoPackageTables[geopackage.id].featureTables[tableName]
         delete mapLayers[layerId]
-        const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
-        if (layer.hasOwnProperty('close')) {
-          layer.close()
+        if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
+          const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
+          if (layer.hasOwnProperty('close')) {
+            layer.close()
+          }
+          delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
         }
-        delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
       }
     },
     watch: {
