@@ -168,6 +168,9 @@ const mutations = {
   expandProjectLayer (state, {projectId, layerId}) {
     Vue.set(state[projectId].layers[layerId], 'expanded', !state[projectId].layers[layerId].expanded)
   },
+  collapseProjectLayer (state, {projectId, layerId}) {
+    Vue.set(state[projectId].layers[layerId], 'expanded', false)
+  },
   expandGeoPackageConfiguration (state, {projectId, geopackageId}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
   },
@@ -386,6 +389,9 @@ const actions = {
   },
   expandProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('expandProjectLayer', {projectId, layerId})
+  },
+  collapseProjectLayer ({ commit, state }, {projectId, layerId}) {
+    commit('collapseProjectLayer', {projectId, layerId})
   },
   expandGeoPackageConfiguration ({ commit, state }, {projectId, geopackageId}) {
     commit('expandGeoPackageConfiguration', {projectId, geopackageId})

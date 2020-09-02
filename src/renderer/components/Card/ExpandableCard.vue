@@ -1,6 +1,6 @@
 <template>
   <v-card class="pa-2 card">
-    <v-container class="pa-0 ma-0 clickable" @click.stop="toggle()">
+    <v-container class="pa-0 ma-0 clickable">
       <v-row no-gutters>
         <v-col align-self="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
           <font-awesome-icon :icon="(expanded ? 'chevron-up' : 'chevron-down')" class="expand-collapse" size="lg"/>
@@ -13,7 +13,7 @@
       </v-row>
     </v-container>
     <transition-expand>
-      <div v-show="expanded">
+      <div v-show="currentlyExpanded">
         <slot name="card-expanded-body">
           default expanded card
         </slot>
@@ -27,11 +27,13 @@
   export default {
     props: {
       initiallyExpanded: Boolean,
-      onExpandCollapse: Function
+      onExpandCollapse: Function,
+      currentlyExpanded: String
     },
     data () {
       return {
-        expanded: this.initiallyExpanded || false
+        // expanded: this.initiallyExpanded || false
+        expanded: this.currentlyExpanded || false
       }
     },
     methods: {
@@ -44,6 +46,12 @@
     },
     components: {
       TransitionExpand
+    },
+    watch: {
+      // Watching for collapse call from the collapse all function in Project.vue
+      currentlyExpanded: function () {
+        this.expanded = !this.expanded
+      }
     }
   }
 </script>

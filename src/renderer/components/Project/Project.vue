@@ -41,6 +41,9 @@
 
       <add-source :project="project"/>
 
+      <div class="collapse-action" @click.stop="collapseLayers()">Collapse all
+      </div>
+
       <layer-flip-card
               v-for="sourceLayer in project.layers"
               :key="sourceLayer.id"
@@ -122,6 +125,8 @@
         setProjectName: 'Projects/setProjectName',
         addProjectLayer: 'Projects/addProjectLayer',
         addGeoPackage: 'Projects/addGeoPackage',
+        expandProjectLayer: 'Projects/expandProjectLayer',
+        collapseProjectLayer: 'Projects/collapseProjectLayer',
         addProjectState: 'UIState/addProjectState'
       }),
       showLayers () {
@@ -132,6 +137,12 @@
       },
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})
+      },
+      collapseLayers () {
+        // Force all layers to collapse
+        Object.values(this.project.layers).forEach(layer => {
+          this.collapseProjectLayer({projectId: this.project.id, layerId: layer.id})
+        })
       }
     },
     mounted: function () {
@@ -147,6 +158,10 @@
   #project {
     font-family: sans-serif;
     color: rgba(255, 255, 255, .87);
+  }
+  .collapse-action {
+    text-align: left;
+    padding-bottom: 8px;
   }
   .project-holder {
     display:flex;
