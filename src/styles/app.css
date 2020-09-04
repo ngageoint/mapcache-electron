@@ -28,6 +28,9 @@
 .detail-bg {
 	background-color: rgba(226, 233, 236, 0.71);
 }
+.settings-header {
+	background-color: rgba(204, 224, 236, 1.0);
+}
 .detail-section-margins-and-padding {
 	padding: 8px 20px;
 	margin: 8px -8px -8px -12px;

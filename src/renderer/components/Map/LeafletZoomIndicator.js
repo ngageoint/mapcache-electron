@@ -1,10 +1,10 @@
-import * as vendor from '../vendor'
+import * as vendor from '../../../lib/vendor'
 
 export default class LeafletZoomIndicator extends vendor.L.Control {
   constructor (options) {
     let mergedOptions = {
       ...{
-        position: 'topleft',
+        position: 'topright',
         enabled: true
       },
       ...options

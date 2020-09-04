@@ -17,6 +17,19 @@
         </v-row>
       </div>
     </modal>
+    <modal
+      v-if="project.showSettings"
+      header-class="settings-header"
+      header="Settings"
+      :ok="closeSettingsModal"
+      ok-text="Close">
+      <div slot="body">
+        <v-row>
+          <v-col cols="12">
+          </v-col>
+        </v-row>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -26,8 +39,9 @@
   import ZoomToExtent from './ZoomToExtent'
   import DrawBounds from './DrawBounds'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
-  import LeafletZoomIndicator from '../../../lib/map/LeafletZoomIndicator'
-  import LeafletDraw from '../../../lib/map/LeafletDraw'
+  import LeafletZoomIndicator from './LeafletZoomIndicator'
+  import LeafletDraw from './LeafletDraw'
+  import LeafletSettings from './LeafletSettings'
   import DrawingLayer from '../../../lib/source/layer/vector/DrawingLayer'
   import _ from 'lodash'
   import Modal from '../Modal'
@@ -93,7 +107,8 @@
         removeProjectLayer: 'Projects/removeProjectLayer',
         addProjectLayerFeatureRow: 'Projects/addProjectLayerFeatureRow',
         deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
-        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow'
+        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow',
+        showSettings: 'Projects/showSettings'
       }),
       getMapLayerForLayer (layer) {
         if (_.isNil(mapLayers[layer.id])) {
@@ -180,6 +195,9 @@
         this.layerSelection = 0
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
+      },
+      closeSettingsModal () {
+        this.showSettings({projectId: this.projectId})
       },
       addLayer (layerConfig, map, deleteEnabled) {
         layerConfigs[layerConfig.id] = _.cloneDeep(layerConfig)
@@ -441,19 +459,25 @@
               if (featureTablesToZoomTo.length > 0) {
                 GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, featureTablesToZoomTo[0]).then(function (extent) {
                   if (!_.isNil(extent)) {
-                    map.fitBounds([
-                      [extent[1], extent[0]],
-                      [extent[3], extent[2]]
-                    ])
+                    const bounds = map.getBounds()
+                    if (bounds.getWest() < extent[0] && bounds.getEast() > extent[2]) {
+                      map.fitBounds([
+                        [extent[1], extent[0]],
+                        [extent[3], extent[2]]
+                      ])
+                    }
                   }
                 })
               } else if (tileTablesToZoomTo.length > 0) {
                 GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, tileTablesToZoomTo[0]).then(function (extent) {
                   if (!_.isNil(extent)) {
-                    map.fitBounds([
-                      [extent[1], extent[0]],
-                      [extent[3], extent[2]]
-                    ])
+                    const bounds = map.getBounds()
+                    if (bounds.getWest() < extent[0] && bounds.getEast() > extent[2]) {
+                      map.fitBounds([
+                        [extent[1], extent[0]],
+                        [extent[3], extent[2]]
+                      ])
+                    }
                   }
                 })
               }
@@ -508,8 +532,13 @@
       })
       this.map.setView(defaultCenter, defaultZoom)
       osmbasemap.addTo(this.map)
+      this.map.zoomControl.setPosition('topright')
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
+      this.map.addControl(new LeafletSettings({}, () => {
+        console.log('showing settings for project: ' + _this.projectId)
+        _this.showSettings({projectId: _this.projectId})
+      }))
       this.map.on('layeradd', function (e) {
         if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
@@ -658,6 +687,9 @@
   }
   .leaflet-control-draw-trash-disabled {
     background: url('../../assets/trash.svg') no-repeat;
+  }
+  .leaflet-control-draw-settings {
+    background: url('../../assets/settings.svg') no-repeat;
   }
   .leaflet-control-disabled {
     color: currentColor;

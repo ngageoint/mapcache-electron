@@ -1,7 +1,7 @@
 <template>
-  <v-dialog v-model="dialog" persistent max-width="400">
+  <v-dialog v-model="dialog" persistent :fullscreen="fullScreen" max-width="400">
     <v-card>
-      <v-card-title class="headline">
+      <v-card-title :class="'headline ' + headerClass">
         {{header}}
       </v-card-title>
       <v-card-text>
@@ -13,14 +13,14 @@
         <v-spacer></v-spacer>
         <v-btn
           text
-          v-if="ok"
+          v-if="cancel"
           :color="cancelColor || 'light darken-1'"
           @click="modalCancel">
           {{cancelText || "Cancel"}}
         </v-btn>
         <v-btn
           text
-          v-if="cancel"
+          v-if="ok"
           :color="okColor || 'primary darken-1'"
           @click="modalOK">
           {{okText || "OK"}}
@@ -34,13 +34,21 @@
   export default {
     props: {
       header: String,
+      headerClass: {
+        type: String,
+        default: ''
+      },
       cardText: String,
       ok: Function,
       okText: String,
       okColor: String,
       cancel: Function,
       cancelText: String,
-      cancelColor: String
+      cancelColor: String,
+      fullScreen: {
+        type: Boolean,
+        default: false
+      }
     },
     data () {
       return {
