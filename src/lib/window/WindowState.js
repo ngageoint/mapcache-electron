@@ -18,7 +18,8 @@ export default class WindowState {
         y: undefined,
         width: 1200,
         height: 800,
-        minHeight: 800
+        minHeight: 800,
+        minWidth: 800
       }
     }
   }

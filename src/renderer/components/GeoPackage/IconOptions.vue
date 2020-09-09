@@ -26,7 +26,7 @@
               <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
             </v-col>
             <v-col cols="6">
-              <v-row no-gutters class="justify-end" align="center">
+              <v-row v-if="deletable" no-gutters class="justify-end" align="center">
                 <v-btn text dark color="#ff4444" @click.stop="deleteIcon()">
                   <v-icon>mdi-trash-can</v-icon> Delete Icon
                 </v-btn>

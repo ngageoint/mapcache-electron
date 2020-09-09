@@ -25,7 +25,7 @@
         <p class="ma-0 pa-0">Spatial Reference Systems: {{details.srsCount}}</p>
       </v-col>
     </v-row>
-    <v-row class="mb-2" v-for="srs in details.spatialReferenceSystems" no-gutters>
+    <v-row class="mb-2" v-for="srs in details.spatialReferenceSystems" :key="srs.id" no-gutters>
       <v-col cols="12">
         <v-row no-gutters>
           <v-col cols="12">

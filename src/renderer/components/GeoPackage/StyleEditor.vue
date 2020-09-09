@@ -71,7 +71,7 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <v-btn dark color="#73c1c5" @click.stop="addFeatureStyle()">
+                <v-btn class="button-width" dark color="#73c1c5" @click.stop="addFeatureStyle()">
                   <v-icon left>mdi-plus</v-icon> add style
                 </v-btn>
               </v-row>
@@ -127,7 +127,7 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <v-btn dark color="#73c1c5" @click.stop="addFeatureIcon()">
+                <v-btn class="button-width" dark color="#73c1c5" @click.stop="addFeatureIcon()">
                   <v-icon left>mdi-plus</v-icon> add icon
                 </v-btn>
               </v-row>
@@ -530,5 +530,8 @@
     color: black;
     font-size: 14px;
     font-weight: normal;
+  }
+  .button-width {
+    width: 140px;
   }
 </style>

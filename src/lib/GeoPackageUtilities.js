@@ -279,7 +279,6 @@ export default class GeoPackageUtilities {
       featureTableStyles.createTableIconRelationship()
       featureTableStyles.createStyleRelationship()
       featureTableStyles.createIconRelationship()
-
       GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
       GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
 
@@ -299,6 +298,7 @@ export default class GeoPackageUtilities {
         }
         let featureRowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName)
         if (!_.isNil(style.features[feature.id])) {
+          const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
           if (style.features[feature.id].iconOrStyle === 'icon') {
             let iconId = style.features[feature.id].icon
             let featureIconRow = icons[iconId]
@@ -319,7 +319,7 @@ export default class GeoPackageUtilities {
               icons[iconId] = featureIconRow
             }
             style.features[feature.id].icon = iconIdToIconRowId[iconId]
-            featureTableStyles.setIcon(featureRowId, feature.geometry.type.toUpperCase(), featureIconRow)
+            featureTableStyles.setIcon(featureRowId, geometryType, featureIconRow)
           } else {
             let styleId = style.features[feature.id].style
             let featureStyleRow = styles[styleId]
@@ -329,7 +329,6 @@ export default class GeoPackageUtilities {
               featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
               featureStyleRow.setWidth(featureStyle.width)
               featureStyleRow.setName(featureStyle.name)
-              const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
               if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
                 featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
               }
@@ -340,11 +339,12 @@ export default class GeoPackageUtilities {
               styles[styleId] = featureStyleRow
             }
             style.features[feature.id].style = styleIdToStyleRowId[styleId]
-            featureTableStyles.setStyle(featureRowId, feature.geometry.type.toUpperCase(), featureStyleRow)
+            featureTableStyles.setStyle(featureRowId, geometryType, featureStyleRow)
           }
         }
       }
-      await GeoPackageUtilities.indexFeatureTable(gp, tableName)
+      await GeoPackageUtilities._indexFeatureTable(gp, tableName)
+      console.log('indexed!')
     } catch (error) {
       console.error(error)
     }
@@ -618,9 +618,7 @@ export default class GeoPackageUtilities {
     const featureDao = gp.getFeatureDao(tableName)
     const fti = featureDao.featureTableIndex
     if (fti) {
-      if (!_.isNil(fti.tableIndex)) {
-        await fti.index()
-      }
+      await fti.index()
     }
   }
 

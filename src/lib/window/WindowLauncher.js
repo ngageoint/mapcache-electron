@@ -70,7 +70,8 @@ class WindowLauncher {
       show: false,
       width: 1200,
       height: 800,
-      minHeight: 800
+      minHeight: 800,
+      minWidth: 1000
     }
     this.projectWindow = new BrowserWindow(windowOptions)
     this.projectWindow.on('close', (e) => {
