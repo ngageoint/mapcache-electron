@@ -70,7 +70,6 @@
           </div>
           <div slot="card-expanded-body">
             <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>
-            <vector-options v-if="layer.pane === 'vector'" :layer="layer" :layer-key="layer.layerKey" :projectId="projectId"></vector-options>
           </div>
         </expandable-card>
         <div class="flex-container-row danger-div">
@@ -89,7 +88,6 @@
   import BoundsUi from './BoundsUi'
   import GeotiffOptions from './GeotiffOptions'
   import { mapActions, mapState } from 'vuex'
-  import VectorOptions from './VectorOptions'
   import ViewEditText from '../Common/ViewEditText'
   import ExpandableCard from '../Card/ExpandableCard'
   import _ from 'lodash'
@@ -121,7 +119,6 @@
       projectId: String
     },
     components: {
-      VectorOptions,
       BoundsUi,
       GeotiffOptions,
       ViewEditText,

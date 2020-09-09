@@ -1,7 +1,7 @@
 <template>
 <div id="project-holder" class="project-holder">
   <v-layout row justify-center>
-    <v-dialog v-model="dialog" max-width="300">
+    <v-dialog v-model="showDialog" max-width="300">
       <v-card class="text-center">
         <v-card-title class="headline">
           <v-container class="pa-0 ma-0">
@@ -155,7 +155,7 @@
         dark
         fab
         color="#3b779a"
-        @click.stop="dialog = true">
+        @click.stop="showDialog = true">
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </div>
@@ -189,7 +189,7 @@
   let options = {
     geopackagesShowing: true,
     titleColor: '#ffffff',
-    dialog: false
+    showDialog: false
   }
 
   export default {
@@ -234,7 +234,7 @@
         this.setProjectName({project: this.project, name: val})
       },
       createNewGeoPackage () {
-        this.dialog = false
+        this.showDialog = false
         remote.dialog.showSaveDialog((filePath) => {
           if (!filePath.endsWith('.gpkg')) {
             filePath = filePath + '.gpkg'
@@ -260,12 +260,12 @@
             this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath, fileSize: FileUtilities.toHumanReadable(fileInfo.size)})
           }
         })
-        this.dialog = false
+        this.showDialog = false
       },
       displayURLModal () {
         // TODO:
         console.log('url geopackage')
-        this.dialog = false
+        this.showDialog = false
       }
     },
     mounted: function () {

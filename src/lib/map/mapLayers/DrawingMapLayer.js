@@ -1,6 +1,7 @@
 import * as vendor from '../../vendor'
 import _ from 'lodash'
 import GeoPackageUtilities from '../../GeoPackageUtilities'
+import { GeometryType } from '@ngageoint/geopackage'
 
 export default class DrawingMapLayer {
   static constructMapLayer (drawingModel) {
@@ -10,11 +11,12 @@ export default class DrawingMapLayer {
     drawingModel.featureCollection.features.forEach(feature => {
       feature.properties.layerId = drawingModel.id
       feature.properties.featureId = feature.id
-      let styleRow = GeoPackageUtilities.getFeatureStyleRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, feature.geometry.type)
+      let geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      let styleRow = GeoPackageUtilities.getFeatureStyleRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, geometryType)
       let layer
-      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+      if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
         if (_.isNil(styleRow)) {
-          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, geometryType)
         }
         let style = {
           fillColor: styleRow.getFillHexColor(),
@@ -24,13 +26,13 @@ export default class DrawingMapLayer {
           weight: styleRow.getWidth()
         }
         layer = new vendor.L.GeoJSON(feature, {style: style})
-      } else if (feature.geometry.type === 'Point') {
-        let iconRow = GeoPackageUtilities.getFeatureIconRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, feature.geometry.type)
+      } else if (geometryType === GeometryType.POINT) {
+        let iconRow = GeoPackageUtilities.getFeatureIconRow(drawingModel._geopackage, drawingModel.sourceLayerName, feature.id, geometryType)
         if (_.isNil(iconRow) && _.isNil(styleRow)) {
-          iconRow = GeoPackageUtilities.getTableIcon(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+          iconRow = GeoPackageUtilities.getTableIcon(drawingModel._geopackage, drawingModel.sourceLayerName, geometryType)
         }
         if (_.isNil(styleRow)) {
-          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, geometryType)
         }
 
         if (!_.isNil(iconRow)) {
@@ -59,7 +61,7 @@ export default class DrawingMapLayer {
         }
       } else {
         if (_.isNil(styleRow)) {
-          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, feature.geometry.type)
+          styleRow = GeoPackageUtilities.getTableStyle(drawingModel._geopackage, drawingModel.sourceLayerName, geometryType)
         }
         let style = {
           color: styleRow.getHexColor(),

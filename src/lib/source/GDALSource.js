@@ -4,6 +4,7 @@ import GeoTiffLayer from './layer/tile/GeoTiffLayer'
 import path from 'path'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
+import { GeometryType } from '@ngageoint/geopackage'
 
 export default class GDALSource extends Source {
   constructor (filePath, sourceId) {
@@ -59,7 +60,7 @@ export default class GDALSource extends Source {
         sourceFilePath: this.filePath,
         sourceLayerName: name,
         sourceType: 'GDAL',
-        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, 'Point')
+        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, GeometryType.POINT)
       }))
     }
     if (this.dataset.driver.description === 'GTiff') {

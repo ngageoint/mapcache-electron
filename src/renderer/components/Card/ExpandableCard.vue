@@ -1,11 +1,11 @@
 <template>
   <v-card class="pa-2 card">
-    <v-container class="pa-0 ma-0 clickable" @click.stop="toggle()">
+    <v-container :class="allowExpand ? 'pa-0 ma-0 clickable' : 'pa-0 ma-0'" @click.stop="toggle()">
       <v-row no-gutters justify="center">
-        <v-col align-self="center" justify="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
+        <v-col v-if="allowExpand" align-self="center" justify="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
           <font-awesome-icon :icon="(expanded ? 'chevron-up' : 'chevron-down')" class="expand-collapse" size="lg"/>
         </v-col>
-        <v-col cols="11">
+        <v-col cols="11" :offset="allowExpand ? 0 : 1">
           <slot name="card-header">
             default collapsed card
           </slot>
@@ -27,7 +27,11 @@
   export default {
     props: {
       initiallyExpanded: Boolean,
-      onExpandCollapse: Function
+      onExpandCollapse: Function,
+      allowExpand: {
+        type: Boolean,
+        default: true
+      }
     },
     data () {
       return {
@@ -36,9 +40,11 @@
     },
     methods: {
       toggle () {
-        this.expanded = !this.expanded
-        if (this.onExpandCollapse) {
-          this.onExpandCollapse()
+        if (this.allowExpand) {
+          this.expanded = !this.expanded
+          if (this.onExpandCollapse) {
+            this.onExpandCollapse()
+          }
         }
       }
     },

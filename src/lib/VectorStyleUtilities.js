@@ -20,17 +20,17 @@ export default class VectorStyleUtilities {
     return {
       default: {
         icons: {
-          'Point': -1
+          'POINT': -1
         },
         styles: {
-          'Point': -1,
-          'LineString': -2,
-          'Polygon': -3
+          'POINT': -1,
+          'LINESTRING': -2,
+          'POLYGON': -3
         },
         iconOrStyle: {
-          'Point': 'icon',
-          'Polygon': 'style',
-          'LineString': 'style'
+          'POINT': 'icon',
+          'POLYGON': 'style',
+          'LINESTRING': 'style'
         }
       },
       features: {},
@@ -38,13 +38,13 @@ export default class VectorStyleUtilities {
         '-1': {
           color: '#3388FF',
           opacity: 1.0,
-          width: 2.0,
+          width: 1.0,
           name: 'Default Point Style'
         },
         '-2': {
           color: '#3388FF',
           opacity: 1.0,
-          width: 3.0,
+          width: 1.0,
           name: 'Default LineString Style'
         },
         '-3': {
@@ -52,7 +52,7 @@ export default class VectorStyleUtilities {
           opacity: 1.0,
           fillColor: '#3388FF',
           fillOpacity: 0.2,
-          width: 3.0,
+          width: 1.0,
           name: 'Default Polygon Style'
         }
       },
@@ -78,17 +78,17 @@ export default class VectorStyleUtilities {
     return {
       default: {
         icons: {
-          'Point': -1
+          'POINT': -1
         },
         styles: {
-          'Point': -1,
-          'LineString': -2,
-          'Polygon': -3
+          'POINT': -1,
+          'LINESTRING': -2,
+          'POLYGON': -3
         },
         iconOrStyle: {
-          'Point': 'icon',
-          'Polygon': 'style',
-          'LineString': 'style'
+          'POINT': 'icon',
+          'POLYGON': 'style',
+          'LINESTRING': 'style'
         }
       },
       features: {},
@@ -96,13 +96,13 @@ export default class VectorStyleUtilities {
         '-1': {
           color: VectorStyleUtilities.generateColor(),
           opacity: 1.0,
-          width: 2.0,
+          width: 1.0,
           name: 'Default Point Style'
         },
         '-2': {
           color: VectorStyleUtilities.generateColor(),
           opacity: 1.0,
-          width: 3.0,
+          width: 1.0,
           name: 'Default LineString Style'
         },
         '-3': {
@@ -110,7 +110,7 @@ export default class VectorStyleUtilities {
           opacity: 1.0,
           fillColor: VectorStyleUtilities.generateColor(),
           fillOpacity: 0.2,
-          width: 3.0,
+          width: 1.0,
           name: 'Default Polygon Style'
         }
       },

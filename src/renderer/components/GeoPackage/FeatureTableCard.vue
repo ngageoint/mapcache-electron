@@ -119,6 +119,37 @@
           </v-card>
         </v-dialog>
         <v-dialog
+          v-model="styleDialog"
+          max-width="450">
+          <v-card>
+            <v-card-title style="font-size: 18px !important; color: black; font-weight: 500;">
+              <v-row no-gutters>
+                <v-col>
+                  "{{tableName}}" Style Editor
+                </v-col>
+              </v-row>
+            </v-card-title>
+            <v-card-text>
+              <style-editor :tableName="tableName" :filePath="geopackage.path" :projectId="projectId" :geopackage="geopackage" :style-key="geopackage.styleKey"/>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer/>
+              <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5" @click.stop="addStyleExtensionAndDefaultStyles()">
+                <v-icon>mdi-palette</v-icon> Enable Styling
+              </v-btn>
+              <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeStyleExtensionAndTableStyles()">
+                <v-icon>mdi-trash-can</v-icon> Remove Styling
+              </v-btn>
+              <v-btn
+                color="#3b779a"
+                text
+                @click="closeStyleEditor">
+                close
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        <v-dialog
           v-model="deleteDialog"
           max-width="300">
           <v-card>
@@ -158,7 +189,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters class="pt-2" justify="center" align-content="center">
+          <v-row no-gutters class="pt-2" style="margin-left: -12px" justify="center" align-content="center">
             <v-hover>
               <template v-slot="{ hover }">
                 <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
@@ -182,6 +213,20 @@
                     </v-row>
                     <v-row no-gutters align-content="center" justify="center">
                       Copy
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </template>
+            </v-hover>
+            <v-hover>
+              <template v-slot="{ hover }">
+                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleDialog = true">
+                  <v-card-text class="pa-2">
+                    <v-row no-gutters align-content="center" justify="center">
+                      <v-icon small>mdi-palette</v-icon>
+                    </v-row>
+                    <v-row no-gutters align-content="center" justify="center">
+                      Style
                     </v-row>
                   </v-card-text>
                 </v-card>
@@ -236,20 +281,35 @@
   import { mapActions } from 'vuex'
   import ViewEditText from '../Common/ViewEditText'
   import ExpandableCard from '../Card/ExpandableCard'
+  import StyleEditor from './StyleEditor'
+  import { GeoPackageAPI } from '@ngageoint/geopackage'
 
   export default {
     props: {
       projectId: String,
       geopackage: Object,
-      tableName: String
+      tableName: String,
+      styleKey: Number
     },
     components: {
       ViewEditText,
-      ExpandableCard
+      ExpandableCard,
+      StyleEditor
+    },
+    created () {
+      let _this = this
+      this.loading = true
+      this.styleExtensionEnabled().then(function (hasStyleExtension) {
+        _this.hasStyleExtension = hasStyleExtension
+        _this.loading = false
+      })
     },
     data () {
       return {
+        loading: true,
+        hasStyleExtension: false,
         deleteDialog: false,
+        styleDialog: false,
         renameValid: false,
         renameDialog: false,
         renamedTable: this.tableName,
@@ -284,6 +344,8 @@
     },
     methods: {
       ...mapActions({
+        addStyleExtensionAndDefaultStylesForTable: 'Projects/addStyleExtensionAndDefaultStylesForTable',
+        removeStyleExtensionForTable: 'Projects/removeStyleExtensionForTable',
         deleteGeoPackage: 'Projects/deleteGeoPackage',
         expandCollapseFeatureTableCard: 'Projects/expandCollapseFeatureTableCard',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
@@ -291,6 +353,21 @@
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable'
       }),
+      async styleExtensionEnabled () {
+        let hasStyle = false
+        let gp = await GeoPackageAPI.open(this.geopackage.path)
+        try {
+          hasStyle = gp.featureStyleExtension.has(this.tableName)
+        } catch (error) {
+          console.error(error)
+        }
+        try {
+          gp.close()
+        } catch (error) {
+          console.error(error)
+        }
+        return hasStyle
+      },
       zoomToExtent (extent) {
         this.$emit('zoom-to', extent)
       },
@@ -306,9 +383,41 @@
         this.copyDialog = false
         this.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
       },
+      closeStyleEditor () {
+        this.styleDialog = false
+      },
       deleteTable () {
         this.deleteDialog = false
         this.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+      },
+      addStyleExtensionAndDefaultStyles () {
+        this.addStyleExtensionAndDefaultStylesForTable({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
+        })
+      },
+      removeStyleExtensionAndTableStyles () {
+        this.removeStyleExtensionForTable({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
+        })
+      }
+    },
+    watch: {
+      styleKey: {
+        async handler (styleKey, oldValue) {
+          if (styleKey !== oldValue) {
+            let _this = this
+            _this.loading = true
+            this.styleExtensionEnabled().then(function (hasStyleExtension) {
+              _this.hasStyleExtension = hasStyleExtension
+              _this.loading = false
+            })
+          }
+        },
+        deep: true
       }
     }
   }

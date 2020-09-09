@@ -1,13 +1,16 @@
 <template>
   <expandablecard class="mb-2">
     <div slot="card-header">
-      <v-row no-gutters class="justify-space-between" align="center">
+      <v-row no-gutters justify="space-between" align="center">
         <v-col cols="10" class="align-center">
-          <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.id + ')' : ''" font-size="16px" font-weight="500" label="Style Name" :on-save="saveName"/>
+          <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.id + ')' : ''" font-size="14px" font-weight="400" font-color="black" label="Style Name" :on-save="saveName"/>
         </v-col>
         <v-col cols="2">
           <v-row no-gutters class="justify-end" align="center">
-            <div class="color-box" :style="{backgroundColor: ((geometryType === 'Polygon' || geometryType === 'MultiPolygon') ? fillColor : color)}"></div>
+            <div class="color-box" :style="{
+            backgroundColor: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? fillColor : color),
+            borderColor: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? color : '#fff'),
+            borderWidth: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? (Math.min(10, width) + 'px') : '1px')}"></div>
           </v-row>
         </v-col>
       </v-row>
@@ -20,19 +23,21 @@
             <colorpicker :color="color" v-model="color" />
           </v-col>
         </v-row>
-        <v-row v-if="(geometryType === 'Polygon' || geometryType === 'MultiPolygon' || geometryType === undefined) && styleRow.getFillHexColor() !== null && styleRow.getFillOpacity() !== null" no-gutters class="mb-2">
+        <v-row v-if="(geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON' || geometryType === undefined) && styleRow.getFillHexColor() !== null && styleRow.getFillOpacity() !== null" no-gutters class="mb-2">
           <v-col cols="10">
             <label class="v-label v-label--active theme--light v-label--active fs12">Fill Color</label>
             <colorpicker :color="fillColor" v-model="fillColor" />
           </v-col>
         </v-row>
         <v-row no-gutters class="justify-space-between" align="center">
-          <v-col cols="10" class="align-center">
+          <v-col cols="6" class="align-center">
             <numberpicker :number="styleRow.getWidth()" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" @update-number="updateWidth" />
           </v-col>
-          <v-col cols="2">
+          <v-col cols="6">
             <v-row v-if="deletable" no-gutters class="justify-end" align="center">
-              <font-awesome-icon class="delete-button danger" @click.stop="deleteStyle()" icon="trash" size="2x"/>
+              <v-btn text dark color="#ff4444" @click.stop="deleteStyle()">
+                <v-icon>mdi-trash-can</v-icon> Delete Style
+              </v-btn>
             </v-row>
           </v-col>
         </v-row>
@@ -43,20 +48,21 @@
 
 <script>
   import { mapActions } from 'vuex'
-  import ColorPicker from './ColorPicker'
-  import NumberPicker from './NumberPicker'
+  import ColorPicker from '../Common/ColorPicker'
+  import NumberPicker from '../Common/NumberPicker'
   import _ from 'lodash'
   import ExpandableCard from '../Card/ExpandableCard'
   import ViewEditText from '../Common/ViewEditText'
 
   export default {
     props: {
+      geopackage: Object,
+      tableName: String,
       defaultName: String,
       allowStyleNameEditing: Boolean,
       deletable: Boolean,
       geometryType: String,
       styleRow: Object,
-      layer: Object,
       projectId: String,
       showId: Boolean
     },
@@ -77,7 +83,8 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               styleRow: styleRow
             })
           }
@@ -99,7 +106,8 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               styleRow: styleRow
             })
           }
@@ -120,7 +128,8 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               styleRow: styleRow
             })
           }
@@ -149,6 +158,14 @@
         set (val) {
           this.debounceFillColorOpacity(val)
         }
+      },
+      width: {
+        get () {
+          return this.styleRow.getWidth()
+        },
+        set (val) {
+          this.debounceWidth(val)
+        }
       }
     },
     methods: {
@@ -173,7 +190,8 @@
           }
           this.updateProjectLayerStyleRow({
             projectId: this.projectId,
-            layerId: this.layer.id,
+            geopackageId: this.geopackage.id,
+            tableName: this.tableName,
             styleRow: styleRow
           })
         }
@@ -196,7 +214,8 @@
       deleteStyle () {
         this.deleteProjectLayerStyleRow({
           projectId: this.projectId,
-          layerId: this.layer.id,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName,
           styleId: this.styleRow.id
         })
       }
@@ -214,12 +233,14 @@
     height: 2rem;
   }
   .subtitle-card {
-    display: inline-block;
-    vertical-align: middle;
-    line-height: normal;
-    color: #000;
+    color: dimgray;
     font-size: 16px;
     font-weight: normal;
+  }
+  .title-card {
+    color: dimgray;
+    font-size: 18px;
+    font-weight: 500;
   }
   .flex-row {
     display: flex;

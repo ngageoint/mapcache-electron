@@ -26,7 +26,7 @@ export default class WFSSource extends Source {
         sourceFilePath: this.filePath,
         sourceLayerName: layer.name,
         sourceType: 'WFS',
-        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer.name, GeometryType.nameFromType(GeometryType.POINT))
+        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer.name, GeometryType.POINT)
       }))
     }
     return this.geopackageLayers

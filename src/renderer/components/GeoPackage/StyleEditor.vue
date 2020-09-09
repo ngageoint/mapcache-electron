@@ -1,57 +1,41 @@
 <template>
   <div>
-    <expandablecard class="mb-2">
-      <div slot="card-header">
-        <div class="title-card">
-          Feature Tile Settings
-        </div>
-      </div>
-      <div slot="card-expanded-body">
-        <v-container fluid>
-          <v-row no-gutters>
-            <v-col cols="12">
-              <div class="subtitle-card">
-                <numberpicker :number="Number(layer.maxFeatures)" label="Max Features" :step="Number(10)" @update-number="updateMaxFeatures" :min="Number(0)" />
-              </div>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
-    </expandablecard>
     <div v-if="!loading">
-      <expandablecard class="mb-2">
+      <expandablecard v-if="hasStyleExtension" class="mb-2">
         <div slot="card-header">
-          <div class="title-card">
+          <div class="title">
             Default Styles and Icons
           </div>
         </div>
-        <div slot="card-expanded-body">
-          <card class="mb-2">
+        <div slot="card-expanded-body" class="detail">
+          <card class="mb-2 mt-2">
             <div slot="card">
-              <div class="subtitle-card">
+              <div class="subtitle">
                 Default Point Style/Icon
               </div>
               <v-row no-gutters>
-                <input type="checkbox" :id="layer.id" name="set-name" class="switch-input" v-model="usePointIconDefault">
-                <label :for="layer.id" class="switch-label">Use <span class="toggle--on">Icon</span><span class="toggle--off">Style</span></label>
+                <input type="checkbox" :id="geopackage.id + '_' + tableName" name="set-name" class="switch-input" v-model="usePointIconDefault">
+                <label :for="geopackage.id + '_' + tableName" class="switch-label">Use <span class="toggle--on">Icon</span><span class="toggle--off">Style</span></label>
               </v-row>
               <styleoptions
                       v-if="!usePointIconDefault && tablePointStyleRow"
                       defaultName="Point Style"
                       :deletable="false"
                       :allowStyleNameEditing="false"
-                      geometry-type="Point"
+                      geometry-type="POINT"
                       :style-row="tablePointStyleRow"
-                      :layer="layer"
+                      :geopackage="geopackage"
+                      :table-name="tableName"
                       :project-id="projectId"
                       :show-id="false"/>
               <iconoptions
                       v-if="usePointIconDefault && tablePointIconRow"
                       defaultName="Point Icon"
                       :allowIconNameEditing="false"
-                      geometry-type="Point"
+                      geometry-type="POINT"
                       :icon-row="tablePointIconRow"
-                      :layer="layer"
+                      :geopackage="geopackage"
+                      :table-name="tableName"
                       :project-id="projectId"
                       :show-id="false"
                       :is-table-icon="true"/>
@@ -61,31 +45,35 @@
                   defaultName="LineString Style"
                   :deletable="false"
                   :allowStyleNameEditing="false"
-                  geometry-type="LineString"
+                  geometry-type="LINESTRING"
                   :style-row="tableLineStringStyleRow"
-                  :layer="layer"
+                  :geopackage="geopackage"
+                  :table-name="tableName"
                   :project-id="projectId"
                   :show-id="false"/>
           <styleoptions
                   defaultName="Polygon Style"
                   :deletable="false"
                   :allowStyleNameEditing="false"
-                  geometry-type="Polygon"
+                  geometry-type="POLYGON"
                   :style-row="tablePolygonStyleRow"
-                  :layer="layer"
+                  :geopackage="geopackage"
+                  :table-name="tableName"
                   :project-id="projectId"
                   :show-id="false"/>
         </div>
       </expandablecard>
-      <expandablecard class="mb-2">
+      <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(featureStyleRows).length > 0" class="mb-2">
         <div slot="card-header">
-          <v-row class="justify-space-between" no-gutters>
-            <v-col cols="10" class="title-card">
+          <v-row justify="space-between" align="center" no-gutters>
+            <v-col class="title" align-content="center">
               {{'Feature Styles (' + Object.keys(featureStyleRows).length + ')'}}
             </v-col>
-            <v-col cols="2">
-              <v-row no-gutters class="justify-end">
-                <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addFeatureStyle()"/>
+            <v-col>
+              <v-row no-gutters justify="end">
+                <v-btn dark color="#73c1c5" @click.stop="addFeatureStyle()">
+                  <v-icon left>mdi-plus</v-icon> add style
+                </v-btn>
               </v-row>
             </v-col>
           </v-row>
@@ -98,16 +86,17 @@
             :defaultName="styleRow.id + ''"
             :allowStyleNameEditing="true"
             :style-row="styleRow"
-            :layer="layer"
+            :geopackage="geopackage"
+            :table-name="tableName"
             :project-id="projectId"
             :show-id="true"/>
-          <expandablecard class="mb-2" v-if="Object.keys(featureStyleRows).length > 0">
+          <expandablecard class="mb-2" v-if="Object.keys(featureStyleRows).length > 0 && featureItems.length > 1">
             <div slot="card-header">
-              <v-row no-gutters class="subtitle-card">
-                <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">
+              <v-row no-gutters class="subtitle">
+                <v-card-title class="ma-0 pa-0 full-width">
                   <v-row no-gutters class="full-width">
                     <v-col class="title-edit align-center" cols="12">
-                      <p>Feature Style Assignment</p>
+                      <p class="assignment-title">Feature Style Assignment</p>
                     </v-col>
                   </v-row>
                 </v-card-title>
@@ -117,11 +106,11 @@
               <v-container fluid>
                 <v-row>
                   <v-col cols="12">
-                    <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details>
+                    <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details class="subtitle">
                     </v-select>
                   </v-col>
                   <v-col cols="12">
-                    <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details>
+                    <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
                     </v-select>
                   </v-col>
                 </v-row>
@@ -130,15 +119,17 @@
           </expandablecard>
         </div>
       </expandablecard>
-      <expandablecard class="mb-2">
+      <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(featureIconRows).length > 0" class="mb-2">
         <div slot="card-header">
-          <v-row class="justify-space-between" no-gutters>
-            <v-col cols="10" class="title-card">
+          <v-row justify="space-between" align="center" no-gutters>
+            <v-col class="title" align-content="center">
               {{'Feature Icons (' + Object.keys(featureIconRows).length + ')'}}
             </v-col>
-            <v-col cols="2">
-              <v-row no-gutters class="justify-end">
-                <font-awesome-icon icon="plus-circle" size="2x" class="add-button" @click.stop="addFeatureIcon()"/>
+            <v-col>
+              <v-row no-gutters justify="end">
+                <v-btn dark color="#73c1c5" @click.stop="addFeatureIcon()">
+                  <v-icon left>mdi-plus</v-icon> add icon
+                </v-btn>
               </v-row>
             </v-col>
           </v-row>
@@ -150,19 +141,20 @@
             :deletable="true"
             :defaultName="iconRow.id + ''"
             :allowIconNameEditing="true"
-            geometry-type="Point"
+            geometry-type="POINT"
             :icon-row="iconRow"
-            :layer="layer"
+            :geopackage="geopackage"
+            :table-name="tableName"
             :project-id="projectId"
             :show-id="true"
             :is-table-icon="false"/>
-          <expandablecard class="mb-2" v-if="Object.keys(featureIconRows).length > 0">
+          <expandablecard class="mb-2" v-if="Object.keys(featureIconRows).length > 0 && iconFeatureItems.length > 1">
             <div slot="card-header">
-              <v-row no-gutters class="subtitle-card">
-                <v-card-title class="ma-0 pa-0 full-width fs-16 fw-500">
+              <v-row no-gutters class="subtitle">
+                <v-card-title class="ma-0 pa-0 full-width">
                   <v-row no-gutters class="full-width">
                     <v-col class="title-edit align-center" cols="12">
-                      <p>Feature Icon Assignment</p>
+                      <p class="assignment-title">Feature Icon Assignment</p>
                     </v-col>
                   </v-row>
                 </v-card-title>
@@ -172,11 +164,11 @@
               <v-container fluid>
                 <v-row>
                   <v-col cols="12">
-                    <v-select v-model="iconAssignmentFeature" :items="featureItems" label="Feature" dense hide-details>
+                    <v-select v-model="iconAssignmentFeature" :items="iconFeatureItems" label="Feature" dense hide-details class="subtitle">
                     </v-select>
                   </v-col>
                   <v-col cols="12">
-                    <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details>
+                    <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
                     </v-select>
                   </v-col>
                 </v-row>
@@ -193,22 +185,25 @@
   import { mapActions } from 'vuex'
   import StyleOptions from './StyleOptions'
   import IconOptions from './IconOptions'
-  import NumberPicker from './NumberPicker'
+  import NumberPicker from '../Common/NumberPicker'
   import _ from 'lodash'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-  import { GeoPackageAPI } from '@ngageoint/geopackage'
+  import { GeoPackageAPI, GeometryType } from '@ngageoint/geopackage'
   import Card from '../Card/Card'
   import ExpandableCard from '../Card/ExpandableCard'
 
   export default {
     props: {
-      layer: Object,
-      layerKey: Number,
-      projectId: String
+      filePath: String,
+      geopackage: Object,
+      tableName: String,
+      projectId: String,
+      styleKey: Number
     },
     data () {
       return {
         loading: true,
+        hasStyleExtension: false,
         updatingStyle: true,
         tablePointStyleRow: null,
         tablePointIconRow: null,
@@ -217,9 +212,11 @@
         featureStyleRows: null,
         featureIconRows: null,
         featureItems: null,
+        iconFeatureItems: null,
         styleItems: null,
         iconItems: null,
         features: [],
+        iconFeatures: [],
         featureStyleSelection: -1,
         featureIconSelection: -1,
         usePointIconDefault: false
@@ -233,15 +230,6 @@
       'expandablecard': ExpandableCard
     },
     created () {
-      this.debounceUpdateMaxFeatures = _.debounce((val) => {
-        if (val) {
-          this.updateProjectLayerStyleMaxFeatures({
-            projectId: this.projectId,
-            layerId: this.layer.id,
-            maxFeatures: val
-          })
-        }
-      }, 500)
       let _this = this
       this.getStyle().then(function () {
         _this.loading = false
@@ -251,25 +239,27 @@
     computed: {
       styleAssignmentFeature: {
         get () {
-          return this.layer.styleAssignmentFeature || -1
+          return this.geopackage.styleAssignment ? this.geopackage.styleAssignment.featureId : -1
         },
         set (value) {
           this.updateStyleAssignmentFeature({
             projectId: this.projectId,
-            layerId: this.layer.id,
-            styleAssignmentFeature: value
+            geopackageId: this.geopackage.id,
+            tableName: this.tableName,
+            featureId: value
           })
         }
       },
       iconAssignmentFeature: {
         get () {
-          return this.layer.iconAssignmentFeature || -1
+          return this.geopackage.iconAssignment ? this.geopackage.iconAssignment.featureId : -1
         },
         set (value) {
           this.updateIconAssignmentFeature({
             projectId: this.projectId,
-            layerId: this.layer.id,
-            iconAssignmentFeature: value
+            geopackageId: this.geopackage.id,
+            tableName: this.tableName,
+            featureId: value
           })
         }
       }
@@ -280,7 +270,6 @@
         updateFeatureIconSelection: 'Projects/updateFeatureIconSelection',
         updateStyleAssignmentFeature: 'Projects/updateStyleAssignmentFeature',
         updateIconAssignmentFeature: 'Projects/updateIconAssignmentFeature',
-        updateProjectLayerStyleMaxFeatures: 'Projects/updateProjectLayerStyleMaxFeatures',
         createProjectLayerStyleRow: 'Projects/createProjectLayerStyleRow',
         createProjectLayerIconRow: 'Projects/createProjectLayerIconRow',
         updateProjectLayerUsePointIconDefault: 'Projects/updateProjectLayerUsePointIconDefault'
@@ -291,18 +280,20 @@
       addFeatureStyle () {
         this.createProjectLayerStyleRow({
           projectId: this.projectId,
-          layerId: this.layer.id
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
         })
       },
       addFeatureIcon () {
         this.createProjectLayerIconRow({
           projectId: this.projectId,
-          layerId: this.layer.id
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
         })
       },
       determineStyleForStyleAssignment (gp, featureId) {
         if (featureId !== -1) {
-          let featureStyle = GeoPackageUtilities._getFeatureStyle(gp, this.layer.sourceLayerName, featureId)
+          let featureStyle = GeoPackageUtilities._getFeatureStyle(gp, this.tableName, featureId)
           if (_.isNil(featureStyle)) {
             this.featureStyleSelection = -1
           } else {
@@ -312,7 +303,7 @@
       },
       determineIconForIconAssignment (gp, featureId) {
         if (featureId !== -1) {
-          let featureIcon = GeoPackageUtilities._getFeatureIcon(gp, this.layer.sourceLayerName, featureId)
+          let featureIcon = GeoPackageUtilities._getFeatureIcon(gp, this.tableName, featureId)
           if (_.isNil(featureIcon)) {
             this.featureIconSelection = -1
           } else {
@@ -321,39 +312,43 @@
         }
       },
       async getStyle () {
-        let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
+        let gp = await GeoPackageAPI.open(this.filePath)
         try {
-          let featureTableName = this.layer.sourceLayerName
-          this.tablePointStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'Point')
-          this.tablePointIconRow = GeoPackageUtilities._getTableIcon(gp, featureTableName, 'Point')
-          this.usePointIconDefault = !_.isNil(this.tablePointIconRow)
-          if (!this.usePointIconDefault) {
-            this.tablePointIconRow = GeoPackageUtilities._getIconById(gp, featureTableName, this.layer.tablePointIconRowId)
+          let featureTableName = this.tableName
+          this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
+          if (this.hasStyleExtension) {
+            this.tablePointStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, GeometryType.POINT)
+            this.tablePointIconRow = GeoPackageUtilities._getTableIcon(gp, featureTableName, GeometryType.POINT)
+            this.usePointIconDefault = !_.isNil(this.tablePointIconRow)
+            this.tableLineStringStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, GeometryType.LINESTRING)
+            this.tablePolygonStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, GeometryType.POLYGON)
+            this.features = GeoPackageUtilities._getFeatureIds(gp, this.tableName)
+            this.featureItems = [{text: 'Select Feature', value: -1}]
+            this.features.forEach(featureId => {
+              this.featureItems.push({text: featureId, value: featureId})
+            })
+            this.iconFeatures = GeoPackageUtilities._getPointAndMultiPointFeatureIds(gp, this.tableName)
+            this.iconFeatureItems = [{text: 'Select Feature', value: -1}]
+            this.iconFeatures.forEach(featureId => {
+              this.iconFeatureItems.push({text: featureId, value: featureId})
+            })
+            let featureStyleRows = GeoPackageUtilities._getFeatureStyleRows(gp, featureTableName)
+            this.styleItems = [{text: 'Use Defaults', value: -1}]
+            for (let styleId in featureStyleRows) {
+              let style = featureStyleRows[styleId]
+              this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
+            }
+            this.featureStyleRows = featureStyleRows
+            let featureIconRows = GeoPackageUtilities._getFeatureIconRows(gp, featureTableName)
+            this.iconItems = [{text: 'Use Defaults', value: -1}]
+            for (let iconId in featureIconRows) {
+              let icon = featureIconRows[iconId]
+              this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
+            }
+            this.featureIconRows = featureIconRows
+            this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
+            this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
           }
-          this.tableLineStringStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'LineString')
-          this.tablePolygonStyleRow = GeoPackageUtilities._getTableStyle(gp, featureTableName, 'Polygon')
-          this.features = GeoPackageUtilities._getFeatureIds(gp, this.layer.sourceLayerName)
-          this.featureItems = [{text: 'Select Feature', value: -1}]
-          for (let featureIdx in this.features) {
-            let featureId = this.features[featureIdx]
-            this.featureItems.push({text: featureId, value: Number(featureId)})
-          }
-          let featureStyleRows = GeoPackageUtilities._getFeatureStyleRows(gp, featureTableName)
-          this.styleItems = [{text: 'Use Defaults', value: -1}]
-          for (let styleId in featureStyleRows) {
-            let style = featureStyleRows[styleId]
-            this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
-          }
-          this.featureStyleRows = featureStyleRows
-          let featureIconRows = GeoPackageUtilities._getFeatureIconRows(gp, featureTableName)
-          this.iconItems = [{text: 'Use Defaults', value: -1}]
-          for (let iconId in featureIconRows) {
-            let icon = featureIconRows[iconId]
-            this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
-          }
-          this.featureIconRows = featureIconRows
-          this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
-          this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
         } catch (error) {
           console.error(error)
         }
@@ -365,9 +360,9 @@
       }
     },
     watch: {
-      layerKey: {
-        async handler (layerKey, oldValue) {
-          if (layerKey !== oldValue) {
+      styleKey: {
+        async handler (styleKey, oldValue) {
+          if (styleKey !== oldValue) {
             let _this = this
             this.updatingStyle = true
             this.getStyle().then(function () {
@@ -383,7 +378,8 @@
           if (newValue !== oldValue && !this.updatingStyle) {
             this.updateFeatureStyleSelection({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               featureId: this.styleAssignmentFeature,
               styleId: newValue
             })
@@ -393,25 +389,26 @@
       featureIconSelection: {
         async handler (newValue, oldValue) {
           // the user edited the value
-          if (Number(newValue) !== oldValue && !this.updatingStyle) {
+          if (newValue !== oldValue && !this.updatingStyle) {
             this.updateFeatureIconSelection({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               featureId: this.iconAssignmentFeature,
-              iconId: Number(newValue)
+              iconId: newValue
             })
           }
         }
       },
       styleAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
+          let gp = await GeoPackageAPI.open(this.filePath)
           this.determineStyleForStyleAssignment(gp, newValue)
         }
       },
       iconAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.layer.geopackageFilePath)
+          let gp = await GeoPackageAPI.open(this.filePath)
           this.determineIconForIconAssignment(gp, newValue)
         }
       },
@@ -420,7 +417,8 @@
           if (!this.updatingStyle) {
             this.updateProjectLayerUsePointIconDefault({
               projectId: this.projectId,
-              layerId: this.layer.id,
+              geopackageId: this.geopackage.id,
+              tableName: this.tableName,
               usePointIconDefault: newValue
             })
           }
@@ -431,16 +429,14 @@
 </script>
 
 <style scoped>
-  .title-card {
-    color: #000;
-    font-size: 20px
+  .title {
+    font-size: 16px !important;;
+    color: black;
+    font-weight: 500;
   }
-  .subtitle-card {
-    display: inline-block;
-    vertical-align: middle;
-    line-height: normal;
-    color: #000;
-    font-size: 16px;
+  .subtitle {
+    color: dimgray;
+    font-size: 14px !important;;
     font-weight: normal;
   }
   .flex-row {
@@ -455,6 +451,7 @@
     position: relative;
     display: inline-block;
     min-width: 112px;
+    color: dimgray;
     cursor: pointer;
     font-weight: 500;
     text-align: left;
@@ -529,10 +526,9 @@
     text-overflow: ellipsis;
     margin-bottom: 0 !important;
   }
-  .fs-16 {
-    font-size: 16px;
-  }
-  .fw-500 {
-    font-weight: 500;
+  .assignment-title {
+    color: black;
+    font-size: 14px;
+    font-weight: normal;
   }
 </style>

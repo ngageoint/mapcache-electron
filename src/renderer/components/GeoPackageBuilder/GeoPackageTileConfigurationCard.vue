@@ -137,7 +137,7 @@
   import ExpandableCard from '../Card/ExpandableCard'
   import Modal from '../Modal'
   import _ from 'lodash'
-  import NumberPicker from '../Project/NumberPicker'
+  import NumberPicker from '../Common/NumberPicker'
   import draggable from 'vuedraggable'
   import TileBoundingBoxUtils from '../../../lib/tile/tileBoundingBoxUtils'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'

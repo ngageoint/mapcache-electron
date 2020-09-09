@@ -19,6 +19,9 @@
 .accent {
 	color: #3b779a;
 }
+.secondary {
+	color: #73c1c5;
+}
 .v-input--selection-controls {
 	margin-top: 0;
 }

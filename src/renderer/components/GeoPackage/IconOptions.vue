@@ -3,7 +3,7 @@
     <div slot="card-header">
       <v-row no-gutters class="justify-space-between" align="center">
         <v-col cols="10" class="align-center">
-          <view-edit-text :editing-disabled="!allowIconNameEditing" :value="iconRow.name" :appendedText="showId ? ' (' + iconRow.id + ')' : ''" font-size="16px" font-weight="500" label="Icon Name" :on-save="saveName"/>
+          <view-edit-text :editing-disabled="!allowIconNameEditing" :value="iconRow.name" :appendedText="showId ? ' (' + iconRow.id + ')' : ''" font-size="14px" font-weight="400" label="Icon Name" :on-save="saveName"/>
         </v-col>
         <v-col cols="2">
           <v-row no-gutters class="justify-end" align="center">
@@ -22,12 +22,14 @@
             </v-col>
           </v-row>
           <v-row no-gutters class="justify-space-between">
-            <v-col cols="10">
+            <v-col cols="6">
               <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
             </v-col>
-            <v-col cols="2">
+            <v-col cols="6">
               <v-row no-gutters class="justify-end" align="center">
-                <font-awesome-icon class="delete-button danger" @click.stop="deleteIcon()" icon="trash" size="2x"/>
+                <v-btn text dark color="#ff4444" @click.stop="deleteIcon()">
+                  <v-icon>mdi-trash-can</v-icon> Delete Icon
+                </v-btn>
               </v-row>
             </v-col>
           </v-row>
@@ -48,12 +50,13 @@
 
   export default {
     props: {
+      geopackage: Object,
+      tableName: String,
       defaultName: String,
       allowIconNameEditing: Boolean,
       deletable: Boolean,
       geometryType: String,
       iconRow: Object,
-      layer: Object,
       projectId: String,
       showId: Boolean,
       isTableIcon: Boolean
@@ -81,7 +84,8 @@
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
-            layerId: this.layer.id,
+            geopackageId: this.geopackage.id,
+            tableName: this.tableName,
             iconRow: iconRow
           })
           this.updateIconAnchor(value)
@@ -112,7 +116,12 @@
         deleteProjectLayerIconRow: 'Projects/deleteProjectLayerIconRow'
       }),
       deleteIcon () {
-        this.deleteProjectLayerIconRow({projectId: this.projectId, layerId: this.layer.id, iconId: this.iconRow.id})
+        this.deleteProjectLayerIconRow({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName,
+          iconId: this.iconRow.id
+        })
       },
       saveName (val) {
         if (this.iconRow.name !== val) {
@@ -128,7 +137,8 @@
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
-            layerId: this.layer.id,
+            geopackageId: this.geopackage.id,
+            tableName: this.tableName,
             iconRow: iconRow
           })
         }
@@ -208,7 +218,8 @@
         }
         this.updateProjectLayerIconRow({
           projectId: this.projectId,
-          layerId: this.layer.id,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName,
           iconRow: iconRow
         })
       },
@@ -254,7 +265,8 @@
               }
               this.updateProjectLayerIconRow({
                 projectId: this.projectId,
-                layerId: this.layer.id,
+                geopackageId: this.geopackage.id,
+                tableName: this.tableName,
                 iconRow: iconRow
               })
             }
@@ -266,10 +278,15 @@
 </script>
 
 <style>
-  .subtitle-card {
-    color: #000;
-    font-size: 16px;
+  .title-card {
+    color: dimgray;
+    font-size: 18px;
     font-weight: 500;
+  }
+  .subtitle-card {
+    color: dimgray;
+    font-size: 16px;
+    font-weight: normal;
   }
   .icon-options {
     margin: 0 8px 0;

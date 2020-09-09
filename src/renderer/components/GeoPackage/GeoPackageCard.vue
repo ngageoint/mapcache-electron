@@ -265,6 +265,7 @@
               :key="geopackage.id + '_' + featureTable"
               :table-name="featureTable"
               :geopackage="geopackage"
+              :style-key="geopackage.styleKey"
               :projectId="projectId"/>
           </v-col>
         </v-row>
@@ -277,6 +278,11 @@
               :geopackage="geopackage"
               :projectId="projectId"/>
           </v-col>
+        </v-row>
+        <v-row no-gutters justify="end">
+          <v-btn class="ma-2" dark color="#73c1c5">
+            <v-icon left>mdi-layers-plus</v-icon> Add Layer
+          </v-btn>
         </v-row>
       </v-container>
     </div>

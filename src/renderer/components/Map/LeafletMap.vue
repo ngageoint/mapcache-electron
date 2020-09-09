@@ -51,6 +51,7 @@
   import path from 'path'
   import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
+  import { GeometryType } from '@ngageoint/geopackage'
 
   let initializedLayers = {}
   let shownMapLayers = {}
@@ -172,7 +173,7 @@
             sourceFilePath: this.filePath,
             sourceLayerName: name,
             sourceType: 'Drawing',
-            tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, 'Point')
+            tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, GeometryType.POINT)
           })
           await layer.initialize()
           let config = layer.configuration
@@ -199,6 +200,16 @@
       closeSettingsModal () {
         this.showSettings({projectId: this.projectId})
       },
+      zoomToFeature (map, path, table, featureId) {
+        GeoPackageUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
+          if (extent) {
+            map.fitBounds([
+              [extent[1], extent[0]],
+              [extent[3], extent[2]]
+            ])
+          }
+        })
+      },
       addLayer (layerConfig, map, deleteEnabled) {
         layerConfigs[layerConfig.id] = _.cloneDeep(layerConfig)
         let layer = LayerFactory.constructLayer(layerConfig)
@@ -224,7 +235,7 @@
         delete shownMapLayers[layerId]
         delete mapLayers[layerId]
         const layer = initializedLayers[layerId]
-        if (layer.hasOwnProperty('close')) {
+        if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
           layer.close()
         }
         delete initializedLayers[layerId]
@@ -287,7 +298,7 @@
 
         if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
           const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
-          if (layer.hasOwnProperty('close')) {
+          if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
             layer.close()
           }
           delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
@@ -336,7 +347,7 @@
         delete mapLayers[layerId]
         if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
           const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
-          if (layer.hasOwnProperty('close')) {
+          if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
             layer.close()
           }
           delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
@@ -452,8 +463,8 @@
             // check if the tables have changed
             if (!_.isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
               // determine if a table's visibility was enabled
-              const featureTablesToZoomTo = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && oldGeoPackage.tables.features.hasOwnProperty(table) && !oldGeoPackage.tables.features[table].tableVisible)
-              const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)
+              const featureTablesToZoomTo = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && (_.isNil(oldGeoPackage.tables.features) || (oldGeoPackage.tables.features.hasOwnProperty(table) && !oldGeoPackage.tables.features[table].tableVisible)))
+              const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && (_.isNil(oldGeoPackage.tables.tiles) || (oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)))
               _this.removeGeoPackage(geoPackageId)
               _this.addGeoPackage(updatedGeoPackage, map)
               if (featureTablesToZoomTo.length > 0) {
@@ -481,6 +492,13 @@
                   }
                 })
               }
+            } else if (!_.isEqual(updatedGeoPackage.styleKey, oldGeoPackage.styleKey)) {
+              _this.removeGeoPackage(geoPackageId)
+              _this.addGeoPackage(updatedGeoPackage, map)
+            } else if (!_.isEqual(updatedGeoPackage.styleAssignment, oldGeoPackage.styleAssignment)) {
+              this.zoomToFeature(map, updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
+            } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
+              this.zoomToFeature(map, updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
             }
           })
           // -----------------------------------------------
@@ -637,13 +655,13 @@
       _.keys(initializedGeoPackageTables).forEach(geopackageId => {
         _.keys(initializedGeoPackageTables[geopackageId].featureTables).forEach(table => {
           let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
-          if (layer.hasOwnProperty('close')) {
+          if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
             layer.close()
           }
         })
         _.keys(initializedGeoPackageTables[geopackageId].tileTables).forEach(table => {
           let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
-          if (layer.hasOwnProperty('close')) {
+          if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
             layer.close()
           }
         })
@@ -651,7 +669,7 @@
       _.keys(initializedGeoPackageTables).forEach(geopackageId => {
         _.keys(initializedLayers[geopackageId]).forEach(id => {
           let layer = initializedLayers[geopackageId][id]
-          if (layer.hasOwnProperty('close')) {
+          if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
             layer.close()
           }
         })

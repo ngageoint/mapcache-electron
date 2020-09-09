@@ -12,6 +12,7 @@ import VectorLayer from './layer/vector/VectorLayer'
 import { userDataDir } from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
 import http from 'http'
+import { GeometryType } from '@ngageoint/geopackage'
 
 export default class KMLSource extends Source {
   async initialize () {
@@ -46,7 +47,7 @@ export default class KMLSource extends Source {
           sourceFilePath: this.filePath,
           sourceLayerName: name,
           sourceType: 'KML',
-          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, 'Point')
+          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, GeometryType.POINT)
         }))
       }
     }
@@ -61,17 +62,18 @@ export default class KMLSource extends Source {
       fillOpacity: 1.0,
       name: 'KML Style'
     }
-    if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
+    const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+    if (geometryType === GeometryType.LINESTRING || geometryType === GeometryType.MULTILINESTRING) {
       style.width = feature.properties['stroke-width']
       style.color = feature.properties['stroke']
       style.opacity = feature.properties['stroke-opacity']
-    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+    } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
       style.width = feature.properties['stroke-width']
       style.color = feature.properties['stroke']
       style.opacity = feature.properties['stroke-opacity']
       style.fillColor = feature.properties['fill']
       style.fillOpacity = feature.properties['fill-opacity']
-    } else if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') {
+    } else if (geometryType === GeometryType.POINT || geometryType === GeometryType.MULTIPOINT) {
       style.width = feature.properties['stroke-width']
       style.color = feature.properties['stroke']
       style.opacity = feature.properties['stroke-opacity']
@@ -84,10 +86,11 @@ export default class KMLSource extends Source {
     let fileIcons = {}
     let iconNumber = 1
     for (let feature of features) {
+      const featureGeometryTypeString = feature.geometry.type.toUpperCase()
       layerStyle.features[feature.id] = {
-        icon: layerStyle.default.icons[feature.geometry.type],
-        style: layerStyle.default.styles[feature.geometry.type],
-        iconOrStyle: layerStyle.default.iconOrStyle[feature.geometry.type]
+        icon: layerStyle.default.icons[featureGeometryTypeString],
+        style: layerStyle.default.styles[featureGeometryTypeString],
+        iconOrStyle: layerStyle.default.iconOrStyle[featureGeometryTypeString]
       }
       if (feature.properties.icon) {
         let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))

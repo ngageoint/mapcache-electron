@@ -1,5 +1,5 @@
 import Source from './Source'
-import { GeoPackageAPI } from '@ngageoint/geopackage'
+import { GeoPackageAPI, GeometryType } from '@ngageoint/geopackage'
 import GeoPackageLayer from './layer/tile/GeoPackageLayer'
 import VectorLayer from './layer/vector/VectorLayer'
 import GeoPackageUtilities from '../GeoPackageUtilities'
@@ -39,7 +39,7 @@ export default class GeoPackageSource extends Source {
           sourceFilePath: this.filePath,
           sourceLayerName: layer,
           sourceType: 'GeoPackage',
-          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer, 'Point')
+          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer, GeometryType.POINT)
         }))
       } catch (error) {
         console.error('Unable to import feature table: ' + layer)
