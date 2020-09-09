@@ -2,15 +2,20 @@
   <expandablecard class="mb-2">
     <div slot="card-header">
       <v-row no-gutters justify="space-between" align="center">
-        <v-col cols="10" class="align-center">
+        <v-col class="align-center">
           <view-edit-text :editing-disabled="!allowStyleNameEditing" :value="styleRow.getName()" :appendedText="showId ? ' (' + styleRow.id + ')' : ''" font-size="14px" font-weight="400" font-color="black" label="Style Name" :on-save="saveName"/>
         </v-col>
-        <v-col cols="2">
+        <v-col>
           <v-row no-gutters class="justify-end" align="center">
-            <div class="color-box" :style="{
-            backgroundColor: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? fillColor : color),
-            borderColor: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? color : '#fff'),
-            borderWidth: ((geometryType === 'POLYGON' || geometryType === 'MULTIPOLYGON') ? (Math.min(10, width) + 'px') : '1px')}"></div>
+            <svg height="25" width="25">
+              <circle cx="12.5" cy="12.5" r="5" :stroke="color" :fill="color" :stroke-width="(Math.min(width, 5) + 'px')"></circle>
+            </svg>
+            <svg height="25" width="25">
+              <polyline points="5,20 20,15, 5,10, 20,5" :stroke="color" :stroke-width="(Math.min(width, 5) + 'px')" fill="none"></polyline>
+            </svg>
+            <svg height="25" width="25">
+              <polygon points="5,10 20,5 20,20 5,20" :stroke="color" :fill="fillColor" :stroke-width="(Math.min(width, 5) + 'px')"></polygon>
+            </svg>
           </v-row>
         </v-col>
       </v-row>
@@ -224,14 +229,6 @@
 </script>
 
 <style scoped>
-  .color-box {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: white;
-    margin: 0.25rem;
-    width: 2rem;
-    height: 2rem;
-  }
   .subtitle-card {
     color: dimgray;
     font-size: 16px;

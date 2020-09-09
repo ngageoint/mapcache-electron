@@ -47,8 +47,8 @@ export default class GeoPackageUtilities {
     return result
   }
 
-  static _addStyleExtensionAndDefaultStylesForTable (gp, tableName) {
-    const style = VectorStyleUtilities.defaultRandomColorStyle()
+  static _addStyleExtensionForTable (gp, tableName) {
+    // const style = VectorStyleUtilities.defaultRandomColorStyle()
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
     featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
@@ -57,13 +57,13 @@ export default class GeoPackageUtilities {
     featureTableStyles.createTableIconRelationship()
     featureTableStyles.createStyleRelationship()
     featureTableStyles.createIconRelationship()
-    GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
-    GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
+    // GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
+    // GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
   }
 
-  static async addStyleExtensionAndDefaultStylesForTable (filePath, tableName) {
+  static async addStyleExtensionForTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._addStyleExtensionAndDefaultStylesForTable(gp, tableName)
+      return GeoPackageUtilities._addStyleExtensionForTable(gp, tableName)
     })
   }
 
@@ -817,43 +817,37 @@ export default class GeoPackageUtilities {
     })
   }
 
-  static _getFeatureStyleRows (gp, tableName) {
+  static _getStyleRows (gp, tableName) {
     let styleRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
-    let idsToIgnore = featureTableStyles.getAllTableStyleIds().map(n => Number(n))
     let styleDao = featureTableStyles.getStyleDao()
     styleDao.queryForAll().forEach((result) => {
       let styleRow = styleDao.createObject(result)
-      if (idsToIgnore.find(id => id === styleRow.id) === undefined) {
-        styleRows[styleRow.id] = styleRow
-      }
+      styleRows[styleRow.id] = styleRow
     })
     return styleRows
   }
 
-  static async getFeatureStyleRows (filePath, tableName) {
+  static async getStyleRows (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._getFeatureStyleRows(gp, tableName)
+      return GeoPackageUtilities._getStyleRows(gp, tableName)
     })
   }
 
-  static _getFeatureIconRows (gp, tableName) {
+  static _getIconRows (gp, tableName) {
     let iconRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
-    let idsToIgnore = featureTableStyles.getAllTableIconIds().map(n => Number(n))
     let iconDao = featureTableStyles.getIconDao()
     iconDao.queryForAll().forEach((result) => {
       let iconRow = iconDao.createObject(result)
-      if (idsToIgnore.find(id => id === iconRow.id) === undefined) {
-        iconRows[iconRow.id] = iconRow
-      }
+      iconRows[iconRow.id] = iconRow
     })
     return iconRows
   }
 
-  static async getFeatureIconRows (filePath, tableName) {
+  static async getIconRows (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._getFeatureIconRows(gp, tableName)
+      return GeoPackageUtilities._getIconRows(gp, tableName)
     })
   }
 
@@ -1040,6 +1034,42 @@ export default class GeoPackageUtilities {
   static async getFeatureIconRow (filePath, tableName, featureId, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureIconRow(gp, tableName, featureId, geometryType)
+    })
+  }
+
+  static _setTableStyle (gp, tableName, geometryType, styleId) {
+    const featureTableStyles = new FeatureTableStyles(gp, tableName)
+    if (styleId === -1) {
+      return featureTableStyles.getFeatureStyleExtension().setTableStyle(tableName, geometryType, null)
+    } else {
+      let style = featureTableStyles.getStyleDao().queryForId(styleId)
+      if (!_.isNil(style)) {
+        return featureTableStyles.getFeatureStyleExtension().setTableStyle(tableName, geometryType, style)
+      }
+    }
+  }
+
+  static async setTableStyle (filePath, tableName, geometryType, styleId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._setTableStyle(gp, tableName, geometryType, styleId)
+    })
+  }
+
+  static _setTableIcon (gp, tableName, geometryType, iconId) {
+    const featureTableStyles = new FeatureTableStyles(gp, tableName)
+    if (iconId === -1) {
+      return featureTableStyles.getFeatureStyleExtension().setTableIcon(tableName, geometryType, null)
+    } else {
+      let icon = featureTableStyles.getIconDao().queryForId(iconId)
+      if (!_.isNil(icon)) {
+        return featureTableStyles.getFeatureStyleExtension().setTableIcon(tableName, geometryType, icon)
+      }
+    }
+  }
+
+  static async setTableIcon (filePath, tableName, geometryType, iconId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._setTableIcon(gp, tableName, geometryType, iconId)
     })
   }
 

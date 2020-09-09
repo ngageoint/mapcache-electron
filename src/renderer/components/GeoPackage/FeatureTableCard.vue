@@ -24,16 +24,11 @@
       <v-container fluid class="pa-0 ma-0">
         <v-dialog
           v-model="renameDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-pencil-outline</v-icon>
-                </v-col>
-                <v-col>
-                  Rename {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-pencil-outline</v-icon>Rename {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-text>
@@ -72,16 +67,11 @@
         </v-dialog>
         <v-dialog
           v-model="copyDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-content-copy</v-icon>
-                </v-col>
-                <v-col>
-                  Copy {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-content-copy</v-icon>Copy {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-text>
@@ -120,7 +110,7 @@
         </v-dialog>
         <v-dialog
           v-model="styleDialog"
-          max-width="450">
+          max-width="500">
           <v-card>
             <v-card-title style="font-size: 18px !important; color: black; font-weight: 500;">
               <v-row no-gutters>
@@ -151,16 +141,11 @@
         </v-dialog>
         <v-dialog
           v-model="deleteDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-trash-can-outline</v-icon>
-                </v-col>
-                <v-col>
-                  Remove {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-trash-can-outline</v-icon>Remove {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-actions>
@@ -172,7 +157,7 @@
                 cancel
               </v-btn>
               <v-btn
-                color="#3b779a"
+                color="#ff4444"
                 text
                 @click="deleteTable">
                 remove
@@ -344,7 +329,7 @@
     },
     methods: {
       ...mapActions({
-        addStyleExtensionAndDefaultStylesForTable: 'Projects/addStyleExtensionAndDefaultStylesForTable',
+        addStyleExtensionForTable: 'Projects/addStyleExtensionForTable',
         removeStyleExtensionForTable: 'Projects/removeStyleExtensionForTable',
         deleteGeoPackage: 'Projects/deleteGeoPackage',
         expandCollapseFeatureTableCard: 'Projects/expandCollapseFeatureTableCard',
@@ -391,7 +376,7 @@
         this.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
       },
       addStyleExtensionAndDefaultStyles () {
-        this.addStyleExtensionAndDefaultStylesForTable({
+        this.addStyleExtensionForTable({
           projectId: this.projectId,
           geopackageId: this.geopackage.id,
           tableName: this.tableName

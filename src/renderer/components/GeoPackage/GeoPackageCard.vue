@@ -36,16 +36,11 @@
       </v-dialog>
       <v-dialog
         v-model="renameDialog"
-        max-width="300">
+        max-width="500">
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters>
-              <v-col cols="2">
-                <v-icon>mdi-pencil-outline</v-icon>
-              </v-col>
-              <v-col>
-                Rename {{geopackage.name}}
-              </v-col>
+            <v-row no-gutters justify="start" align="center">
+              <v-icon>mdi-pencil-outline</v-icon>Rename {{geopackage.name}}
             </v-row>
           </v-card-title>
           <v-card-text>
@@ -84,16 +79,11 @@
       </v-dialog>
       <v-dialog
         v-model="copyDialog"
-        max-width="300">
+        max-width="500">
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters>
-              <v-col cols="2">
-                <v-icon>mdi-content-copy</v-icon>
-              </v-col>
-              <v-col>
-                Copy {{geopackage.name}}
-              </v-col>
+            <v-row no-gutters justify="start" align="center">
+              <v-icon>mdi-content-copy</v-icon>Copy {{geopackage.name}}
             </v-row>
           </v-card-title>
           <v-card-text>
@@ -132,15 +122,12 @@
       </v-dialog>
       <v-dialog
         v-model="removeDialog"
-        max-width="300">
+        max-width="500">
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters>
-              <v-col cols="2">
-                <v-icon>mdi-trash-can-outline</v-icon>
-              </v-col>
+            <v-row no-gutters justify="start" align="center">
               <v-col>
-                Remove {{geopackage.name}}
+                <v-icon>mdi-trash-can-outline</v-icon>Remove {{geopackage.name}}
               </v-col>
             </v-row>
           </v-card-title>
@@ -153,7 +140,7 @@
               cancel
             </v-btn>
             <v-btn
-              color="#3b779a"
+              color="#ff4444"
               text
               @click="remove">
               remove

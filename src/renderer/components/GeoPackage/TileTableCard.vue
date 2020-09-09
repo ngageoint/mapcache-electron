@@ -24,16 +24,11 @@
       <v-container fluid class="pa-0 ma-0">
         <v-dialog
           v-model="renameDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-pencil-outline</v-icon>
-                </v-col>
-                <v-col>
-                  Rename {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-pencil-outline</v-icon>Rename {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-text>
@@ -72,16 +67,11 @@
         </v-dialog>
         <v-dialog
           v-model="copyDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-content-copy</v-icon>
-                </v-col>
-                <v-col>
-                  Copy {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-content-copy</v-icon>Copy {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-text>
@@ -120,16 +110,11 @@
         </v-dialog>
         <v-dialog
           v-model="deleteDialog"
-          max-width="300">
+          max-width="500">
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters>
-                <v-col cols="2">
-                  <v-icon>mdi-trash-can-outline</v-icon>
-                </v-col>
-                <v-col>
-                  Remove {{tableName}}
-                </v-col>
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-trash-can-outline</v-icon>Delete {{tableName}}
               </v-row>
             </v-card-title>
             <v-card-actions>
@@ -141,7 +126,7 @@
                 cancel
               </v-btn>
               <v-btn
-                color="#3b779a"
+                color="#ff4444"
                 text
                 @click="deleteTable">
                 remove

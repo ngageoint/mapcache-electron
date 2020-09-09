@@ -220,6 +220,18 @@ const mutations = {
   updateLayerExtent (state, {projectId, layerId, extent}) {
     Vue.set(state[projectId].layers[layerId], 'extent', extent)
   },
+  updateTableStyleAssignmentGeometryType (state, {projectId, geopackageId, tableName, geometryType}) {
+    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].tableStyleAssignment)
+    copy.table = tableName
+    copy.geometryType = geometryType
+    Vue.set(state[projectId].geopackages[geopackageId], 'tableStyleAssignment', copy)
+  },
+  updateTableIconAssignmentGeometryType (state, {projectId, geopackageId, tableName, geometryType}) {
+    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].tableIconAssignment)
+    copy.table = tableName
+    copy.geometryType = geometryType
+    Vue.set(state[projectId].geopackages[geopackageId], 'tableIconAssignment', copy)
+  },
   updateStyleAssignmentFeature (state, {projectId, geopackageId, tableName, featureId}) {
     const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].styleAssignment)
     copy.table = tableName
@@ -312,6 +324,8 @@ const actions = {
       geopackage.styleKey = 0
       geopackage.styleAssignment = {table: null, featureId: -1}
       geopackage.iconAssignment = {table: null, featureId: -1}
+      geopackage.tableStyleAssignment = {table: null, geometryType: -1}
+      geopackage.tableIconAssignment = {table: null, geometryType: -1}
       commit('addGeoPackage', {projectId, geopackage})
     })
   },
@@ -536,6 +550,12 @@ const actions = {
   updateIconAssignmentFeature ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {
     commit('updateIconAssignmentFeature', {projectId, geopackageId, tableName, featureId})
   },
+  updateTableStyleAssignmentGeometryType ({ commit, state }, {projectId, geopackageId, tableName, geometryType}) {
+    commit('updateTableStyleAssignmentGeometryType', {projectId, geopackageId, tableName, geometryType})
+  },
+  updateTableIconAssignmentGeometryType ({ commit, state }, {projectId, geopackageId, tableName, geometryType}) {
+    commit('updateTableIconAssignmentGeometryType', {projectId, geopackageId, tableName, geometryType})
+  },
   updateFeatureStyleSelection ({ commit, state }, {projectId, geopackageId, tableName, featureId, styleId}) {
     const filePath = state[projectId].geopackages[geopackageId].path
     GeoPackageUtilities.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
@@ -545,6 +565,18 @@ const actions = {
   updateFeatureIconSelection ({ commit, state }, {projectId, geopackageId, tableName, featureId, iconId}) {
     const filePath = state[projectId].geopackages[geopackageId].path
     GeoPackageUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
+      commit('updateGeoPackageStyleKey', {projectId, geopackageId})
+    })
+  },
+  updateTableStyleSelection ({ commit, state }, {projectId, geopackageId, tableName, geometryType, styleId}) {
+    const filePath = state[projectId].geopackages[geopackageId].path
+    GeoPackageUtilities.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
+      commit('updateGeoPackageStyleKey', {projectId, geopackageId})
+    })
+  },
+  updateTableIconSelection ({ commit, state }, {projectId, geopackageId, tableName, geometryType, iconId}) {
+    const filePath = state[projectId].geopackages[geopackageId].path
+    GeoPackageUtilities.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
       commit('updateGeoPackageStyleKey', {projectId, geopackageId})
     })
   },
@@ -602,15 +634,9 @@ const actions = {
       commit('updateGeoPackageStyleKey', {projectId, geopackageId})
     })
   },
-  updateProjectLayerUsePointIconDefault ({ commit, state }, {projectId, geopackageId, tableName, usePointIconDefault}) {
+  addStyleExtensionForTable ({ commit, state }, {projectId, geopackageId, tableName}) {
     const filePath = state[projectId].geopackages[geopackageId].path
-    GeoPackageUtilities.usePointIconDefault(filePath, tableName, usePointIconDefault).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId})
-    })
-  },
-  addStyleExtensionAndDefaultStylesForTable ({ commit, state }, {projectId, geopackageId, tableName}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
-    GeoPackageUtilities.addStyleExtensionAndDefaultStylesForTable(filePath, tableName).then(function () {
+    GeoPackageUtilities.addStyleExtensionForTable(filePath, tableName).then(function () {
       commit('updateGeoPackageStyleKey', {projectId, geopackageId})
     })
   },
