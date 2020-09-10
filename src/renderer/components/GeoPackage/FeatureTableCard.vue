@@ -1,5 +1,5 @@
 <template>
-  <expandable-card class="mb-2" :initially-expanded="geopackage.tables.features[tableName].expanded" :on-expand-collapse="expandFeatureTableCard">
+  <expandable-card class="mb-2" :initially-expanded="expanded" :on-expand-collapse="expandFeatureTableCard">
     <div slot="card-header">
       <v-container fluid class="pa-0 ma-0">
         <v-row no-gutters align="center" justify="center">
@@ -314,17 +314,20 @@
     computed: {
       visible: {
         get () {
-          return this.geopackage.tables.features[this.tableName].tableVisible || false
+          return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].tableVisible : false
         },
         set (value) {
           this.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
       featureCount () {
-        return this.geopackage.tables.features[this.tableName].featureCount
+        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].featureCount : 0
       },
       description () {
-        return this.geopackage.tables.features[this.tableName].description
+        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].description : ''
+      },
+      expanded () {
+        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].expanded : false
       }
     },
     methods: {
