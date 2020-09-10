@@ -1,22 +1,61 @@
 <template>
   <div id="map" style="width: 100%; height: 100%; z-index: 0;">
-    <modal
-      v-if="layerSelectionVisible"
-      header="Drawing Layer Selection"
-      card-text="Select layer for the drawn feature."
-      ok-text="Ok"
-      cancel-text="Cancel"
-      :ok="confirmLayerSelection"
-      :cancel="cancelDrawing">
-      <div slot="body">
-        <v-row>
-          <v-col cols="12">
-            <v-select v-model="layerSelection" :items="layerChoices" label="Select Layer" dense>
-            </v-select>
-          </v-col>
-        </v-row>
-      </div>
-    </modal>
+    <v-dialog
+      v-model="layerSelectionVisible"
+      max-width="500">
+      <v-card>
+        <v-card-title style="color: grey; font-weight: 600;">
+          <v-row no-gutters justify="start" align="center">
+            Add Drawing
+          </v-row>
+        </v-card-title>
+        <v-card-text>
+          Add drawing to selected GeoPackage and feature layer.
+          <v-row no-gutters class="mt-4">
+            <v-col cols="12">
+              <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="Select GeoPackage" dense>
+              </v-select>
+            </v-col>
+          </v-row>
+          <v-row v-if="geoPackageSelection !== 0" no-gutters>
+            <v-col cols="12">
+              <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Select Feature Layer" dense>
+              </v-select>
+            </v-col>
+          </v-row>
+          <v-form v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
+            <v-container class="ma-0 pa-0">
+              <v-row no-gutters>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="featureTableName"
+                    :rules="featureTableNameRules"
+                    label="Feature Layer Name"
+                    required
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#3b779a"
+            text
+            @click="cancelDrawing">
+            cancel
+          </v-btn>
+          <v-btn
+            v-if="geoPackageFeatureLayerSelection !== NEW_FEATURE_LAYER_OPTION || featureTableNameValid"
+            color="#3b779a"
+            text
+            @click="confirmGeoPackageFeatureLayerSelection">
+            confirm
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <modal
       v-if="project.showSettings"
       header-class="settings-header"
@@ -35,6 +74,7 @@
 
 <script>
   import { mapActions } from 'vuex'
+  import { remote } from 'electron'
   import * as vendor from '../../../lib/vendor'
   import ZoomToExtent from './ZoomToExtent'
   import DrawBounds from './DrawBounds'
@@ -42,17 +82,14 @@
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LeafletDraw from './LeafletDraw'
   import LeafletSettings from './LeafletSettings'
-  import DrawingLayer from '../../../lib/source/layer/vector/DrawingLayer'
   import _ from 'lodash'
   import Modal from '../Modal'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-  import VectorStyleUtilities from '../../../lib/VectorStyleUtilities'
-  import { userDataDir } from '../../../lib/settings/Settings'
-  import path from 'path'
   import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
-  import { GeometryType } from '@ngageoint/geopackage'
 
+  const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
+  const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
   let initializedLayers = {}
   let shownMapLayers = {}
   let layerConfigs = {}
@@ -60,7 +97,8 @@
   let shownGeoPackageTables = {}
   let geopackages = {}
   let layerSelectionVisible = false
-  let layerChoices = []
+  let geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
+  let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let mapLayers = {}
 
   function normalize (longitude) {
@@ -95,18 +133,31 @@
     },
     data () {
       return {
+        NEW_GEOPACKAGE_OPTION,
+        NEW_FEATURE_LAYER_OPTION,
         layerSelectionVisible,
-        layerChoices,
-        layerSelection: 0,
+        geoPackageChoices,
+        geoPackageFeatureLayerChoices,
+        geoPackageSelection: 0,
+        geoPackageFeatureLayerSelection: 0,
         lastCreatedFeature: null,
-        deleteEnabled: false
+        deleteEnabled: false,
+        featureTableNameValid: false,
+        featureTableName: 'Feature Layer',
+        featureTableNameRules: [
+          v => !!v || 'Layer name is required',
+          v => /^[\w,\s-]+$/.test(v) || 'Layer name is not valid',
+          v => (this.geoPackageSelection === 0 || _.isNil(this.geopackages[this.geoPackageSelection].tables.features[v])) || 'Layer name already exists'
+        ]
       }
     },
     methods: {
       ...mapActions({
+        updateGeoPackage: 'Projects/updateGeoPackage',
+        addGeoPackage: 'Projects/addGeoPackage',
         addProjectLayer: 'Projects/addProjectLayer',
         removeProjectLayer: 'Projects/removeProjectLayer',
-        addProjectLayerFeatureRow: 'Projects/addProjectLayerFeatureRow',
+        addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
         deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
         updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow',
         showSettings: 'Projects/showSettings'
@@ -117,7 +168,8 @@
         }
         return mapLayers[layer.id]
       },
-      async confirmLayerSelection () {
+      async confirmGeoPackageFeatureLayerSelection () {
+        let _this = this
         let feature = this.createdLayer.toGeoJSON()
         feature.id = UniqueIDUtilities.createUniqueID()
         if (!_.isNil(this.createdLayer._mRadius)) {
@@ -154,48 +206,49 @@
             break
           }
         }
-        let drawingLayers = Object.values(this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing')
-        if (this.layerSelection === 0) {
-          let name = 'Drawing Layer ' + (drawingLayers.length + 1)
-          let id = UniqueIDUtilities.createUniqueID()
-          let fileName = name + '.gpkg'
-          let filePath = userDataDir().dir(id).file(fileName).path()
-          let fullFile = path.join(filePath, fileName)
-          let featureCollection = {
-            type: 'FeatureCollection',
-            features: [feature]
-          }
-          await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, VectorStyleUtilities.defaultLeafletStyle())
-          let layer = new DrawingLayer({
-            id: id,
-            name: name,
-            geopackageFilePath: fullFile,
-            sourceFilePath: this.filePath,
-            sourceLayerName: name,
-            sourceType: 'Drawing',
-            tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, GeometryType.POINT)
+        const featureTableName = this.featureTableName
+        let featureCollection = {
+          type: 'FeatureCollection',
+          features: [feature]
+        }
+        if (this.geoPackageSelection === 0) {
+          remote.dialog.showSaveDialog((filePath) => {
+            if (!filePath.endsWith('.gpkg')) {
+              filePath = filePath + '.gpkg'
+            }
+            GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
+              GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true)
+              _this.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+            })
           })
-          await layer.initialize()
-          let config = layer.configuration
-          this.addProjectLayer({project: this.project, layerId: layer.id, config: config})
         } else {
-          let drawingConfig = drawingLayers.find(drawingLayer => drawingLayer.id === this.layerSelection)
-          if (drawingConfig) {
-            this.addProjectLayerFeatureRow({projectId: this.projectId, layerId: drawingConfig.id, feature: feature})
+          const geopackage = this.geopackages[this.geoPackageSelection]
+          if (this.geoPackageFeatureLayerSelection === 0) {
+            await GeoPackageUtilities.createFeatureTable(geopackage.path, featureTableName, featureCollection, true)
+            this.updateGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, filePath: geopackage.path})
+          } else {
+            // add to existing table
+            this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text, feature: feature})
           }
         }
         this.layerSelectionVisible = false
-        this.layerChoices = []
-        this.layerSelection = 0
+        this.geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
+        this.geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
+        this.geoPackageSelection = 0
+        this.geoPackageFeatureLayerSelection = 0
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
+        this.featureTableName = 'Feature layer'
       },
       cancelDrawing () {
         this.layerSelectionVisible = false
-        this.layerChoices = []
-        this.layerSelection = 0
+        this.geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
+        this.geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
+        this.geoPackageSelection = 0
+        this.geoPackageFeatureLayerSelection = 0
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
+        this.featureTableName = 'Feature layer'
       },
       closeSettingsModal () {
         this.showSettings({projectId: this.projectId})
@@ -240,7 +293,8 @@
         }
         delete initializedLayers[layerId]
       },
-      addGeoPackage (geopackage, map) {
+      addGeoPackageToMap (geopackage, map) {
+        this.removeGeoPackage(geopackage.id)
         geopackages[geopackage.id] = _.cloneDeep(geopackage)
         _.keys(geopackage.tables.tiles).forEach(tableName => {
           this.addGeoPackageTileTable(geopackage, map, tableName)
@@ -318,6 +372,9 @@
           if (geopackage.tables.features[tableName].tableVisible) {
             let mapLayer = _this.getMapLayerForLayer(layer)
             mapLayer.addTo(map)
+            mapLayer.on('click', (e) => {
+              console.log(e)
+            })
             if (!shownGeoPackageTables[geopackage.id]) {
               shownGeoPackageTables[geopackage.id] = {
                 tileTables: {},
@@ -453,7 +510,7 @@
           // new layer configs
           updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
             _this.removeGeoPackage(geoPackageId)
-            _this.addGeoPackage(updatedGeoPackages[geoPackageId], map)
+            _this.addGeoPackageToMap(updatedGeoPackages[geoPackageId], map)
           })
 
           // TODO: check for updated layers...
@@ -466,7 +523,7 @@
               const featureTablesToZoomTo = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && (_.isNil(oldGeoPackage.tables.features) || (oldGeoPackage.tables.features.hasOwnProperty(table) && !oldGeoPackage.tables.features[table].tableVisible)))
               const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && (_.isNil(oldGeoPackage.tables.tiles) || (oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)))
               _this.removeGeoPackage(geoPackageId)
-              _this.addGeoPackage(updatedGeoPackage, map)
+              _this.addGeoPackageToMap(updatedGeoPackage, map)
               if (featureTablesToZoomTo.length > 0) {
                 GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, featureTablesToZoomTo[0]).then(function (extent) {
                   if (!_.isNil(extent)) {
@@ -494,7 +551,7 @@
               }
             } else if (!_.isEqual(updatedGeoPackage.styleKey, oldGeoPackage.styleKey)) {
               _this.removeGeoPackage(geoPackageId)
-              _this.addGeoPackage(updatedGeoPackage, map)
+              _this.addGeoPackageToMap(updatedGeoPackage, map)
             } else if (!_.isEqual(updatedGeoPackage.styleAssignment, oldGeoPackage.styleAssignment)) {
               this.zoomToFeature(map, updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
             } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
@@ -538,6 +595,18 @@
           // }
         },
         deep: true
+      },
+      geoPackageSelection: {
+        handler (updatedGeoPackageSelection, oldValue) {
+          this.geoPackageFeatureLayerSelection = 0
+          let layers = [NEW_FEATURE_LAYER_OPTION]
+          if (updatedGeoPackageSelection !== 0) {
+            Object.keys(this.geopackages[updatedGeoPackageSelection].tables.features).forEach((tableName, index) => {
+              layers.push({text: tableName, value: index + 1})
+            })
+          }
+          this.geoPackageFeatureLayerChoices = layers
+        }
       }
     },
     mounted: async function () {
@@ -620,12 +689,12 @@
       this.map.on('editable:drawing:end', function (e) {
         if (!_this.isDrawingBounds) {
           e.layer.toggleEdit()
-          let layers = [{text: 'New Layer', value: 0}]
-          Object.values(_this.layerConfigs).filter(layerConfig => layerConfig.layerType === 'Drawing').forEach((layerConfig) => {
-            layers.push({text: layerConfig.displayName ? layerConfig.displayName : layerConfig.name, value: layerConfig.id})
+          let layers = [NEW_GEOPACKAGE_OPTION]
+          Object.values(_this.geopackages).forEach((geopackage) => {
+            layers.push({text: geopackage.name, value: geopackage.id})
           })
           _this.createdLayer = e.layer
-          _this.layerChoices = layers
+          _this.geoPackageChoices = layers
           _this.layerSelectionVisible = true
         }
       })
@@ -649,6 +718,10 @@
       })
       for (const layerId in this.layerConfigs) {
         this.addLayer(this.layerConfigs[layerId], this.map, false)
+      }
+      // add geopackages to map on mount
+      for (const geopackageId in this.geopackages) {
+        this.addGeoPackageToMap(this.geopackages[geopackageId], this.map)
       }
     },
     beforeDestroy: function () {

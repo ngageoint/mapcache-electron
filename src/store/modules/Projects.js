@@ -33,7 +33,7 @@ const mutations = {
       Vue.set(state[layer.project.id].layers, layer.layerId, layer.config)
     })
   },
-  addGeoPackage (state, {projectId, geopackage}) {
+  setGeoPackage (state, {projectId, geopackage}) {
     if (!state[projectId].geopackages[geopackage.id]) {
       Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
     }
@@ -318,15 +318,26 @@ const actions = {
   addProjectLayers ({ commit, state }, {projectLayers}) {
     commit('addProjectLayers', {projectLayers})
   },
-  addGeoPackage ({ commit, state }, {projectId, filePath, fileSize}) {
+  addGeoPackage ({ commit, state }, {projectId, filePath}) {
     GeoPackageUtilities.getOrCreateGeoPackageForApp(filePath).then(geopackage => {
-      geopackage.size = fileSize
       geopackage.styleKey = 0
       geopackage.styleAssignment = {table: null, featureId: -1}
       geopackage.iconAssignment = {table: null, featureId: -1}
       geopackage.tableStyleAssignment = {table: null, geometryType: -1}
       geopackage.tableIconAssignment = {table: null, geometryType: -1}
-      commit('addGeoPackage', {projectId, geopackage})
+      commit('setGeoPackage', {projectId, geopackage})
+    })
+  },
+  updateGeoPackage ({ commit, state }, {projectId, geopackageId, filePath}) {
+    // this should be called whenever a geopackage's contents are modified
+    GeoPackageUtilities.getOrCreateGeoPackageForApp(filePath).then(geopackage => {
+      geopackage.id = geopackageId
+      geopackage.styleKey = 0
+      geopackage.styleAssignment = {table: null, featureId: -1}
+      geopackage.iconAssignment = {table: null, featureId: -1}
+      geopackage.tableStyleAssignment = {table: null, geometryType: -1}
+      geopackage.tableIconAssignment = {table: null, geometryType: -1}
+      commit('setGeoPackage', {projectId, geopackage})
     })
   },
   expandCollapseGeoPackage ({ commit, state }, {projectId, geopackageId}) {
@@ -622,12 +633,6 @@ const actions = {
       commit('updateGeoPackageStyleKey', {projectId, geopackageId})
     })
   },
-  addProjectLayerFeatureRow ({ commit, state }, {projectId, geopackageId, tableName, feature}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
-    GeoPackageUtilities.createFeatureRow(filePath, tableName, feature).then(function (result) {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId})
-    })
-  },
   updateProjectLayerFeatureRow ({ commit, state }, {projectId, geopackageId, tableName, featureRowId, feature}) {
     const filePath = state[projectId].geopackages[geopackageId].path
     GeoPackageUtilities.updateFeatureRow(filePath, tableName, featureRowId, feature).then(function (result) {
@@ -644,6 +649,13 @@ const actions = {
     const filePath = state[projectId].geopackages[geopackageId].path
     GeoPackageUtilities.removeStyleExtensionForTable(filePath, tableName).then(function () {
       commit('updateGeoPackageStyleKey', {projectId, geopackageId})
+    })
+  },
+  addFeatureToGeoPackage ({ commit, state }, {projectId, geopackageId, tableName, feature}) {
+    const filePath = state[projectId].geopackages[geopackageId].path
+    const _this = this
+    GeoPackageUtilities.createFeatureRow(filePath, tableName, feature).then(function (result) {
+      _this.updateGeoPackage({ commit, state }, { projectId, geopackageId, filePath })
     })
   },
   // setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {

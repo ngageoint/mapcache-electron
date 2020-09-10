@@ -184,7 +184,6 @@
   import GeoPackageCard from '../GeoPackage/GeoPackageCard'
   import Modal from '../Modal'
   import Card from '../Card/Card'
-  import FileUtilities from '../../../lib/FileUtilities'
 
   let options = {
     geopackagesShowing: true,
@@ -257,7 +256,7 @@
               times: true,
               absolutePath: true
             })
-            this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath, fileSize: FileUtilities.toHumanReadable(fileInfo.size)})
+            this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
           }
         })
         this.showDialog = false

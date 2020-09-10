@@ -130,6 +130,67 @@ export default class GeoPackageUtilities {
     }
   }
 
+  static async getOrCreateGeoPackage (filePath) {
+    let gp
+    if (!fs.existsSync(filePath)) {
+      gp = await GeoPackageAPI.create(filePath)
+    } else {
+      gp = await GeoPackageAPI.open(filePath)
+    }
+    return gp
+  }
+
+  static _addFeatureToFeatureTable (gp, tableName, feature) {
+    if (feature.properties) {
+      feature.properties.id = undefined
+      _.keys(feature.properties).forEach(key => {
+        if (_.isObject(feature.properties[key])) {
+          delete feature.properties[key]
+        }
+      })
+    }
+    gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
+  }
+
+  static addFeatureToFeatureTable (filePath, tableName, feature) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._addFeatureToFeatureTable(gp, tableName, feature)
+    })
+  }
+
+  static _createFeatureTable (gp, tableName, featureCollection, addFeatures = false) {
+    let layerColumns = GeoPackageUtilities.getLayerColumns(featureCollection)
+    let geometryColumns = new GeometryColumns()
+    geometryColumns.table_name = tableName
+    geometryColumns.column_name = layerColumns.geom.name
+    geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
+    geometryColumns.z = 0
+    geometryColumns.m = 0
+    let columns = []
+    columns.push(FeatureColumn.createPrimaryKeyColumn(0, layerColumns.id.name))
+    columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, GeometryType.GEOMETRY, false, null))
+    let columnCount = 2
+    for (const column of layerColumns.columns) {
+      if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
+        columns.push(FeatureColumn.createColumn(columnCount++, column.name, GeoPackageDataType.fromName(column.dataType), column.notNull, column.defaultValue))
+      }
+    }
+    let extent = geojsonExtent(featureCollection)
+    let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
+    gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
+    if (addFeatures) {
+      featureCollection.features.forEach(feature => {
+        this._addFeatureToFeatureTable(gp, tableName, feature)
+      })
+    }
+  }
+
+  static createFeatureTable (filePath, tableName, featureCollection) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._createFeatureTable(gp, tableName, featureCollection)
+    })
+  }
+
   static async getOrCreateGeoPackageForApp (filePath) {
     let gp
     if (!fs.existsSync(filePath)) {
@@ -140,6 +201,7 @@ export default class GeoPackageUtilities {
     const filename = path.basename(filePath)
     const geopackage = {
       id: UniqueIDUtilities.createUniqueID(),
+      size: FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size),
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
       expanded: true,
@@ -251,26 +313,8 @@ export default class GeoPackageUtilities {
     let gp = await GeoPackageAPI.create(fileName)
     try {
       // setup the columns for the feature table
-      let layerColumns = GeoPackageUtilities.getLayerColumns(featureCollection)
-      let geometryColumns = new GeometryColumns()
-      geometryColumns.table_name = tableName
-      geometryColumns.column_name = layerColumns.geom.name
-      geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
-      geometryColumns.z = 0
-      geometryColumns.m = 0
-      let columns = []
-      columns.push(FeatureColumn.createPrimaryKeyColumn(0, layerColumns.id.name))
-      columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, GeometryType.GEOMETRY, false, null))
-      let columnCount = 2
-      for (const column of layerColumns.columns) {
-        if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
-          columns.push(FeatureColumn.createColumn(columnCount++, column.name, GeoPackageDataType.fromName(column.dataType), column.notNull, column.defaultValue))
-        }
-      }
+      this.createFeatureTable(gp, tableName, featureCollection)
 
-      let extent = geojsonExtent(featureCollection)
-      let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
-      gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
       let featureTableStyles = new FeatureTableStyles(gp, tableName)
       featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
       featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
