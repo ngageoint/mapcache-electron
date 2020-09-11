@@ -95,12 +95,12 @@
             </v-list-item-content>
           </v-list-item>
           <v-divider></v-divider>
-          <v-list-item-group v-model="item">
+          <v-list-item-group v-model="item" activeClass="list-item-active">
             <v-list-item
+              class="list-item-hover"
               v-for="(item, i) in items"
               :key="i"
               :onclick="item.onclick"
-              link
             >
               <v-list-item-icon>
                 <v-icon v-text="item.icon"></v-icon>
@@ -363,5 +363,11 @@
     right: 15rem;
     text-align: center;
     top: 16px;
+  }
+  .list-item-hover:hover {
+    background-color: #4c99c7;
+  }
+  .list-item-active {
+    background-color: #5fc2fc;
   }
 </style>
