@@ -178,6 +178,9 @@
         </v-col>
       </v-row>
     </v-layout>
+    <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
+      GeoPackage already exists in project.
+    </v-alert>
   </v-layout>
 </template>
 
@@ -198,6 +201,7 @@
     contentShown: -1,
     titleColor: '#ffffff',
     addGeoPackageDialog: false,
+    addGeoPackageError: false,
     drawer: true,
     item: 0,
     items: [
@@ -254,14 +258,21 @@
       },
       createNewGeoPackage () {
         this.addGeoPackageDialog = false
+        const geopackages = this.project.geopackages
         remote.dialog.showSaveDialog((filePath) => {
           if (!filePath.endsWith('.gpkg')) {
             filePath = filePath + '.gpkg'
           }
-          this.addGeoPackage({projectId: this.project.id, filePath})
+          const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === filePath) !== -1
+          if (!exists) {
+            this.addGeoPackage({projectId: this.project.id, filePath: filePath})
+          } else {
+            this.addGeoPackageError = true
+          }
         })
       },
       importGeoPackage () {
+        const geopackages = this.project.geopackages
         remote.dialog.showOpenDialog({
           filters: [
             {
@@ -276,7 +287,12 @@
               times: true,
               absolutePath: true
             })
-            this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
+            const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
+            if (!exists) {
+              this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
+            } else {
+              this.addGeoPackageError = true
+            }
           }
         })
         this.addGeoPackageDialog = false
@@ -338,5 +354,14 @@
     position: absolute;
     left: 384px;
     bottom: 16px;
+  }
+  .alert-position {
+    position: absolute;
+    margin-left: auto;
+    margin-right: auto;
+    left: 15rem;
+    right: 15rem;
+    text-align: center;
+    top: 16px;
   }
 </style>
