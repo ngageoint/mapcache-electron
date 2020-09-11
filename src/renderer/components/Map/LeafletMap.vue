@@ -372,9 +372,6 @@
           if (geopackage.tables.features[tableName].tableVisible) {
             let mapLayer = _this.getMapLayerForLayer(layer)
             mapLayer.addTo(map)
-            mapLayer.on('click', (e) => {
-              console.log(e)
-            })
             if (!shownGeoPackageTables[geopackage.id]) {
               shownGeoPackageTables[geopackage.id] = {
                 tileTables: {},
@@ -611,14 +608,27 @@
     },
     mounted: async function () {
       let _this = this
-      this.map = vendor.L.map('map', {editable: true, attributionControl: false})
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 3
-      const osmbasemap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {
-        subdomains: ['1', '2', '3', '4']
+      const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
+      const streetsBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
+      const satelliteBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/humanitarian/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
+      const baseMaps = {
+        'Default': defaultBaseMap,
+        'Bright': streetsBaseMap,
+        'Humanitarian': satelliteBaseMap
+      }
+      this.map = vendor.L.map('map', {
+        editable: true,
+        attributionControl: false,
+        center: defaultCenter,
+        zoom: defaultZoom,
+        minZoom: 3,
+        layers: [defaultBaseMap]
       })
+      vendor.L.control.layers(baseMaps).addTo(this.map)
+
       this.map.setView(defaultCenter, defaultZoom)
-      osmbasemap.addTo(this.map)
       this.map.zoomControl.setPosition('topright')
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
@@ -746,6 +756,14 @@
             layer.close()
           }
         })
+      })
+    },
+    beforeUpdate: function () {
+      const _this = this
+      this.$nextTick(() => {
+        if (_this.map) {
+          _this.map.invalidateSize()
+        }
       })
     }
   }

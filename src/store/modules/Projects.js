@@ -34,9 +34,7 @@ const mutations = {
     })
   },
   setGeoPackage (state, {projectId, geopackage}) {
-    if (!state[projectId].geopackages[geopackage.id]) {
-      Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
-    }
+    Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
   },
   expandCollapseGeoPackage (state, {projectId, geopackageId}) {
     if (!state[projectId].geopackages[geopackageId]) {
@@ -652,10 +650,16 @@ const actions = {
     })
   },
   addFeatureToGeoPackage ({ commit, state }, {projectId, geopackageId, tableName, feature}) {
+    const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
+    const existingTable = geopackageCopy.tables.features[tableName]
     const filePath = state[projectId].geopackages[geopackageId].path
-    const _this = this
-    GeoPackageUtilities.createFeatureRow(filePath, tableName, feature).then(function (result) {
-      _this.updateGeoPackage({ commit, state }, { projectId, geopackageId, filePath })
+    GeoPackageUtilities.createFeatureRow(filePath, tableName, feature).then(function () {
+      GeoPackageUtilities.getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+        geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
+        existingTable.featureCount = tableInfo.featureCount
+        existingTable.description = tableInfo.description
+        commit('setGeoPackage', {projectId, geopackage: geopackageCopy})
+      })
     })
   },
   // setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {

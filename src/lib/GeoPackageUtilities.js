@@ -27,14 +27,19 @@ export default class GeoPackageUtilities {
    * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
    * @param filePath
    * @param func
+   * @param isFuncAsync
    * @returns {Promise<any>}
    */
-  static async performSafeGeoPackageOperation (filePath, func) {
+  static async performSafeGeoPackageOperation (filePath, func, isFuncAsync = false) {
     let result
     const gp = await GeoPackageAPI.open(filePath)
     if (!_.isNil(gp)) {
       try {
-        result = func(gp)
+        if (isFuncAsync) {
+          result = await func(gp)
+        } else {
+          result = func(gp)
+        }
       } catch (error) {
         console.log(error)
       }
@@ -188,6 +193,27 @@ export default class GeoPackageUtilities {
   static createFeatureTable (filePath, tableName, featureCollection) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._createFeatureTable(gp, tableName, featureCollection)
+    })
+  }
+
+  static getGeoPackageSize (filePath) {
+    return FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size)
+  }
+
+  static _getGeoPackageFeatureTableForApp (gp, table) {
+    const featureDao = gp.getFeatureDao(table)
+    const description = gp.getTableContents(table).description
+    return {
+      tableVisible: false,
+      expanded: false,
+      featureCount: featureDao.count(),
+      description: _.isNil(description) || description.length === 0 ? 'None' : description
+    }
+  }
+
+  static async getGeoPackageFeatureTableForApp (filePath, table) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getGeoPackageFeatureTableForApp(gp, table)
     })
   }
 
@@ -669,7 +695,7 @@ export default class GeoPackageUtilities {
   static async indexFeatureTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._indexFeatureTable(gp, tableName)
-    })
+    }, true)
   }
 
   static getLayerColumnsFromGeoPackage (featureDao) {
@@ -1172,19 +1198,11 @@ export default class GeoPackageUtilities {
   static async updateFeatureRow (filePath, tableName, featureRowId, feature) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._updateFeatureRow(gp, tableName, featureRowId, feature)
-    })
+    }, true)
   }
 
-  static async _createFeatureRow (gp, tableName, feature) {
+  static _createFeatureRow (gp, tableName, feature) {
     gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: (await gp.getGeoJSONFeaturesInTile(tableName, 0, 0, 0, true)).map(f => {
-        f.type = 'Feature'
-        return f
-      })
-    }
-    return {count: featureCollection.features.length, extent: geojsonExtent(featureCollection)}
   }
 
   static async createFeatureRow (filePath, tableName, feature) {
@@ -1208,7 +1226,7 @@ export default class GeoPackageUtilities {
   static async deleteFeatureRow (filePath, tableName, featureRowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteFeatureRow(gp, tableName, featureRowId)
-    })
+    }, true)
   }
 
   static _getBoundingBoxForFeature (gp, tableName, featureRowId) {
