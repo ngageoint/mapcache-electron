@@ -56,19 +56,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <modal
-      v-if="project.showSettings"
-      header-class="settings-header"
-      header="Settings"
-      :ok="closeSettingsModal"
-      ok-text="Close">
-      <div slot="body">
-        <v-row>
-          <v-col cols="12">
-          </v-col>
-        </v-row>
-      </div>
-    </modal>
   </div>
 </template>
 
@@ -81,7 +68,6 @@
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LeafletDraw from './LeafletDraw'
-  import LeafletSettings from './LeafletSettings'
   import _ from 'lodash'
   import Modal from '../Modal'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
@@ -159,8 +145,7 @@
         removeProjectLayer: 'Projects/removeProjectLayer',
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
         deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
-        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow',
-        showSettings: 'Projects/showSettings'
+        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow'
       }),
       getMapLayerForLayer (layer) {
         if (_.isNil(mapLayers[layer.id])) {
@@ -249,9 +234,6 @@
         this.map.removeLayer(this.createdLayer)
         this.createdLayer = null
         this.featureTableName = 'Feature layer'
-      },
-      closeSettingsModal () {
-        this.showSettings({projectId: this.projectId})
       },
       zoomToFeature (map, path, table, featureId) {
         GeoPackageUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
@@ -632,10 +614,6 @@
       this.map.zoomControl.setPosition('topright')
       this.map.addControl(new LeafletZoomIndicator())
       this.map.addControl(new LeafletDraw())
-      this.map.addControl(new LeafletSettings({}, () => {
-        console.log('showing settings for project: ' + _this.projectId)
-        _this.showSettings({projectId: _this.projectId})
-      }))
       this.map.on('layeradd', function (e) {
         if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
@@ -873,5 +851,8 @@
   .leaflet-control a {
     color: black !important;
   }
-
+  .leaflet-touch .leaflet-control-layers-toggle {
+    width: 30px;
+    height: 30px;
+  }
 </style>

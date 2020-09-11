@@ -139,7 +139,7 @@
             </div>
           </v-container>
           <v-container v-if="item === 2">
-            Settings TODO
+            <settings></settings>
           </v-container>
           <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
             <v-row no-gutters justify="space-between" align="end">
@@ -196,6 +196,7 @@
   import GeoPackageCard from '../GeoPackage/GeoPackageCard'
   import Modal from '../Modal'
   import Card from '../Card/Card'
+  import Settings from './Settings'
 
   let options = {
     contentShown: -1,
@@ -238,7 +239,8 @@
       ViewEditText,
       GeoPackageCard,
       Modal,
-      Card
+      Card,
+      Settings
     },
     methods: {
       ...mapActions({

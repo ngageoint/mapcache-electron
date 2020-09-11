@@ -283,9 +283,6 @@ const mutations = {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     delete geopackageCopy.tables.features[tableName]
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
-  },
-  showSettings (state, {projectId}) {
-    Vue.set(state[projectId], 'showSettings', !state[projectId].showSettings)
   }
 }
 
@@ -297,8 +294,7 @@ const actions = {
       layerCount: 0,
       layers: {},
       geopackages: {},
-      maxFeatures: 1000,
-      showSettings: false
+      maxFeatures: 1000
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
@@ -689,9 +685,6 @@ const actions = {
   },
   setProjectMaxFeatures  ({ commit, state }, {projectId, maxFeatures}) {
     commit('setProjectMaxFeatures', {projectId, maxFeatures})
-  },
-  showSettings  ({ commit, state }, {projectId}) {
-    commit('showSettings', {projectId})
   }
 }
 
