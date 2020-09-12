@@ -3,6 +3,9 @@
     <v-dialog v-model="editProjectNameDialog" max-width="400">
       <edit-text-modal :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
+    <v-dialog v-model="editMaxFeaturesDialog" max-width="400">
+      <edit-number-modal :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+    </v-dialog>
     <v-toolbar
       color="#3b779a"
       class="round-top-border"
@@ -27,6 +30,7 @@
       subheader
       two-line
       flat
+      style="padding-bottom: 0;"
     >
       <v-subheader>Map</v-subheader>
       <v-list-item-group
@@ -63,22 +67,36 @@
         </v-list-item>
       </v-list-item-group>
     </v-list>
+    <v-list
+      two-line
+      style="padding-top: 0;"
+    >
+      <v-list-item @click="toggleEditMaxFeaturesDialog">
+        <v-list-item-content style="padding-right: 12px;">
+          <v-list-item-title>Max features</v-list-item-title>
+          <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
   </v-card>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
   import EditTextModal from '../Common/EditTextModal'
+  import EditNumberModal from '../Common/EditNumberModal'
 
   let options = {
-    editProjectNameDialog: false
+    editProjectNameDialog: false,
+    editMaxFeaturesDialog: false
   }
   export default {
     props: {
       project: Object
     },
     components: {
-      EditTextModal
+      EditTextModal,
+      EditNumberModal
     },
     computed: {
       settings: {
@@ -113,6 +131,7 @@
     methods: {
       ...mapActions({
         setProjectName: 'Projects/setProjectName',
+        setProjectMaxFeatures: 'Projects/setProjectMaxFeatures',
         setZoomControlEnabled: 'Projects/setZoomControlEnabled',
         setDisplayZoomEnabled: 'Projects/setDisplayZoomEnabled'
       }),
@@ -120,8 +139,15 @@
         this.setProjectName({project: this.project, name: val})
         this.toggleEditProjectNameDialog()
       },
+      saveMaxFeatures (val) {
+        this.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
+        this.toggleEditMaxFeaturesDialog()
+      },
       toggleEditProjectNameDialog () {
         this.editProjectNameDialog = !this.editProjectNameDialog
+      },
+      toggleEditMaxFeaturesDialog () {
+        this.editMaxFeaturesDialog = !this.editMaxFeaturesDialog
       }
     }
   }

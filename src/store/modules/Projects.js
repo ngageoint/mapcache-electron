@@ -41,8 +41,8 @@ const mutations = {
       Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
     }
   },
-  setProjectMaxFeatures (state, {project, maxFeatures}) {
-    Vue.set(state[project.id], 'maxFeatures', maxFeatures)
+  setProjectMaxFeatures (state, {projectId, maxFeatures}) {
+    Vue.set(state[projectId], 'maxFeatures', maxFeatures)
   },
   setGeoPackageLayersVisible (state, {projectId, geopackageId, visible}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'layersVisible', visible)

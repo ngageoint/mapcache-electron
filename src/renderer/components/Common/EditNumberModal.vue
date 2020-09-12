@@ -2,7 +2,7 @@
   <v-card>
     <v-row no-gutters @click.stop="onClick">
       <v-card-text>
-        <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" />
+        <number-picker :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
       </v-card-text>
       <v-container class="pa-0">
        <v-card-actions>
@@ -28,11 +28,12 @@
 
 <script>
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
+  import NumberPicker from './NumberPicker'
 
   export default {
     props: {
       label: String,
-      value: String,
+      value: Number,
       onSave: Function,
       onCancel: Function,
       darkMode: {
@@ -58,7 +59,17 @@
       appendedText: {
         type: String,
         default: ''
+      },
+      step: Number,
+      min: Number,
+      max: Number,
+      arrowsOnly: {
+        type: Boolean,
+        default: false
       }
+    },
+    components: {
+      NumberPicker
     },
     data () {
       return {
@@ -83,6 +94,9 @@
       },
       onClick (e) {
         e.stopPropagation()
+      },
+      updateValue (val) {
+        this.editedValue = val
       }
     },
     watch: {

@@ -42,7 +42,7 @@ export default class VectorLayer extends Layer {
 
   async updateStyle (maxFeatures) {
     this._maxFeatures = maxFeatures
-    await this.vectorTileRenderer.styleChanged(maxFeatures)
+    return this.vectorTileRenderer.styleChanged(maxFeatures)
   }
 
   get configuration () {

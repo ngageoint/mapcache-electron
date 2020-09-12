@@ -36,7 +36,7 @@ export default class GeoPackageVectorTileRenderer {
     }
   }
 
-  async styleChanged (geopackage, maxFeatures) {
+  async styleChanged (maxFeatures) {
     this.maxFeatures = maxFeatures
     this.close()
     await this.init()

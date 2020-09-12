@@ -86,6 +86,7 @@
   let geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let mapLayers = {}
+  let maxFeatures
 
   function normalize (longitude) {
     let lon = longitude
@@ -119,6 +120,7 @@
     },
     data () {
       return {
+        maxFeatures,
         NEW_GEOPACKAGE_OPTION,
         NEW_FEATURE_LAYER_OPTION,
         layerSelectionVisible,
@@ -299,10 +301,9 @@
       },
       addGeoPackageTileTable (geopackage, map, tableName) {
         let layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
-        let _this = this
         layer.initialize().then(function () {
           if (geopackage.tables.tiles[tableName].tableVisible) {
-            let mapLayer = _this.getMapLayerForLayer(layer)
+            let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
             mapLayer.addTo(map)
             if (!shownGeoPackageTables[geopackage.id]) {
               shownGeoPackageTables[geopackage.id] = {
@@ -322,7 +323,6 @@
         })
       },
       removeGeoPackageTileTable (geopackage, tableName) {
-        const layerId = geopackage.id + '_tile_' + tableName
         if (!_.isNil(shownGeoPackageTables[geopackage.id])) {
           let mapLayer = shownGeoPackageTables[geopackage.id].tileTables[tableName]
           if (mapLayer) {
@@ -330,8 +330,6 @@
           }
           delete shownGeoPackageTables[geopackage.id].tileTables[tableName]
         }
-        delete mapLayers[layerId]
-
         if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
           const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
           if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
@@ -347,12 +345,12 @@
           sourceFilePath: geopackage.path,
           sourceLayerName: tableName,
           sourceType: 'GeoPackage',
-          layerType: 'Vector'
+          layerType: 'Vector',
+          maxFeatures: this.project.maxFeatures
         })
-        let _this = this
         layer.initialize().then(function () {
           if (geopackage.tables.features[tableName].tableVisible) {
-            let mapLayer = _this.getMapLayerForLayer(layer)
+            let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
             mapLayer.addTo(map)
             if (!shownGeoPackageTables[geopackage.id]) {
               shownGeoPackageTables[geopackage.id] = {
@@ -372,7 +370,6 @@
         })
       },
       removeGeoPackageFeatureTable (geopackage, tableName) {
-        const layerId = geopackage.id + '_feature_' + tableName
         if (!_.isNil(shownGeoPackageTables[geopackage.id])) {
           let mapLayer = shownGeoPackageTables[geopackage.id].featureTables[tableName]
           if (mapLayer) {
@@ -380,7 +377,6 @@
           }
           delete shownGeoPackageTables[geopackage.id].featureTables[tableName]
         }
-        delete mapLayers[layerId]
         if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
           const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
           if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
@@ -600,9 +596,32 @@
         }
       },
       project: {
-        handler (updatedProject, oldValue) {
+        async handler (updatedProject, oldValue) {
           updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
           updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+          if (updatedProject.maxFeatures !== this.maxFeatures) {
+            for (const gp of Object.values(updatedProject.geopackages)) {
+              for (const tableName of Object.keys(gp.tables.features)) {
+                if (initializedGeoPackageTables[gp.id] && initializedGeoPackageTables[gp.id].featureTables) {
+                  const layer = initializedGeoPackageTables[gp.id].featureTables[tableName]
+                  if (!_.isNil(layer)) {
+                    await layer.updateStyle(updatedProject.maxFeatures)
+                    if (shownGeoPackageTables[gp.id] && shownGeoPackageTables[gp.id].featureTables) {
+                      const mapLayer = shownGeoPackageTables[gp.id].featureTables[tableName]
+                      if (mapLayer) {
+                        mapLayer.remove()
+                        delete shownGeoPackageTables[gp.id].featureTables[tableName]
+                        let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+                        updateMapLayer.addTo(this.map)
+                        shownGeoPackageTables[gp.id].featureTables[tableName] = updateMapLayer
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          this.maxFeatures = updatedProject.maxFeatures
         },
         deep: true
       }
@@ -627,6 +646,7 @@
         minZoom: 3,
         layers: [defaultBaseMap]
       })
+      this.maxFeatures = this.project.maxFeatures
       this.map.setView(defaultCenter, defaultZoom)
       this.baseMapsControl = vendor.L.control.layers(baseMaps)
       this.baseMapsControl.addTo(this.map)
