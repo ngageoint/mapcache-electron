@@ -503,31 +503,43 @@
               const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && (_.isNil(oldGeoPackage.tables.tiles) || (oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)))
               _this.removeGeoPackage(geoPackageId)
               _this.addGeoPackageToMap(updatedGeoPackage, map)
-              if (featureTablesToZoomTo.length > 0) {
-                GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, featureTablesToZoomTo[0]).then(function (extent) {
-                  if (!_.isNil(extent)) {
-                    const bounds = map.getBounds()
-                    if (bounds.getWest() < extent[0] && bounds.getEast() > extent[2]) {
-                      map.fitBounds([
-                        [extent[1], extent[0]],
-                        [extent[3], extent[2]]
-                      ])
+
+              GeoPackageUtilities.performSafeGeoPackageOperation(updatedGeoPackage.path, function (gp) {
+                let extent = null
+                featureTablesToZoomTo.concat(tileTablesToZoomTo).forEach(table => {
+                  const ext = GeoPackageUtilities._getBoundingBoxForTable(gp, table)
+                  if (!_.isNil(ext)) {
+                    if (_.isNil(extent)) {
+                      extent = ext
+                    } else {
+                      if (ext[0] < extent[0]) {
+                        extent[0] = ext[0]
+                      }
+                      if (ext[1] < extent[1]) {
+                        extent[1] = ext[1]
+                      }
+                      if (ext[2] > extent[2]) {
+                        extent[2] = ext[2]
+                      }
+                      if (ext[3] > extent[3]) {
+                        extent[3] = ext[3]
+                      }
                     }
                   }
                 })
-              } else if (tileTablesToZoomTo.length > 0) {
-                GeoPackageUtilities.getBoundingBoxForTable(updatedGeoPackage.path, tileTablesToZoomTo[0]).then(function (extent) {
-                  if (!_.isNil(extent)) {
-                    const bounds = map.getBounds()
-                    if (bounds.getWest() < extent[0] && bounds.getEast() > extent[2]) {
-                      map.fitBounds([
-                        [extent[1], extent[0]],
-                        [extent[3], extent[2]]
-                      ])
-                    }
+                return extent
+              }).then(extent => {
+                if (!_.isNil(extent)) {
+                  const bounds = map.getBounds()
+                  // if map bounds are not within the extent, zoom to the extent
+                  if (!(bounds.getWest() > extent[0] && bounds.getEast() < extent[2] && bounds.getSouth() > extent[1] && bounds.getNorth() < extent[3])) {
+                    map.fitBounds([
+                      [extent[1], extent[0]],
+                      [extent[3], extent[2]]
+                    ])
                   }
-                })
-              }
+                }
+              })
             } else if (!_.isEqual(updatedGeoPackage.styleKey, oldGeoPackage.styleKey)) {
               _this.removeGeoPackage(geoPackageId)
               _this.addGeoPackageToMap(updatedGeoPackage, map)
@@ -586,6 +598,13 @@
           }
           this.geoPackageFeatureLayerChoices = layers
         }
+      },
+      project: {
+        handler (updatedProject, oldValue) {
+          updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
+          updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+        },
+        deep: true
       }
     },
     mounted: async function () {
@@ -608,12 +627,16 @@
         minZoom: 3,
         layers: [defaultBaseMap]
       })
-      vendor.L.control.layers(baseMaps).addTo(this.map)
-
       this.map.setView(defaultCenter, defaultZoom)
+      this.baseMapsControl = vendor.L.control.layers(baseMaps)
+      this.baseMapsControl.addTo(this.map)
       this.map.zoomControl.setPosition('topright')
-      this.map.addControl(new LeafletZoomIndicator())
-      this.map.addControl(new LeafletDraw())
+      this.displayZoomControl = new LeafletZoomIndicator()
+      this.map.addControl(this.displayZoomControl)
+      this.drawingControl = new LeafletDraw()
+      this.map.addControl(this.drawingControl)
+      this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
+      this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
       this.map.on('layeradd', function (e) {
         if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {

@@ -139,7 +139,7 @@
             </div>
           </v-container>
           <v-container v-if="item === 2">
-            <settings></settings>
+            <settings :project="project"></settings>
           </v-container>
           <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
             <v-row no-gutters justify="space-between" align="end">

@@ -283,6 +283,12 @@ const mutations = {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     delete geopackageCopy.tables.features[tableName]
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
+  },
+  setZoomControlEnabled (state, {projectId, enabled}) {
+    Vue.set(state[projectId], 'zoomControlEnabled', enabled)
+  },
+  setDisplayZoomEnabled (state, {projectId, enabled}) {
+    Vue.set(state[projectId], 'displayZoomEnabled', enabled)
   }
 }
 
@@ -294,6 +300,8 @@ const actions = {
       layerCount: 0,
       layers: {},
       geopackages: {},
+      zoomControlEnabled: true,
+      displayZoomEnabled: true,
       maxFeatures: 1000
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
@@ -685,6 +693,12 @@ const actions = {
   },
   setProjectMaxFeatures  ({ commit, state }, {projectId, maxFeatures}) {
     commit('setProjectMaxFeatures', {projectId, maxFeatures})
+  },
+  setZoomControlEnabled  ({ commit, state }, {projectId, enabled}) {
+    commit('setZoomControlEnabled', {projectId, enabled})
+  },
+  setDisplayZoomEnabled  ({ commit, state }, {projectId, enabled}) {
+    commit('setDisplayZoomEnabled', {projectId, enabled})
   }
 }
 
