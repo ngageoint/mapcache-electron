@@ -64,6 +64,7 @@
   import { remote } from 'electron'
   import * as vendor from '../../../lib/vendor'
   import ZoomToExtent from './ZoomToExtent'
+  import LeafletZoomToActive from './LeafletZoomToActive'
   import DrawBounds from './DrawBounds'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
@@ -384,6 +385,59 @@
           }
           delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
         }
+      },
+      async getExtentForShownGeoPackages () {
+        let overallExtent = null
+        const keys = Object.keys(shownGeoPackageTables)
+        for (let i = 0; i < keys.length; i++) {
+          const geopackageId = keys[i]
+          const geopackage = geopackages[geopackageId]
+          const tablesToZoomTo = _.keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].tableVisible).concat(_.keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].tableVisible))
+          const extentForGeoPackage = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, function (gp) {
+            let extent = null
+            tablesToZoomTo.forEach(table => {
+              const ext = GeoPackageUtilities._getBoundingBoxForTable(gp, table)
+              if (!_.isNil(ext)) {
+                if (_.isNil(extent)) {
+                  extent = ext
+                } else {
+                  if (ext[0] < extent[0]) {
+                    extent[0] = ext[0]
+                  }
+                  if (ext[1] < extent[1]) {
+                    extent[1] = ext[1]
+                  }
+                  if (ext[2] > extent[2]) {
+                    extent[2] = ext[2]
+                  }
+                  if (ext[3] > extent[3]) {
+                    extent[3] = ext[3]
+                  }
+                }
+              }
+            })
+            return extent
+          })
+          if (!_.isNil(extentForGeoPackage)) {
+            if (_.isNil(overallExtent)) {
+              overallExtent = extentForGeoPackage
+            } else {
+              if (extentForGeoPackage[0] < overallExtent[0]) {
+                overallExtent[0] = extentForGeoPackage[0]
+              }
+              if (extentForGeoPackage[1] < overallExtent[1]) {
+                overallExtent[1] = extentForGeoPackage[1]
+              }
+              if (extentForGeoPackage[2] > overallExtent[2]) {
+                overallExtent[2] = extentForGeoPackage[2]
+              }
+              if (extentForGeoPackage[3] > overallExtent[3]) {
+                overallExtent[3] = extentForGeoPackage[3]
+              }
+            }
+          }
+        }
+        return overallExtent
       }
     },
     watch: {
@@ -653,6 +707,17 @@
       this.map.zoomControl.setPosition('topright')
       this.displayZoomControl = new LeafletZoomIndicator()
       this.map.addControl(this.displayZoomControl)
+      this.zoomToActiveControl = new LeafletZoomToActive({}, function () {
+        _this.getExtentForShownGeoPackages().then((extent) => {
+          if (!_.isNil(extent)) {
+            _this.map.fitBounds([
+              [extent[1], extent[0]],
+              [extent[3], extent[2]]
+            ])
+          }
+        })
+      })
+      this.map.addControl(this.zoomToActiveControl)
       this.drawingControl = new LeafletDraw()
       this.map.addControl(this.drawingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
@@ -793,6 +858,10 @@
 <style>
 
   @import '~leaflet/dist/leaflet.css';
+
+  .leaflet-control-zoom-to-active {
+    background: url('../../assets/zoom-to-active.svg') no-repeat;
+  }
 
   .leaflet-control-zoom-indicator {
     font-weight: bold;
