@@ -191,7 +191,7 @@
 </script>
 
 <style scoped>
-@import '~verte/dist/verte.css';
+@import '../../../../node_modules/verte/dist/verte.css';
 .layer-summary {
   position: relative;
   display: flex;

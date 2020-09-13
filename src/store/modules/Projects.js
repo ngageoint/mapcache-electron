@@ -37,9 +37,7 @@ const mutations = {
     Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
   },
   expandCollapseGeoPackage (state, {projectId, geopackageId}) {
-    if (!state[projectId].geopackages[geopackageId]) {
-      Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
-    }
+    Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
   },
   setProjectMaxFeatures (state, {projectId, maxFeatures}) {
     Vue.set(state[projectId], 'maxFeatures', maxFeatures)
