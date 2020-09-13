@@ -326,7 +326,7 @@
       }),
       layersVisible: {
         get () {
-          return this.geopackage.layersVisible || false
+          return Object.values(this.geopackage.tables.features).concat(Object.values(this.geopackage.tables.tiles)).filter(table => !table.tableVisible).length === 0 || false
         },
         set (value) {
           this.setGeoPackageLayersVisible({projectId: this.projectId, geopackageId: this.geopackage.id, visible: value})

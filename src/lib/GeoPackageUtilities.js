@@ -231,7 +231,6 @@ export default class GeoPackageUtilities {
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
       expanded: true,
-      layersVisible: false,
       tables: {
         features: {},
         tiles: {},

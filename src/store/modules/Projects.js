@@ -45,7 +45,6 @@ const mutations = {
     Vue.set(state[projectId], 'maxFeatures', maxFeatures)
   },
   setGeoPackageLayersVisible (state, {projectId, geopackageId, visible}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'layersVisible', visible)
     const tables = _.cloneDeep(state[projectId].geopackages[geopackageId].tables)
     _.keys(tables.tiles).forEach(table => {
       tables.tiles[table].tableVisible = visible
