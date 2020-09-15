@@ -17,7 +17,6 @@ export default class VectorLayer extends Layer {
   _features
   _layerKey
   _maxFeatures
-  _tablePointIconRowId
 
   constructor (configuration = {}) {
     super(configuration)
@@ -25,7 +24,6 @@ export default class VectorLayer extends Layer {
     this._geopackageFilePath = configuration.geopackageFilePath
     this._layerKey = configuration.layerKey || 0
     this._maxFeatures = configuration.maxFeatures || 250
-    this._tablePointIconRowId = configuration.tablePointIconRowId || -1
   }
 
   async initialize () {
@@ -55,8 +53,7 @@ export default class VectorLayer extends Layer {
         count: this.count || 0,
         geopackageFilePath: this._geopackageFilePath,
         layerKey: this._layerKey,
-        maxFeatures: this._maxFeatures,
-        tablePointIconRowId: this._tablePointIconRowId
+        maxFeatures: this._maxFeatures
       }
     }
   }

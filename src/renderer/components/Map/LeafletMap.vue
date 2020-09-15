@@ -63,7 +63,7 @@
         v-show="showFeatureTable"
         ref="featuresPopup"
         class="mx-auto"
-        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 30303; left: 15%; width: 70%;"
+        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 30303; width: 100%;"
         tile>
         <v-card-title>
           Features
@@ -167,7 +167,7 @@
     },
     methods: {
       ...mapActions({
-        updateGeoPackage: 'Projects/updateGeoPackage',
+        addFeatureTableToGeoPackage: 'Projects/addFeatureTableToGeoPackage',
         addGeoPackage: 'Projects/addGeoPackage',
         addProjectLayer: 'Projects/addProjectLayer',
         removeProjectLayer: 'Projects/removeProjectLayer',
@@ -237,8 +237,7 @@
         } else {
           const geopackage = this.geopackages[this.geoPackageSelection]
           if (this.geoPackageFeatureLayerSelection === 0) {
-            await GeoPackageUtilities.createFeatureTable(geopackage.path, featureTableName, featureCollection, true)
-            this.updateGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, filePath: geopackage.path})
+            this.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection})
           } else {
             // add to existing table
             this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text, feature: feature})
@@ -307,10 +306,10 @@
       addGeoPackageToMap (geopackage, map) {
         this.removeGeoPackage(geopackage.id)
         geopackages[geopackage.id] = _.cloneDeep(geopackage)
-        _.keys(geopackage.tables.tiles).forEach(tableName => {
+        _.keys(geopackage.tables.tiles).filter(tableName => geopackage.tables.tiles[tableName].tableVisible).forEach(tableName => {
           this.addGeoPackageTileTable(geopackage, map, tableName)
         })
-        _.keys(geopackage.tables.features).forEach(tableName => {
+        _.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].tableVisible).forEach(tableName => {
           this.addGeoPackageFeatureTable(geopackage, map, tableName)
         })
       },
@@ -568,21 +567,55 @@
             _this.addGeoPackageToMap(updatedGeoPackages[geoPackageId], map)
           })
 
-          // TODO: check for updated layers...
           updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) >= 0).forEach(geoPackageId => {
             let updatedGeoPackage = updatedGeoPackages[geoPackageId]
             let oldGeoPackage = geopackages[geoPackageId]
             // check if the tables have changed
             if (!_.isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
-              // determine if a table's visibility was enabled
-              const featureTablesToZoomTo = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && (_.isNil(oldGeoPackage.tables.features) || (oldGeoPackage.tables.features.hasOwnProperty(table) && !oldGeoPackage.tables.features[table].tableVisible)))
-              const tileTablesToZoomTo = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible && (_.isNil(oldGeoPackage.tables.tiles) || (oldGeoPackage.tables.tiles.hasOwnProperty(table) && !oldGeoPackage.tables.tiles[table].tableVisible)))
-              _this.removeGeoPackage(geoPackageId)
-              _this.addGeoPackageToMap(updatedGeoPackage, map)
+              const oldVisibleFeatureTables = _.keys(oldGeoPackage.tables.features).filter(table => oldGeoPackage.tables.features[table].tableVisible)
+              const oldVisibleTileTables = _.keys(oldGeoPackage.tables.tiles).filter(table => oldGeoPackage.tables.tiles[table].tableVisible)
+              const newVisibleFeatureTables = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible)
+              const newVisibleTileTables = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].tableVisible)
+
+              // tables removed
+              const featureTablesRemoved = _.difference(_.keys(oldGeoPackage.tables.features), _.keys(updatedGeoPackage.tables.features))
+              const tileTablesRemoved = _.difference(_.keys(oldGeoPackage.tables.tiles), _.keys(updatedGeoPackage.tables.tiles))
+
+              // tables turned on
+              const featureTablesTurnedOn = _.difference(newVisibleFeatureTables, oldVisibleFeatureTables)
+              const tileTablesTurnedOn = _.difference(newVisibleTileTables, oldVisibleTileTables)
+
+              // tables turned off
+              const featureTablesTurnedOff = _.difference(oldVisibleFeatureTables, newVisibleFeatureTables)
+              const tileTablesTurnedOff = _.difference(oldVisibleTileTables, newVisibleTileTables)
+
+              // remove feature and tile tables that were turned off or deleted
+              tileTablesRemoved.concat(tileTablesTurnedOff).forEach(tableName => {
+                this.removeGeoPackageTileTable(updatedGeoPackage, tableName)
+              })
+              featureTablesRemoved.concat(featureTablesTurnedOff).forEach(tableName => {
+                this.removeGeoPackageFeatureTable(updatedGeoPackage, tableName)
+              })
+
+              geopackages[updatedGeoPackage.id] = _.cloneDeep(updatedGeoPackage)
+              // add feature and tile tables that were turned on
+              tileTablesTurnedOn.forEach(tableName => {
+                this.addGeoPackageTileTable(updatedGeoPackage, map, tableName)
+              })
+              featureTablesTurnedOn.forEach(tableName => {
+                this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
+              })
+
+              // tables with updated style key
+              const featureTablesStyleUpdated = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].tableVisible && oldGeoPackage.tables.features[table] && featureTablesTurnedOn.indexOf(table) === -1 && updatedGeoPackage.tables.features[table].styleKey !== oldGeoPackage.tables.features[table].styleKey)
+              featureTablesStyleUpdated.forEach(tableName => {
+                this.removeGeoPackageFeatureTable(updatedGeoPackage, tableName)
+                this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
+              })
 
               GeoPackageUtilities.performSafeGeoPackageOperation(updatedGeoPackage.path, function (gp) {
                 let extent = null
-                featureTablesToZoomTo.concat(tileTablesToZoomTo).forEach(table => {
+                featureTablesTurnedOn.concat(tileTablesTurnedOn).forEach(table => {
                   const ext = GeoPackageUtilities._getBoundingBoxForTable(gp, table)
                   if (!_.isNil(ext)) {
                     if (_.isNil(extent)) {
@@ -616,9 +649,6 @@
                   }
                 }
               })
-            } else if (!_.isEqual(updatedGeoPackage.styleKey, oldGeoPackage.styleKey)) {
-              _this.removeGeoPackage(geoPackageId)
-              _this.addGeoPackageToMap(updatedGeoPackage, map)
             } else if (!_.isEqual(updatedGeoPackage.styleAssignment, oldGeoPackage.styleAssignment)) {
               this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
             } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {

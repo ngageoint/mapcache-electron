@@ -248,7 +248,8 @@ export default class GeoPackageUtilities {
         tableVisible: false,
         expanded: false,
         featureCount: featureDao.count(),
-        description: _.isNil(description) || description.length === 0 ? 'None' : description
+        description: _.isNil(description) || description.length === 0 ? 'None' : description,
+        styleKey: 0
       }
     })
     tables.tiles.forEach(table => {
@@ -260,7 +261,8 @@ export default class GeoPackageUtilities {
         tileCount: count,
         minZoom: tileDao.minZoom,
         maxZoom: tileDao.maxZoom,
-        description: 'An image layer with ' + count + ' tiles'
+        description: 'An image layer with ' + count + ' tiles',
+        styleKey: 0
       }
     })
     tables.attributes.forEach(table => {
@@ -340,7 +342,7 @@ export default class GeoPackageUtilities {
     let gp = await GeoPackageAPI.create(fileName)
     try {
       // setup the columns for the feature table
-      this.createFeatureTable(gp, tableName, featureCollection)
+      this._createFeatureTable(gp, tableName, featureCollection)
 
       let featureTableStyles = new FeatureTableStyles(gp, tableName)
       featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
@@ -415,7 +417,6 @@ export default class GeoPackageUtilities {
         }
       }
       await GeoPackageUtilities._indexFeatureTable(gp, tableName)
-      console.log('indexed!')
     } catch (error) {
       console.error(error)
     }
@@ -1359,7 +1360,7 @@ export default class GeoPackageUtilities {
   static _getAllFeaturesAsGeoJSON (gp, tableName) {
     const featureDao = gp.getFeatureDao(tableName)
     const srs = featureDao.srs
-    this._features = featureDao.queryForAll().map(result => {
+    return featureDao.queryForAll().map(result => {
       let feature = GeoPackage.parseFeatureRowIntoGeoJSON(result, srs)
       feature.type = 'Feature'
     })
@@ -1367,7 +1368,7 @@ export default class GeoPackageUtilities {
 
   static async getAllFeaturesAsGeoJSON (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      GeoPackageUtilities._getAllFeaturesAsGeoJSON(gp, tableName)
+      return GeoPackageUtilities._getAllFeaturesAsGeoJSON(gp, tableName)
     })
   }
 

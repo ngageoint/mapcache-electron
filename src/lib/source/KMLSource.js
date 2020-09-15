@@ -46,8 +46,7 @@ export default class KMLSource extends Source {
           geopackageFilePath: fullFile,
           sourceFilePath: this.filePath,
           sourceLayerName: name,
-          sourceType: 'KML',
-          tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, name, GeometryType.POINT)
+          sourceType: 'KML'
         }))
       }
     }

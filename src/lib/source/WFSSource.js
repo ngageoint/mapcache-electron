@@ -8,7 +8,6 @@ import _ from 'lodash'
 import GeoServiceUtilities from '../GeoServiceUtilities'
 import {userDataDir} from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
-import { GeometryType } from '@ngageoint/geopackage'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {
@@ -25,8 +24,7 @@ export default class WFSSource extends Source {
         geopackageFilePath: fullFile,
         sourceFilePath: this.filePath,
         sourceLayerName: layer.name,
-        sourceType: 'WFS',
-        tablePointIconRowId: await GeoPackageUtilities.getTableIconId(fullFile, layer.name, GeometryType.POINT)
+        sourceType: 'WFS'
       }))
     }
     return this.geopackageLayers

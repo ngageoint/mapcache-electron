@@ -120,7 +120,7 @@
               </v-row>
             </v-card-title>
             <v-card-text>
-              <style-editor :tableName="tableName" :filePath="geopackage.path" :projectId="projectId" :geopackage="geopackage" :style-key="geopackage.styleKey"/>
+              <style-editor :tableName="tableName" :filePath="geopackage.path" :projectId="projectId" :geopackage="geopackage" :style-key="styleKey"/>
             </v-card-text>
             <v-card-actions>
               <v-spacer/>
@@ -273,8 +273,7 @@
     props: {
       projectId: String,
       geopackage: Object,
-      tableName: String,
-      styleKey: Number
+      tableName: String
     },
     components: {
       ViewEditText,
@@ -328,6 +327,9 @@
       },
       expanded () {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].expanded : false
+      },
+      styleKey () {
+        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].styleKey : 0
       }
     },
     methods: {
