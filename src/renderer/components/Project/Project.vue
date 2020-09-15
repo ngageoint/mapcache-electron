@@ -41,7 +41,7 @@
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-if="item >= 0">
           <v-container v-show="item === 0">
-            <geo-package-content :project-id="project.id" :geopackages="project.geopackages"></geo-package-content>
+            <geo-package-content :project-id="project.id" :geopackages="project.geopackages" :style-editor="project.styleEditor"></geo-package-content>
           </v-container>
           <v-container v-show="item === 1">
             <div

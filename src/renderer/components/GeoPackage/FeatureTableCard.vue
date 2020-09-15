@@ -109,37 +109,6 @@
           </v-card>
         </v-dialog>
         <v-dialog
-          v-model="styleDialog"
-          max-width="500">
-          <v-card>
-            <v-card-title style="font-size: 18px !important; color: black; font-weight: 500;">
-              <v-row no-gutters>
-                <v-col>
-                  "{{tableName}}" Style Editor
-                </v-col>
-              </v-row>
-            </v-card-title>
-            <v-card-text>
-              <style-editor :tableName="tableName" :filePath="geopackage.path" :projectId="projectId" :geopackage="geopackage" :style-key="styleKey"/>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer/>
-              <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5" @click.stop="addStyleExtensionAndDefaultStyles()">
-                <v-icon>mdi-palette</v-icon> Enable Styling
-              </v-btn>
-              <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeStyleExtensionAndTableStyles()">
-                <v-icon>mdi-trash-can</v-icon> Remove Styling
-              </v-btn>
-              <v-btn
-                color="#3b779a"
-                text
-                @click="closeStyleEditor">
-                close
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog
           v-model="deleteDialog"
           max-width="500">
           <v-card>
@@ -205,7 +174,7 @@
             </v-hover>
             <v-hover>
               <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleDialog = true">
+                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="enableStyleDialog">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>mdi-palette</v-icon>
@@ -293,7 +262,6 @@
         loading: true,
         hasStyleExtension: false,
         deleteDialog: false,
-        styleDialog: false,
         renameValid: false,
         renameDialog: false,
         renamedTable: this.tableName,
@@ -334,15 +302,17 @@
     },
     methods: {
       ...mapActions({
-        addStyleExtensionForTable: 'Projects/addStyleExtensionForTable',
-        removeStyleExtensionForTable: 'Projects/removeStyleExtensionForTable',
         deleteGeoPackage: 'Projects/deleteGeoPackage',
         expandCollapseFeatureTableCard: 'Projects/expandCollapseFeatureTableCard',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
         renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
-        deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable'
+        deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
+        displayStyleEditor: 'Projects/displayStyleEditor'
       }),
+      enableStyleDialog () {
+        this.displayStyleEditor({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+      },
       async styleExtensionEnabled () {
         let hasStyle = false
         let gp = await GeoPackageAPI.open(this.geopackage.path)
@@ -373,26 +343,9 @@
         this.copyDialog = false
         this.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
       },
-      closeStyleEditor () {
-        this.styleDialog = false
-      },
       deleteTable () {
         this.deleteDialog = false
         this.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
-      },
-      addStyleExtensionAndDefaultStyles () {
-        this.addStyleExtensionForTable({
-          projectId: this.projectId,
-          geopackageId: this.geopackage.id,
-          tableName: this.tableName
-        })
-      },
-      removeStyleExtensionAndTableStyles () {
-        this.removeStyleExtensionForTable({
-          projectId: this.projectId,
-          geopackageId: this.geopackage.id,
-          tableName: this.tableName
-        })
       }
     },
     watch: {

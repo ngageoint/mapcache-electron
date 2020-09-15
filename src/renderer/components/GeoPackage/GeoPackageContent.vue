@@ -74,38 +74,41 @@
         </v-card>
       </v-dialog>
     </v-layout>
-    <geo-package-card
-      v-for="geopackage in geopackages"
-      :key="geopackage.id"
-      :geopackage="geopackage"
-      :projectId="projectId"/>
-    <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
-      <v-row no-gutters justify="space-between" align="end">
-        <v-col>
-          <v-row class="pa-0" no-gutters>
-            <v-col class="pa-0 align-center">
-              <h5 class="align-self-center"style="color: #9A9E9E">No GeoPackage files found</h5>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0" no-gutters>
-            <v-col class="pa-0 align-center">
-              <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-    </v-card>
-    <v-btn
-      class="fab-position"
-      dark
-      fab
-      color="#3b779a"
-      @click.stop="addGeoPackageDialog = true">
-      <v-icon>mdi-plus</v-icon>
-    </v-btn>
-    <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
-      GeoPackage already exists in project.
-    </v-alert>
+    <div v-show="!styleEditorVisible">
+      <geo-package-card
+        v-for="geopackage in geopackages"
+        :key="geopackage.id"
+        :geopackage="geopackage"
+        :projectId="projectId"/>
+      <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
+        <v-row no-gutters justify="space-between" align="end">
+          <v-col>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center"style="color: #9A9E9E">No GeoPackage files found</h5>
+              </v-col>
+            </v-row>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-card>
+      <v-btn
+        class="fab-position"
+        dark
+        fab
+        color="#3b779a"
+        @click.stop="addGeoPackageDialog = true">
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+      <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
+        GeoPackage already exists in project.
+      </v-alert>
+    </div>
+    <style-editor v-if="styleEditorVisible" :tableName="styleEditor.tableName" :projectId="projectId" :geopackage="geopackages[styleEditor.geopackageId]" :style-key="styleKey"/>
   </div>
 </template>
 
@@ -113,8 +116,10 @@
   import { mapActions } from 'vuex'
   import jetpack from 'fs-jetpack'
   import { remote } from 'electron'
+  import _ from 'lodash'
 
   import GeoPackageCard from './GeoPackageCard'
+  import StyleEditor from './StyleEditor'
 
   let options = {
     addGeoPackageDialog: false,
@@ -124,13 +129,23 @@
   export default {
     props: {
       geopackages: Object,
+      styleEditor: Object,
       projectId: String
     },
     data () {
       return options
     },
+    computed: {
+      styleKey () {
+        return this.styleEditor && this.geopackages[this.styleEditor.geopackageId].tables.features[this.styleEditor.tableName] ? this.geopackages[this.styleEditor.geopackageId].tables.features[this.styleEditor.tableName].styleKey : 0
+      },
+      styleEditorVisible () {
+        return !_.isNil(this.styleEditor)
+      }
+    },
     components: {
-      GeoPackageCard
+      GeoPackageCard,
+      StyleEditor
     },
     methods: {
       ...mapActions({

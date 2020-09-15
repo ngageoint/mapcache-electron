@@ -1,176 +1,196 @@
 <template>
-  <div>
-    <div v-if="!loading">
-      <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(styleRows).length > 0" class="mb-2">
-        <div slot="card-header">
-          <v-row justify="space-between" align="center" no-gutters>
-            <v-col class="title" align-content="center">
-              {{'Styles (' + Object.keys(styleRows).length + ')'}}
-            </v-col>
-            <v-col>
-              <v-row no-gutters justify="end">
-                <v-btn class="button-width" dark color="#73c1c5" @click.stop="addStyle()">
-                  <v-icon left>mdi-plus</v-icon> add style
-                </v-btn>
-              </v-row>
-            </v-col>
-          </v-row>
-        </div>
-        <div slot="card-expanded-body" class="mt-2">
-          <styleoptions
-            v-for="styleRow in styleRows"
-            :key="'style_' + styleRow.id"
-            :deletable="true"
-            :defaultName="styleRow.id + ''"
-            :allowStyleNameEditing="true"
-            :style-row="styleRow"
-            :geopackage="geopackage"
-            :table-name="tableName"
-            :project-id="projectId"
-            :show-id="true"/>
-          <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0 && featureItems.length > 1">
+  <v-card>
+    <v-card-title style="font-size: 18px !important; color: black; font-weight: 500;">
+      <v-row no-gutters>
+        <v-col>
+          <v-btn icon @click="closeStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn><b class="ml-2">{{tableName}}</b> Style Editor
+        </v-col>
+      </v-row>
+    </v-card-title>
+    <v-card-text>
+      <div>
+        <div v-if="!loading">
+          <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(styleRows).length > 0" class="mb-2">
             <div slot="card-header">
-              <v-row no-gutters class="subtitle">
-                <v-card-title class="ma-0 pa-0 full-width">
-                  <v-row no-gutters class="full-width">
-                    <v-col class="title-edit align-center" cols="12">
-                      <p class="assignment-title">Feature Style Assignment</p>
-                    </v-col>
+              <v-row justify="space-between" align="center" no-gutters>
+                <v-col class="title" align-content="center">
+                  {{'Styles (' + Object.keys(styleRows).length + ')'}}
+                </v-col>
+                <v-col>
+                  <v-row no-gutters justify="end">
+                    <v-btn class="button-width" dark color="#73c1c5" @click.stop="addStyle()">
+                      <v-icon left>mdi-plus</v-icon> add style
+                    </v-btn>
                   </v-row>
-                </v-card-title>
+                </v-col>
               </v-row>
             </div>
-            <div slot="card-expanded-body">
-              <v-container fluid>
-                <v-row>
-                  <v-col cols="12">
-                    <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                </v-row>
-              </v-container>
+            <div slot="card-expanded-body" class="mt-2">
+              <styleoptions
+                v-for="styleRow in styleRows"
+                :key="'style_' + styleRow.id"
+                :deletable="true"
+                :defaultName="styleRow.id + ''"
+                :allowStyleNameEditing="true"
+                :style-row="styleRow"
+                :geopackage="geopackage"
+                :table-name="tableName"
+                :project-id="projectId"
+                :show-id="true"/>
+              <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0 && featureItems.length > 1">
+                <div slot="card-header">
+                  <v-row no-gutters class="subtitle">
+                    <v-card-title class="ma-0 pa-0 full-width">
+                      <v-row no-gutters class="full-width">
+                        <v-col class="title-edit align-center" cols="12">
+                          <p class="assignment-title">Feature Style Assignment</p>
+                        </v-col>
+                      </v-row>
+                    </v-card-title>
+                  </v-row>
+                </div>
+                <div slot="card-expanded-body">
+                  <v-container fluid>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </div>
+              </expandablecard>
+              <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0">
+                <div slot="card-header">
+                  <v-row no-gutters class="subtitle">
+                    <v-card-title class="ma-0 pa-0 full-width">
+                      <v-row no-gutters class="full-width">
+                        <v-col class="title-edit align-center" cols="12">
+                          <p class="assignment-title">Table Style Assignment</p>
+                        </v-col>
+                      </v-row>
+                    </v-card-title>
+                  </v-row>
+                </div>
+                <div slot="card-expanded-body">
+                  <v-container fluid>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-select v-model="tableStyleGeometry" :items="styleGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select v-model="tableStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </div>
+              </expandablecard>
             </div>
           </expandablecard>
-          <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0">
+          <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(iconRows).length > 0" class="mb-2">
             <div slot="card-header">
-              <v-row no-gutters class="subtitle">
-                <v-card-title class="ma-0 pa-0 full-width">
-                  <v-row no-gutters class="full-width">
-                    <v-col class="title-edit align-center" cols="12">
-                      <p class="assignment-title">Table Style Assignment</p>
-                    </v-col>
+              <v-row justify="space-between" align="center" no-gutters>
+                <v-col class="title" align-content="center">
+                  {{'Icons (' + Object.keys(iconRows).length + ')'}}
+                </v-col>
+                <v-col>
+                  <v-row no-gutters justify="end">
+                    <v-btn class="button-width" dark color="#73c1c5" @click.stop="addIcon()">
+                      <v-icon left>mdi-plus</v-icon> add icon
+                    </v-btn>
                   </v-row>
-                </v-card-title>
+                </v-col>
               </v-row>
             </div>
-            <div slot="card-expanded-body">
-              <v-container fluid>
-                <v-row>
-                  <v-col cols="12">
-                    <v-select v-model="tableStyleGeometry" :items="styleGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="tableStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                </v-row>
-              </v-container>
+            <div slot="card-expanded-body" class="mt-2">
+              <iconoptions
+                v-for="iconRow in iconRows"
+                :key="'icon' + iconRow.id"
+                :deletable="true"
+                :defaultName="iconRow.id + ''"
+                :allowIconNameEditing="true"
+                geometry-type="POINT"
+                :icon-row="iconRow"
+                :geopackage="geopackage"
+                :table-name="tableName"
+                :project-id="projectId"
+                :show-id="true"
+                :is-table-icon="false"/>
+              <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0 && iconFeatureItems.length > 1">
+                <div slot="card-header">
+                  <v-row no-gutters class="subtitle">
+                    <v-card-title class="ma-0 pa-0 full-width">
+                      <v-row no-gutters class="full-width">
+                        <v-col class="title-edit align-center" cols="12">
+                          <p class="assignment-title">Feature Icon Assignment</p>
+                        </v-col>
+                      </v-row>
+                    </v-card-title>
+                  </v-row>
+                </div>
+                <div slot="card-expanded-body">
+                  <v-container fluid>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-select v-model="iconAssignmentFeature" :items="iconFeatureItems" label="Feature" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </div>
+              </expandablecard>
+              <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0">
+                <div slot="card-header">
+                  <v-row no-gutters class="subtitle">
+                    <v-card-title class="ma-0 pa-0 full-width">
+                      <v-row no-gutters class="full-width">
+                        <v-col class="title-edit align-center" cols="12">
+                          <p class="assignment-title">Table Icon Assignment</p>
+                        </v-col>
+                      </v-row>
+                    </v-card-title>
+                  </v-row>
+                </div>
+                <div slot="card-expanded-body">
+                  <v-container fluid>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-select v-model="tableIconGeometry" :items="iconGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select v-model="tableIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </div>
+              </expandablecard>
             </div>
           </expandablecard>
         </div>
-      </expandablecard>
-      <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(iconRows).length > 0" class="mb-2">
-        <div slot="card-header">
-          <v-row justify="space-between" align="center" no-gutters>
-            <v-col class="title" align-content="center">
-              {{'Icons (' + Object.keys(iconRows).length + ')'}}
-            </v-col>
-            <v-col>
-              <v-row no-gutters justify="end">
-                <v-btn class="button-width" dark color="#73c1c5" @click.stop="addIcon()">
-                  <v-icon left>mdi-plus</v-icon> add icon
-                </v-btn>
-              </v-row>
-            </v-col>
-          </v-row>
-        </div>
-        <div slot="card-expanded-body" class="mt-2">
-          <iconoptions
-            v-for="iconRow in iconRows"
-            :key="'icon' + iconRow.id"
-            :deletable="true"
-            :defaultName="iconRow.id + ''"
-            :allowIconNameEditing="true"
-            geometry-type="POINT"
-            :icon-row="iconRow"
-            :geopackage="geopackage"
-            :table-name="tableName"
-            :project-id="projectId"
-            :show-id="true"
-            :is-table-icon="false"/>
-          <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0 && iconFeatureItems.length > 1">
-            <div slot="card-header">
-              <v-row no-gutters class="subtitle">
-                <v-card-title class="ma-0 pa-0 full-width">
-                  <v-row no-gutters class="full-width">
-                    <v-col class="title-edit align-center" cols="12">
-                      <p class="assignment-title">Feature Icon Assignment</p>
-                    </v-col>
-                  </v-row>
-                </v-card-title>
-              </v-row>
-            </div>
-            <div slot="card-expanded-body">
-              <v-container fluid>
-                <v-row>
-                  <v-col cols="12">
-                    <v-select v-model="iconAssignmentFeature" :items="iconFeatureItems" label="Feature" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </div>
-          </expandablecard>
-          <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0">
-            <div slot="card-header">
-              <v-row no-gutters class="subtitle">
-                <v-card-title class="ma-0 pa-0 full-width">
-                  <v-row no-gutters class="full-width">
-                    <v-col class="title-edit align-center" cols="12">
-                      <p class="assignment-title">Table Icon Assignment</p>
-                    </v-col>
-                  </v-row>
-                </v-card-title>
-              </v-row>
-            </div>
-            <div slot="card-expanded-body">
-              <v-container fluid>
-                <v-row>
-                  <v-col cols="12">
-                    <v-select v-model="tableIconGeometry" :items="iconGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="tableIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
-                    </v-select>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </div>
-          </expandablecard>
-        </div>
-      </expandablecard>
-    </div>
-  </div>
+      </div>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer/>
+      <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5" @click.stop="addStyleExtensionAndDefaultStyles()">
+        <v-icon>mdi-palette</v-icon> Enable Styling
+      </v-btn>
+      <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeStyleExtensionAndTableStyles()">
+        <v-icon>mdi-trash-can</v-icon> Remove Styling
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <script>
@@ -186,7 +206,6 @@
 
   export default {
     props: {
-      filePath: String,
       geopackage: Object,
       tableName: String,
       projectId: String,
@@ -304,8 +323,14 @@
         updateTableStyleAssignmentGeometryType: 'Projects/updateTableStyleAssignmentGeometryType',
         updateTableIconAssignmentGeometryType: 'Projects/updateTableIconAssignmentGeometryType',
         createProjectLayerStyleRow: 'Projects/createProjectLayerStyleRow',
-        createProjectLayerIconRow: 'Projects/createProjectLayerIconRow'
+        createProjectLayerIconRow: 'Projects/createProjectLayerIconRow',
+        addStyleExtensionForTable: 'Projects/addStyleExtensionForTable',
+        removeStyleExtensionForTable: 'Projects/removeStyleExtensionForTable',
+        displayStyleEditor: 'Projects/displayStyleEditor'
       }),
+      closeStyleEditor () {
+        this.displayStyleEditor({projectId: this.projectId})
+      },
       updateMaxFeatures (val) {
         this.debounceUpdateMaxFeatures(val)
       },
@@ -364,7 +389,7 @@
         }
       },
       async getStyle () {
-        let gp = await GeoPackageAPI.open(this.filePath)
+        let gp = await GeoPackageAPI.open(this.geopackage.path)
         try {
           let featureTableName = this.tableName
           this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
@@ -406,6 +431,20 @@
         } catch (error) {
           console.error(error)
         }
+      },
+      addStyleExtensionAndDefaultStyles () {
+        this.addStyleExtensionForTable({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
+        })
+      },
+      removeStyleExtensionAndTableStyles () {
+        this.removeStyleExtensionForTable({
+          projectId: this.projectId,
+          geopackageId: this.geopackage.id,
+          tableName: this.tableName
+        })
       }
     },
     watch: {
@@ -479,25 +518,25 @@
       },
       styleAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.filePath)
+          let gp = await GeoPackageAPI.open(this.geopackage.path)
           this.determineStyleForStyleAssignment(gp, newValue)
         }
       },
       iconAssignmentFeature: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.filePath)
+          let gp = await GeoPackageAPI.open(this.geopackage.path)
           this.determineIconForIconAssignment(gp, newValue)
         }
       },
       tableStyleGeometry: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.filePath)
+          let gp = await GeoPackageAPI.open(this.geopackage.path)
           this.determineStyleForGeometryAssignment(gp, newValue)
         }
       },
       tableIconGeometry: {
         async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.filePath)
+          let gp = await GeoPackageAPI.open(this.geopackage.path)
           this.determineIconForGeometryAssignment(gp, newValue)
         }
       }

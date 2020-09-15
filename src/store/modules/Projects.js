@@ -52,6 +52,16 @@ const mutations = {
     })
     Vue.set(state[projectId].geopackages[geopackageId], 'tables', tables)
   },
+  displayStyleEditor (state, {projectId, geopackageId, tableName}) {
+    if (tableName === null || tableName === undefined) {
+      Vue.delete(state[projectId], 'styleEditor')
+    } else {
+      Vue.set(state[projectId], 'styleEditor', {
+        tableName,
+        geopackageId
+      })
+    }
+  },
   setGeoPackageFeatureTableVisible (state, {projectId, geopackageId, tableName, visible}) {
     Vue.set(state[projectId].geopackages[geopackageId].tables.features[tableName], 'tableVisible', visible)
   },
@@ -538,6 +548,9 @@ const actions = {
   },
   expandProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('expandProjectLayer', {projectId, layerId})
+  },
+  displayStyleEditor ({ commit, state }, {projectId, geopackageId, tableName}) {
+    commit('displayStyleEditor', {projectId, geopackageId, tableName})
   },
   // expandGeoPackageConfiguration ({ commit, state }, {projectId, geopackageId}) {
   //   commit('expandGeoPackageConfiguration', {projectId, geopackageId})
