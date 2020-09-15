@@ -1,5 +1,5 @@
 <template>
-  <expandable-card class="mb-2" :initially-expanded="expanded" :on-expand-collapse="expandFeatureTableCard">
+  <expandable-card class="mb-2" :initially-expanded="expanded" :on-expand-collapse="expandFeatureTableCard" expandedEmphasis>
     <div slot="card-header">
       <v-container fluid class="pa-0 ma-0">
         <v-row no-gutters align="center" justify="center">

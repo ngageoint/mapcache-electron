@@ -1,5 +1,5 @@
 <template>
-  <v-card class="pa-2 card">
+  <v-card :class="expandedEmphasis && expanded ? 'mb-4 pa-2 card' : 'pa-2 card'" :elevation="expandedEmphasis && expanded ? 6 : 2">
     <v-container :class="allowExpand ? 'pa-0 ma-0 clickable' : 'pa-0 ma-0'" @click.stop="toggle()">
       <v-row no-gutters justify="center">
         <v-col v-if="allowExpand" align-self="center" justify="center" cols="1" class="clickable pl-1" @click.stop="toggle()">
@@ -31,6 +31,10 @@
       allowExpand: {
         type: Boolean,
         default: true
+      },
+      expandedEmphasis: {
+        type: Boolean,
+        default: false
       }
     },
     data () {
