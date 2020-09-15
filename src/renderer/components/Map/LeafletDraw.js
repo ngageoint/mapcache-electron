@@ -10,6 +10,7 @@ export default class LeafletDraw extends vendor.L.Control {
       ...options
     }
     super(mergedOptions)
+    this.isDrawing = false
   }
 
   onAdd (map) {
@@ -40,22 +41,26 @@ export default class LeafletDraw extends vendor.L.Control {
         this.disableDrawingLinks()
         this.disableEditingLinks()
         map.editTools.startMarker()
+        this.isDrawing = true
       }.bind(this)
 
       this._polyLink.onclick = function () {
         this.disableDrawingLinks()
         this.disableEditingLinks()
         map.editTools.startPolygon()
+        this.isDrawing = true
       }.bind(this)
       this._rectLink.onclick = function () {
         this.disableDrawingLinks()
         this.disableEditingLinks()
         map.editTools.startRectangle()
+        this.isDrawing = true
       }.bind(this)
       this._linestringLink.onclick = function () {
         this.disableDrawingLinks()
         this.disableEditingLinks()
         map.editTools.startPolyline()
+        this.isDrawing = true
       }.bind(this)
     }.bind(this)
 
@@ -111,6 +116,7 @@ export default class LeafletDraw extends vendor.L.Control {
     map.on('editable:drawing:commit', function () {
       this.enableDrawingLinks()
       this.enableEditingLinks()
+      this.isDrawing = false
     }.bind(this))
 
     map.on('boundingBoxDisabled', function () {

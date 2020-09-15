@@ -23,6 +23,8 @@ import jetpack from 'fs-jetpack'
 import FileUtilities from './FileUtilities'
 
 export default class GeoPackageUtilities {
+  static queryDistanceDegrees = 0.0001
+
   /**
    * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
    * @param filePath
@@ -1210,22 +1212,14 @@ export default class GeoPackageUtilities {
     })
   }
 
-  static async _deleteFeatureRow (gp, tableName, featureRowId) {
-    gp.getFeatureDao(tableName).deleteById(featureRowId)
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: (await gp.getGeoJSONFeaturesInTile(tableName, 0, 0, 0, true)).map(f => {
-        f.type = 'Feature'
-        return f
-      })
-    }
-    return {count: featureCollection.features.length, extent: geojsonExtent(featureCollection)}
+  static _deleteFeatureRow (gp, tableName, featureRowId) {
+    return gp.getFeatureDao(tableName).deleteById(featureRowId)
   }
 
   static async deleteFeatureRow (filePath, tableName, featureRowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteFeatureRow(gp, tableName, featureRowId)
-    }, true)
+    })
   }
 
   static _getBoundingBoxForFeature (gp, tableName, featureRowId) {
@@ -1374,6 +1368,47 @@ export default class GeoPackageUtilities {
   static async getAllFeaturesAsGeoJSON (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       GeoPackageUtilities._getAllFeaturesAsGeoJSON(gp, tableName)
+    })
+  }
+
+  static getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
+    const queryDistanceDegrees = 10.0 / Math.pow(2, zoom)
+    return new BoundingBox(coordinate.lng - queryDistanceDegrees, coordinate.lng + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
+  }
+
+  static _queryForFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+    let features = []
+    for (let i = 0; i < tableNames.length; i++) {
+      const tableName = tableNames[i]
+      features = features.concat(gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).map(feature => {
+        feature.table = tableName
+        feature.geopackageId = geopackageId
+        feature.geopackageName = geopackageName
+        return feature
+      }))
+    }
+    return features
+  }
+
+  static async queryForFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._queryForFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)
+    })
+  }
+
+  static _countOfFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+    let count = 0
+    for (let i = 0; i < tableNames.length; i++) {
+      const tableName = tableNames[i]
+      const featureDao = gp.getFeatureDao(tableName)
+      count += featureDao.countInBoundingBox(GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom), 'EPSG:4326')
+    }
+    return count
+  }
+
+  static async countOfFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._countOfFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)
     })
   }
 }

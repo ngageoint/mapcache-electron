@@ -663,6 +663,22 @@ const actions = {
       })
     })
   },
+  removeFeatureFromGeopackage ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {
+    const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
+    const existingTable = geopackageCopy.tables.features[tableName]
+    const filePath = state[projectId].geopackages[geopackageId].path
+    GeoPackageUtilities.deleteFeatureRow(filePath, tableName, featureId).then(function () {
+      GeoPackageUtilities.getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+        geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
+        existingTable.featureCount = tableInfo.featureCount
+        existingTable.description = tableInfo.description
+        commit('setGeoPackage', {projectId, geopackage: geopackageCopy})
+      })
+    })
+  },
+  editFeatureFromGeopackage ({ commit, state }, {projectId, geopackageId, tableName, featureId, feature}) {
+    // TODO: what changed and how does that impact the feature table? will there be geometry changes?
+  },
   // setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {
   //   commit('setGeoPackageName', {projectId, geopackageId, name})
   // },

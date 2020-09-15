@@ -1,61 +1,78 @@
 <template>
-  <div id="map" style="width: 100%; height: 100%; z-index: 0;">
-    <v-dialog
-      v-model="layerSelectionVisible"
-      max-width="500">
-      <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            Add Drawing
-          </v-row>
+  <div style="width: 100%; height: 100%; z-index: 0; position: relative;">
+    <div id="map" style="width: 100%; height: 100%; z-index: 0;">
+      <v-dialog
+        v-model="layerSelectionVisible"
+        max-width="500">
+        <v-card>
+          <v-card-title style="color: grey; font-weight: 600;">
+            <v-row no-gutters justify="start" align="center">
+              Add Drawing
+            </v-row>
+          </v-card-title>
+          <v-card-text>
+            Add drawing to selected GeoPackage and feature layer.
+            <v-row no-gutters class="mt-4">
+              <v-col cols="12">
+                <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="Select GeoPackage" dense>
+                </v-select>
+              </v-col>
+            </v-row>
+            <v-row v-if="geoPackageSelection !== 0" no-gutters>
+              <v-col cols="12">
+                <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Select Feature Layer" dense>
+                </v-select>
+              </v-col>
+            </v-row>
+            <v-form v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
+              <v-container class="ma-0 pa-0">
+                <v-row no-gutters>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="featureTableName"
+                      :rules="featureTableNameRules"
+                      label="Feature Layer Name"
+                      required
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="#3b779a"
+              text
+              @click="cancelDrawing">
+              cancel
+            </v-btn>
+            <v-btn
+              v-if="geoPackageFeatureLayerSelection !== NEW_FEATURE_LAYER_OPTION || featureTableNameValid"
+              color="#3b779a"
+              text
+              @click="confirmGeoPackageFeatureLayerSelection">
+              confirm
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </div>
+    <transition name="slide-up">
+      <v-card
+        v-show="showFeatureTable"
+        ref="featuresPopup"
+        class="mx-auto"
+        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 30303; left: 15%; width: 70%;"
+        tile>
+        <v-card-title>
+          Features
         </v-card-title>
         <v-card-text>
-          Add drawing to selected GeoPackage and feature layer.
-          <v-row no-gutters class="mt-4">
-            <v-col cols="12">
-              <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="Select GeoPackage" dense>
-              </v-select>
-            </v-col>
-          </v-row>
-          <v-row v-if="geoPackageSelection !== 0" no-gutters>
-            <v-col cols="12">
-              <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Select Feature Layer" dense>
-              </v-select>
-            </v-col>
-          </v-row>
-          <v-form v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
-            <v-container class="ma-0 pa-0">
-              <v-row no-gutters>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="featureTableName"
-                    :rules="featureTableNameRules"
-                    label="Feature Layer Name"
-                    required
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-form>
+          <feature-table :projectId="projectId" :geopackages="geopackages" :features="features" :zoomToFeature="zoomToFeature"></feature-table>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="#3b779a"
-            text
-            @click="cancelDrawing">
-            cancel
-          </v-btn>
-          <v-btn
-            v-if="geoPackageFeatureLayerSelection !== NEW_FEATURE_LAYER_OPTION || featureTableNameValid"
-            color="#3b779a"
-            text
-            @click="confirmGeoPackageFeatureLayerSelection">
-            confirm
-          </v-btn>
-        </v-card-actions>
       </v-card>
-    </v-dialog>
+    </transition>
   </div>
 </template>
 
@@ -74,6 +91,8 @@
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
+  import FeatureTable from './FeatureTable'
+  // import Vue from 'vue'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -88,6 +107,7 @@
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let mapLayers = {}
   let maxFeatures
+  let isDrawing = false
 
   function normalize (longitude) {
     let lon = longitude
@@ -117,15 +137,20 @@
       }
     },
     components: {
-      Modal
+      Modal,
+      FeatureTable
     },
     data () {
       return {
+        isDrawing,
         maxFeatures,
         NEW_GEOPACKAGE_OPTION,
         NEW_FEATURE_LAYER_OPTION,
         layerSelectionVisible,
         geoPackageChoices,
+        showFeatureTable: false,
+        popup: null,
+        features: [],
         geoPackageFeatureLayerChoices,
         geoPackageSelection: 0,
         geoPackageFeatureLayerSelection: 0,
@@ -238,7 +263,8 @@
         this.createdLayer = null
         this.featureTableName = 'Feature layer'
       },
-      zoomToFeature (map, path, table, featureId) {
+      zoomToFeature (path, table, featureId) {
+        const map = this.map
         GeoPackageUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
           if (extent) {
             map.fitBounds([
@@ -594,9 +620,9 @@
               _this.removeGeoPackage(geoPackageId)
               _this.addGeoPackageToMap(updatedGeoPackage, map)
             } else if (!_.isEqual(updatedGeoPackage.styleAssignment, oldGeoPackage.styleAssignment)) {
-              this.zoomToFeature(map, updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
+              this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
             } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
-              this.zoomToFeature(map, updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
+              this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
             }
           })
           // -----------------------------------------------
@@ -722,6 +748,52 @@
       this.map.addControl(this.drawingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+      this.map.on('click', async function (e) {
+        let features = []
+        // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
+        const geopackageValues = Object.values(this.geopackages)
+        for (let i = 0; i < geopackageValues.length; i++) {
+          const geopackage = geopackageValues[i]
+          const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].tableVisible)
+          if (tables.length > 0) {
+            features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom()))
+          }
+        }
+        if (features.length > 0) {
+          this.features = features
+          this.showFeatureTable = true
+          // Vue.nextTick(function () {
+          //   this.popup = vendor.L.popup({maxWidth: 600, minWidth: 400})
+          //     .setLatLng(e.latlng)
+          //     .setContent(this.$refs.featuresPopup.$el.innerHTML)
+          //     .openOn(this.map)
+          // }.bind(this))
+        } else {
+          this.showFeatureTable = false
+          this.features = []
+        }
+      }.bind(this))
+
+      const checkFeatureCount = _.throttle(async function (e) {
+        if (!_this.drawingControl.isDrawing) {
+          let count = 0
+          // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
+          const geopackageValues = Object.values(this.geopackages)
+          for (let i = 0; i < geopackageValues.length; i++) {
+            const geopackage = geopackageValues[i]
+            const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].tableVisible)
+            if (tables.length > 0) {
+              count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom())
+            }
+          }
+          if (count > 0) {
+            document.getElementById('map').style.cursor = 'pointer'
+          } else {
+            document.getElementById('map').style.cursor = ''
+          }
+        }
+      }.bind(this), 100)
+      this.map.on('mousemove', checkFeatureCount)
       this.map.on('layeradd', function (e) {
         if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
           e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
@@ -966,5 +1038,16 @@
   .leaflet-touch .leaflet-control-layers-toggle {
     width: 30px;
     height: 30px;
+  }
+  .slide-up-enter-active {
+    transition: all 0.5s ease;
+  }
+  .slide-up-leave-active {
+    transition: all .25s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+  }
+  .slide-up-enter, .slide-up-leave-to
+    /* .slide-fade-leave-active below version 2.1.8 */ {
+    transform: translateY(100px);
+    opacity: 0;
   }
 </style>
