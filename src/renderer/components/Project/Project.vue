@@ -39,21 +39,12 @@
         </v-list>
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
-        <v-col class="content-panel" v-if="item >= 0">
+        <v-col class="content-panel" v-show="item >= 0">
           <v-container v-show="item === 0">
             <geo-package-content :project-id="project.id" :geopackages="project.geopackages" :style-editor="project.styleEditor"></geo-package-content>
           </v-container>
           <v-container v-show="item === 1">
-            <div
-              id="source-drop-zone">
-              <add-source :project="project"/>
-              <layer-flip-card
-                v-for="sourceLayer in project.layers"
-                :key="sourceLayer.id"
-                class="sources"
-                :layer="sourceLayer"
-                :projectId="project.id"/>
-            </div>
+            <data-sources :project="project"></data-sources>
           </v-container>
           <v-container v-if="item === 2">
             <settings :project="project"></settings>
@@ -81,12 +72,12 @@
 
   import LayerFlipCard from '../DataSources/LayerFlipCard'
   import LeafletMap from '../Map/LeafletMap'
-  import AddSource from '../DataSources/AddSource'
   import ViewEditText from '../Common/ViewEditText'
   import Modal from '../Modal'
   import Card from '../Card/Card'
   import Settings from '../Settings/Settings'
   import GeoPackageContent from '../GeoPackage/GeoPackageContent'
+  import DataSources from '../DataSources/DataSources'
 
   let options = {
     contentShown: -1,
@@ -119,9 +110,9 @@
       })
     },
     components: {
+      DataSources,
       LayerFlipCard,
       LeafletMap,
-      AddSource,
       ViewEditText,
       Modal,
       Card,
@@ -168,13 +159,6 @@
     flex-direction: row;
     overflow: hidden;
     min-height: 100vh;
-  }
-  .sources {
-    list-style: none;
-    text-align: left;
-  }
-  .sources li.checked {
-    list-style: url('../../assets/check.png');
   }
   .content-panel {
     max-width: 400px;

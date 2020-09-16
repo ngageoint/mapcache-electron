@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card class="mt-2 mb-2">
     <v-progress-linear v-if="!source.error"
             :active="true"
             :indeterminate="true"

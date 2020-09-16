@@ -1,28 +1,38 @@
 <template>
-  <v-card>
-    <v-row no-gutters @click.stop="onClick">
-      <v-card-text>
-        <number-picker :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
-      </v-card-text>
-      <v-container class="pa-0">
-       <v-card-actions>
-         <v-spacer></v-spacer>
-         <v-btn
-                 text
-                 color="light darken-1"
-                 :dark="this.darkMode"
-                 @click.stop="cancel">
-           {{"Cancel"}}
-         </v-btn>
-         <v-btn
-                 color="info"
-                 :dark="this.darkMode"
-                 @click.stop="save">
-           {{"Save"}}
-         </v-btn>
-       </v-card-actions>
-      </v-container>
-    </v-row>
+  <v-card @click.stop="onClick">
+    <v-card-title style="color: grey; font-weight: 600;">
+      <v-row no-gutters justify="start" align="center">
+        <v-icon>{{icon}}</v-icon>{{title}}
+      </v-row>
+    </v-card-title>
+    <v-card-text>
+      <v-form>
+        <v-container class="ma-0 pa-0">
+          <v-row no-gutters>
+            <v-col cols="12">
+              <number-picker :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-form>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn
+        color="#3b779a"
+        text
+        :dark="darkMode"
+        @click="cancel">
+        {{cancelText}}
+      </v-btn>
+      <v-btn
+        color="#3b779a"
+        text
+        :dark="darkMode"
+        @click="save">
+        {{saveText}}
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
 
@@ -32,8 +42,18 @@
 
   export default {
     props: {
+      title: String,
+      icon: String,
       label: String,
       value: Number,
+      saveText: {
+        type: String,
+        default: 'Save'
+      },
+      cancelText: {
+        type: String,
+        default: 'Cancel'
+      },
       onSave: Function,
       onCancel: Function,
       darkMode: {

@@ -101,8 +101,9 @@
         dark
         fab
         color="#3b779a"
+        title="Add geopackage"
         @click.stop="addGeoPackageDialog = true">
-        <v-icon>mdi-plus</v-icon>
+        <v-icon>mdi-package-variant</v-icon>
       </v-btn>
       <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
         GeoPackage already exists in project.

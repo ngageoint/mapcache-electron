@@ -18,8 +18,8 @@ export default class Layer {
     this.name = this._configuration.name || this.sourceLayerName
     this.pane = configuration.pane
     this.style = this._configuration.style
-    this.shown = this._configuration.shown || true
-    this.expanded = this._configuration.expanded || true
+    this.shown = this._configuration.shown || false
+    this.expanded = this._configuration.expanded || false
     this.images = this._configuration.images
     this.sourceFilePath = this._configuration.sourceFilePath
     this.sourceType = this._configuration.sourceType
@@ -45,8 +45,8 @@ export default class Layer {
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         displayName: this.displayName,
-        shown: this.shown || true,
-        expanded: this.expanded || true,
+        shown: this.shown || false,
+        expanded: this.expanded || false,
         style: this.style,
         images: this.images,
         sourceFilePath: this.sourceFilePath,

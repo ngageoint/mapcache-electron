@@ -753,6 +753,9 @@ export default class GeoPackageUtilities {
           if (type === 'object') {
             if (feature.properties[key] instanceof Date) {
               type = 'Date'
+            } else {
+              type = 'string'
+              feature.properties[key] = JSON.stringify(feature.properties[key])
             }
           }
           switch (type) {
