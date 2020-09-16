@@ -60,7 +60,7 @@
     </div>
     <transition name="slide-up">
       <v-card
-        v-show="showFeatureTable"
+        v-show="features && features.length > 0"
         ref="featuresPopup"
         class="mx-auto"
         style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 30303; width: 100%;"
@@ -148,7 +148,6 @@
         NEW_FEATURE_LAYER_OPTION,
         layerSelectionVisible,
         geoPackageChoices,
-        showFeatureTable: false,
         popup: null,
         features: [],
         geoPackageFeatureLayerChoices,
@@ -230,14 +229,15 @@
               filePath = filePath + '.gpkg'
             }
             GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
-              GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true)
-              _this.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+              GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+                _this.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+              })
             })
           })
         } else {
           const geopackage = this.geopackages[this.geoPackageSelection]
           if (this.geoPackageFeatureLayerSelection === 0) {
-            this.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection})
+            this.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection})
           } else {
             // add to existing table
             this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text, feature: feature})
@@ -789,9 +789,10 @@
             features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom()))
           }
         }
+        console.log('features')
+        console.log(features)
         if (features.length > 0) {
           this.features = features
-          this.showFeatureTable = true
           // Vue.nextTick(function () {
           //   this.popup = vendor.L.popup({maxWidth: 600, minWidth: 400})
           //     .setLatLng(e.latlng)
@@ -799,7 +800,6 @@
           //     .openOn(this.map)
           // }.bind(this))
         } else {
-          this.showFeatureTable = false
           this.features = []
         }
       }.bind(this))

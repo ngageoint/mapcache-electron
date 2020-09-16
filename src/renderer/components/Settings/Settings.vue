@@ -1,19 +1,11 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-card class="mx-auto">
+  <v-card flat class="mx-auto" style="width: 100%;">
     <v-dialog v-model="editProjectNameDialog" max-width="500">
       <edit-text-modal icon="mdi-pencil-outline" :title="'Rename ' + project.name" save-text="rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="500">
       <edit-number-modal icon="mdi-pencil-outline" title="Edit Max Features" save-text="save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
-    <v-toolbar
-      color="#3b779a"
-      class="round-top-border"
-      dark
-      flat
-    >
-      <v-toolbar-title>Settings</v-toolbar-title>
-    </v-toolbar>
     <v-list two-line subheader>
       <v-subheader>General</v-subheader>
       <v-list-item @click="toggleEditProjectNameDialog">

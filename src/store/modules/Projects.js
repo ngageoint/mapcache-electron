@@ -656,14 +656,11 @@ const actions = {
   },
   addFeatureTableToGeoPackage ({ commit, state }, {projectId, geopackageId, tableName, featureCollection}) {
     const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
-    const existingTable = geopackageCopy.tables.features[tableName]
-    const filePath = state[projectId].geopackages[geopackageId].path
+    const filePath = geopackageCopy.path
     GeoPackageUtilities.createFeatureTable(filePath, tableName, featureCollection).then(function () {
       GeoPackageUtilities.getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
         geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
-        existingTable.featureCount = tableInfo.featureCount
-        existingTable.description = tableInfo.description
-        existingTable.tables.features[tableName] = _.cloneDeep(tableInfo.tables.features[tableName])
+        geopackageCopy.tables.features[tableName] = _.cloneDeep(tableInfo)
         commit('setGeoPackage', {projectId, geopackage: geopackageCopy})
       })
     })
@@ -677,8 +674,25 @@ const actions = {
         geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
         existingTable.featureCount = tableInfo.featureCount
         existingTable.description = tableInfo.description
+        existingTable.styleKey = existingTable.styleKey + 1
+        existingTable.indexed = tableInfo.indexed
         commit('setGeoPackage', {projectId, geopackage: geopackageCopy})
       })
+    })
+  },
+  updateFeatureTable ({ commit, state }, {projectId, geopackageId, tableName}) {
+    const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
+    console.log('geopackageCopy')
+    console.log(geopackageCopy)
+    const existingTable = geopackageCopy.tables.features[tableName]
+    const filePath = state[projectId].geopackages[geopackageId].path
+    GeoPackageUtilities.getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+      geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
+      existingTable.featureCount = tableInfo.featureCount
+      existingTable.description = tableInfo.description
+      existingTable.styleKey = existingTable.styleKey + 1
+      existingTable.indexed = tableInfo.indexed
+      commit('setGeoPackage', {projectId, geopackage: geopackageCopy})
     })
   },
   removeFeatureFromGeopackage ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {

@@ -152,13 +152,13 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <layer-flip-card
+    <data-source-card
       v-for="source in project.layers"
       :key="source.id"
       class="sources"
       :layer="source"
       :projectId="project.id">
-    </layer-flip-card>
+    </data-source-card>
     <processing-source
       v-for="source in processing.sources"
       :source="source"
@@ -207,7 +207,7 @@
   import URLUtilities from '../../../lib/URLUtilities'
   import _ from 'lodash'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
-  import LayerFlipCard from './LayerFlipCard'
+  import DataSourceCard from './DataSourceCard'
 
   let processing = {
     dataDragOver: false,
@@ -297,7 +297,7 @@
       ProcessingSource,
       Modal,
       Card,
-      LayerFlipCard
+      DataSourceCard
     },
     methods: {
       ...mapActions({

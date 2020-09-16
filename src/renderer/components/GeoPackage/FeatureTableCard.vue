@@ -23,6 +23,39 @@
     <div slot="card-expanded-body">
       <v-container fluid class="pa-0 ma-0">
         <v-dialog
+          v-model="indexDialog"
+          max-width="500"
+          persistent>
+          <v-card>
+            <v-card-title style="color: grey; font-weight: 600;">
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-speedometer</v-icon><span class="pl-1 pr-1">Indexing</span><b>{{tableName}}</b>
+              </v-row>
+            </v-card-title>
+            <v-card-text>
+              <v-row
+                align-content="center"
+                justify="center"
+              >
+                <v-col
+                  class="subtitle-1 text-center"
+                  cols="12"
+                >
+                  {{indexMessage}}
+                </v-col>
+                <v-col cols="6">
+                  <v-progress-linear
+                    color="#3b779a"
+                    :value="indexProgressPercentage"
+                    rounded
+                    height="6"
+                  ></v-progress-linear>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+        <v-dialog
           v-model="renameDialog"
           max-width="500">
           <v-card>
@@ -134,8 +167,8 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
-        <v-container fluid class="pa-0 ma-0 pl-1 text-left">
-          <v-row no-gutters>
+        <v-container fluid class="pa-0 mb-2 ma-0 pl-1 text-left">
+          <v-row no-gutters justify="center">
             <v-col>
               <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
@@ -146,7 +179,7 @@
           <v-row no-gutters class="pt-2" style="margin-left: -12px" justify="center" align-content="center">
             <v-hover>
               <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
+                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>mdi-pencil-outline</v-icon>
@@ -160,7 +193,7 @@
             </v-hover>
             <v-hover>
               <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
+                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>mdi-content-copy</v-icon>
@@ -174,7 +207,7 @@
             </v-hover>
             <v-hover>
               <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="enableStyleDialog">
+                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="enableStyleDialog">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>mdi-palette</v-icon>
@@ -188,13 +221,27 @@
             </v-hover>
             <v-hover>
               <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+                <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>mdi-trash-can-outline</v-icon>
                     </v-row>
                     <v-row no-gutters align-content="center" justify="center">
                       Remove
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </template>
+            </v-hover>
+            <v-hover v-if="!indexed" >
+              <template v-slot="{ hover }">
+                <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
+                  <v-card-text class="pa-2">
+                    <v-row no-gutters align-content="center" justify="center">
+                      <v-icon small>mdi-speedometer</v-icon>
+                    </v-row>
+                    <v-row no-gutters align-content="center" justify="center">
+                      Index
                     </v-row>
                   </v-card-text>
                 </v-card>
@@ -233,10 +280,15 @@
 
 <script>
   import { mapActions } from 'vuex'
+  import { GeoPackageAPI } from '@ngageoint/geopackage'
+  import _ from 'lodash'
+
   import ViewEditText from '../Common/ViewEditText'
   import ExpandableCard from '../Card/ExpandableCard'
   import StyleEditor from './StyleEditor'
-  import { GeoPackageAPI } from '@ngageoint/geopackage'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+
+  const GPKG_INDEX_REGEX = new RegExp(/Indexing (\d*) to \d*/)
 
   export default {
     props: {
@@ -259,6 +311,10 @@
     },
     data () {
       return {
+        GPKG_INDEX_REGEX,
+        indexDialog: false,
+        indexProgressPercentage: 0,
+        indexMessage: 'Indexing Started',
         loading: true,
         hasStyleExtension: false,
         deleteDialog: false,
@@ -287,6 +343,9 @@
           this.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
+      indexed () {
+        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].indexed : true
+      },
       featureCount () {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].featureCount : 0
       },
@@ -308,7 +367,8 @@
         renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
-        displayStyleEditor: 'Projects/displayStyleEditor'
+        displayStyleEditor: 'Projects/displayStyleEditor',
+        updateFeatureTable: 'Projects/updateFeatureTable'
       }),
       enableStyleDialog () {
         this.displayStyleEditor({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
@@ -346,6 +406,34 @@
       deleteTable () {
         this.deleteDialog = false
         this.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+      },
+      indexTable () {
+        let _this = this
+        this.indexDialog = true
+        setTimeout(function () {
+          _this.indexMessage = 'Indexing...'
+          GeoPackageUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true, function (message) {
+            // 'Indexing ' + # + ' to ' + #)
+            if (!_.isNil(message)) {
+              try {
+                _this.indexProgressPercentage = ((Number.parseInt(message.match(_this.GPKG_INDEX_REGEX)[1], 10) * 1.0) / (_this.featureCount * 1.0)) * 100.0
+              } catch (e) {
+                console.error(e)
+              }
+            }
+          }).then(function (result) {
+            console.log(result)
+            setTimeout(function () {
+              _this.indexProgressPercentage = 100.0
+              _this.indexMessage = 'Indexing Completed'
+              setTimeout(function () {
+                _this.indexDialog = false
+                _this.indexMessage = 'Indexing Started'
+                _this.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
+              }, 1000)
+            }, 1000)
+          })
+        }, 1000)
       }
     },
     watch: {

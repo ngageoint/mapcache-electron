@@ -40,15 +40,21 @@
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="item >= 0">
+          <v-toolbar
+            color="#3b779a"
+            dark
+            flat
+          >
+            <v-btn icon @click="item = undefined"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+            <v-toolbar-title>{{item >= 0 ? items[item].text : ''}}</v-toolbar-title>
+          </v-toolbar>
           <v-container v-show="item === 0">
             <geo-package-content :project-id="project.id" :geopackages="project.geopackages" :style-editor="project.styleEditor"></geo-package-content>
           </v-container>
           <v-container v-show="item === 1">
             <data-sources :project="project"></data-sources>
           </v-container>
-          <v-container v-if="item === 2">
-            <settings :project="project"></settings>
-          </v-container>
+          <settings v-if="item === 2" :project="project"></settings>
         </v-col>
         <v-col>
           <leaflet-map
@@ -69,8 +75,8 @@
 
 <script>
   import { mapGetters, mapActions, mapState } from 'vuex'
+  import _ from 'lodash'
 
-  import LayerFlipCard from '../DataSources/LayerFlipCard'
   import LeafletMap from '../Map/LeafletMap'
   import ViewEditText from '../Common/ViewEditText'
   import Modal from '../Modal'
@@ -101,7 +107,20 @@
       ...mapState({
         project (state) {
           const projectId = new URL(location.href).searchParams.get('id')
-          return state.Projects[projectId]
+          let project = state.Projects[projectId]
+          if (_.isNil(project)) {
+            project = {
+              id: '-1',
+              name: '',
+              layerCount: 0,
+              layers: {},
+              geopackages: {},
+              zoomControlEnabled: true,
+              displayZoomEnabled: true,
+              maxFeatures: 1000
+            }
+          }
+          return project
         }
       }),
       ...mapGetters({
@@ -111,7 +130,6 @@
     },
     components: {
       DataSources,
-      LayerFlipCard,
       LeafletMap,
       ViewEditText,
       Modal,
@@ -133,6 +151,9 @@
       },
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})
+      },
+      back () {
+        this.item = undefined
       }
     },
     mounted: function () {
@@ -161,6 +182,7 @@
     min-height: 100vh;
   }
   .content-panel {
+    background-color: whitesmoke;
     max-width: 400px;
     min-height: 100vh;
     max-height: 100vh;

@@ -156,14 +156,16 @@
         this.addGeoPackageDialog = false
         const geopackages = this.geopackages
         remote.dialog.showSaveDialog((filePath) => {
-          if (!filePath.endsWith('.gpkg')) {
-            filePath = filePath + '.gpkg'
-          }
-          const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === filePath) !== -1
-          if (!exists) {
-            this.addGeoPackage({projectId: this.projectId, filePath: filePath})
-          } else {
-            this.addGeoPackageError = true
+          if (!_.isNil(filePath)) {
+            if (!filePath.endsWith('.gpkg')) {
+              filePath = filePath + '.gpkg'
+            }
+            const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === filePath) !== -1
+            if (!exists) {
+              this.addGeoPackage({projectId: this.projectId, filePath: filePath})
+            } else {
+              this.addGeoPackageError = true
+            }
           }
         })
       },

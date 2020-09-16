@@ -165,7 +165,21 @@ export default class GeoPackageUtilities {
     })
   }
 
-  static _createFeatureTable (gp, tableName, featureCollection, addFeatures = false) {
+  static async _createFeatureTable (gp, tableName, featureCollection, addFeatures = false) {
+    // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
+    featureCollection.features.forEach(feature => {
+      Object.keys(feature.properties).forEach(key => {
+        let type = typeof feature.properties[key]
+        if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
+          if (type === 'object') {
+            if (!(feature.properties[key] instanceof Date)) {
+              feature.properties[key] = JSON.stringify(feature.properties.key)
+            }
+          }
+        }
+      })
+    })
+
     let layerColumns = GeoPackageUtilities.getLayerColumns(featureCollection)
     let geometryColumns = new GeometryColumns()
     geometryColumns.table_name = tableName
@@ -187,15 +201,17 @@ export default class GeoPackageUtilities {
     gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
     if (addFeatures) {
       featureCollection.features.forEach(feature => {
+        console.log(feature)
         this._addFeatureToFeatureTable(gp, tableName, feature)
       })
     }
+    await this._indexFeatureTable(gp, tableName)
   }
 
-  static createFeatureTable (filePath, tableName, featureCollection) {
+  static async createFeatureTable (filePath, tableName, featureCollection) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._createFeatureTable(gp, tableName, featureCollection)
-    })
+      return GeoPackageUtilities._createFeatureTable(gp, tableName, featureCollection, true)
+    }, true)
   }
 
   static getGeoPackageSize (filePath) {
@@ -209,7 +225,9 @@ export default class GeoPackageUtilities {
       tableVisible: false,
       expanded: false,
       featureCount: featureDao.count(),
-      description: _.isNil(description) || description.length === 0 ? 'None' : description
+      description: _.isNil(description) || description.length === 0 ? 'None' : description,
+      indexed: featureDao.isIndexed(),
+      styleKey: 0
     }
   }
 
@@ -242,15 +260,7 @@ export default class GeoPackageUtilities {
 
     const tables = gp.getTables()
     tables.features.forEach(table => {
-      const featureDao = gp.getFeatureDao(table)
-      const description = gp.getTableContents(table).description
-      geopackage.tables.features[table] = {
-        tableVisible: false,
-        expanded: false,
-        featureCount: featureDao.count(),
-        description: _.isNil(description) || description.length === 0 ? 'None' : description,
-        styleKey: 0
-      }
+      geopackage.tables.features[table] = GeoPackageUtilities._getGeoPackageFeatureTableForApp(gp, table)
     })
     tables.tiles.forEach(table => {
       const tileDao = gp.getTileDao(table)
@@ -342,7 +352,7 @@ export default class GeoPackageUtilities {
     let gp = await GeoPackageAPI.create(fileName)
     try {
       // setup the columns for the feature table
-      this._createFeatureTable(gp, tableName, featureCollection)
+      await this._createFeatureTable(gp, tableName, featureCollection)
 
       let featureTableStyles = new FeatureTableStyles(gp, tableName)
       featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
@@ -686,17 +696,17 @@ export default class GeoPackageUtilities {
     return featuresAdded
   }
 
-  static async _indexFeatureTable (gp, tableName) {
+  static async _indexFeatureTable (gp, tableName, force = false, progress) {
     const featureDao = gp.getFeatureDao(tableName)
     const fti = featureDao.featureTableIndex
     if (fti) {
-      await fti.index()
+      await fti.ngaIndexWithForce(force, progress)
     }
   }
 
-  static async indexFeatureTable (filePath, tableName) {
+  static async indexFeatureTable (filePath, tableName, force = false, progress) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._indexFeatureTable(gp, tableName)
+      return GeoPackageUtilities._indexFeatureTable(gp, tableName, force, progress)
     }, true)
   }
 
@@ -753,9 +763,6 @@ export default class GeoPackageUtilities {
           if (type === 'object') {
             if (feature.properties[key] instanceof Date) {
               type = 'Date'
-            } else {
-              type = 'string'
-              feature.properties[key] = JSON.stringify(feature.properties[key])
             }
           }
           switch (type) {
@@ -1384,12 +1391,14 @@ export default class GeoPackageUtilities {
     let features = []
     for (let i = 0; i < tableNames.length; i++) {
       const tableName = tableNames[i]
-      features = features.concat(gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).map(feature => {
-        feature.table = tableName
-        feature.geopackageId = geopackageId
-        feature.geopackageName = geopackageName
-        return feature
-      }))
+      if (gp.getFeatureDao(tableName).isIndexed()) {
+        features = features.concat(gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).filter(feature => !_.isNil(feature)).map(feature => {
+          feature.table = tableName
+          feature.geopackageId = geopackageId
+          feature.geopackageName = geopackageName
+          return feature
+        }))
+      }
     }
     return features
   }
@@ -1405,7 +1414,9 @@ export default class GeoPackageUtilities {
     for (let i = 0; i < tableNames.length; i++) {
       const tableName = tableNames[i]
       const featureDao = gp.getFeatureDao(tableName)
-      count += featureDao.countInBoundingBox(GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom), 'EPSG:4326')
+      if (featureDao.isIndexed()) {
+        count += featureDao.countInBoundingBox(GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom), 'EPSG:4326')
+      }
     }
     return count
   }
