@@ -5,6 +5,7 @@ import { select } from 'xpath'
 import fs from 'fs'
 import request from 'request'
 import { remote } from 'electron'
+import FileUtilities from './FileUtilities'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir) => {
@@ -81,9 +82,12 @@ export default class KMLUtilities {
           }
 
           const extent = [Number(west), Number(south), Number(east), Number(north)]
-          const geotiffFullFile = fullFile.substring(0, fullFile.lastIndexOf('.')) + '.tif'
-          if (GDALUtilities.translateToGeoTiff(fullFile, geotiffFullFile, extent)) {
-            parsedKML.geotiffs.push(new GeoTiffLayer({filePath: geotiffFullFile, shown: true, sourceLayerName: name}))
+          // ensure there is a unique directory for each geotiff
+          const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+          const fileName = iconPath.substring(0, iconPath.lastIndexOf('.')) + '.tif'
+          const geotiffFilePath = path.join(sourceDirectory, fileName)
+          if (GDALUtilities.translateToGeoTiff(fullFile, geotiffFilePath, extent)) {
+            parsedKML.geotiffs.push(new GeoTiffLayer({filePath: geotiffFilePath, visible: false, sourceLayerName: name, sourceDirectory: sourceDirectory, sourceId: sourceId}))
           }
         }
       } catch (error) {

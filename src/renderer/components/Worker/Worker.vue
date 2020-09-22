@@ -32,6 +32,7 @@
           console.error(error)
         }
       }
+      createdSource.removeSourceDir()
     } catch (e) {
       console.error(e)
       error = e

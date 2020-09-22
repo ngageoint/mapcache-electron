@@ -9,7 +9,8 @@ import {
   TileScaling,
   GeometryType,
   GeoPackage,
-  FeatureStyleExtension
+  FeatureStyleExtension,
+  RTreeIndex
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
 import path from 'path'
@@ -54,6 +55,12 @@ export default class GeoPackageUtilities {
     return result
   }
 
+  /**
+   * Adds the style extension to a feature table
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _addStyleExtensionForTable (gp, tableName) {
     // const style = VectorStyleUtilities.defaultRandomColorStyle()
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -68,12 +75,24 @@ export default class GeoPackageUtilities {
     // GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
   }
 
+  /**
+   * Adds the style extension to a feature table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async addStyleExtensionForTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._addStyleExtensionForTable(gp, tableName)
     })
   }
 
+  /**
+   * Removes the style extension from a feature table
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _removeStyleExtensionForTable (gp, tableName) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.setTableFeatureStyles(null)
@@ -83,12 +102,23 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Removes the style extension from a feature table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async removeStyleExtensionForTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._removeStyleExtensionForTable(gp, tableName)
     })
   }
 
+  /**
+   * Creates geopackage table styles using the style object passed in
+   * @param featureTableStyles
+   * @param style
+   */
   static createGeoPackageTableStyles (featureTableStyles, style) {
     let polyStyle = style.styleRowMap[style.default.styles[GeometryType.nameFromType(GeometryType.POLYGON)]]
     let polygonStyleRow = featureTableStyles.getStyleDao().newRow()
@@ -120,6 +150,11 @@ export default class GeoPackageUtilities {
     featureTableStyles.setTableStyle(GeometryType.MULTIPOINT, pointStyleRow)
   }
 
+  /**
+   * Creates geopackage table icons using the style passed in
+   * @param featureTableStyles
+   * @param style
+   */
   static createGeoPackageTableIcons (featureTableStyles, style) {
     if (style.default.iconOrStyle[GeometryType.nameFromType(GeometryType.POINT)] === 'icon') {
       let pointIcon = style.iconRowMap[style.default.icons[GeometryType.nameFromType(GeometryType.POINT)]]
@@ -137,6 +172,11 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Gets or Creates a geopackage at the filePath
+   * @param filePath
+   * @returns {Promise<GeoPackage>}
+   */
   static async getOrCreateGeoPackage (filePath) {
     let gp
     if (!fs.existsSync(filePath)) {
@@ -147,6 +187,13 @@ export default class GeoPackageUtilities {
     return gp
   }
 
+  /**
+   * Adds a feature to a feature table and updates the extent listed in the contents, if necessary
+   * @param gp
+   * @param tableName
+   * @param feature
+   * @private
+   */
   static _addFeatureToFeatureTable (gp, tableName, feature) {
     if (feature.properties) {
       feature.properties.id = undefined
@@ -157,14 +204,31 @@ export default class GeoPackageUtilities {
       })
     }
     gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
+    this._updateBoundingBoxForFeatureTable(gp, tableName)
   }
 
+  /**
+   * Adds a feature to the feature table and updates the extent listed in the contents, if necessary
+   * @param filePath
+   * @param tableName
+   * @param feature
+   * @returns {Promise<any>}
+   */
   static addFeatureToFeatureTable (filePath, tableName, feature) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._addFeatureToFeatureTable(gp, tableName, feature)
     })
   }
 
+  /**
+   * Creates a feature table and adds the contents of the feature collection to that table
+   * @param gp
+   * @param tableName
+   * @param featureCollection
+   * @param addFeatures
+   * @returns {Promise<void>}
+   * @private
+   */
   static async _createFeatureTable (gp, tableName, featureCollection, addFeatures = false) {
     // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
     featureCollection.features.forEach(feature => {
@@ -173,7 +237,7 @@ export default class GeoPackageUtilities {
         if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
           if (type === 'object') {
             if (!(feature.properties[key] instanceof Date)) {
-              feature.properties[key] = JSON.stringify(feature.properties.key)
+              feature.properties[key] = JSON.stringify(feature.properties[key])
             }
           }
         }
@@ -208,35 +272,61 @@ export default class GeoPackageUtilities {
     await this._indexFeatureTable(gp, tableName)
   }
 
+  /**
+   * Creates a feature table
+   * @param filePath
+   * @param tableName
+   * @param featureCollection
+   * @returns {Promise<any>}
+   */
   static async createFeatureTable (filePath, tableName, featureCollection) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._createFeatureTable(gp, tableName, featureCollection, true)
     }, true)
   }
 
-  static getGeoPackageSize (filePath) {
-    return FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size)
-  }
-
+  /**
+   * Gets the geopackage feature table information required by the app to ensure functionality in all vue components
+   * @param gp
+   * @param table
+   * @returns {{visible: boolean, indexed: boolean, description: string, styleKey: number, featureCount: number}}
+   * @private
+   */
   static _getGeoPackageFeatureTableForApp (gp, table) {
     const featureDao = gp.getFeatureDao(table)
     const description = gp.getTableContents(table).description
+    const rtreeIndex = new RTreeIndex(gp, featureDao)
+    const rtreeIndexed = rtreeIndex.hasExtension(
+      rtreeIndex.extensionName,
+      rtreeIndex.tableName,
+      rtreeIndex.columnName
+    )
     return {
-      tableVisible: false,
-      expanded: false,
+      visible: false,
       featureCount: featureDao.count(),
       description: _.isNil(description) || description.length === 0 ? 'None' : description,
-      indexed: featureDao.isIndexed(),
+      indexed: rtreeIndexed,
       styleKey: 0
     }
   }
 
+  /**
+   * Gets the geopackage feature table information required by the app to ensure functionality in all vue components
+   * @param filePath
+   * @param table
+   * @returns {Promise<any>}
+   */
   static async getGeoPackageFeatureTableForApp (filePath, table) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getGeoPackageFeatureTableForApp(gp, table)
     })
   }
 
+  /**
+   * Gets geopackage information required by the app to ensure functionality in all vue components
+   * @param filePath
+   * @returns {Promise<{path: *, tables: {features: {}, tiles: {}}, size: *, name: string, id: *}>}
+   */
   static async getOrCreateGeoPackageForApp (filePath) {
     let gp
     if (!fs.existsSync(filePath)) {
@@ -250,11 +340,9 @@ export default class GeoPackageUtilities {
       size: FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size),
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
-      expanded: true,
       tables: {
         features: {},
-        tiles: {},
-        attributes: {}
+        tiles: {}
       }
     }
 
@@ -266,19 +354,12 @@ export default class GeoPackageUtilities {
       const tileDao = gp.getTileDao(table)
       const count = tileDao.count()
       geopackage.tables.tiles[table] = {
-        tableVisible: false,
-        expanded: false,
+        visible: false,
         tileCount: count,
         minZoom: tileDao.minZoom,
         maxZoom: tileDao.maxZoom,
         description: 'An image layer with ' + count + ' tiles',
         styleKey: 0
-      }
-    })
-    tables.attributes.forEach(table => {
-      geopackage.tables.attributes[table] = {
-        tableVisible: false,
-        expanded: false
       }
     })
 
@@ -291,36 +372,74 @@ export default class GeoPackageUtilities {
     return geopackage
   }
 
+  /**
+   * Gets tile tables from a geopackage
+   * @param gp
+   * @returns {*}
+   * @private
+   */
   static _getTileTables (gp) {
     return gp.getTileTables()
   }
 
+  /**
+   * Gets tile tables from a geopackage
+   * @param filePath
+   * @returns {Promise<any>}
+   */
   static async getTileTables (filePath) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getTileTables(gp)
     })
   }
 
+  /**
+   * Gets feature tables from a geopackage
+   * @param gp
+   * @returns {*}
+   * @private
+   */
   static _getFeatureTables (gp) {
     return gp.getFeatureTables()
   }
 
+  /**
+   * Gets feature tables from a geopackage
+   * @param filePath
+   * @returns {Promise<any>}
+   */
   static async getFeatureTables (filePath) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureTables(gp)
     })
   }
 
+  /**
+   * Gets tables from a geopackage
+   * @param gp
+   * @returns {*}
+   * @private
+   */
   static _getTables (gp) {
     return gp.getTables()
   }
 
+  /**
+   * Gets tables from a geopackage
+   * @param filePath
+   * @returns {Promise<any>}
+   */
   static async getTables (filePath) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getTables(gp)
     })
   }
 
+  /**
+   * Gets geopackage file size on disk
+   * @param filePath
+   * @returns {*}
+   */
   static getGeoPackageFileSize (filePath) {
     let fileInfo = jetpack.inspect(filePath, {
       times: true,
@@ -329,6 +448,13 @@ export default class GeoPackageUtilities {
     return FileUtilities.toHumanReadable(fileInfo.size)
   }
 
+  /**
+   * Gets details of a geopackage
+   * @param gp
+   * @param filePath
+   * @returns {{path: *, spatialReferenceSystems: SpatialReferenceSystem[], srsCount: number, size: *, featureTableCount: *, tileTableCount: *}}
+   * @private
+   */
   static _getDetails (gp, filePath) {
     let spatialReferenceSystems = gp.spatialReferenceSystemDao.queryForAll().map(result => gp.spatialReferenceSystemDao.createObject(result))
     return {
@@ -341,29 +467,46 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Gets details of a geopackage
+   * @param filePath
+   * @returns {Promise<any>}
+   */
   static async getDetails (filePath) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getDetails(gp, filePath)
     })
   }
 
-  static async buildGeoPackage (fileName, tableName, featureCollection, style = VectorStyleUtilities.defaultRandomColorStyle()) {
+  /**
+   * Writes a geopackage to the filename provided containing a feature table with the feature collection provided.
+   * If a style is provided the style extension will be enabled and associated styles/icons will be created
+   * @param fileName
+   * @param tableName
+   * @param featureCollection
+   * @param style
+   * @returns {Promise<void>}
+   */
+  static async buildGeoPackage (fileName, tableName, featureCollection, style) {
     // create the geopackage
     let gp = await GeoPackageAPI.create(fileName)
     try {
       // setup the columns for the feature table
       await this._createFeatureTable(gp, tableName, featureCollection)
 
-      let featureTableStyles = new FeatureTableStyles(gp, tableName)
-      featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
-      featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
-      featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
-      featureTableStyles.createTableStyleRelationship()
-      featureTableStyles.createTableIconRelationship()
-      featureTableStyles.createStyleRelationship()
-      featureTableStyles.createIconRelationship()
-      GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
-      GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
+      let featureTableStyles
+      if (!_.isNil(style)) {
+        featureTableStyles = new FeatureTableStyles(gp, tableName)
+        featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
+        featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+        featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+        featureTableStyles.createTableStyleRelationship()
+        featureTableStyles.createTableIconRelationship()
+        featureTableStyles.createStyleRelationship()
+        featureTableStyles.createIconRelationship()
+        GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
+        GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
+      }
 
       let icons = {}
       let styles = {}
@@ -380,7 +523,7 @@ export default class GeoPackageUtilities {
           })
         }
         let featureRowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName)
-        if (!_.isNil(style.features[feature.id])) {
+        if (!_.isNil(style) && !_.isNil(style.features[feature.id])) {
           const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
           if (style.features[feature.id].iconOrStyle === 'icon') {
             let iconId = style.features[feature.id].icon
@@ -437,6 +580,11 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Gets columns for a feature table using the feature collection provided
+   * @param featureCollection
+   * @returns {{columns: Array, id: {name: string}, geom: {name: string}}}
+   */
   static getLayerColumns (featureCollection) {
     let properties = {}
     featureCollection.features.forEach(feature => {
@@ -466,6 +614,13 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Gets the extent of all content in a geopackage
+   * @param gp
+   * @param tableName
+   * @returns {number[]}
+   * @private
+   */
   static _getGeoPackageExtent (gp, tableName) {
     let contentsDao = gp.contentsDao
     let contents = contentsDao.queryForId(tableName)
@@ -474,12 +629,25 @@ export default class GeoPackageUtilities {
     return [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
   }
 
+  /**
+   * Gets the extent of all content in a geopackage
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getGeoPackageExtent (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getGeoPackageExtent(gp, tableName)
     })
   }
 
+  /**
+   * Copies a geopackage's feature tables and associated style extension
+   * @param filePath
+   * @param geopackageCopyFileName
+   * @param tableName
+   * @returns {Promise<void>}
+   */
   static async copyGeoPackageFeatureLayerAndStyles (filePath, geopackageCopyFileName, tableName) {
     let geoPackage = await GeoPackageAPI.open(filePath)
     let geoPackageCopy
@@ -696,20 +864,40 @@ export default class GeoPackageUtilities {
     return featuresAdded
   }
 
-  static async _indexFeatureTable (gp, tableName, force = false, progress) {
+  /**
+   * Indexes a feature table
+   * @param gp
+   * @param tableName
+   * @param force
+   * @returns {Promise<void>}
+   * @private
+   */
+  static async _indexFeatureTable (gp, tableName, force = false) {
     const featureDao = gp.getFeatureDao(tableName)
     const fti = featureDao.featureTableIndex
     if (fti) {
-      await fti.ngaIndexWithForce(force, progress)
+      await fti.indexWithForce(force)
     }
   }
 
-  static async indexFeatureTable (filePath, tableName, force = false, progress) {
+  /**
+   * Indexes a feature table
+   * @param filePath
+   * @param tableName
+   * @param force
+   * @returns {Promise<any>}
+   */
+  static async indexFeatureTable (filePath, tableName, force = false) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._indexFeatureTable(gp, tableName, force, progress)
+      return GeoPackageUtilities._indexFeatureTable(gp, tableName, force)
     }, true)
   }
 
+  /**
+   * Gets the columns for a table represented by the featureDao passed in
+   * @param featureDao
+   * @returns {{columns: Array}}
+   */
   static getLayerColumnsFromGeoPackage (featureDao) {
     let columns = {
       columns: []
@@ -738,6 +926,11 @@ export default class GeoPackageUtilities {
     return columns
   }
 
+  /**
+   * Adds feature properties to a properties object
+   * @param feature
+   * @param currentProperties
+   */
   static addFeatureProperties (feature, currentProperties) {
     if (feature.properties.geometry) {
       feature.properties.geometry_property = feature.properties.geometry
@@ -788,39 +981,92 @@ export default class GeoPackageUtilities {
     })
   }
 
+  /**
+   * Gets the table style
+   * @param gp
+   * @param tableName
+   * @param geometryType
+   * @returns {StyleRow}
+   * @private
+   */
   static _getTableStyle (gp, tableName, geometryType) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     return featureTableStyles.getTableStyle(geometryType)
   }
 
+  /**
+   * Gets the table style
+   * @param filePath
+   * @param tableName
+   * @param geometryType
+   * @returns {Promise<any>}
+   */
   static async getTableStyle (filePath, tableName, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getTableStyle(gp, tableName, geometryType)
     })
   }
 
+  /**
+   * Gets the table icon
+   * @param gp
+   * @param tableName
+   * @param geometryType
+   * @returns {IconRow}
+   * @private
+   */
   static _getTableIcon (gp, tableName, geometryType) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     return featureTableStyles.getTableIcon(geometryType)
   }
 
+  /**
+   * Gets the table icon
+   * @param filePath
+   * @param tableName
+   * @param geometryType
+   * @returns {Promise<any>}
+   */
   static async getTableIcon (filePath, tableName, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getTableIcon(gp, tableName, geometryType)
     })
   }
 
+  /**
+   * Gets the icon by id
+   * @param gp
+   * @param tableName
+   * @param id
+   * @returns {UserRow}
+   * @private
+   */
   static _getIconById (gp, tableName, id) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     return featureTableStyles.getIconDao().queryForId(id)
   }
 
+  /**
+   * Gets the icon by id
+   * @param filePath
+   * @param tableName
+   * @param id
+   * @returns {Promise<any>}
+   */
   static async getIconById (filePath, tableName, id) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getIconById(gp, tableName, id)
     })
   }
 
+  /**
+   * Gets the tableIcon's id
+   * @param gp
+   * @param tableName
+   * @param geometryType
+   * @returns {number}
+   * @private
+   */
   static _getTableIconId (gp, tableName, geometryType) {
     let id = -1
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -831,12 +1077,26 @@ export default class GeoPackageUtilities {
     return id
   }
 
+  /**
+   * Gets the table icon's id
+   * @param filePath
+   * @param tableName
+   * @param geometryType
+   * @returns {Promise<any>}
+   */
   static async getTableIconId (filePath, tableName, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getTableIconId(gp, tableName, geometryType)
     })
   }
 
+  /**
+   * Gets the feature ids for the features in a feature table
+   * @param gp
+   * @param tableName
+   * @returns {Array}
+   * @private
+   */
   static _getFeatureIds (gp, tableName) {
     let featureIds = []
     let featureDao = gp.getFeatureDao(tableName)
@@ -847,12 +1107,25 @@ export default class GeoPackageUtilities {
     return featureIds
   }
 
+  /**
+   * Gets the feature ids from the features in a feature table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getFeatureIds (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureIds(gp, tableName)
     })
   }
 
+  /**
+   * Gets the ids for the point and multi point geometry type features
+   * @param gp
+   * @param tableName
+   * @returns {Array}
+   * @private
+   */
   static _getPointAndMultiPointFeatureIds (gp, tableName) {
     let featureIds = []
     let featureDao = gp.getFeatureDao(tableName)
@@ -867,12 +1140,26 @@ export default class GeoPackageUtilities {
     return featureIds
   }
 
+  /**
+   * Gets the ids for the point and multi point geometry type features
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getPointAndMultiPointFeatureIds (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getPointAndMultiPointFeatureIds(gp, tableName)
     })
   }
 
+  /**
+   * Gets the feature style
+   * @param gp
+   * @param tableName
+   * @param rowId
+   * @returns {StyleRow}
+   * @private
+   */
   static _getFeatureStyle (gp, tableName, rowId) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let featureDao = gp.getFeatureDao(tableName)
@@ -880,12 +1167,27 @@ export default class GeoPackageUtilities {
     return featureTableStyles.getFeatureStyleExtension().getStyle(tableName, rowId, _.isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()), false)
   }
 
+  /**
+   * Gets the feature style
+   * @param filePath
+   * @param tableName
+   * @param rowId
+   * @returns {Promise<any>}
+   */
   static async getFeatureStyle (filePath, tableName, rowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureStyle(gp, tableName, rowId)
     })
   }
 
+  /**
+   * Gets the feature icon
+   * @param gp
+   * @param tableName
+   * @param rowId
+   * @returns {IconRow}
+   * @private
+   */
   static _getFeatureIcon (gp, tableName, rowId) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let featureDao = gp.getFeatureDao(tableName)
@@ -893,12 +1195,25 @@ export default class GeoPackageUtilities {
     return featureTableStyles.getFeatureStyleExtension().getIcon(tableName, rowId, _.isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()), false)
   }
 
+  /**
+   * Gets the feature icon
+   * @param filePath
+   * @param tableName
+   * @param rowId
+   * @returns {Promise<any>}
+   */
   static async getFeatureIcon (filePath, tableName, rowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureIcon(gp, tableName, rowId)
     })
   }
 
+  /**
+   * Gets the style rows for a table
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _getStyleRows (gp, tableName) {
     let styleRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -910,12 +1225,24 @@ export default class GeoPackageUtilities {
     return styleRows
   }
 
+  /**
+   * Gets the style rows for a table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getStyleRows (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getStyleRows(gp, tableName)
     })
   }
 
+  /**
+   * Gets the icon rows for a table
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _getIconRows (gp, tableName) {
     let iconRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -927,75 +1254,95 @@ export default class GeoPackageUtilities {
     return iconRows
   }
 
+  /**
+   * Gets the icon rows for a table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getIconRows (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getIconRows(gp, tableName)
     })
   }
 
-  static _usePointIconDefault (gp, tableName, usePointIconDefault) {
-    let featureTableStyles = new FeatureTableStyles(gp, tableName)
-    if (usePointIconDefault) {
-      let pointIcon = VectorStyleUtilities.getDefaultIcon()
-      let pointIconRow = featureTableStyles.getIconDao().newRow()
-      pointIconRow.data = Buffer.from(pointIcon.url.split(',')[1], 'base64')
-      pointIconRow.contentType = pointIcon.url.substring(pointIcon.url.indexOf(':') + 1, pointIcon.url.indexOf(';'))
-      pointIconRow.width = pointIcon.width
-      pointIconRow.height = pointIcon.height
-      pointIconRow.anchorU = pointIcon.anchor_u
-      pointIconRow.anchorV = pointIcon.anchor_v
-      pointIconRow.name = pointIcon.name
-      featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(pointIconRow)
-      featureTableStyles.setTableIcon(GeometryType.POINT, pointIconRow)
-      featureTableStyles.setTableIcon(GeometryType.MULTIPOINT, pointIconRow)
-    } else {
-      const iconRow = featureTableStyles.getTableIcons().getIcon(GeometryType.POINT)
-      // Delete icon relationship
-      featureTableStyles.deleteTableIcon(GeometryType.POINT)
-      featureTableStyles.deleteTableIcon(GeometryType.MULTIPOINT)
-      // Delete default point/multipoint icon
-      if (!_.isNil(iconRow)) {
-        featureTableStyles.getIconDao().deleteById(iconRow.id)
-      }
-    }
-  }
-
-  static async usePointIconDefault (filePath, tableName, usePointIconDefault, rowId) {
-    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._usePointIconDefault(gp, tableName, usePointIconDefault, rowId)
-    })
-  }
-
+  /**
+   * Renames a geopackage table
+   * @param gp
+   * @param tableName
+   * @param newTableName
+   * @private
+   */
   static _renameGeoPackageTable (gp, tableName, newTableName) {
     gp.renameTable(tableName, newTableName)
   }
 
+  /**
+   * Renames a geopackage table
+   * @param filePath
+   * @param tableName
+   * @param newTableName
+   * @returns {Promise<any>}
+   */
   static async renameGeoPackageTable (filePath, tableName, newTableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._renameGeoPackageTable(gp, tableName, newTableName)
     })
   }
 
+  /**
+   * Copies a geopackage table
+   * @param gp
+   * @param tableName
+   * @param copyTableName
+   * @private
+   */
   static _copyGeoPackageTable (gp, tableName, copyTableName) {
     gp.copyTable(tableName, copyTableName, true, true)
   }
 
+  /**
+   * Copies a geopackage table
+   * @param filePath
+   * @param tableName
+   * @param copyTableName
+   * @returns {Promise<any>}
+   */
   static async copyGeoPackageTable (filePath, tableName, copyTableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._copyGeoPackageTable(gp, tableName, copyTableName)
     })
   }
 
+  /**
+   * Deletes a table from the geopackage
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _deleteGeoPackageTable (gp, tableName) {
     gp.deleteTable(tableName)
   }
 
+  /**
+   * Deletes a table from the geopackage
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async deleteGeoPackageTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteGeoPackageTable(gp, tableName)
     })
   }
 
+  /**
+   * Updates a style row
+   * @param gp
+   * @param tableName
+   * @param styleRow
+   * @private
+   */
   static _updateStyleRow (gp, tableName, styleRow) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let styleDao = featureTableStyles.getStyleDao()
@@ -1009,12 +1356,26 @@ export default class GeoPackageUtilities {
     styleDao.update(updatedRow)
   }
 
+  /**
+   * Updates a style row
+   * @param filePath
+   * @param tableName
+   * @param styleRow
+   * @returns {Promise<any>}
+   */
   static async updateStyleRow (filePath, tableName, styleRow) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._updateStyleRow(gp, tableName, styleRow)
     })
   }
 
+  /**
+   * Updates an icon row
+   * @param gp
+   * @param tableName
+   * @param iconRow
+   * @private
+   */
   static _updateIconRow (gp, tableName, iconRow) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let iconDao = featureTableStyles.getIconDao()
@@ -1031,12 +1392,25 @@ export default class GeoPackageUtilities {
     iconDao.update(updatedRow)
   }
 
+  /**
+   * Updates an icon row
+   * @param filePath
+   * @param tableName
+   * @param iconRow
+   * @returns {Promise<any>}
+   */
   static async updateIconRow (filePath, tableName, iconRow) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._updateIconRow(gp, tableName, iconRow)
     })
   }
 
+  /**
+   * Creates a style row
+   * @param gp
+   * @param tableName
+   * @private
+   */
   static _createStyleRow (gp, tableName) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let styleDao = featureTableStyles.getStyleDao()
@@ -1049,12 +1423,25 @@ export default class GeoPackageUtilities {
     featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
   }
 
+  /**
+   * Creates a style row
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async createStyleRow (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._createStyleRow(gp, tableName)
     })
   }
 
+  /**
+   * Creates an icon row
+   * @param gp
+   * @param tableName
+   * @param icon
+   * @private
+   */
   static _createIconRow (gp, tableName, icon = VectorStyleUtilities.getDefaultIcon()) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let iconDao = featureTableStyles.getIconDao()
@@ -1069,56 +1456,136 @@ export default class GeoPackageUtilities {
     featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
   }
 
+  /**
+   * Creates an icon row
+   * @param filePath
+   * @param tableName
+   * @param icon
+   * @returns {Promise<any>}
+   */
   static async createIconRow (filePath, tableName, icon = VectorStyleUtilities.getDefaultIcon()) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._createIconRow(gp, tableName, icon)
     })
   }
 
+  /**
+   * Deletes a style row
+   * @param gp
+   * @param tableName
+   * @param styleId
+   * @private
+   */
   static _deleteStyleRow (gp, tableName, styleId) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.deleteStyleAndMappingsByStyleRowId(styleId)
   }
 
+  /**
+   * Deletes a style row
+   * @param filePath
+   * @param tableName
+   * @param styleId
+   * @returns {Promise<any>}
+   */
   static async deleteStyleRow (filePath, tableName, styleId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteStyleRow(gp, tableName, styleId)
     })
   }
 
+  /**
+   * Deletes an icon row
+   * @param gp
+   * @param tableName
+   * @param iconId
+   * @private
+   */
   static _deleteIconRow (gp, tableName, iconId) {
+    console.log('deleting icon row for table: ' + tableName)
+    console.log('icon row id: ' + iconId)
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
-    featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
+    console.log('rows deleted: ' + featureTableStyles.deleteIconAndMappingsByIconRowId(iconId))
   }
 
+  /**
+   * Deletes an icon row
+   * @param filePath
+   * @param tableName
+   * @param iconId
+   * @returns {Promise<any>}
+   */
   static async deleteIconRow (filePath, tableName, iconId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteIconRow(gp, tableName, iconId)
     })
   }
 
+  /**
+   * Gets a feature style row
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @param geometryType
+   * @returns {StyleRow}
+   * @private
+   */
   static _getFeatureStyleRow (gp, tableName, featureId, geometryType) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     return featureTableStyles.getFeatureStyleExtension().getStyle(tableName, featureId, geometryType, false)
   }
 
+  /**
+   * Gets a feature style row
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @param geometryType
+   * @returns {Promise<any>}
+   */
   static async getFeatureStyleRow (filePath, tableName, featureId, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureStyleRow(gp, tableName, featureId, geometryType)
     })
   }
 
+  /**
+   * Gets a feature icon row
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @param geometryType
+   * @returns {IconRow}
+   * @private
+   */
   static _getFeatureIconRow (gp, tableName, featureId, geometryType) {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     return featureTableStyles.getFeatureStyleExtension().getIcon(tableName, featureId, geometryType, false)
   }
 
+  /**
+   * Gets a feature icon row
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @param geometryType
+   * @returns {Promise<any>}
+   */
   static async getFeatureIconRow (filePath, tableName, featureId, geometryType) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureIconRow(gp, tableName, featureId, geometryType)
     })
   }
 
+  /**
+   * Sets a table style
+   * @param gp
+   * @param tableName
+   * @param geometryType
+   * @param styleId
+   * @returns {number}
+   * @private
+   */
   static _setTableStyle (gp, tableName, geometryType, styleId) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
     if (styleId === -1) {
@@ -1131,12 +1598,29 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Sets a table style
+   * @param filePath
+   * @param tableName
+   * @param geometryType
+   * @param styleId
+   * @returns {Promise<any>}
+   */
   static async setTableStyle (filePath, tableName, geometryType, styleId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._setTableStyle(gp, tableName, geometryType, styleId)
     })
   }
 
+  /**
+   * Sets a table icon
+   * @param gp
+   * @param tableName
+   * @param geometryType
+   * @param iconId
+   * @returns {number}
+   * @private
+   */
   static _setTableIcon (gp, tableName, geometryType, iconId) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
     if (iconId === -1) {
@@ -1149,12 +1633,29 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Sets a table icon
+   * @param filePath
+   * @param tableName
+   * @param geometryType
+   * @param iconId
+   * @returns {Promise<any>}
+   */
   static async setTableIcon (filePath, tableName, geometryType, iconId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._setTableIcon(gp, tableName, geometryType, iconId)
     })
   }
 
+  /**
+   * Sets a feature style
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @param styleId
+   * @returns {number}
+   * @private
+   */
   static _setFeatureStyle (gp, tableName, featureId, styleId) {
     const featureDao = gp.getFeatureDao(tableName)
     const feature = featureDao.queryForId(featureId)
@@ -1168,12 +1669,29 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Sets a feature style
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @param styleId
+   * @returns {Promise<any>}
+   */
   static async setFeatureStyle (filePath, tableName, featureId, styleId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._setFeatureStyle(gp, tableName, featureId, styleId)
     })
   }
 
+  /**
+   * Sets a feature icon
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @param iconId
+   * @returns {number}
+   * @private
+   */
   static _setFeatureIcon (gp, tableName, featureId, iconId) {
     const featureDao = gp.getFeatureDao(tableName)
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -1187,52 +1705,82 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Sets a feature icon
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @param iconId
+   * @returns {Promise<any>}
+   */
   static async setFeatureIcon (filePath, tableName, featureId, iconId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._setFeatureIcon(gp, tableName, featureId, iconId)
     })
   }
 
-  static async _updateFeatureRow (gp, tableName, featureRowId, feature) {
+  /**
+   * Updates a feature row
+   * @param gp
+   * @param tableName
+   * @param featureRowId
+   * @param feature
+   * @private
+   */
+  static _updateFeatureRow (gp, tableName, featureRowId, feature) {
     const featureDao = gp.getFeatureDao(tableName)
     featureDao.deleteById(featureRowId)
     gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: (await gp.getGeoJSONFeaturesInTile(tableName, 0, 0, 0, true)).map(f => {
-        f.type = 'Feature'
-        return f
-      })
-    }
-    return {extent: geojsonExtent(featureCollection)}
+    // TODO: check if feature's geometry changed and if that geometry impacts the contents of the table
   }
 
+  /**
+   * Updates a feature row
+   * @param filePath
+   * @param tableName
+   * @param featureRowId
+   * @param feature
+   * @returns {Promise<any>}
+   */
   static async updateFeatureRow (filePath, tableName, featureRowId, feature) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._updateFeatureRow(gp, tableName, featureRowId, feature)
-    }, true)
-  }
-
-  static _createFeatureRow (gp, tableName, feature) {
-    gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
-  }
-
-  static async createFeatureRow (filePath, tableName, feature) {
-    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._createFeatureRow(gp, tableName, feature)
     })
   }
 
+  /**
+   * Deletes a feature row
+   * @param gp
+   * @param tableName
+   * @param featureRowId
+   * @private
+   */
   static _deleteFeatureRow (gp, tableName, featureRowId) {
-    return gp.getFeatureDao(tableName).deleteById(featureRowId)
+    gp.getFeatureDao(tableName).deleteById(featureRowId)
+    this._updateBoundingBoxForFeatureTable(gp, tableName)
   }
 
+  /**
+   * Delets a feature row
+   * @param filePath
+   * @param tableName
+   * @param featureRowId
+   * @returns {Promise<any>}
+   */
   static async deleteFeatureRow (filePath, tableName, featureRowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteFeatureRow(gp, tableName, featureRowId)
     })
   }
 
+  /**
+   * Gets the bounding box for a feature's geometry
+   * @param gp
+   * @param tableName
+   * @param featureRowId
+   * @returns {null}
+   * @private
+   */
   static _getBoundingBoxForFeature (gp, tableName, featureRowId) {
     let extent = null
     const featureDao = gp.getFeatureDao(tableName)
@@ -1244,12 +1792,70 @@ export default class GeoPackageUtilities {
     return extent
   }
 
+  /**
+   * Gets the bounding box for a feature's geometry
+   * @param filePath
+   * @param tableName
+   * @param featureRowId
+   * @returns {Promise<any>}
+   */
   static async getBoundingBoxForFeature (filePath, tableName, featureRowId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getBoundingBoxForFeature(gp, tableName, featureRowId)
     })
   }
 
+  /**
+   * Updates the bounding box for a feature table to match the actual contents of the table
+   * @param gp
+   * @param tableName
+   * @private
+   */
+  static _updateBoundingBoxForFeatureTable (gp, tableName) {
+    const contentsDao = gp.contentsDao
+    const contents = contentsDao.queryForId(tableName)
+    const featureDao = gp.getFeatureDao(tableName)
+    const features = []
+    featureDao.queryForAll().forEach(result => {
+      const featureRow = featureDao.createObject(result)
+      const geometry = featureRow.geometry
+      features.push({
+        type: 'Feature',
+        properties: {},
+        geometry: geometry.geometry.toGeoJSON()
+      })
+    })
+    const featureCollection = {
+      type: 'FeatureCollection',
+      features: features
+    }
+    const extent = geojsonExtent(featureCollection)
+    contents.min_x = extent[0]
+    contents.min_y = extent[1]
+    contents.max_x = extent[2]
+    contents.max_y = extent[3]
+    contentsDao.update(contents)
+  }
+
+  /**
+   * Updates the bounding box for a feature table to match the actual contents of the table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
+  static async updateBoundingBoxForFeatureTable (filePath, tableName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._updateBoundingBoxForFeatureTable(gp, tableName)
+    })
+  }
+
+  /**
+   * Gets the bounding box extent for a feature table
+   * @param gp
+   * @param tableName
+   * @returns {number[]}
+   * @private
+   */
   static _getBoundingBoxForTable (gp, tableName) {
     const contents = gp.getTableContents(tableName)
     let extent
@@ -1268,22 +1874,49 @@ export default class GeoPackageUtilities {
     return extent
   }
 
+  /**
+   * Gets the bounding box extent for a feature table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getBoundingBoxForTable (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getBoundingBoxForTable(gp, tableName)
     })
   }
 
+  /**
+   * Gets the feature count in a bounding box
+   * @param gp
+   * @param tableName
+   * @param boundingBox
+   * @returns {number}
+   * @private
+   */
   static _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
     return gp.getFeatureDao(tableName).featureTableIndex.countWithGeometryEnvelope(new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0]).buildEnvelope())
   }
 
+  /**
+   * Gets the feature count in a bounding box
+   * @param filePath
+   * @param tableName
+   * @param boundingBox
+   * @returns {Promise<any>}
+   */
   static async getFeatureCountInBoundingBox (filePath, tableName, boundingBox) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getFeatureCountInBoundingBox(gp, tableName, boundingBox)
     })
   }
 
+  /**
+   * Determines the estimated work for a tile configuration
+   * @param project
+   * @param tileConfiguration
+   * @returns {{boundingBox: null, estimatedNumberOfTiles: number, tileScaling: null, zoomLevels: Array}}
+   */
   static tileConfigurationEstimatedWork (project, tileConfiguration) {
     const results = {
       estimatedNumberOfTiles: 0,
@@ -1367,6 +2000,13 @@ export default class GeoPackageUtilities {
     return results
   }
 
+  /**
+   * Gets all features in a table as geojson
+   * @param gp
+   * @param tableName
+   * @returns {any[]}
+   * @private
+   */
   static _getAllFeaturesAsGeoJSON (gp, tableName) {
     const featureDao = gp.getFeatureDao(tableName)
     const srs = featureDao.srs
@@ -1376,17 +2016,40 @@ export default class GeoPackageUtilities {
     })
   }
 
+  /**
+   * Gets all features in a table as geojson
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
   static async getAllFeaturesAsGeoJSON (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getAllFeaturesAsGeoJSON(gp, tableName)
     })
   }
 
+  /**
+   * Gets a bounding box to perform a query using a coordinate and zoom
+   * @param coordinate
+   * @param zoom
+   * @returns {BoundingBox}
+   */
   static getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
     const queryDistanceDegrees = 10.0 / Math.pow(2, zoom)
     return new BoundingBox(coordinate.lng - queryDistanceDegrees, coordinate.lng + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
   }
 
+  /**
+   * Qeuries for features at a coordinate with a buffer based on zoom level
+   * @param gp
+   * @param geopackageId
+   * @param geopackageName
+   * @param tableNames
+   * @param coordinate
+   * @param zoom
+   * @returns {Array}
+   * @private
+   */
   static _queryForFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
     let features = []
     for (let i = 0; i < tableNames.length; i++) {
@@ -1403,12 +2066,33 @@ export default class GeoPackageUtilities {
     return features
   }
 
+  /**
+   * Queries for features at a coordinate with a buffer based on zoom level
+   * @param filePath
+   * @param geopackageId
+   * @param geopackageName
+   * @param tableNames
+   * @param coordinate
+   * @param zoom
+   * @returns {Promise<any>}
+   */
   static async queryForFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._queryForFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)
     })
   }
 
+  /**
+   * Gets the count for the features near a coordinate based on zoom
+   * @param gp
+   * @param geopackageId
+   * @param geopackageName
+   * @param tableNames
+   * @param coordinate
+   * @param zoom
+   * @returns {number}
+   * @private
+   */
   static _countOfFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
     let count = 0
     for (let i = 0; i < tableNames.length; i++) {
@@ -1421,6 +2105,16 @@ export default class GeoPackageUtilities {
     return count
   }
 
+  /**
+   * Gets the count for the features near a coordinate based on zoom
+   * @param filePath
+   * @param geopackageId
+   * @param geopackageName
+   * @param tableNames
+   * @param coordinate
+   * @param zoom
+   * @returns {Promise<any>}
+   */
   static async countOfFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._countOfFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)

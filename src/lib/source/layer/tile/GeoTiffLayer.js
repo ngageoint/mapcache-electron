@@ -254,7 +254,7 @@ export default class GeoTiffLayer extends TileLayer {
         bitsPerSample: this.bitsPerSample,
         colorMap: this.colorMap,
         info: GDALUtilities.gdalInfo(this.ds, this.image),
-        shown: this.shown || true,
+        visible: this.visible || false,
         stretchToMinMax: this.stretchToMinMax,
         renderingMethod: this.renderingMethod,
         redBand: this.redBand,

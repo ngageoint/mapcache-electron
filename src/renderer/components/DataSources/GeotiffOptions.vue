@@ -1,221 +1,165 @@
 <template>
   <div>
-    <div class="layer__face__stats">
-      <p class="layer__face__stats__weight">
-        Rendering Method
-      </p>
-      <div class="preset-select">
-        <select v-model="renderingMethod">
-          <!-- <option value="">Custom</option> -->
-          <option v-for="method in renderMethods" :value="method.value">{{method.name}}</option>
-        </select>
-      </div>
-    </div>
-    <div class="layer__horizontal__divider detail-divider"></div>
-    <div v-if="renderingMethod === 0">
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          Gray Scale Options
-          <div class="flex-column option-block">
-            Gray Band Options
-            <div class="preset-select gray-color">
-              <select v-model="grayBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Gray</div>
-            </div>
-            <div class="flex-row option-block" v-if="grayBand >= 0">
-              <span class="text-box-label">Min</span>
-              <input type="number" class="text-box" v-model="grayBandMin"/>
-              <span class="text-box-label">Max</span>
-              <input type="number" class="text-box" v-model="grayBandMax"/>
-            </div>
-            <div>
-              Color Gradient
-              <div class="preset-select">
-                <select v-model="grayScaleColorGradient">
-                  <option value=0>White is Zero</option>
-                  <option value=1>Black is Zero</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              Stretch to Min/Max
-              <input type="checkbox" v-model="stretchToMinMax">
-            </div>
-          </div>
-        </p>
-      </div>
-      <div class="layer__horizontal__divider detail-divider"></div>
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          Transparency Options
-        <div class="flex-row option-block">
-          <span class="text-box-label">
-            NO_DATA Value
-            <input type="checkbox" v-model="enableGlobalNoDataValue">
-          </span>
-          <input type="number" class="text-box" v-model="globalNoDataValue"/>
-        </div>
-        <div class="flex-row option-block">
-          <span class="text-box-label">
-            Opacity Mask
-            <input type="checkbox" v-model="enableGlobalOpacity">
-          </span>
-          <div style="flex: 1; padding: 8px; max-width: 180px;">
-            <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
-          </div>
-        </div>
-        <div class="flex-column option-block">
-          Alpha Band
-          <div class="preset-select alpha-color">
-            <select v-model="alphaBand">
-              <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-            </select>
-            <div class="color-band-name">Alpha</div>
-          </div>
-        </div>
-        </p>
-      </div>
-    </div>
-    <div v-else-if="renderingMethod === 1">
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          RGB Options
-          <div class="flex-column option-block">
-            Red Band Options
-            <div class="preset-select red-color">
-              <select v-model="redBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Red</div>
-            </div>
-            <div class="flex-row option-block" v-if="redBand >= 0">
-              <span class="text-box-label">Min</span>
-              <input type="number" class="text-box" v-model="redBandMin"/>
-              <span class="text-box-label">Max</span>
-              <input type="number" class="text-box" v-model="redBandMax"/>
-            </div>
-          </div>
-          <div class="flex-column option-block">
-            Green Band Options
-            <div class="preset-select green-color">
-              <select v-model="greenBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Green</div>
-            </div>
-            <div class="flex-row option-block" v-if="greenBand >= 0">
-              <span class="text-box-label">Min</span>
-              <input type="number" class="text-box" v-model="greenBandMin"/>
-              <span class="text-box-label">Max</span>
-              <input type="number" class="text-box" v-model="greenBandMax"/>
-            </div>
-          </div>
-          <div class="flex-column option-block">
-            Blue Band Options
-            <div class="preset-select blue-color">
-              <select v-model="blueBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Blue</div>
-            </div>
-            <div class="flex-row option-block" v-if="blueBand >= 0">
-              <span class="text-box-label">Min</span>
-              <input type="number" class="text-box" v-model="blueBandMin"/>
-              <span class="text-box-label">Max</span>
-              <input type="number" class="text-box" v-model="blueBandMax"/>
-            </div>
-          </div>
-          <div>
-            Stretch to Min/Max
-            <input type="checkbox" v-model="stretchToMinMax">
-          </div>
-        </p>
-      </div>
-      <div class="layer__horizontal__divider detail-divider"></div>
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          Transparency Options
-          <div class="flex-row option-block">
-            <span class="text-box-label">
-              NO_DATA Value
-              <input type="checkbox" v-model="enableGlobalNoDataValue">
-            </span>
-            <input type="number" class="text-box" v-model="globalNoDataValue"/>
-          </div>
-          <div class="flex-row option-block">
-            <span class="text-box-label">
-              Opacity Mask
-              <input type="checkbox" v-model="enableGlobalOpacity">
-            </span>
-            <div style="flex: 1; padding: 8px; max-width: 180px;">
-              <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
-            </div>
-          </div>
-          <div class="flex-column option-block">
-            Alpha Band
-            <div class="preset-select alpha-color">
-              <select v-model="alphaBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Alpha</div>
-            </div>
-          </div>
-        </p>
-      </div>
-    </div>
-    <div v-else-if="renderingMethod === 2">
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          Color Palette Options
-          <div class="flex-column option-block">
-            Color Palette Band Options
-            <div class="preset-select palette-color">
-              <select v-model="paletteBand">
-                <option v-for="band in bandOptions" :value="band.value">{{band.name}}</option>
-              </select>
-              <div class="color-band-name">Palette</div>
-            </div>
-          </div>
-        </p>
-      </div>
-      <div class="layer__horizontal__divider detail-divider"></div>
-      <div class="layer__face__stats">
-        <p class="layer__face__stats__weight">
-          Transparency Options
-          <div class="flex-row option-block">
-              <span class="text-box-label">
-                Opacity Mask
-                <input type="checkbox" v-model="enableGlobalOpacity">
-              </span>
-            <div style="flex: 1; padding: 8px; max-width: 180px;">
-              <vue-slider v-model="globalOpacity" :min="0" :max="100" :interval="1" />
-            </div>
-          </div>
-        </p>
-      </div>
-    </div>
+    <v-toolbar
+      color="#3b779a"
+      dark
+      flat
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title><b class="ml-2">{{displayName}}</b> Style Editor</v-toolbar-title>
+    </v-toolbar>
+    <v-card>
+      <v-card-text>
+        <v-list two-line subheader>
+          <v-subheader>Rendering Method</v-subheader>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-select v-model="renderingMethod" :items="renderMethods" label="Rendering Method" dense>
+              </v-select>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list two-line subheader v-if="renderingMethod === 0">
+          <v-subheader>Gray Scale Options</v-subheader>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-row no-gutters class="ma-0 pa-0">
+                <v-select v-model="grayBand" :items="bandOptions" label="Gray Scale Band" dense>
+                </v-select>
+              </v-row>
+              <v-row no-gutters v-if="grayBand > 0">
+                <v-col class="ma-0 pr-1">
+                  <v-text-field type="number" label="Min" v-model="grayBandMin" dense></v-text-field>
+                </v-col>
+                <v-col class="ma-0 pl-1">
+                  <v-text-field type="number" label="Max" v-model="grayBandMax" dense></v-text-field>
+                </v-col>
+              </v-row>
+              <v-row no-gutters class="ma-0 pa-0">
+                <v-checkbox v-model="stretchToMinMax" label="Stretch Band to Min/Max" dense>
+                </v-checkbox>
+              </v-row>
+              <v-row no-gutters>
+                <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color Gradient" dense>
+                </v-select>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+        <v-list two-line subheader v-if="renderingMethod === 1">
+          <v-subheader>RGB Options</v-subheader>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-row no-gutters class="ma-0 pa-0">
+                <v-select v-model="redBand" :items="bandOptions" label="Red Band" dense>
+                </v-select>
+              </v-row>
+              <v-row no-gutters v-if="redBand > 0">
+                <v-col class="ma-0 pr-1">
+                  <v-text-field type="number" label="Min" v-model="redBandMin" dense></v-text-field>
+                </v-col>
+                <v-col class="ma-0 pl-1">
+                  <v-text-field type="number" label="Max" v-model="redBandMax" dense></v-text-field>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-row no-gutters class="ma-0 pa-0">
+                <v-select v-model="greenBand" :items="bandOptions" label="Green Band" dense>
+                </v-select>
+              </v-row>
+              <v-row no-gutters v-if="greenBand > 0">
+                <v-col class="ma-0 pr-1">
+                  <v-text-field type="number" label="Min" v-model="greenBandMin" dense></v-text-field>
+                </v-col>
+                <v-col class="ma-0 pl-1">
+                  <v-text-field type="number" label="Max" v-model="greenBandMax" dense></v-text-field>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-row no-gutters class="ma-0 pa-0">
+                <v-select v-model="blueBand" :items="bandOptions" label="Blue Band" dense>
+                </v-select>
+              </v-row>
+              <v-row no-gutters v-if="blueBand > 0">
+                <v-col class="ma-0 pr-1">
+                  <v-text-field type="number" label="Min" v-model="blueBandMin" dense></v-text-field>
+                </v-col>
+                <v-col class="ma-0 pl-1">
+                  <v-text-field type="number" label="Max" v-model="blueBandMax" dense></v-text-field>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;" class="pt-0 mt-0 pb-0 mb-0">
+              <v-row no-gutters>
+                <v-checkbox v-model="stretchToMinMax" label="Stretch Bands to Min/Max" dense>
+                </v-checkbox>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list two-line subheader v-if="renderingMethod === 2">
+          <v-subheader>Palette Options</v-subheader>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px;">
+              <v-select v-model="paletteBand" :items="bandOptions" label="Palette Band" dense>
+              </v-select>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list two-line subheader>
+          <v-subheader>Transparency Options</v-subheader>
+          <v-list-item v-if="renderingMethod < 2">
+            <v-list-item-content style="padding-right: 12px;">
+              <v-select v-model="alphaBand" :items="bandOptions" label="Alpha Band" dense>
+              </v-select>
+              <v-row no-gutters>
+                <v-checkbox label="NO_DATA" v-model="enableGlobalNoDataValue" dense></v-checkbox>
+              </v-row>
+              <v-row no-gutters>
+                <v-text-field type="number" label="NO_DATA Value" v-model="globalNoDataValue" dense hide-details></v-text-field>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+              <v-row no-gutters class="pa-0 ma-0">
+                <v-checkbox v-model="enableGlobalOpacity" dnse></v-checkbox>
+                <v-slider label="Opacity Mask" v-model="globalOpacity" :min="0" :max="100" :interval="1" dense></v-slider>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
   import _ from 'lodash'
-  import VueSlider from 'vue-slider-component'
-  import 'vue-slider-component/theme/antd.css'
 
   export default {
     data () {
       return {
-        globalNoDataValue: this.layer.globalNoDataValue,
-        globalOpacity: this.layer.globalOpacity
+        globalNoDataValue: this.source.globalNoDataValue,
+        globalOpacity: this.source.globalOpacity
       }
     },
     created () {
       this.debounceLayerField = _.debounce((value, key) => {
         if (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer[key] = value
           this.updateLayer({
             projectId: this.projectId,
@@ -224,23 +168,29 @@
         }
       }, 500)
     },
-    components: {
-      VueSlider
-    },
     props: {
-      layer: Object,
-      projectId: String
+      source: Object,
+      projectId: String,
+      back: Function
     },
     computed: {
+      grayScaleColorGradientItems () {
+        return [{text: 'White is zero', value: 0}, {text: 'Black is zero', value: 1}]
+      },
+      displayName () {
+        return this.source.displayName ? this.source.displayName : this.source.name
+      },
       bandOptions () {
-        return this.layer.bandOptions
+        return this.source.bandOptions.map(band => {
+          return {text: band.name, value: band.value}
+        })
       },
       renderingMethod: {
         get () {
-          return this.layer.renderingMethod
+          return this.source.renderingMethod
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.renderingMethod = value
           this.updateLayer({
             projectId: this.projectId,
@@ -250,13 +200,13 @@
       },
       redBand: {
         get () {
-          return this.layer.redBand
+          return this.source.redBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.redBand = Number(value)
-          updatedLayer.redBandMin = this.layer.bandOptions[updatedLayer.redBand].min
-          updatedLayer.redBandMax = this.layer.bandOptions[updatedLayer.redBand].max
+          updatedLayer.redBandMin = this.source.bandOptions[updatedLayer.redBand].min
+          updatedLayer.redBandMax = this.source.bandOptions[updatedLayer.redBand].max
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -265,7 +215,7 @@
       },
       redBandMin: {
         get () {
-          return this.layer.redBandMin
+          return this.source.redBandMin
         },
         set (value) {
           this.debounceLayerField(value, 'redBandMin')
@@ -273,7 +223,7 @@
       },
       redBandMax: {
         get () {
-          return this.layer.redBandMax
+          return this.source.redBandMax
         },
         set (value) {
           this.debounceLayerField(value, 'redBandMax')
@@ -281,13 +231,13 @@
       },
       greenBand: {
         get () {
-          return this.layer.greenBand
+          return this.source.greenBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.greenBand = Number(value)
-          updatedLayer.greenBandMin = this.layer.bandOptions[updatedLayer.greenBand].min
-          updatedLayer.greenBandMax = this.layer.bandOptions[updatedLayer.greenBand].max
+          updatedLayer.greenBandMin = this.source.bandOptions[updatedLayer.greenBand].min
+          updatedLayer.greenBandMax = this.source.bandOptions[updatedLayer.greenBand].max
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -296,7 +246,7 @@
       },
       greenBandMin: {
         get () {
-          return this.layer.greenBandMin
+          return this.source.greenBandMin
         },
         set (value) {
           this.debounceLayerField(value, 'greenBandMin')
@@ -304,7 +254,7 @@
       },
       greenBandMax: {
         get () {
-          return this.layer.greenBandMax
+          return this.source.greenBandMax
         },
         set (value) {
           this.debounceLayerField(value, 'greenBandMax')
@@ -312,13 +262,13 @@
       },
       blueBand: {
         get () {
-          return this.layer.blueBand
+          return this.source.blueBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.blueBand = Number(value)
-          updatedLayer.blueBandMin = this.layer.bandOptions[updatedLayer.blueBand].min
-          updatedLayer.blueBandMax = this.layer.bandOptions[updatedLayer.blueBand].max
+          updatedLayer.blueBandMin = this.source.bandOptions[updatedLayer.blueBand].min
+          updatedLayer.blueBandMax = this.source.bandOptions[updatedLayer.blueBand].max
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -327,7 +277,7 @@
       },
       blueBandMin: {
         get () {
-          return this.layer.blueBandMin
+          return this.source.blueBandMin
         },
         set (value) {
           this.debounceLayerField(value, 'blueBandMin')
@@ -335,7 +285,7 @@
       },
       blueBandMax: {
         get () {
-          return this.layer.blueBandMax
+          return this.source.blueBandMax
         },
         set (value) {
           this.debounceLayerField(value, 'blueBandMax')
@@ -343,13 +293,13 @@
       },
       grayBand: {
         get () {
-          return this.layer.grayBand
+          return this.source.grayBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.grayBand = Number(value)
-          updatedLayer.grayBandMin = this.layer.bandOptions[updatedLayer.grayBand].min
-          updatedLayer.grayBandMax = this.layer.bandOptions[updatedLayer.grayBand].max
+          updatedLayer.grayBandMin = this.source.bandOptions[updatedLayer.grayBand].min
+          updatedLayer.grayBandMax = this.source.bandOptions[updatedLayer.grayBand].max
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -358,7 +308,7 @@
       },
       grayBandMin: {
         get () {
-          return this.layer.grayBandMin
+          return this.source.grayBandMin
         },
         set (value) {
           this.debounceLayerField(value, 'grayBandMin')
@@ -366,7 +316,7 @@
       },
       grayBandMax: {
         get () {
-          return this.layer.grayBandMax
+          return this.source.grayBandMax
         },
         set (value) {
           this.debounceLayerField(value, 'grayBandMax')
@@ -374,10 +324,10 @@
       },
       paletteBand: {
         get () {
-          return this.layer.paletteBand
+          return this.source.paletteBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.paletteBand = Number(value)
           this.updateLayer({
             projectId: this.projectId,
@@ -387,10 +337,10 @@
       },
       alphaBand: {
         get () {
-          return this.layer.alphaBand
+          return this.source.alphaBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.alphaBand = Number(value)
           this.updateLayer({
             projectId: this.projectId,
@@ -400,10 +350,10 @@
       },
       grayScaleColorGradient: {
         get () {
-          return this.layer.grayScaleColorGradient
+          return this.source.grayScaleColorGradient
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.layer)
+          let updatedLayer = Object.assign({}, this.source)
           updatedLayer.grayScaleColorGradient = Number(value)
           this.updateLayer({
             projectId: this.projectId,
@@ -413,11 +363,11 @@
       },
       enableGlobalNoDataValue: {
         get () {
-          return this.layer.enableGlobalNoDataValue
+          return this.source.enableGlobalNoDataValue
         },
         set () {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.enableGlobalNoDataValue = !this.layer.enableGlobalNoDataValue
+          let updatedLayer = Object.assign({}, this.source)
+          updatedLayer.enableGlobalNoDataValue = !this.source.enableGlobalNoDataValue
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -426,11 +376,11 @@
       },
       enableGlobalOpacity: {
         get () {
-          return this.layer.enableGlobalOpacity
+          return this.source.enableGlobalOpacity
         },
         set () {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.enableGlobalOpacity = !this.layer.enableGlobalOpacity
+          let updatedLayer = Object.assign({}, this.source)
+          updatedLayer.enableGlobalOpacity = !this.source.enableGlobalOpacity
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -439,21 +389,21 @@
       },
       renderMethods () {
         let methods = []
-        if (this.layer.colorMap) {
-          methods.push({name: 'Palette', value: 2})
+        if (this.source.colorMap) {
+          methods.push({text: 'Palette', value: 2})
         } else {
-          methods.push({name: 'Gray Scale', value: 0})
-          methods.push({name: 'RGB', value: 1})
+          methods.push({text: 'Gray Scale', value: 0})
+          methods.push({text: 'RGB', value: 1})
         }
         return methods
       },
       stretchToMinMax: {
         get () {
-          return this.layer.stretchToMinMax
+          return this.source.stretchToMinMax
         },
         set () {
-          let updatedLayer = Object.assign({}, this.layer)
-          updatedLayer.stretchToMinMax = !this.layer.stretchToMinMax
+          let updatedLayer = Object.assign({}, this.source)
+          updatedLayer.stretchToMinMax = !this.source.stretchToMinMax
           this.updateLayer({
             projectId: this.projectId,
             layer: updatedLayer
@@ -468,9 +418,6 @@
       zoomToExtent (extent) {
         this.setProjectExtents({projectId: this.projectId, extents: extent})
         this.$emit('zoom-to', extent)
-      },
-      openDetail () {
-        this.expanded = !this.expanded
       }
     },
     watch: {

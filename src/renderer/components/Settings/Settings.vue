@@ -1,5 +1,13 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-card flat class="mx-auto" style="width: 100%;">
+  <div flat class="mx-auto" style="width: 100%;">
+    <v-toolbar
+      color="#3b779a"
+      dark
+      flat
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title>Settings</v-toolbar-title>
+    </v-toolbar>
     <v-dialog v-model="editProjectNameDialog" max-width="500">
       <edit-text-modal icon="mdi-pencil-outline" :title="'Rename ' + project.name" save-text="rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
@@ -70,7 +78,7 @@
         </v-list-item-content>
       </v-list-item>
     </v-list>
-  </v-card>
+  </div>
 </template>
 
 <script>
@@ -84,7 +92,8 @@
   }
   export default {
     props: {
-      project: Object
+      project: Object,
+      back: Function
     },
     components: {
       EditTextModal,
@@ -146,8 +155,4 @@
 </script>
 
 <style scoped>
-  .round-top-border {
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-  }
 </style>

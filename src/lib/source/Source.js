@@ -1,16 +1,21 @@
-import { userDataDir } from '../settings/Settings'
-import UniqueIDUtilities from '../UniqueIDUtilities'
+import FileUtilities from '../FileUtilities'
 
 export default class Source {
-  constructor (filePath, layers = [], credentials = {}, sourceId = UniqueIDUtilities.createUniqueID()) {
+  constructor (filePath, layers = [], credentials = {}) {
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     this.sourceId = sourceId
+    this.sourceDirectory = sourceDirectory
     this.filePath = filePath
     this.layers = layers
     this.credentials = credentials
   }
 
+  removeSourceDir () {
+    FileUtilities.rmSourceDirectory(this.sourceId)
+  }
+
   get sourceCacheFolder () {
-    return userDataDir().dir(this.sourceId)
+    return this.sourceDirectory
   }
 
   async initialize () {

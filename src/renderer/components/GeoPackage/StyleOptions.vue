@@ -61,7 +61,7 @@
 
   export default {
     props: {
-      geopackage: Object,
+      id: String,
       tableName: String,
       defaultName: String,
       allowStyleNameEditing: Boolean,
@@ -69,7 +69,11 @@
       geometryType: String,
       styleRow: Object,
       projectId: String,
-      showId: Boolean
+      showId: Boolean,
+      isGeoPackage: {
+        type: Boolean,
+        default: true
+      }
     },
     created () {
       this.debounceColorOpacity = _.debounce((val) => {
@@ -88,9 +92,10 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              geopackageId: this.geopackage.id,
+              id: this.id,
               tableName: this.tableName,
-              styleRow: styleRow
+              styleRow: styleRow,
+              isGeoPackage: this.isGeoPackage
             })
           }
         }
@@ -111,9 +116,10 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              geopackageId: this.geopackage.id,
+              id: this.id,
               tableName: this.tableName,
-              styleRow: styleRow
+              styleRow: styleRow,
+              isGeoPackage: this.isGeoPackage
             })
           }
         }
@@ -133,9 +139,10 @@
             }
             this.updateProjectLayerStyleRow({
               projectId: this.projectId,
-              geopackageId: this.geopackage.id,
+              id: this.id,
               tableName: this.tableName,
-              styleRow: styleRow
+              styleRow: styleRow,
+              isGeoPackage: this.isGeoPackage
             })
           }
         }
@@ -195,9 +202,10 @@
           }
           this.updateProjectLayerStyleRow({
             projectId: this.projectId,
-            geopackageId: this.geopackage.id,
+            id: this.id,
             tableName: this.tableName,
-            styleRow: styleRow
+            styleRow: styleRow,
+            isGeoPackage: this.isGeoPackage
           })
         }
       },
@@ -219,9 +227,10 @@
       deleteStyle () {
         this.deleteProjectLayerStyleRow({
           projectId: this.projectId,
-          geopackageId: this.geopackage.id,
+          id: this.id,
           tableName: this.tableName,
-          styleId: this.styleRow.id
+          styleId: this.styleRow.id,
+          isGeoPackage: this.isGeoPackage
         })
       }
     }

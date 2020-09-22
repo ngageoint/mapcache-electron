@@ -5,6 +5,7 @@ import fs from 'fs'
 import WindowLauncher from '../../lib/window/WindowLauncher'
 import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
 import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
+import FileUtilities from '../../lib/FileUtilities'
 
 const state = {
 }
@@ -25,9 +26,6 @@ const mutations = {
   setLayerDisplayName (state, {projectId, layerId, displayName}) {
     Vue.set(state[projectId].layers[layerId], 'displayName', displayName)
   },
-  addProjectLayer (state, {project, layerId, config}) {
-    Vue.set(state[project.id].layers, layerId, config)
-  },
   addProjectLayers (state, {projectLayers}) {
     projectLayers.forEach(layer => {
       Vue.set(state[layer.project.id].layers, layer.layerId, layer.config)
@@ -36,51 +34,28 @@ const mutations = {
   setGeoPackage (state, {projectId, geopackage}) {
     Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
   },
-  expandCollapseGeoPackage (state, {projectId, geopackageId}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
-  },
   setProjectMaxFeatures (state, {projectId, maxFeatures}) {
     Vue.set(state[projectId], 'maxFeatures', maxFeatures)
   },
   setGeoPackageLayersVisible (state, {projectId, geopackageId, visible}) {
     const tables = _.cloneDeep(state[projectId].geopackages[geopackageId].tables)
     _.keys(tables.tiles).forEach(table => {
-      tables.tiles[table].tableVisible = visible
+      tables.tiles[table].visible = visible
     })
     _.keys(tables.features).forEach(table => {
-      tables.features[table].tableVisible = visible
+      tables.features[table].visible = visible
     })
     Vue.set(state[projectId].geopackages[geopackageId], 'tables', tables)
   },
-  displayStyleEditor (state, {projectId, geopackageId, tableName}) {
-    if (tableName === null || tableName === undefined) {
-      Vue.delete(state[projectId], 'styleEditor')
-    } else {
-      Vue.set(state[projectId], 'styleEditor', {
-        tableName,
-        geopackageId
-      })
-    }
-  },
   setGeoPackageFeatureTableVisible (state, {projectId, geopackageId, tableName, visible}) {
-    Vue.set(state[projectId].geopackages[geopackageId].tables.features[tableName], 'tableVisible', visible)
+    Vue.set(state[projectId].geopackages[geopackageId].tables.features[tableName], 'visible', visible)
   },
   setGeoPackageTileTableVisible (state, {projectId, geopackageId, tableName, visible}) {
-    Vue.set(state[projectId].geopackages[geopackageId].tables.tiles[tableName], 'tableVisible', visible)
+    Vue.set(state[projectId].geopackages[geopackageId].tables.tiles[tableName], 'visible', visible)
   },
   renameGeoPackage (state, {projectId, geopackageId, newPath, newName}) {
     Vue.set(state[projectId].geopackages[geopackageId], 'path', newPath)
     Vue.set(state[projectId].geopackages[geopackageId], 'name', newName)
-  },
-  expandCollapseFeatureTableCard (state, {projectId, geopackageId, tableName}) {
-    if (!state[projectId].geopackages[geopackageId]) {
-      Vue.set(state[projectId].geopackages[geopackageId].featureTables[tableName], 'expanded', !state[projectId].geopackages[geopackageId].tileTables[tableName].expanded)
-    }
-  },
-  expandCollapseTileTableCard (state, {projectId, geopackageId, tableName}) {
-    if (!state[projectId].geopackages[geopackageId]) {
-      Vue.set(state[projectId].geopackages[geopackageId].tileTables[tableName], 'expanded', !state[projectId].geopackages[geopackageId].featureTables[tableName].expanded)
-    }
   },
   // setGeoPackageBuildMode (state, {projectId, geopackageId, buildMode}) {
   //   Vue.set(state[projectId].geopackages[geopackageId], 'buildMode', buildMode)
@@ -187,14 +162,8 @@ const mutations = {
   //   Vue.delete(state[projectId].geopackages[geopackageId].vectorConfigurations, configId)
   // },
   toggleProjectLayer (state, {projectId, layerId}) {
-    Vue.set(state[projectId].layers[layerId], 'shown', !state[projectId].layers[layerId].shown)
+    Vue.set(state[projectId].layers[layerId], 'visible', !state[projectId].layers[layerId].visible)
   },
-  expandProjectLayer (state, {projectId, layerId}) {
-    Vue.set(state[projectId].layers[layerId], 'expanded', !state[projectId].layers[layerId].expanded)
-  },
-  // expandGeoPackageConfiguration (state, {projectId, geopackageId}) {
-  //   Vue.set(state[projectId].geopackages[geopackageId], 'expanded', !state[projectId].geopackages[geopackageId].expanded)
-  // },
   // setGeoPackageName (state, {projectId, geopackageId, name}) {
   //   Vue.set(state[projectId].geopackages[geopackageId], 'name', name)
   // },
@@ -216,11 +185,15 @@ const mutations = {
   updateProjectLayerStyleMaxFeatures (state, {projectId, layerId, maxFeatures}) {
     Vue.set(state[projectId].layers[layerId], 'maxFeatures', maxFeatures)
   },
-  updateGeoPackageStyleKey (state, {projectId, geopackageId, tableName}) {
-    if (state[projectId].geopackages[geopackageId].tables.features[tableName]) {
-      Vue.set(state[projectId].geopackages[geopackageId].tables.features[tableName], 'styleKey', state[projectId].geopackages[geopackageId].tables.features[tableName].styleKey + 1)
-    } else if (state[projectId].geopackages[geopackageId].tables.tiles[tableName]) {
-      Vue.set(state[projectId].geopackages[geopackageId].tables.tiles[tableName], 'styleKey', state[projectId].geopackages[geopackageId].tables.tiles[tableName].styleKey + 1)
+  updateStyleKey (state, {projectId, id, tableName, isGeoPackage}) {
+    if (isGeoPackage) {
+      if (state[projectId].geopackages[id].tables.features[tableName]) {
+        Vue.set(state[projectId].geopackages[id].tables.features[tableName], 'styleKey', state[projectId].geopackages[id].tables.features[tableName].styleKey + 1)
+      } else if (state[projectId].geopackages[id].tables.tiles[tableName]) {
+        Vue.set(state[projectId].geopackages[id].tables.tiles[tableName], 'styleKey', state[projectId].geopackages[id].tables.tiles[tableName].styleKey + 1)
+      }
+    } else {
+      Vue.set(state[projectId].layers[id], 'styleKey', state[projectId].layers[id].styleKey + 1)
     }
   },
   updateLayerFeatureCount (state, {projectId, layerId, count}) {
@@ -229,29 +202,57 @@ const mutations = {
   updateLayerExtent (state, {projectId, layerId, extent}) {
     Vue.set(state[projectId].layers[layerId], 'extent', extent)
   },
-  updateTableStyleAssignmentGeometryType (state, {projectId, geopackageId, tableName, geometryType}) {
-    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].tableStyleAssignment)
-    copy.table = tableName
-    copy.geometryType = geometryType
-    Vue.set(state[projectId].geopackages[geopackageId], 'tableStyleAssignment', copy)
+  updateTableStyleAssignmentGeometryType (state, {projectId, id, tableName, geometryType, isGeoPackage}) {
+    if (isGeoPackage) {
+      const copy = _.cloneDeep(state[projectId].geopackages[id].tableStyleAssignment)
+      copy.table = tableName
+      copy.geometryType = geometryType
+      Vue.set(state[projectId].geopackages[id], 'tableStyleAssignment', copy)
+    } else {
+      const copy = _.cloneDeep(state[projectId].layers[id].tableStyleAssignment)
+      copy.table = tableName
+      copy.geometryType = geometryType
+      Vue.set(state[projectId].layers[id], 'tableStyleAssignment', copy)
+    }
   },
-  updateTableIconAssignmentGeometryType (state, {projectId, geopackageId, tableName, geometryType}) {
-    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].tableIconAssignment)
-    copy.table = tableName
-    copy.geometryType = geometryType
-    Vue.set(state[projectId].geopackages[geopackageId], 'tableIconAssignment', copy)
+  updateTableIconAssignmentGeometryType (state, {projectId, id, tableName, geometryType, isGeoPackage}) {
+    if (isGeoPackage) {
+      const copy = _.cloneDeep(state[projectId].geopackages[id].tableIconAssignment)
+      copy.table = tableName
+      copy.geometryType = geometryType
+      Vue.set(state[projectId].geopackages[id], 'tableIconAssignment', copy)
+    } else {
+      const copy = _.cloneDeep(state[projectId].layers[id].tableIconAssignment)
+      copy.table = tableName
+      copy.geometryType = geometryType
+      Vue.set(state[projectId].layers[id], 'tableIconAssignment', copy)
+    }
   },
-  updateStyleAssignmentFeature (state, {projectId, geopackageId, tableName, featureId}) {
-    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].styleAssignment)
-    copy.table = tableName
-    copy.featureId = featureId
-    Vue.set(state[projectId].geopackages[geopackageId], 'styleAssignment', copy)
+  updateStyleAssignmentFeature (state, {projectId, id, tableName, featureId, isGeoPackage}) {
+    if (isGeoPackage) {
+      const copy = _.cloneDeep(state[projectId].geopackages[id].styleAssignment)
+      copy.table = tableName
+      copy.featureId = featureId
+      Vue.set(state[projectId].geopackages[id], 'styleAssignment', copy)
+    } else {
+      const copy = _.cloneDeep(state[projectId].layers[id].styleAssignment)
+      copy.table = tableName
+      copy.featureId = featureId
+      Vue.set(state[projectId].layers[id], 'styleAssignment', copy)
+    }
   },
-  updateIconAssignmentFeature (state, {projectId, geopackageId, tableName, featureId}) {
-    const copy = _.cloneDeep(state[projectId].geopackages[geopackageId].iconAssignment)
-    copy.table = tableName
-    copy.featureId = featureId
-    Vue.set(state[projectId].geopackages[geopackageId], 'iconAssignment', copy)
+  updateIconAssignmentFeature (state, {projectId, id, tableName, featureId, isGeoPackage}) {
+    if (isGeoPackage) {
+      const copy = _.cloneDeep(state[projectId].geopackages[id].iconAssignment)
+      copy.table = tableName
+      copy.featureId = featureId
+      Vue.set(state[projectId].geopackages[id], 'iconAssignment', copy)
+    } else {
+      const copy = _.cloneDeep(state[projectId].layers[id].iconAssignment)
+      copy.table = tableName
+      copy.featureId = featureId
+      Vue.set(state[projectId].layers[id], 'iconAssignment', copy)
+    }
   },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
@@ -269,7 +270,7 @@ const mutations = {
   copyGeoPackageTileTable (state, {projectId, geopackageId, tableName, copyTableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     geopackageCopy.tables.tiles[copyTableName] = _.cloneDeep(geopackageCopy.tables.tiles[tableName])
-    geopackageCopy.tables.tiles[copyTableName].tableVisible = false
+    geopackageCopy.tables.tiles[copyTableName].visible = false
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   deleteGeoPackageTileTable (state, {projectId, geopackageId, tableName}) {
@@ -287,7 +288,7 @@ const mutations = {
   copyGeoPackageFeatureTable (state, {projectId, geopackageId, tableName, copyTableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     geopackageCopy.tables.features[copyTableName] = _.cloneDeep(geopackageCopy.tables.features[tableName])
-    geopackageCopy.tables.features[copyTableName].tableVisible = false
+    geopackageCopy.tables.features[copyTableName].visible = false
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   deleteGeoPackageFeatureTable (state, {projectId, geopackageId, tableName}) {
@@ -300,6 +301,23 @@ const mutations = {
   },
   setDisplayZoomEnabled (state, {projectId, enabled}) {
     Vue.set(state[projectId], 'displayZoomEnabled', enabled)
+  },
+  clearActiveLayers (state, {projectId}) {
+    const projectCopy = _.cloneDeep(state[projectId])
+    _.keys(projectCopy.geopackages).forEach(key => {
+      const geopackage = projectCopy.geopackages[key]
+      _.keys(geopackage.tables.tiles).forEach(table => {
+        geopackage.tables.tiles[table].visible = false
+      })
+      _.keys(geopackage.tables.features).forEach(table => {
+        geopackage.tables.features[table].visible = false
+      })
+    })
+    _.keys(projectCopy.layers).forEach(key => {
+      const layer = projectCopy.layers[key]
+      layer.visible = false
+    })
+    Vue.set(state, projectId, projectCopy)
   }
 }
 
@@ -325,9 +343,6 @@ const actions = {
   setLayerDisplayName ({ commit, state }, {projectId, layerId, displayName}) {
     commit('setLayerDisplayName', {projectId, layerId, displayName})
   },
-  addProjectLayer ({ commit, state }, {project, layerId, config}) {
-    commit('addProjectLayer', {project, layerId, config})
-  },
   addProjectLayers ({ commit, state }, {projectLayers}) {
     commit('addProjectLayers', {projectLayers})
   },
@@ -339,15 +354,6 @@ const actions = {
       geopackage.tableIconAssignment = {table: null, geometryType: -1}
       commit('setGeoPackage', {projectId, geopackage})
     })
-  },
-  expandCollapseGeoPackage ({ commit, state }, {projectId, geopackageId}) {
-    commit('expandCollapseGeoPackage', {projectId, geopackageId})
-  },
-  expandCollapseFeatureTableCard ({ commit, state }, {projectId, geopackageId, tableName}) {
-    commit('expandCollapseFeatureTableCard', {projectId, geopackageId, tableName})
-  },
-  expandCollapseTileTableCard ({ commit, state }, {projectId, geopackageId, tableName}) {
-    commit('expandCollapseTileTableCard', {projectId, geopackageId, tableName})
   },
   setGeoPackageLayersVisible ({ commit, state }, {projectId, geopackageId, visible}) {
     commit('setGeoPackageLayersVisible', {projectId, geopackageId, visible})
@@ -376,13 +382,19 @@ const actions = {
     commit('removeGeoPackage', {projectId, geopackageId})
   },
   renameGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, oldTableName, newTableName}) {
-    GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-      commit('renameGeoPackageTileTable', {projectId, geopackageId, oldTableName, newTableName})
+    return new Promise((resolve) => {
+      return GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
+        commit('renameGeoPackageTileTable', {projectId, geopackageId, oldTableName, newTableName})
+        resolve()
+      })
     })
   },
   copyGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, tableName, copyTableName}) {
-    GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-      commit('copyGeoPackageTileTable', {projectId, geopackageId, tableName, copyTableName})
+    return new Promise((resolve) => {
+      return GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
+        commit('copyGeoPackageTileTable', {projectId, geopackageId, tableName, copyTableName})
+        resolve()
+      })
     })
   },
   deleteGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, tableName}) {
@@ -391,13 +403,19 @@ const actions = {
     })
   },
   renameGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, oldTableName, newTableName}) {
-    GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-      commit('renameGeoPackageFeatureTable', {projectId, geopackageId, oldTableName, newTableName})
+    return new Promise((resolve) => {
+      return GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
+        commit('renameGeoPackageFeatureTable', {projectId, geopackageId, oldTableName, newTableName})
+        resolve()
+      })
     })
   },
   copyGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, tableName, copyTableName}) {
-    GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-      commit('copyGeoPackageFeatureTable', {projectId, geopackageId, tableName, copyTableName})
+    return new Promise((resolve) => {
+      return GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
+        commit('copyGeoPackageFeatureTable', {projectId, geopackageId, tableName, copyTableName})
+        resolve()
+      })
     })
   },
   deleteGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, tableName}) {
@@ -439,7 +457,6 @@ const actions = {
   //   let geopackage = {
   //     id: UniqueIDUtilities.createUniqueID(),
   //     name: name,
-  //     expanded: true,
   //     vectorConfigurations: {},
   //     tileConfigurations: {},
   //     layers: Object.keys(project.layers),
@@ -546,112 +563,108 @@ const actions = {
   toggleProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('toggleProjectLayer', {projectId, layerId})
   },
-  expandProjectLayer ({ commit, state }, {projectId, layerId}) {
-    commit('expandProjectLayer', {projectId, layerId})
-  },
-  displayStyleEditor ({ commit, state }, {projectId, geopackageId, tableName}) {
-    commit('displayStyleEditor', {projectId, geopackageId, tableName})
-  },
-  // expandGeoPackageConfiguration ({ commit, state }, {projectId, geopackageId}) {
-  //   commit('expandGeoPackageConfiguration', {projectId, geopackageId})
-  // },
   removeProjectLayer ({ commit, state }, {projectId, layerId}) {
+    try {
+      FileUtilities.rmSourceDirectory(state[projectId].layers[layerId].sourceId)
+    } catch (error) {
+      console.error(error)
+    }
     commit('removeProjectLayer', {projectId, layerId})
   },
-  updateStyleAssignmentFeature ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {
-    commit('updateStyleAssignmentFeature', {projectId, geopackageId, tableName, featureId})
+  updateStyleAssignmentFeature ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
+    commit('updateStyleAssignmentFeature', {projectId, id, tableName, featureId, isGeoPackage})
   },
-  updateIconAssignmentFeature ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {
-    commit('updateIconAssignmentFeature', {projectId, geopackageId, tableName, featureId})
+  updateIconAssignmentFeature ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
+    commit('updateIconAssignmentFeature', {projectId, id, tableName, featureId, isGeoPackage})
   },
-  updateTableStyleAssignmentGeometryType ({ commit, state }, {projectId, geopackageId, tableName, geometryType}) {
-    commit('updateTableStyleAssignmentGeometryType', {projectId, geopackageId, tableName, geometryType})
+  updateTableStyleAssignmentGeometryType ({ commit, state }, {projectId, id, tableName, geometryType, isGeoPackage}) {
+    commit('updateTableStyleAssignmentGeometryType', {projectId, id, tableName, geometryType, isGeoPackage})
   },
-  updateTableIconAssignmentGeometryType ({ commit, state }, {projectId, geopackageId, tableName, geometryType}) {
-    commit('updateTableIconAssignmentGeometryType', {projectId, geopackageId, tableName, geometryType})
+  updateTableIconAssignmentGeometryType ({ commit, state }, {projectId, id, tableName, geometryType, isGeoPackage}) {
+    commit('updateTableIconAssignmentGeometryType', {projectId, id, tableName, geometryType, isGeoPackage})
   },
-  updateFeatureStyleSelection ({ commit, state }, {projectId, geopackageId, tableName, featureId, styleId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateFeatureStyleSelection ({ commit, state }, {projectId, id, tableName, featureId, styleId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateFeatureIconSelection ({ commit, state }, {projectId, geopackageId, tableName, featureId, iconId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateFeatureIconSelection ({ commit, state }, {projectId, id, tableName, featureId, iconId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateTableStyleSelection ({ commit, state }, {projectId, geopackageId, tableName, geometryType, styleId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateTableStyleSelection ({ commit, state }, {projectId, id, tableName, geometryType, styleId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateTableIconSelection ({ commit, state }, {projectId, geopackageId, tableName, geometryType, iconId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateTableIconSelection ({ commit, state }, {projectId, id, tableName, geometryType, iconId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerStyleRow ({ commit, state }, {projectId, geopackageId, tableName}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  createProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.createStyleRow(filePath, tableName).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerIconRow ({ commit, state }, {projectId, geopackageId, tableName}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  createProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.createIconRow(filePath, tableName).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateProjectLayerStyleRow ({ commit, state }, {projectId, geopackageId, tableName, styleRow}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, styleRow, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.updateStyleRow(filePath, tableName, styleRow).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateProjectLayerIconRow ({ commit, state }, {projectId, geopackageId, tableName, iconRow}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, iconRow, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.updateIconRow(filePath, tableName, iconRow).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  deleteProjectLayerStyleRow ({ commit, state }, {projectId, geopackageId, tableName, styleId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  deleteProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, styleId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.deleteStyleRow(filePath, tableName, styleId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  deleteProjectLayerIconRow ({ commit, state }, {projectId, geopackageId, tableName, iconId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  deleteProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, iconId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.deleteIconRow(filePath, tableName, iconId).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  deleteProjectLayerFeatureRow ({ commit, state }, {projectId, geopackageId, tableName, featureId}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  deleteProjectLayerFeatureRow ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.deleteFeatureRow(filePath, tableName, featureId).then(function (result) {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateProjectLayerFeatureRow ({ commit, state }, {projectId, geopackageId, tableName, featureRowId, feature}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  updateProjectLayerFeatureRow ({ commit, state }, {projectId, id, tableName, featureRowId, feature, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.updateFeatureRow(filePath, tableName, featureRowId, feature).then(function (result) {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  addStyleExtensionForTable ({ commit, state }, {projectId, geopackageId, tableName}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  addStyleExtensionForTable ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.addStyleExtensionForTable(filePath, tableName).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  removeStyleExtensionForTable ({ commit, state }, {projectId, geopackageId, tableName}) {
-    const filePath = state[projectId].geopackages[geopackageId].path
+  removeStyleExtensionForTable ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].layers[id].geopackageFilePath
     GeoPackageUtilities.removeStyleExtensionForTable(filePath, tableName).then(function () {
-      commit('updateGeoPackageStyleKey', {projectId, geopackageId, tableName})
+      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
   addFeatureTableToGeoPackage ({ commit, state }, {projectId, geopackageId, tableName, featureCollection}) {
@@ -669,7 +682,7 @@ const actions = {
     const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     const existingTable = geopackageCopy.tables.features[tableName]
     const filePath = state[projectId].geopackages[geopackageId].path
-    GeoPackageUtilities.createFeatureRow(filePath, tableName, feature).then(function () {
+    GeoPackageUtilities.addFeatureToFeatureTable(filePath, tableName, feature).then(function () {
       GeoPackageUtilities.getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
         geopackageCopy.size = GeoPackageUtilities.getGeoPackageFileSize(filePath)
         existingTable.featureCount = tableInfo.featureCount
@@ -744,6 +757,9 @@ const actions = {
   },
   setDisplayZoomEnabled  ({ commit, state }, {projectId, enabled}) {
     commit('setDisplayZoomEnabled', {projectId, enabled})
+  },
+  clearActiveLayers  ({ commit, state }, {projectId}) {
+    commit('clearActiveLayers', {projectId})
   }
 }
 

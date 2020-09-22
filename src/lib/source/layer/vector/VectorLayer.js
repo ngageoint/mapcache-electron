@@ -14,20 +14,22 @@ export default class VectorLayer extends Layer {
   _vectorTileRenderer
   _tileIndex
   _geopackageFilePath
-  _features
   _layerKey
   _maxFeatures
 
   constructor (configuration = {}) {
     super(configuration)
-    this._extent = configuration.extent
     this._geopackageFilePath = configuration.geopackageFilePath
     this._layerKey = configuration.layerKey || 0
     this._maxFeatures = configuration.maxFeatures || 250
+    this._styleAssignment = {table: null, featureId: -1}
+    this._iconAssignment = {table: null, featureId: -1}
+    this._tableStyleAssignment = {table: null, geometryType: -1}
+    this._tableIconAssignment = {table: null, geometryType: -1}
   }
 
   async initialize () {
-    this._features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(this._geopackageFilePath, this.sourceLayerName)
+    this._extent = await GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
     await this.vectorTileRenderer.init()
     return this
   }
@@ -49,19 +51,16 @@ export default class VectorLayer extends Layer {
       ...{
         pane: 'vector',
         layerType: 'Vector',
-        extent: this.extent,
+        extent: this._extent,
         count: this.count || 0,
         geopackageFilePath: this._geopackageFilePath,
         layerKey: this._layerKey,
-        maxFeatures: this._maxFeatures
+        maxFeatures: this._maxFeatures,
+        styleAssignment: this._styleAssignment,
+        iconAssignment: this._iconAssignment,
+        tableStyleAssignment: this._tableStyleAssignment,
+        tableIconAssignment: this._tableIconAssignment
       }
-    }
-  }
-
-  get featureCollection () {
-    return {
-      type: 'FeatureCollection',
-      features: this._features
     }
   }
 
@@ -70,9 +69,6 @@ export default class VectorLayer extends Layer {
   }
 
   get extent () {
-    if (!this._extent) {
-      this._extent = GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
-    }
     return this._extent
   }
 

@@ -6,25 +6,27 @@ import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
 import _ from 'lodash'
 import GeoServiceUtilities from '../GeoServiceUtilities'
-import {userDataDir} from '../settings/Settings'
-import UniqueIDUtilities from '../UniqueIDUtilities'
+import FileUtilities from '../FileUtilities'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {
     this.geopackageLayers = []
     for (const layer of this.layers) {
-      let sourceId = UniqueIDUtilities.createUniqueID()
+      const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
       let featureCollection = await this.getFeatureCollectionInLayer(layer.name)
       let fileName = layer.name + '.gpkg'
-      let filePath = userDataDir().dir(sourceId).file(fileName).path()
-      let fullFile = path.join(filePath, fileName)
-      await GeoPackageUtilities.buildGeoPackage(fullFile, layer.name, featureCollection)
+      let filePath = path.join(sourceDirectory, fileName)
+      await GeoPackageUtilities.buildGeoPackage(filePath, layer.name, featureCollection)
+      const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, layer.name)
       this.geopackageLayers.push(new VectorLayer({
         id: sourceId,
-        geopackageFilePath: fullFile,
+        geopackageFilePath: filePath,
         sourceFilePath: this.filePath,
+        sourceDirectory: sourceDirectory,
+        sourceId: sourceId,
         sourceLayerName: layer.name,
-        sourceType: 'WFS'
+        sourceType: 'WFS',
+        extent: extent
       }))
     }
     return this.geopackageLayers

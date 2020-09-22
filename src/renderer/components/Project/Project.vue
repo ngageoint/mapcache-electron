@@ -40,21 +40,9 @@
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="item >= 0">
-          <v-toolbar
-            color="#3b779a"
-            dark
-            flat
-          >
-            <v-btn icon @click="item = undefined"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-            <v-toolbar-title>{{item >= 0 ? items[item].text : ''}}</v-toolbar-title>
-          </v-toolbar>
-          <v-container v-show="item === 0">
-            <geo-package-content :project-id="project.id" :geopackages="project.geopackages" :style-editor="project.styleEditor"></geo-package-content>
-          </v-container>
-          <v-container v-show="item === 1">
-            <data-sources :project="project"></data-sources>
-          </v-container>
-          <settings v-if="item === 2" :project="project"></settings>
+          <geo-packages v-show="item === 0" :back="back" :project-id="project.id" :geopackages="project.geopackages"></geo-packages>
+          <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.layers"></data-sources>
+          <settings v-if="item === 2" :back="back" :project="project"></settings>
         </v-col>
         <v-col>
           <leaflet-map
@@ -62,7 +50,8 @@
             :geopackages="project.geopackages"
             :layer-configs="project.layers"
             :project-id="project.id"
-            :project="project">
+            :project="project"
+            :resizeListener="item">
           </leaflet-map>
         </v-col>
       </v-row>
@@ -82,7 +71,7 @@
   import Modal from '../Modal'
   import Card from '../Card/Card'
   import Settings from '../Settings/Settings'
-  import GeoPackageContent from '../GeoPackage/GeoPackageContent'
+  import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
 
   let options = {
@@ -135,12 +124,11 @@
       Modal,
       Card,
       Settings,
-      GeoPackageContent
+      GeoPackages
     },
     methods: {
       ...mapActions({
         setProjectName: 'Projects/setProjectName',
-        addProjectLayer: 'Projects/addProjectLayer',
         addProjectState: 'UIState/addProjectState'
       }),
       showLayers () {

@@ -19,7 +19,7 @@ describe('Source Tests', function () {
     let source = new Source('/path/to/file', 'id')
     source.filePath.should.be.equal('/path/to/file')
     source.sourceId.should.be.equal('id')
-    source.sourceCacheFolder.path().should.be.equal('/tmp/id')
+    source.sourceCacheFolder.should.be.equal('/tmp/id')
 
     try {
       let layer = source.mapLayer
@@ -35,7 +35,7 @@ describe('Source Tests', function () {
     let source = new Source('/path/to/file')
     source.filePath.should.be.equal('/path/to/file')
     source.sourceId.should.exist
-    source.sourceCacheFolder.path().should.be.equal('/tmp/'+source.sourceId)
+    source.sourceCacheFolder.should.be.equal('/tmp/'+source.sourceId)
     try {
       let layer = source.mapLayer
       true.should.be.equal(false, 'accessing mapLayer property on a source should throw an error')

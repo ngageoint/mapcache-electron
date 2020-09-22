@@ -32,6 +32,7 @@ export default class GeoPackageLayer extends TileLayer {
 
   async renderTile (coords, tileCanvas, done) {
     let {x, y, z} = coords
+    console.log(coords)
     if (tileCanvas) {
       await this.geopackage.xyzTile(this.sourceLayerName, x, y, z, tileCanvas.width, tileCanvas.height, tileCanvas)
       if (done) {

@@ -50,7 +50,7 @@
 
   export default {
     props: {
-      geopackage: Object,
+      id: String,
       tableName: String,
       defaultName: String,
       allowIconNameEditing: Boolean,
@@ -59,7 +59,11 @@
       iconRow: Object,
       projectId: String,
       showId: Boolean,
-      isTableIcon: Boolean
+      isTableIcon: Boolean,
+      isGeoPackage: {
+        type: Boolean,
+        default: true
+      }
     },
     components: {
       ExpandableCard,
@@ -84,9 +88,10 @@
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
-            geopackageId: this.geopackage.id,
+            id: this.id,
             tableName: this.tableName,
-            iconRow: iconRow
+            iconRow: iconRow,
+            isGeoPackage: this.isGeoPackage
           })
           this.updateIconAnchor(value)
         }
@@ -118,9 +123,10 @@
       deleteIcon () {
         this.deleteProjectLayerIconRow({
           projectId: this.projectId,
-          geopackageId: this.geopackage.id,
+          id: this.id,
           tableName: this.tableName,
-          iconId: this.iconRow.id
+          iconId: this.iconRow.id,
+          isGeoPackage: this.isGeoPackage
         })
       },
       saveName (val) {
@@ -137,9 +143,10 @@
           }
           this.updateProjectLayerIconRow({
             projectId: this.projectId,
-            geopackageId: this.geopackage.id,
+            id: this.id,
             tableName: this.tableName,
-            iconRow: iconRow
+            iconRow: iconRow,
+            isGeoPackage: this.isGeoPackage
           })
         }
       },
@@ -218,9 +225,10 @@
         }
         this.updateProjectLayerIconRow({
           projectId: this.projectId,
-          geopackageId: this.geopackage.id,
+          id: this.id,
           tableName: this.tableName,
-          iconRow: iconRow
+          iconRow: iconRow,
+          isGeoPackage: this.isGeoPackage
         })
       },
       getIconClick (ev) {
@@ -265,9 +273,10 @@
               }
               this.updateProjectLayerIconRow({
                 projectId: this.projectId,
-                geopackageId: this.geopackage.id,
+                id: this.id,
                 tableName: this.tableName,
-                iconRow: iconRow
+                iconRow: iconRow,
+                isGeoPackage: this.isGeoPackage
               })
             }
           }

@@ -1,27 +1,28 @@
 <template>
-  <expandable-card class="mb-2" :initially-expanded="expanded" :on-expand-collapse="expandFeatureTableCard" expandedEmphasis>
-    <div slot="card-header">
-      <v-container fluid class="pa-0 ma-0">
-        <v-row no-gutters align="center" justify="center">
-          <v-col cols="8">
-            <p :style="{fontSize: '1.15em', fontWeight: '700', marginBottom: '0px'}">
-              {{tableName}}
-            </p>
-          </v-col>
-          <v-col offset="2" cols="2" justify="center" @click.stop="">
-            <v-switch
-              class="v-label detail"
-              color="#3b779a"
-              hide-details
-              v-model="visible"
-              dense
-            ></v-switch>
-          </v-col>
-        </v-row>
-      </v-container>
+  <div style="background-color: white;">
+    <div v-if="styleEditorVisible">
+      <style-editor
+        :tableName="tableName"
+        :projectId="projectId"
+        :id="geopackage.id"
+        :path="geopackage.path"
+        :style-key="styleKey"
+        :back="hideStyleEditor"
+        :style-assignment="geopackage.styleAssignment"
+        :table-style-assignment="geopackage.tableStyleAssignment"
+        :icon-assignment="geopackage.iconAssignment"
+        :table-icon-assignment="geopackage.tableIconAssignment"/>
     </div>
-    <div slot="card-expanded-body">
-      <v-container fluid class="pa-0 ma-0">
+    <div v-else>
+      <v-toolbar
+        color="#3b779a"
+        dark
+        flat
+      >
+        <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+        <v-toolbar-title>{{tableName}}</v-toolbar-title>
+      </v-toolbar>
+      <v-container fluid>
         <v-dialog
           v-model="indexDialog"
           max-width="500"
@@ -46,7 +47,7 @@
                 <v-col cols="6">
                   <v-progress-linear
                     color="#3b779a"
-                    :value="indexProgressPercentage"
+                    indeterminate
                     rounded
                     height="6"
                   ></v-progress-linear>
@@ -65,7 +66,7 @@
               </v-row>
             </v-card-title>
             <v-card-text>
-              <v-form v-model="renameValid">
+              <v-form ref="renameForm" v-model="renameValid">
                 <v-container class="ma-0 pa-0">
                   <v-row no-gutters>
                     <v-col cols="12">
@@ -108,7 +109,7 @@
               </v-row>
             </v-card-title>
             <v-card-text>
-              <v-form v-model="copyValid">
+              <v-form ref="copyForm" v-model="copyValid">
                 <v-container class="ma-0 pa-0">
                   <v-row no-gutters>
                     <v-col cols="12">
@@ -167,138 +168,155 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
-        <v-container fluid class="pa-0 mb-2 ma-0 pl-1 text-left">
-          <v-row no-gutters justify="center">
-            <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
-                <span>Feature Layer</span>
-              </p>
-            </v-col>
-          </v-row>
-          <v-row no-gutters class="pt-2" style="margin-left: -12px" justify="center" align-content="center">
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-pencil-outline</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Rename
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-content-copy</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Copy
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="enableStyleDialog">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-palette</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Style
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-trash-can-outline</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Remove
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover v-if="!indexed" >
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-speedometer</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Index
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-          </v-row>
-          <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
-            <v-col>
-              <v-row no-gutters>
-                <v-col>
+        <v-row no-gutters justify="center" class="mb-2">
+          <v-col>
+            <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+              <span>Feature Layer</span>
+            </p>
+          </v-col>
+        </v-row>
+        <v-row no-gutters class="pt-2" justify="center" align-content="center">
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 mb-2 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-pencil-outline</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Rename
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-content-copy</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Copy
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-palette</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Style
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-trash-can-outline</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Remove
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover v-if="!indexed" >
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-speedometer</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Index
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-row>
+        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
+          <v-col>
+            <v-row no-gutters justify="space-between">
+              <v-col>
+                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Features
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                  {{featureCount}}
+                </p>
+              </v-col>
+              <v-col>
+                <v-row no-gutters justify="end">
                   <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Features
+                    Enable
                   </p>
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    {{featureCount}}
-                  </p>
-                </v-col>
-              </v-row>
-              <v-row no-gutters>
-                <v-col>
-                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Description
-                  </p>
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    {{description}}
-                  </p>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
-        </v-container>
+                  <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                </v-row>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col>
+                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Description
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                  {{description}}
+                </p>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
       </v-container>
+      <v-snackbar
+        v-model="copySnackBar"
+      >
+        Layer copied.
+        <template v-slot:action="{ attrs }">
+          <v-btn
+            color="#3b779a"
+            text
+            v-bind="attrs"
+            @click="copySnackBar = false"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
     </div>
-  </expandable-card>
+  </div>
 </template>
 
 <script>
+  import Vue from 'vue'
   import { mapActions } from 'vuex'
   import { GeoPackageAPI } from '@ngageoint/geopackage'
-  import _ from 'lodash'
 
   import ViewEditText from '../Common/ViewEditText'
-  import ExpandableCard from '../Card/ExpandableCard'
   import StyleEditor from './StyleEditor'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-
-  const GPKG_INDEX_REGEX = new RegExp(/Indexing (\d*) to \d*/)
-
   export default {
     props: {
       projectId: String,
       geopackage: Object,
-      tableName: String
+      tableName: String,
+      back: Function
     },
     components: {
       ViewEditText,
-      ExpandableCard,
       StyleEditor
     },
     created () {
@@ -311,7 +329,8 @@
     },
     data () {
       return {
-        GPKG_INDEX_REGEX,
+        copySnackBar: false,
+        styleEditorVisible: false,
         indexDialog: false,
         indexProgressPercentage: 0,
         indexMessage: 'Indexing Started',
@@ -322,22 +341,22 @@
         renameDialog: false,
         renamedTable: this.tableName,
         renamedTableRules: [
-          v => !!v || 'Name is required',
-          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name'
+          v => !!v || 'Layer name is required',
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ],
         copyDialog: false,
         copyValid: false,
         copiedTable: this.tableName + '_copy',
         copiedTableRules: [
-          v => !!v || 'Name is required',
-          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name'
+          v => !!v || 'Layer name is required',
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ]
       }
     },
     computed: {
       visible: {
         get () {
-          return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].tableVisible : false
+          return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
         },
         set (value) {
           this.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
@@ -352,9 +371,6 @@
       description () {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].description : ''
       },
-      expanded () {
-        return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].expanded : false
-      },
       styleKey () {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].styleKey : 0
       }
@@ -362,17 +378,12 @@
     methods: {
       ...mapActions({
         deleteGeoPackage: 'Projects/deleteGeoPackage',
-        expandCollapseFeatureTableCard: 'Projects/expandCollapseFeatureTableCard',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
-        renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
+        renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
-        displayStyleEditor: 'Projects/displayStyleEditor',
         updateFeatureTable: 'Projects/updateFeatureTable'
       }),
-      enableStyleDialog () {
-        this.displayStyleEditor({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
-      },
       async styleExtensionEnabled () {
         let hasStyle = false
         let gp = await GeoPackageAPI.open(this.geopackage.path)
@@ -391,40 +402,41 @@
       zoomToExtent (extent) {
         this.$emit('zoom-to', extent)
       },
-      expandFeatureTableCard () {
-        this.expandCollapseFeatureTableCard({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
-      },
       rename () {
         this.renameDialog = false
-        this.copiedTable = this.renamedTable + '_copy'
         this.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        this.renamed(this.renamedTable)
       },
       copy () {
         this.copyDialog = false
         this.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
+        this.copySnackBar = true
       },
       deleteTable () {
         this.deleteDialog = false
         this.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+      },
+      showRenameDialog () {
+        this.renameValid = false
+        this.renameDialog = true
+        Vue.nextTick(() => {
+          this.$refs.renameForm.validate()
+        })
+      },
+      showCopyDialog () {
+        this.copyValid = false
+        this.copyDialog = true
+        Vue.nextTick(() => {
+          this.$refs.copyForm.validate()
+        })
       },
       indexTable () {
         let _this = this
         this.indexDialog = true
         setTimeout(function () {
           _this.indexMessage = 'Indexing...'
-          GeoPackageUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true, function (message) {
-            // 'Indexing ' + # + ' to ' + #)
-            if (!_.isNil(message)) {
-              try {
-                _this.indexProgressPercentage = ((Number.parseInt(message.match(_this.GPKG_INDEX_REGEX)[1], 10) * 1.0) / (_this.featureCount * 1.0)) * 100.0
-              } catch (e) {
-                console.error(e)
-              }
-            }
-          }).then(function (result) {
-            console.log(result)
+          GeoPackageUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
             setTimeout(function () {
-              _this.indexProgressPercentage = 100.0
               _this.indexMessage = 'Indexing Completed'
               setTimeout(function () {
                 _this.indexDialog = false
@@ -434,6 +446,9 @@
             }, 1000)
           })
         }, 1000)
+      },
+      hideStyleEditor () {
+        this.styleEditorVisible = false
       }
     },
     watch: {

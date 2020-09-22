@@ -9,16 +9,16 @@ import { imageSize } from 'image-size'
 import _ from 'lodash'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
-import { userDataDir } from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
 import http from 'http'
 import { GeometryType } from '@ngageoint/geopackage'
+import FileUtilities from '../FileUtilities'
 
 export default class KMLSource extends Source {
   async initialize () {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder.path())
+    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder)
     this.geotiffs = parsedKML.geotiffs
     this.vectorLayers = []
     let documents = parsedKML.documents
@@ -35,16 +35,15 @@ export default class KMLSource extends Source {
             feature.id = UniqueIDUtilities.createUniqueID()
           }
         }
-        let id = UniqueIDUtilities.createUniqueID()
+        const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
         let fileName = name + '.gpkg'
-        let filePath = userDataDir().dir(id).file(fileName).path()
-        let fullFile = path.join(filePath, fileName)
+        let filePath = path.join(sourceDirectory, fileName)
         let style = await this.generateStyleForKML(featureCollection.features, originalFileDir)
-        await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, style)
+        await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection, style)
         this.vectorLayers.push(new VectorLayer({
-          id: id,
-          geopackageFilePath: fullFile,
-          sourceFilePath: this.filePath,
+          geopackageFilePath: filePath,
+          sourceDirectory: sourceDirectory,
+          sourceId: sourceId,
           sourceLayerName: name,
           sourceType: 'KML'
         }))

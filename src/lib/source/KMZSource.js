@@ -5,11 +5,12 @@ import path from 'path'
 import JSZip from 'jszip'
 import KMLSource from './KMLSource'
 import mkdirp from 'mkdirp'
+import FileUtilities from '../FileUtilities'
 
 export default class KMZSource extends Source {
   async initialize () {
     // unzip kmz
-    const destinationFolder = this.sourceCacheFolder.path()
+    const destinationFolder = this.sourceCacheFolder
     let data = fs.readFileSync(this.filePath)
     let zip = await JSZip.loadAsync(data)
     let keys = Object.keys(zip.files)
@@ -34,8 +35,9 @@ export default class KMZSource extends Source {
     }
 
     this.filePath = path.join(destinationFolder, this.kmlFileName)
-    this.kmlSource = new KMLSource(this.filePath, this.sourceId)
+    this.kmlSource = new KMLSource(this.filePath)
     await this.kmlSource.initialize()
+    this.kmlSource.removeSourceDir()
   }
 
   async retrieveLayers () {

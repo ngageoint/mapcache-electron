@@ -1,6 +1,5 @@
 import path from 'path'
 import GDALSource from './GDALSource'
-import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
 import KMZSource from './KMZSource'
@@ -25,10 +24,6 @@ export default class SourceFactory {
     try {
       let source = null
       switch (type) {
-        case 'gpkg':
-        case 'geopackage':
-          source = new GeoPackageSource(filePath)
-          break
         case 'kml':
           source = new KMLSource(filePath)
           await source.initialize()
