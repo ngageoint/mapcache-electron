@@ -14,6 +14,7 @@ export default class VectorLayer extends Layer {
   _vectorTileRenderer
   _tileIndex
   _geopackageFilePath
+  _features
   _layerKey
   _maxFeatures
 
@@ -29,6 +30,7 @@ export default class VectorLayer extends Layer {
   }
 
   async initialize () {
+    this._features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(this._geopackageFilePath, this.sourceLayerName)
     this._extent = await GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
     await this.vectorTileRenderer.init()
     return this
@@ -61,6 +63,13 @@ export default class VectorLayer extends Layer {
         tableStyleAssignment: this._tableStyleAssignment,
         tableIconAssignment: this._tableIconAssignment
       }
+    }
+  }
+
+  get featureCollection () {
+    return {
+      type: 'FeatureCollection',
+      features: this._features
     }
   }
 

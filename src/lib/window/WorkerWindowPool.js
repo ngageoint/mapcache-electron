@@ -121,5 +121,21 @@ class WorkerWindowPool {
       console.error(error)
     }
   }
+
+  async executeBuildFeatureLayer (payload, statusCallback) {
+    return new Promise(async (resolve) => {
+      const workerWindow = await this.getOrWaitForAvailableWorker()
+      this.workerWindowAssignment[payload.configuration.id] = workerWindow
+      workerWindow.window.webContents.send('worker_build_feature_layer', payload)
+      ipcMain.once('worker_build_feature_layer_completed_' + workerWindow.id, (event, result) => {
+        ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
+        this.releaseWorker(workerWindow, payload.configuration.id)
+        resolve(result)
+      })
+      ipcMain.on('worker_build_feature_layer_status_' + workerWindow.id, (event, status) => {
+        statusCallback(status)
+      })
+    })
+  }
 }
 export default new WorkerWindowPool()

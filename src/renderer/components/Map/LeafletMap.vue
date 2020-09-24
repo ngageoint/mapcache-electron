@@ -24,7 +24,7 @@
                 </v-select>
               </v-col>
             </v-row>
-            <v-form v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
+            <v-form v-on:submit.prevent v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
               <v-container class="ma-0 pa-0">
                 <v-row no-gutters>
                   <v-col cols="12">
@@ -108,6 +108,7 @@
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let maxFeatures
   let isDrawing = false
+  let zoomToExtentKey
 
   function normalize (longitude) {
     let lon = longitude
@@ -143,6 +144,7 @@
     },
     data () {
       return {
+        zoomToExtentKey,
         isDrawing,
         maxFeatures,
         NEW_GEOPACKAGE_OPTION,
@@ -749,6 +751,13 @@
             }
           }
           this.maxFeatures = updatedProject.maxFeatures
+          if (!_.isNil(updatedProject.zoomToExtent) && !_.isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
+            this.zoomToExtentKey = updatedProject.zoomToExtent.key
+            this.map.fitBounds([
+              [updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]],
+              [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]
+            ])
+          }
         },
         deep: true
       }

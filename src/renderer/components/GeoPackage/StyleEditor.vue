@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-toolbar
-      color="#3b779a"
+      :color="toolbarColor"
       dark
       flat
     >
@@ -224,6 +224,10 @@
       isGeoPackage: {
         type: Boolean,
         default: true
+      },
+      toolbarColor: {
+        type: String,
+        default: '#3b779a'
       }
     },
     data () {

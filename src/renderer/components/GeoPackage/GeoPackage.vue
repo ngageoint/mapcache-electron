@@ -5,14 +5,14 @@
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
-      :projectId="projectId"
+      :projectId="project.id"
       :back="deselectLayer"/>
     <tile-layer
       v-else
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
-      :projectId="projectId"
+      :projectId="project.id"
       :back="deselectLayer"/>
   </div>
   <div v-else style="background-color: white">
@@ -56,7 +56,7 @@
           </v-row>
         </v-card-title>
         <v-card-text>
-          <v-form v-model="renameValid">
+          <v-form v-on:submit.prevent v-model="renameValid">
             <v-container class="ma-0 pa-0">
               <v-row no-gutters>
                 <v-col cols="12">
@@ -99,7 +99,7 @@
           </v-row>
         </v-card-title>
         <v-card-text>
-          <v-form v-model="copyValid">
+          <v-form v-on:submit.prevent v-model="copyValid">
             <v-container class="ma-0 pa-0">
               <v-row no-gutters>
                 <v-col cols="12">
@@ -160,6 +160,63 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="addFeatureLayerDialog" max-width="500" scrollable persistent>
+      <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
+    </v-dialog>
+    <v-dialog v-model="addLayerDialog" max-width="350">
+      <v-card class="text-center">
+        <v-card-title class="headline">
+          <v-container class="pa-0 ma-0">
+            <v-row no-gutters>
+              <v-col class="align-center">
+                Add GeoPackage Layer
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-divider class="mt-2 mb-2"/>
+            </v-row>
+          </v-container>
+        </v-card-title>
+        <v-card-text>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFeatureLayer">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+                      </v-col>
+                      <v-col cols="8">
+                        Add Feature Layer
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addTileLayer">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="20px">
+                      </v-col>
+                      <v-col cols="8">
+                        Add Tile Layer
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-container fluid class="text-left pb-0 mb-0">
       <v-row no-gutters>
         <v-col>
@@ -171,14 +228,14 @@
       <v-row no-gutters>
         <v-col>
           <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            {{"Feature Tables: " + tables.features.length}}
+            {{"Feature Tables: " + Object.keys(geopackage.tables.features).length}}
           </p>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col>
           <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            {{"Tile Tables: " + tables.tiles.length}}
+            {{"Tile Tables: " + Object.keys(geopackage.tables.tiles).length}}
           </p>
         </v-col>
       </v-row>
@@ -259,14 +316,15 @@
         <!--          ></v-switch>-->
         <!--        </v-col>-->
       </v-row>
-      <geo-package-layer-list :project-id="projectId" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
+      <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
     </v-container>
     <v-btn
       class="fab-position"
       dark
       fab
       color="#73c1c5"
-      title="Add layer">
+      title="Add layer"
+      @click.stop="addLayerDialog = true">
       <v-icon>mdi-layers-plus</v-icon>
     </v-btn>
   </div>
@@ -282,14 +340,16 @@
   import GeoPackageUtilities from './../../../lib/GeoPackageUtilities'
   import GeoPackageDetails from './GeoPackageDetails'
   import GeoPackageLayerList from './GeoPackageLayerList'
+  import AddFeatureLayer from './AddFeatureLayer'
 
   export default {
     props: {
       geopackage: Object,
-      projectId: String,
+      project: Object,
       back: Function
     },
     components: {
+      AddFeatureLayer,
       GeoPackageLayerList,
       GeoPackageDetails,
       ViewEditText,
@@ -298,6 +358,9 @@
     },
     data () {
       return {
+        addFeatureLayerDialog: false,
+        addTileLayerDialog: false,
+        addLayerDialog: false,
         selectedLayer: null,
         detailDialog: false,
         renameDialog: false,
@@ -329,7 +392,7 @@
           return (allTableKeys.filter(table => !table.visible).length === 0 && allTableKeys.length > 0) || false
         },
         set (value) {
-          this.setGeoPackageLayersVisible({projectId: this.projectId, geopackageId: this.geopackage.id, visible: value})
+          this.setGeoPackageLayersVisible({projectId: this.project.id, geopackageId: this.geopackage.id, visible: value})
         }
       },
       size () {
@@ -365,15 +428,15 @@
       rename () {
         this.renameDialog = false
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
-        this.renameGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id, name: this.renamedGeoPackage})
+        this.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage})
       },
       copy () {
         this.copyDialog = false
-        this.copyGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id, name: this.copiedGeoPackage})
+        this.copyGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.copiedGeoPackage})
       },
       remove () {
         this.removeDialog = false
-        this.removeGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id})
+        this.removeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         this.back()
       },
       layerSelected (layer) {
@@ -384,6 +447,17 @@
       },
       deselectLayer () {
         this.selectedLayer = null
+      },
+      addFeatureLayer () {
+        this.addLayerDialog = false
+        this.addFeatureLayerDialog = true
+      },
+      addTileLayer () {
+        this.addLayerDialog = false
+        this.addTileLayerDialog = true
+      },
+      hideAddFeatureDialog () {
+        this.addFeatureLayerDialog = false
       }
     },
     watch: {

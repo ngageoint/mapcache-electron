@@ -64,7 +64,7 @@ export default class GDALSource extends Source {
         const ext = path.extname(this.filePath).toLowerCase()
 
         let sourceType = 'GDAL'
-        if (ext === 'geojson' || ext === 'json') {
+        if (ext === '.geojson' || ext === '.json') {
           sourceType = 'GeoJSON'
         }
         await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection)

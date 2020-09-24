@@ -19,7 +19,7 @@
             </v-row>
           </v-card-title>
           <v-card-text>
-            <v-form ref="renameForm" v-model="renameValid">
+            <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
               <v-container class="ma-0 pa-0">
                 <v-row no-gutters>
                   <v-col cols="12">
@@ -62,7 +62,7 @@
             </v-row>
           </v-card-title>
           <v-card-text>
-            <v-form ref="copyForm" v-model="copyValid">
+            <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
               <v-container class="ma-0 pa-0">
                 <v-row no-gutters>
                   <v-col cols="12">
@@ -176,7 +176,7 @@
       <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
         <v-col>
           <v-row no-gutters justify="space-between">
-            <v-col>
+            <v-col style="margin-top: 8px;">
               <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Tiles
               </p>
@@ -185,11 +185,12 @@
               </p>
             </v-col>
             <v-col>
-              <v-row no-gutters justify="end">
+              <v-row no-gutters justify="end" align="center">
                 <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Enable
                 </p>
                 <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                <v-btn text icon title="Zoom To" @click.stop="zoomToLayer"><v-icon>mdi-magnify</v-icon></v-btn>
               </v-row>
             </v-col>
           </v-row>
@@ -239,6 +240,7 @@
   import { mapActions } from 'vuex'
   import _ from 'lodash'
   import ViewEditText from '../Common/ViewEditText'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
   export default {
     props: {
@@ -299,11 +301,9 @@
         setGeoPackageTileTableVisible: 'Projects/setGeoPackageTileTableVisible',
         renameGeoPackageTileTable: 'Projects/renameGeoPackageTileTable',
         copyGeoPackageTileTable: 'Projects/copyGeoPackageTileTable',
-        deleteGeoPackageTileTable: 'Projects/deleteGeoPackageTileTable'
+        deleteGeoPackageTileTable: 'Projects/deleteGeoPackageTileTable',
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
-      zoomToExtent (extent) {
-        this.$emit('zoom-to', extent)
-      },
       rename () {
         this.renameDialog = false
         this.copiedTable = this.renamedTable + '_copy'
@@ -332,6 +332,10 @@
         Vue.nextTick(() => {
           this.$refs.copyForm.validate()
         })
+      },
+      async zoomToLayer () {
+        const extent = await GeoPackageUtilities.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        this.zoomToExtent({projectId: this.projectId, extent})
       }
     }
   }

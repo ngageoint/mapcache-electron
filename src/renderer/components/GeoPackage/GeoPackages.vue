@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined">
-      <geo-package :project-id="projectId" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
+      <geo-package :project="project" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
     </div>
     <div v-else>
       <v-toolbar
@@ -48,24 +48,6 @@
               </v-hover>
               <v-hover>
                 <template v-slot="{ hover }">
-                  <v-card class="text-left mt-4 mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="displayURLModal">
-                    <v-card-text>
-                      <v-container style="padding: 4px">
-                        <v-row>
-                          <v-col cols="2">
-                            <v-icon color="black">mdi-cloud-download-outline</v-icon>
-                          </v-col>
-                          <v-col cols="8">
-                            Download from URL
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-text>
-                  </v-card>
-                </template>
-              </v-hover>
-              <v-hover>
-                <template v-slot="{ hover }">
                   <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="importGeoPackage">
                     <v-card-text>
                       <v-container style="padding: 4px">
@@ -87,7 +69,7 @@
         </v-dialog>
       </v-layout>
       <div>
-        <geo-package-list :geopackages="geopackages" :projectId="projectId" :geopackage-selected="geopackageSelected"></geo-package-list>
+        <geo-package-list :geopackages="geopackages" :projectId="project.id" :geopackage-selected="geopackageSelected"></geo-package-list>
         <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
           <v-row no-gutters justify="space-between" align="end">
             <v-col>
@@ -139,7 +121,7 @@
   export default {
     props: {
       geopackages: Object,
-      projectId: String,
+      project: Object,
       back: Function
     },
     data () {
@@ -163,7 +145,7 @@
             }
             const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === filePath) !== -1
             if (!exists) {
-              this.addGeoPackage({projectId: this.projectId, filePath: filePath})
+              this.addGeoPackage({projectId: this.project.id, filePath: filePath})
             } else {
               this.addGeoPackageError = true
             }
@@ -188,17 +170,12 @@
             })
             const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
             if (!exists) {
-              this.addGeoPackage({projectId: this.projectId, filePath: fileInfo.absolutePath})
+              this.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
             } else {
               this.addGeoPackageError = true
             }
           }
         })
-        this.addGeoPackageDialog = false
-      },
-      displayURLModal () {
-        // TODO:
-        console.log('url geopackage')
         this.addGeoPackageDialog = false
       },
       geopackageSelected (geopackageId) {

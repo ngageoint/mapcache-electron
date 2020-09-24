@@ -40,7 +40,7 @@
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="item >= 0">
-          <geo-packages v-show="item === 0" :back="back" :project-id="project.id" :geopackages="project.geopackages"></geo-packages>
+          <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
           <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.layers"></data-sources>
           <settings v-if="item === 2" :back="back" :project="project"></settings>
         </v-col>

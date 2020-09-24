@@ -66,7 +66,7 @@
               </v-row>
             </v-card-title>
             <v-card-text>
-              <v-form ref="renameForm" v-model="renameValid">
+              <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
                 <v-container class="ma-0 pa-0">
                   <v-row no-gutters>
                     <v-col cols="12">
@@ -109,7 +109,7 @@
               </v-row>
             </v-card-title>
             <v-card-text>
-              <v-form ref="copyForm" v-model="copyValid">
+              <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
                 <v-container class="ma-0 pa-0">
                   <v-row no-gutters>
                     <v-col cols="12">
@@ -179,7 +179,7 @@
         <v-row no-gutters class="pt-2" justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 mb-2 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-pencil-outline</v-icon>
@@ -193,7 +193,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-content-copy</v-icon>
@@ -207,7 +207,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-palette</v-icon>
@@ -221,7 +221,7 @@
           </v-hover>
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 mb-2 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-trash-can-outline</v-icon>
@@ -235,7 +235,7 @@
           </v-hover>
           <v-hover v-if="!indexed" >
             <template v-slot="{ hover }">
-              <v-card class="ma-0 mb-2 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
+              <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
                     <v-icon small>mdi-speedometer</v-icon>
@@ -251,7 +251,7 @@
         <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
           <v-col>
             <v-row no-gutters justify="space-between">
-              <v-col>
+              <v-col style="margin-top: 8px;">
                 <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Features
                 </p>
@@ -260,11 +260,12 @@
                 </p>
               </v-col>
               <v-col>
-                <v-row no-gutters justify="end">
+                <v-row no-gutters justify="end" align="center">
                   <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     Enable
                   </p>
                   <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                  <v-btn text icon title="Zoom To" @click.stop="zoomToLayer"><v-icon>mdi-magnify</v-icon></v-btn>
                 </v-row>
               </v-col>
             </v-row>
@@ -382,7 +383,8 @@
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
         renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
-        updateFeatureTable: 'Projects/updateFeatureTable'
+        updateFeatureTable: 'Projects/updateFeatureTable',
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
       async styleExtensionEnabled () {
         let hasStyle = false
@@ -398,9 +400,6 @@
           console.error(error)
         }
         return hasStyle
-      },
-      zoomToExtent (extent) {
-        this.$emit('zoom-to', extent)
       },
       rename () {
         this.renameDialog = false
@@ -449,6 +448,10 @@
       },
       hideStyleEditor () {
         this.styleEditorVisible = false
+      },
+      async zoomToLayer () {
+        const extent = await GeoPackageUtilities.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        this.zoomToExtent({projectId: this.projectId, extent})
       }
     },
     watch: {

@@ -61,6 +61,7 @@
           </v-card-title>
           <v-card-text>
             <v-form
+              v-on:submit.prevent
               ref="form"
               v-model="valid"
               lazy-validation>
@@ -170,15 +171,17 @@
           </v-card-text>
         </v-card>
       </v-dialog>
-      <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
-      </data-source-list>
-      <processing-source
-        v-for="source in processing.sources"
-        :source="source"
-        :key="source.file.path"
-        class="sources processing-source"
-        @clear-processing="clearProcessing">
-      </processing-source>
+      <div style="margin-bottom: 80px;">
+        <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
+        </data-source-list>
+        <processing-source
+          v-for="source in processing.sources"
+          :source="source"
+          :key="source.file.path"
+          class="sources processing-source"
+          @clear-processing="clearProcessing">
+        </processing-source>
+      </div>
       <v-card class="card-position" v-if="Object.keys(project.layers).length === 0">
         <v-row no-gutters justify="space-between" align="end">
           <v-col>

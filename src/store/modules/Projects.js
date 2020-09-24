@@ -318,6 +318,13 @@ const mutations = {
       layer.visible = false
     })
     Vue.set(state, projectId, projectCopy)
+  },
+  zoomToExtent (state, {projectId, extent}) {
+    let key = 0
+    if (!_.isNil(state[projectId].zoomToExtent)) {
+      key = (!_.isNil(state[projectId].zoomToExtent.key) ? state[projectId].zoomToExtent.key : 0) + 1
+    }
+    Vue.set(state[projectId], 'zoomToExtent', {extent, key})
   }
 }
 
@@ -749,17 +756,60 @@ const actions = {
   updateProjectLayer ({ commit, state }, {projectId, layer}) {
     commit('updateProjectLayer', {projectId, layer})
   },
-  setProjectMaxFeatures  ({ commit, state }, {projectId, maxFeatures}) {
+  setProjectMaxFeatures ({ commit, state }, {projectId, maxFeatures}) {
     commit('setProjectMaxFeatures', {projectId, maxFeatures})
   },
-  setZoomControlEnabled  ({ commit, state }, {projectId, enabled}) {
+  setZoomControlEnabled ({ commit, state }, {projectId, enabled}) {
     commit('setZoomControlEnabled', {projectId, enabled})
   },
-  setDisplayZoomEnabled  ({ commit, state }, {projectId, enabled}) {
+  setDisplayZoomEnabled ({ commit, state }, {projectId, enabled}) {
     commit('setDisplayZoomEnabled', {projectId, enabled})
   },
-  clearActiveLayers  ({ commit, state }, {projectId}) {
+  clearActiveLayers ({ commit, state }, {projectId}) {
     commit('clearActiveLayers', {projectId})
+  },
+  zoomToExtent ({ commit, state }, {projectId, extent}) {
+    commit('zoomToExtent', {projectId, extent})
+  },
+  synchronizeGeoPackage ({ commit, state }, {projectId, geopackageId}) {
+    const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
+    GeoPackageUtilities.getOrCreateGeoPackageForApp(geopackageCopy.path).then(geopackage => {
+      geopackage.id = geopackageId
+      geopackage.styleAssignment = geopackageCopy.styleAssignment
+      geopackage.iconAssignment = geopackageCopy.iconAssignment
+      geopackage.tableStyleAssignment = geopackageCopy.tableStyleAssignment
+      geopackage.tableIconAssignment = geopackageCopy.tableIconAssignment
+      _.keys(geopackage.tables.features).forEach(table => {
+        const featureTable = geopackage.tables.features[table]
+        const originalTable = geopackage.tables.features[table]
+        if (!_.isNil(originalTable)) {
+          featureTable.visible = originalTable.visible
+        }
+      })
+      _.keys(geopackage.tables.tiles).forEach(table => {
+        const tileTable = geopackage.tables.tiles[table]
+        const originalTable = geopackage.tables.tiles[table]
+        if (!_.isNil(originalTable)) {
+          tileTable.visible = originalTable.visible
+        }
+      })
+      commit('setGeoPackage', {projectId, geopackage})
+    })
+  },
+  validateData ({ dispatch, state }) {
+    const copiedState = _.cloneDeep(state)
+    _.keys(copiedState).forEach(projectId => {
+      const project = copiedState[projectId]
+      // update geopackages
+      _.keys(project.geopackages).forEach(geopackageId => {
+        const geopackage = project.geopackages[geopackageId]
+        if (!fs.existsSync(geopackage.path)) {
+          dispatch('removeGeoPackage', {projectId, geopackageId})
+        } else {
+          // dispatch('addGeoPackage', {projectId, filePath: geopackage.path})
+        }
+      })
+    })
   }
 }
 

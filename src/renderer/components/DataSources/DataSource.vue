@@ -38,7 +38,7 @@
             </v-row>
           </v-card-title>
           <v-card-text>
-            <v-form v-model="renameValid">
+            <v-form v-on:submit.prevent v-model="renameValid">
               <v-container class="ma-0 pa-0">
                 <v-row no-gutters>
                   <v-col cols="12">
@@ -157,7 +157,7 @@
           <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
             <v-col>
               <v-row no-gutters justify="space-between">
-                <v-col>
+                <v-col style="margin-top: 8px;">
                   <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     Data Source Type
                   </p>
@@ -166,11 +166,12 @@
                   </p>
                 </v-col>
                 <v-col>
-                  <v-row no-gutters justify="end">
+                  <v-row no-gutters justify="end" align="center">
                     <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                       Enable
                     </p>
                     <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                    <v-btn text icon title="Zoom To" @click.stop="zoomToSource"><v-icon>mdi-magnify</v-icon></v-btn>
                   </v-row>
                 </v-col>
               </v-row>
@@ -262,7 +263,8 @@
       ...mapActions({
         setLayerDisplayName: 'Projects/setLayerDisplayName',
         removeProjectLayer: 'Projects/removeProjectLayer',
-        toggleProjectLayer: 'Projects/toggleProjectLayer'
+        toggleProjectLayer: 'Projects/toggleProjectLayer',
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
       saveLayerName () {
         this.renameDialog = false
@@ -277,6 +279,9 @@
       },
       hideStyleEditor () {
         this.styleEditorVisible = false
+      },
+      zoomToSource () {
+        this.zoomToExtent({projectId: this.projectId, extent: this.source.extent})
       }
     }
   }
