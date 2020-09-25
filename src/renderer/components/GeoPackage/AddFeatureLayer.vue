@@ -152,7 +152,7 @@
         color="#3b779a"
         text
         @click.stop="cancel">
-        cancel'
+        cancel
       </v-btn>
       <v-btn
         v-if="layerNameValid && ((dataSourceSelection.length + geopackageLayerSelection.length) > 0)"
@@ -172,6 +172,7 @@
   import Modal from '../Modal'
   import _ from 'lodash'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
   export default {
     props: {
@@ -245,17 +246,22 @@
         this.back()
       }
     },
-    computed: {
-      geopackageFeatureLayers () {
+    asyncComputed: {
+      async geopackageFeatureLayers () {
         const items = []
-        _.keys(this.project.geopackages).forEach(geopackageKey => {
-          const geopackage = this.project.geopackages[geopackageKey]
-          _.keys(geopackage.tables.features).forEach(table => {
-            items.push({value: {geopackageId: geopackage.id, table: table}, text: geopackage.name + ': ' + table})
-          })
-        })
+        const keys = _.keys(this.project.geopackages)
+        for (let i = 0; i < keys.length; i++) {
+          const geopackage = this.project.geopackages[keys[i]]
+          if (await GeoPackageUtilities.isHealthy(geopackage)) {
+            _.keys(geopackage.tables.features).forEach(table => {
+              items.push({value: {geopackageId: geopackage.id, table: table}, text: geopackage.name + ': ' + table})
+            })
+          }
+        }
         return items
-      },
+      }
+    },
+    computed: {
       dataSourceLayers () {
         return Object.values(this.project.layers).filter(layer => layer.pane === 'vector').map(layer => {
           return {text: layer.displayName ? layer.displayName : layer.name, value: layer.id}

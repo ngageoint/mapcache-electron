@@ -10,7 +10,8 @@ import {
   GeometryType,
   GeoPackage,
   FeatureStyleExtension,
-  RTreeIndex
+  RTreeIndex,
+  GeoPackageValidate
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
 import path from 'path'
@@ -317,6 +318,11 @@ export default class GeoPackageUtilities {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._getGeoPackageFeatureTableForApp(gp, table)
     })
+  }
+
+  static async isGeoPackageValid (filePath) {
+    const gp = await GeoPackageAPI.open(filePath)
+    return GeoPackageValidate.hasMinimumTables(gp)
   }
 
   /**
@@ -2232,5 +2238,41 @@ export default class GeoPackageUtilities {
       throttleStatusCallback(status)
       await GeoPackageUtilities.wait(500)
     }, true)
+  }
+
+  static isSynchronized (geopackage) {
+    return FileUtilities.getLastModifiedDate(geopackage.path) === (geopackage.modifiedDate ? geopackage.modifiedDate : '0')
+  }
+
+  static isMissing (geopackage) {
+    return !FileUtilities.exists(geopackage.path)
+  }
+
+  /**
+   * Check GeoPackage's health
+   * @param geopackage
+   * @returns {Promise<{synchronized: boolean, invalid: boolean, missing: boolean}>}
+   */
+  static async checkGeoPackageHealth (geopackage) {
+    const missing = GeoPackageUtilities.isMissing(geopackage)
+    const synchronized = GeoPackageUtilities.isSynchronized(geopackage)
+    let invalid = false
+    if (!missing) {
+      try {
+        invalid = !await GeoPackageUtilities.isGeoPackageValid(geopackage.path)
+      } catch (error) {
+        invalid = true
+      }
+    }
+    return {
+      missing,
+      synchronized,
+      invalid
+    }
+  }
+
+  static async isHealthy (geopackage) {
+    const health = await GeoPackageUtilities.checkGeoPackageHealth(geopackage)
+    return !health.missing && !health.invalid && health.synchronized
   }
 }

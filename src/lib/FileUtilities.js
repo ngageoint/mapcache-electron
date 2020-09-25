@@ -50,4 +50,29 @@ export default class FileUtilities {
     const sourceDirectory = userDataDir().dir(sourceId).path()
     return { sourceId, sourceDirectory }
   }
+
+  /**
+   * Get modified date for file
+   * @param filePath
+   * @returns {String}
+   */
+  static getLastModifiedDate (filePath) {
+    let result
+    try {
+      result = fs.statSync(filePath).mtime.toTimeString()
+    } catch (error) {
+      result = undefined
+    }
+    return result
+  }
+
+  static exists (filePath) {
+    let result = false
+    try {
+      result = fs.existsSync(filePath)
+    } catch (error) {
+      result = false
+    }
+    return result
+  }
 }

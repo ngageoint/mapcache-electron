@@ -32,6 +32,7 @@ const mutations = {
     })
   },
   setGeoPackage (state, {projectId, geopackage}) {
+    geopackage.modifiedDate = FileUtilities.getLastModifiedDate(geopackage.path)
     Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
   },
   setProjectMaxFeatures (state, {projectId, maxFeatures}) {
@@ -187,11 +188,14 @@ const mutations = {
   },
   updateStyleKey (state, {projectId, id, tableName, isGeoPackage}) {
     if (isGeoPackage) {
-      if (state[projectId].geopackages[id].tables.features[tableName]) {
-        Vue.set(state[projectId].geopackages[id].tables.features[tableName], 'styleKey', state[projectId].geopackages[id].tables.features[tableName].styleKey + 1)
-      } else if (state[projectId].geopackages[id].tables.tiles[tableName]) {
-        Vue.set(state[projectId].geopackages[id].tables.tiles[tableName], 'styleKey', state[projectId].geopackages[id].tables.tiles[tableName].styleKey + 1)
+      const geopackageCopy = _.cloneDeep(state[projectId].geopackages[id])
+      geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
+      if (geopackageCopy.tables.features[tableName]) {
+        geopackageCopy.tables.features[tableName].styleKey = geopackageCopy.tables.features[tableName].styleKey + 1
+      } else if (geopackageCopy.tables.tiles[tableName]) {
+        geopackageCopy.tables.tiles[tableName].styleKey = geopackageCopy.tables.tiles[tableName].styleKey + 1
       }
+      Vue.set(state[projectId].geopackages, id, geopackageCopy)
     } else {
       Vue.set(state[projectId].layers[id], 'styleKey', state[projectId].layers[id].styleKey + 1)
     }
@@ -265,17 +269,20 @@ const mutations = {
     let table = geopackageCopy.tables.tiles[oldTableName]
     delete geopackageCopy.tables.tiles[oldTableName]
     geopackageCopy.tables.tiles[newTableName] = table
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   copyGeoPackageTileTable (state, {projectId, geopackageId, tableName, copyTableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     geopackageCopy.tables.tiles[copyTableName] = _.cloneDeep(geopackageCopy.tables.tiles[tableName])
     geopackageCopy.tables.tiles[copyTableName].visible = false
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   deleteGeoPackageTileTable (state, {projectId, geopackageId, tableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     delete geopackageCopy.tables.tiles[tableName]
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   renameGeoPackageFeatureTable (state, {projectId, geopackageId, oldTableName, newTableName}) {
@@ -283,17 +290,20 @@ const mutations = {
     let table = geopackageCopy.tables.features[oldTableName]
     delete geopackageCopy.tables.features[oldTableName]
     geopackageCopy.tables.features[newTableName] = table
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   copyGeoPackageFeatureTable (state, {projectId, geopackageId, tableName, copyTableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     geopackageCopy.tables.features[copyTableName] = _.cloneDeep(geopackageCopy.tables.features[tableName])
     geopackageCopy.tables.features[copyTableName].visible = false
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   deleteGeoPackageFeatureTable (state, {projectId, geopackageId, tableName}) {
     let geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     delete geopackageCopy.tables.features[tableName]
+    geopackageCopy.modifiedDate = FileUtilities.getLastModifiedDate(geopackageCopy.path)
     Vue.set(state[projectId].geopackages, geopackageId, geopackageCopy)
   },
   setZoomControlEnabled (state, {projectId, enabled}) {
@@ -382,7 +392,11 @@ const actions = {
     const newPath = path.join(path.dirname(oldPath), name + '.gpkg')
     fs.copyFileSync(oldPath, newPath)
     GeoPackageUtilities.getOrCreateGeoPackageForApp(newPath).then(geopackage => {
-      commit('addGeoPackage', {projectId, geopackage})
+      geopackage.styleAssignment = {table: null, featureId: -1}
+      geopackage.iconAssignment = {table: null, featureId: -1}
+      geopackage.tableStyleAssignment = {table: null, geometryType: -1}
+      geopackage.tableIconAssignment = {table: null, geometryType: -1}
+      commit('setGeoPackage', {projectId, geopackage})
     })
   },
   removeGeoPackage ({ commit, state }, {projectId, geopackageId}) {
@@ -430,143 +444,6 @@ const actions = {
       commit('deleteGeoPackageFeatureTable', {projectId, geopackageId, tableName})
     })
   },
-  // addGeoPackage ({ commit, state }, {project}) {
-  //   let name = project.name + ' GeoPackage Configuration'
-  //   if (Object.keys(project.geopackages).length) {
-  //     name += ' ' + Object.keys(project.geopackages).length
-  //   }
-  //   let tileLayers = {}
-  //   let vectorLayers = {}
-  //   for (const layerId in project.layers) {
-  //     let layer = project.layers[layerId]
-  //     if (layer.pane === 'tile' && !tileLayers[layerId]) {
-  //       tileLayers[layerId] = {
-  //         id: layer.id,
-  //         included: layer.shown,
-  //         name: layer.name,
-  //         displayName: layer.displayName || layer.name,
-  //         style: layer.style
-  //       }
-  //     }
-  //     if (layer.pane === 'vector' && !vectorLayers[layerId]) {
-  //       vectorLayers[layerId] = {
-  //         id: layer.id,
-  //         included: layer.shown,
-  //         name: layer.name,
-  //         displayName: layer.displayName || layer.name,
-  //         style: layer.style,
-  //         geopackageFilePath: layer.geopackageFilePath,
-  //         sourceLayerName: layer.sourceLayerName
-  //       }
-  //     }
-  //   }
-  //
-  //   let geopackage = {
-  //     id: UniqueIDUtilities.createUniqueID(),
-  //     name: name,
-  //     vectorConfigurations: {},
-  //     tileConfigurations: {},
-  //     layers: Object.keys(project.layers),
-  //     tileLayers: tileLayers,
-  //     vectorLayers: vectorLayers
-  //   }
-  //   commit('addGeoPackage', {project, geopackage})
-  // },
-  // addGeoPackageTileConfiguration ({ commit, state }, {projectId, geopackageId}) {
-  //   let count = 1
-  //   let tableName = 'TileTable' + count
-  //   while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.tableName === tableName) !== -1) {
-  //     count++
-  //     tableName = 'TileTable' + count
-  //   }
-  //   count = 1
-  //   let configName = 'Tile Configuration ' + count
-  //   while (Object.values(state[projectId].geopackages[geopackageId].tileConfigurations).findIndex(config => config.configurationName === configName) !== -1) {
-  //     count++
-  //     configName = 'Tile Configuration ' + count
-  //   }
-  //   let tileConfiguration = {
-  //     id: UniqueIDUtilities.createUniqueID(),
-  //     type: 'tile',
-  //     configurationName: configName,
-  //     tableName: tableName,
-  //     tileLayers: [],
-  //     vectorLayers: [],
-  //     renderingOrder: [],
-  //     minZoom: 0,
-  //     maxZoom: 0,
-  //     tileScaling: false,
-  //     boundingBox: undefined,
-  //     boundingBoxEditingEnabled: false
-  //   }
-  //   commit('addGeoPackageTileConfiguration', {projectId, geopackageId, tileConfiguration})
-  // },
-  // setGeoPackageTileConfigurationName ({ commit, state }, {projectId, geopackageId, configId, configurationName}) {
-  //   commit('setGeoPackageTileConfigurationName', {projectId, geopackageId, configId, configurationName})
-  // },
-  // setGeoPackageTileTableName ({ commit, state }, {projectId, geopackageId, configId, tableName}) {
-  //   commit('setGeoPackageTileTableName', {projectId, geopackageId, configId, tableName})
-  // },
-  // setGeoPackageTileConfigurationTileLayers ({ commit, state }, {projectId, geopackageId, configId, tileLayers}) {
-  //   commit('setGeoPackageTileConfigurationTileLayers', {projectId, geopackageId, configId, tileLayers})
-  // },
-  // setGeoPackageTileConfigurationVectorLayers ({ commit, state }, {projectId, geopackageId, configId, vectorLayers}) {
-  //   commit('setGeoPackageTileConfigurationVectorLayers', {projectId, geopackageId, configId, vectorLayers})
-  // },
-  // setGeoPackageTileConfigurationBoundingBox ({ commit, state }, {projectId, geopackageId, configId, boundingBox}) {
-  //   commit('setGeoPackageTileConfigurationBoundingBox', {projectId, geopackageId, configId, boundingBox})
-  // },
-  // setGeoPackageTileConfigurationRenderingOrder ({ commit, state }, {projectId, geopackageId, configId, renderingOrder}) {
-  //   commit('setGeoPackageTileConfigurationRenderingOrder', {projectId, geopackageId, configId, renderingOrder})
-  // },
-  // setGeoPackageTileConfigurationTileScaling ({ commit, state }, {projectId, geopackageId, configId, tileScaling}) {
-  //   commit('setGeoPackageTileConfigurationTileScaling', {projectId, geopackageId, configId, tileScaling})
-  // },
-  // setGeoPackageTileConfigurationMinZoom ({ commit, state }, {projectId, geopackageId, configId, minZoom}) {
-  //   commit('setGeoPackageTileConfigurationMinZoom', {projectId, geopackageId, configId, minZoom})
-  // },
-  // setGeoPackageTileConfigurationMaxZoom ({ commit, state }, {projectId, geopackageId, configId, maxZoom}) {
-  //   commit('setGeoPackageTileConfigurationMaxZoom', {projectId, geopackageId, configId, maxZoom})
-  // },
-  // toggleGeoPackageTileConfigurationBoundingBoxEditing ({ commit, state }, {projectId, geopackageId, configId, enabled}) {
-  //   commit('toggleGeoPackageTileConfigurationBoundingBoxEditing', {projectId, geopackageId, configId, enabled})
-  // },
-  // deleteGeoPackageTileConfiguration ({ commit, state }, {projectId, geopackageId, configId}) {
-  //   commit('deleteGeoPackageTileConfiguration', {projectId, geopackageId, configId})
-  // },
-  // addGeoPackageVectorConfiguration ({ commit, state }, {projectId, geopackageId}) {
-  //   let count = 1
-  //   let configName = 'Vector Configuration #' + count
-  //   while (Object.values(state[projectId].geopackages[geopackageId].vectorConfigurations).findIndex(config => config.configurationName === configName) !== -1) {
-  //     count++
-  //     configName = 'Vector Configuration #' + count
-  //   }
-  //   let vectorConfiguration = {
-  //     id: UniqueIDUtilities.createUniqueID(),
-  //     type: 'vector',
-  //     configurationName: configName,
-  //     vectorLayers: [],
-  //     boundingBox: undefined,
-  //     boundingBoxEditingEnabled: false,
-  //     indexed: true
-  //   }
-  //   commit('addGeoPackageVectorConfiguration', {projectId, geopackageId, vectorConfiguration})
-  // },
-  // setGeoPackageVectorConfigurationName ({ commit, state }, {projectId, geopackageId, configId, configurationName}) {
-  //   commit('setGeoPackageVectorConfigurationName', {projectId, geopackageId, configId, configurationName})
-  // },
-  // setGeoPackageVectorConfigurationVectorLayers ({ commit, state }, {projectId, geopackageId, configId, vectorLayers}) {
-  //   commit('setGeoPackageVectorConfigurationVectorLayers', {projectId, geopackageId, configId, vectorLayers})
-  // },
-  // setGeoPackageVectorConfigurationBoundingBox ({ commit, state }, {projectId, geopackageId, configId, boundingBox}) {
-  //   commit('setGeoPackageVectorConfigurationBoundingBox', {projectId, geopackageId, configId, boundingBox})
-  // },
-  // toggleGeoPackageVectorConfigurationBoundingBoxEditing ({ commit, state }, {projectId, geopackageId, configId, enabled}) {
-  //   commit('toggleGeoPackageVectorConfigurationBoundingBoxEditing', {projectId, geopackageId, configId, enabled})
-  // },
-  // deleteGeoPackageVectorConfiguration ({ commit, state }, {projectId, geopackageId, configId}) {
-  //   commit('deleteGeoPackageVectorConfiguration', {projectId, geopackageId, configId})
-  // },
   toggleProjectLayer ({ commit, state }, {projectId, layerId}) {
     commit('toggleProjectLayer', {projectId, layerId})
   },
@@ -728,24 +605,6 @@ const actions = {
       })
     })
   },
-  editFeatureFromGeopackage ({ commit, state }, {projectId, geopackageId, tableName, featureId, feature}) {
-    // TODO: what changed and how does that impact the feature table? will there be geometry changes?
-  },
-  // setGeoPackageName ({ commit, state }, {projectId, geopackageId, name}) {
-  //   commit('setGeoPackageName', {projectId, geopackageId, name})
-  // },
-  // setGeoPackageLocation ({ commit, state }, {projectId, geopackageId, fileName}) {
-  //   commit('setGeoPackageLocation', {projectId, geopackageId, fileName})
-  // },
-  // setGeoPackageStatus ({ commit, state }, {projectId, geopackageId, status}) {
-  //   commit('setGeoPackageStatus', {projectId, geopackageId, status})
-  // },
-  // setGeoPackageBuildMode ({ commit, state }, {projectId, geopackageId, buildMode}) {
-  //   commit('setGeoPackageBuildMode', {projectId, geopackageId, buildMode})
-  // },
-  // setGeoPackageStatusReset ({ commit, state }, {projectId, geopackageId}) {
-  //   commit('setGeoPackageStatusReset', {projectId, geopackageId})
-  // },
   deleteProject ({ commit, state }, project) {
     commit('deleteProject', project)
     commit('UIState/deleteProject', project.id, {root: true})
