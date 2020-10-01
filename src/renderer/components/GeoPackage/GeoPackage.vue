@@ -15,11 +15,15 @@
       :projectId="project.id"
       :back="deselectLayer"/>
   </div>
+  <div v-else-if="addFeatureLayerDialog">
+    <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
+  </div>
   <div v-else style="background-color: white">
     <v-toolbar
       color="#3b779a"
       dark
       flat
+      class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>{{geopackage.name}}</v-toolbar-title>
@@ -27,7 +31,8 @@
     <v-dialog
       v-model="detailDialog"
       max-width="500"
-      scrollable>
+      scrollable
+      persistent>
       <v-card>
         <v-card-title style="color: grey; font-weight: 600;">{{geopackage.name}}</v-card-title>
         <v-divider/>
@@ -48,7 +53,8 @@
     </v-dialog>
     <v-dialog
       v-model="renameDialog"
-      max-width="500">
+      max-width="500"
+      persistent>
       <v-card>
         <v-card-title style="color: grey; font-weight: 600;">
           <v-row no-gutters justify="start" align="center">
@@ -91,7 +97,8 @@
     </v-dialog>
     <v-dialog
       v-model="copyDialog"
-      max-width="500">
+      max-width="500"
+      persistent>
       <v-card>
         <v-card-title style="color: grey; font-weight: 600;">
           <v-row no-gutters justify="start" align="center">
@@ -134,7 +141,8 @@
     </v-dialog>
     <v-dialog
       v-model="removeDialog"
-      max-width="500">
+      max-width="500"
+      persistent>
       <v-card>
         <v-card-title style="color: grey; font-weight: 600;">
           <v-row no-gutters justify="start" align="center">
@@ -160,10 +168,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="addFeatureLayerDialog" max-width="500" scrollable persistent>
-      <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
-    </v-dialog>
-    <v-dialog v-model="addLayerDialog" max-width="350">
+    <v-dialog v-model="addLayerDialog" max-width="350" persistent>
       <v-card class="text-center">
         <v-card-title class="headline">
           <v-container class="pa-0 ma-0">
@@ -215,6 +220,15 @@
             </template>
           </v-hover>
         </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#3b779a"
+            text
+            @click="addLayerDialog = false">
+            cancel
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
     <v-container fluid class="text-left pb-0 mb-0">

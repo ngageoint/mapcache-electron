@@ -4,6 +4,7 @@
       :color="toolbarColor"
       dark
       flat
+      class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title><b class="ml-2">{{tableName}}</b> Style Editor</v-toolbar-title>

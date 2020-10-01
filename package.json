@@ -146,6 +146,7 @@
     "pbf": "^3.1.0",
     "proj4": "^2.5.0",
     "pureimage": "^0.1.6",
+    "reproject": "1.2.5",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
     "superagent": "^5.0.5",

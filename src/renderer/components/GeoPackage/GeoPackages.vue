@@ -8,12 +8,13 @@
         color="#3b779a"
         dark
         flat
+        class="sticky-toolbar"
       >
         <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
         <v-toolbar-title>GeoPackages</v-toolbar-title>
       </v-toolbar>
       <v-layout row justify-center>
-        <v-dialog v-model="addGeoPackageDialog" max-width="300">
+        <v-dialog v-model="addGeoPackageDialog" max-width="300" persistent>
           <v-card class="text-center">
             <v-card-title class="headline">
               <v-container class="pa-0 ma-0">
@@ -65,6 +66,15 @@
                 </template>
               </v-hover>
             </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="#3b779a"
+                text
+                @click="addGeoPackageDialog = false">
+                cancel
+              </v-btn>
+            </v-card-actions>
           </v-card>
         </v-dialog>
       </v-layout>

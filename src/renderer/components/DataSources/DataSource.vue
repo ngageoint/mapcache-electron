@@ -24,13 +24,15 @@
         color="#3b779a"
         dark
         flat
+        class="sticky-toolbar"
       >
         <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
         <v-toolbar-title>{{initialDisplayName}}</v-toolbar-title>
       </v-toolbar>
       <v-dialog
         v-model="renameDialog"
-        max-width="500">
+        max-width="500"
+        persistent>
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
             <v-row no-gutters justify="start" align="center">
@@ -73,7 +75,8 @@
       </v-dialog>
       <v-dialog
         v-model="deleteDialog"
-        max-width="500">
+        max-width="500"
+        persistent>
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
             <v-row no-gutters justify="start" align="center">
@@ -93,7 +96,7 @@
             <v-btn
               color="#ff4444"
               text
-              @click="removeProjectLayer({projectId: projectId, layerId: source.id})">
+              @click="removeDataSource({projectId: projectId, sourceId: source.id})">
               remove
             </v-btn>
           </v-card-actions>
@@ -243,7 +246,7 @@
           return this.source ? this.source.visible : false
         },
         set () {
-          this.toggleProjectLayer({projectId: this.projectId, layerId: this.source.id})
+          this.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: !this.source.visible})
         }
       }
     },
@@ -261,14 +264,14 @@
     },
     methods: {
       ...mapActions({
-        setLayerDisplayName: 'Projects/setLayerDisplayName',
-        removeProjectLayer: 'Projects/removeProjectLayer',
-        toggleProjectLayer: 'Projects/toggleProjectLayer',
+        setDataSourceDisplayName: 'Projects/setDataSourceDisplayName',
+        removeDataSource: 'Projects/removeDataSource',
+        setDataSourceVisible: 'Projects/setDataSourceVisible',
         zoomToExtent: 'Projects/zoomToExtent'
       }),
       saveLayerName () {
         this.renameDialog = false
-        this.setLayerDisplayName({projectId: this.projectId, layerId: this.source.id, displayName: this.renamedSource})
+        this.setDataSourceDisplayName({projectId: this.projectId, sourceId: this.source.id, displayName: this.renamedSource})
       },
       downloadGeoPackage () {
         try {

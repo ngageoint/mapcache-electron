@@ -1,213 +1,219 @@
 <template>
-  <div>
-    <div v-if="selectedDataSource !== null && selectedDataSource !== undefined">
-      <data-source
-        :key="selectedDataSource.id"
-        class="sources"
-        :source="selectedDataSource"
-        :projectId="project.id"
-        :back="deselectDataSource">
-      </data-source>
-    </div>
-    <div v-else>
-      <v-toolbar
-        color="#3b779a"
-        dark
-        flat
-      >
-        <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-        <v-toolbar-title>Data Sources</v-toolbar-title>
-      </v-toolbar>
-      <modal
-        v-if="layerSelectionVisible"
-        :header="layerSelectionSourceType + ' Layer Selection'"
-        :card-text="'Select the ' + layerSelectionSourceType + ' layers for import.'"
-        :ok="confirmLayerImport"
-        :cancel="cancelLayerImport">
-        <div slot="body">
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-select
-                  v-model="layerSelection"
-                  :items="layerChoices"
-                  :label="layerSelectionSourceType + ' Layers'"
-                  multiple
-                  return-object
-                  item-text="name"
-                  item-value="name"
-                  hide-details
-                  chips>
-                </v-select>
+  <div class="content-panel" v-if="selectedDataSource !== null && selectedDataSource !== undefined">
+    <data-source
+      :key="selectedDataSource.id"
+      class="sources"
+      :source="selectedDataSource"
+      :projectId="project.id"
+      :back="deselectDataSource">
+    </data-source>
+  </div>
+  <div v-else>
+    <v-toolbar
+      color="#3b779a"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title>Data Sources</v-toolbar-title>
+    </v-toolbar>
+    <modal
+      v-if="layerSelectionVisible"
+      :header="layerSelectionSourceType + ' Layer Selection'"
+      :card-text="'Select the ' + layerSelectionSourceType + ' layers for import.'"
+      :ok="confirmLayerImport"
+      :cancel="cancelLayerImport">
+      <div slot="body">
+        <v-container>
+          <v-row>
+            <v-col cols="12">
+              <v-select
+                v-model="layerSelection"
+                :items="layerChoices"
+                :label="layerSelectionSourceType + ' Layers'"
+                multiple
+                return-object
+                item-text="name"
+                item-value="name"
+                hide-details
+                chips>
+              </v-select>
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
+    </modal>
+    <modal
+      v-if="showErrorModal"
+      header="Invalid URL"
+      :ok="dismissErrorModal">
+      <div slot="body">
+        <p style="color: #42b983">{{error}}</p>
+      </div>
+    </modal>
+    <v-dialog v-model="urlSourceDialog" max-width="500" persistent>
+      <v-card>
+        <v-card-title>
+          Import URL Source
+        </v-card-title>
+        <v-card-text>
+          <v-form
+            v-on:submit.prevent
+            ref="form"
+            v-model="valid"
+            lazy-validation>
+            <v-text-field
+              label="Link from web"
+              clearable
+              v-model="linkToValidate"
+              :rules="urlRules"
+              required/>
+            <v-select
+              v-model="authSelection"
+              label="Authorization"
+              :items="authItems">
+            </v-select>
+            <v-text-field
+              v-if="authSelection === 'basic'"
+              label="Username"
+              clearable
+              v-model="username"
+              :rules="basicAuthUsernameRules"
+              required/>
+            <v-text-field
+              v-if="authSelection === 'basic'"
+              label="Password"
+              clearable
+              v-model="password"
+              type="password"
+              :rules="basicAuthPasswordRules"
+              required/>
+            <v-text-field
+              v-if="authSelection === 'bearer'"
+              label="Token"
+              clearable
+              v-model="token"
+              :rules="tokenAuthRules"
+              required/>
+            <v-row justify="end" align="center">
+              <v-btn
+                color="light"
+                class="mr-4"
+                @click="cancelProvideLink">
+                Cancel
+              </v-btn>
+              <v-btn
+                :disabled="!valid"
+                color="primary"
+                class="mr-4"
+                @click.stop="validateLink">
+                Add URL
+              </v-btn>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="addSourceDialog" max-width="300" persistent>
+      <v-card class="text-center">
+        <v-card-title class="headline">
+          <v-container class="pa-0 ma-0">
+            <v-row no-gutters>
+              <v-col class="align-center">
+                New Data Source
               </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-divider class="mt-2 mb-2"/>
             </v-row>
           </v-container>
-        </div>
-      </modal>
-      <modal
-        v-if="showErrorModal"
-        header="Invalid URL"
-        :ok="dismissErrorModal">
-        <div slot="body">
-          <p style="color: #42b983">{{error}}</p>
-        </div>
-      </modal>
-      <v-dialog
-        v-model="urlSourceDialog"
-        max-width="500">
-        <v-card>
-          <v-card-title>
-            Import URL Source
-          </v-card-title>
-          <v-card-text>
-            <v-form
-              v-on:submit.prevent
-              ref="form"
-              v-model="valid"
-              lazy-validation>
-              <v-text-field
-                label="Link from web"
-                clearable
-                v-model="linkToValidate"
-                :rules="urlRules"
-                required/>
-              <v-select
-                v-model="authSelection"
-                label="Authorization"
-                :items="authItems">
-              </v-select>
-              <v-text-field
-                v-if="authSelection === 'basic'"
-                label="Username"
-                clearable
-                v-model="username"
-                :rules="basicAuthUsernameRules"
-                required/>
-              <v-text-field
-                v-if="authSelection === 'basic'"
-                label="Password"
-                clearable
-                v-model="password"
-                type="password"
-                :rules="basicAuthPasswordRules"
-                required/>
-              <v-text-field
-                v-if="authSelection === 'bearer'"
-                label="Token"
-                clearable
-                v-model="token"
-                :rules="tokenAuthRules"
-                required/>
-              <v-row justify="end" align="center">
-                <v-btn
-                  color="light"
-                  class="mr-4"
-                  @click="cancelProvideLink">
-                  Cancel
-                </v-btn>
-                <v-btn
-                  :disabled="!valid"
-                  color="primary"
-                  class="mr-4"
-                  @click.stop="validateLink">
-                  Add URL
-                </v-btn>
-              </v-row>
-            </v-form>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-      <v-dialog v-model="addSourceDialog" max-width="300">
-        <v-card class="text-center">
-          <v-card-title class="headline">
-            <v-container class="pa-0 ma-0">
-              <v-row no-gutters>
-                <v-col class="align-center">
-                  New Data Source
-                </v-col>
-              </v-row>
-              <v-row no-gutters>
-                <v-divider class="mt-2 mb-2"/>
-              </v-row>
-            </v-container>
-          </v-card-title>
-          <v-card-text>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="displayURLModal">
-                  <v-card-text>
-                    <v-container style="padding: 4px">
-                      <v-row>
-                        <v-col cols="2">
-                          <v-icon color="black">mdi-cloud-download-outline</v-icon>
-                        </v-col>
-                        <v-col cols="8">
-                          Download from URL
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFileClick">
-                  <v-card-text>
-                    <v-container style="padding: 4px">
-                      <v-row>
-                        <v-col cols="2">
-                          <v-icon color="black">mdi-file-document-outline</v-icon>
-                        </v-col>
-                        <v-col cols="8">
-                          Import from File
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-      <div style="margin-bottom: 80px;">
-        <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
-        </data-source-list>
-        <processing-source
-          v-for="source in processing.sources"
-          :source="source"
-          :key="source.file.path"
-          class="sources processing-source"
-          @clear-processing="clearProcessing">
-        </processing-source>
-      </div>
-      <v-card class="card-position" v-if="Object.keys(project.layers).length === 0">
-        <v-row no-gutters justify="space-between" align="end">
-          <v-col>
-            <v-row class="pa-0" no-gutters>
-              <v-col class="pa-0 align-center">
-                <h5 class="align-self-center" style="color: #9A9E9E">No data sources found</h5>
-              </v-col>
-            </v-row>
-            <v-row class="pa-0" no-gutters>
-              <v-col class="pa-0 align-center">
-                <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
+        </v-card-title>
+        <v-card-text>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="displayURLModal">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <v-icon color="black">mdi-cloud-download-outline</v-icon>
+                      </v-col>
+                      <v-col cols="8">
+                        Download from URL
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFileClick">
+                <v-card-text>
+                  <v-container style="padding: 4px">
+                    <v-row>
+                      <v-col cols="2">
+                        <v-icon color="black">mdi-file-document-outline</v-icon>
+                      </v-col>
+                      <v-col cols="8">
+                        Import from File
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#3b779a"
+            text
+            @click="addSourceDialog = false">
+            cancel
+          </v-btn>
+        </v-card-actions>
       </v-card>
-      <v-btn
-        class="fab-position"
-        dark
-        fab
-        color="#3b779a"
-        title="Add data source"
-        @click.stop="addSourceDialog = true">
-        <v-icon>mdi-layers-plus</v-icon>
-      </v-btn>
+    </v-dialog>
+    <div style="margin-bottom: 80px;">
+      <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
+      </data-source-list>
+      <processing-source
+        v-for="source in processing.sources"
+        :source="source"
+        :key="source.file.path"
+        class="sources processing-source"
+        @clear-processing="clearProcessing">
+      </processing-source>
     </div>
+    <v-card class="card-position" v-if="Object.keys(project.sources).length === 0">
+      <v-row no-gutters justify="space-between" align="end">
+        <v-col>
+          <v-row class="pa-0" no-gutters>
+            <v-col class="pa-0 align-center">
+              <h5 class="align-self-center" style="color: #9A9E9E">No data sources found</h5>
+            </v-col>
+          </v-row>
+          <v-row class="pa-0" no-gutters>
+            <v-col class="pa-0 align-center">
+              <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card>
+    <v-btn
+      class="fab-position"
+      dark
+      fab
+      color="#3b779a"
+      title="Add data source"
+      @click.stop="addSourceDialog = true">
+      <v-icon>mdi-layers-plus</v-icon>
+    </v-btn>
   </div>
 </template>
 
@@ -324,7 +330,7 @@
     },
     methods: {
       ...mapActions({
-        addProjectLayers: 'Projects/addProjectLayers'
+        addDataSources: 'Projects/addDataSources'
       }),
       cancelProvideLink () {
         this.linkToValidate = ''
@@ -531,7 +537,7 @@
         this.$electron.ipcRenderer.once('process_source_completed_' + source.id, (event, result) => {
           if (!result.error) {
             _this.clearProcessing(result.source)
-            _this.addProjectLayers({projectLayers: result.projectLayers})
+            _this.addDataSources({dataSources: result.dataSources})
           }
         })
         this.$electron.ipcRenderer.send('process_source', {project: _this.project, source: source})
@@ -618,7 +624,7 @@
         this.urlSourceDialog = true
       },
       dataSourceSelected (dataSourceId) {
-        this.selectedDataSource = this.project.layers[dataSourceId]
+        this.selectedDataSource = this.project.sources[dataSourceId]
       },
       deselectDataSource () {
         this.selectedDataSource = null

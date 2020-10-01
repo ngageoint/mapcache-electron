@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-dialog v-model="showDialog" max-width="500">
+    <v-dialog v-model="showDialog" max-width="500" persistent>
       <v-card>
         <v-card-title>
           {{dialogText}}
@@ -127,9 +127,7 @@
             health: await GeoPackageUtilities.checkGeoPackageHealth(geopackage),
             click: async function (item) {
               item.health = await GeoPackageUtilities.checkGeoPackageHealth(geopackage)
-              console.log(item.health)
               if (!item.health.missing && !item.health.invalid && item.health.synchronized) {
-                console.log('lets do it!')
                 _this.geopackageSelected(geopackage.id)
               } else {
                 if (item.health.missing) {
@@ -150,7 +148,7 @@
               _this.dialogSubText = 'File not found at ' + geopackage.path + '. Would you like to remove this GeoPackage?'
               _this.dialogActionText = 'Remove'
               _this.showDialog = true
-              _this.action = () => _this.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+              _this.dialogAction = () => _this.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
             },
             showInvalidFileDialog: function () {
               _this.dialogGeoPackageId = geopackage.id
@@ -158,15 +156,15 @@
               _this.dialogSubText = 'Would you like to remove this GeoPackage?'
               _this.dialogActionText = 'Remove'
               _this.showDialog = true
-              _this.action = () => _this.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+              _this.dialogAction = () => _this.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
             },
             showSynchronizedFileDialog: function () {
               _this.dialogGeoPackageId = geopackage.id
               _this.dialogText = geopackage.name + ' GeoPackage not synchronized'
               _this.dialogSubText = geopackage.name + ' GeoPackage has been modified outside of the application. Would you like to synchronize this GeoPackage?'
               _this.dialogActionText = 'Synchronize'
+              _this.dialogAction = () => _this.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
               _this.showDialog = true
-              _this.action = () => _this.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
             }
           })
         }

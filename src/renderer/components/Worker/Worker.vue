@@ -10,7 +10,7 @@
 
   const workerId = new URL(location.href).searchParams.get('id')
   async function processSource (project, source) {
-    let projectLayers = []
+    let dataSources = []
     let error = null
     try {
       let createdSource = null
@@ -27,9 +27,9 @@
       for (let i = 0; i < layers.length; i++) {
         try {
           let initLayer = await layers[i].initialize()
-          projectLayers.push({project: project, layerId: initLayer.id, config: initLayer.configuration})
+          dataSources.push({project: project, sourceId: initLayer.id, config: initLayer.configuration})
         } catch (error) {
-          console.error('unable to initialize layer: ' + layers[i].sourceLayerName)
+          console.error('unable to initialize data source: ' + layers[i].sourceLayerName)
           console.error(error)
         }
       }
@@ -39,7 +39,7 @@
       error = e
     }
     return {
-      projectLayers: projectLayers,
+      dataSources: dataSources,
       source: source,
       error: error
     }

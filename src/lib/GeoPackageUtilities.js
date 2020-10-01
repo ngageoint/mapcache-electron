@@ -14,6 +14,7 @@ import {
   GeoPackageValidate
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
+import reproject from 'reproject'
 import path from 'path'
 import fs from 'fs'
 import geojsonExtent from '@mapbox/geojson-extent'
@@ -23,6 +24,7 @@ import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
 import UniqueIDUtilities from './UniqueIDUtilities'
 import jetpack from 'fs-jetpack'
 import FileUtilities from './FileUtilities'
+import wkx from 'wkx'
 
 export default class GeoPackageUtilities {
   /**
@@ -1864,7 +1866,7 @@ export default class GeoPackageUtilities {
    * @returns {number}
    */
   static _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
-    return gp.getFeatureDao(tableName).featureTableIndex.countWithGeometryEnvelope(new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0]).buildEnvelope())
+    return gp.getFeatureDao(tableName).countInBoundingBox(new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]), 'EPSG:4326')
   }
 
   /**
@@ -2004,6 +2006,51 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Gets all features in a table
+   * @param gp
+   * @param tableName
+   * @param srsId
+   * @param boundingBox
+   * @returns {any[]}
+   */
+  static _getAllFeatureRowsIn4326 (gp, tableName, srsId, boundingBox) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const srs = featureDao.srs
+    const projectionNeeded = srs.organization.toUpperCase() + ':' + srs.srs_id !== 'EPSG:4326'
+    let each
+    if (!_.isNil(boundingBox) && !_.isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
+      each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBox, 'EPSG:4326')
+    } else {
+      each = featureDao.queryForEach()
+    }
+    const featureRows = []
+    for (let row of each) {
+      if (!_.isNil(row)) {
+        const featureRow = featureDao.getRow(row)
+        if (projectionNeeded) {
+          featureRow.geometry.setGeometry(GeoPackageUtilities.projectGeometryTo4326(featureRow.geometry, srs))
+        }
+        featureRows.push(featureRow)
+      }
+    }
+    return featureRows
+  }
+
+  /**
+   * Gets all features in a table
+   * @param filePath
+   * @param tableName
+   * @param srsId
+   * @param boundingBox
+   * @returns {Promise<any>}
+   */
+  static async getAllFeatureRowsIn4326 (filePath, tableName, srsId, boundingBox) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getAllFeatureRowsIn4326(gp, tableName, srsId, boundingBox)
+    })
+  }
+
+  /**
    * Gets a bounding box to perform a query using a coordinate and zoom
    * @param coordinate
    * @param zoom
@@ -2102,12 +2149,17 @@ export default class GeoPackageUtilities {
     })
   }
 
+  static flatten (arr) {
+    return arr.reduce(function (flat, toFlatten) {
+      return flat.concat(Array.isArray(toFlatten) ? GeoPackageUtilities.flatten(toFlatten) : toFlatten)
+    }, [])
+  }
+
   /**
    * Builds a feature layer
    * currently this just merges features, determines all possible columns from features (rather than from tables) and inserts into the new table
    * TODO: support extensions
    * TODO: support related tables
-   * TODO: support building feature columns from all layer's columns
    * TODO: support bounding box cutting
    * @param configuration
    * @param statusCallback
@@ -2128,10 +2180,9 @@ export default class GeoPackageUtilities {
 
       await GeoPackageUtilities.wait(1000)
 
-      const featureCollection = {
-        type: 'FeatureCollection',
-        features: []
-      }
+      let sourceFeatureMap = {}
+      let sourceColumnMap = {}
+      let sourceNameChanges = {}
 
       // retrieve layers
       status.message = 'Retrieving features from data sources and geopackage feature layers...'
@@ -2140,11 +2191,23 @@ export default class GeoPackageUtilities {
 
       const numberLayersToRetrieve = configuration.sourceLayers.length + configuration.geopackageLayers.length
       let layersRetrieved = 0
+      let featureColumns = null
 
+      let boundingBoxFilter
+      if (configuration.boundingBoxFilter) {
+        boundingBoxFilter = new BoundingBox(configuration.boundingBoxFilter[0], configuration.boundingBoxFilter[2], configuration.boundingBoxFilter[1], configuration.boundingBoxFilter[3])
+      }
+
+      let sourceIdx = 0
       // copy data from source layers
       for (let i = 0; i < configuration.sourceLayers.length; i++) {
         const sourceLayer = configuration.sourceLayers[i]
-        featureCollection.features = featureCollection.features.concat(await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName))
+        sourceFeatureMap[sourceIdx] = await GeoPackageUtilities.getAllFeatureRowsIn4326(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName, 4326, boundingBoxFilter)
+        sourceColumnMap[sourceIdx] = await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName)
+        const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName))
+        featureColumns = result.mergedColumns
+        sourceNameChanges[sourceIdx] = result.nameChanges
+        sourceIdx++
         layersRetrieved++
         status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
         throttleStatusCallback(status)
@@ -2153,7 +2216,12 @@ export default class GeoPackageUtilities {
       // copy data from geopackage feature layers
       for (let i = 0; i < configuration.geopackageLayers.length; i++) {
         const geopackageLayer = configuration.geopackageLayers[i]
-        featureCollection.features = featureCollection.features.concat(await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackageLayer.geopackage.path, geopackageLayer.table))
+        sourceFeatureMap[sourceIdx] = await GeoPackageUtilities.getAllFeatureRowsIn4326(geopackageLayer.geopackage.path, geopackageLayer.table, 4326, boundingBoxFilter)
+        sourceColumnMap[sourceIdx] = await GeoPackageUtilities.getFeatureColumns(geopackageLayer.geopackage.path, geopackageLayer.table)
+        const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, await GeoPackageUtilities.getFeatureColumns(geopackageLayer.geopackage.path, geopackageLayer.table))
+        featureColumns = result.mergedColumns
+        sourceNameChanges[sourceIdx] = result.nameChanges
+        sourceIdx++
         layersRetrieved++
         status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
         throttleStatusCallback(status)
@@ -2165,37 +2233,34 @@ export default class GeoPackageUtilities {
       status.message = 'Combining features and organizing properties...'
       throttleStatusCallback(status)
 
-      // TODO: at some point i'd like to update this to simply pull the feature table's columns and merge everything together...
-      // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
-      featureCollection.features.forEach(feature => {
-        Object.keys(feature.properties).forEach(key => {
-          let type = typeof feature.properties[key]
-          if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
-            if (type === 'object') {
-              if (!(feature.properties[key] instanceof Date)) {
-                feature.properties[key] = JSON.stringify(feature.properties[key])
-              }
-            }
-          }
-        })
-      })
-
-      let layerColumns = GeoPackageUtilities.getLayerColumns(featureCollection)
       let geometryColumns = new GeometryColumns()
       geometryColumns.table_name = tableName
-      geometryColumns.column_name = layerColumns.geom.name
+      geometryColumns.column_name = 'geometry'
       geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
       geometryColumns.z = 0
       geometryColumns.m = 0
       let columns = []
-      columns.push(FeatureColumn.createPrimaryKeyColumn(0, layerColumns.id.name))
-      columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, GeometryType.GEOMETRY, false, null))
-      let columnCount = 2
-      for (const column of layerColumns.columns) {
-        if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
-          columns.push(FeatureColumn.createColumn(columnCount++, column.name, GeoPackageDataType.fromName(column.dataType), column.notNull, column.defaultValue))
-        }
+      columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
+      columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
+      let columnIndex = 2
+      featureColumns.getColumns().forEach(column => {
+        column.resetIndex()
+        column.setIndex(columnIndex++)
+        columns.push(column)
+      })
+
+      const featureCollection = {
+        type: 'FeatureCollection',
+        features: GeoPackageUtilities.flatten(_.values(sourceFeatureMap)).map(row => {
+          return {
+            type: 'Feature',
+            properties: {},
+            geometry: row.geometry.geometry.toGeoJSON()
+          }
+        })
       }
+
+      const featureCount = featureCollection.features.length
       let extent = geojsonExtent(featureCollection)
       let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
 
@@ -2207,22 +2272,51 @@ export default class GeoPackageUtilities {
       throttleStatusCallback(status)
       await GeoPackageUtilities.wait(500)
       gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
+      const featureDao = gp.getFeatureDao(tableName)
 
-      const featureCount = featureCollection.features.length
-      let featuresAdded = 0
-      featureCollection.features.forEach(feature => {
-        if (feature.properties) {
-          feature.properties.id = undefined
-          _.keys(feature.properties).forEach(key => {
-            if (_.isObject(feature.properties[key])) {
-              delete feature.properties[key]
+      const columnTypes = {}
+      for (let i = 0; i < featureDao.table.getColumnCount(); i++) {
+        const column = featureDao.table.getColumnWithIndex(i)
+        columnTypes[column.name] = column.dataType
+      }
+
+      let id = 0
+      _.keys(sourceFeatureMap).forEach(sourceIdx => {
+        const featureRows = sourceFeatureMap[sourceIdx]
+        const columns = sourceColumnMap[sourceIdx]
+        const nameChanges = sourceNameChanges[sourceIdx]
+        featureRows.forEach(featureRow => {
+          const values = {}
+
+          // iterate over this row's columns and pull values out to be added to the new row
+          columns.getColumns().forEach(column => {
+            const columnName = column.getName()
+            let value = featureRow.getValueWithColumnName(columnName)
+            const name = _.isNil(nameChanges[columnName]) ? columnName : nameChanges[columnName]
+            const tableColumn = featureDao.table.getUserColumns().getColumn(name)
+            if (_.isNil(value) && tableColumn.isNotNull() && !tableColumn.hasDefaultValue()) {
+              value = GeoPackageUtilities.getDefaultValueForDataType(tableColumn.getDataType())
+            }
+            values[name] = value
+          })
+
+          // check for any of our table's columns that require a not null value
+          featureColumns.getColumns().forEach(column => {
+            const columnName = column.getName()
+            if (!_.isNil(values[columnName]) && column.isNotNull() && !column.hasDefaultValue) {
+              values[columnName] = GeoPackageUtilities.getDefaultValueForDataType(column.getDataType())
             }
           })
-        }
-        gp.addGeoJSONFeatureToGeoPackage(feature, tableName)
-        featuresAdded++
-        status.progress = 30 + (50 * featuresAdded / featureCount)
-        throttleStatusCallback(status)
+
+          values.id = id++
+          values.geometry = featureRow.geometry
+
+          // create the new row
+          featureDao.create(featureDao.newRow(columnTypes, values))
+
+          status.progress = 30 + (50 * id / featureCount)
+          throttleStatusCallback(status)
+        })
       })
 
       await GeoPackageUtilities.wait(500)
@@ -2274,5 +2368,112 @@ export default class GeoPackageUtilities {
   static async isHealthy (geopackage) {
     const health = await GeoPackageUtilities.checkGeoPackageHealth(geopackage)
     return !health.missing && !health.invalid && health.synchronized
+  }
+
+  /**
+   * merges feature columns from several tables to be used in a new table
+   * will create new column if data type is different
+   * will update column
+   * @param mergedColumns
+   * @param featureColumns
+   */
+  static mergeFeatureColumns (mergedColumns, featureColumns) {
+    const nameChanges = {}
+    featureColumns.setCustom(true)
+    // remove pk column
+    if (featureColumns.hasPkColumn()) {
+      featureColumns.dropColumnWithIndex(featureColumns.getPkColumnIndex())
+    }
+    // remove feature column
+    if (featureColumns.hasGeometryColumn()) {
+      featureColumns.dropColumnWithIndex(featureColumns.getGeometryIndex())
+    }
+    if (_.isNil(mergedColumns)) {
+      mergedColumns = featureColumns
+    } else {
+      featureColumns.getColumns().forEach(column => {
+        const columnName = column.getName()
+        if (mergedColumns.hasColumn(columnName)) {
+          let mergedColumn = mergedColumns.getColumn(columnName)
+          const dataType = mergedColumn.getDataType()
+          if (dataType !== column.getDataType()) {
+            const newColumnName = (columnName + '_' + GeoPackageDataType.nameFromType(column.getDataType())).toLowerCase()
+            if (!mergedColumns.hasColumn(newColumnName)) {
+              const columnCopy = column.copy()
+              columnCopy.setName(newColumnName)
+              columnCopy.resetIndex()
+              mergedColumns.addColumn(columnCopy)
+            }
+            mergedColumn = mergedColumns.getColumn(newColumnName)
+            nameChanges[columnName] = newColumnName
+          }
+          // check if existing column needs more constraints
+          if (column.isNotNull() && !mergedColumn.isNotNull()) {
+            mergedColumn.setNotNull(true)
+          }
+          if (column.hasDefaultValue() && !mergedColumn.hasDefaultValue()) {
+            mergedColumn.setDefaultValue(column.getDefaultValue())
+          }
+          if (column.hasMax() && !mergedColumn.hasMax()) {
+            mergedColumn.setMax(column.getMax())
+          }
+        } else {
+          column.resetIndex()
+          mergedColumns.addColumn(column)
+        }
+      })
+    }
+    return {mergedColumns, nameChanges}
+  }
+
+  static _getFeatureColumns (gp, tableName) {
+    return gp.getFeatureDao(tableName).table.getUserColumns()
+  }
+
+  /**
+   * Gets the feature columns for a table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
+  static async getFeatureColumns (filePath, tableName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getFeatureColumns(gp, tableName)
+    })
+  }
+
+  /**
+   * Projects a geometry to 4326 from the srs provided
+   * @param geometry
+   * @param srs
+   * @returns {wkx.Geometry}
+   */
+  static projectGeometryTo4326 (geometry, srs) {
+    let projectedGeometry = geometry.geometry
+    if (geometry && !geometry.empty && geometry.geometry) {
+      let geoJsonGeom = geometry.geometry.toGeoJSON()
+      geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + ':' + srs.srs_id, 'EPSG:4326')
+      projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
+    }
+    return projectedGeometry
+  }
+
+  static getDefaultValueForDataType (dataType) {
+    let value
+    switch (dataType) {
+      case GeoPackageDataType.BOOLEAN:
+        value = false
+        break
+      case GeoPackageDataType.TEXT:
+        value = ''
+        break
+      case GeoPackageDataType.BLOB:
+        value = new Blob()
+        break
+      default:
+        value = 0
+        break
+    }
+    return value
   }
 }

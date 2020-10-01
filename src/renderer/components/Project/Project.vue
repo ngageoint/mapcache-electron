@@ -9,6 +9,7 @@
         permanent
         absolute
         dark
+        class="z-index-500"
       >
         <v-list dense flat class="py-0">
           <v-list-item two-line class="px-0">
@@ -41,14 +42,14 @@
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="item >= 0">
           <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
-          <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.layers"></data-sources>
+          <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
           <settings v-if="item === 2" :back="back" :project="project"></settings>
         </v-col>
         <v-col>
           <leaflet-map
             style="width: 100%; height: 100%;"
             :geopackages="project.geopackages"
-            :layer-configs="project.layers"
+            :sources="project.sources"
             :project-id="project.id"
             :project="project"
             :resizeListener="item">
@@ -101,12 +102,13 @@
             project = {
               id: '-1',
               name: '',
-              layerCount: 0,
-              layers: {},
+              sources: {},
               geopackages: {},
               zoomControlEnabled: true,
               displayZoomEnabled: true,
-              maxFeatures: 1000
+              maxFeatures: 1000,
+              boundingBoxFilterEditingEnabled: false,
+              boundingBoxFilter: undefined
             }
           }
           return project
@@ -131,12 +133,6 @@
         setProjectName: 'Projects/setProjectName',
         addProjectState: 'UIState/addProjectState'
       }),
-      showLayers () {
-        options.geopackagesShowing = false
-      },
-      showGeoPackages () {
-        options.geopackagesShowing = true
-      },
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})
       },
@@ -174,7 +170,7 @@
     max-width: 400px;
     min-height: 100vh;
     max-height: 100vh;
-    overflow-y: auto;
+    /*overflow-y: auto;*/
   }
   .alert-position {
     position: absolute;
@@ -190,5 +186,8 @@
   }
   .list-item-active {
     background-color: #5fc2fc;
+  }
+  .z-index-500 {
+    z-index: 500;
   }
 </style>

@@ -1,67 +1,85 @@
 import { mapActions } from 'vuex'
 import * as vendor from '../../../lib/vendor'
+import _ from 'lodash'
 
 export default {
+  data () {
+    return {
+      enabled: false
+    }
+  },
   methods: {
     ...mapActions({
-      setGeoPackageVectorConfigurationBoundingBox: 'Projects/setGeoPackageVectorConfigurationBoundingBox',
-      setGeoPackageTileConfigurationBoundingBox: 'Projects/setGeoPackageTileConfigurationBoundingBox'
+      setBoundingBoxFilter: 'Projects/setBoundingBoxFilter'
     }),
     disableBoundingBoxDrawing () {
       if (this.r && this.map) {
         this.r.disableEdit()
         this.map.removeLayer(this.r)
         this.r = undefined
-        this.activeGeoPakageId = undefined
-        this.activeConfigurationId = undefined
       }
       this.map.fire('boundingBoxDisabled')
+      this.enabled = false
     },
-    enableBoundingBoxDrawing (geopackage, configuration) {
+    enableBoundingBoxDrawing (boundingBoxFilter) {
       this.disableBoundingBoxDrawing()
       this.map.fire('boundingBoxEnabled')
-      let boundingBox = configuration.boundingBox || this.map.getBounds()
-      if (!configuration.boundingBox) {
+      let boundingBox = boundingBoxFilter
+      if (_.isNil(boundingBox)) {
         let sw = this.map.getBounds().getSouthWest()
         let ne = this.map.getBounds().getNorthEast()
-        let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-        if (configuration.type === 'vector') {
-          this.setGeoPackageVectorConfigurationBoundingBox({projectId: this.projectId, geopackageId: geopackage.id, configId: configuration.id, boundingBox: boundingBox})
-        } else {
-          this.setGeoPackageTileConfigurationBoundingBox({projectId: this.projectId, geopackageId: geopackage.id, configId: configuration.id, boundingBox: boundingBox})
-        }
+        boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
       }
-      this.activeGeoPakageId = geopackage.id
-      this.activeConfigurationId = configuration.id
       let bounds = vendor.L.latLngBounds(boundingBox)
       this.r = vendor.L.rectangle(bounds)
       this.r.addTo(this.map)
       this.r.enableEdit()
 
-      // this.r.setStyle({color: 'DarkRed'})
+      this.map.fitBounds(boundingBox)
+
       this.r.on('editable:vertex:dragend', () => {
         let sw = this.r.getBounds().getSouthWest()
         let ne = this.r.getBounds().getNorthEast()
         let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-        if (configuration.type === 'vector') {
-          this.setGeoPackageVectorConfigurationBoundingBox({projectId: this.projectId, geopackageId: geopackage.id, configId: configuration.id, boundingBox: boundingBox})
-        } else {
-          this.setGeoPackageTileConfigurationBoundingBox({projectId: this.projectId, geopackageId: geopackage.id, configId: configuration.id, boundingBox: boundingBox})
-        }
+        this.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
       })
+      this.enabled = true
+      this.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
     }
+  },
+  watch: {
+    project: {
+      async handler (project, oldValue) {
+        if (project.boundingBoxFilterEditingEnabled) {
+          if (!this.enabled) {
+            let boundingBox = project.boundingBoxFilter
+            if (_.isNil(boundingBox)) {
+              boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
+            }
+            if (!_.isNil(boundingBox)) {
+              boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
+            }
+            this.enableBoundingBoxDrawing(boundingBox)
+          }
+        } else {
+          this.disableBoundingBoxDrawing()
+        }
+      },
+      deep: true
+    }
+  },
+  mounted: function () {
+    this.$nextTick(async function () {
+      if (this.project.boundingBoxFilterEditingEnabled) {
+        let boundingBox = this.project.boundingBoxFilter
+        if (_.isNil(boundingBox)) {
+          boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
+        }
+        boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
+        this.enableBoundingBoxDrawing(boundingBox)
+      } else {
+        this.disableBoundingBoxDrawing()
+      }
+    })
   }
-  // watch: {
-  //   drawBounds: {
-  //     handler (value, oldValue) {
-  //       this.setupDrawing(value)
-  //     },
-  //     deep: true
-  //   }
-  // },
-  // mounted: function () {
-  //   this.$nextTick(function () {
-  //     this.setupDrawing(this.drawBounds)
-  //   })
-  // }
 }

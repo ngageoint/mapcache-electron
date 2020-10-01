@@ -3,7 +3,8 @@
     <div id="map" style="width: 100%; height: 100%; z-index: 0;">
       <v-dialog
         v-model="layerSelectionVisible"
-        max-width="500">
+        max-width="500"
+        persistent>
         <v-card>
           <v-card-title style="color: grey; font-weight: 600;">
             <v-row no-gutters justify="start" align="center">
@@ -127,7 +128,7 @@
       DrawBounds
     ],
     props: {
-      layerConfigs: Object,
+      sources: Object,
       geopackages: Object,
       projectId: String,
       project: Object,
@@ -170,10 +171,7 @@
       ...mapActions({
         addFeatureTableToGeoPackage: 'Projects/addFeatureTableToGeoPackage',
         addGeoPackage: 'Projects/addGeoPackage',
-        removeProjectLayer: 'Projects/removeProjectLayer',
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
-        deleteProjectLayerFeatureRow: 'Projects/deleteProjectLayerFeatureRow',
-        updateProjectLayerFeatureRow: 'Projects/updateProjectLayerFeatureRow',
         clearActiveLayers: 'Projects/clearActiveLayers'
       }),
       async confirmGeoPackageFeatureLayerSelection () {
@@ -269,32 +267,32 @@
           }
         })
       },
-      addLayer (layerConfig, map) {
-        let layer = LayerFactory.constructLayer(layerConfig)
-        layer.initialize().then(function () {
+      addDataSource (sourceConfiguration, map) {
+        let source = LayerFactory.constructLayer(sourceConfiguration)
+        source.initialize().then(function () {
           let mapLayer
-          if (layerConfig.visible) {
-            mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+          if (sourceConfiguration.visible) {
+            mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
             mapLayer.addTo(map)
           }
-          sourceLayers[layerConfig.id] = {
-            configuration: _.cloneDeep(layerConfig),
-            initializedLayer: layer,
-            visible: layerConfig.visible,
+          sourceLayers[sourceConfiguration.id] = {
+            configuration: _.cloneDeep(sourceConfiguration),
+            initializedSource: source,
+            visible: sourceConfiguration.visible,
             mapLayer: mapLayer
           }
         })
       },
-      removeLayer (layerId) {
-        const sourceLayer = sourceLayers[layerId]
+      removeDataSource (sourceId) {
+        const sourceLayer = sourceLayers[sourceId]
         if (!_.isNil(sourceLayer)) {
           if (sourceLayer.mapLayer) {
             sourceLayer.mapLayer.remove()
           }
-          if (!_.isNil(sourceLayer.initializedLayer) && sourceLayer.initializedLayer.hasOwnProperty('close')) {
-            sourceLayer.initializedLayer.close()
+          if (!_.isNil(sourceLayer.initializedSource) && sourceLayer.initializedSource.hasOwnProperty('close')) {
+            sourceLayer.initializedSource.close()
           }
-          delete sourceLayers[layerId]
+          delete sourceLayers[sourceId]
         }
       },
       addGeoPackageToMap (geopackage, map) {
@@ -505,80 +503,80 @@
           }
         }
       },
-      layerConfigs: {
-        async handler (updatedLayerConfigs, oldValue) {
+      sources: {
+        async handler (updatedSources, oldValue) {
           let _this = this
           let map = this.map
-          let updatedLayerIds = Object.keys(updatedLayerConfigs)
-          let existingLayerIds = Object.keys(sourceLayers)
+          let updatedSourceIds = Object.keys(updatedSources)
+          let existingSourceIds = Object.keys(sourceLayers)
 
           let zoomToExtentOfAllContent = false
 
           // layer configs that have been removed completely
-          existingLayerIds.filter((i) => updatedLayerIds.indexOf(i) < 0).forEach(layerId => {
-            _this.removeLayer(layerId)
+          existingSourceIds.filter((i) => updatedSourceIds.indexOf(i) < 0).forEach(sourceId => {
+            _this.removeDataSource(sourceId)
           })
 
           // new layer configs
-          updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) < 0).forEach(layerId => {
-            let layerConfig = updatedLayerConfigs[layerId]
-            _this.removeLayer(layerId)
-            _this.addLayer(layerConfig, map)
-            zoomToExtentOfAllContent = zoomToExtentOfAllContent || layerConfig.visible
+          updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) < 0).forEach(sourceId => {
+            let sourceConfig = updatedSources[sourceId]
+            _this.removeDataSource(sourceId)
+            _this.addDataSource(sourceConfig, map)
+            zoomToExtentOfAllContent = zoomToExtentOfAllContent || sourceConfig.visible
           })
 
           // see if any of the layers have changed
-          updatedLayerIds.filter((i) => existingLayerIds.indexOf(i) >= 0).forEach(layerId => {
-            let updatedLayerConfig = updatedLayerConfigs[layerId]
-            let oldLayerConfig = sourceLayers[layerId].configuration
-            // something other than layerKey, maxFeatures, visible, or feature assignments changed
-            if (!_.isEqual(_.omit(updatedLayerConfig, ['layerKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['layerKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
-              _this.removeLayer(layerId)
-              _this.addLayer(updatedLayerConfig, map)
-            } else if (!_.isEqual(updatedLayerConfig.visible, oldLayerConfig.visible)) {
-              sourceLayers[layerId].configuration = _.cloneDeep(updatedLayerConfig)
-              if (updatedLayerConfig.visible) {
-                let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[layerId].initializedLayer)
+          updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) >= 0).forEach(sourceId => {
+            let updatedSource = updatedSources[sourceId]
+            let oldLayerConfig = sourceLayers[sourceId].configuration
+            // something other than sourceKey, maxFeatures, visible, or feature assignments changed
+            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['styleKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
+              _this.removeDataSource(sourceId)
+              _this.addDataSource(updatedSource, map)
+            } else if (!_.isEqual(updatedSource.visible, oldLayerConfig.visible)) {
+              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
+              if (updatedSource.visible) {
+                let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                 mapLayer.addTo(map)
-                sourceLayers[layerId].mapLayer = mapLayer
+                sourceLayers[sourceId].mapLayer = mapLayer
                 zoomToExtentOfAllContent = true
               } else {
                 // hide it
-                let mapLayer = sourceLayers[layerId].mapLayer
+                let mapLayer = sourceLayers[sourceId].mapLayer
                 if (mapLayer) {
                   mapLayer.remove()
-                  delete sourceLayers[layerId].mapLayer
+                  delete sourceLayers[sourceId].mapLayer
                 }
               }
-            } else if (!_.isEqual(updatedLayerConfig.layerKey, oldLayerConfig.layerKey) && updatedLayerConfig.pane === 'vector') {
-              sourceLayers[layerId].configuration = _.cloneDeep(updatedLayerConfig)
+            } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector') {
+              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
               // only style has changed, let's just update style
-              sourceLayers[layerId].initializedLayer.updateStyle(updatedLayerConfig.maxFeatures).then(function () {
+              sourceLayers[sourceId].initializedSource.updateStyle(updatedSource.maxFeatures).then(function () {
                 // remove layer from map if it is currently being visible
-                let mapLayer = sourceLayers[layerId].mapLayer
+                let mapLayer = sourceLayers[sourceId].mapLayer
                 if (mapLayer) {
                   mapLayer.remove()
                 }
-                delete sourceLayers[layerId].mapLayer
+                delete sourceLayers[sourceId].mapLayer
                 // if layer is set to be visible, display it on the map
-                if (updatedLayerConfig.visible) {
-                  let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[layerId].initializedLayer)
+                if (updatedSource.visible) {
+                  let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                   updateMapLayer.addTo(map)
-                  sourceLayers[layerId].mapLayer = updateMapLayer
+                  sourceLayers[sourceId].mapLayer = updateMapLayer
                 }
               })
-            } else if (!_.isEqual(updatedLayerConfig.styleAssignmentFeature, oldLayerConfig.styleAssignmentFeature) && updatedLayerConfig.pane === 'vector') {
-              sourceLayers[layerId].configuration = _.cloneDeep(updatedLayerConfig)
-              GeoPackageUtilities.getBoundingBoxForFeature(updatedLayerConfig.geopackageFilePath, updatedLayerConfig.sourceLayerName, updatedLayerConfig.styleAssignmentFeature).then(function (extent) {
+            } else if (!_.isEqual(updatedSource.styleAssignmentFeature, oldLayerConfig.styleAssignmentFeature) && updatedSource.pane === 'vector') {
+              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
+              GeoPackageUtilities.getBoundingBoxForFeature(updatedSource.geopackageFilePath, updatedSource.sourceLayerName, updatedSource.styleAssignmentFeature).then(function (extent) {
                 map.fitBounds([
                   [extent[1], extent[0]],
                   [extent[3], extent[2]]
                 ])
               })
               zoomToExtentOfAllContent = false
-            } else if (!_.isEqual(updatedLayerConfig.iconAssignmentFeature, oldLayerConfig.iconAssignmentFeature) && updatedLayerConfig.pane === 'vector') {
-              sourceLayers[layerId].configuration = _.cloneDeep(updatedLayerConfig)
-              GeoPackageUtilities.getBoundingBoxForFeature(updatedLayerConfig.geopackageFilePath, updatedLayerConfig.sourceLayerName, updatedLayerConfig.iconAssignmentFeature).then(function (extent) {
+            } else if (!_.isEqual(updatedSource.iconAssignmentFeature, oldLayerConfig.iconAssignmentFeature) && updatedSource.pane === 'vector') {
+              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
+              GeoPackageUtilities.getBoundingBoxForFeature(updatedSource.geopackageFilePath, updatedSource.sourceLayerName, updatedSource.iconAssignmentFeature).then(function (extent) {
                 map.fitBounds([
                   [extent[1], extent[0]],
                   [extent[3], extent[2]]
@@ -608,7 +606,7 @@
             _this.removeGeoPackage(geoPackageId)
           })
 
-          // new layer configs
+          // new source configs
           updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
             _this.removeGeoPackage(geoPackageId)
             _this.addGeoPackageToMap(updatedGeoPackages[geoPackageId], map)
@@ -674,41 +672,6 @@
               this.zoomToContent()
             }
           })
-          // -----------------------------------------------
-          // let config
-          // Object.values(updatedGeoPackages).forEach(gp => {
-          //   // check vector configs
-          //   let editingConfigIdx = Object.values(gp.vectorConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
-          //   if (editingConfigIdx > -1) {
-          //     config = Object.values(gp.vectorConfigurations)[editingConfigIdx]
-          //     if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
-          //       if (config.boundingBox) {
-          //         this.map.fitBounds([
-          //           [config.boundingBox[0][0], config.boundingBox[0][1]],
-          //           [config.boundingBox[1][0], config.boundingBox[1][1]]
-          //         ])
-          //       }
-          //       this.enableBoundingBoxDrawing(gp, config)
-          //     }
-          //   }
-          //   // check tile configs
-          //   editingConfigIdx = Object.values(gp.tileConfigurations).findIndex(vc => vc.boundingBoxEditingEnabled)
-          //   if (editingConfigIdx > -1) {
-          //     config = Object.values(gp.tileConfigurations)[editingConfigIdx]
-          //     if (this.activeGeoPakageId !== gp.id || this.activeConfigurationId !== config.id) {
-          //       if (config.boundingBox) {
-          //         this.map.fitBounds([
-          //           [config.boundingBox[0][0], config.boundingBox[0][1]],
-          //           [config.boundingBox[1][0], config.boundingBox[1][1]]
-          //         ])
-          //       }
-          //       this.enableBoundingBoxDrawing(gp, config)
-          //     }
-          //   }
-          // })
-          // if (_.isNil(config)) {
-          //   this.disableBoundingBoxDrawing()
-          // }
         },
         deep: true
       },
@@ -810,11 +773,11 @@
             features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom()))
           }
         }
-        // for (let layerId in sourceLayers) {
-        //   const sourceLayerConfig = sourceLayers[layerId].configuration
+        // for (let sourceId in sourceLayers) {
+        //   const sourceLayerConfig = sourceLayers[sourceId].configuration
         //   if (sourceLayerConfig.visible) {
         //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-        //       features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, layerId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom()))
+        //       features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom()))
         //     }
         //   }
         // }
@@ -836,11 +799,11 @@
               count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom())
             }
           }
-          // for (let layerId in sourceLayers) {
-          //   const sourceLayerConfig = sourceLayers[layerId].configuration
+          // for (let sourceId in sourceLayers) {
+          //   const sourceLayerConfig = sourceLayers[sourceId].configuration
           //   if (sourceLayerConfig.visible) {
           //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-          //       count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayerConfig.geopackageFilePath, layerId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom())
+          //       count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom())
           //     }
           //   }
           // }
@@ -875,27 +838,9 @@
           _this.layerSelectionVisible = true
         }
       })
-      this.map.on('editable:disable', async (e) => {
-        if (!this.isDrawingBounds) {
-          let feature = e.layer.toGeoJSON()
-          if (!feature.id) {
-            feature.id = e.layer.id
-          }
-          let layerId = feature.properties.layerId
-          let featureId = feature.properties.featureId
-          if (!_.isNil(e.layer._mRadius)) {
-            feature.properties.radius = e.layer._mRadius
-          }
-          if (!_.isNil(layerId) && !_.isNil(featureId)) {
-            delete feature.properties.layerId
-            delete feature.properties.featureId
-            _this.updateProjectLayerFeatureRow({projectId: _this.projectId, layerId: layerId, featureRowId: featureId, feature: feature})
-          }
-        }
-      })
       // add sources to map
-      for (const layerId in this.layerConfigs) {
-        this.addLayer(this.layerConfigs[layerId], this.map, false)
+      for (const sourceId in this.sources) {
+        this.addDataSource(this.sources[sourceId], this.map, false)
       }
       // add geopackages to map on mount
       for (const geopackageId in this.geopackages) {
@@ -918,7 +863,7 @@
         })
       })
       _.keys(sourceLayers).forEach(key => {
-        let layer = sourceLayers[key].initializedLayer
+        let layer = sourceLayers[key].initializedSource
         if (!_.isNil(layer) && layer.hasOwnProperty('close')) {
           layer.close()
         }

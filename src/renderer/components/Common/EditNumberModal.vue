@@ -1,5 +1,5 @@
 <template>
-  <v-card @click.stop="onClick">
+  <v-card>
     <v-card-title style="color: grey; font-weight: 600;">
       <v-row no-gutters justify="start" align="center">
         <v-icon>{{icon}}</v-icon>{{title}}
@@ -110,9 +110,6 @@
       cancel (e) {
         this.onCancel()
         this.editedValue = this.value
-        e.stopPropagation()
-      },
-      onClick (e) {
         e.stopPropagation()
       },
       updateValue (val) {

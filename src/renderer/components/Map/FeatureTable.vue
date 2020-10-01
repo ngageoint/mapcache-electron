@@ -2,7 +2,8 @@
   <div>
     <v-dialog
       v-model="removeDialog"
-      max-width="500">
+      max-width="500"
+      persistent>
       <v-card v-if="featureToRemove !== null">
         <v-card-title style="color: grey; font-weight: 600;">
           <v-row no-gutters justify="start" align="center">

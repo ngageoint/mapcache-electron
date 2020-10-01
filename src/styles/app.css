@@ -38,3 +38,25 @@
 	padding: 8px 24px 24px;
 	margin: 12px -12px -12px -12px;
 }
+.content-panel {
+	background-color: whitesmoke;
+	max-width: 400px;
+	min-height: 100vh;
+	max-height: 100vh;
+	overflow-y: auto;
+}
+.sticky-toolbar {
+	position: -webkit-sticky; /* Safari */
+	position: sticky;
+	top: 0;
+	z-index: 300;
+	height: 72px;
+}
+.sticky-card-action-footer {
+	position: -webkit-sticky; /* Safari */
+	position: sticky;
+	bottom: 0;
+	z-index: 300;
+	min-height: 53px;
+	background: white;
+}

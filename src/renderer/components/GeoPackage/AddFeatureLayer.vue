@@ -1,176 +1,168 @@
 <template>
-  <v-card v-if="processing" style="background-color: white;">
-    <v-card-title>Creating Feature Layer</v-card-title>
-    <v-card-text>
-      <v-card-subtitle>{{status.message}}</v-card-subtitle>
-      <v-progress-linear :value="error ? 100 : status.progress" :color="error ? 'pink' : '#3b779a'"></v-progress-linear>
-    </v-card-text>
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn
-        v-if="done"
-        color="#3b779a"
-        text
-        @click.stop="back">
-        close
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-  <v-card v-else style="background-color: white;">
-    <v-card-title>Add Feature Layer</v-card-title>
-    <v-card-text>
-      <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
-        <v-container class="ma-4 pa-0">
-          <v-row no-gutters>
-            <v-col cols="12">
-              <v-text-field
-                v-model="layerName"
-                :rules="layerNameRules"
-                label="Feature Layer Name"
-                required
-              ></v-text-field>
-            </v-col>
-          </v-row>
+  <v-container class="ma-0 pa-0" style="background-color: white;">
+    <v-toolbar
+      color="#3b779a"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <!--      <v-btn icon @click="cancel"><v-icon large>mdi-chevron-left</v-icon></v-btn>-->
+      <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
+    </v-toolbar>
+    <v-card flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
+      <v-card-title>Creating Feature Layer</v-card-title>
+      <v-card-text>
+        <v-card-subtitle>{{status.message}}</v-card-subtitle>
+        <v-progress-linear :value="error ? 100 : status.progress"
+                           :color="error ? 'pink' : '#3b779a'"></v-progress-linear>
+      </v-card-text>
+    </v-card>
+    <v-card flat class="ma-0 pa-0" v-else>
+      <v-card-text>
+        <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
+          <v-container class="ml-4 mr-8 pa-0">
+            <v-row no-gutters>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="layerName"
+                  :rules="layerNameRules"
+                  label="Feature Layer Name"
+                  required
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-form>
+        <v-card-title>
+          Feature Layer Content Selection
+        </v-card-title>
+        <v-card-subtitle>
+          Select features from <b>Data Sources</b> and existing <b>GeoPackges</b> to populate your new GeoPackage
+          feature layer.
+        </v-card-subtitle>
+        <v-container v-if="dataSourceLayers.length > 0" class="ma-0 pa-0">
+          <v-card-title class="pb-0" style="font-size: 1rem;">
+            Data Source Layers
+          </v-card-title>
+          <v-card-text>
+            <v-list style="max-height: 150px" class="overflow-y-auto">
+              <v-list-item-group
+                multiple
+              >
+                <template v-for="(item, i) in dataSourceLayers">
+                  <v-list-item
+                    :key="`data-source-item-${i}`"
+                    :value="item.value"
+                  >
+                    <template>
+                      <v-list-item-content>
+                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
+                      </v-list-item-content>
+                      <v-list-item-action>
+                        <v-checkbox
+                          @click.stop="item.changeVisibility"
+                          :input-value="item.visible"
+                          color="#3b779a"
+                        ></v-checkbox>
+                      </v-list-item-action>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-item-group>
+            </v-list>
+          </v-card-text>
         </v-container>
-      </v-form>
-      <v-card-title>
-        Feature Layer Content Selection
-      </v-card-title>
-      <v-card-subtitle>
-        Select features from <b>Data Sources</b> and existing <b>GeoPackges</b> to populate your new feature layer.
-      </v-card-subtitle>
-      <v-card v-if="dataSourceLayers.length > 0">
-        <v-card-title>
-          Data Source Layers
-        </v-card-title>
-        <v-card-text>
-          <v-list style="max-height: 150px" class="overflow-y-auto">
-            <v-list-item-group
-              v-model="dataSourceSelection"
-              multiple
-            >
-              <template v-for="(item, i) in dataSourceLayers">
-                <v-list-item
-                  :key="`data-source-item-${i}`"
-                  :value="item.value"
-                >
-                  <template v-slot:default="{ active }">
-                    <v-list-item-content>
-                      <v-list-item-title v-text="item.text"></v-list-item-title>
-                    </v-list-item-content>
-                    <v-list-item-action>
-                      <v-checkbox
-                        :input-value="active"
-                        color="#3b779a"
-                      ></v-checkbox>
-                    </v-list-item-action>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-list-item-group>
-          </v-list>
-        </v-card-text>
-      </v-card>
-      <v-card v-if="geopackageFeatureLayers.length > 0" class="mt-4">
-        <v-card-title>
-          GeoPackage Layers
-        </v-card-title>
-        <v-card-text>
-          <v-list style="max-height: 150px" class="overflow-y-auto">
-            <v-list-item-group
-              v-model="geopackageLayerSelection"
-              multiple
-            >
-              <template v-for="(item, i) in geopackageFeatureLayers">
-                <v-list-item
-                  :key="`geopackage-layer-item-${i}`"
-                  :value="item.value"
-                >
-                  <template v-slot:default="{ active }">
-                    <v-list-item-content>
-                      <v-list-item-title v-text="item.text"></v-list-item-title>
-                    </v-list-item-content>
-                    <v-list-item-action>
-                      <v-checkbox
-                        :input-value="active"
-                        color="#3b779a"
-                      ></v-checkbox>
-                    </v-list-item-action>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-list-item-group>
-          </v-list>
-        </v-card-text>
-      </v-card>
-      <!--        <v-container>-->
-      <!--          <v-card-subtitle>-->
-      <!--            Feature Data Source Selection-->
-      <!--          </v-card-subtitle>-->
-      <!--          <v-card-text>-->
-      <!--            <v-row no-gutters>-->
-      <!--              <v-select-->
-      <!--                v-model="layersToInclude"-->
-      <!--                :items="vectorLayers"-->
-      <!--                label="Vector Layers"-->
-      <!--                multiple-->
-      <!--                dense-->
-      <!--                item-text="name"-->
-      <!--                item-value="id"-->
-      <!--                hide-details-->
-      <!--                return-object-->
-      <!--                chips/>-->
-      <!--            </v-row>-->
-      <!--          </v-card-text>-->
-      <!--          <v-card-title>-->
-      <!--            Bounding Box-->
-      <!--          </v-card-title>-->
-      <!--          <v-container class="mt-0 mb-0">-->
-      <!--            <div class="flex-container" :style="{justifyContent: 'start'}">-->
-      <!--              <v-text-field label="Specify Bounding Box" readonly :value="boundingBoxText" clearable @click.clear="resetBoundingBox"/>-->
-      <!--              <v-btn text icon :color="vectorConfiguration.boundingBoxEditingEnabled ? 'red' : 'black'" @click.stop="editBoundingBox">-->
-      <!--                <v-icon>{{vectorConfiguration.boundingBoxEditingEnabled ? 'mdi-stop' : 'mdi-crop-free'}}</v-icon>-->
-      <!--              </v-btn>-->
-      <!--            </div>-->
-      <!--            <v-row no-gutters class="mb-2" v-if="layersToInclude.length > 0">-->
-      <!--              <v-chip-->
-      <!--                class="mr-2"-->
-      <!--                @click="setBoundingBoxToDataExtent"-->
-      <!--              >-->
-      <!--                Use Extent of All Layers-->
-      <!--              </v-chip>-->
-      <!--            </v-row>-->
-      <!--            <v-row no-gutters>-->
-      <!--              <p>{{'Features in Bounding Box: ' + featuresInBounds}}</p>-->
-      <!--            </v-row>-->
-      <!--          </v-container>-->
-      <!--        </v-container>-->
-    </v-card-text>
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn
-        color="#3b779a"
-        text
-        @click.stop="cancel">
-        cancel
-      </v-btn>
-      <v-btn
-        v-if="layerNameValid && ((dataSourceSelection.length + geopackageLayerSelection.length) > 0)"
-        color="#3b779a"
-        text
-        @click.stop="addFeatureLayer">
-        add
-      </v-btn>
-    </v-card-actions>
-  </v-card>
+        <v-container v-if="geopackageFeatureLayers.length > 0" class="ma-0 pa-0">
+          <v-card-title class="pb-0" style="font-size: 1rem;">
+            GeoPackage Layers
+          </v-card-title>
+          <v-card-text>
+            <v-list style="max-height: 150px" class="overflow-y-auto">
+              <v-list-item-group
+                multiple
+              >
+                <template v-for="(item, i) in geopackageFeatureLayers">
+                  <v-list-item
+                    :key="`geopackage-layer-item-${i}`"
+                    :value="item.value"
+                  >
+                    <template>
+                      <v-list-item-content>
+                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
+                      </v-list-item-content>
+                      <v-list-item-action>
+                        <v-checkbox
+                          @click.stop="item.changeVisibility"
+                          :input-value="item.visible"
+                          color="#3b779a"
+                        ></v-checkbox>
+                      </v-list-item-action>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-item-group>
+            </v-list>
+          </v-card-text>
+        </v-container>
+        <v-container class="ma-0 pa-0 mt-4">
+          <v-card-title>
+            Bounding Box Filter
+          </v-card-title>
+          <v-card-subtitle>
+            Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
+          </v-card-subtitle>
+          <v-card-text>
+            <v-row no-gutters justify="end">
+              <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
+                Clear
+              </v-btn>
+              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'red' : '#3b779a'" @click.stop="editBoundingBox">
+                {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit Bounds' : 'Set Bounds')}}
+              </v-btn>
+            </v-row>
+          </v-card-text>
+        </v-container>
+        <v-container
+          class="ma-0 pa-0 mt-2"
+          v-if="!project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)">
+          <v-card-title>
+            Summary
+          </v-card-title>
+          <v-card-subtitle>
+            <b>{{filteredFeatureCount}}</b>{{(project.boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layers will be added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
+          </v-card-subtitle>
+        </v-container>
+      </v-card-text>
+    </v-card>
+
+    <div v-if="!processing || done" class="sticky-card-action-footer">
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          v-if="done || !processing"
+          color="#3b779a"
+          text
+          @click.stop="cancel">
+          {{done ? 'close' : 'cancel'}}
+        </v-btn>
+        <v-btn
+          v-if="!done && !processing && !project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
+          color="#3b779a"
+          text
+          @click.stop="addFeatureLayer">
+          add
+        </v-btn>
+      </v-card-actions>
+    </div>
+  </v-container>
 </template>
 
 <script>
   import Vue from 'vue'
   import { mapActions } from 'vuex'
-  import ViewEditText from '../Common/ViewEditText'
-  import Modal from '../Modal'
   import _ from 'lodash'
+  import ViewEditText from '../Common/ViewEditText'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
 
@@ -181,8 +173,7 @@
       back: Function
     },
     components: {
-      ViewEditText,
-      Modal
+      ViewEditText
     },
     data () {
       return {
@@ -192,8 +183,6 @@
           v => !!v || 'Layer name is required',
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ],
-        dataSourceSelection: [],
-        geopackageLayerSelection: [],
         status: {
           message: 'Starting',
           progress: 0.0
@@ -201,12 +190,17 @@
         cancelBuildFeatureLayer: undefined,
         processing: false,
         error: false,
-        done: false
+        done: false,
+        dataSourceLayers: this.getDataSourceLayers()
       }
     },
     methods: {
       ...mapActions({
-        synchronizeGeoPackage: 'Projects/synchronizeGeoPackage'
+        synchronizeGeoPackage: 'Projects/synchronizeGeoPackage',
+        setDataSourceVisible: 'Projects/setDataSourceVisible',
+        setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
+        setBoundingBoxFilterEditingEnabled: 'Projects/setBoundingBoxFilterEditingEnabled',
+        clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter'
       }),
       async addFeatureLayer () {
         this.processing = true
@@ -217,9 +211,10 @@
           table: this.layerName,
           layerExtent: null,
           includeStyles: false,
-          sourceLayers: this.dataSourceSelection.map(sourceId => this.project.layers[sourceId]),
-          geopackageLayers: this.geopackageLayerSelection.map(({geopackageId, table}) => {
-            return {geopackage: this.project.geopackages[geopackageId], table}
+          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value]),
+          boundingBoxFilter: this.project.boundingBoxFilter,
+          geopackageLayers: this.geopackageFeatureLayers.filter(item => item.visible).map(({value}) => {
+            return {geopackage: this.project.geopackages[value.geopackageId], table: value.table}
           })
         }
 
@@ -244,34 +239,119 @@
       },
       cancel () {
         this.back()
-      }
-    },
-    asyncComputed: {
-      async geopackageFeatureLayers () {
+      },
+      resetBoundingBox () {
+        this.clearBoundingBoxFilter({projectId: this.project.id})
+      },
+      editBoundingBox () {
+        this.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, enabled: !this.project.boundingBoxFilterEditingEnabled})
+      },
+      async getFilteredFeatures () {
+        let numberOfFeatures = 0
+        const sourceItems = this.dataSourceLayers.filter(item => item.visible)
+        for (let i = 0; i < sourceItems.length; i++) {
+          const source = this.project.sources[sourceItems[i].value]
+          if (!_.isNil(this.project.boundingBoxFilter)) {
+            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
+          } else {
+            numberOfFeatures += source.count
+          }
+        }
+        const geopackageItems = this.geopackageFeatureLayers.filter(item => item.visible)
+        for (let i = 0; i < geopackageItems.length; i++) {
+          const item = geopackageItems[i]
+          const table = item.value.table
+          const geopackage = this.project.geopackages[item.value.geopackageId]
+          if (!_.isNil(this.project.boundingBoxFilter)) {
+            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(geopackage.path, table, this.project.boundingBoxFilter)
+          } else {
+            numberOfFeatures += geopackage.tables.features[table].featureCount
+          }
+        }
+        return numberOfFeatures
+      },
+      async getGeoPackageFeatureLayerItems () {
+        const self = this
+        const projectId = this.project.id
         const items = []
         const keys = _.keys(this.project.geopackages)
         for (let i = 0; i < keys.length; i++) {
           const geopackage = this.project.geopackages[keys[i]]
           if (await GeoPackageUtilities.isHealthy(geopackage)) {
             _.keys(geopackage.tables.features).forEach(table => {
-              items.push({value: {geopackageId: geopackage.id, table: table}, text: geopackage.name + ': ' + table})
+              const tableName = table
+              const visible = geopackage.tables.features[table].visible
+              const geopackageId = geopackage.id
+              items.push({
+                value: {geopackageId: geopackage.id, table: table},
+                text: geopackage.name + ': ' + table,
+                visible,
+                changeVisibility: () => {
+                  self.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                }
+              })
             })
           }
         }
         return items
+      },
+      getDataSourceLayers () {
+        const self = this
+        const projectId = this.project.id
+        return Object.values(this.project.sources).filter(source => source.pane === 'vector').map(source => {
+          const sourceId = source.id
+          const visible = !source.visible
+          return {
+            text: source.displayName ? source.displayName : source.name,
+            value: source.id,
+            visible: source.visible,
+            changeVisibility: () => {
+              self.setDataSourceVisible({projectId, sourceId, visible})
+            }
+          }
+        })
+      }
+    },
+    asyncComputed: {
+      filteredFeatureCount: {
+        async get () {
+          return this.getFilteredFeatures()
+        },
+        default: 0
+      },
+      geopackageFeatureLayers: {
+        async get () {
+          return this.getGeoPackageFeatureLayerItems()
+        },
+        default: []
       }
     },
     computed: {
-      dataSourceLayers () {
-        return Object.values(this.project.layers).filter(layer => layer.pane === 'vector').map(layer => {
-          return {text: layer.displayName ? layer.displayName : layer.name, value: layer.id}
-        })
+      boundingBoxText () {
+        let boundingBoxText = 'Not specified'
+        if (!_.isNil(this.project.boundingBoxFilter)) {
+          const bbox = this.project.boundingBoxFilter
+          boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
+        }
+        return boundingBoxText
+      }
+    },
+    watch: {
+      project: {
+        async handler () {
+          this.dataSourceLayers = this.getDataSourceLayers()
+          this.geopackageFeatureLayers = await this.getGeoPackageFeatureLayerItems()
+        },
+        deep: true
       }
     },
     mounted () {
       Vue.nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
+    },
+    beforeDestroy () {
+      this.resetBoundingBox()
     }
   }
 </script>

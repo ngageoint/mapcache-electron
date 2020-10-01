@@ -41,7 +41,7 @@
     },
     methods: {
       ...mapActions({
-        toggleProjectLayer: 'Projects/toggleProjectLayer'
+        setDataSourceVisible: 'Projects/setDataSourceVisible'
       })
     },
     computed: {
@@ -50,10 +50,10 @@
         const items = []
         Object.keys(this.sources).forEach(key => {
           const source = this.sources[key]
-          const layerId = key
+          const sourceId = key
           const projectId = _this.projectId
           const setVisible = (e) => {
-            _this.toggleProjectLayer({projectId, layerId})
+            _this.setDataSourceVisible({projectId, sourceId, visible: !source.visible})
             e.stopPropagation()
           }
           items.push({
@@ -63,7 +63,7 @@
             isTile: source.pane === 'tile',
             visible: source.visible,
             click: function () {
-              _this.sourceSelected(layerId)
+              _this.sourceSelected(sourceId)
             },
             setVisible
           })
