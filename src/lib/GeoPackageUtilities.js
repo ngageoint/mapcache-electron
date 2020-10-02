@@ -25,6 +25,12 @@ import UniqueIDUtilities from './UniqueIDUtilities'
 import jetpack from 'fs-jetpack'
 import FileUtilities from './FileUtilities'
 import wkx from 'wkx'
+import LayerFactory from './source/layer/LayerFactory'
+import CanvasUtilities from './CanvasUtilities'
+import imagemin from 'imagemin'
+import imageminPngquant from 'imagemin-pngquant'
+import proj4 from 'proj4'
+import { intersect, bbox } from '@turf/turf'
 
 export default class GeoPackageUtilities {
   /**
@@ -596,7 +602,7 @@ export default class GeoPackageUtilities {
       let prop = properties[key]
       if (prop.name.toLowerCase() !== 'id') {
         let c = {
-          dataType: prop.type,
+          dataType: !_.isNil(prop.type) ? prop.type : 'TEXT',
           name: prop.name,
           notNull: false,
           defaultValue: null
@@ -1971,6 +1977,99 @@ export default class GeoPackageUtilities {
     return results
   }
 
+  static estimatedTileCount (boundingBoxFilter, dataSources, geopackageLayers, tileScaling = false, minZoom = 0, maxZoom = 20) {
+    const results = {
+      estimatedNumberOfTiles: 0,
+      tileScaling: null,
+      boundingBox: null,
+      zoomLevels: []
+    }
+
+    let tilesToAdd = 0
+    let tileScalingMethod
+    let zoomOut
+    let zoomIn
+    let zoomLevels = []
+    let boundingBox
+
+    if (!_.isNil(minZoom) && !_.isNil(maxZoom) && !_.isNil(boundingBoxFilter)) {
+      // we will use the intersection of the requested bounding box and the bounding box for all layers combined
+      let extents = dataSources.map(dataSource => dataSource.extent)
+      // extents = extents.concat(geopackageLayers.map(geopackageLayer => geopackageLayer.extent))
+      if (extents.length > 0) {
+        boundingBox = TileBoundingBoxUtils.getBoundingBoxFromExtents(extents)
+      }
+      if (!_.isNil(boundingBox)) {
+        const result = TileBoundingBoxUtils.intersection(
+          new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]),
+          new BoundingBox(boundingBoxFilter[0], boundingBoxFilter[2], boundingBoxFilter[1], boundingBoxFilter[3])
+        )
+        boundingBox = [[result[1], result[0]], [result[3], result[2]]]
+      } else {
+        boundingBox = [[boundingBoxFilter[1], boundingBoxFilter[0]], [boundingBoxFilter[3], boundingBoxFilter[2]]]
+      }
+      if (tileScaling) {
+        // TODO: figure out natural zoom or already available zoom levels to help prevent extra work
+        // const vectorLayerCount = dataSources.filter(dataSource => dataSource.type === 'feature').length + geopackageLayers.filter(geopackage => geopackage.type === 'feature').length
+        // const tileLayerCount = dataSources.length + geopackageLayers.length - vectorLayerCount
+        // const tileLayers = tileConfiguration.tileLayers.map(layerId => project.layers[layerId])
+        // if (vectorLayerCount === 0 &&
+        //   tileLayerCount > 0 &&
+        //   tileLayers.filter(tileLayer => tileLayer.layerType === 'GeoTIFF').length === tileLayerCount &&
+        //   tileLayers.filter(tileLayer => Math.abs(tileLayer.naturalWebMercatorZoom - tileLayers[0].naturalWebMercatorZoom) <= 1).length === tileLayerCount) {
+        //   // no vector layers, and each tile layer is a geotiff and the difference in zoom levels is <= 1, enable tile scaling
+        //   const zoom = Math.min(tileLayers.map(tileLayer => tileLayer.naturalWebMercatorZoom).reduce((a, b) => Math.max(a, b)), maxZoom)
+        //   if (maxZoom - zoom > 0) {
+        //     zoomIn = maxZoom - zoom
+        //   }
+        //   zoomOut = 2
+        //   tileScalingMethod = TileScalingType.IN_OUT
+        //   for (let z = zoom; z >= minZoom; z -= 2) {
+        //     zoomLevels.push(z)
+        //   }
+        //   tilesToAdd = XYZTileUtilities.tileCountInExtentForZoomLevels(boundingBox, zoomLevels)
+        // }
+        let onlyOneTile = false
+        for (let zoom = maxZoom; zoom >= minZoom; zoom -= 1) {
+          const tiles = XYZTileUtilities.tileCountInExtentForZoomLevels(boundingBox, [zoom])
+          if (tiles > 1 || (tiles === 1 && !onlyOneTile)) {
+            zoomLevels.push({
+              zoom,
+              tiles: tiles
+            })
+          }
+          onlyOneTile = onlyOneTile || tiles === 1
+        }
+
+        // should have an array of zoom levels and the number of tiles they need. list will stop at first occurrence of only a single tile being generated
+        // now i need to remove every other start with the smallest zoom level working my way up to the largest requested
+        for (let i = 0; i <= zoomLevels.length; i += 2) {
+          zoomLevels.splice(i, 1)
+        }
+
+        zoomIn = zoomLevels[zoomLevels.length - 1].zoom - minZoom
+        zoomOut = 1
+        tileScalingMethod = TileScalingType.IN_OUT
+        zoomLevels = zoomLevels.map(zoomLevel => zoomLevel.zoom)
+        tilesToAdd = XYZTileUtilities.tileCountInExtentForZoomLevels(boundingBox, zoomLevels)
+        const tileScalingRecord = new TileScaling()
+        tileScalingRecord.scaling_type = tileScalingMethod
+        tileScalingRecord.zoom_in = zoomIn
+        tileScalingRecord.zoom_out = zoomOut
+        results.tileScaling = tileScalingRecord
+      } else {
+        for (let zoom = minZoom; zoom <= maxZoom; zoom += 1) {
+          zoomLevels.push(zoom)
+        }
+        tilesToAdd = XYZTileUtilities.tileCountInExtent(boundingBox, minZoom, maxZoom)
+      }
+    }
+    results.estimatedNumberOfTiles = tilesToAdd
+    results.boundingBox = boundingBox
+    results.zoomLevels = zoomLevels
+    return results
+  }
+
   /**
    * Gets all features in a table as geojson
    * @param gp
@@ -2157,10 +2256,10 @@ export default class GeoPackageUtilities {
 
   /**
    * Builds a feature layer
-   * currently this just merges features, determines all possible columns from features (rather than from tables) and inserts into the new table
+   * currently this just merges features
    * TODO: support extensions
    * TODO: support related tables
-   * TODO: support bounding box cutting
+   * TODO: bounding box does not cut, instead it just includes any intersecting features
    * @param configuration
    * @param statusCallback
    * @returns {Promise<any>}
@@ -2327,6 +2426,291 @@ export default class GeoPackageUtilities {
       await this._indexFeatureTable(gp, tableName)
 
       status.message = 'Feature layer creation completed'
+      status.progress = 100.0
+
+      throttleStatusCallback(status)
+      await GeoPackageUtilities.wait(500)
+    }, true)
+  }
+
+  /**
+   * Builds a tile layer
+   * @param configuration
+   * @param statusCallback
+   * @returns {Promise<any>}
+   */
+  static async buildTileLayer (configuration, statusCallback) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(configuration.path, async (gp) => {
+      const status = {
+        message: 'Starting...',
+        progress: 0.0
+      }
+
+      const throttleStatusCallback = _.throttle(statusCallback, 100)
+
+      const tableName = configuration.table
+
+      throttleStatusCallback(status)
+
+      await GeoPackageUtilities.wait(1000)
+
+      let minZoom = configuration.minZoom
+      let maxZoom = configuration.maxZoom
+
+      status.message = 'Preparing layers...'
+
+      const { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
+
+      throttleStatusCallback(status)
+      const contentsBounds = new BoundingBox(configuration.boundingBoxFilter[0], configuration.boundingBoxFilter[2], configuration.boundingBoxFilter[1], configuration.boundingBoxFilter[3])
+      const contentsSrsId = 4326
+      const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
+      const tileMatrixSetSrsId = 3857
+      await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+
+      if (!_.isNil(tileScaling)) {
+        const tileScalingExtension = gp.getTileScalingExtension(tableName)
+        await tileScalingExtension.getOrCreateExtension()
+        tileScalingExtension.createOrUpdate(tileScaling)
+      }
+
+      let layersPrepared = 0
+      const numberOfLayers = configuration.sourceLayers.length + configuration.geopackageLayers.length
+      let layers = []
+
+      for (let i = 0; i < configuration.sourceLayers.length; i++) {
+        const sourceLayer = configuration.sourceLayers[i]
+        const layer = LayerFactory.constructLayer(sourceLayer)
+        layers.push(await layer.initialize())
+        layersPrepared++
+        status.progress = 20.0 * layersPrepared / numberOfLayers
+        throttleStatusCallback(status)
+      }
+
+      for (let i = 0; i < configuration.geopackageLayers.length; i++) {
+        const geopackageLayer = configuration.geopackageLayers[i]
+        const geopackage = geopackageLayer.geopackage
+        const tableName = geopackageLayer.tableName
+        const type = geopackageLayer.type
+        let layer
+        if (type === 'feature') {
+          layer = LayerFactory.constructLayer({
+            id: geopackage.id + '_feature_' + tableName,
+            geopackageFilePath: geopackage.path,
+            sourceDirectory: geopackage.path,
+            sourceLayerName: tableName,
+            sourceType: 'GeoPackage',
+            layerType: 'Vector'
+          })
+        } else {
+          layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+        }
+        layers.push(await layer.initialize())
+        layersPrepared++
+        status.progress = 20.0 * layersPrepared / numberOfLayers
+        throttleStatusCallback(status)
+      }
+
+      // sort layers into rendering order
+      let sortedLayers = []
+      for (let i = 0; i < configuration.renderingOrder.length; i++) {
+        let layer = configuration.renderingOrder[i]
+        let layerIdx = layers.findIndex(l => l.id === layer.id)
+        if (layerIdx > -1) {
+          sortedLayers.push(layers[layerIdx])
+        }
+      }
+
+      await GeoPackageUtilities.wait(500)
+
+      // update status to generating tiles
+      status.message = 'Generating tiles...'
+      throttleStatusCallback(status)
+      let tilesAdded = 0
+      await XYZTileUtilities.iterateAllTilesInExtentForZoomLevels(boundingBox, zoomLevels, async ({z, x, y}) => {
+        // setup canvas that we will draw each layer into
+        let canvas = document.createElement('canvas')
+        canvas.width = 256
+        canvas.height = 256
+        let ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
+        let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
+
+        const tileBounds = new BoundingBox(tileLowerLeft[0], tileUpperRight[0], tileLowerLeft[1], tileUpperRight[1])
+        const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
+        const tileHeight = tileBounds.maxLatitude - tileBounds.minLatitude
+
+        const getX = lng => {
+          return Math.floor(256 / tileWidth * (lng - tileBounds.minLongitude))
+        }
+
+        const getY = lat => {
+          return Math.floor(256 / tileHeight * (tileBounds.maxLatitude - lat))
+        }
+
+        const difference = intersect(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)
+        if (!_.isNil(difference)) {
+          const differenceBbox = bbox(difference)
+          const minLon = differenceBbox[0]
+          const minLat = differenceBbox[1]
+          const maxLon = differenceBbox[2]
+          const maxLat = differenceBbox[3]
+          const minX = Math.max(0, getX(minLon) - 1)
+          const maxX = Math.min(256, getX(maxLon) + 1)
+          const minY = Math.max(0, getY(maxLat) - 1)
+          const maxY = Math.min(256, getY(minLat) + 1)
+          ctx.rect(minX, minY, maxX - minX, maxY - minY)
+          ctx.clip()
+        }
+        // // if tile is not contained within the extent fully, we will need to perform some clipping
+        // if (!booleanContains(contentsBounds.toGeoJSON().geometry, tileBounds.toGeoJSON().geometry)) {
+        //   if (booleanContains(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)) {
+        //     // top-left
+        //     let x = 0
+        //     let y = 0
+        //     let w = getX(contentsBounds.minLongitude)
+        //     let h = getY(contentsBounds.maxLatitude)
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // top-middle
+        //     x = getX(contentsBounds.minLongitude)
+        //     y = 0
+        //     w = getX(contentsBounds.maxLongitude) - x
+        //     h = getY(contentsBounds.maxLatitude)
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // top-right
+        //     x = getX(contentsBounds.maxLongitude)
+        //     y = 0
+        //     w = 256 - x
+        //     h = getY(contentsBounds.maxLatitude)
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // center-left
+        //     x = 0
+        //     y = getY(contentsBounds.maxLatitude)
+        //     w = getX(contentsBounds.minLongitude)
+        //     h = getY(contentsBounds.minLatitude) - getY(contentsBounds.maxLatitude)
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // center-right
+        //     x = getX(contentsBounds.maxLongitude)
+        //     y = getY(contentsBounds.maxLatitude)
+        //     w = 256 - x
+        //     h = getY(contentsBounds.minLatitude) - getY(contentsBounds.maxLatitude)
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // bottom-left
+        //     x = 0
+        //     y = getY(contentsBounds.minLatitude)
+        //     w = getX(contentsBounds.minLongitude)
+        //     h = 256 - y
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // bottom-middle
+        //     x = getX(contentsBounds.minLongitude)
+        //     y = getY(contentsBounds.minLatitude)
+        //     w = getX(contentsBounds.maxLongitude) - x
+        //     h = 256 - y
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
+        //     }
+        //     // bottom-right
+        //     x = getX(contentsBounds.maxLongitude)
+        //     y = getY(contentsBounds.minLatitude)
+        //     w = 256 - x
+        //     h = 256 - y
+        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
+        //       ctx.clearRect(x, y, w, h)
+        //     }
+        //   } else {
+        //     const difference = difference(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)
+        //   }
+        // }
+        // iterate over each layer and generate the tile for that layer
+        for (let i = 0; i < sortedLayers.length; i++) {
+          await new Promise((resolve, reject) => {
+            let layer = sortedLayers[i]
+            layer.renderTile({x, y, z}, null, (err, result) => {
+              if (err) {
+                console.error(err)
+                reject(err)
+              } else if (!_.isNil(result)) {
+                try {
+                  let image
+                  // result could be a buffer, a canvas, or a data url (string)
+                  if (typeof result === 'string') {
+                    image = result
+                  } else {
+                    image = result.toDataURL()
+                  }
+                  let img = new Image()
+                  img.onload = () => {
+                    ctx.drawImage(img, 0, 0)
+                    resolve()
+                  }
+                  img.onerror = (error) => {
+                    console.log(error)
+                    resolve()
+                  }
+                  img.src = image
+                } catch (error) {
+                  console.error(error)
+                  resolve()
+                }
+              } else {
+                resolve()
+              }
+            })
+          })
+        }
+
+        // look at merged canvas
+        if (!CanvasUtilities.isBlank(canvas)) {
+          await new Promise((resolve) => {
+            if (CanvasUtilities.hasTransparentPixels(canvas)) {
+              canvas.toBlob((blob) => {
+                let reader = new FileReader()
+                reader.addEventListener('loadend', async function () {
+                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
+                    plugins: [
+                      imageminPngquant({
+                        speed: 8,
+                        quality: [0.5, 0.8]
+                      })
+                    ]
+                  })
+                  gp.addTile(buffer, tableName, z, y, x)
+                  resolve(false)
+                })
+                reader.readAsArrayBuffer(blob)
+              }, 'image/png')
+            } else {
+              canvas.toBlob((blob) => {
+                const reader = new FileReader()
+                reader.addEventListener('loadend', function () {
+                  gp.addTile(Buffer.from(reader.result), tableName, z, y, x)
+                  resolve(false)
+                })
+                reader.readAsArrayBuffer(blob)
+              }, 'image/jpeg', 0.7)
+            }
+          })
+        }
+        tilesAdded += 1
+        status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
+        throttleStatusCallback(status)
+      })
+
       status.progress = 100.0
 
       throttleStatusCallback(status)

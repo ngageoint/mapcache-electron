@@ -7,10 +7,10 @@
       class="sticky-toolbar"
     >
       <!--      <v-btn icon @click="cancel"><v-icon large>mdi-chevron-left</v-icon></v-btn>-->
-      <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
+      <v-toolbar-title>{{geopackage.name + ': Add Tile Layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-card flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
-      <v-card-title>{{'Creating ' + layerName + ' Feature Layer'}}</v-card-title>
+      <v-card-title>{{'Creating ' + layerName + ' Tile Layer'}}</v-card-title>
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
         <v-progress-linear :value="error ? 100 : status.progress"
@@ -26,7 +26,7 @@
                 <v-text-field
                   v-model="layerName"
                   :rules="layerNameRules"
-                  label="Feature Layer Name"
+                  label="Tile Layer Name"
                   required
                 ></v-text-field>
               </v-col>
@@ -34,11 +34,11 @@
           </v-container>
         </v-form>
         <v-card-title>
-          Feature Layer Content Selection
+          Tile Layer Content Selection
         </v-card-title>
         <v-card-subtitle>
-          Select features from <b>Data Sources</b> and existing <b>GeoPackges</b> to populate your new GeoPackage
-          feature layer.
+          Select imagery and features from <b>Data Sources</b> and existing <b>GeoPackges</b> to populate your new GeoPackage
+          tile layer.
         </v-card-subtitle>
         <v-container v-if="dataSourceLayers.length > 0" class="ma-0 pa-0">
           <v-card-title class="pb-0" style="font-size: 1rem;">
@@ -55,6 +55,10 @@
                     :value="item.value"
                   >
                     <template>
+                      <v-list-item-icon>
+                        <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+                        <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                      </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
@@ -72,7 +76,7 @@
             </v-list>
           </v-card-text>
         </v-container>
-        <v-container v-if="geopackageFeatureLayers.length > 0" class="ma-0 pa-0">
+        <v-container v-if="geopackageLayers.length > 0" class="ma-0 pa-0">
           <v-card-title class="pb-0" style="font-size: 1rem;">
             GeoPackage Layers
           </v-card-title>
@@ -81,12 +85,16 @@
               <v-list-item-group
                 multiple
               >
-                <template v-for="(item, i) in geopackageFeatureLayers">
+                <template v-for="(item, i) in geopackageLayers">
                   <v-list-item
-                    :key="`geopackage-layer-item-${i}`"
+                    :key="`geopackage-tile-layer-item-${i}`"
                     :value="item.value"
                   >
                     <template>
+                      <v-list-item-icon>
+                        <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+                        <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                      </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
@@ -104,12 +112,39 @@
             </v-list>
           </v-card-text>
         </v-container>
+        <v-container v-if="sortedLayers.length > 0" class="ma-0 pa-0">
+          <v-card-title>
+            Layer Rendering Order
+          </v-card-title>
+          <v-card-subtitle>
+            Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
+          </v-card-subtitle>
+          <v-card-text>
+            <draggable
+              v-model="sortedLayers"
+              ghost-class="ghost">
+              <v-list-item
+                v-for="(item, i) in sortedLayers"
+                :key="`sorted-item-${i}`"
+                :value="item.value"
+                class="v-list-item--link">
+                <v-list-item-icon>
+                  <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+                  <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </draggable>
+          </v-card-text>
+        </v-container>
         <v-container class="ma-0 pa-0 mt-4">
           <v-card-title>
             Bounding Box Filter
           </v-card-title>
           <v-card-subtitle>
-            Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
+            Provide a bounding box to specify the area to pull content from selected data sources and GeoPackage layers
           </v-card-subtitle>
           <v-card-text>
             <v-row no-gutters justify="end">
@@ -122,14 +157,28 @@
             </v-row>
           </v-card-text>
         </v-container>
+        <v-container class="ma-0 pa-0 mt-4">
+          <v-row no-gutters>
+            <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+          </v-row>
+          <v-row no-gutters>
+            <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+          </v-row>
+          <v-row no-gutters v-if="estimatedTileCount > tileWarningThreshold">
+            <p style="color: red">{{'This configuration may generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or lowering the maximum zoom level.'}}</p>
+          </v-row>
+          <v-row no-gutters justify="start" align="center">
+            <span class="mr-2">Enable Tile Scaling</span><v-checkbox v-model="tileScaling"/>
+          </v-row>
+        </v-container>
         <v-container
           class="ma-0 pa-0 mt-2"
-          v-if="!project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)">
+          v-if="!project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)">
           <v-card-title>
             Summary
           </v-card-title>
           <v-card-subtitle>
-            <b>{{filteredFeatureCount}}</b>{{(project.boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layers will be added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
+            <b>{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layers will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
           </v-card-subtitle>
         </v-container>
       </v-card-text>
@@ -147,10 +196,10 @@
           {{done ? 'close' : 'cancel'}}
         </v-btn>
         <v-btn
-          v-if="!done && !processing && !project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
+          v-if="!done && !processing && project.boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
           color="#3b779a"
           text
-          @click.stop="addFeatureLayer">
+          @click.stop="addTileLayer">
           add
         </v-btn>
       </v-card-actions>
@@ -165,6 +214,8 @@
   import ViewEditText from '../Common/ViewEditText'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import NumberPicker from '../Common/NumberPicker'
+  import draggable from 'vuedraggable'
 
   export default {
     props: {
@@ -173,12 +224,14 @@
       back: Function
     },
     components: {
-      ViewEditText
+      ViewEditText,
+      NumberPicker,
+      draggable
     },
     data () {
       return {
         layerNameValid: false,
-        layerName: 'New Feature Layer',
+        layerName: 'New Tile Layer',
         layerNameRules: [
           v => !!v || 'Layer name is required',
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
@@ -190,18 +243,24 @@
         processing: false,
         error: false,
         done: false,
-        dataSourceLayers: this.getDataSourceLayers()
+        dataSourceLayers: this.getDataSourceLayers(),
+        tileScaling: false,
+        minZoom: 0,
+        maxZoom: 20,
+        tileWarningThreshold: 1000,
+        sortedRenderingLayers: undefined
       }
     },
     methods: {
       ...mapActions({
         synchronizeGeoPackage: 'Projects/synchronizeGeoPackage',
         setDataSourceVisible: 'Projects/setDataSourceVisible',
+        setGeoPackageTileTableVisible: 'Projects/setGeoPackageTileTableVisible',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
         setBoundingBoxFilterEditingEnabled: 'Projects/setBoundingBoxFilterEditingEnabled',
         clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter'
       }),
-      async addFeatureLayer () {
+      async addTileLayer () {
         this.processing = true
         const configuration = {
           id: UniqueIDUtilities.createUniqueID(),
@@ -210,12 +269,16 @@
           table: this.layerName,
           sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value]),
           boundingBoxFilter: this.project.boundingBoxFilter,
-          geopackageLayers: this.geopackageFeatureLayers.filter(item => item.visible).map(({value}) => {
-            return {geopackage: this.project.geopackages[value.geopackageId], table: value.table}
-          })
+          geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(({value, type}) => {
+            return {geopackage: this.project.geopackages[value.geopackageId], table: value.table, type}
+          }),
+          minZoom: this.minZoom,
+          maxZoom: this.maxZoom,
+          tileScaling: this.tileScaling,
+          renderingOrder: this.sortedLayers
         }
 
-        this.$electron.ipcRenderer.once('build_feature_layer_completed_' + configuration.id, (event, result) => {
+        this.$electron.ipcRenderer.once('build_tile_layer_completed_' + configuration.id, (event, result) => {
           this.done = true
           if (result && result.error) {
             this.status.message = result.error
@@ -224,18 +287,24 @@
             this.status.message = 'Completed'
             this.status.progress = 100
           }
-          this.$electron.ipcRenderer.removeAllListeners('build_feature_layer_status_' + configuration.id)
+          this.$electron.ipcRenderer.removeAllListeners('build_tile_layer_status_' + configuration.id)
           this.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         })
-        this.$electron.ipcRenderer.on('build_feature_layer_status_' + configuration.id, (event, status) => {
+        this.$electron.ipcRenderer.on('build_tile_layer_status_' + configuration.id, (event, status) => {
           if (!this.done) {
             this.status = status
           }
         })
-        this.$electron.ipcRenderer.send('build_feature_layer', {configuration: configuration})
+        this.$electron.ipcRenderer.send('build_tile_layer', {configuration: configuration})
       },
       cancel () {
         this.back()
+      },
+      updateMinZoom (val) {
+        this.minZoom = val
+      },
+      updateMaxZoom (val) {
+        this.maxZoom = val
       },
       resetBoundingBox () {
         this.clearBoundingBoxFilter({projectId: this.project.id})
@@ -243,31 +312,14 @@
       editBoundingBox () {
         this.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, enabled: !this.project.boundingBoxFilterEditingEnabled})
       },
-      async getFilteredFeatures () {
-        let numberOfFeatures = 0
-        const sourceItems = this.dataSourceLayers.filter(item => item.visible)
-        for (let i = 0; i < sourceItems.length; i++) {
-          const source = this.project.sources[sourceItems[i].value]
-          if (!_.isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
-          } else {
-            numberOfFeatures += source.count
-          }
-        }
-        const geopackageItems = this.geopackageFeatureLayers.filter(item => item.visible)
-        for (let i = 0; i < geopackageItems.length; i++) {
-          const item = geopackageItems[i]
-          const table = item.value.table
-          const geopackage = this.project.geopackages[item.value.geopackageId]
-          if (!_.isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(geopackage.path, table, this.project.boundingBoxFilter)
-          } else {
-            numberOfFeatures += geopackage.tables.features[table].featureCount
-          }
-        }
-        return numberOfFeatures
+      getEstimatedTileCount () {
+        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value])
+        const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(({value, type}) => {
+          return {geopackage: this.project.geopackages[value.geopackageId], table: value.table, type}
+        })
+        return GeoPackageUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
       },
-      async getGeoPackageFeatureLayerItems () {
+      async getGeoPackageLayerItems () {
         const self = this
         const projectId = this.project.id
         const items = []
@@ -275,14 +327,30 @@
         for (let i = 0; i < keys.length; i++) {
           const geopackage = this.project.geopackages[keys[i]]
           if (await GeoPackageUtilities.isHealthy(geopackage)) {
-            _.keys(geopackage.tables.features).forEach(table => {
+            _.keys(geopackage.tables.tiles).forEach(table => {
               const tableName = table
-              const visible = geopackage.tables.features[table].visible
+              const visible = geopackage.tables.tiles[table].visible
               const geopackageId = geopackage.id
               items.push({
                 value: {geopackageId: geopackage.id, table: table},
                 text: geopackage.name + ': ' + table,
                 visible,
+                type: 'tile',
+                changeVisibility: () => {
+                  self.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                }
+              })
+            })
+            _.keys(geopackage.tables.features).forEach(table => {
+              const tableName = table
+              const visible = geopackage.tables.features[table].visible
+              const geopackageId = geopackage.id
+              items.push({
+                id: geopackageId + '_' + tableName,
+                value: {geopackageId: geopackage.id, table: table},
+                text: geopackage.name + ': ' + table,
+                visible,
+                type: 'feature',
                 changeVisibility: () => {
                   self.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }
@@ -295,35 +363,40 @@
       getDataSourceLayers () {
         const self = this
         const projectId = this.project.id
-        return Object.values(this.project.sources).filter(source => source.pane === 'vector').map(source => {
+        return Object.values(this.project.sources).map(source => {
           const sourceId = source.id
           const visible = !source.visible
           return {
+            id: source.id,
             text: source.displayName ? source.displayName : source.name,
             value: source.id,
             visible: source.visible,
+            type: source.pane === 'vector' ? 'feature' : 'tile',
             changeVisibility: () => {
               self.setDataSourceVisible({projectId, sourceId, visible})
             }
           }
         })
+      },
+      getRenderingLayers () {
+        return this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
       }
     },
     asyncComputed: {
-      filteredFeatureCount: {
+      geopackageLayers: {
         async get () {
-          return this.getFilteredFeatures()
-        },
-        default: 0
-      },
-      geopackageFeatureLayers: {
-        async get () {
-          return this.getGeoPackageFeatureLayerItems()
+          return this.getGeoPackageLayerItems()
         },
         default: []
       }
     },
     computed: {
+      prettyEstimatedTileCount () {
+        return this.getEstimatedTileCount().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      },
+      estimatedTileCount () {
+        return this.getEstimatedTileCount()
+      },
       boundingBoxText () {
         let boundingBoxText = 'Not specified'
         if (!_.isNil(this.project.boundingBoxFilter)) {
@@ -331,13 +404,44 @@
           boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
         }
         return boundingBoxText
+      },
+      sortedLayers: {
+        get () {
+          return this.sortedRenderingLayers || this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+        },
+        set (val) {
+          this.sortedRenderingLayers = val
+        }
       }
     },
     watch: {
       project: {
         async handler () {
           this.dataSourceLayers = this.getDataSourceLayers()
-          this.geopackageFeatureLayers = await this.getGeoPackageFeatureLayerItems()
+          this.geopackageLayers = await this.getGeoPackageLayerItems()
+          if (!_.isNil(this.sortedRenderingLayers)) {
+            const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
+            const newRenderingLayers = this.getRenderingLayers()
+
+            const idsRemoved = _.difference(sortedRenderingLayersCopy.map(item => item.id), newRenderingLayers.map(item => item.id))
+            const idsAdded = _.difference(newRenderingLayers.map(item => item.id), sortedRenderingLayersCopy.map(item => item.id))
+
+            idsRemoved.forEach(id => {
+              const index = sortedRenderingLayersCopy.findIndex(item => item.id === id)
+              if (index !== -1) {
+                sortedRenderingLayersCopy.splice(index, 1)
+              }
+            })
+
+            idsAdded.forEach(id => {
+              const index = newRenderingLayers.findIndex(item => item.id === id)
+              if (index !== -1) {
+                sortedRenderingLayersCopy.push(newRenderingLayers[index])
+              }
+            })
+
+            this.sortedLayers = sortedRenderingLayersCopy
+          }
         },
         deep: true
       }
@@ -354,4 +458,8 @@
 </script>
 
 <style scoped>
+  .ghost {
+    opacity: 0.5;
+    background: #3b779a;
+  }
 </style>

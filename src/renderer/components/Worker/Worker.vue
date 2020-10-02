@@ -4,8 +4,6 @@
 
 <script>
   import SourceFactory from '../../../lib/source/SourceFactory'
-  import GeoPackageBuilder from '../../../lib/source/GeoPackageBuilder'
-  import store from '../../../store'
   import GeoPackageUtilties from '../../../lib/GeoPackageUtilities'
 
   const workerId = new URL(location.href).searchParams.get('id')
@@ -45,11 +43,6 @@
     }
   }
 
-  async function buildGeoPackage (project, geopackageConfiguration) {
-    const geopackageBuilder = new GeoPackageBuilder(geopackageConfiguration, project, store)
-    return geopackageBuilder.go()
-  }
-
   export default {
     name: 'worker-page',
     created: function () {
@@ -58,17 +51,20 @@
           this.$electron.ipcRenderer.send('worker_process_source_completed_' + workerId, result)
         })
       })
-      this.$electron.ipcRenderer.on('worker_build_geopackage', (e, data) => {
-        buildGeoPackage(data.project, data.geopackage).then((result) => {
-          this.$electron.ipcRenderer.send('worker_build_geopackage_completed_' + workerId, result)
-        })
-      })
       this.$electron.ipcRenderer.on('worker_build_feature_layer', (e, data) => {
         const statusCallback = (status) => {
           this.$electron.ipcRenderer.send('worker_build_feature_layer_status_' + workerId, status)
         }
         GeoPackageUtilties.buildFeatureLayer(data.configuration, statusCallback).then((result) => {
           this.$electron.ipcRenderer.send('worker_build_feature_layer_completed_' + workerId, result)
+        })
+      })
+      this.$electron.ipcRenderer.on('worker_build_tile_layer', (e, data) => {
+        const statusCallback = (status) => {
+          this.$electron.ipcRenderer.send('worker_build_tile_layer_status_' + workerId, status)
+        }
+        GeoPackageUtilties.buildTileLayer(data.configuration, statusCallback).then((result) => {
+          this.$electron.ipcRenderer.send('worker_build_tile_layer_completed_' + workerId, result)
         })
       })
     }

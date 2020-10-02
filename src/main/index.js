@@ -28,23 +28,22 @@ ipcMain.on('process_source', (event, payload) => {
 ipcMain.on('cancel_process_source', (event, payload) => {
   WorkerPool.cancelProcessSource(payload.id)
 })
-ipcMain.on('build_geopackage', (event, payload) => {
-  const id = payload.geopackage.id
-  WorkerPool.executeBuildGeoPackage(payload).then(function (result) {
-    event.sender.send('build_geopackage_completed_' + id, result)
-  })
-})
-ipcMain.on('cancel_geopackage_build', (event, payload) => {
-  WorkerPool.cancelGeoPackageBuild(payload.geopackage)
-})
 ipcMain.on('build_feature_layer', (event, payload) => {
   const id = payload.configuration.id
-  console.log('configuration id: ' + id)
   const statusCallback = (status) => {
     event.sender.send('build_feature_layer_status_' + id, status)
   }
   WorkerPool.executeBuildFeatureLayer(payload, statusCallback).then(function (result) {
     event.sender.send('build_feature_layer_completed_' + id, result)
+  })
+})
+ipcMain.on('build_tile_layer', (event, payload) => {
+  const id = payload.configuration.id
+  const statusCallback = (status) => {
+    event.sender.send('build_tile_layer_status_' + id, status)
+  }
+  WorkerPool.executeBuildTileLayer(payload, statusCallback).then(function (result) {
+    event.sender.send('build_tile_layer_completed_' + id, result)
   })
 })
 ipcMain.on('quick_download_geopackage', (event, payload) => {

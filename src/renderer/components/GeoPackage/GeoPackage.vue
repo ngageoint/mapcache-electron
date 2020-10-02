@@ -18,6 +18,9 @@
   <div v-else-if="addFeatureLayerDialog">
     <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
   </div>
+  <div v-else-if="addTileLayerDialog">
+    <add-tile-layer :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
+  </div>
   <div v-else style="background-color: white">
     <v-toolbar
       color="#3b779a"
@@ -355,6 +358,7 @@
   import GeoPackageDetails from './GeoPackageDetails'
   import GeoPackageLayerList from './GeoPackageLayerList'
   import AddFeatureLayer from './AddFeatureLayer'
+  import AddTileLayer from './AddTileLayer'
 
   export default {
     props: {
@@ -364,6 +368,7 @@
     },
     components: {
       AddFeatureLayer,
+      AddTileLayer,
       GeoPackageLayerList,
       GeoPackageDetails,
       ViewEditText,
@@ -472,6 +477,9 @@
       },
       hideAddFeatureDialog () {
         this.addFeatureLayerDialog = false
+      },
+      hideAddTileDialog () {
+        this.addTileLayerDialog = false
       }
     },
     watch: {
