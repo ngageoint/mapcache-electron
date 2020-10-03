@@ -39,11 +39,14 @@
 	margin: 12px -12px -12px -12px;
 }
 .content-panel {
-	background-color: whitesmoke;
+	-moz-box-shadow: 0 0 10px #000000;
+	-webkit-box-shadow: 0 0 10px #000000;
+	box-shadow: 0 0 10px #000000;
 	max-width: 400px;
 	min-height: 100vh;
 	max-height: 100vh;
 	overflow-y: auto;
+	z-index: 1;
 }
 .sticky-toolbar {
 	position: -webkit-sticky; /* Safari */

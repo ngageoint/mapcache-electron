@@ -2043,8 +2043,10 @@ export default class GeoPackageUtilities {
 
         // should have an array of zoom levels and the number of tiles they need. list will stop at first occurrence of only a single tile being generated
         // now i need to remove every other start with the smallest zoom level working my way up to the largest requested
-        for (let i = 0; i <= zoomLevels.length; i += 2) {
-          zoomLevels.splice(i, 1)
+        if (zoomLevels.length > 1) {
+          for (let i = 0; i <= zoomLevels.length; i += 2) {
+            zoomLevels.splice(i, 1)
+          }
         }
 
         zoomIn = zoomLevels[zoomLevels.length - 1].zoom - minZoom

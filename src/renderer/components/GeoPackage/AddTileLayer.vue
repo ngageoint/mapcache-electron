@@ -20,16 +20,14 @@
     <v-card flat class="ma-0 pa-0" v-else>
       <v-card-text>
         <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
-          <v-container class="ml-4 mr-8 pa-0">
+          <v-container>
             <v-row no-gutters>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="layerName"
-                  :rules="layerNameRules"
-                  label="Tile Layer Name"
-                  required
-                ></v-text-field>
-              </v-col>
+              <v-text-field
+                v-model="layerName"
+                :rules="layerNameRules"
+                label="Tile Layer Name"
+                required
+              ></v-text-field>
             </v-row>
           </v-container>
         </v-form>
@@ -158,18 +156,32 @@
           </v-card-text>
         </v-container>
         <v-container class="ma-0 pa-0 mt-4">
-          <v-row no-gutters>
-            <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
-          </v-row>
-          <v-row no-gutters>
-            <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
-          </v-row>
-          <v-row no-gutters v-if="estimatedTileCount > tileWarningThreshold">
-            <p style="color: red">{{'This configuration may generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or lowering the maximum zoom level.'}}</p>
-          </v-row>
-          <v-row no-gutters justify="start" align="center">
-            <span class="mr-2">Enable Tile Scaling</span><v-checkbox v-model="tileScaling"/>
-          </v-row>
+          <v-card-title>
+            Zoom Levels and Tile Scaling
+          </v-card-title>
+          <v-card-subtitle>
+            Specify the zoom levels you wish to view your content at. Enable tile scaling to reduce the number of tiles generated.
+          </v-card-subtitle>
+          <v-card-text>
+            <v-container>
+              <v-row no-gutters>
+                <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+              </v-row>
+              <v-row no-gutters>
+                <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+              </v-row>
+              <v-row no-gutters justify="start" align="center">
+                <v-container class="ma-0 pa-0">
+                  <v-switch v-model="tileScaling"
+                            class="v-input--reverse v-input--expand"
+                            hint="Tile scaling reduces the number of tiles by allowing geopackage to search for tiles at nearby zoom levels and scale them"
+                            persistent-hint
+                            label="Tile Scaling">
+                  </v-switch>
+                </v-container>
+              </v-row>
+            </v-container>
+          </v-card-text>
         </v-container>
         <v-container
           class="ma-0 pa-0 mt-2"
@@ -178,7 +190,10 @@
             Summary
           </v-card-title>
           <v-card-subtitle>
-            <b>{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layers will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+            <b :style="estimatedTileCount > tileWarningThreshold ? 'color: red;' : 'color: black;'">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layers will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+          </v-card-subtitle>
+          <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" style="color: red">
+            {{'This configuration will generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or decreasing the max zoom.'}}
           </v-card-subtitle>
         </v-container>
       </v-card-text>
@@ -301,9 +316,15 @@
         this.back()
       },
       updateMinZoom (val) {
+        if (val > this.maxZoom) {
+          this.maxZoom = val
+        }
         this.minZoom = val
       },
       updateMaxZoom (val) {
+        if (val < this.minZoom) {
+          this.minZoom = val
+        }
         this.maxZoom = val
       },
       resetBoundingBox () {
@@ -461,5 +482,19 @@
   .ghost {
     opacity: 0.5;
     background: #3b779a;
+  }
+  .v-input--reverse .v-input__slot {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    .v-input--selection-controls__input {
+      margin-left: 0;
+      margin-right: 8px;
+    }
+  }
+  .v-input--expand .v-input__slot {
+    .v-label {
+      display: block;
+      flex: 1;
+    }
   }
 </style>
