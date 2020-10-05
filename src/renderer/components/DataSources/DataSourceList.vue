@@ -12,7 +12,7 @@
           <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="24px" height="24px">
         </v-list-item-icon>
         <v-list-item-content>
-          <v-list-item-title class="header" :style="{fontSize: '18px', fontWeight: '500', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
+          <v-list-item-title :title="item.name" class="header" :style="{fontSize: '18px', fontWeight: '500', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
         </v-list-item-content>
         <v-switch
           hide-details

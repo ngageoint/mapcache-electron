@@ -20,10 +20,19 @@ export default class LeafletActiveLayersTools extends vendor.L.Control {
     let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-control')
     this._zoomLink = vendor.L.DomUtil.create('a', 'leaflet-control-zoom-to-active', container)
     this._zoomLink.title = 'Zoom to Active'
-    this._zoomLink.onclick = this.zoomToActiveLayers
+    const self = this
+    this._zoomLink.onclick = (e) => {
+      self.zoomToActiveLayers()
+      e.stopPropagation()
+      e.preventDefault()
+    }
     this._clearLink = vendor.L.DomUtil.create('a', 'leaflet-control-clear-active', container)
     this._clearLink.title = 'Clear Active'
-    this._clearLink.onclick = this.clearActiveLayers
+    this._clearLink.onclick = (e) => {
+      self.clearActiveLayers()
+      e.stopPropagation()
+      e.preventDefault()
+    }
     return container
   }
 }

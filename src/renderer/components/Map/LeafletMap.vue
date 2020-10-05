@@ -1,6 +1,7 @@
 <template>
   <div style="width: 100%; height: 100%; z-index: 0; position: relative;">
     <div id="map" style="width: 100%; height: 100%; z-index: 0;">
+      <div id='tooltip'></div>
       <v-dialog
         v-model="layerSelectionVisible"
         max-width="500"
@@ -84,7 +85,6 @@
   import * as vendor from '../../../lib/vendor'
 
   import Modal from '../Modal'
-  import ZoomToExtent from './ZoomToExtent'
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
   import FeatureTable from './FeatureTable'
@@ -124,7 +124,6 @@
 
   export default {
     mixins: [
-      ZoomToExtent,
       DrawBounds
     ],
     props: {
@@ -827,7 +826,7 @@
         }
       })
       this.map.on('editable:drawing:end', function (e) {
-        if (!_this.isDrawingBounds) {
+        if (!_this.isDrawingBounds && !_this.drawingControl.cancelled) {
           e.layer.toggleEdit()
           let layers = [NEW_GEOPACKAGE_OPTION]
           Object.values(_this.geopackages).forEach((geopackage) => {
@@ -912,11 +911,8 @@
   .leaflet-control-draw-trash-enabled {
     background: url('../../assets/trash_red.svg') no-repeat;
   }
-  .leaflet-control-draw-trash-disabled {
-    background: url('../../assets/trash.svg') no-repeat;
-  }
-  .leaflet-control-draw-settings {
-    background: url('../../assets/settings.svg') no-repeat;
+  .leaflet-control-draw-cancel {
+    background: url('../../assets/close.svg') no-repeat;
   }
   .leaflet-control-disabled {
     color: currentColor;
@@ -1005,5 +1001,25 @@
     /* .slide-fade-leave-active below version 2.1.8 */ {
     transform: translateY(100px);
     opacity: 0;
+  }
+  #tooltip {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #666;
+    color: white;
+    opacity: 0.90;
+    padding: 10px;
+    border: 1px dashed #999;
+    font-family: sans-serif;
+    font-size: 12px;
+    height: 40px;
+    line-height: 20px;
+    z-index: 1000;
+  }
+  .hidden {
+    display: none !important;
+    visibility: hidden;
   }
 </style>

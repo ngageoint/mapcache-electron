@@ -7,7 +7,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-      <v-toolbar-title>{{tableName}}</v-toolbar-title>
+      <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-container fluid>
       <v-dialog

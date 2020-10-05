@@ -497,6 +497,9 @@ const actions = {
   openProject ({ commit, state }, project) {
     WindowLauncher.showProject(project.id)
   },
+  setProjectMaxFeatures ({ commit, state }, {projectId, maxFeatures}) {
+    commit('setProjectMaxFeatures', {projectId, maxFeatures})
+  },
   setZoomControlEnabled ({ commit, state }, {projectId, enabled}) {
     commit('setZoomControlEnabled', {projectId, enabled})
   },

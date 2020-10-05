@@ -27,7 +27,7 @@
         class="sticky-toolbar"
       >
         <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-        <v-toolbar-title>{{initialDisplayName}}</v-toolbar-title>
+        <v-toolbar-title :title="initialDisplayName">{{initialDisplayName}}</v-toolbar-title>
       </v-toolbar>
       <v-dialog
         v-model="renameDialog"
@@ -191,16 +191,6 @@
             </v-col>
           </v-row>
         </v-container>
-        <!--        <expandable-card class="mb-2">-->
-        <!--          <div slot="card-header">-->
-        <!--            <div class="title-card">-->
-        <!--              Style Options-->
-        <!--            </div>-->
-        <!--          </div>-->
-        <!--          <div slot="card-expanded-body">-->
-        <!--            <geotiff-options v-if="layer.layerType === 'GeoTIFF'" :layer="layer" :projectId="projectId"></geotiff-options>-->
-        <!--          </div>-->
-        <!--        </expandable-card>-->
       </div>
     </div>
 
@@ -213,8 +203,7 @@
   import BoundsUi from './BoundsUi'
   import GeotiffOptions from './GeotiffOptions'
   import ViewEditText from '../Common/ViewEditText'
-  import ExpandableCard from '../Card/ExpandableCard'
-  import StyleEditor from '../GeoPackage/StyleEditor'
+  import StyleEditor from '../StyleEditor/StyleEditor'
 
   export default {
     props: {
@@ -232,7 +221,6 @@
       BoundsUi,
       GeotiffOptions,
       ViewEditText,
-      ExpandableCard,
       StyleEditor
     },
     computed: {
