@@ -7,7 +7,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-      <v-toolbar-title :title="tableName + ' Style Editor'"><b class="ml-2">{{tableName}}</b> Style Editor</v-toolbar-title>
+      <v-toolbar-title :title="tableName + ' Style Editor'"><b>{{tableName}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
     <v-card>
       <v-card-text>

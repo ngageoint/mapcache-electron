@@ -184,9 +184,9 @@
           </v-container>
         </v-card-title>
         <v-card-text>
-          <v-hover>
+          <v-hover :disabled="projectFeatureLayerCount === 0">
             <template v-slot="{ hover }">
-              <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFeatureLayer">
+              <v-card :disabled="projectFeatureLayerCount === 0" class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFeatureLayer">
                 <v-card-text>
                   <v-container style="padding: 4px">
                     <v-row>
@@ -202,9 +202,9 @@
               </v-card>
             </template>
           </v-hover>
-          <v-hover>
+          <v-hover :disabled="projectFeatureLayerCount + projectTileLayerCount === 0">
             <template v-slot="{ hover }">
-              <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addTileLayer">
+              <v-card :disabled="projectFeatureLayerCount + projectTileLayerCount === 0" class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addTileLayer">
                 <v-card-text>
                   <v-container style="padding: 4px">
                     <v-row>
@@ -335,6 +335,7 @@
     <v-btn
       class="fab-position"
       fab
+      :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
       color="accent"
       title="Add layer"
       @click.stop="addLayerDialog = true">
@@ -403,7 +404,7 @@
       }),
       layersVisible: {
         get () {
-          const allTableKeys = Object.values(this.geopackage.tables.features).concat(Object.values(this.geopackage.tables.tiles))
+          const allTableKeys = _.values(this.geopackage.tables.features).concat(_.values(this.geopackage.tables.tiles))
           return (allTableKeys.filter(table => !table.visible).length === 0 && allTableKeys.length > 0) || false
         },
         set (value) {
@@ -414,7 +415,15 @@
         return GeoPackageUtilities.getGeoPackageFileSize(this.geopackage.path)
       },
       hasLayers () {
-        return Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).length > 0
+        return _.keys(this.geopackage.tables.features).concat(_.keys(this.geopackage.tables.tiles)).length > 0
+      },
+      projectFeatureLayerCount () {
+        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.features).length, 0) +
+          _.values(this.project.sources).filter(source => source.pane === 'vector').length
+      },
+      projectTileLayerCount () {
+        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.tiles).length, 0) +
+          _.values(this.project.sources).filter(source => source.pane === 'tile').length
       }
     },
     asyncComputed: {

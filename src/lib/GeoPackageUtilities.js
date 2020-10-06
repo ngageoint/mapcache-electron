@@ -70,7 +70,6 @@ export default class GeoPackageUtilities {
    * @param tableName
    */
   static _addStyleExtensionForTable (gp, tableName) {
-    // const style = VectorStyleUtilities.defaultRandomColorStyle()
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
     featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
@@ -79,8 +78,6 @@ export default class GeoPackageUtilities {
     featureTableStyles.createTableIconRelationship()
     featureTableStyles.createStyleRelationship()
     featureTableStyles.createIconRelationship()
-    // GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
-    // GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
   }
 
   /**
@@ -1781,7 +1778,6 @@ export default class GeoPackageUtilities {
    */
   static _updateFeatureRow (gp, tableName, featureRow) {
     const featureDao = gp.getFeatureDao(tableName)
-    console.log(featureRow.values)
     return featureDao.update(featureRow)
   }
 
