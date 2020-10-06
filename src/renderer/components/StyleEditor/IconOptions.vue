@@ -23,6 +23,16 @@
           </v-row>
           <v-row no-gutters class="justify-space-between">
             <v-col cols="6">
+              <number-picker @update-number="updateWidth" :number="this.iconRow.width" label="width" :step="Number(1)" :min="Number(8)" :max="Number(64)"/>
+            </v-col>
+          </v-row>
+          <v-row no-gutters class="justify-space-between">
+            <v-col cols="6">
+              <number-picker @update-number="updateHeight" :number="this.iconRow.height" label="height" :step="Number(1)" :min="Number(8)" :max="Number(64)"/>
+            </v-col>
+          </v-row>
+          <v-row no-gutters class="justify-space-between">
+            <v-col cols="6">
               <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
             </v-col>
             <v-col cols="6">
@@ -47,6 +57,7 @@
   import jetpack from 'fs-jetpack'
   import fs from 'fs'
   import path from 'path'
+  import NumberPicker from '../Common/NumberPicker'
 
   export default {
     props: {
@@ -66,6 +77,7 @@
       }
     },
     components: {
+      NumberPicker,
       ExpandableCard,
       ViewEditText
     },
@@ -139,6 +151,48 @@
             anchorU: this.iconRow.anchorU,
             anchorV: this.iconRow.anchorV,
             name: val,
+            contentType: this.iconRow.contentType
+          }
+          this.updateProjectLayerIconRow({
+            projectId: this.projectId,
+            id: this.id,
+            tableName: this.tableName,
+            iconRow: iconRow,
+            isGeoPackage: this.isGeoPackage
+          })
+        }
+      },
+      updateWidth (val) {
+        if (this.iconRow.width !== val) {
+          let iconRow = {
+            id: this.iconRow.id,
+            data: this.iconRow.data,
+            width: val,
+            height: this.iconRow.height,
+            anchorU: this.iconRow.anchorU,
+            anchorV: this.iconRow.anchorV,
+            name: this.iconRow.name,
+            contentType: this.iconRow.contentType
+          }
+          this.updateProjectLayerIconRow({
+            projectId: this.projectId,
+            id: this.id,
+            tableName: this.tableName,
+            iconRow: iconRow,
+            isGeoPackage: this.isGeoPackage
+          })
+        }
+      },
+      updateHeight (val) {
+        if (this.iconRow.height !== val) {
+          let iconRow = {
+            id: this.iconRow.id,
+            data: this.iconRow.data,
+            width: this.iconRow.width,
+            height: val,
+            anchorU: this.iconRow.anchorU,
+            anchorV: this.iconRow.anchorV,
+            name: this.iconRow.name,
             contentType: this.iconRow.contentType
           }
           this.updateProjectLayerIconRow({

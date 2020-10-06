@@ -12,10 +12,13 @@
               :key="'editor-' + column.name"
             >
               <v-list-item-content class="pa-4" style="margin: -16px;">
-                <v-text-field :label="column.name" clearable v-if="column.dataType === TEXT" v-model="featureProperties[column.name]" :rules="rules && rules[column.name] ? rules[column.name] : []"></v-text-field>
-                <v-switch :label="column.name" v-else-if="column.dataType === BOOLEAN" v-model="featureProperties[column.name]"></v-switch>
-                <span v-else-if="column.dataType === DATE || column.dataType === DATETIME">DATE/TIME Not Currently Supported</span>
-                <v-text-field :label="column.name" clearable type="number" v-else v-model="featureProperties[column.name]" :rules="rules && rules[column.name] ? rules[column.name] : []"></v-text-field>
+                <v-text-field :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="featureProperties[column.name]" :rules="rules && rules[column.name] ? rules[column.name] : []"></v-text-field>
+                <v-switch :label="column.name.toLowerCase()" v-else-if="column.dataType === BOOLEAN" v-model="featureProperties[column.name]"></v-switch>
+                <span v-else-if="column.dataType === DATE || column.dataType === DATETIME">
+                  <label class="v-label v-label--active theme--light pb-" style="font-size: 11px;">{{column.name.toLowerCase()}}</label>
+                  <p class="mt-2" style="font-size: 14px; color: red;">date/time field not yet supported.</p>
+                </span>
+                <v-text-field :label="column.name.toLowerCase()" clearable type="number" v-else v-model="featureProperties[column.name]" :rules="rules && rules[column.name] ? rules[column.name] : []"></v-text-field>
               </v-list-item-content>
             </v-list-item>
           </template>
