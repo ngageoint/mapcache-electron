@@ -353,6 +353,7 @@
               const visible = geopackage.tables.tiles[table].visible
               const geopackageId = geopackage.id
               items.push({
+                id: geopackageId + '_' + tableName,
                 value: {geopackageId: geopackage.id, table: table},
                 text: geopackage.name + ': ' + table,
                 visible,

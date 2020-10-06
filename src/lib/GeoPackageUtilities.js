@@ -2599,6 +2599,7 @@ export default class GeoPackageUtilities {
       for (let i = 0; i < configuration.sourceLayers.length; i++) {
         const sourceLayer = configuration.sourceLayers[i]
         const layer = LayerFactory.constructLayer(sourceLayer)
+        layer._maxFeatures = undefined
         layers.push(await layer.initialize())
         layersPrepared++
         status.progress = 20.0 * layersPrepared / numberOfLayers
@@ -2608,12 +2609,13 @@ export default class GeoPackageUtilities {
       for (let i = 0; i < configuration.geopackageLayers.length; i++) {
         const geopackageLayer = configuration.geopackageLayers[i]
         const geopackage = geopackageLayer.geopackage
-        const tableName = geopackageLayer.tableName
+        const tableName = geopackageLayer.table
         const type = geopackageLayer.type
         let layer
         if (type === 'feature') {
+          console.log(geopackage.path)
           layer = LayerFactory.constructLayer({
-            id: geopackage.id + '_feature_' + tableName,
+            id: geopackage.id + '_' + tableName,
             geopackageFilePath: geopackage.path,
             sourceDirectory: geopackage.path,
             sourceLayerName: tableName,
@@ -2621,8 +2623,9 @@ export default class GeoPackageUtilities {
             layerType: 'Vector'
           })
         } else {
-          layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+          layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
         }
+        layer._maxFeatures = undefined
         layers.push(await layer.initialize())
         layersPrepared++
         status.progress = 20.0 * layersPrepared / numberOfLayers
@@ -2683,78 +2686,7 @@ export default class GeoPackageUtilities {
           ctx.rect(minX, minY, maxX - minX, maxY - minY)
           ctx.clip()
         }
-        // // if tile is not contained within the extent fully, we will need to perform some clipping
-        // if (!booleanContains(contentsBounds.toGeoJSON().geometry, tileBounds.toGeoJSON().geometry)) {
-        //   if (booleanContains(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)) {
-        //     // top-left
-        //     let x = 0
-        //     let y = 0
-        //     let w = getX(contentsBounds.minLongitude)
-        //     let h = getY(contentsBounds.maxLatitude)
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // top-middle
-        //     x = getX(contentsBounds.minLongitude)
-        //     y = 0
-        //     w = getX(contentsBounds.maxLongitude) - x
-        //     h = getY(contentsBounds.maxLatitude)
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // top-right
-        //     x = getX(contentsBounds.maxLongitude)
-        //     y = 0
-        //     w = 256 - x
-        //     h = getY(contentsBounds.maxLatitude)
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // center-left
-        //     x = 0
-        //     y = getY(contentsBounds.maxLatitude)
-        //     w = getX(contentsBounds.minLongitude)
-        //     h = getY(contentsBounds.minLatitude) - getY(contentsBounds.maxLatitude)
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // center-right
-        //     x = getX(contentsBounds.maxLongitude)
-        //     y = getY(contentsBounds.maxLatitude)
-        //     w = 256 - x
-        //     h = getY(contentsBounds.minLatitude) - getY(contentsBounds.maxLatitude)
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // bottom-left
-        //     x = 0
-        //     y = getY(contentsBounds.minLatitude)
-        //     w = getX(contentsBounds.minLongitude)
-        //     h = 256 - y
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // bottom-middle
-        //     x = getX(contentsBounds.minLongitude)
-        //     y = getY(contentsBounds.minLatitude)
-        //     w = getX(contentsBounds.maxLongitude) - x
-        //     h = 256 - y
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, Math.min(w, 256 - x), Math.min(h, 256 - y))
-        //     }
-        //     // bottom-right
-        //     x = getX(contentsBounds.maxLongitude)
-        //     y = getY(contentsBounds.minLatitude)
-        //     w = 256 - x
-        //     h = 256 - y
-        //     if (x >= 0 && x <= 256 && y >= 0 && y <= 256 && w > 0 && h > 0) {
-        //       ctx.clearRect(x, y, w, h)
-        //     }
-        //   } else {
-        //     const difference = difference(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)
-        //   }
-        // }
-        // iterate over each layer and generate the tile for that layer
+
         for (let i = 0; i < sortedLayers.length; i++) {
           await new Promise((resolve, reject) => {
             let layer = sortedLayers[i]

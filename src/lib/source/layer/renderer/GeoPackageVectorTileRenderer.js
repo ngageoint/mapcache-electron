@@ -18,8 +18,10 @@ export default class GeoPackageVectorTileRenderer {
     this.geopackage = await GeoPackageAPI.open(this.filePath)
     this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
-    this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
-    this.featureTile.maxFeaturesPerTile = this.maxFeatures
+    if (this.maxFeatures && this.maxFeatures > 0) {
+      this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
+      this.featureTile.maxFeaturesPerTile = this.maxFeatures
+    }
     this.featureTile.iconCacheSize = 1000
   }
 
