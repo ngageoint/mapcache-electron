@@ -1,29 +1,31 @@
 <template>
-  <div v-if="selectedLayer !== null && selectedLayer !== undefined">
+  <v-sheet v-if="selectedLayer !== null && selectedLayer !== undefined">
     <feature-layer
       v-if="geopackage.tables.features[selectedLayer]"
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
       :projectId="project.id"
-      :back="deselectLayer"/>
+      :back="deselectLayer"
+      :renamed="selectedLayerRenamed"/>
     <tile-layer
       v-else
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
       :projectId="project.id"
-      :back="deselectLayer"/>
-  </div>
-  <div v-else-if="addFeatureLayerDialog">
+      :back="deselectLayer"
+      :renamed="selectedLayerRenamed"/>
+  </v-sheet>
+  <v-sheet v-else-if="addFeatureLayerDialog">
     <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
-  </div>
-  <div v-else-if="addTileLayerDialog">
+  </v-sheet>
+  <v-sheet v-else-if="addTileLayerDialog">
     <add-tile-layer :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
-  </div>
-  <div v-else style="background-color: white">
+  </v-sheet>
+  <v-sheet v-else style="background-color: white">
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -46,7 +48,6 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click="detailDialog = false">
             close
@@ -83,14 +84,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click="renameDialog = false">
             cancel
           </v-btn>
           <v-btn
             v-if="renameValid"
-            color="#3b779a"
+            color="primary"
             text
             @click="rename">
             rename
@@ -127,14 +127,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click="copyDialog = false">
             cancel
           </v-btn>
           <v-btn
             v-if="copyValid"
-            color="#3b779a"
+            color="primary"
             text
             @click="copy">
             copy
@@ -157,13 +156,12 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click="removeDialog = false">
             cancel
           </v-btn>
           <v-btn
-            color="#ff4444"
+            color="warning"
             text
             @click="remove">
             remove
@@ -226,7 +224,6 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click="addLayerDialog = false">
             cancel
@@ -337,14 +334,13 @@
     </v-container>
     <v-btn
       class="fab-position"
-      dark
       fab
-      color="#73c1c5"
+      color="accent"
       title="Add layer"
       @click.stop="addLayerDialog = true">
       <v-icon>mdi-layers-plus</v-icon>
     </v-btn>
-  </div>
+  </v-sheet>
 </template>
 
 <script>

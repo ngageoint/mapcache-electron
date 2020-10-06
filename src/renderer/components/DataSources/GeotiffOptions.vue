@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <v-sheet>
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -143,7 +143,7 @@
         </v-list>
       </v-card-text>
     </v-card>
-  </div>
+  </v-sheet>
 </template>
 
 <script>

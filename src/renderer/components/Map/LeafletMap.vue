@@ -44,14 +44,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="cancelDrawing">
               cancel
             </v-btn>
             <v-btn
               v-if="geoPackageFeatureLayerSelection !== NEW_FEATURE_LAYER_OPTION || featureTableNameValid"
-              color="#3b779a"
+              color="primary"
               text
               @click="confirmGeoPackageFeatureLayerSelection">
               confirm
@@ -59,19 +58,22 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog
+        v-model="showAddFeatureDialog"
+        max-width="500"
+        scrollable
+        persistent>
+        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :geopackage="featureToAddGeoPackage" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature"></feature-editor>
+      </v-dialog>
     </div>
     <transition name="slide-up">
       <v-card
-        v-show="features && features.length > 0"
+        v-show="showFeatureTable"
         ref="featuresPopup"
         class="mx-auto"
-        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 30303; width: 100%;"
-        tile>
-        <v-card-title>
-          Features
-        </v-card-title>
+        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
         <v-card-text>
-          <feature-table :projectId="projectId" :geopackages="geopackages" :features="features" :zoomToFeature="zoomToFeature"></feature-table>
+          <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>
       </v-card>
     </transition>
@@ -94,6 +96,7 @@
   import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import FeatureEditor from '../GeoPackage/FeatureEditor'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -139,6 +142,7 @@
       }
     },
     components: {
+      FeatureEditor,
       Modal,
       FeatureTable
     },
@@ -152,7 +156,12 @@
         layerSelectionVisible,
         geoPackageChoices,
         popup: null,
-        features: [],
+        showFeatureTable: false,
+        tableFeatures: {
+          geopackageTables: [],
+          sourceTables: []
+        },
+        tableFeaturesLatLng: null,
         geoPackageFeatureLayerChoices,
         geoPackageSelection: 0,
         geoPackageFeatureLayerSelection: 0,
@@ -163,7 +172,12 @@
           v => !!v || 'Layer name is required',
           v => /^[\w,\s-]+$/.test(v) || 'Layer name is not valid',
           v => (this.geoPackageSelection === 0 || _.isNil(this.geopackages[this.geoPackageSelection].tables.features[v])) || 'Layer name already exists'
-        ]
+        ],
+        showAddFeatureDialog: false,
+        featureToAdd: null,
+        featureToAddColumns: null,
+        featureToAddGeoPackage: null,
+        featureToAddTableName: null
       }
     },
     methods: {
@@ -173,6 +187,9 @@
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
         clearActiveLayers: 'Projects/clearActiveLayers'
       }),
+      hideFeatureTable () {
+        this.showFeatureTable = false
+      },
       async confirmGeoPackageFeatureLayerSelection () {
         let _this = this
         let feature = this.createdLayer.toGeoJSON()
@@ -232,8 +249,14 @@
           if (this.geoPackageFeatureLayerSelection === 0) {
             this.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection})
           } else {
-            // add to existing table
-            this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text, feature: feature})
+            const self = this
+            this.featureToAdd = feature
+            this.featureToAddTableName = this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text
+            this.featureToAddGeoPackage = geopackage
+            GeoPackageUtilities.getFeatureColumns(geopackage.path, this.featureToAddTableName).then(columns => {
+              self.featureToAddColumns = columns
+              this.showAddFeatureDialog = true
+            })
           }
         }
         this.layerSelectionVisible = false
@@ -281,6 +304,13 @@
             mapLayer: mapLayer
           }
         })
+      },
+      cancelAddFeature () {
+        this.showAddFeatureDialog = false
+        this.featureToAdd = null
+        this.featureToAddColumns = null
+        this.featureToAddGeoPackage = null
+        this.featureToAddTableName = null
       },
       removeDataSource (sourceId) {
         const sourceLayer = sourceLayers[sourceId]
@@ -487,6 +517,65 @@
           }
         }
         return overallExtent
+      },
+      async queryForFeatures (e) {
+        let tableFeatures = {
+          geopackageTables: [],
+          sourceTables: []
+        }
+        let featuresFound = false
+        // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
+        const geopackageValues = Object.values(this.geopackages)
+        for (let i = 0; i < geopackageValues.length; i++) {
+          const geopackage = geopackageValues[i]
+          const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
+          if (tables.length > 0) {
+            const geopackageTables = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, (gp) => {
+              const geopackageTables = []
+              for (let i = 0; i < tables.length; i++) {
+                const tableName = tables[i]
+                const features = GeoPackageUtilities._queryForFeaturesAt(gp, geopackage.id, geopackage.name, tableName, e.latlng, this.map.getZoom())
+                if (!_.isEmpty(features)) {
+                  featuresFound = true
+                  const tableId = geopackage.id + '_' + tableName
+                  geopackageTables.push({
+                    id: tableId,
+                    tabName: geopackage.name + ': ' + tableName,
+                    geopackageId: geopackage.id,
+                    tableName: tableName,
+                    columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
+                    features: features
+                  })
+                }
+              }
+              return geopackageTables
+            })
+            tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
+          }
+        }
+        // for (let sourceId in sourceLayers) {
+        //   const sourceLayerConfig = sourceLayers[sourceId].configuration
+        //   if (sourceLayerConfig.visible) {
+        //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
+        //       features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom()).map(f => {
+        //         f.fromGeoPackage = false
+        //         f.layerName = _.isNil(sourceLayerConfig.displayName) ? sourceLayerConfig.sourceLayerName : sourceLayerConfig.displayName
+        //         return f
+        //       }))
+        //     }
+        //   }
+        // }
+        if (featuresFound) {
+          this.tableFeaturesLatLng = e.latlng
+          this.tableFeatures = tableFeatures
+          this.showFeatureTable = true
+        } else {
+          this.tableFeatures = {
+            geopackageTables: [],
+            sourceTables: []
+          }
+          this.hideFeatureTable()
+        }
       }
     },
     watch: {
@@ -666,6 +755,11 @@
             } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
               this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
               zoomToExtentOfAllContent = false
+            } else if (!_.isEqual(updatedGeoPackage.modifiedDate, oldGeoPackage.modifiedDate)) {
+              // geopackage was synchronized
+              if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+                this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+              }
             }
             if (zoomToExtentOfAllContent) {
               this.zoomToContent()
@@ -761,31 +855,7 @@
       this.map.addControl(this.drawingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
-      this.map.on('click', async function (e) {
-        let features = []
-        // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
-        const geopackageValues = Object.values(this.geopackages)
-        for (let i = 0; i < geopackageValues.length; i++) {
-          const geopackage = geopackageValues[i]
-          const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
-          if (tables.length > 0) {
-            features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom()))
-          }
-        }
-        // for (let sourceId in sourceLayers) {
-        //   const sourceLayerConfig = sourceLayers[sourceId].configuration
-        //   if (sourceLayerConfig.visible) {
-        //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-        //       features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom()))
-        //     }
-        //   }
-        // }
-        if (features.length > 0) {
-          this.features = features
-        } else {
-          this.features = []
-        }
-      }.bind(this))
+      this.map.on('click', this.queryForFeatures)
       const checkFeatureCount = _.throttle(async function (e) {
         if (!_this.drawingControl.isDrawing) {
           let count = 0
@@ -904,12 +974,6 @@
   }
   .leaflet-control-draw-linestring {
     background: url('../../assets/linestring.svg') no-repeat;
-  }
-  .leaflet-control-draw-circle {
-    background: url('../../assets/circle.svg') no-repeat;
-  }
-  .leaflet-control-draw-trash-enabled {
-    background: url('../../assets/trash_red.svg') no-repeat;
   }
   .leaflet-control-draw-cancel {
     background: url('../../assets/close.svg') no-repeat;

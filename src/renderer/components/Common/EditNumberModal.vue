@@ -19,14 +19,13 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-        color="#3b779a"
         text
         :dark="darkMode"
         @click="cancel">
         {{cancelText}}
       </v-btn>
       <v-btn
-        color="#3b779a"
+        color="primary"
         text
         :dark="darkMode"
         @click="save">

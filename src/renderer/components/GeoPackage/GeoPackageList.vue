@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-sheet>
     <v-dialog v-model="showDialog" max-width="500" persistent>
       <v-card>
         <v-card-title>
@@ -11,13 +11,12 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
             text
             @click.stop="clearDialog">
             cancel
           </v-btn>
           <v-btn
-            color="red"
+            color="warning"
             text
             @click.stop="executeDialogAction">
             {{dialogActionText}}
@@ -69,7 +68,7 @@
         </v-btn>
       </template>
     </v-snackbar>
-  </div>
+  </v-sheet>
 </template>
 
 <script>

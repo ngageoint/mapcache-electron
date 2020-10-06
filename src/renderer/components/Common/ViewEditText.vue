@@ -39,13 +39,12 @@
         <v-btn
           class="pr-2"
           text
-          color="light darken-1"
           :dark="this.darkMode"
           @click.stop="cancel">
           {{"Cancel"}}
         </v-btn>
         <v-btn
-          color="info"
+          color="primary"
           :dark="this.darkMode"
           @click.stop="save">
           {{"Save"}}

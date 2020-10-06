@@ -63,3 +63,6 @@
 	min-height: 53px;
 	background: white;
 }
+.v-toolbar__title {
+	padding-left: 4px !important;
+}

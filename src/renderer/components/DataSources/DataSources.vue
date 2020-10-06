@@ -1,5 +1,5 @@
 <template>
-  <div class="content-panel" v-if="selectedDataSource !== null && selectedDataSource !== undefined">
+  <v-sheet class="content-panel" v-if="selectedDataSource !== null && selectedDataSource !== undefined">
     <data-source
       :key="selectedDataSource.id"
       class="sources"
@@ -7,10 +7,10 @@
       :projectId="project.id"
       :back="deselectDataSource">
     </data-source>
-  </div>
-  <div v-else>
+  </v-sheet>
+  <v-sheet v-else>
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -98,7 +98,6 @@
               required/>
             <v-row justify="end" align="center">
               <v-btn
-                color="light"
                 class="mr-4"
                 @click="cancelProvideLink">
                 Cancel
@@ -170,7 +169,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            color="#3b779a"
+            color="primary"
             text
             @click="addSourceDialog = false">
             cancel
@@ -207,14 +206,13 @@
     </v-card>
     <v-btn
       class="fab-position"
-      dark
       fab
-      color="#3b779a"
+      color="primary"
       title="Add data source"
       @click.stop="addSourceDialog = true">
       <v-icon>mdi-layers-plus</v-icon>
     </v-btn>
-  </div>
+  </v-sheet>
 </template>
 
 <script>

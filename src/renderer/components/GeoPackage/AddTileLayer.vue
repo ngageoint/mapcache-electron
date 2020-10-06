@@ -1,7 +1,7 @@
 <template>
-  <v-container class="ma-0 pa-0" style="background-color: white;">
+  <v-container class="ma-0 pa-0">
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -14,7 +14,7 @@
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
         <v-progress-linear :value="error ? 100 : status.progress"
-                           :color="error ? 'pink' : '#3b779a'"></v-progress-linear>
+                           :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
     <v-card flat class="ma-0 pa-0" v-else>
@@ -64,7 +64,7 @@
                         <v-checkbox
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
-                          color="#3b779a"
+                          color="primary"
                         ></v-checkbox>
                       </v-list-item-action>
                     </template>
@@ -100,7 +100,7 @@
                         <v-checkbox
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
-                          color="#3b779a"
+                          color="primary"
                         ></v-checkbox>
                       </v-list-item-action>
                     </template>
@@ -149,7 +149,7 @@
               <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
                 Clear
               </v-btn>
-              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'red' : '#3b779a'" @click.stop="editBoundingBox">
+              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
                 {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit Bounds' : 'Set Bounds')}}
               </v-btn>
             </v-row>
@@ -190,9 +190,9 @@
             Summary
           </v-card-title>
           <v-card-subtitle>
-            <b :style="estimatedTileCount > tileWarningThreshold ? 'color: red;' : 'color: black;'">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layers will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+            <b :style="estimatedTileCount > tileWarningThreshold ? 'color: #A12D0F;' : 'color: black;'">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Sources and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layers will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
           </v-card-subtitle>
-          <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" style="color: red">
+          <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" color="warning">
             {{'This configuration will generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or decreasing the max zoom.'}}
           </v-card-subtitle>
         </v-container>
@@ -205,14 +205,14 @@
         <v-spacer></v-spacer>
         <v-btn
           v-if="done || !processing"
-          color="#3b779a"
+          color="primary"
           text
           @click.stop="cancel">
           {{done ? 'close' : 'cancel'}}
         </v-btn>
         <v-btn
           v-if="!done && !processing && project.boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
-          color="#3b779a"
+          color="primary"
           text
           @click.stop="addTileLayer">
           add

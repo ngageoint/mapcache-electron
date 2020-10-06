@@ -1,12 +1,12 @@
 <template>
-  <div>
-    <div v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined">
+  <v-sheet>
+    <v-sheet v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined">
       <geo-package :project="project" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
-    </div>
-    <div v-else>
+    </v-sheet>
+    <v-sheet v-else>
       <v-toolbar
-        color="#3b779a"
         dark
+        color="primary"
         flat
         class="sticky-toolbar"
       >
@@ -69,7 +69,6 @@
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn
-                color="#3b779a"
                 text
                 @click="addGeoPackageDialog = false">
                 cancel
@@ -98,9 +97,8 @@
         </v-card>
         <v-btn
           class="fab-position"
-          dark
           fab
-          color="#3b779a"
+          color="primary"
           title="Add geopackage"
           @click.stop="addGeoPackageDialog = true">
           <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
@@ -109,8 +107,8 @@
           GeoPackage already exists in project.
         </v-alert>
       </div>
-    </div>
-  </div>
+    </v-sheet>
+  </v-sheet>
 </template>
 
 <script>

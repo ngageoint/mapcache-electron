@@ -1,5 +1,5 @@
 <template>
-  <v-app id="app">
+  <v-app id="app" light>
     <v-main>
       <router-view></router-view>
     </v-main>
@@ -8,7 +8,15 @@
 
 <script>
   export default {
-    name: 'MapCache'
+    name: 'MapCache',
+    mounted: function () {
+      this.$vuetify.theme.themes.light.primary = '#3B779A'
+      this.$vuetify.theme.themes.light.accent = '#73C1C5'
+      this.$vuetify.theme.themes.light.warning = '#FF1744'
+      this.$vuetify.theme.themes.dark.primary = '#113856'
+      this.$vuetify.theme.themes.dark.accent = '#AEDBDD'
+      this.$vuetify.theme.themes.dark.warning = '#FF8A80'
+    }
   }
 </script>
 

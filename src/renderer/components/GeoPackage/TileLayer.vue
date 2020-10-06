@@ -1,7 +1,7 @@
 <template>
-  <div style="background-color: white">
+  <v-sheet>
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -39,14 +39,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="renameDialog = false">
               cancel
             </v-btn>
             <v-btn
               v-if="renameValid"
-              color="#3b779a"
+              color="primary"
               text
               @click="rename">
               rename
@@ -83,14 +82,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="copyDialog = false">
               cancel
             </v-btn>
             <v-btn
               v-if="copyValid"
-              color="#3b779a"
+              color="primary"
               text
               @click="copy">
               copy
@@ -111,13 +109,12 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="deleteDialog = false">
               cancel
             </v-btn>
             <v-btn
-              color="#ff4444"
+              color="warning"
               text
               @click="deleteTable">
               remove
@@ -182,10 +179,10 @@
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
               <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Tiles
+                GeoPackage
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
-                {{tileCount}}
+                {{geopackage.name}}
               </p>
             </v-col>
             <v-col>
@@ -196,6 +193,16 @@
                 <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
                 <v-btn text icon title="Zoom To" @click.stop="zoomToLayer"><v-icon>mdi-magnify</v-icon></v-btn>
               </v-row>
+            </v-col>
+          </v-row>
+          <v-row no-gutters>
+            <v-col>
+              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Tiles
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                {{tileCount}}
+              </p>
             </v-col>
           </v-row>
           <v-row no-gutters>
@@ -227,7 +234,7 @@
       Layer copied.
       <template v-slot:action="{ attrs }">
         <v-btn
-          color="#3b779a"
+          color="primary"
           text
           v-bind="attrs"
           @click="copySnackBar = false"
@@ -236,7 +243,7 @@
         </v-btn>
       </template>
     </v-snackbar>
-  </div>
+  </v-sheet>
 </template>
 
 <script>

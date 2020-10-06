@@ -1329,6 +1329,82 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Renames a geopackage table column
+   * @param gp
+   * @param tableName
+   * @param columnName
+   * @param newColumnName
+   */
+  static _renameGeoPackageFeatureTableColumn (gp, tableName, columnName, newColumnName) {
+    const featureDao = gp.getFeatureDao(tableName)
+    featureDao.renameColumn(columnName, newColumnName)
+  }
+
+  /**
+   * Renames a geopackage table column
+   * @param filePath
+   * @param tableName
+   * @param columnName
+   * @param newColumnName
+   * @returns {Promise<any>}
+   */
+  static async renameGeoPackageFeatureTableColumn (filePath, tableName, columnName, newColumnName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._renameGeoPackageFeatureTableColumn(gp, tableName, columnName, newColumnName)
+    })
+  }
+
+  /**
+   * Deletes a table column from the geopackage
+   * @param gp
+   * @param tableName
+   * @param columnName
+   */
+  static _deleteGeoPackageFeatureTableColumn (gp, tableName, columnName) {
+    const featureDao = gp.getFeatureDao(tableName)
+    featureDao.dropColumn(columnName)
+  }
+
+  /**
+   * Deletes a table column from the geopackage
+   * @param filePath
+   * @param tableName
+   * @param columnName
+   * @returns {Promise<any>}
+   */
+  static async deleteGeoPackageFeatureTableColumn (filePath, tableName, columnName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
+    })
+  }
+
+  /**
+   * Adds a table column to the geopackage
+   * @param gp
+   * @param tableName
+   * @param columnName
+   * @param columnType
+   */
+  static _addGeoPackageFeatureTableColumn (gp, tableName, columnName, columnType) {
+    const featureDao = gp.getFeatureDao(tableName)
+    featureDao.addColumn(new FeatureColumn(featureDao.table.getUserColumns().columnCount(), columnName, columnType))
+  }
+
+  /**
+   * Adds a table column to the geopackage
+   * @param filePath
+   * @param tableName
+   * @param columnName
+   * @param columnType
+   * @returns {Promise<any>}
+   */
+  static async addGeoPackageFeatureTableColumn (filePath, tableName, columnName, columnType) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
+    })
+  }
+
+  /**
    * Updates a style row
    * @param gp
    * @param tableName
@@ -1701,27 +1777,24 @@ export default class GeoPackageUtilities {
    * Updates a feature row
    * @param gp
    * @param tableName
-   * @param featureRowId
-   * @param feature
+   * @param featureRow
    */
-  static _updateFeatureRow (gp, tableName, featureRowId, feature) {
+  static _updateFeatureRow (gp, tableName, featureRow) {
     const featureDao = gp.getFeatureDao(tableName)
-    featureDao.deleteById(featureRowId)
-    gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
-    // TODO: check if feature's geometry changed and if that geometry impacts the contents of the table
+    console.log(featureRow.values)
+    return featureDao.update(featureRow)
   }
 
   /**
    * Updates a feature row
    * @param filePath
    * @param tableName
-   * @param featureRowId
-   * @param feature
+   * @param featureRow
    * @returns {Promise<any>}
    */
-  static async updateFeatureRow (filePath, tableName, featureRowId, feature) {
+  static async updateFeatureRow (filePath, tableName, featureRow) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._updateFeatureRow(gp, tableName, featureRowId, feature)
+      return GeoPackageUtilities._updateFeatureRow(gp, tableName, featureRow)
     })
   }
 
@@ -2152,6 +2225,61 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Gets all features in a table
+   * @param gp
+   * @param tableName
+   * @returns {any[]}
+   */
+  static _getAllFeatureRows (gp, tableName) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const each = featureDao.queryForEach()
+    const featureRows = []
+    for (let row of each) {
+      if (!_.isNil(row)) {
+        featureRows.push(featureDao.getRow(row))
+      }
+    }
+    return featureRows
+  }
+
+  /**
+   * Gets all features in a table
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
+  static async getAllFeatureRows (filePath, tableName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getAllFeatureRows(gp, tableName)
+    })
+  }
+
+  /**
+   * Gets feature in table
+   * @param gp
+   * @param tableName
+   * @param id
+   * @returns {FeatureRow}
+   */
+  static _getFeatureRow (gp, tableName, id) {
+    const featureDao = gp.getFeatureDao(tableName)
+    return featureDao.queryForId(id)
+  }
+
+  /**
+   * Gets features in table
+   * @param filePath
+   * @param tableName
+   * @param id
+   * @returns {Promise<any>}
+   */
+  static async getFeatureRow (filePath, tableName, id) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getFeatureRow(gp, tableName, id)
+    })
+  }
+
+  /**
    * Gets a bounding box to perform a query using a coordinate and zoom
    * @param coordinate
    * @param zoom
@@ -2167,23 +2295,15 @@ export default class GeoPackageUtilities {
    * @param gp
    * @param geopackageId
    * @param geopackageName
-   * @param tableNames
+   * @param tableName
    * @param coordinate
    * @param zoom
-   * @returns {Array}
+   * @returns {Object}
    */
-  static _queryForFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
-    let features = []
-    for (let i = 0; i < tableNames.length; i++) {
-      const tableName = tableNames[i]
-      if (gp.getFeatureDao(tableName).isIndexed()) {
-        features = features.concat(gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).filter(feature => !_.isNil(feature)).map(feature => {
-          feature.table = tableName
-          feature.geopackageId = geopackageId
-          feature.geopackageName = geopackageName
-          return feature
-        }))
-      }
+  static _queryForFeaturesAt (gp, geopackageId, geopackageName, tableName, coordinate, zoom) {
+    let features
+    if (gp.getFeatureDao(tableName).isIndexed()) {
+      features = gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).filter(feature => !_.isNil(feature))
     }
     return features
   }
@@ -2193,14 +2313,14 @@ export default class GeoPackageUtilities {
    * @param filePath
    * @param geopackageId
    * @param geopackageName
-   * @param tableNames
+   * @param tableName
    * @param coordinate
    * @param zoom
    * @returns {Promise<any>}
    */
-  static async queryForFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+  static async queryForFeaturesAt (filePath, geopackageId, geopackageName, tableName, coordinate, zoom) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._queryForFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)
+      return GeoPackageUtilities._queryForFeaturesAt(gp, geopackageId, geopackageName, tableName, coordinate, zoom)
     })
   }
 
@@ -2861,5 +2981,43 @@ export default class GeoPackageUtilities {
         break
     }
     return value
+  }
+
+  static getSimplifiedType (dataType) {
+    let simplifiedType = 'Number'
+    switch (dataType) {
+      case GeoPackageDataType.BOOLEAN:
+        simplifiedType = 'Boolean'
+        break
+      case GeoPackageDataType.TEXT:
+        simplifiedType = 'Text'
+        break
+      case GeoPackageDataType.DATE:
+      case GeoPackageDataType.DATETIME:
+        simplifiedType = 'Date'
+        break
+      default:
+        break
+    }
+    return simplifiedType
+  }
+
+  static getSimplifiedTypeIcon (dataType) {
+    let simplifiedTypeIcon = 'mdi-pound'
+    switch (dataType) {
+      case GeoPackageDataType.BOOLEAN:
+        simplifiedTypeIcon = 'mdi-toggle-switch'
+        break
+      case GeoPackageDataType.TEXT:
+        simplifiedTypeIcon = 'mdi-format-text'
+        break
+      case GeoPackageDataType.DATE:
+      case GeoPackageDataType.DATETIME:
+        simplifiedTypeIcon = 'mdi-calendar'
+        break
+      default:
+        break
+    }
+    return simplifiedTypeIcon
   }
 }

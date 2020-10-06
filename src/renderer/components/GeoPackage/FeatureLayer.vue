@@ -1,5 +1,5 @@
 <template>
-  <div style="background-color: white;">
+  <v-sheet>
     <div v-if="styleEditorVisible">
       <style-editor
         :tableName="tableName"
@@ -13,9 +13,19 @@
         :icon-assignment="geopackage.iconAssignment"
         :table-icon-assignment="geopackage.tableIconAssignment"/>
     </div>
+    <div v-else-if="showFeatureLayerField">
+      <feature-layer-field
+        :tableName="tableName"
+        :projectId="projectId"
+        :geopackage="geopackage"
+        :column="featureLayerField"
+        :columnNames="featureColumnNames"
+        :back="hideFeatureLayerField"
+        :renamed="featureLayerFieldRenamed"/>
+    </div>
     <div v-else>
       <v-toolbar
-        color="#3b779a"
+        color="primary"
         dark
         flat
         class="sticky-toolbar"
@@ -47,7 +57,7 @@
                 </v-col>
                 <v-col cols="6">
                   <v-progress-linear
-                    color="#3b779a"
+                    color="primary"
                     indeterminate
                     rounded
                     height="6"
@@ -86,14 +96,13 @@
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn
-                color="#3b779a"
                 text
                 @click="renameDialog = false">
                 cancel
               </v-btn>
               <v-btn
                 v-if="renameValid"
-                color="#3b779a"
+                color="primary"
                 text
                 @click="rename">
                 rename
@@ -130,17 +139,96 @@
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn
-                color="#3b779a"
                 text
                 @click="copyDialog = false">
                 cancel
               </v-btn>
               <v-btn
                 v-if="copyValid"
-                color="#3b779a"
+                color="primary"
                 text
                 @click="copy">
                 copy
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="addFieldDialog"
+          max-width="500"
+          persistent>
+          <v-card>
+            <v-card-title style="color: grey; font-weight: 600;">
+              <v-row no-gutters justify="start" align="center">
+                <v-icon>mdi-content-copy</v-icon>New Field
+              </v-row>
+            </v-card-title>
+            <v-card-text>
+              <v-form v-on:submit.prevent ref="copyForm" v-model="addFieldValid">
+                <v-container class="ma-0 pa-0">
+                  <v-row no-gutters>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="addFieldValue"
+                        :rules="addFieldRules"
+                        label="Name"
+                        required
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <v-row no-gutters class="mt-4">
+                    <v-col cols="12">
+                      <p class="pb-0 mb-0">Type</p>
+                      <v-btn-toggle
+                        v-model="addFieldType"
+                        color="primary"
+                        mandatory
+                        style="width: 100%"
+                      >
+                        <v-btn :value="TEXT" style="width: 20%">
+                          <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
+                            mdi-format-text
+                          </v-icon>
+                          <span class="hidden-sm-and-down">Text</span>
+                        </v-btn>
+                        <v-btn :value="FLOAT" style="width: 30%">
+                          <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
+                            mdi-pound
+                          </v-icon>
+                          <span class="hidden-sm-and-down">Number</span>
+                        </v-btn>
+                        <v-btn :value="BOOLEAN" style="width: 30%">
+                          <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
+                            mdi-toggle-switch
+                          </v-icon>
+                          <span class="hidden-sm-and-down">Checkbox</span>
+                        </v-btn>
+                        <v-btn :value="DATETIME" style="width: 20%">
+                          <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
+                            mdi-calendar
+                          </v-icon>
+                          <span class="hidden-sm-and-down">Date</span>
+
+                        </v-btn>
+                      </v-btn-toggle>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-form>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                text
+                @click="cancelAddField">
+                cancel
+              </v-btn>
+              <v-btn
+                v-if="addFieldValid"
+                color="primary"
+                text
+                @click="addField">
+                save
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -158,13 +246,12 @@
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn
-                color="#3b779a"
                 text
                 @click="deleteDialog = false">
                 cancel
               </v-btn>
               <v-btn
-                color="#ff4444"
+                color="warning"
                 text
                 @click="deleteTable">
                 remove
@@ -257,10 +344,10 @@
             <v-row no-gutters justify="space-between">
               <v-col style="margin-top: 8px;">
                 <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Features
+                  GeoPackage
                 </p>
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
-                  {{featureCount}}
+                  {{geopackage.name}}
                 </p>
               </v-col>
               <v-col>
@@ -276,6 +363,16 @@
             <v-row no-gutters>
               <v-col>
                 <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Features
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                  {{featureCount}}
+                </p>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col>
+                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Description
                 </p>
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
@@ -285,6 +382,35 @@
             </v-row>
           </v-col>
         </v-row>
+        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
+          <v-container class="ma-0 pa-0">
+            <v-row no-gutters>
+              <p style="color: black; font-size: 16px; font-weight: 500;">Fields</p>
+            </v-row>
+            <v-row no-gutters>
+              <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
+            </v-row>
+            <v-row no-gutters class="mt-4 detail-bg">
+              <v-list style="width: 100%" class="detail-bg ma-0 pa-0">
+                <template v-for="item in tableFields">
+                  <v-list-item
+                    class="detail-bg"
+                    :key="item.id"
+                    @click="item.click"
+                  >
+                    <v-list-item-icon>
+                      <v-icon>{{item.icon}}</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title :title="item.name" v-html="item.name"></v-list-item-title>
+                      <v-list-item-subtitle :title="item.type" v-html="item.type"></v-list-item-subtitle>
+                    </v-list-item-content>
+                  </v-list-item>
+                </template>
+              </v-list>
+            </v-row>
+          </v-container>
+        </v-row>
       </v-container>
       <v-snackbar
         v-model="copySnackBar"
@@ -292,7 +418,7 @@
         Layer copied.
         <template v-slot:action="{ attrs }">
           <v-btn
-            color="#3b779a"
+            color="primary"
             text
             v-bind="attrs"
             @click="copySnackBar = false"
@@ -302,27 +428,30 @@
         </template>
       </v-snackbar>
     </div>
-  </div>
+  </v-sheet>
 </template>
 
 <script>
   import Vue from 'vue'
   import { mapActions } from 'vuex'
-  import { GeoPackageAPI } from '@ngageoint/geopackage'
-
+  import _ from 'lodash'
+  import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
   import ViewEditText from '../Common/ViewEditText'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import FeatureLayerField from './FeatureLayerField'
   export default {
     props: {
       projectId: String,
       geopackage: Object,
       tableName: String,
-      back: Function
+      back: Function,
+      renamed: Function
     },
     components: {
       ViewEditText,
-      StyleEditor
+      StyleEditor,
+      FeatureLayerField
     },
     created () {
       let _this = this
@@ -334,8 +463,12 @@
     },
     data () {
       return {
+        columnNames: [],
         copySnackBar: false,
         styleEditorVisible: false,
+        showFeatureLayerField: false,
+        featureColumnNames: [],
+        featureLayerField: null,
         indexDialog: false,
         indexProgressPercentage: 0,
         indexMessage: 'Indexing Started',
@@ -355,7 +488,19 @@
         copiedTableRules: [
           v => !!v || 'Layer name is required',
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
-        ]
+        ],
+        addFieldDialog: false,
+        addFieldValid: false,
+        addFieldValue: '',
+        addFieldRules: [
+          v => !!v || 'Field name is required',
+          v => this.columnNames.map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Field name must be unique'
+        ],
+        addFieldType: GeoPackageDataType.TEXT,
+        TEXT: GeoPackageDataType.TEXT,
+        FLOAT: GeoPackageDataType.FLOAT,
+        BOOLEAN: GeoPackageDataType.BOOLEAN,
+        DATETIME: GeoPackageDataType.DATETIME
       }
     },
     computed: {
@@ -380,6 +525,36 @@
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].styleKey : 0
       }
     },
+    asyncComputed: {
+      tableFields: {
+        get () {
+          return GeoPackageUtilities.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
+            const tableFields = []
+            this.columnNames = columns._columns.map(c => c.name)
+            columns._columns.forEach((column, index) => {
+              if (!column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+                tableFields.push({
+                  id: column.name + '_' + index,
+                  name: column.name.toLowerCase(),
+                  type: GeoPackageUtilities.getSimplifiedType(column.dataType),
+                  icon: GeoPackageUtilities.getSimplifiedTypeIcon(column.dataType),
+                  click: () => {
+                    this.featureLayerField = {
+                      name: column.name,
+                      type: GeoPackageUtilities.getSimplifiedType(column.dataType)
+                    }
+                    this.featureColumnNames = this.columnNames
+                    this.showFeatureLayerField = true
+                  }
+                })
+              }
+            })
+            return _.orderBy(tableFields, ['name'], ['asc'])
+          })
+        },
+        default: []
+      }
+    },
     methods: {
       ...mapActions({
         deleteGeoPackage: 'Projects/deleteGeoPackage',
@@ -387,6 +562,7 @@
         copyGeoPackageFeatureTable: 'Projects/copyGeoPackageFeatureTable',
         renameGeoPackageFeatureTable: 'Projects/renameGeoPackageFeatureTable',
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
+        addGeoPackageFeatureTableColumn: 'Projects/addGeoPackageFeatureTableColumn',
         updateFeatureTable: 'Projects/updateFeatureTable',
         zoomToExtent: 'Projects/zoomToExtent'
       }),
@@ -453,9 +629,29 @@
       hideStyleEditor () {
         this.styleEditorVisible = false
       },
+      hideFeatureLayerField () {
+        this.showFeatureLayerField = false
+        this.featureLayerField = null
+        this.featureColumnNames = []
+      },
+      featureLayerFieldRenamed (name) {
+        this.featureColumnNames.splice(this.featureColumnNames.indexOf(this.featureLayerField.name), 1, name)
+        this.featureLayerField.name = name
+      },
       async zoomToLayer () {
         const extent = await GeoPackageUtilities.getBoundingBoxForTable(this.geopackage.path, this.tableName)
         this.zoomToExtent({projectId: this.projectId, extent})
+      },
+      addField () {
+        this.addFieldDialog = false
+        this.addGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.addFieldValue, columnType: this.addFieldType})
+        this.addFieldValue = ''
+        this.addFieldType = GeoPackageDataType.TEXT
+      },
+      cancelAddField () {
+        this.addFieldDialog = false
+        this.addFieldValue = ''
+        this.addFieldType = GeoPackageDataType.TEXT
       }
     },
     watch: {

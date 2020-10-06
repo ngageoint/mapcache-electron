@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <v-sheet>
     <v-toolbar
-      :color="toolbarColor"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -11,8 +11,8 @@
     </v-toolbar>
     <v-card>
       <v-card-text>
-        <div>
-          <div v-if="!loading">
+        <v-sheet>
+          <v-sheet v-if="!loading">
             <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(styleRows).length > 0" class="mb-2">
               <div slot="card-header">
                 <v-row justify="space-between" align="center" no-gutters>
@@ -183,8 +183,8 @@
                 </expandablecard>
               </div>
             </expandablecard>
-          </div>
-        </div>
+          </v-sheet>
+        </v-sheet>
       </v-card-text>
       <v-card-actions>
         <v-spacer/>
@@ -196,7 +196,7 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-  </div>
+  </v-sheet>
 </template>
 
 <script>
@@ -225,10 +225,6 @@
       isGeoPackage: {
         type: Boolean,
         default: true
-      },
-      toolbarColor: {
-        type: String,
-        default: '#3b779a'
       }
     },
     data () {

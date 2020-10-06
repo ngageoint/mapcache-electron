@@ -1,7 +1,7 @@
 <template>
-  <div style="background-color: white;">
-    <div v-if="styleEditorVisible">
-      <div v-if="source.pane === 'vector'">
+  <v-sheet>
+    <v-sheet v-if="styleEditorVisible">
+      <v-sheet v-if="source.pane === 'vector'">
         <style-editor
           :tableName="source.sourceLayerName"
           :projectId="projectId"
@@ -14,14 +14,14 @@
           :icon-assignment="source.iconAssignment"
           :table-icon-assignment="source.tableIconAssignment"
           :is-geo-package="false"/>
-      </div>
+      </v-sheet>
       <div v-if="source.layerType === 'GeoTIFF'">
         <geotiff-options :source="source" :projectId="projectId" :back="hideStyleEditor"></geotiff-options>
       </div>
-    </div>
-    <div v-else>
+    </v-sheet>
+    <v-sheet v-else>
       <v-toolbar
-        color="#3b779a"
+        color="primary"
         dark
         flat
         class="sticky-toolbar"
@@ -58,14 +58,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="renameDialog = false">
               cancel
             </v-btn>
             <v-btn
               v-if="renameValid"
-              color="#3b779a"
+              color="primary"
               text
               @click="saveLayerName">
               rename
@@ -88,13 +87,12 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              color="#3b779a"
               text
               @click="deleteDialog = false">
               cancel
             </v-btn>
             <v-btn
-              color="#ff4444"
+              color="warning"
               text
               @click="removeDataSource({projectId: projectId, sourceId: source.id})">
               remove
@@ -192,9 +190,9 @@
           </v-row>
         </v-container>
       </div>
-    </div>
+    </v-sheet>
 
-  </div>
+  </v-sheet>
 </template>
 
 <script>

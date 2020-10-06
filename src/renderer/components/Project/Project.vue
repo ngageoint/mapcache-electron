@@ -3,7 +3,7 @@
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
         v-model="drawer"
-        color="#3b779a"
+        color="primary"
         expand-on-hover
         mini-variant
         permanent

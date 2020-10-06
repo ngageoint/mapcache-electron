@@ -19,13 +19,12 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-        color="#3b779a"
         text
         @click="cancel">
         {{cancelText}}
       </v-btn>
       <v-btn
-        color="#3b779a"
+        color="primary"
         text
         @click="save">
         {{saveText}}

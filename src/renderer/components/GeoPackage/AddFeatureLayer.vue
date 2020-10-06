@@ -1,7 +1,7 @@
 <template>
-  <v-container class="ma-0 pa-0" style="background-color: white;">
+  <v-container class="ma-0 pa-0">
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -14,7 +14,7 @@
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
         <v-progress-linear :value="error ? 100 : status.progress"
-                           :color="error ? 'pink' : '#3b779a'"></v-progress-linear>
+                           :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
     <v-card flat class="ma-0 pa-0" v-else>
@@ -62,7 +62,7 @@
                         <v-checkbox
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
-                          color="#3b779a"
+                          color="primary"
                         ></v-checkbox>
                       </v-list-item-action>
                     </template>
@@ -94,7 +94,7 @@
                         <v-checkbox
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
-                          color="#3b779a"
+                          color="primary"
                         ></v-checkbox>
                       </v-list-item-action>
                     </template>
@@ -116,7 +116,7 @@
               <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
                 Clear
               </v-btn>
-              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'red' : '#3b779a'" @click.stop="editBoundingBox">
+              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
                 {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit Bounds' : 'Set Bounds')}}
               </v-btn>
             </v-row>
@@ -141,14 +141,14 @@
         <v-spacer></v-spacer>
         <v-btn
           v-if="done || !processing"
-          color="#3b779a"
+          color="primary"
           text
           @click.stop="cancel">
           {{done ? 'close' : 'cancel'}}
         </v-btn>
         <v-btn
           v-if="!done && !processing && !project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
-          color="#3b779a"
+          color="primary"
           text
           @click.stop="addFeatureLayer">
           add

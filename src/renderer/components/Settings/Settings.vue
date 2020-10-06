@@ -1,7 +1,7 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <div flat class="mx-auto" style="width: 100%;">
     <v-toolbar
-      color="#3b779a"
+      color="primary"
       dark
       flat
       class="sticky-toolbar"
@@ -23,6 +23,17 @@
           <v-list-item-subtitle>Edit project name</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
+<!--      <v-list-item>-->
+<!--        <v-list-item-content class="pl-4" style="margin-left: -16px;">-->
+<!--          <v-list-item-title>Theme</v-list-item-title>-->
+<!--          <v-switch-->
+<!--            dense-->
+<!--            v-model="$vuetify.theme.dark"-->
+<!--            inset-->
+<!--            label="Dark"-->
+<!--          ></v-switch>-->
+<!--        </v-list-item-content>-->
+<!--      </v-list-item>-->
     </v-list>
 
     <v-divider></v-divider>
@@ -43,7 +54,7 @@
           <v-list-item-action>
             <v-checkbox
               :input-value="active"
-              color="#3b779a"
+              color="primary"
             ></v-checkbox>
           </v-list-item-action>
           <v-list-item-content>
@@ -57,7 +68,7 @@
             <v-list-item-action>
               <v-checkbox
                 :input-value="active"
-                color="#3b779a"
+                color="primary"
               ></v-checkbox>
             </v-list-item-action>
             <v-list-item-content>

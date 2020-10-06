@@ -15,7 +15,8 @@ const mutations = {
       extents: [-53.4, -79.1, 53.64, 79.1],
       drawBounds: {},
       boundsBeingDrawn: {},
-      activeCount: 0
+      activeCount: 0,
+      dark: false
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -23,6 +24,9 @@ const mutations = {
   },
   deleteProject (state, projectId) {
     Vue.delete(state, projectId)
+  },
+  setDarkTheme (state, {projectId, enabled}) {
+    state[projectId].dark = enabled
   }
 }
 
@@ -35,6 +39,9 @@ const actions = {
   },
   deleteProject ({ commit, state }, projectId) {
     commit('deleteProject', projectId)
+  },
+  setDarkTheme ({ commit, state }, {projectId, enabled}) {
+    commit('setDarkTheme', {projectId, enabled})
   }
 }
 

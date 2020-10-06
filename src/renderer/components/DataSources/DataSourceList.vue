@@ -16,7 +16,7 @@
         </v-list-item-content>
         <v-switch
           hide-details
-          color="#3b779a"
+          color="primary"
           @click="item.setVisible"
           :input-value="item.visible"
           dense>
