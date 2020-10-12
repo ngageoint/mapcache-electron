@@ -46,23 +46,31 @@
 	min-height: 100vh;
 	max-height: 100vh;
 	overflow-y: auto;
-	z-index: 1;
+	z-index: 2;
 }
 .sticky-toolbar {
 	position: -webkit-sticky; /* Safari */
 	position: sticky;
 	top: 0;
-	z-index: 300;
+	z-index: 3;
 	height: 72px;
 }
 .sticky-card-action-footer {
 	position: -webkit-sticky; /* Safari */
 	position: sticky;
 	bottom: 0;
-	z-index: 300;
+	z-index: 3;
 	min-height: 53px;
 	background: white;
 }
 .v-toolbar__title {
 	padding-left: 4px !important;
+}
+.fab-position {
+	position: fixed;
+	left: 384px;
+	bottom: 16px;
+}
+.v-btn {
+	text-transform: none !important;
 }

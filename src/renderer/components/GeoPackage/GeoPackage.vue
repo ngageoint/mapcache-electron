@@ -23,7 +23,7 @@
   <v-sheet v-else-if="addTileLayerDialog">
     <add-tile-layer :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
   </v-sheet>
-  <v-sheet v-else style="background-color: white">
+  <v-sheet v-else>
     <v-toolbar
       color="primary"
       dark
@@ -50,7 +50,7 @@
           <v-btn
             text
             @click="detailDialog = false">
-            close
+            Close
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -86,14 +86,14 @@
           <v-btn
             text
             @click="renameDialog = false">
-            cancel
+            Cancel
           </v-btn>
           <v-btn
             v-if="renameValid"
             color="primary"
             text
             @click="rename">
-            rename
+            Rename
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -129,14 +129,14 @@
           <v-btn
             text
             @click="copyDialog = false">
-            cancel
+            Cancel
           </v-btn>
           <v-btn
             v-if="copyValid"
             color="primary"
             text
             @click="copy">
-            copy
+            Copy
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -158,13 +158,13 @@
           <v-btn
             text
             @click="removeDialog = false">
-            cancel
+            Cancel
           </v-btn>
           <v-btn
             color="warning"
             text
             @click="remove">
-            remove
+            Remove
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -226,7 +226,7 @@
           <v-btn
             text
             @click="addLayerDialog = false">
-            cancel
+            Cancel
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -319,16 +319,6 @@
             {{"Layers"}}
           </p>
         </v-col>
-        <!--        <v-col offset="4" cols="4" justify="center">-->
-        <!--          <v-switch-->
-        <!--            class="v-label detail"-->
-        <!--            hide-details-->
-        <!--            color="#3b779a"-->
-        <!--            v-model="layersVisible"-->
-        <!--            label="Enable all"-->
-        <!--            dense-->
-        <!--          ></v-switch>-->
-        <!--        </v-col>-->
       </v-row>
       <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
     </v-container>
@@ -503,9 +493,4 @@
 </script>
 
 <style scoped>
-  .fab-position {
-    position: absolute;
-    left: 384px;
-    bottom: 16px;
-  }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <v-sheet>
-    <div v-if="styleEditorVisible">
+    <v-sheet v-if="styleEditorVisible">
       <style-editor
         :tableName="tableName"
         :projectId="projectId"
@@ -12,8 +12,8 @@
         :table-style-assignment="geopackage.tableStyleAssignment"
         :icon-assignment="geopackage.iconAssignment"
         :table-icon-assignment="geopackage.tableIconAssignment"/>
-    </div>
-    <div v-else-if="showFeatureLayerField">
+    </v-sheet>
+    <v-sheet v-else-if="showFeatureLayerField">
       <feature-layer-field
         :tableName="tableName"
         :projectId="projectId"
@@ -22,8 +22,8 @@
         :columnNames="featureColumnNames"
         :back="hideFeatureLayerField"
         :renamed="featureLayerFieldRenamed"/>
-    </div>
-    <div v-else>
+    </v-sheet>
+    <v-sheet v-else>
       <v-toolbar
         color="primary"
         dark
@@ -98,14 +98,14 @@
               <v-btn
                 text
                 @click="renameDialog = false">
-                cancel
+                Cancel
               </v-btn>
               <v-btn
                 v-if="renameValid"
                 color="primary"
                 text
                 @click="rename">
-                rename
+                Rename
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -141,14 +141,14 @@
               <v-btn
                 text
                 @click="copyDialog = false">
-                cancel
+                Cancel
               </v-btn>
               <v-btn
                 v-if="copyValid"
                 color="primary"
                 text
                 @click="copy">
-                copy
+                Copy
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -221,14 +221,14 @@
               <v-btn
                 text
                 @click="cancelAddField">
-                cancel
+                Cancel
               </v-btn>
               <v-btn
                 v-if="addFieldValid"
                 color="primary"
                 text
                 @click="addField">
-                save
+                Save
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -248,13 +248,13 @@
               <v-btn
                 text
                 @click="deleteDialog = false">
-                cancel
+                Cancel
               </v-btn>
               <v-btn
                 color="warning"
                 text
                 @click="deleteTable">
-                remove
+                Remove
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -427,7 +427,7 @@
           </v-btn>
         </template>
       </v-snackbar>
-    </div>
+    </v-sheet>
   </v-sheet>
 </template>
 

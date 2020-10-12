@@ -71,13 +71,13 @@
               <v-btn
                 text
                 @click="addGeoPackageDialog = false">
-                cancel
+                Cancel
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
       </v-layout>
-      <div>
+      <v-sheet>
         <geo-package-list :geopackages="geopackages" :projectId="project.id" :geopackage-selected="geopackageSelected"></geo-package-list>
         <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
           <v-row no-gutters justify="space-between" align="end">
@@ -95,18 +95,18 @@
             </v-col>
           </v-row>
         </v-card>
-        <v-btn
-          class="fab-position"
-          fab
-          color="primary"
-          title="Add geopackage"
-          @click.stop="addGeoPackageDialog = true">
-          <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
-        </v-btn>
         <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
           GeoPackage already exists in project.
         </v-alert>
-      </div>
+      </v-sheet>
+      <v-btn
+        class="fab-position"
+        fab
+        color="primary"
+        title="Add geopackage"
+        @click.stop="addGeoPackageDialog = true">
+        <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
+      </v-btn>
     </v-sheet>
   </v-sheet>
 </template>
@@ -215,11 +215,6 @@
     width: 384px;
     left: 64px;
     bottom: 8px;
-  }
-  .fab-position {
-    position: absolute;
-    left: 384px;
-    bottom: 16px;
   }
   .alert-position {
     position: absolute;

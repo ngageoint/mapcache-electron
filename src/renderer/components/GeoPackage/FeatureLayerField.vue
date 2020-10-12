@@ -41,14 +41,14 @@
             <v-btn
               text
               @click="renameDialog = false">
-              cancel
+              Cancel
             </v-btn>
             <v-btn
               v-if="renameValid"
               color="primary"
               text
               @click="rename">
-              rename
+              Rename
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -69,13 +69,13 @@
               color="primary"
               text
               @click="deleteDialog = false">
-              cancel
+              Cancel
             </v-btn>
             <v-btn
               color="warning"
               text
               @click="deleteField">
-              remove
+              Remove
             </v-btn>
           </v-card-actions>
         </v-card>

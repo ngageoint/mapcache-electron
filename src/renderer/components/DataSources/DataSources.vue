@@ -172,7 +172,7 @@
             color="primary"
             text
             @click="addSourceDialog = false">
-            cancel
+            Cancel
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -223,7 +223,6 @@
   import xml2js from 'xml2js'
   import Modal from '../Modal'
   import request from 'request-promise-native'
-  import Card from '../Card/Card'
   import GeoServiceUtilities from '../../../lib/GeoServiceUtilities'
   import URLUtilities from '../../../lib/URLUtilities'
   import _ from 'lodash'
@@ -322,7 +321,6 @@
     components: {
       ProcessingSource,
       Modal,
-      Card,
       DataSource,
       DataSourceList
     },
@@ -662,12 +660,6 @@
     width: 384px;
     left: 64px;
     bottom: 8px;
-  }
-
-  .fab-position {
-    position: absolute;
-    left: 384px;
-    bottom: 16px;
   }
 
   .sources {

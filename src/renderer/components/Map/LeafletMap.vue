@@ -46,14 +46,14 @@
             <v-btn
               text
               @click="cancelDrawing">
-              cancel
+              Cancel
             </v-btn>
             <v-btn
               v-if="geoPackageFeatureLayerSelection !== NEW_FEATURE_LAYER_OPTION || featureTableNameValid"
               color="primary"
               text
               @click="confirmGeoPackageFeatureLayerSelection">
-              confirm
+              Confirm
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -86,7 +86,6 @@
   import _ from 'lodash'
   import * as vendor from '../../../lib/vendor'
 
-  import Modal from '../Modal'
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
   import FeatureTable from './FeatureTable'
@@ -143,7 +142,6 @@
     },
     components: {
       FeatureEditor,
-      Modal,
       FeatureTable
     },
     data () {

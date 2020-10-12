@@ -60,14 +60,14 @@
             <v-btn
               text
               @click="renameDialog = false">
-              cancel
+              Cancel
             </v-btn>
             <v-btn
               v-if="renameValid"
               color="primary"
               text
               @click="saveLayerName">
-              rename
+              Rename
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -89,13 +89,13 @@
             <v-btn
               text
               @click="deleteDialog = false">
-              cancel
+              Cancel
             </v-btn>
             <v-btn
               color="warning"
               text
               @click="removeDataSource({projectId: projectId, sourceId: source.id})">
-              remove
+              Remove
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -211,7 +211,6 @@
           name: ''
         }
       },
-      zIndex: Number,
       projectId: String,
       back: Function
     },

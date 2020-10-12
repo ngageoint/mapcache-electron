@@ -2,17 +2,17 @@
   <v-layout id="project" class="project-holder ma-0 pa-0">
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
-        v-model="drawer"
         color="primary"
+        v-model="drawer"
         expand-on-hover
         mini-variant
         permanent
         absolute
         dark
-        class="z-index-500"
+        style="z-index: 4;"
       >
         <v-list dense flat class="py-0">
-          <v-list-item two-line class="px-0">
+          <v-list-item one-line class="px-0 pt-1 pb-1">
             <v-list-item-avatar class="ml-2">
               <img src="../../assets/64x64.png">
             </v-list-item-avatar>
@@ -21,13 +21,13 @@
               <v-list-item-subtitle>{{project.name}}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
-          <v-divider></v-divider>
-          <v-list-item-group v-model="item" activeClass="list-item-active">
+          <v-list-item-group v-model="item" :activeClass="darkTheme ? 'list-item-active-dark' : 'list-item-active-light'">
             <v-list-item
-              class="list-item-hover"
+              :class="darkTheme ? 'list-item-hover-dark' : 'list-item-hover-light'"
               v-for="(item, i) in items"
               :key="i"
               :onclick="item.onclick"
+              v-ripple="{ class: `primary--text` }"
             >
               <v-list-item-icon>
                 <v-icon v-text="item.icon"></v-icon>
@@ -43,7 +43,7 @@
         <v-col class="content-panel" v-show="item >= 0">
           <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
           <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
-          <settings v-if="item === 2" :back="back" :project="project"></settings>
+          <settings v-if="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
         </v-col>
         <v-col>
           <leaflet-map
@@ -69,8 +69,6 @@
 
   import LeafletMap from '../Map/LeafletMap'
   import ViewEditText from '../Common/ViewEditText'
-  import Modal from '../Modal'
-  import Card from '../Card/Card'
   import Settings from '../Settings/Settings'
   import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
@@ -112,6 +110,16 @@
             }
           }
           return project
+        },
+        darkTheme (state) {
+          let isDark = false
+          const projectId = new URL(location.href).searchParams.get('id')
+          let project = state.UIState[projectId]
+          if (!_.isNil(project)) {
+            isDark = project.dark
+          }
+          this.$vuetify.theme.dark = isDark
+          return isDark
         }
       }),
       ...mapGetters({
@@ -123,8 +131,6 @@
       DataSources,
       LeafletMap,
       ViewEditText,
-      Modal,
-      Card,
       Settings,
       GeoPackages
     },
@@ -138,6 +144,13 @@
       },
       back () {
         this.item = undefined
+      }
+    },
+    watch: {
+      darkTheme: {
+        handler (newValue, oldValue) {
+          this.$vuetify.theme.dark = newValue
+        }
       }
     },
     mounted: function () {
@@ -181,13 +194,26 @@
     text-align: center;
     top: 16px;
   }
-  .list-item-hover:hover {
-    background-color: #4c99c7;
+  .list-item-hover-light:hover {
+    background-color: #192F43;
   }
-  .list-item-active {
-    background-color: #5fc2fc;
+  .list-item-active-light {
+    background-color: whitesmoke;
+    color: #1E4D7C
   }
-  .z-index-500 {
-    z-index: 500;
+  .list-item-active-light:hover {
+    background-color: #192F43;
+    color: whitesmoke
+  }
+  .list-item-hover-dark:hover {
+    background-color: #414042;
+  }
+  .list-item-active-dark {
+    background-color: #414042;
+    color: whitesmoke
+  }
+  .list-item-active-dark:hover {
+    background-color: #414042;
+    color: whitesmoke
   }
 </style>

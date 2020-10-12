@@ -41,13 +41,13 @@
           text
           :dark="this.darkMode"
           @click.stop="cancel">
-          {{"Cancel"}}
+          Cancel
         </v-btn>
         <v-btn
           color="primary"
           :dark="this.darkMode"
           @click.stop="save">
-          {{"Save"}}
+          Save
         </v-btn>
       </v-col>
     </v-row>

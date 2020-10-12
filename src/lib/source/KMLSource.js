@@ -131,10 +131,10 @@ export default class KMLSource extends Source {
               }
             } catch (exception) {
               console.error(exception)
-              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
+              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {
-            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
+            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
           }
           iconNumber++
         }

@@ -9,206 +9,253 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title :title="tableName + ' Style Editor'"><b>{{tableName}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
+    <v-dialog
+      v-model="removeDialog"
+      max-width="500"
+      persistent>
+      <v-card>
+        <v-card-title style="color: grey; font-weight: 600;">
+          <v-row no-gutters justify="start" align="center">
+            <v-icon>mdi-trash-can-outline</v-icon>{{'Remove'}}<b class="pl-1 pr-1">{{tableName}}</b>{{'Styling'}}
+          </v-row>
+        </v-card-title>
+        <v-card-text>
+          When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or icons will be deleted. Are you sure you want to remove styling?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="removeDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="warning"
+            text
+            @click="removeStyleExtensionAndTableStyles">
+            Remove
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-sheet v-if="!loading && hasStyleExtension">
+      <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable>
+        <edit-table-style-assignment
+          v-if="styleAssignment"
+          :assignment="styleAssignment"
+          :table-name="tableName"
+          :project-id="projectId"
+          :styles="styleItems"
+          :icons="iconItems"
+          :id="id"
+          :is-geo-package="isGeoPackage"
+          :close="closeStyleAssignment"/>
+      </v-dialog>
+      <v-dialog v-model="editStyleDialog" max-width="400" persistent scrollable>
+        <create-edit-style
+          v-if="editStyle"
+          :key="'icon' + editStyle.id"
+          :style-row="editStyle"
+          :table-name="tableName"
+          :project-id="projectId"
+          :id="id"
+          :is-geo-package="isGeoPackage"
+          :close="closeStyleEditor"/>
+      </v-dialog>
+      <v-dialog v-model="editIconDialog" max-width="400" persistent>
+        <create-edit-icon
+          v-if="editIcon"
+          :key="'icon' + editIcon.id"
+          :icon-row="editIcon"
+          :table-name="tableName"
+          :project-id="projectId"
+          :id="id"
+          :is-geo-package="isGeoPackage"
+          :close="closeIconEditor"/>
+      </v-dialog>
+      <v-list class="pt-0">
+        <v-list-group
+          v-for="item in items"
+          :key="item.title"
+          v-model="item.active"
+          :prepend-icon="item.action"
+          no-action
+        >
+          <template v-slot:activator>
+            <v-list-item-content>
+              <v-list-item-title v-text="item.title"></v-list-item-title>
+            </v-list-item-content>
+          </template>
+          <v-list-item
+            v-if="item.itemType === 0"
+            v-for="style in item.items"
+            :key="style.id"
+            link
+            @click="() => showStyleEditor({
+              id: style.styleRow.id,
+              name: style.styleRow.getName(),
+              description: style.styleRow.getDescription(),
+              color: style.styleRow.getHexColor(),
+              opacity: style.styleRow.getOpacity(),
+              fillColor: style.styleRow.getFillHexColor(),
+              fillOpacity: style.styleRow.getFillOpacity(),
+              width: style.styleRow.getWidth(),
+            })"
+          >
+            <v-list-item-content>
+              <v-row no-gutters justify="space-between" align="center">
+                <v-col cols="8">
+                  <v-list-item-title v-text="style.name"></v-list-item-title>
+                </v-col>
+                <v-col>
+                  <v-row no-gutters justify="end" align="center" class="mr-5">
+                    <svg height="25" width="25">
+                      <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
+                    </svg>
+                    <svg height="25" width="25">
+                      <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
+                    </svg>
+                    <svg height="25" width="25">
+                      <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor" :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
+                    </svg>
+                  </v-row>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item v-if="item.itemType === 0 && item.hint" key="style-hint">
+            <v-list-item-title>No styles found</v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-if="item.itemType === 1"
+            v-for="icon in item.items"
+            :key="icon.id"
+            link
+            @click="() => showIconEditor(icon.iconRow)"
+          >
+            <v-list-item-content>
+              <v-row no-gutters justify="space-between" align="center">
+                <v-col cols="8">
+                  <v-list-item-title v-text="icon.name"></v-list-item-title>
+                </v-col>
+                <v-col>
+                  <v-row no-gutters justify="end" class="mr-5">
+                    <img class="icon-box" :src="icon.url"/>
+                  </v-row>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item v-if="item.itemType === 1 && item.hint" key="icon-hint">
+            <v-list-item-title>No icons found</v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-if="item.itemType === 2"
+            v-for="assignment in item.items"
+            :key="'assignment' + assignment.id"
+            link
+            @click="() => showStyleAssignment(assignment)">
+            <v-list-item-content>
+              <v-row no-gutters justify="space-between" align="center">
+                <v-col cols="3">
+                  <v-list-item-title v-text="assignment.name"></v-list-item-title>
+                </v-col>
+                <v-col cols="6" v-if="assignment.icon">
+                  <v-list-item-title v-text="assignment.icon.name"></v-list-item-title>
+                </v-col>
+                <v-col cols="3" v-if="assignment.icon">
+                  <v-row no-gutters justify="end" class="mr-5">
+                    <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.iconUrl"/>
+                  </v-row>
+                </v-col>
+                <v-col cols="6" v-if="assignment.style">
+                  {{assignment.style.getName()}}
+                </v-col>
+                <v-col cols="3" v-if="assignment.style">
+                  <v-row no-gutters justify="end" class="mr-5">
+                    <svg height="25" width="25" v-if="assignment.geometryType === 1">
+                      <circle cx="12.5" cy="12.5" r="5" :stroke="assignment.style.getHexColor()" :fill="assignment.style.getHexColor()" :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></circle>
+                    </svg>
+                    <svg height="25" width="25" v-if="assignment.geometryType === 2">
+                      <polyline points="5,20 20,15, 5,10, 20,5" :stroke="assignment.style.getHexColor()" :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')" fill="none"></polyline>
+                    </svg>
+                    <svg height="25" width="25" v-if="assignment.geometryType === 3">
+                      <polygon points="5,10 20,5 20,20 5,20" :stroke="assignment.style.getHexColor()" :fill="assignment.style.getFillHexColor()" :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></polygon>
+                    </svg>
+                  </v-row>
+                </v-col>
+                <v-col cols="9" v-if="!assignment.icon && !assignment.style">
+                  <v-row no-gutters align="start">
+                    <v-list-item-subtitle>Unassigned</v-list-item-subtitle>
+                  </v-row>
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item v-if="item.itemType === 2 && item.hint" key="style-hint">
+            <v-list-item-title>No styles or icons to assign</v-list-item-title>
+          </v-list-item>
+        </v-list-group>
+      </v-list>
+    </v-sheet>
     <v-card>
-      <v-card-text>
-        <v-sheet>
-          <v-sheet v-if="!loading">
-            <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(styleRows).length > 0" class="mb-2">
-              <div slot="card-header">
-                <v-row justify="space-between" align="center" no-gutters>
-                  <v-col class="title" align-content="center">
-                    {{'Styles (' + Object.keys(styleRows).length + ')'}}
-                  </v-col>
-                  <v-col>
-                    <v-row no-gutters justify="end">
-                      <v-btn class="button-width" dark color="#73c1c5" @click.stop="addStyle()">
-                        <v-icon left>mdi-plus</v-icon> add style
-                      </v-btn>
-                    </v-row>
-                  </v-col>
-                </v-row>
-              </div>
-              <div slot="card-expanded-body" class="mt-2">
-                <styleoptions
-                  v-for="styleRow in styleRows"
-                  :key="'style_' + styleRow.id"
-                  :deletable="true"
-                  :defaultName="styleRow.id + ''"
-                  :allowStyleNameEditing="true"
-                  :style-row="styleRow"
-                  :id="id"
-                  :table-name="tableName"
-                  :project-id="projectId"
-                  :show-id="true"
-                  :is-geo-package="isGeoPackage"/>
-                <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0 && featureItems.length > 1">
-                  <div slot="card-header">
-                    <v-row no-gutters class="subtitle">
-                      <v-card-title class="ma-0 pa-0 full-width">
-                        <v-row no-gutters class="full-width">
-                          <v-col class="title-edit align-center" cols="12">
-                            <p class="assignment-title">Feature Style Assignment</p>
-                          </v-col>
-                        </v-row>
-                      </v-card-title>
-                    </v-row>
-                  </div>
-                  <div slot="card-expanded-body">
-                    <v-container fluid>
-                      <v-row>
-                        <v-col cols="12">
-                          <v-select v-model="styleAssignmentFeature" :items="featureItems" label="Feature" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select v-model="featureStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </div>
-                </expandablecard>
-                <expandablecard class="mb-2" v-if="Object.keys(styleRows).length > 0">
-                  <div slot="card-header">
-                    <v-row no-gutters class="subtitle">
-                      <v-card-title class="ma-0 pa-0 full-width">
-                        <v-row no-gutters class="full-width">
-                          <v-col class="title-edit align-center" cols="12">
-                            <p class="assignment-title">Table Style Assignment</p>
-                          </v-col>
-                        </v-row>
-                      </v-card-title>
-                    </v-row>
-                  </div>
-                  <div slot="card-expanded-body">
-                    <v-container fluid>
-                      <v-row>
-                        <v-col cols="12">
-                          <v-select v-model="tableStyleGeometry" :items="styleGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select v-model="tableStyleSelection" :items="styleItems" label="Style" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </div>
-                </expandablecard>
-              </div>
-            </expandablecard>
-            <expandablecard v-if="hasStyleExtension" :allow-expand="Object.keys(iconRows).length > 0" class="mb-2">
-              <div slot="card-header">
-                <v-row justify="space-between" align="center" no-gutters>
-                  <v-col class="title" align-content="center">
-                    {{'Icons (' + Object.keys(iconRows).length + ')'}}
-                  </v-col>
-                  <v-col>
-                    <v-row no-gutters justify="end">
-                      <v-btn class="button-width" dark color="#73c1c5" @click.stop="addIcon()">
-                        <v-icon left>mdi-plus</v-icon> add icon
-                      </v-btn>
-                    </v-row>
-                  </v-col>
-                </v-row>
-              </div>
-              <div slot="card-expanded-body" class="mt-2">
-                <iconoptions
-                  v-for="iconRow in iconRows"
-                  :key="'icon' + iconRow.id"
-                  :deletable="true"
-                  :defaultName="iconRow.id + ''"
-                  :allowIconNameEditing="true"
-                  geometry-type="POINT"
-                  :icon-row="iconRow"
-                  :id="id"
-                  :table-name="tableName"
-                  :project-id="projectId"
-                  :show-id="true"
-                  :is-table-icon="false"
-                  :is-geo-package="isGeoPackage"/>
-                <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0 && iconFeatureItems.length > 1">
-                  <div slot="card-header">
-                    <v-row no-gutters class="subtitle">
-                      <v-card-title class="ma-0 pa-0 full-width">
-                        <v-row no-gutters class="full-width">
-                          <v-col class="title-edit align-center" cols="12">
-                            <p class="assignment-title">Feature Icon Assignment</p>
-                          </v-col>
-                        </v-row>
-                      </v-card-title>
-                    </v-row>
-                  </div>
-                  <div slot="card-expanded-body">
-                    <v-container fluid>
-                      <v-row>
-                        <v-col cols="12">
-                          <v-select v-model="iconAssignmentFeature" :items="iconFeatureItems" label="Feature" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select v-model="featureIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </div>
-                </expandablecard>
-                <expandablecard class="mb-2" v-if="Object.keys(iconRows).length > 0">
-                  <div slot="card-header">
-                    <v-row no-gutters class="subtitle">
-                      <v-card-title class="ma-0 pa-0 full-width">
-                        <v-row no-gutters class="full-width">
-                          <v-col class="title-edit align-center" cols="12">
-                            <p class="assignment-title">Table Icon Assignment</p>
-                          </v-col>
-                        </v-row>
-                      </v-card-title>
-                    </v-row>
-                  </div>
-                  <div slot="card-expanded-body">
-                    <v-container fluid>
-                      <v-row>
-                        <v-col cols="12">
-                          <v-select v-model="tableIconGeometry" :items="iconGeometryItems" label="Geometry Type" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select v-model="tableIconSelection" :items="iconItems" label="Icon" dense hide-details class="subtitle">
-                          </v-select>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </div>
-                </expandablecard>
-              </div>
-            </expandablecard>
-          </v-sheet>
-        </v-sheet>
-      </v-card-text>
       <v-card-actions>
         <v-spacer/>
         <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5" @click.stop="addStyleExtensionAndDefaultStyles()">
           <v-icon>mdi-palette</v-icon> Enable Styling
         </v-btn>
-        <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeStyleExtensionAndTableStyles()">
+        <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
           <v-icon>mdi-trash-can</v-icon> Remove Styling
         </v-btn>
       </v-card-actions>
     </v-card>
+    <v-speed-dial
+      v-if="!loading && hasStyleExtension"
+      class="fab-position"
+      v-model="fab"
+      transition="slide-y-reverse-transition"
+    >
+      <template v-slot:activator>
+        <v-btn
+          v-model="fab"
+          color="primary"
+          fab
+          title="Add style or icon"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+      </template>
+      <v-btn
+        fab
+        small
+        color="accent"
+        @click="addIcon"
+        title="Add icon"
+      >
+        <v-icon>mdi-map-marker</v-icon>
+      </v-btn>
+      <v-btn
+        fab
+        small
+        color="accent"
+        title="Add style"
+        @click="addStyle"
+      >
+        <v-icon>mdi-palette</v-icon>
+      </v-btn>
+    </v-speed-dial>
   </v-sheet>
 </template>
 
 <script>
   import { mapActions } from 'vuex'
-  import StyleOptions from './StyleOptions'
-  import IconOptions from './IconOptions'
-  import NumberPicker from '../Common/NumberPicker'
+  import CreateEditStyle from './CreateEditStyle'
+  import CreateEditIcon from './CreateEditIcon'
+  import EditTableStyleAssignment from './EditTableStyleAssignment'
   import _ from 'lodash'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import { GeoPackageAPI, GeometryType } from '@ngageoint/geopackage'
-  import Card from '../Card/Card'
-  import ExpandableCard from '../Card/ExpandableCard'
+  import VectorStyleUtilities from '../../../lib/VectorStyleUtilities'
 
   export default {
     props: {
@@ -217,10 +264,6 @@
       tableName: String,
       projectId: String,
       styleKey: Number,
-      tableStyleAssignment: Object,
-      tableIconAssingment: Object,
-      styleAssignment: Object,
-      iconAssignment: Object,
       back: Function,
       isGeoPackage: {
         type: Boolean,
@@ -229,121 +272,62 @@
     },
     data () {
       return {
-        loading: true,
+        loading: false,
         hasStyleExtension: false,
         updatingStyle: true,
-        styleRows: null,
-        iconRows: null,
-        featureItems: null,
-        iconFeatureItems: null,
-        iconGeometryItems: [
-          {text: 'None Selected', value: -1},
-          {text: 'Point', value: GeometryType.POINT},
-          {text: 'MultiPoint', value: GeometryType.MULTIPOINT}
-        ],
-        styleGeometryItems: [
-          {text: 'None Selected', value: -1},
-          {text: 'Point', value: GeometryType.POINT},
-          {text: 'LineString', value: GeometryType.LINESTRING},
-          {text: 'Polygon', value: GeometryType.POLYGON},
-          {text: 'MultiPoint', value: GeometryType.MULTIPOINT},
-          {text: 'MultiLineString', value: GeometryType.MULTILINESTRING},
-          {text: 'MultiPoint', value: GeometryType.MULTIPOLYGON}
-        ],
-        styleItems: null,
-        iconItems: null,
         features: [],
         iconFeatures: [],
-        featureStyleSelection: -1,
-        featureIconSelection: -1,
-        tableIconSelection: -1,
-        tableStyleSelection: -1
+        fab: false,
+        items: [
+          {
+            action: 'mdi-palette',
+            items: [],
+            title: 'Styles',
+            itemType: 0
+          },
+          {
+            action: 'mdi-map-marker',
+            items: [],
+            title: 'Icons',
+            itemType: 1
+          },
+          {
+            action: 'mdi-link-variant',
+            items: [],
+            title: 'Feature Type Assignment',
+            itemType: 2
+          }
+        ],
+        editIcon: null,
+        editIconDialog: false,
+        editStyle: null,
+        editStyleDialog: false,
+        styleAssignment: null,
+        assignStyleDialog: false,
+        styleItems: [],
+        iconItems: [],
+        removeDialog: false
       }
     },
     components: {
-      'styleoptions': StyleOptions,
-      'iconoptions': IconOptions,
-      'numberpicker': NumberPicker,
-      'card': Card,
-      'expandablecard': ExpandableCard
+      CreateEditIcon,
+      CreateEditStyle,
+      EditTableStyleAssignment
     },
     created () {
       let _this = this
+      _this.loading = true
       this.getStyle().then(function () {
         _this.loading = false
         _this.updatingStyle = false
+      }).catch((e) => {
+        console.error(e)
+        _this.updatingStyle = false
+        _this.loading = false
       })
-    },
-    computed: {
-      tableStyleGeometry: {
-        get () {
-          return this.tableStyleAssignment ? this.tableStyleAssignment.geometryType : -1
-        },
-        set (value) {
-          this.updateTableStyleAssignmentGeometryType({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: value,
-            isGeoPackage: this.isGeoPackage
-          })
-        }
-      },
-      tableIconGeometry: {
-        get () {
-          return this.tableIconAssignment ? this.tableIconAssignment.geometryType : -1
-        },
-        set (value) {
-          this.updateTableIconAssignmentGeometryType({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: value,
-            isGeoPackage: this.isGeoPackage
-          })
-        }
-      },
-      styleAssignmentFeature: {
-        get () {
-          return this.styleAssignment ? this.styleAssignment.featureId : -1
-        },
-        set (value) {
-          this.updateStyleAssignmentFeature({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            featureId: value,
-            isGeoPackage: this.isGeoPackage
-          })
-        }
-      },
-      iconAssignmentFeature: {
-        get () {
-          return this.iconAssignment ? this.iconAssignment.featureId : -1
-        },
-        set (value) {
-          this.updateIconAssignmentFeature({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            featureId: value,
-            isGeoPackage: this.isGeoPackage
-          })
-        }
-      }
     },
     methods: {
       ...mapActions({
-        updateTableStyleSelection: 'Projects/updateTableStyleSelection',
-        updateTableIconSelection: 'Projects/updateTableIconSelection',
-        updateFeatureStyleSelection: 'Projects/updateFeatureStyleSelection',
-        updateFeatureIconSelection: 'Projects/updateFeatureIconSelection',
-        updateStyleAssignmentFeature: 'Projects/updateStyleAssignmentFeature',
-        updateIconAssignmentFeature: 'Projects/updateIconAssignmentFeature',
-        updateTableStyleAssignmentGeometryType: 'Projects/updateTableStyleAssignmentGeometryType',
-        updateTableIconAssignmentGeometryType: 'Projects/updateTableIconAssignmentGeometryType',
-        createProjectLayerStyleRow: 'Projects/createProjectLayerStyleRow',
-        createProjectLayerIconRow: 'Projects/createProjectLayerIconRow',
         addStyleExtensionForTable: 'Projects/addStyleExtensionForTable',
         removeStyleExtensionForTable: 'Projects/removeStyleExtensionForTable'
       }),
@@ -351,60 +335,52 @@
         this.debounceUpdateMaxFeatures(val)
       },
       addStyle () {
-        this.createProjectLayerStyleRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          isGeoPackage: this.isGeoPackage
-        })
+        this.showStyleEditor(VectorStyleUtilities.randomStyle())
       },
       addIcon () {
-        this.createProjectLayerIconRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          isGeoPackage: this.isGeoPackage
-        })
+        const icon = VectorStyleUtilities.getDefaultIcon()
+        this.showIconEditor(icon)
       },
-      determineStyleForGeometryAssignment (gp, geometryType) {
-        if (geometryType !== -1) {
-          let geometryStyle = GeoPackageUtilities._getTableStyle(gp, this.tableName, geometryType)
-          if (_.isNil(geometryStyle)) {
-            this.tableStyleSelection = -1
-          } else {
-            this.tableStyleSelection = geometryStyle.id
-          }
+      determineAssignment (gp, geometryType) {
+        const assignment = {
+          icon: undefined,
+          iconUrl: undefined,
+          style: undefined
         }
+        let style = GeoPackageUtilities._getTableStyle(gp, this.tableName, geometryType)
+        let icon = GeoPackageUtilities._getTableIcon(gp, this.tableName, geometryType)
+        if (!_.isNil(style)) {
+          assignment.style = style
+        }
+        if (!_.isNil(icon)) {
+          assignment.icon = icon
+          assignment.iconUrl = 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+        }
+        return assignment
       },
-      determineIconForGeometryAssignment (gp, geometryType) {
-        if (geometryType !== -1) {
-          let geometryIcon = GeoPackageUtilities._getTableIcon(gp, this.tableName, geometryType)
-          if (_.isNil(geometryIcon)) {
-            this.tableIconSelection = -1
-          } else {
-            this.tableIconSelection = geometryIcon.id
-          }
-        }
+      showStyleEditor (style) {
+        this.editStyle = style
+        this.editStyleDialog = true
       },
-      determineStyleForStyleAssignment (gp, featureId) {
-        if (featureId !== -1) {
-          let featureStyle = GeoPackageUtilities._getFeatureStyle(gp, this.tableName, featureId)
-          if (_.isNil(featureStyle)) {
-            this.featureStyleSelection = -1
-          } else {
-            this.featureStyleSelection = featureStyle.id
-          }
-        }
+      closeStyleEditor () {
+        this.editStyleDialog = false
+        this.editStyle = null
       },
-      determineIconForIconAssignment (gp, featureId) {
-        if (featureId !== -1) {
-          let featureIcon = GeoPackageUtilities._getFeatureIcon(gp, this.tableName, featureId)
-          if (_.isNil(featureIcon)) {
-            this.featureIconSelection = -1
-          } else {
-            this.featureIconSelection = featureIcon.id
-          }
-        }
+      showIconEditor (icon) {
+        this.editIcon = icon
+        this.editIconDialog = true
+      },
+      closeIconEditor () {
+        this.editIconDialog = false
+        this.editIcon = null
+      },
+      showStyleAssignment (assignment) {
+        this.styleAssignment = assignment
+        this.assignStyleDialog = true
+      },
+      closeStyleAssignment () {
+        this.assignStyleDialog = false
+        this.styleAssignment = null
       },
       async getStyle () {
         let gp = await GeoPackageAPI.open(this.path)
@@ -412,34 +388,69 @@
           let featureTableName = this.tableName
           this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
           if (this.hasStyleExtension) {
-            this.features = GeoPackageUtilities._getFeatureIds(gp, this.tableName)
-            this.featureItems = [{text: 'Select Feature', value: -1}]
-            this.features.forEach(featureId => {
-              this.featureItems.push({text: featureId, value: featureId})
+            const styleRows = GeoPackageUtilities._getStyleRows(gp, featureTableName)
+            const iconRows = GeoPackageUtilities._getIconRows(gp, featureTableName)
+            this.styleItems = _.values(styleRows).map(style => {
+              return {
+                id: style.id,
+                name: style.getName(),
+                description: style.getDescription(),
+                color: style.getHexColor(),
+                opacity: style.getOpacity(),
+                fillColor: style.getFillHexColor(),
+                fillOpacity: style.getFillOpacity(),
+                width: style.getWidth(),
+                styleRow: style
+              }
             })
-            this.iconFeatures = GeoPackageUtilities._getPointAndMultiPointFeatureIds(gp, this.tableName)
-            this.iconFeatureItems = [{text: 'Select Feature', value: -1}]
-            this.iconFeatures.forEach(featureId => {
-              this.iconFeatureItems.push({text: featureId, value: featureId})
+            this.items[0].items = this.styleItems.slice()
+            this.items[0].hint = this.items[0].items.length === 0
+            this.iconItems = _.values(iconRows).map(icon => {
+              return {
+                id: icon.id,
+                name: icon.name,
+                data: icon.data,
+                width: icon.width,
+                height: icon.height,
+                anchorU: icon.anchorU,
+                anchorV: icon.anchorV,
+                contentType: icon.contentType,
+                url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64'),
+                iconRow: icon
+              }
             })
-            let styleRows = GeoPackageUtilities._getStyleRows(gp, featureTableName)
-            this.styleItems = [{text: 'Use Defaults', value: -1}]
-            for (let styleId in styleRows) {
-              let style = styleRows[styleId]
-              this.styleItems.push({text: style.getName() + ' (' + style.id + ')', value: style.id})
+            this.items[1].items = this.iconItems.slice()
+            this.items[1].hint = this.items[1].items.length === 0
+            if (this.styleItems.length + this.iconItems.length > 0) {
+              const pointAssignment = this.determineAssignment(gp, GeometryType.POINT)
+              const lineAssignment = this.determineAssignment(gp, GeometryType.LINESTRING)
+              const polygonAssignment = this.determineAssignment(gp, GeometryType.POLYGON)
+              this.items[2].items = [
+                {
+                  id: 'assignment_point',
+                  name: 'Point',
+                  geometryType: GeometryType.POINT,
+                  style: pointAssignment.style,
+                  icon: pointAssignment.icon,
+                  iconUrl: pointAssignment.iconUrl
+                },
+                {
+                  id: 'assignment_line',
+                  name: 'Line',
+                  geometryType: GeometryType.LINESTRING,
+                  style: lineAssignment.style
+                },
+                {
+                  id: 'assignment_polygon',
+                  name: 'Polygon',
+                  geometryType: GeometryType.POLYGON,
+                  style: polygonAssignment.style
+                }
+              ]
+              this.items[2].hint = false
+            } else {
+              this.items[2].hint = true
             }
-            this.styleRows = styleRows
-            let iconRows = GeoPackageUtilities._getIconRows(gp, featureTableName)
-            this.iconItems = [{text: 'Use Defaults', value: -1}]
-            for (let iconId in iconRows) {
-              let icon = iconRows[iconId]
-              this.iconItems.push({text: icon.name + ' (' + icon.id + ')', value: icon.id})
-            }
-            this.iconRows = iconRows
-            this.determineStyleForStyleAssignment(gp, this.styleAssignmentFeature)
-            this.determineIconForIconAssignment(gp, this.iconAssignmentFeature)
-            this.determineStyleForGeometryAssignment(gp, this.styleAssignmentFeature)
-            this.determineIconForGeometryAssignment(gp, this.iconAssignmentFeature)
           }
         } catch (error) {
           console.error(error)
@@ -459,6 +470,7 @@
         })
       },
       removeStyleExtensionAndTableStyles () {
+        this.removeDialog = false
         this.removeStyleExtensionForTable({
           projectId: this.projectId,
           id: this.id,
@@ -479,199 +491,17 @@
           }
         },
         deep: true
-      },
-      featureStyleSelection: {
-        async handler (newValue, oldValue) {
-          // the user edited the value
-          if (newValue !== oldValue && !this.updatingStyle) {
-            this.updateFeatureStyleSelection({
-              projectId: this.projectId,
-              id: this.id,
-              tableName: this.tableName,
-              featureId: this.styleAssignmentFeature,
-              styleId: newValue,
-              isGeoPackage: this.isGeoPackage
-            })
-          }
-        }
-      },
-      featureIconSelection: {
-        async handler (newValue, oldValue) {
-          // the user edited the value
-          if (newValue !== oldValue && !this.updatingStyle) {
-            this.updateFeatureIconSelection({
-              projectId: this.projectId,
-              id: this.id,
-              tableName: this.tableName,
-              featureId: this.iconAssignmentFeature,
-              iconId: newValue,
-              isGeoPackage: this.isGeoPackage
-            })
-          }
-        }
-      },
-      tableStyleSelection: {
-        async handler (newValue, oldValue) {
-          // the user edited the value
-          if (newValue !== oldValue && !this.updatingStyle) {
-            this.updateTableStyleSelection({
-              projectId: this.projectId,
-              id: this.id,
-              tableName: this.tableName,
-              geometryType: this.tableStyleGeometry,
-              styleId: newValue,
-              isGeoPackage: this.isGeoPackage
-            })
-          }
-        }
-      },
-      tableIconSelection: {
-        async handler (newValue, oldValue) {
-          // the user edited the value
-          if (newValue !== oldValue && !this.updatingStyle) {
-            this.updateTableIconSelection({
-              projectId: this.projectId,
-              id: this.id,
-              tableName: this.tableName,
-              geometryType: this.tableIconGeometry,
-              iconId: newValue,
-              isGeoPackage: this.isGeoPackage
-            })
-          }
-        }
-      },
-      styleAssignmentFeature: {
-        async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.path)
-          this.determineStyleForStyleAssignment(gp, newValue)
-        }
-      },
-      iconAssignmentFeature: {
-        async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.path)
-          this.determineIconForIconAssignment(gp, newValue)
-        }
-      },
-      tableStyleGeometry: {
-        async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.path)
-          this.determineStyleForGeometryAssignment(gp, newValue)
-        }
-      },
-      tableIconGeometry: {
-        async handler (newValue, oldValue) {
-          let gp = await GeoPackageAPI.open(this.path)
-          this.determineIconForGeometryAssignment(gp, newValue)
-        }
       }
     }
   }
 </script>
 
 <style scoped>
-  .title {
-    font-size: 16px !important;;
-    color: black;
-    font-weight: 500;
-  }
-  .subtitle {
-    color: dimgray;
-    font-size: 14px !important;;
-    font-weight: normal;
-  }
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-  .switch-input {
-    display: none;
-  }
-  .switch-label {
-    position: relative;
-    display: inline-block;
-    min-width: 112px;
-    color: dimgray;
-    cursor: pointer;
-    font-weight: 500;
-    text-align: left;
-    margin-left: 10px;
-    padding: 16px 0 16px 44px;
-  }
-  .switch-label:before, .switch-label:after {
-    content: "";
-    position: absolute;
-    margin: 0;
-    outline: 0;
-    top: 50%;
-    -ms-transform: translate(0, -50%);
-    -webkit-transform: translate(0, -50%);
-    transform: translate(0, -50%);
-    -webkit-transition: all 0.3s ease;
-    transition: all 0.3s ease;
-  }
-  .switch-label:before {
-    left: 1px;
-    width: 34px;
-    height: 14px;
-    background-color: #9E9E9E;
-    border-radius: 8px;
-  }
-  .switch-label:after {
-    left: 0;
-    width: 20px;
-    height: 20px;
-    background-color: #FAFAFA;
-    border-radius: 50%;
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.14), 0 2px 2px 0 rgba(0, 0, 0, 0.098), 0 1px 5px 0 rgba(0, 0, 0, 0.084);
-  }
-  .switch-label .toggle--on {
-    display: none;
-  }
-  .switch-label .toggle--off {
-    display: inline-block;
-  }
-  .switch-input:checked + .switch-label:before {
-    background-color: #768fff;
-  }
-  .switch-input:checked + .switch-label:after {
-    background-color: #2962ff;
-    -ms-transform: translate(80%, -50%);
-    -webkit-transform: translate(80%, -50%);
-    transform: translate(80%, -50%);
-  }
-  .switch-input:checked + .switch-label .toggle--on {
-    display: inline-block;
-  }
-  .switch-input:checked + .switch-label .toggle--off {
-    display: none;
-  }
-  .add-button {
-    color: #2962ff;
-    margin-right: 0.25rem;
-  }
-  .add-button:hover {
-    color: #0039cb;
-    cursor: pointer;
-  }
-  .title-edit {
-    min-width: 0;
-    display: inherit;
-    overflow: hidden;
-  }
-  .title-edit p {
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 0 !important;
-  }
-  .assignment-title {
-    color: black;
-    font-size: 14px;
-    font-weight: normal;
-  }
-  .button-width {
-    width: 140px;
+  .icon-box {
+    border: 1px solid #ffffff00;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
   }
 </style>

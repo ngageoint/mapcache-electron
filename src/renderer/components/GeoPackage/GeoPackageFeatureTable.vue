@@ -18,16 +18,26 @@
           <v-btn
             text
             @click="cancelRemove">
-            cancel
+            Cancel
           </v-btn>
           <v-btn
             color="warning"
             text
             @click="remove">
-            remove
+            Remove
           </v-btn>
         </v-card-actions>
       </v-card>
+    </v-dialog>
+    <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable>
+      <edit-feature-style-assignment
+        v-if="styleAssignment"
+        :assignment="styleAssignment"
+        :table-name="table.tableName"
+        :project-id="projectId"
+        :id="geopackage.id"
+        :is-geo-package="true"
+        :close="closeStyleAssignment"/>
     </v-dialog>
     <v-data-table
       v-model="selected"
@@ -40,7 +50,7 @@
       :height="Math.min(160, 32 * (tableEntries.length + 1))"
       @click:row="handleClick"
     >
-      <template v-slot:item.actions="{ item }">
+      <template v-slot:item.code_actions="{ item }">
         <v-btn
           icon
           small
@@ -74,6 +84,23 @@
           </v-icon>
         </v-btn>
       </template>
+      <template v-slot:item.code_style="{ item }">
+        <v-btn
+          icon
+          small
+          @click="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }">
+          <v-icon
+            small
+            title="Style"
+          >
+            mdi-palette
+          </v-icon>
+        </v-btn>
+      </template>
     </v-data-table>
     <v-dialog
       v-model="editDialog"
@@ -91,6 +118,7 @@
   import { GeoPackageDataType } from '@ngageoint/geopackage'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import FeatureEditor from './FeatureEditor'
+  import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
 
   export default {
     props: {
@@ -101,7 +129,8 @@
       close: Function
     },
     components: {
-      FeatureEditor
+      FeatureEditor,
+      EditFeatureStyleAssignment
     },
     data () {
       return {
@@ -110,56 +139,55 @@
         featureToRemove: null,
         selected: [],
         editFeature: null,
-        editFeatureColumns: {}
+        editFeatureColumns: {},
+        assignStyleDialog: false,
+        styleAssignment: null
       }
     },
     computed: {
       tableEntries () {
-        const entries = this.table.features.map(feature => {
+        return this.table.features.map(feature => {
           const item = {
             code_key: feature.id + '_' + this.table.tableName + '_' + this.geopackage.name,
             code_geopackage: this.geopackage.name,
             code_geopackageId: this.geopackage.id,
             code_layer: this.table.tableName,
             id: feature.id,
-            code_type: feature.geometry.type
+            code_type: feature.geometry.type,
+            code_style: null
           }
-
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
             try {
               const column = this.table.columns.getColumn(key)
               if (column.dataType === GeoPackageDataType.BOOLEAN) {
-                if (value === 1 || value === true) {
-                  value = true
-                } else {
-                  value = false
-                }
+                value = value === 1 || value === true
               }
               if (value !== '' && (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME)) {
                 value = new Date(value).toISOString()
               }
             } catch (e) {}
-            item[key.toLowerCase()] = value
+            item[key.toLowerCase() + '_table'] = value
           })
           return item
         })
-        return entries
       },
       headers () {
         const headers = [
-          { text: 'Actions', value: 'actions', sortable: false },
+          { text: 'Actions', value: 'code_actions', sortable: false },
+          { text: 'Style', value: 'code_style' },
           { text: 'Geometry Type', value: 'code_type', width: 150 }
         ]
+        const tableHeaders = []
         this.table.columns._columns.forEach(column => {
           if (!column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-            headers.push({
+            tableHeaders.push({
               text: column.name.toLowerCase(),
-              value: column.name.toLowerCase()
+              value: column.name.toLowerCase() + '_table'
             })
           }
         })
-        return _.orderBy(headers, ['text'], ['asc'])
+        return headers.concat(_.orderBy(tableHeaders, ['text'], ['asc']))
       }
     },
     watch: {
@@ -197,6 +225,14 @@
           this.removeDialog = false
           this.featureToRemove = null
         }
+      },
+      async showStyleAssignment (item) {
+        this.styleAssignment = await GeoPackageUtilities.getStyleItemsForFeature(this.geopackage.path, this.table.tableName, item.id)
+        this.assignStyleDialog = true
+      },
+      closeStyleAssignment () {
+        this.assignStyleDialog = false
+        this.styleAssignment = null
       },
       closeEditor () {
         this.editDialog = false

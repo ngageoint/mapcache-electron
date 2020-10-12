@@ -3,9 +3,8 @@
     <v-card-title>
       {{isEditing ? 'Edit Feature' : 'New Feature'}}
     </v-card-title>
-    <v-divider></v-divider>
-    <v-card-text  style="max-height: 500px;">
-      <v-form v-model="formValid">
+    <v-card-text style="max-height: 500px;">
+      <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
           <template v-for="column in editableColumns">
             <v-list-item
@@ -25,20 +24,19 @@
         </v-list>
       </v-form>
     </v-card-text>
-    <v-divider></v-divider>
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
         text
         @click="close">
-        cancel
+        Cancel
       </v-btn>
       <v-btn
         v-if="formValid"
         color="primary"
         text
         @click="save">
-        save
+        Save
       </v-btn>
     </v-card-actions>
     <v-snackbar

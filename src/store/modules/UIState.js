@@ -26,7 +26,7 @@ const mutations = {
     Vue.delete(state, projectId)
   },
   setDarkTheme (state, {projectId, enabled}) {
-    state[projectId].dark = enabled
+    Vue.set(state[projectId], 'dark', enabled)
   }
 }
 

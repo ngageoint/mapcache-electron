@@ -13,7 +13,7 @@
           <v-btn
             text
             @click.stop="clearDialog">
-            cancel
+            Cancel
           </v-btn>
           <v-btn
             color="warning"

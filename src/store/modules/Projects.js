@@ -78,58 +78,6 @@ const mutations = {
       Vue.set(state[projectId].sources[id], 'styleKey', state[projectId].sources[id].styleKey + 1)
     }
   },
-  updateTableStyleAssignmentGeometryType (state, {projectId, id, tableName, geometryType, isGeoPackage}) {
-    if (isGeoPackage) {
-      const copy = _.cloneDeep(state[projectId].geopackages[id].tableStyleAssignment)
-      copy.table = tableName
-      copy.geometryType = geometryType
-      Vue.set(state[projectId].geopackages[id], 'tableStyleAssignment', copy)
-    } else {
-      const copy = _.cloneDeep(state[projectId].sources[id].tableStyleAssignment)
-      copy.table = tableName
-      copy.geometryType = geometryType
-      Vue.set(state[projectId].sources[id], 'tableStyleAssignment', copy)
-    }
-  },
-  updateTableIconAssignmentGeometryType (state, {projectId, id, tableName, geometryType, isGeoPackage}) {
-    if (isGeoPackage) {
-      const copy = _.cloneDeep(state[projectId].geopackages[id].tableIconAssignment)
-      copy.table = tableName
-      copy.geometryType = geometryType
-      Vue.set(state[projectId].geopackages[id], 'tableIconAssignment', copy)
-    } else {
-      const copy = _.cloneDeep(state[projectId].sources[id].tableIconAssignment)
-      copy.table = tableName
-      copy.geometryType = geometryType
-      Vue.set(state[projectId].sources[id], 'tableIconAssignment', copy)
-    }
-  },
-  updateStyleAssignmentFeature (state, {projectId, id, tableName, featureId, isGeoPackage}) {
-    if (isGeoPackage) {
-      const copy = _.cloneDeep(state[projectId].geopackages[id].styleAssignment)
-      copy.table = tableName
-      copy.featureId = featureId
-      Vue.set(state[projectId].geopackages[id], 'styleAssignment', copy)
-    } else {
-      const copy = _.cloneDeep(state[projectId].sources[id].styleAssignment)
-      copy.table = tableName
-      copy.featureId = featureId
-      Vue.set(state[projectId].sources[id], 'styleAssignment', copy)
-    }
-  },
-  updateIconAssignmentFeature (state, {projectId, id, tableName, featureId, isGeoPackage}) {
-    if (isGeoPackage) {
-      const copy = _.cloneDeep(state[projectId].geopackages[id].iconAssignment)
-      copy.table = tableName
-      copy.featureId = featureId
-      Vue.set(state[projectId].geopackages[id], 'iconAssignment', copy)
-    } else {
-      const copy = _.cloneDeep(state[projectId].sources[id].iconAssignment)
-      copy.table = tableName
-      copy.featureId = featureId
-      Vue.set(state[projectId].sources[id], 'iconAssignment', copy)
-    }
-  },
   deleteProject (state, project) {
     Vue.delete(state, project.id)
   },
@@ -265,10 +213,6 @@ const actions = {
   },
   addGeoPackage ({ commit, state }, {projectId, filePath}) {
     GeoPackageUtilities.getOrCreateGeoPackageForApp(filePath).then(geopackage => {
-      geopackage.styleAssignment = {table: null, featureId: -1}
-      geopackage.iconAssignment = {table: null, featureId: -1}
-      geopackage.tableStyleAssignment = {table: null, geometryType: -1}
-      geopackage.tableIconAssignment = {table: null, geometryType: -1}
       commit('setGeoPackage', {projectId, geopackage})
     })
   },
@@ -292,10 +236,6 @@ const actions = {
     const newPath = path.join(path.dirname(oldPath), name + '.gpkg')
     fs.copyFileSync(oldPath, newPath)
     GeoPackageUtilities.getOrCreateGeoPackageForApp(newPath).then(geopackage => {
-      geopackage.styleAssignment = {table: null, featureId: -1}
-      geopackage.iconAssignment = {table: null, featureId: -1}
-      geopackage.tableStyleAssignment = {table: null, geometryType: -1}
-      geopackage.tableIconAssignment = {table: null, geometryType: -1}
       commit('setGeoPackage', {projectId, geopackage})
     })
   },
@@ -373,51 +313,39 @@ const actions = {
     }
     commit('removeDataSource', {projectId, sourceId})
   },
-  updateStyleAssignmentFeature ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
-    commit('updateStyleAssignmentFeature', {projectId, id, tableName, featureId, isGeoPackage})
-  },
-  updateIconAssignmentFeature ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
-    commit('updateIconAssignmentFeature', {projectId, id, tableName, featureId, isGeoPackage})
-  },
-  updateTableStyleAssignmentGeometryType ({ commit, state }, {projectId, id, tableName, geometryType, isGeoPackage}) {
-    commit('updateTableStyleAssignmentGeometryType', {projectId, id, tableName, geometryType, isGeoPackage})
-  },
-  updateTableIconAssignmentGeometryType ({ commit, state }, {projectId, id, tableName, geometryType, isGeoPackage}) {
-    commit('updateTableIconAssignmentGeometryType', {projectId, id, tableName, geometryType, isGeoPackage})
-  },
-  updateFeatureStyleSelection ({ commit, state }, {projectId, id, tableName, featureId, styleId, isGeoPackage}) {
+  setFeatureStyle ({ commit, state }, {projectId, id, tableName, featureId, styleId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateFeatureIconSelection ({ commit, state }, {projectId, id, tableName, featureId, iconId, isGeoPackage}) {
+  setFeatureIcon ({ commit, state }, {projectId, id, tableName, featureId, iconId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateTableStyleSelection ({ commit, state }, {projectId, id, tableName, geometryType, styleId, isGeoPackage}) {
+  setTableStyle ({ commit, state }, {projectId, id, tableName, geometryType, styleId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateTableIconSelection ({ commit, state }, {projectId, id, tableName, geometryType, iconId, isGeoPackage}) {
+  setTableIcon ({ commit, state }, {projectId, id, tableName, geometryType, iconId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+  createProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, style}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
-    GeoPackageUtilities.createStyleRow(filePath, tableName).then(function () {
+    GeoPackageUtilities.createStyleRow(filePath, tableName, style).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, isGeoPackage}) {
+  createProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, icon}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
-    GeoPackageUtilities.createIconRow(filePath, tableName).then(function () {
+    GeoPackageUtilities.createIconRow(filePath, tableName, icon).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
@@ -551,10 +479,6 @@ const actions = {
     const geopackageCopy = _.cloneDeep(state[projectId].geopackages[geopackageId])
     GeoPackageUtilities.getOrCreateGeoPackageForApp(geopackageCopy.path).then(geopackage => {
       geopackage.id = geopackageId
-      geopackage.styleAssignment = geopackageCopy.styleAssignment
-      geopackage.iconAssignment = geopackageCopy.iconAssignment
-      geopackage.tableStyleAssignment = geopackageCopy.tableStyleAssignment
-      geopackage.tableIconAssignment = geopackageCopy.tableIconAssignment
       _.keys(geopackage.tables.features).forEach(table => {
         const featureTable = geopackage.tables.features[table]
         const originalTable = geopackageCopy.tables.features[table]

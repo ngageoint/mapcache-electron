@@ -28,7 +28,7 @@
 <!--          <v-list-item-title>Theme</v-list-item-title>-->
 <!--          <v-switch-->
 <!--            dense-->
-<!--            v-model="$vuetify.theme.dark"-->
+<!--            v-model="darkTheme"-->
 <!--            inset-->
 <!--            label="Dark"-->
 <!--          ></v-switch>-->
@@ -105,6 +105,10 @@
   export default {
     props: {
       project: Object,
+      dark: {
+        type: Boolean,
+        default: false
+      },
       back: Function
     },
     components: {
@@ -112,6 +116,14 @@
       EditNumberModal
     },
     computed: {
+      darkTheme: {
+        get () {
+          return this.dark
+        },
+        set (val) {
+          this.setDarkTheme({projectId: this.project.id, enabled: val})
+        }
+      },
       settings: {
         get () {
           const settings = []
@@ -146,7 +158,8 @@
         setProjectName: 'Projects/setProjectName',
         setProjectMaxFeatures: 'Projects/setProjectMaxFeatures',
         setZoomControlEnabled: 'Projects/setZoomControlEnabled',
-        setDisplayZoomEnabled: 'Projects/setDisplayZoomEnabled'
+        setDisplayZoomEnabled: 'Projects/setDisplayZoomEnabled',
+        setDarkTheme: 'UIState/setDarkTheme'
       }),
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})

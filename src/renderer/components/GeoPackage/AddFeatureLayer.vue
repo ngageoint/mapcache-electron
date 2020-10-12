@@ -117,7 +117,7 @@
                 Clear
               </v-btn>
               <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
-                {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit Bounds' : 'Set Bounds')}}
+                {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds')}}
               </v-btn>
             </v-row>
           </v-card-text>
@@ -144,14 +144,14 @@
           color="primary"
           text
           @click.stop="cancel">
-          {{done ? 'close' : 'cancel'}}
+          {{done ? 'Close' : 'Cancel'}}
         </v-btn>
         <v-btn
           v-if="!done && !processing && !project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
           color="primary"
           text
           @click.stop="addFeatureLayer">
-          add
+          Add
         </v-btn>
       </v-card-actions>
     </div>
