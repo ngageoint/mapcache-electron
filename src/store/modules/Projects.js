@@ -337,45 +337,39 @@ const actions = {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, style}) {
+  createStyleRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, style}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.createStyleRow(filePath, tableName, style).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  createProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, icon}) {
+  createIconRow ({ commit, state }, {projectId, id, tableName, isGeoPackage, icon}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.createIconRow(filePath, tableName, icon).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, styleRow, isGeoPackage}) {
+  updateStyleRow ({ commit, state }, {projectId, id, tableName, styleRow, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.updateStyleRow(filePath, tableName, styleRow).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  updateProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, iconRow, isGeoPackage}) {
+  updateIconRow ({ commit, state }, {projectId, id, tableName, iconRow, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.updateIconRow(filePath, tableName, iconRow).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  deleteProjectLayerStyleRow ({ commit, state }, {projectId, id, tableName, styleId, isGeoPackage}) {
+  deleteStyleRow ({ commit, state }, {projectId, id, tableName, styleId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.deleteStyleRow(filePath, tableName, styleId).then(function () {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
-  deleteProjectLayerIconRow ({ commit, state }, {projectId, id, tableName, iconId, isGeoPackage}) {
+  deleteIconRow ({ commit, state }, {projectId, id, tableName, iconId, isGeoPackage}) {
     const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
     GeoPackageUtilities.deleteIconRow(filePath, tableName, iconId).then(function () {
-      commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
-    })
-  },
-  deleteProjectLayerFeatureRow ({ commit, state }, {projectId, id, tableName, featureId, isGeoPackage}) {
-    const filePath = isGeoPackage ? state[projectId].geopackages[id].path : state[projectId].sources[id].geopackageFilePath
-    GeoPackageUtilities.deleteFeatureRow(filePath, tableName, featureId).then(function (result) {
       commit('updateStyleKey', {projectId, id, tableName, isGeoPackage})
     })
   },
@@ -445,6 +439,13 @@ const actions = {
     })
   },
   deleteProject ({ commit, state }, project) {
+    _.keys(state[project.id].sources).forEach(sourceId => {
+      try {
+        FileUtilities.rmSourceDirectory(state[project.id].sources[sourceId].sourceId)
+      } catch (error) {
+        console.error(error)
+      }
+    })
     commit('deleteProject', project)
     commit('UIState/deleteProject', project.id, {root: true})
   },

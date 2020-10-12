@@ -270,6 +270,20 @@
         </v-hover>
         <v-hover>
           <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="openFolder">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-folder</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Show
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
@@ -335,6 +349,7 @@
 </template>
 
 <script>
+  import { shell } from 'electron'
   import Vue from 'vue'
   import { mapActions, mapState } from 'vuex'
   import _ from 'lodash'
@@ -475,6 +490,9 @@
       },
       hideAddTileDialog () {
         this.addTileLayerDialog = false
+      },
+      openFolder () {
+        shell.showItemInFolder(this.geopackage.path)
       }
     },
     watch: {

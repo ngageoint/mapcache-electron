@@ -135,9 +135,9 @@
     },
     methods: {
       ...mapActions({
-        updateProjectLayerStyleRow: 'Projects/updateProjectLayerStyleRow',
-        deleteProjectLayerStyleRow: 'Projects/deleteProjectLayerStyleRow',
-        createProjectLayerStyleRow: 'Projects/createProjectLayerStyleRow'
+        updateStyleRow: 'Projects/updateStyleRow',
+        deleteStyleRow: 'Projects/deleteStyleRow',
+        createStyleRow: 'Projects/createStyleRow'
       }),
       updateOpacity (val) {
         this.opacity = val
@@ -160,7 +160,7 @@
         }
         if (this.styleRow.id) {
           styleRow.id = this.styleRow.id
-          this.updateProjectLayerStyleRow({
+          this.updateStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -168,7 +168,7 @@
             isGeoPackage: this.isGeoPackage
           })
         } else {
-          this.createProjectLayerStyleRow({
+          this.createStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -179,7 +179,7 @@
         this.close()
       },
       deleteStyle () {
-        this.deleteProjectLayerStyleRow({
+        this.deleteStyleRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,

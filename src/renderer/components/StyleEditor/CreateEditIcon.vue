@@ -189,9 +189,9 @@
     },
     methods: {
       ...mapActions({
-        updateProjectLayerIconRow: 'Projects/updateProjectLayerIconRow',
-        deleteProjectLayerIconRow: 'Projects/deleteProjectLayerIconRow',
-        createProjectLayerIconRow: 'Projects/createProjectLayerIconRow'
+        updateIconRow: 'Projects/updateIconRow',
+        deleteIconRow: 'Projects/deleteIconRow',
+        createIconRow: 'Projects/createIconRow'
       }),
       handleKeyDown: (e) => {
         if ((e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 9) || e.keyCode === 69) {
@@ -217,7 +217,7 @@
         this.aspectRatio = this.width / this.height
       },
       deleteIcon () {
-        this.deleteProjectLayerIconRow({
+        this.deleteIconRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,
@@ -239,7 +239,7 @@
         }
         if (this.iconRow.id) {
           iconRow.id = this.iconRow.id
-          this.updateProjectLayerIconRow({
+          this.updateIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -247,7 +247,7 @@
             isGeoPackage: this.isGeoPackage
           })
         } else {
-          this.createProjectLayerIconRow({
+          this.createIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,

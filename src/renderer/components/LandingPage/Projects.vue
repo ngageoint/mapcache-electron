@@ -1,5 +1,34 @@
 <template>
   <div>
+    <v-dialog
+      v-if="removeProject"
+      v-model="removeDialog"
+      max-width="500"
+      persistent>
+      <v-card>
+        <v-card-title style="color: grey; font-weight: 600;">
+          <v-row no-gutters justify="start" align="center">
+            <v-col>
+              <v-icon>mdi-trash-can-outline</v-icon>Remove <b>{{removeProject.name}}</b>
+            </v-col>
+          </v-row>
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="removeDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="warning"
+            text
+            @click="remove">
+            Remove
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <div class="project-container" id="projects">
       <ul class="projects" id="project-list">
 
@@ -11,7 +40,7 @@
         </li>
 
         <li v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)" class="project">
-          <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="deleteProject(project)"/>
+          <font-awesome-icon class="project-delete" icon="times-circle" size="lg" @click.stop="showRemoveProjectDialog(project)"/>
           <div class="project-thumb">
             <img class="project-thumb-icon" src="@/assets/Icon.png"></img>
           </div>
@@ -55,7 +84,9 @@
     data () {
       return {
         dialog: false,
-        dialogText: ''
+        dialogText: '',
+        removeDialog: false,
+        removeProject: null
       }
     },
     methods: {
@@ -71,6 +102,15 @@
         this.$electron.ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })
+      },
+      showRemoveProjectDialog (project) {
+        this.removeProject = project
+        this.removeDialog = true
+      },
+      remove () {
+        this.deleteProject(this.removeProject)
+        this.removeDialog = false
+        this.removeProject = null
       },
       onClickOpenProject (project) {
         this.dialogText = 'Loading ' + project.name + '...'
