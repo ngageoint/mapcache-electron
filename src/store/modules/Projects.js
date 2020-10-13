@@ -147,6 +147,9 @@ const mutations = {
   setDisplayZoomEnabled (state, {projectId, enabled}) {
     Vue.set(state[projectId], 'displayZoomEnabled', enabled)
   },
+  setDisplayAddressSearchBar (state, {projectId, enabled}) {
+    Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
+  },
   clearActiveLayers (state, {projectId}) {
     const projectCopy = _.cloneDeep(state[projectId])
     _.keys(projectCopy.geopackages).forEach(key => {
@@ -460,6 +463,9 @@ const actions = {
   },
   setDisplayZoomEnabled ({ commit, state }, {projectId, enabled}) {
     commit('setDisplayZoomEnabled', {projectId, enabled})
+  },
+  setDisplayAddressSearchBar ({ commit, state }, {projectId, enabled}) {
+    commit('setDisplayAddressSearchBar', {projectId, enabled})
   },
   clearActiveLayers ({ commit, state }, {projectId}) {
     commit('clearActiveLayers', {projectId})

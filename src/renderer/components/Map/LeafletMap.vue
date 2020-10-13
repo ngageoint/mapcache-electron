@@ -114,7 +114,6 @@
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let maxFeatures
   let isDrawing = false
-  let zoomToExtentKey
 
   function normalize (longitude) {
     let lon = longitude
@@ -149,7 +148,7 @@
     },
     data () {
       return {
-        zoomToExtentKey,
+        zoomToExtentKey: this.project && this.project.zoomToExtent ? this.project.zoomToExtent.key || 0 : 0,
         isDrawing,
         maxFeatures,
         NEW_GEOPACKAGE_OPTION,
@@ -654,24 +653,6 @@
                   sourceLayers[sourceId].mapLayer = updateMapLayer
                 }
               })
-            } else if (!_.isEqual(updatedSource.styleAssignmentFeature, oldLayerConfig.styleAssignmentFeature) && updatedSource.pane === 'vector') {
-              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              GeoPackageUtilities.getBoundingBoxForFeature(updatedSource.geopackageFilePath, updatedSource.sourceLayerName, updatedSource.styleAssignmentFeature).then(function (extent) {
-                map.fitBounds([
-                  [extent[1], extent[0]],
-                  [extent[3], extent[2]]
-                ])
-              })
-              zoomToExtentOfAllContent = false
-            } else if (!_.isEqual(updatedSource.iconAssignmentFeature, oldLayerConfig.iconAssignmentFeature) && updatedSource.pane === 'vector') {
-              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              GeoPackageUtilities.getBoundingBoxForFeature(updatedSource.geopackageFilePath, updatedSource.sourceLayerName, updatedSource.iconAssignmentFeature).then(function (extent) {
-                map.fitBounds([
-                  [extent[1], extent[0]],
-                  [extent[3], extent[2]]
-                ])
-              })
-              zoomToExtentOfAllContent = false
             }
           })
 
@@ -755,12 +736,6 @@
                 this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
               })
               zoomToExtentOfAllContent = zoomToExtentOfAllContent || (featureTablesTurnedOn.length + tileTablesTurnedOn.length) > 0
-            } else if (!_.isEqual(updatedGeoPackage.styleAssignment, oldGeoPackage.styleAssignment)) {
-              this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.styleAssignment.table, updatedGeoPackage.styleAssignment.featureId)
-              zoomToExtentOfAllContent = false
-            } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
-              this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
-              zoomToExtentOfAllContent = false
             }
             // if (zoomToExtentOfAllContent) {
             //   this.zoomToContent()
@@ -790,6 +765,8 @@
         async handler (updatedProject, oldValue) {
           updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
           updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+          console.log(this.addressSearchBarControl.container)
+          updatedProject.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
           if (updatedProject.maxFeatures !== this.maxFeatures) {
             for (const gp of Object.values(updatedProject.geopackages)) {
               for (const tableName of Object.keys(gp.tables.features)) {
@@ -845,11 +822,12 @@
         layers: [defaultBaseMap]
       })
       const provider = new OpenStreetMapProvider()
+      this.addressSearchBarControl = new GeoSearchControl({
+        provider,
+        style: 'bar'
+      })
       this.map.addControl(
-        new GeoSearchControl({
-          provider,
-          style: 'bar'
-        })
+        this.addressSearchBarControl
       )
       this.maxFeatures = this.project.maxFeatures
       this.map.setView(defaultCenter, defaultZoom)
@@ -868,6 +846,7 @@
       this.map.addControl(this.drawingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+      this.project.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
       this.map.on('click', this.queryForFeatures)
       const checkFeatureCount = _.throttle(async function (e) {
         if (!_this.drawingControl.isDrawing) {

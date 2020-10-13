@@ -104,6 +104,7 @@
               geopackages: {},
               zoomControlEnabled: true,
               displayZoomEnabled: true,
+              displayAddressSearchBar: true,
               maxFeatures: 1000,
               boundingBoxFilterEditingEnabled: false,
               boundingBoxFilter: undefined

@@ -77,6 +77,20 @@
             </v-list-item-content>
           </template>
         </v-list-item>
+        <v-list-item>
+          <template v-slot:default="{ active }">
+            <v-list-item-action>
+              <v-checkbox
+                :input-value="active"
+                color="primary"
+              ></v-checkbox>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>Address search</v-list-item-title>
+              <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
+            </v-list-item-content>
+          </template>
+        </v-list-item>
       </v-list-item-group>
     </v-list>
     <v-list
@@ -133,19 +147,27 @@
           if (this.project.displayZoomEnabled || false) {
             settings.push(1)
           }
+          if (this.project.displayAddressSearchBar || false) {
+            settings.push(2)
+          }
           return settings
         },
         set (settings) {
           const zoomControlEnabled = this.project.zoomControlEnabled || false
           const displayZoomEnabled = this.project.displayZoomEnabled || false
+          const displayAddressSearchBar = this.project.displayAddressSearchBar || false
           const zoomControlSettingFound = settings.findIndex(setting => setting === 0) >= 0
           const displayZoomSettingFound = settings.findIndex(setting => setting === 1) >= 0
+          const displayAddressSearchBarFound = settings.findIndex(setting => setting === 2) >= 0
 
           if (zoomControlEnabled !== zoomControlSettingFound) {
             this.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
           }
           if (displayZoomEnabled !== displayZoomSettingFound) {
             this.setDisplayZoomEnabled({projectId: this.project.id, enabled: displayZoomSettingFound})
+          }
+          if (displayAddressSearchBar !== displayAddressSearchBarFound) {
+            this.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
           }
         }
       }
@@ -159,6 +181,7 @@
         setProjectMaxFeatures: 'Projects/setProjectMaxFeatures',
         setZoomControlEnabled: 'Projects/setZoomControlEnabled',
         setDisplayZoomEnabled: 'Projects/setDisplayZoomEnabled',
+        setDisplayAddressSearchBar: 'Projects/setDisplayAddressSearchBar',
         setDarkTheme: 'UIState/setDarkTheme'
       }),
       saveProjectName (val) {
