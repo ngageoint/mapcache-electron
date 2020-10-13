@@ -675,9 +675,9 @@
             }
           })
 
-          if (zoomToExtentOfAllContent) {
-            this.zoomToContent()
-          }
+          // if (zoomToExtentOfAllContent) {
+          //   this.zoomToContent()
+          // }
 
           // // data source was changed
           // if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
@@ -762,9 +762,9 @@
               this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
               zoomToExtentOfAllContent = false
             }
-            if (zoomToExtentOfAllContent) {
-              this.zoomToContent()
-            }
+            // if (zoomToExtentOfAllContent) {
+            //   this.zoomToContent()
+            // }
           })
 
           // geopackage was changed
@@ -1101,5 +1101,10 @@
   }
   .results {
     color: black;
+  }
+
+  .leaflet-geosearch-bar {
+    margin-left: 1rem !important;
+    margin-top: 1rem !important;
   }
 </style>
