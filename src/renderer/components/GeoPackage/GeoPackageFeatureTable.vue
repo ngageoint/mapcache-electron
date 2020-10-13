@@ -45,12 +45,12 @@
       calculate-widths
       :headers="headers"
       :items="tableEntries"
-      item-key="code_key"
+      item-key="key"
       class="elevation-1"
-      :height="Math.min(160, 32 * (tableEntries.length + 1))"
+      :options="{itemsPerPage: 5}"
       @click:row="handleClick"
     >
-      <template v-slot:item.code_actions="{ item }">
+      <template v-slot:item.actions="{ item }">
         <v-btn
           icon
           small
@@ -64,6 +64,21 @@
             title="Edit"
           >
             mdi-pencil
+          </v-icon>
+        </v-btn>
+        <v-btn
+          icon
+          small
+          @click="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }">
+          <v-icon
+            small
+            title="Style"
+          >
+            mdi-palette
           </v-icon>
         </v-btn>
         <v-btn
@@ -84,23 +99,6 @@
           </v-icon>
         </v-btn>
       </template>
-      <template v-slot:item.code_style="{ item }">
-        <v-btn
-          icon
-          small
-          @click="(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              showStyleAssignment(item)
-            }">
-          <v-icon
-            small
-            title="Style"
-          >
-            mdi-palette
-          </v-icon>
-        </v-btn>
-      </template>
     </v-data-table>
     <v-dialog
       v-model="editDialog"
@@ -115,6 +113,7 @@
 <script>
   import { mapActions } from 'vuex'
   import _ from 'lodash'
+  import moment from 'moment'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import FeatureEditor from './FeatureEditor'
@@ -148,13 +147,12 @@
       tableEntries () {
         return this.table.features.map(feature => {
           const item = {
-            code_key: feature.id + '_' + this.table.tableName + '_' + this.geopackage.name,
-            code_geopackage: this.geopackage.name,
-            code_geopackageId: this.geopackage.id,
-            code_layer: this.table.tableName,
+            key: feature.id + '_' + this.table.tableName + '_' + this.geopackage.name,
+            geopackage: this.geopackage.name,
+            geopackageId: this.geopackage.id,
+            layer: this.table.tableName,
             id: feature.id,
-            code_type: feature.geometry.type,
-            code_style: null
+            type: feature.geometry.type
           }
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
@@ -163,8 +161,14 @@
               if (column.dataType === GeoPackageDataType.BOOLEAN) {
                 value = value === 1 || value === true
               }
-              if (value !== '' && (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME)) {
-                value = new Date(value).toISOString()
+              if (value !== '' && column.dataType === GeoPackageDataType.DATE) {
+                value = moment.utc(value).format('MM/DD/YYYY')
+              }
+              if (value !== '' && column.dataType === GeoPackageDataType.DATETIME) {
+                value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
+              }
+              if (column.dataType === GeoPackageDataType.TEXT && value.length > 15) {
+                value = value.substring(0, 15) + '...'
               }
             } catch (e) {}
             item[key.toLowerCase() + '_table'] = value
@@ -174,16 +178,16 @@
       },
       headers () {
         const headers = [
-          { text: 'Actions', value: 'code_actions', sortable: false },
-          { text: 'Style', value: 'code_style' },
-          { text: 'Geometry Type', value: 'code_type', width: 150 }
+          { text: 'Actions', value: 'actions', sortable: false, width: 150 },
+          { text: 'Geometry Type', value: 'type', width: 150 }
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
           if (!column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
             tableHeaders.push({
               text: column.name.toLowerCase(),
-              value: column.name.toLowerCase() + '_table'
+              value: column.name.toLowerCase() + '_table',
+              width: 200
             })
           }
         })
@@ -243,7 +247,7 @@
       },
       handleClick (value) {
         if (!this.removeDialog) {
-          this.zoomToFeature(this.geopackage.path, value.code_layer, value.id)
+          this.zoomToFeature(this.geopackage.path, value.layer, value.id)
         }
       }
     }

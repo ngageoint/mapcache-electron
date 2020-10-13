@@ -1,6 +1,6 @@
 <template>
-  <div style="width: 100%; height: 100%; z-index: 0; position: relative;">
-    <div id="map" style="width: 100%; height: 100%; z-index: 0;">
+  <div :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
+    <div id="map" :style="{width: '100%', zIndex: 0, flex: 1}">
       <div id='tooltip'></div>
       <v-dialog
         v-model="layerSelectionVisible"
@@ -68,10 +68,11 @@
     </div>
     <transition name="slide-up">
       <v-card
+        tile
         v-show="showFeatureTable"
         ref="featuresPopup"
         class="mx-auto"
-        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
+        style="height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
         <v-card-text>
           <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>
@@ -85,6 +86,8 @@
   import { remote } from 'electron'
   import _ from 'lodash'
   import * as vendor from '../../../lib/vendor'
+  import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
+  import 'leaflet-geosearch/dist/geosearch.css'
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
@@ -675,6 +678,11 @@
           if (zoomToExtentOfAllContent) {
             this.zoomToContent()
           }
+
+          // // data source was changed
+          // if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+          //   this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+          // }
         },
         deep: true
       },
@@ -753,16 +761,16 @@
             } else if (!_.isEqual(updatedGeoPackage.iconAssignment, oldGeoPackage.iconAssignment)) {
               this.zoomToFeature(updatedGeoPackage.path, updatedGeoPackage.iconAssignment.table, updatedGeoPackage.iconAssignment.featureId)
               zoomToExtentOfAllContent = false
-            } else if (!_.isEqual(updatedGeoPackage.modifiedDate, oldGeoPackage.modifiedDate)) {
-              // geopackage was synchronized
-              if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
-                this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-              }
             }
             if (zoomToExtentOfAllContent) {
               this.zoomToContent()
             }
           })
+
+          // geopackage was changed
+          if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+            this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+          }
         },
         deep: true
       },
@@ -836,6 +844,13 @@
         minZoom: 3,
         layers: [defaultBaseMap]
       })
+      const provider = new OpenStreetMapProvider()
+      this.map.addControl(
+        new GeoSearchControl({
+          provider,
+          style: 'bar'
+        })
+      )
       this.maxFeatures = this.project.maxFeatures
       this.map.setView(defaultCenter, defaultZoom)
       this.baseMapsControl = vendor.L.control.layers(baseMaps)
@@ -1083,5 +1098,8 @@
   .hidden {
     display: none !important;
     visibility: hidden;
+  }
+  .results {
+    color: black;
   }
 </style>

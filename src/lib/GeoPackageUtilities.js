@@ -14,6 +14,7 @@ import {
   GeoPackageValidate
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
+import moment from 'moment'
 import reproject from 'reproject'
 import path from 'path'
 import fs from 'fs'
@@ -199,14 +200,16 @@ export default class GeoPackageUtilities {
    * @param updateBoundingBox
    */
   static _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = true) {
-    if (feature.properties) {
-      feature.properties.id = undefined
-      _.keys(feature.properties).forEach(key => {
-        if (_.isObject(feature.properties[key])) {
-          delete feature.properties[key]
+    // fix dates
+    gp.getFeatureDao(tableName).table.getUserColumns().getColumns().forEach(column => {
+      if (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME) {
+        if (!_.isNil(feature.properties[column.getName()]) && !_.isEmpty(feature.properties[column.getName()])) {
+          feature.properties[column.getName()] = moment.utc(feature.properties[column.getName()]).toDate()
+        } else {
+          delete feature.properties[column.getName()]
         }
-      })
-    }
+      }
+    })
     gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
     if (updateBoundingBox) {
       this._updateBoundingBoxForFeatureTable(gp, tableName)
@@ -2735,8 +2738,10 @@ export default class GeoPackageUtilities {
         simplifiedType = 'Text'
         break
       case GeoPackageDataType.DATE:
-      case GeoPackageDataType.DATETIME:
         simplifiedType = 'Date'
+        break
+      case GeoPackageDataType.DATETIME:
+        simplifiedType = 'Date & Time'
         break
       default:
         break
@@ -2754,8 +2759,10 @@ export default class GeoPackageUtilities {
         simplifiedTypeIcon = 'mdi-format-text'
         break
       case GeoPackageDataType.DATE:
-      case GeoPackageDataType.DATETIME:
         simplifiedTypeIcon = 'mdi-calendar'
+        break
+      case GeoPackageDataType.DATETIME:
+        simplifiedTypeIcon = 'mdi-calendar-clock'
         break
       default:
         break

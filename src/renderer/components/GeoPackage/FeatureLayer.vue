@@ -155,7 +155,7 @@
         </v-dialog>
         <v-dialog
           v-model="addFieldDialog"
-          max-width="500"
+          max-width="575"
           persistent>
           <v-card>
             <v-card-title style="color: grey; font-weight: 600;">
@@ -185,30 +185,35 @@
                         mandatory
                         style="width: 100%"
                       >
-                        <v-btn :value="TEXT" style="width: 20%">
+                        <v-btn :value="TEXT">
                           <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
                             mdi-format-text
                           </v-icon>
                           <span class="hidden-sm-and-down">Text</span>
                         </v-btn>
-                        <v-btn :value="FLOAT" style="width: 30%">
+                        <v-btn :value="FLOAT">
                           <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
                             mdi-pound
                           </v-icon>
                           <span class="hidden-sm-and-down">Number</span>
                         </v-btn>
-                        <v-btn :value="BOOLEAN" style="width: 30%">
+                        <v-btn :value="BOOLEAN">
                           <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
                             mdi-toggle-switch
                           </v-icon>
                           <span class="hidden-sm-and-down">Checkbox</span>
                         </v-btn>
-                        <v-btn :value="DATETIME" style="width: 20%">
-                          <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
+                        <v-btn :value="DATE">
+                          <v-icon left :color="addFieldType === DATE ? 'primary' : ''">
                             mdi-calendar
                           </v-icon>
                           <span class="hidden-sm-and-down">Date</span>
-
+                        </v-btn>
+                        <v-btn :value="DATETIME">
+                          <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
+                            mdi-calendar-clock
+                          </v-icon>
+                          <span class="hidden-sm-and-down">Date & Time</span>
                         </v-btn>
                       </v-btn-toggle>
                     </v-col>
@@ -500,7 +505,8 @@
         TEXT: GeoPackageDataType.TEXT,
         FLOAT: GeoPackageDataType.FLOAT,
         BOOLEAN: GeoPackageDataType.BOOLEAN,
-        DATETIME: GeoPackageDataType.DATETIME
+        DATETIME: GeoPackageDataType.DATETIME,
+        DATE: GeoPackageDataType.DATE
       }
     },
     computed: {

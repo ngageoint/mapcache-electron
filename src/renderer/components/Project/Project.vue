@@ -9,7 +9,7 @@
         permanent
         absolute
         dark
-        style="z-index: 4;"
+        style="z-index: 10;"
       >
         <v-list dense flat class="py-0">
           <v-list-item one-line class="px-0 pt-1 pb-1">
