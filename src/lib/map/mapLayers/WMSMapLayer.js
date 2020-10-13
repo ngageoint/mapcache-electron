@@ -46,8 +46,8 @@ export default class WMSLayer {
     const headers = []
     if (layerModel.credentials && (layerModel.credentials.type === 'basic' || layerModel.credentials.type === 'bearer')) {
       headers.push({ header: 'Authorization', value: layerModel.credentials.authorization })
-      headers.push({ header: 'User-Agent', value: remote.getCurrentWebContents().session.getUserAgent() })
     }
+    headers.push({ header: 'User-Agent', value: remote.getCurrentWebContents().session.getUserAgent() })
     let mapLayer = wmsHeader(GeoServiceUtilities.getBaseURL(layerModel.filePath), options, headers)
     mapLayer.id = layerModel.id
     return mapLayer

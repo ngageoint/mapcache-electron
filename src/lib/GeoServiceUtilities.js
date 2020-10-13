@@ -4,9 +4,6 @@ export default class GeoServiceUtilities {
   // get the GetCapabilities URL
   static getGetCapabilitiesURL (wmsUrl) {
     let {baseUrl, queryParams} = URLUtilities.getBaseUrlAndQueryParams(wmsUrl)
-    if (queryParams['service']) {
-      delete queryParams['service']
-    }
     queryParams['request'] = 'GetCapabilities'
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
@@ -18,6 +15,9 @@ export default class GeoServiceUtilities {
     }
     if (queryParams['service']) {
       delete queryParams['service']
+    }
+    if (queryParams['version']) {
+      delete queryParams['version']
     }
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
@@ -32,20 +32,42 @@ export default class GeoServiceUtilities {
     return version
   }
 
+  static getLayers (layer) {
+    const layers = []
+    if (!_.isNil(layer['Layer'])) {
+      for (const l of layer['Layer']) {
+        layers.push(...this.getLayers(l))
+      }
+    } else {
+      let bbox
+      let extent
+      let version
+      if (!_.isNil(layer['LatLonBoundingBox'])) {
+        bbox = layer['LatLonBoundingBox'][0]['$']
+        extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+        version = '1.1.1'
+      } else {
+        bbox = layer['EX_GeographicBoundingBox'][0]
+        extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
+        version = '1.3.0'
+      }
+      layers.push({name: layer['Name'][0], extent: extent, wms: true, version})
+    }
+    return layers
+  }
+
   static getWMSLayersFromGetCapabilities (json) {
     let layers = []
-    if (!_.isNil(json['WMT_MS_Capabilities'])) {
-      for (const layer of json['WMT_MS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
-        const bbox = layer['LatLonBoundingBox'][0]['$']
-        const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-        layers.push({name: layer['Name'][0], extent: extent, wms: true, version: '1.1.1'})
+    try {
+      if (!_.isNil(json['WMT_MS_Capabilities'])) {
+        const wmsCapability = json['WMT_MS_Capabilities']['Capability'][0]
+        layers.push(...this.getLayers(wmsCapability))
+      } else if (!_.isNil(json['WMS_Capabilities'])) {
+        const wmsCapability = json['WMS_Capabilities']['Capability'][0]
+        layers.push(...this.getLayers(wmsCapability))
       }
-    } else if (!_.isNil(json['WMS_Capabilities'])) {
-      for (const layer of json['WMS_Capabilities']['Capability'][0]['Layer'][0]['Layer']) {
-        const bbox = layer['EX_GeographicBoundingBox'][0]
-        const extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
-        layers.push({name: layer['Name'][0], extent: extent, wms: true, version: '1.3.0'})
-      }
+    } catch (e) {
+      console.log(e)
     }
     return layers
   }

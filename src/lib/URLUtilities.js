@@ -8,19 +8,11 @@ export default class URLUtilities {
       baseUrl = url.substring(0, queryIndex)
     }
     let queryObject = {}
-    let equalIdx
-    while ((equalIdx = query.indexOf('=')) > 0) {
-      let key = query.substring(0, equalIdx)
-      let value = query.substring(equalIdx + 1)
-      let additionalParamIndex = value.indexOf('&')
-      if (additionalParamIndex > 0) {
-        value = value.substring(0, additionalParamIndex)
-        query = value.substring(additionalParamIndex + 1)
-      } else {
-        query = ''
-      }
+    const params = query.split('&')
+    params.forEach(param => {
+      const [key, value] = param.split('=')
       queryObject[key] = value
-    }
+    })
     return {
       baseUrl: baseUrl,
       queryParams: queryObject

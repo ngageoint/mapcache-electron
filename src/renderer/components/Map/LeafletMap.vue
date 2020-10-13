@@ -765,7 +765,6 @@
         async handler (updatedProject, oldValue) {
           updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
           updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
-          console.log(this.addressSearchBarControl.container)
           updatedProject.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
           if (updatedProject.maxFeatures !== this.maxFeatures) {
             for (const gp of Object.values(updatedProject.geopackages)) {
