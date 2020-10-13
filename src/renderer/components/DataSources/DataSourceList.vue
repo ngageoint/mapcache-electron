@@ -5,11 +5,15 @@
         :key="item.id"
         @click="item.click"
       >
-        <v-list-item-icon v-if="item.isTile">
-          <img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="24px">
-        </v-list-item-icon>
-        <v-list-item-icon v-else>
-          <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="24px" height="24px">
+        <v-list-item-icon class="mt-auto mb-auto">
+          <v-btn
+            icon
+            color="primary"
+            @click="item.zoomTo"
+          >
+            <img v-if="item.isTile" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="24px"/>
+            <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="24px" height="24px"/>
+          </v-btn>
         </v-list-item-icon>
         <v-list-item-content>
           <v-list-item-title :title="item.name" class="header" :style="{fontSize: '18px', fontWeight: '500', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
@@ -41,7 +45,8 @@
     },
     methods: {
       ...mapActions({
-        setDataSourceVisible: 'Projects/setDataSourceVisible'
+        setDataSourceVisible: 'Projects/setDataSourceVisible',
+        zoomToExtent: 'Projects/zoomToExtent'
       })
     },
     computed: {
@@ -56,6 +61,10 @@
             _this.setDataSourceVisible({projectId, sourceId, visible: !source.visible})
             e.stopPropagation()
           }
+          const zoomTo = (e) => {
+            _this.zoomToExtent({projectId, extent: source.extent})
+            e.stopPropagation()
+          }
           items.push({
             id: key,
             name: _.isNil(source.displayName) ? source.name : source.displayName,
@@ -65,7 +74,8 @@
             click: function () {
               _this.sourceSelected(sourceId)
             },
-            setVisible
+            setVisible,
+            zoomTo
           })
         })
         return items

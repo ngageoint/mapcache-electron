@@ -5,11 +5,15 @@
         :key="item.id"
         @click="item.click"
       >
-      <v-list-item-icon v-if="item.isTile">
-        <img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="24px">
-      </v-list-item-icon>
-      <v-list-item-icon v-else>
-        <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="24px" height="24px">
+      <v-list-item-icon class="mt-auto mb-auto">
+        <v-btn
+          icon
+          color="primary"
+          @click="item.zoomTo"
+        >
+          <img v-if="item.isTile" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="24px"/>
+          <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="24px" height="24px"/>
+        </v-btn>
       </v-list-item-icon>
       <v-list-item-content>
         <v-list-item-title :title="item.name" class="header" :style="{fontSize: '18px', fontWeight: '500', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
@@ -31,6 +35,7 @@
 
 <script>
   import { mapActions } from 'vuex'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   export default {
     props: {
       geopackage: Object,
@@ -40,7 +45,8 @@
     methods: {
       ...mapActions({
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
-        setGeoPackageTileTableVisible: 'Projects/setGeoPackageTileTableVisible'
+        setGeoPackageTileTableVisible: 'Projects/setGeoPackageTileTableVisible',
+        zoomToExtent: 'Projects/zoomToExtent'
       })
     },
     computed: {
@@ -61,6 +67,12 @@
               _this.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
               e.stopPropagation()
             },
+            zoomTo: function (e) {
+              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                _this.zoomToExtent({projectId: _this.projectId, extent})
+              })
+              e.stopPropagation()
+            },
             visible: featureLayer.visible
           })
         })
@@ -76,6 +88,12 @@
             },
             setVisible: function (e) {
               _this.setGeoPackageTileTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !tileLayer.visible})
+              e.stopPropagation()
+            },
+            zoomTo: function (e) {
+              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                _this.zoomToExtent({projectId: _this.projectId, extent})
+              })
               e.stopPropagation()
             },
             visible: tileLayer.visible

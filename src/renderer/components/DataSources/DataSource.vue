@@ -105,8 +105,10 @@
           <v-row no-gutters>
             <v-col>
               <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                <img v-if="source.pane === 'vector'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Data Source" width="20px" height="20px">
-                <img v-if="source.pane === 'tile'" :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Data Source" width="20px" height="20px">
+                <v-btn icon @click="zoomToSource">
+                  <img v-if="source.pane === 'vector'" src="../../assets/polygon.png" alt="Feature Data Source" width="20px" height="20px">
+                  <img v-if="source.pane === 'tile'" src="../../assets/colored_layers.png" alt="Tile Data Source" width="20px" height="20px">
+                </v-btn>
                 <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} Data Source</span>
               </p>
             </v-col>
@@ -158,7 +160,7 @@
           <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
             <v-col>
               <v-row no-gutters justify="space-between">
-                <v-col style="margin-top: 8px;">
+                <v-col>
                   <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     Data Source Type
                   </p>
@@ -167,12 +169,11 @@
                   </p>
                 </v-col>
                 <v-col>
-                  <v-row no-gutters justify="end" align="center">
+                  <v-row no-gutters justify="end">
                     <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                       Enable
                     </p>
                     <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
-                    <v-btn text icon title="Zoom To" @click.stop="zoomToSource"><v-icon>mdi-magnify</v-icon></v-btn>
                   </v-row>
                 </v-col>
               </v-row>

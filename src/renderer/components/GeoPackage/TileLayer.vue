@@ -125,7 +125,9 @@
       <v-row no-gutters class="mb-2">
         <v-col>
           <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            <img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="20px">
+            <v-btn icon @click="zoomToLayer">
+              <img src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="20px">
+            </v-btn>
             <span>Tile Layer</span>
           </p>
         </v-col>
@@ -177,7 +179,7 @@
       <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
         <v-col>
           <v-row no-gutters justify="space-between">
-            <v-col style="margin-top: 8px;">
+            <v-col>
               <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 GeoPackage
               </p>
@@ -186,12 +188,11 @@
               </p>
             </v-col>
             <v-col>
-              <v-row no-gutters justify="end" align="center">
+              <v-row no-gutters justify="end">
                 <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Enable
                 </p>
                 <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
-                <v-btn text icon title="Zoom To" @click.stop="zoomToLayer"><v-icon>mdi-magnify</v-icon></v-btn>
               </v-row>
             </v-col>
           </v-row>
