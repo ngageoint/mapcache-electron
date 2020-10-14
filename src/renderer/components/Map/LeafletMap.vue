@@ -72,7 +72,7 @@
         v-show="showFeatureTable"
         ref="featuresPopup"
         class="mx-auto"
-        style="height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
+        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
         <v-card-text>
           <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>

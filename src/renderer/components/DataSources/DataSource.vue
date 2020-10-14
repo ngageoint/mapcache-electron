@@ -128,7 +128,7 @@
                 </v-card>
               </template>
             </v-hover>
-            <v-hover>
+            <v-hover v-if="source.pane === 'vector' || source.layerType === 'GeoTIFF'">
               <template v-slot="{ hover }">
                 <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
                   <v-card-text class="pa-2">
