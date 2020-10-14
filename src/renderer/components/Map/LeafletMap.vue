@@ -1082,7 +1082,7 @@
   }
 
   .leaflet-geosearch-bar {
-    margin-left: 1rem !important;
-    margin-top: 1rem !important;
+    margin-left: 10px !important;
+    margin-top: 10px !important;
   }
 </style>
