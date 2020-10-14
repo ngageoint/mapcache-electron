@@ -4,7 +4,7 @@
       <v-sheet v-if="source.pane === 'vector'">
         <style-editor
           :tableName="source.sourceLayerName"
-          :projectId="projectId"
+          :projectId="project.id"
           :id="source.id"
           :path="source.geopackageFilePath"
           :style-key="source.styleKey"
@@ -16,7 +16,7 @@
           :is-geo-package="false"/>
       </v-sheet>
       <div v-if="source.layerType === 'GeoTIFF'">
-        <geotiff-options :source="source" :projectId="projectId" :back="hideStyleEditor"></geotiff-options>
+        <geotiff-options :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
       </div>
     </v-sheet>
     <v-sheet v-else>
@@ -94,10 +94,58 @@
             <v-btn
               color="warning"
               text
-              @click="removeDataSource({projectId: projectId, sourceId: source.id})">
+              @click="removeDataSource({projectId: project.id, sourceId: source.id})">
               Remove
             </v-btn>
           </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="showOverwriteDialog"
+        max-width="500"
+        persistent>
+        <v-card>
+          <v-card-title style="color: grey; font-weight: 600;">
+            <v-row no-gutters justify="start" align="center">
+              <v-col>
+                <v-icon>mdi-export-variant</v-icon>Overwrite {{overwriteFileName}}
+              </v-col>
+            </v-row>
+          </v-card-title>
+          <v-card-text>
+            Are you sure you want to overwrite {{overwriteFileName}}?
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="cancelOverwrite">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="warning"
+              text
+              @click="overwrite">
+              Overwrite
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="exportingProgressDialog"
+        max-width="500"
+        persistent>
+        <v-card>
+          <v-card-title style="color: grey; font-weight: 600;">
+            <v-row no-gutters justify="start" align="center">
+              <v-col>
+                <v-icon>mdi-export-variant</v-icon>Exporting {{initialDisplayName}}
+              </v-col>
+            </v-row>
+          </v-card-title>
+          <v-card-text>
+            <v-progress-linear indeterminate color="primary"></v-progress-linear>
+          </v-card-text>
         </v-card>
       </v-dialog>
       <div class="layer-body">
@@ -142,6 +190,25 @@
                 </v-card>
               </template>
             </v-hover>
+            <v-tooltip bottom :disabled="!project.showToolTips">
+              <template v-slot:activator="{ on, attrs }">
+                <v-hover v-if="source.pane === 'vector'">
+                  <template v-slot="{ hover }">
+                    <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="downloadGeoPackage" v-bind="attrs" v-on="on">
+                      <v-card-text class="pa-2">
+                        <v-row no-gutters align-content="center" justify="center">
+                          <v-icon small>mdi-export-variant</v-icon>
+                        </v-row>
+                        <v-row no-gutters align-content="center" justify="center">
+                          Export
+                        </v-row>
+                      </v-card-text>
+                    </v-card>
+                  </template>
+                </v-hover>
+              </template>
+              <span>Export as GeoPackage</span>
+            </v-tooltip>
             <v-hover>
               <template v-slot="{ hover }">
                 <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
@@ -192,12 +259,29 @@
         </v-container>
       </div>
     </v-sheet>
-
+    <v-snackbar
+      v-model="showExportSnackBar"
+    >
+      Successfully exported.
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="primary"
+          text
+          v-bind="attrs"
+          @click="showExportSnackBar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-sheet>
 </template>
 
 <script>
   import { mapActions, mapState } from 'vuex'
+  import { remote } from 'electron'
+  import fs from 'fs'
+  import path from 'path'
   import _ from 'lodash'
   import BoundsUi from './BoundsUi'
   import GeotiffOptions from './GeotiffOptions'
@@ -212,7 +296,7 @@
           name: ''
         }
       },
-      projectId: String,
+      project: Object,
       back: Function
     },
     components: {
@@ -232,13 +316,19 @@
           return this.source ? this.source.visible : false
         },
         set () {
-          this.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: !this.source.visible})
+          this.setDataSourceVisible({projectId: this.project.id, sourceId: this.source.id, visible: !this.source.visible})
         }
       }
     },
     data () {
       return {
+        exportingProgressDialog: false,
         styleEditorVisible: false,
+        showExportSnackBar: false,
+        showOverwriteDialog: false,
+        overwriteFile: '',
+        overwriteFileName: '',
+        exportSnackBarText: '',
         renameDialog: false,
         renameValid: false,
         deleteDialog: false,
@@ -253,24 +343,64 @@
         setDataSourceDisplayName: 'Projects/setDataSourceDisplayName',
         removeDataSource: 'Projects/removeDataSource',
         setDataSourceVisible: 'Projects/setDataSourceVisible',
-        zoomToExtent: 'Projects/zoomToExtent'
+        zoomToExtent: 'Projects/zoomToExtent',
+        addGeoPackage: 'Projects/addGeoPackage',
+        synchronizeGeoPackage: 'Projects/synchronizeGeoPackage'
       }),
       saveLayerName () {
         this.renameDialog = false
-        this.setDataSourceDisplayName({projectId: this.projectId, sourceId: this.source.id, displayName: this.renamedSource})
+        this.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})
+      },
+      copyAndAddGeoPackage (filePath) {
+        this.exportingProgressDialog = true
+        fs.copyFile(this.source.geopackageFilePath, filePath, () => {
+          const geopackageKey = _.keys(this.project.geopackages).find(key => this.project.geopackages[key].path === filePath)
+          if (_.isNil(geopackageKey)) {
+            this.addGeoPackage({projectId: this.project.id, filePath: filePath})
+          } else {
+            this.synchronizeGeoPackage({projectId: this.project.id, geopackageId: geopackageKey})
+          }
+          this.overwriteFile = ''
+          setTimeout(() => {
+            this.exportingProgressDialog = false
+            this.exportSnackBarText = 'Export successful.'
+            this.showExportSnackBar = true
+          }, 1000)
+        })
       },
       downloadGeoPackage () {
         try {
-          this.$electron.ipcRenderer.send('quick_download_geopackage', { url: this.source.geopackageFilePath })
+          remote.dialog.showSaveDialog((filePath) => {
+            if (!_.isNil(filePath)) {
+              if (!filePath.endsWith('.gpkg')) {
+                filePath = filePath + '.gpkg'
+              }
+              if (!fs.existsSync(filePath)) {
+                this.copyAndAddGeoPackage(filePath)
+              } else {
+                this.overwriteFile = filePath
+                this.overwriteFileName = path.basename(filePath)
+                this.showOverwriteDialog = true
+              }
+            }
+          })
         } catch (error) {
           console.error(error)
         }
+      },
+      overwrite () {
+        this.showOverwriteDialog = false
+        this.copyAndAddGeoPackage(this.overwriteFile)
+      },
+      cancelOverwrite () {
+        this.showOverwriteDialog = false
+        this.overwriteFile = ''
       },
       hideStyleEditor () {
         this.styleEditorVisible = false
       },
       zoomToSource () {
-        this.zoomToExtent({projectId: this.projectId, extent: this.source.extent})
+        this.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
       }
     }
   }

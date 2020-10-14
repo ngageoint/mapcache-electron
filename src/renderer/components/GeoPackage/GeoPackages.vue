@@ -99,14 +99,20 @@
           GeoPackage already exists in project.
         </v-alert>
       </v-sheet>
-      <v-btn
-        class="fab-position"
-        fab
-        color="primary"
-        title="Add geopackage"
-        @click.stop="addGeoPackageDialog = true">
-        <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
-      </v-btn>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            class="fab-position"
+            v-bind="attrs"
+            v-on="on"
+            fab
+            color="primary"
+            @click.stop="addGeoPackageDialog = true">
+            <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
+          </v-btn>
+        </template>
+        <span>Add GeoPackage</span>
+      </v-tooltip>
     </v-sheet>
   </v-sheet>
 </template>

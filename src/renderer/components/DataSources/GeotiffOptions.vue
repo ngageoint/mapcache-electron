@@ -37,9 +37,9 @@
                   <v-text-field type="number" label="Max" v-model="grayBandMax" dense></v-text-field>
                 </v-col>
               </v-row>
-              <v-row no-gutters class="ma-0 pa-0">
-                <v-checkbox v-model="stretchToMinMax" label="Stretch Band to Min/Max" dense>
-                </v-checkbox>
+              <v-row class="ma-0 pa-0">
+                <v-switch v-model="stretchToMinMax" label="Stretch Band to Min/Max">
+                </v-switch>
               </v-row>
               <v-row no-gutters>
                 <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color Gradient" dense>
@@ -99,12 +99,12 @@
             </v-list-item-content>
           </v-list-item>
           <v-list-item>
-            <v-list-item-content style="padding-right: 12px;" class="pt-0 mt-0 pb-0 mb-0">
-              <v-row no-gutters>
-                <v-checkbox v-model="stretchToMinMax" label="Stretch Bands to Min/Max" dense>
-                </v-checkbox>
-              </v-row>
+            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+              Stretch Bands to Min/Max
             </v-list-item-content>
+            <v-list-item-action>
+              <v-switch v-model="stretchToMinMax"></v-switch>
+            </v-list-item-action>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
@@ -124,21 +124,34 @@
             <v-list-item-content style="padding-right: 12px;">
               <v-select v-model="alphaBand" :items="bandOptions" label="Alpha Band" dense>
               </v-select>
-              <v-row no-gutters>
-                <v-checkbox label="NO_DATA" v-model="enableGlobalNoDataValue" dense></v-checkbox>
-              </v-row>
-              <v-row no-gutters>
-                <v-text-field type="number" label="NO_DATA Value" v-model="globalNoDataValue" dense hide-details></v-text-field>
-              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item v-if="renderingMethod < 2">
+            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+              Specify No Data Value
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-switch v-model="enableGlobalNoDataValue"></v-switch>
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
+            <v-list-item-content style="padding-right: 12px;">
+              <v-text-field type="number" label="NO_DATA Value" v-model="globalNoDataValue" dense hide-details></v-text-field>
             </v-list-item-content>
           </v-list-item>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              <v-row no-gutters class="pa-0 ma-0">
-                <v-checkbox v-model="enableGlobalOpacity" dnse></v-checkbox>
-                <v-slider label="Opacity Mask" v-model="globalOpacity" :min="0" :max="100" :interval="1" dense></v-slider>
-              </v-row>
+              Enable opacity
             </v-list-item-content>
+            <v-list-item-action>
+              <v-switch v-model="enableGlobalOpacity"></v-switch>
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item v-if="enableGlobalOpacity">
+            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+              Opacity Mask
+            </v-list-item-content>
+            <v-slider class="mx-auto" hide-details dense v-model="globalOpacity" :min="0" :max="100" :interval="1"></v-slider>
           </v-list-item>
         </v-list>
       </v-card-text>
@@ -162,9 +175,9 @@
         if (value) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer[key] = value
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       }, 500)
@@ -193,9 +206,9 @@
         set (value) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.renderingMethod = value
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -208,9 +221,9 @@
           updatedLayer.redBand = Number(value)
           updatedLayer.redBandMin = this.source.bandOptions[updatedLayer.redBand].min
           updatedLayer.redBandMax = this.source.bandOptions[updatedLayer.redBand].max
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -239,9 +252,9 @@
           updatedLayer.greenBand = Number(value)
           updatedLayer.greenBandMin = this.source.bandOptions[updatedLayer.greenBand].min
           updatedLayer.greenBandMax = this.source.bandOptions[updatedLayer.greenBand].max
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -266,13 +279,13 @@
           return this.source.blueBand
         },
         set (value) {
-          let updatedLayer = Object.assign({}, this.source)
+          let updatedLayer = _.cloneDeep(this.source)
           updatedLayer.blueBand = Number(value)
           updatedLayer.blueBandMin = this.source.bandOptions[updatedLayer.blueBand].min
           updatedLayer.blueBandMax = this.source.bandOptions[updatedLayer.blueBand].max
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -301,9 +314,9 @@
           updatedLayer.grayBand = Number(value)
           updatedLayer.grayBandMin = this.source.bandOptions[updatedLayer.grayBand].min
           updatedLayer.grayBandMax = this.source.bandOptions[updatedLayer.grayBand].max
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -330,9 +343,9 @@
         set (value) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.paletteBand = Number(value)
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -343,9 +356,9 @@
         set (value) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.alphaBand = Number(value)
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -356,9 +369,9 @@
         set (value) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.grayScaleColorGradient = Number(value)
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -369,9 +382,9 @@
         set () {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.enableGlobalNoDataValue = !this.source.enableGlobalNoDataValue
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -380,11 +393,11 @@
           return this.source.enableGlobalOpacity
         },
         set () {
-          let updatedLayer = Object.assign({}, this.source)
+          let updatedLayer = _.cloneDeep(this.source)
           updatedLayer.enableGlobalOpacity = !this.source.enableGlobalOpacity
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       },
@@ -405,16 +418,16 @@
         set () {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer.stretchToMinMax = !this.source.stretchToMinMax
-          this.updateLayer({
+          this.updateSource({
             projectId: this.projectId,
-            layer: updatedLayer
+            source: updatedLayer
           })
         }
       }
     },
     methods: {
       ...mapActions({
-        updateLayer: 'Projects/updateProjectLayer'
+        updateSource: 'Projects/updateSource'
       }),
       zoomToExtent (extent) {
         this.setProjectExtents({projectId: this.projectId, extents: extent})

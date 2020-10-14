@@ -122,6 +122,8 @@ export default class KMLSource extends Source {
               let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
               fileIcons[iconFile] = {
                 url: dataUrl,
+                contentType: 'image/' + path.extname(iconFile).substring(1),
+                data: fs.readFileSync(iconFile),
                 width: image.width,
                 height: image.height,
                 anchor_x: image.width / 2.0,

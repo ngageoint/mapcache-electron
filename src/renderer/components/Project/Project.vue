@@ -66,6 +66,7 @@
 <script>
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from 'lodash'
+  import Vue from 'vue'
 
   import LeafletMap from '../Map/LeafletMap'
   import ViewEditText from '../Common/ViewEditText'
@@ -121,6 +122,16 @@
           }
           this.$vuetify.theme.dark = isDark
           return isDark
+        },
+        showToolTips (state) {
+          let show = true
+          const projectId = new URL(location.href).searchParams.get('id')
+          let project = state.UIState[projectId]
+          if (!_.isNil(project)) {
+            show = project.showToolTips
+          }
+          Vue.prototype.$showToolTips = show
+          return show
         }
       }),
       ...mapGetters({
@@ -151,6 +162,11 @@
       darkTheme: {
         handler (newValue, oldValue) {
           this.$vuetify.theme.dark = newValue
+        }
+      },
+      showToolTips: {
+        handler (newValue, oldValue) {
+          Vue.prototype.$showToolTips = newValue
         }
       }
     },

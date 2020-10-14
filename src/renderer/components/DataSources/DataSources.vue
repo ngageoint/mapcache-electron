@@ -4,7 +4,7 @@
       :key="selectedDataSource.id"
       class="sources"
       :source="selectedDataSource"
-      :projectId="project.id"
+      :project="project"
       :back="deselectDataSource">
     </data-source>
   </v-sheet>
@@ -204,14 +204,20 @@
         </v-col>
       </v-row>
     </v-card>
-    <v-btn
-      class="fab-position"
-      fab
-      color="primary"
-      title="Add data source"
-      @click.stop="addSourceDialog = true">
-      <v-icon>mdi-layers-plus</v-icon>
-    </v-btn>
+    <v-tooltip right :disabled="!project.showToolTips">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn
+          class="fab-position"
+          v-bind="attrs"
+          v-on="on"
+          fab
+          color="primary"
+          @click.stop="addSourceDialog = true">
+          <v-icon>mdi-layers-plus</v-icon>
+        </v-btn>
+      </template>
+      <span>Add data source</span>
+    </v-tooltip>
   </v-sheet>
 </template>
 

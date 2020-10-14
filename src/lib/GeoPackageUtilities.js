@@ -164,8 +164,8 @@ export default class GeoPackageUtilities {
     if (style.default.iconOrStyle[GeometryType.nameFromType(GeometryType.POINT)] === 'icon') {
       let pointIcon = style.iconRowMap[style.default.icons[GeometryType.nameFromType(GeometryType.POINT)]]
       let pointIconRow = featureTableStyles.getIconDao().newRow()
-      pointIconRow.data = Buffer.from(pointIcon.url.split(',')[1], 'base64')
-      pointIconRow.contentType = pointIcon.url.substring(pointIcon.url.indexOf(':') + 1, pointIcon.url.indexOf(';'))
+      pointIconRow.data = pointIcon.data
+      pointIconRow.contentType = pointIcon.contentType
       pointIconRow.width = pointIcon.width
       pointIconRow.height = pointIcon.height
       pointIconRow.anchorU = pointIcon.anchor_u

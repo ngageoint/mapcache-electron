@@ -23,6 +23,9 @@ const mutations = {
   setProjectName (state, {project, name}) {
     state[project.id].name = name
   },
+  updateSource (state, {projectId, source}) {
+    Vue.set(state[projectId].sources, source.id, source)
+  },
   setDataSourceDisplayName (state, {projectId, sourceId, displayName}) {
     Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
   },
@@ -180,6 +183,9 @@ const mutations = {
   setBoundingBoxFilterEditingEnabled (state, {projectId, enabled}) {
     Vue.set(state[projectId], 'boundingBoxFilterEditingEnabled', enabled)
   },
+  showToolTips (state, {projectId, show}) {
+    Vue.set(state[projectId], 'showToolTips', show)
+  },
   clearBoundingBoxFilter (state, {projectId}) {
     const project = _.cloneDeep(state[projectId])
     project.boundingBoxFilterEditingEnabled = false
@@ -199,14 +205,21 @@ const actions = {
       displayZoomEnabled: true,
       maxFeatures: 1000,
       boundingBoxFilterEditingEnabled: false,
-      boundingBoxFilter: undefined
+      boundingBoxFilter: undefined,
+      showToolTips: true
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
     actions.openProject({ commit, state }, project)
   },
+  updateSource ({ commit, state }, {projectId, source}) {
+    commit('updateSource', {projectId, source})
+  },
   setProjectName ({ commit, state }, {project, name}) {
     commit('setProjectName', {project, name})
+  },
+  showToolTips ({ commit, state }, {projectId, show}) {
+    commit('showToolTips', {projectId, show})
   },
   setDataSourceDisplayName ({ commit, state }, {projectId, sourceId, displayName}) {
     commit('setDataSourceDisplayName', {projectId, sourceId, displayName})

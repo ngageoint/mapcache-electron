@@ -336,15 +336,21 @@
       </v-row>
       <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
     </v-container>
-    <v-btn
-      class="fab-position"
-      fab
-      :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
-      color="accent"
-      title="Add layer"
-      @click.stop="addLayerDialog = true">
-      <v-icon>mdi-layers-plus</v-icon>
-    </v-btn>
+    <v-tooltip right :disabled="!project.showToolTips">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn
+          class="fab-position"
+          v-bind="attrs"
+          v-on="on"
+          fab
+          :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
+          color="accent"
+          @click.stop="addLayerDialog = true">
+          <v-icon>mdi-layers-plus</v-icon>
+        </v-btn>
+      </template>
+      <span>Add Layer</span>
+    </v-tooltip>
   </v-sheet>
 </template>
 

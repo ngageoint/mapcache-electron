@@ -27,13 +27,24 @@
 <!--        <v-list-item-content class="pl-4" style="margin-left: -16px;">-->
 <!--          <v-list-item-title>Theme</v-list-item-title>-->
 <!--          <v-switch-->
-<!--            dense-->
 <!--            v-model="darkTheme"-->
 <!--            inset-->
 <!--            label="Dark"-->
 <!--          ></v-switch>-->
 <!--        </v-list-item-content>-->
 <!--      </v-list-item>-->
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title>Tooltips</v-list-item-title>
+          <v-list-item-subtitle>Show tooltips in application</v-list-item-subtitle>
+        </v-list-item-content>
+        <v-list-item-action>
+          <v-switch
+            v-model="showToolTip"
+            color="primary"
+          ></v-switch>
+        </v-list-item-action>
+      </v-list-item>
     </v-list>
 
     <v-divider></v-divider>
@@ -51,44 +62,44 @@
       >
         <v-list-item>
           <template v-slot:default="{ active }">
-          <v-list-item-action>
-            <v-checkbox
-              :input-value="active"
-              color="primary"
-            ></v-checkbox>
-          </v-list-item-action>
           <v-list-item-content>
             <v-list-item-title>Zoom control</v-list-item-title>
             <v-list-item-subtitle>Show zoom in/out control</v-list-item-subtitle>
           </v-list-item-content>
+            <v-list-item-action>
+              <v-switch
+                :input-value="active"
+                color="primary"
+              ></v-switch>
+            </v-list-item-action>
           </template>
         </v-list-item>
         <v-list-item>
           <template v-slot:default="{ active }">
-            <v-list-item-action>
-              <v-checkbox
-                :input-value="active"
-                color="primary"
-              ></v-checkbox>
-            </v-list-item-action>
             <v-list-item-content>
               <v-list-item-title>Display current zoom</v-list-item-title>
               <v-list-item-subtitle>Show current zoom level</v-list-item-subtitle>
             </v-list-item-content>
+            <v-list-item-action>
+              <v-switch
+                :input-value="active"
+                color="primary"
+              ></v-switch>
+            </v-list-item-action>
           </template>
         </v-list-item>
         <v-list-item>
           <template v-slot:default="{ active }">
-            <v-list-item-action>
-              <v-checkbox
-                :input-value="active"
-                color="primary"
-              ></v-checkbox>
-            </v-list-item-action>
             <v-list-item-content>
               <v-list-item-title>Address search</v-list-item-title>
               <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
             </v-list-item-content>
+            <v-list-item-action>
+              <v-switch
+                :input-value="active"
+                color="primary"
+              ></v-switch>
+            </v-list-item-action>
           </template>
         </v-list-item>
       </v-list-item-group>
@@ -138,6 +149,14 @@
           this.setDarkTheme({projectId: this.project.id, enabled: val})
         }
       },
+      showToolTip: {
+        get () {
+          return this.project.showToolTips
+        },
+        set (val) {
+          this.showToolTips({projectId: this.project.id, show: val})
+        }
+      },
       settings: {
         get () {
           const settings = []
@@ -182,7 +201,8 @@
         setZoomControlEnabled: 'Projects/setZoomControlEnabled',
         setDisplayZoomEnabled: 'Projects/setDisplayZoomEnabled',
         setDisplayAddressSearchBar: 'Projects/setDisplayAddressSearchBar',
-        setDarkTheme: 'UIState/setDarkTheme'
+        setDarkTheme: 'UIState/setDarkTheme',
+        showToolTips: 'Projects/showToolTips'
       }),
       saveProjectName (val) {
         this.setProjectName({project: this.project, name: val})

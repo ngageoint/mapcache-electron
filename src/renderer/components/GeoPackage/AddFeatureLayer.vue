@@ -59,11 +59,11 @@
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
                       <v-list-item-action>
-                        <v-checkbox
+                        <v-switch
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
                           color="primary"
-                        ></v-checkbox>
+                        ></v-switch>
                       </v-list-item-action>
                     </template>
                   </v-list-item>
@@ -91,11 +91,11 @@
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
                       <v-list-item-action>
-                        <v-checkbox
+                        <v-switch
                           @click.stop="item.changeVisibility"
                           :input-value="item.visible"
                           color="primary"
-                        ></v-checkbox>
+                        ></v-switch>
                       </v-list-item-action>
                     </template>
                   </v-list-item>
