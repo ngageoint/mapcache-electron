@@ -1,7 +1,7 @@
 <template>
   <div :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
     <div id="map" :style="{width: '100%', zIndex: 0, flex: 1}">
-      <div id='tooltip'></div>
+      <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
         v-model="layerSelectionVisible"
         max-width="500"
@@ -1060,18 +1060,18 @@
   #tooltip {
     display: none;
     position: absolute;
-    top: 0;
-    left: 0;
+    left: 10px;
     background: #666;
     color: white;
     opacity: 0.90;
-    padding: 10px;
-    border: 1px dashed #999;
+    padding: 8px;
     font-family: sans-serif;
     font-size: 12px;
-    height: 40px;
-    line-height: 20px;
-    z-index: 1000;
+    height: 34px;
+    line-height: 18px;
+    z-index: 2000;
+    border: black 1px;
+    border-radius: 4px;
   }
   .hidden {
     display: none !important;

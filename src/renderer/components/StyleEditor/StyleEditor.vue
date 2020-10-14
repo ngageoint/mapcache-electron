@@ -216,33 +216,51 @@
       transition="slide-y-reverse-transition"
     >
       <template v-slot:activator>
-        <v-btn
-          v-model="fab"
-          color="primary"
-          fab
-          title="Add style or icon"
-        >
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-model="fab"
+              color="primary"
+              fab
+              v-bind="attrs"
+              v-on="on"
+            >
+              <v-icon>mdi-plus</v-icon>
+            </v-btn>
+          </template>
+          <span>Add style or icon</span>
+        </v-tooltip>
       </template>
-      <v-btn
-        fab
-        small
-        color="accent"
-        @click="addIcon"
-        title="Add icon"
-      >
-        <v-icon>mdi-map-marker</v-icon>
-      </v-btn>
-      <v-btn
-        fab
-        small
-        color="accent"
-        title="Add style"
-        @click="addStyle"
-      >
-        <v-icon>mdi-palette</v-icon>
-      </v-btn>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click="addIcon"
+            v-bind="attrs"
+            v-on="on"
+          >
+            <v-icon>mdi-map-marker</v-icon>
+          </v-btn>
+        </template>
+        <span>Add icon</span>
+      </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click="addStyle"
+            v-bind="attrs"
+            v-on="on"
+          >
+            <v-icon>mdi-palette</v-icon>
+          </v-btn>
+        </template>
+        <span>Add style</span>
+      </v-tooltip>
     </v-speed-dial>
   </v-sheet>
 </template>
@@ -263,6 +281,7 @@
       path: String,
       tableName: String,
       projectId: String,
+      project: Object,
       styleKey: Number,
       back: Function,
       isGeoPackage: {

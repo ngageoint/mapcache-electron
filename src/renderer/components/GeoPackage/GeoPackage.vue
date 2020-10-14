@@ -6,6 +6,7 @@
       :table-name="selectedLayer"
       :geopackage="geopackage"
       :projectId="project.id"
+      :project="project"
       :back="deselectLayer"
       :renamed="selectedLayerRenamed"/>
     <tile-layer
@@ -253,78 +254,80 @@
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters class="pt-2" justify="center" align-content="center">
-        <v-hover>
-          <template v-slot="{ hover }">
-            <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="detailDialog = true">
-              <v-card-text class="pa-2">
-                <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-information-outline</v-icon>
-                </v-row>
-                <v-row no-gutters align-content="center" justify="center">
-                  Details
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-        <v-hover>
-          <template v-slot="{ hover }">
-            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="openFolder">
-              <v-card-text class="pa-2">
-                <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-folder</v-icon>
-                </v-row>
-                <v-row no-gutters align-content="center" justify="center">
-                  Show
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-        <v-hover>
-          <template v-slot="{ hover }">
-            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
-              <v-card-text class="pa-2">
-                <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil-outline</v-icon>
-                </v-row>
-                <v-row no-gutters align-content="center" justify="center">
-                  Rename
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-        <v-hover>
-          <template v-slot="{ hover }">
-            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
-              <v-card-text class="pa-2">
-                <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-content-copy</v-icon>
-                </v-row>
-                <v-row no-gutters align-content="center" justify="center">
-                  Copy
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-        <v-hover>
-          <template v-slot="{ hover }">
-            <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
-              <v-card-text class="pa-2">
-                <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can-outline</v-icon>
-                </v-row>
-                <v-row no-gutters align-content="center" justify="center">
-                  Remove
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-      </v-row>
+      <v-container>
+        <v-row no-gutters justify="center" align-content="center">
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="detailDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-information-outline</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Details
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="openFolder">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-folder</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Show
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-pencil-outline</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Rename
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-content-copy</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Copy
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-trash-can-outline</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Remove
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-row>
+      </v-container>
     </v-container>
     <v-container class="ma-0 pa-0">
       <v-row v-if="hasLayers" no-gutters align="center" justify="start" class="ma-2">
@@ -338,19 +341,34 @@
     </v-container>
     <v-tooltip right :disabled="!project.showToolTips">
       <template v-slot:activator="{ on, attrs }">
+        <span class="fab-position" v-bind="attrs" v-on="on">
+          <v-btn
+            fab
+            class="fab-position"
+            :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
+            color="accent"
+            @click.stop="addLayerDialog = true">
+            <v-icon>mdi-layers-plus</v-icon>
+          </v-btn>
+        </span>
+      </template>
+      <span>{{projectTileLayerCount === 0 && projectFeatureLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add Layer'}}</span>
+    </v-tooltip>
+    <v-snackbar
+      v-model="copySnackBar"
+    >
+      GeoPackage copied.
+      <template v-slot:action="{ attrs }">
         <v-btn
-          class="fab-position"
+          color="primary"
+          text
           v-bind="attrs"
-          v-on="on"
-          fab
-          :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
-          color="accent"
-          @click.stop="addLayerDialog = true">
-          <v-icon>mdi-layers-plus</v-icon>
+          @click="copySnackBar = false"
+        >
+          Close
         </v-btn>
       </template>
-      <span>Add Layer</span>
-    </v-tooltip>
+    </v-snackbar>
   </v-sheet>
 </template>
 
@@ -359,6 +377,8 @@
   import Vue from 'vue'
   import { mapActions, mapState } from 'vuex'
   import _ from 'lodash'
+  import path from 'path'
+  import fs from 'fs'
   import ViewEditText from '../Common/ViewEditText'
   import TileLayer from './TileLayer'
   import FeatureLayer from './FeatureLayer'
@@ -385,6 +405,7 @@
     },
     data () {
       return {
+        copySnackBar: false,
         addFeatureLayerDialog: false,
         addTileLayerDialog: false,
         addLayerDialog: false,
@@ -455,7 +476,7 @@
         removeGeoPackage: 'Projects/removeGeoPackage',
         setGeoPackageLayersVisible: 'Projects/setGeoPackageLayersVisible',
         renameGeoPackage: 'Projects/renameGeoPackage',
-        copyGeoPackage: 'Projects/copyGeoPackage'
+        addGeoPackage: 'Projects/addGeoPackage'
       }),
       zoomToExtent (extent) {
         this.$emit('zoom-to', extent)
@@ -467,7 +488,15 @@
       },
       copy () {
         this.copyDialog = false
-        this.copyGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.copiedGeoPackage})
+        const oldPath = this.geopackage.path
+        const newPath = path.join(path.dirname(oldPath), this.copiedGeoPackage + '.gpkg')
+        try {
+          fs.copyFileSync(oldPath, newPath)
+          this.addGeoPackage({projectId: this.project.id, filePath: newPath})
+        } catch (e) {
+          console.error(e)
+        }
+        this.copySnackBar = true
       },
       remove () {
         this.removeDialog = false

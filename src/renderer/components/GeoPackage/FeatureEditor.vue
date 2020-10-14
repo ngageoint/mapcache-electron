@@ -131,7 +131,6 @@
   import moment from 'moment'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
   import ViewEditText from '../Common/ViewEditText'
-  import StyleEditor from '../StyleEditor/StyleEditor'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import FeatureLayerField from './FeatureLayerField'
 
@@ -150,7 +149,6 @@
     },
     components: {
       ViewEditText,
-      StyleEditor,
       FeatureLayerField
     },
     data () {

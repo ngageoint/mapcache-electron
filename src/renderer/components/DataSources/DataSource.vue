@@ -6,6 +6,7 @@
           :tableName="source.sourceLayerName"
           :projectId="project.id"
           :id="source.id"
+          :project="project"
           :path="source.geopackageFilePath"
           :style-key="source.styleKey"
           :back="hideStyleEditor"

@@ -4,6 +4,7 @@
       <style-editor
         :tableName="tableName"
         :projectId="projectId"
+        :project="project"
         :id="geopackage.id"
         :path="geopackage.path"
         :style-key="styleKey"
@@ -449,6 +450,7 @@
   export default {
     props: {
       projectId: String,
+      project: Object,
       geopackage: Object,
       tableName: String,
       back: Function,

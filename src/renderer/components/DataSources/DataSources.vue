@@ -18,32 +18,48 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>Data Sources</v-toolbar-title>
     </v-toolbar>
-    <modal
-      v-if="layerSelectionVisible"
-      :header="layerSelectionSourceType + ' Layer Selection'"
-      :card-text="'Select the ' + layerSelectionSourceType + ' layers for import.'"
-      :ok="confirmLayerImport"
-      :cancel="cancelLayerImport">
-      <div slot="body">
-        <v-container>
-          <v-row>
-            <v-col cols="12">
-              <v-select
-                v-model="layerSelection"
-                :items="layerChoices"
-                :label="layerSelectionSourceType + ' Layers'"
-                multiple
-                return-object
-                item-text="name"
-                item-value="name"
-                hide-details
-                chips>
-              </v-select>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
-    </modal>
+    <v-dialog v-model="layerSelectionVisible" persistent max-width="400">
+      <v-card>
+        <v-card-title>
+          {{layerSelectionSourceType + ' Layer Selection'}}
+        </v-card-title>
+        <v-card-text>
+          {{'Select the ' + layerSelectionSourceType + ' layers for import.'}}
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="layerSelection"
+                  :items="layerChoices"
+                  :label="layerSelectionSourceType + ' Layers'"
+                  multiple
+                  return-object
+                  item-text="name"
+                  item-value="name"
+                  hide-details
+                  chips>
+                </v-select>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="cancelLayerImport">
+            Cancel
+          </v-btn>
+          <v-btn
+            v-if="layerSelection.length > 0"
+            text
+            color="primary"
+            @click="confirmLayerImport">
+            Import
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <modal
       v-if="showErrorModal"
       header="Invalid URL"
@@ -98,11 +114,13 @@
               required/>
             <v-row justify="end" align="center">
               <v-btn
+                text
                 class="mr-4"
                 @click="cancelProvideLink">
                 Cancel
               </v-btn>
               <v-btn
+                text
                 :disabled="!valid"
                 color="primary"
                 class="mr-4"

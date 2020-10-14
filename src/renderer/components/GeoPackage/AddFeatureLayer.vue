@@ -6,7 +6,6 @@
       flat
       class="sticky-toolbar"
     >
-      <!--      <v-btn icon @click="cancel"><v-icon large>mdi-chevron-left</v-icon></v-btn>-->
       <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-card flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
