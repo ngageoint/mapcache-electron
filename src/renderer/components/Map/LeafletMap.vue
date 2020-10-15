@@ -291,6 +291,7 @@
       },
       addDataSource (sourceConfiguration, map) {
         let source = LayerFactory.constructLayer(sourceConfiguration)
+        source._maxFeatures = this.project.maxFeatures
         source.initialize().then(function () {
           let mapLayer
           if (sourceConfiguration.visible) {
@@ -639,7 +640,7 @@
             } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector') {
               sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
               // only style has changed, let's just update style
-              sourceLayers[sourceId].initializedSource.updateStyle(updatedSource.maxFeatures).then(function () {
+              sourceLayers[sourceId].initializedSource.updateStyle(this.project.maxFeatures).then(function () {
                 // remove layer from map if it is currently being visible
                 let mapLayer = sourceLayers[sourceId].mapLayer
                 if (mapLayer) {
@@ -784,6 +785,21 @@
                       }
                     }
                   }
+                }
+              }
+            }
+            for (const sourceId of _.keys(sourceLayers)) {
+              // only style has changed, let's just update style
+              if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
+                await sourceLayers[sourceId].initializedSource.updateStyle(updatedProject.maxFeatures)
+                // remove layer from map if it is currently being visible
+                let mapLayer = sourceLayers[sourceId].mapLayer
+                if (mapLayer) {
+                  mapLayer.remove()
+                  delete sourceLayers[sourceId].mapLayer
+                  let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
+                  updateMapLayer.addTo(this.map)
+                  sourceLayers[sourceId].mapLayer = updateMapLayer
                 }
               }
             }
