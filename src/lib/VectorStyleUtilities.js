@@ -16,7 +16,7 @@ export default class VectorStyleUtilities {
       name: iconName,
       description: '',
       contentType: 'image/png',
-      data: fs.readFileSync(path.join(__dirname, '..', 'renderer', 'assets', 'map-marker.png'))
+      data: fs.readFileSync(path.join(__static, 'map-marker.png'))
     }
   }
 

@@ -181,14 +181,14 @@
       <v-row no-gutters>
         <v-col>
           <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            {{"Feature Tables: " + Object.keys(geopackage.tables.features).length}}
+            {{"Feature layers: " + Object.keys(geopackage.tables.features).length}}
           </p>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col>
           <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            {{"Tile Tables: " + Object.keys(geopackage.tables.tiles).length}}
+            {{"Tile layers: " + Object.keys(geopackage.tables.tiles).length}}
           </p>
         </v-col>
       </v-row>
