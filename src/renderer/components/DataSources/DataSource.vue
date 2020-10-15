@@ -245,6 +245,16 @@
                   </v-row>
                 </v-col>
               </v-row>
+              <v-row no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
+                <v-col>
+                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                    Data Source URL
+                  </p>
+                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black', wordWrap: 'break-word'}">
+                    {{source.filePath}}
+                  </p>
+                </v-col>
+              </v-row>
               <v-row no-gutters v-if="source.pane === 'vector'">
                 <v-col>
                   <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">

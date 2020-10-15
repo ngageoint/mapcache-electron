@@ -1231,7 +1231,6 @@ export default class GeoPackageUtilities {
     updatedRow.setColor(styleRow.color, styleRow.opacity)
     updatedRow.setFillColor(styleRow.fillColor, styleRow.fillOpacity)
     updatedRow.setWidth(styleRow.width)
-    console.log(updatedRow)
     styleDao.update(updatedRow)
   }
 
@@ -2430,7 +2429,6 @@ export default class GeoPackageUtilities {
         const type = geopackageLayer.type
         let layer
         if (type === 'feature') {
-          console.log(geopackage.path)
           layer = LayerFactory.constructLayer({
             id: geopackage.id + '_' + tableName,
             geopackageFilePath: geopackage.path,

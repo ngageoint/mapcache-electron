@@ -170,68 +170,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="addLayerDialog" max-width="350" persistent>
-      <v-card class="text-center">
-        <v-card-title class="headline">
-          <v-container class="pa-0 ma-0">
-            <v-row no-gutters>
-              <v-col class="align-center">
-                Add GeoPackage Layer
-              </v-col>
-            </v-row>
-            <v-row no-gutters>
-              <v-divider class="mt-2 mb-2"/>
-            </v-row>
-          </v-container>
-        </v-card-title>
-        <v-card-text>
-          <v-hover :disabled="projectFeatureLayerCount === 0">
-            <template v-slot="{ hover }">
-              <v-card :disabled="projectFeatureLayerCount === 0" class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFeatureLayer">
-                <v-card-text>
-                  <v-container style="padding: 4px">
-                    <v-row>
-                      <v-col cols="2">
-                        <img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
-                      </v-col>
-                      <v-col cols="8">
-                        Add Feature Layer
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover :disabled="projectFeatureLayerCount + projectTileLayerCount === 0">
-            <template v-slot="{ hover }">
-              <v-card :disabled="projectFeatureLayerCount + projectTileLayerCount === 0" class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addTileLayer">
-                <v-card-text>
-                  <v-container style="padding: 4px">
-                    <v-row>
-                      <v-col cols="2">
-                        <img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="20px">
-                      </v-col>
-                      <v-col cols="8">
-                        Add Tile Layer
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            text
-            @click="addLayerDialog = false">
-            Cancel
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <v-container fluid class="text-left pb-0 mb-0">
       <v-row no-gutters>
         <v-col>
@@ -339,21 +277,57 @@
       </v-row>
       <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
     </v-container>
-    <v-tooltip right :disabled="!project.showToolTips">
-      <template v-slot:activator="{ on, attrs }">
-        <span class="fab-position" v-bind="attrs" v-on="on">
-          <v-btn
-            fab
-            class="fab-position"
-            :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
-            color="accent"
-            @click.stop="addLayerDialog = true">
-            <v-icon>mdi-layers-plus</v-icon>
-          </v-btn>
-        </span>
+    <v-speed-dial
+      class="fab-position"
+      v-model="fab"
+      transition="slide-y-reverse-transition"
+    >
+      <template v-slot:activator>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on">
+              <v-btn
+                fab
+                :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
+                color="primary">
+                <v-icon>mdi-layers-plus</v-icon>
+              </v-btn>
+            </span>
+          </template>
+          <span>{{projectTileLayerCount === 0 && projectFeatureLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add layer'}}</span>
+        </v-tooltip>
       </template>
-      <span>{{projectTileLayerCount === 0 && projectFeatureLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add Layer'}}</span>
-    </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <span v-bind="attrs" v-on="on">
+            <v-btn
+              fab
+              small
+              color="accent"
+              @click="addFeatureLayer"
+              :disabled="projectFeatureLayerCount === 0">
+              <img :style="{verticalAlign: 'middle'}" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px">
+            </v-btn>
+          </span>
+        </template>
+        <span>Add feature layer</span>
+      </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <span v-bind="attrs" v-on="on">
+            <v-btn
+              fab
+              small
+              color="accent"
+              @click="addTileLayer"
+              :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0">
+              <img :style="{verticalAlign: 'middle'}" src="../../assets/white_layers.png" alt="Feature Layer" width="24px" height="20px">
+            </v-btn>
+          </span>
+        </template>
+        <span>Add tile layer</span>
+      </v-tooltip>
+    </v-speed-dial>
     <v-snackbar
       v-model="copySnackBar"
     >
@@ -405,10 +379,10 @@
     },
     data () {
       return {
+        fab: false,
         copySnackBar: false,
         addFeatureLayerDialog: false,
         addTileLayerDialog: false,
-        addLayerDialog: false,
         selectedLayer: null,
         detailDialog: false,
         renameDialog: false,
@@ -513,11 +487,11 @@
         this.selectedLayer = null
       },
       addFeatureLayer () {
-        this.addLayerDialog = false
+        this.fab = false
         this.addFeatureLayerDialog = true
       },
       addTileLayer () {
-        this.addLayerDialog = false
+        this.fab = false
         this.addTileLayerDialog = true
       },
       hideAddFeatureDialog () {

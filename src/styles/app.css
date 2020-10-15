@@ -35,8 +35,8 @@
 	background-color: rgba(204, 224, 236, 1.0);
 }
 .detail-section-margins-and-padding {
-	padding: 8px 24px 24px;
-	margin: 12px -12px -12px -12px;
+	padding: 8px 24px 24px !important;
+	margin: 12px -12px -12px -12px !important;
 }
 .content-panel {
 	-moz-box-shadow: 0 0 8px #000000;
@@ -67,9 +67,9 @@
 	padding-left: 4px !important;
 }
 .fab-position {
-	position: fixed;
-	left: 384px;
-	bottom: 16px;
+	position: fixed !important;
+	left: 384px !important;
+	bottom: 16px !important;
 }
 .v-btn {
 	text-transform: none !important;

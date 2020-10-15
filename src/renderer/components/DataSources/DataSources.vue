@@ -132,69 +132,6 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="addSourceDialog" max-width="300" persistent>
-      <v-card class="text-center">
-        <v-card-title class="headline">
-          <v-container class="pa-0 ma-0">
-            <v-row no-gutters>
-              <v-col class="align-center">
-                New Data Source
-              </v-col>
-            </v-row>
-            <v-row no-gutters>
-              <v-divider class="mt-2 mb-2"/>
-            </v-row>
-          </v-container>
-        </v-card-title>
-        <v-card-text>
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="displayURLModal">
-                <v-card-text>
-                  <v-container style="padding: 4px">
-                    <v-row>
-                      <v-col cols="2">
-                        <v-icon color="black">mdi-cloud-download-outline</v-icon>
-                      </v-col>
-                      <v-col cols="8">
-                        Download from URL
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="addFileClick">
-                <v-card-text>
-                  <v-container style="padding: 4px">
-                    <v-row>
-                      <v-col cols="2">
-                        <v-icon color="black">mdi-file-document-outline</v-icon>
-                      </v-col>
-                      <v-col cols="8">
-                        Import from File
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            text
-            @click="addSourceDialog = false">
-            Cancel
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <div style="margin-bottom: 80px;">
       <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
       </data-source-list>
@@ -222,20 +159,54 @@
         </v-col>
       </v-row>
     </v-card>
-    <v-tooltip right :disabled="!project.showToolTips">
-      <template v-slot:activator="{ on, attrs }">
-        <v-btn
-          class="fab-position"
-          v-bind="attrs"
-          v-on="on"
-          fab
-          color="primary"
-          @click.stop="addSourceDialog = true">
-          <v-icon>mdi-layers-plus</v-icon>
-        </v-btn>
+    <v-speed-dial
+      class="fab-position"
+      v-model="fab"
+      transition="slide-y-reverse-transition"
+    >
+      <template v-slot:activator>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              fab
+              color="primary"
+              v-bind="attrs"
+              v-on="on">
+              <v-icon>mdi-layers-plus</v-icon>
+            </v-btn>
+          </template>
+          <span>Add data source</span>
+        </v-tooltip>
       </template>
-      <span>Add data source</span>
-    </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click="addFileClick"
+            v-bind="attrs"
+            v-on="on">
+            <v-icon>mdi-file-document-outline</v-icon>
+          </v-btn>
+        </template>
+        <span>Import from file</span>
+      </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click="displayURLModal"
+            v-bind="attrs"
+            v-on="on">
+            <v-icon>mdi-cloud-download-outline</v-icon>
+          </v-btn>
+        </template>
+        <span>Download from URL</span>
+      </v-tooltip>
+    </v-speed-dial>
   </v-sheet>
 </template>
 
@@ -261,7 +232,7 @@
     url: undefined
   }
   let selectedDataSource = null
-  let addSourceDialog = false
+  let fab = false
   let urlSourceDialog = false
   let linkInputVisible = false
   let linkToValidate = ''
@@ -319,7 +290,7 @@
     data () {
       return {
         selectedDataSource,
-        addSourceDialog,
+        fab,
         urlSourceDialog,
         processing,
         linkInputVisible,
@@ -459,6 +430,7 @@
             }
           } else {
             this.error = 'URL not supported. Supported URLs include WMS, WFS and XYZ tile servers.'
+            this.urlSourceDialog = false
             this.showErrorModal = true
           }
         }
@@ -470,12 +442,7 @@
         this.token = ''
       },
       cancelLayerImport () {
-        this.layerChoices = []
-        this.layerSelectionSourceType = ''
-        this.layerSelectionVisible = false
-        this.linkToValidate = ''
-        this.urlSourceDialog = false
-        this.resetAuth()
+        this.resetURLValidation()
       },
       confirmLayerImport () {
         if (this.layerSelection.length > 0) {
@@ -492,19 +459,11 @@
           processing.sources.push(sourceToProcess)
           setTimeout(() => {
             this.addSource(sourceToProcess)
-            this.layerChoices = []
-            this.layerSelectionSourceType = ''
-            this.layerSelectionVisible = false
-            this.linkInputVisible = false
-            this.linkToValidate = ''
-            this.layerSelection = []
-            this.urlSourceDialog = false
-            this.resetAuth()
+            this.resetURLValidation()
           }, 0)
         }
       },
-      addFileClick (ev) {
-        this.addSourceDialog = false
+      addFileClick () {
         remote.dialog.showOpenDialog({
           filters: [
             {
@@ -611,11 +570,25 @@
           return undefined
         }
       },
+      resetURLValidation () {
+        this.urlSourceDialog = false
+        this.layerChoices = []
+        this.layerSelectionSourceType = ''
+        this.layerSelectionVisible = false
+        this.linkInputVisible = false
+        this.linkToValidate = ''
+        this.layerSelection = []
+        this.urlSourceDialog = false
+        this.resetAuth()
+        this.$refs.form.resetValidation()
+        this.valid = false
+      },
       processXYZUrl (url) {
         this.processFiles([{
           path: url,
           xyz: true
         }])
+        this.resetURLValidation()
       },
       validateWMSVersion (version) {
         let error = null
@@ -640,7 +613,6 @@
         return error
       },
       displayURLModal () {
-        this.addSourceDialog = false
         this.urlSourceDialog = true
       },
       dataSourceSelected (dataSourceId) {

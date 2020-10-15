@@ -13,70 +13,6 @@
         <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
         <v-toolbar-title>GeoPackages</v-toolbar-title>
       </v-toolbar>
-      <v-layout row justify-center>
-        <v-dialog v-model="addGeoPackageDialog" max-width="300" persistent>
-          <v-card class="text-center">
-            <v-card-title class="headline">
-              <v-container class="pa-0 ma-0">
-                <v-row no-gutters>
-                  <v-col class="align-center">
-                    New GeoPackage
-                  </v-col>
-                </v-row>
-                <v-row no-gutters>
-                  <v-divider class="mt-2 mb-2"/>
-                </v-row>
-              </v-container>
-            </v-card-title>
-            <v-card-text>
-              <v-hover>
-                <template v-slot="{ hover }">
-                  <v-card class="text-left mb-4 clickable" :elevation="hover ? 4 : 1" @click.stop="createNewGeoPackage">
-                    <v-card-text>
-                      <v-container style="padding: 4px">
-                        <v-row>
-                          <v-col cols="2">
-                            <v-icon color="black">mdi-plus-box-outline</v-icon>
-                          </v-col>
-                          <v-col cols="8">
-                            Create New
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-text>
-                  </v-card>
-                </template>
-              </v-hover>
-              <v-hover>
-                <template v-slot="{ hover }">
-                  <v-card class="text-left mt-4 clickable" :elevation="hover ? 4 : 1" @click.stop="importGeoPackage">
-                    <v-card-text>
-                      <v-container style="padding: 4px">
-                        <v-row>
-                          <v-col cols="2">
-                            <v-icon color="black">mdi-file-document-outline</v-icon>
-                          </v-col>
-                          <v-col cols="8">
-                            Import from File
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-text>
-                  </v-card>
-                </template>
-              </v-hover>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="addGeoPackageDialog = false">
-                Cancel
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-layout>
       <v-sheet>
         <geo-package-list :geopackages="geopackages" :projectId="project.id" :geopackage-selected="geopackageSelected"></geo-package-list>
         <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
@@ -99,20 +35,54 @@
           GeoPackage already exists in project.
         </v-alert>
       </v-sheet>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            class="fab-position"
-            v-bind="attrs"
-            v-on="on"
-            fab
-            color="primary"
-            @click.stop="addGeoPackageDialog = true">
-            <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
-          </v-btn>
+      <v-speed-dial
+        class="fab-position"
+        v-model="fab"
+        transition="slide-y-reverse-transition"
+      >
+        <template v-slot:activator>
+          <v-tooltip right :disabled="!project.showToolTips">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                fab
+                color="primary"
+                v-bind="attrs"
+                v-on="on">
+                <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
+              </v-btn>
+            </template>
+            <span>Add GeoPackage</span>
+          </v-tooltip>
         </template>
-        <span>Add GeoPackage</span>
-      </v-tooltip>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              fab
+              small
+              color="accent"
+              @click="importGeoPackage"
+              v-bind="attrs"
+              v-on="on">
+              <v-icon>mdi-file-document-outline</v-icon>
+            </v-btn>
+          </template>
+          <span>Import from file</span>
+        </v-tooltip>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              fab
+              small
+              color="accent"
+              @click="createNewGeoPackage"
+              v-bind="attrs"
+              v-on="on">
+              <v-icon>mdi-plus</v-icon>
+            </v-btn>
+          </template>
+          <span>New GeoPackage</span>
+        </v-tooltip>
+      </v-speed-dial>
     </v-sheet>
   </v-sheet>
 </template>
@@ -127,7 +97,7 @@
   import GeoPackageList from './GeoPackageList'
 
   let options = {
-    addGeoPackageDialog: false,
+    fab: false,
     addGeoPackageError: false,
     selectedGeoPackage: null
   }
@@ -150,7 +120,7 @@
         addGeoPackage: 'Projects/addGeoPackage'
       }),
       createNewGeoPackage () {
-        this.addGeoPackageDialog = false
+        this.fab = false
         const geopackages = this.geopackages
         remote.dialog.showSaveDialog((filePath) => {
           if (!_.isNil(filePath)) {
@@ -190,7 +160,7 @@
             }
           }
         })
-        this.addGeoPackageDialog = false
+        this.fab = false
       },
       geopackageSelected (geopackageId) {
         this.selectedGeoPackage = this.geopackages[geopackageId]

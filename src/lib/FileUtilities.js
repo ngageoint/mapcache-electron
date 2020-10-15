@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import _ from 'lodash'
 import { userDataDir } from './settings/Settings'
 import UniqueIDUtilities from './UniqueIDUtilities'
 
@@ -11,12 +12,14 @@ export default class FileUtilities {
 
   // removes a source directory by the source Id
   static rmSourceDirectory (sourceId) {
-    const sourceDirectory = userDataDir().dir(sourceId).path()
-    if (fs.existsSync(sourceDirectory)) {
-      try {
-        FileUtilities.rmDir(sourceDirectory)
-      } catch (error) {
-        console.error(error)
+    if (!_.isNil(sourceId)) {
+      const sourceDirectory = userDataDir().dir(sourceId).path()
+      if (fs.existsSync(sourceDirectory)) {
+        try {
+          FileUtilities.rmDir(sourceDirectory)
+        } catch (error) {
+          console.error(error)
+        }
       }
     }
   }

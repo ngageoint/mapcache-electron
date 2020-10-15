@@ -18,13 +18,15 @@
         <v-list-item-content>
           <v-list-item-title :title="item.name" class="header" :style="{fontSize: '18px', fontWeight: '500', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
         </v-list-item-content>
-        <v-switch
-          hide-details
-          color="primary"
-          @click="item.setVisible"
-          :input-value="item.visible"
-          dense>
-        </v-switch>
+        <v-list-item-action>
+          <v-switch
+            hide-details
+            color="primary"
+            @click="item.setVisible"
+            :input-value="item.visible"
+            dense>
+          </v-switch>
+        </v-list-item-action>
       </v-list-item>
       <v-divider
         :key="item.id + '_divider'"
