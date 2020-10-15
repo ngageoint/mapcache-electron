@@ -13,10 +13,10 @@
             </v-row>
           </v-card-title>
           <v-card-text>
-            Add drawing to selected GeoPackage and feature layer.
+            Add drawing to the selected GeoPackage and feature layer.
             <v-row no-gutters class="mt-4">
               <v-col cols="12">
-                <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="Select GeoPackage" dense>
+                <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="GeoPackage" dense>
                 </v-select>
               </v-col>
             </v-row>
@@ -282,10 +282,11 @@
         const map = this.map
         GeoPackageUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
           if (extent) {
-            map.fitBounds([
-              [extent[1], extent[0]],
-              [extent[3], extent[2]]
-            ], {padding: [2, 2]})
+            let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
+            let bounds = vendor.L.latLngBounds(boundingBox)
+            bounds = bounds.pad(0.05)
+            boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
+            map.fitBounds(boundingBox)
           }
         })
       },
@@ -437,10 +438,11 @@
         let _this = this
         _this.getExtentForVisibleGeoPackagesAndLayers().then((extent) => {
           if (!_.isNil(extent)) {
-            _this.map.fitBounds([
-              [extent[1], extent[0]],
-              [extent[3], extent[2]]
-            ], {padding: [2, 2]})
+            let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
+            let bounds = vendor.L.latLngBounds(boundingBox)
+            bounds = bounds.pad(0.05)
+            boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
+            _this.map.fitBounds(boundingBox)
           }
         })
       },
@@ -807,10 +809,11 @@
           this.maxFeatures = updatedProject.maxFeatures
           if (!_.isNil(updatedProject.zoomToExtent) && !_.isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
             this.zoomToExtentKey = updatedProject.zoomToExtent.key
-            this.map.fitBounds([
-              [updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]],
-              [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]
-            ], {padding: [2, 2]})
+            let boundingBox = [[updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]], [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]]
+            let bounds = vendor.L.latLngBounds(boundingBox)
+            bounds = bounds.pad(0.05)
+            boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
+            this.map.fitBounds(boundingBox)
           }
         },
         deep: true

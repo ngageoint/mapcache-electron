@@ -49,19 +49,18 @@
 	z-index: 2;
 }
 .sticky-toolbar {
-	position: -webkit-sticky; /* Safari */
-	position: sticky;
-	top: 0;
-	z-index: 3;
-	height: 72px;
+	position: -webkit-sticky !important;
+	position: sticky !important;
+	top: 0 !important;
+	z-index: 3 !important;
 }
 .sticky-card-action-footer {
-	position: -webkit-sticky; /* Safari */
-	position: sticky;
-	bottom: 0;
-	z-index: 3;
-	min-height: 53px;
-	background: white;
+	position: -webkit-sticky !important; /* Safari */
+	position: sticky !important;
+	bottom: 0 !important;
+	z-index: 3 !important;
+	min-height: 53px !important;
+	background: white !important;
 }
 .v-toolbar__title {
 	padding-left: 4px !important;

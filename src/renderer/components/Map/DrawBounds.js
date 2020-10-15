@@ -25,12 +25,17 @@ export default {
       this.disableBoundingBoxDrawing()
       this.map.fire('boundingBoxEnabled')
       let boundingBox = boundingBoxFilter
+      let bounds
       if (_.isNil(boundingBox)) {
         let sw = this.map.getBounds().getSouthWest()
         let ne = this.map.getBounds().getNorthEast()
         boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
+        bounds = vendor.L.latLngBounds(boundingBox)
+        bounds = bounds.pad(-0.05)
+        boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
+      } else {
+        bounds = vendor.L.latLngBounds(boundingBox)
       }
-      let bounds = vendor.L.latLngBounds(boundingBox)
       this.r = vendor.L.rectangle(bounds)
       this.r.addTo(this.map)
       this.r.enableEdit()
@@ -53,9 +58,9 @@ export default {
         if (project.boundingBoxFilterEditingEnabled) {
           if (!this.enabled) {
             let boundingBox = project.boundingBoxFilter
-            if (_.isNil(boundingBox)) {
-              boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
-            }
+            // if (_.isNil(boundingBox)) {
+            //   boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
+            // }
             if (!_.isNil(boundingBox)) {
               boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
             }
