@@ -836,7 +836,10 @@
         minZoom: 3,
         layers: [defaultBaseMap]
       })
-      const provider = new OpenStreetMapProvider()
+      const host = 'https://osm-nominatim.gs.mil'
+      const searchUrl = `${host}/search`
+      const reverseUrl = `${host}/reverse`
+      const provider = new OpenStreetMapProvider({searchUrl, reverseUrl})
       this.addressSearchBarControl = new GeoSearchControl({
         provider,
         style: 'bar'
