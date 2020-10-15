@@ -192,7 +192,7 @@
           </p>
         </v-col>
       </v-row>
-      <v-container>
+      <v-container class="ma-0 pa-0">
         <v-row no-gutters justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
