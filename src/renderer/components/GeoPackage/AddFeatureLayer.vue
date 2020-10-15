@@ -19,9 +19,9 @@
     <v-card flat class="ma-0 pa-0" v-else>
       <v-card-text>
         <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
-          <v-container class="ml-4 mr-8 pa-0">
+          <v-container class="mb-0 pb-0">
             <v-row no-gutters>
-              <v-col cols="12">
+              <v-col>
                 <v-text-field
                   v-model="layerName"
                   :rules="layerNameRules"
@@ -54,6 +54,9 @@
                     :value="item.value"
                   >
                     <template>
+                      <v-list-item-icon>
+                        <v-btn icon @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
+                      </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
@@ -86,6 +89,9 @@
                     :value="item.value"
                   >
                     <template>
+                      <v-list-item-icon>
+                        <v-btn icon @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
+                      </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
                       </v-list-item-content>
@@ -198,7 +204,8 @@
         setDataSourceVisible: 'Projects/setDataSourceVisible',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
         setBoundingBoxFilterEditingEnabled: 'Projects/setBoundingBoxFilterEditingEnabled',
-        clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter'
+        clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter',
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
       async addFeatureLayer () {
         this.processing = true
@@ -284,6 +291,12 @@
                 visible,
                 changeVisibility: () => {
                   self.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                },
+                zoomTo: (e) => {
+                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    self.zoomToExtent({projectId, extent})
+                  })
+                  e.stopPropagation()
                 }
               })
             })
@@ -303,6 +316,10 @@
             visible: source.visible,
             changeVisibility: () => {
               self.setDataSourceVisible({projectId, sourceId, visible})
+            },
+            zoomTo: (e) => {
+              self.zoomToExtent({projectId, extent: source.extent})
+              e.stopPropagation()
             }
           }
         })

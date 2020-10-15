@@ -80,15 +80,17 @@ export default class KMLSource extends Source {
   }
 
   async generateStyleForKML (features, originalFileDir) {
-    let layerStyle = VectorStyleUtilities.defaultRandomColorStyle()
+    let layerStyle = {
+      features: {},
+      styleRowMap: {},
+      iconRowMap: {}
+    }
     let fileIcons = {}
     let iconNumber = 1
     for (let feature of features) {
-      const featureGeometryTypeString = feature.geometry.type.toUpperCase()
       layerStyle.features[feature.id] = {
-        icon: layerStyle.default.icons[featureGeometryTypeString],
-        style: layerStyle.default.styles[featureGeometryTypeString],
-        iconOrStyle: layerStyle.default.iconOrStyle[featureGeometryTypeString]
+        icon: null,
+        style: null
       }
       if (feature.properties.icon) {
         let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
@@ -146,7 +148,6 @@ export default class KMLSource extends Source {
           layerStyle.iconRowMap[iconHash] = icon
         }
         layerStyle.features[feature.id].icon = iconHash
-        layerStyle.features[feature.id].iconOrStyle = 'icon'
       } else {
         let style = this.getStyleFromFeature(feature)
         let styleHash = VectorStyleUtilities.hashCode(style)
@@ -154,7 +155,6 @@ export default class KMLSource extends Source {
           layerStyle.styleRowMap[styleHash] = style
         }
         layerStyle.features[feature.id].style = styleHash
-        layerStyle.features[feature.id].iconOrStyle = 'style'
       }
     }
     return layerStyle

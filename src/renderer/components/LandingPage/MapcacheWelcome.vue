@@ -3,7 +3,7 @@
 
     <div class="app-title-block">
       <img class="gp-img" src="~@/assets/256x256.png">
-      <h4>Mapcache</h4>
+      <h4>MapCache</h4>
       <p>
         Version: <strong id="mapcache-version">{{version}}</strong>
       </p>

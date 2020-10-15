@@ -31,53 +31,6 @@ export default class VectorStyleUtilities {
     }
   }
 
-  static defaultRandomColorStyle () {
-    return {
-      default: {
-        icons: {
-          'POINT': -1
-        },
-        styles: {
-          'POINT': -1,
-          'LINESTRING': -2,
-          'POLYGON': -3
-        },
-        iconOrStyle: {
-          'POINT': 'icon',
-          'POLYGON': 'style',
-          'LINESTRING': 'style'
-        }
-      },
-      features: {},
-      styleRowMap: {
-        '-1': {
-          color: VectorStyleUtilities.generateColor(),
-          opacity: 1.0,
-          width: 1.0,
-          name: 'Default Point Style'
-        },
-        '-2': {
-          color: VectorStyleUtilities.generateColor(),
-          opacity: 1.0,
-          width: 1.0,
-          name: 'Default LineString Style'
-        },
-        '-3': {
-          color: VectorStyleUtilities.generateColor(),
-          opacity: 1.0,
-          fillColor: VectorStyleUtilities.generateColor(),
-          fillOpacity: 0.2,
-          width: 1.0,
-          name: 'Default Polygon Style'
-        }
-      },
-      iconRowMap: {
-        '-1': VectorStyleUtilities.getDefaultIcon()
-      },
-      maxFeatures: 100
-    }
-  }
-
   static hashCode (obj) {
     const str = JSON.stringify(obj)
     let hash = 0

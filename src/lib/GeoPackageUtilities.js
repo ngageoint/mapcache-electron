@@ -120,64 +120,6 @@ export default class GeoPackageUtilities {
   }
 
   /**
-   * Creates geopackage table styles using the style object passed in
-   * @param featureTableStyles
-   * @param style
-   */
-  static createGeoPackageTableStyles (featureTableStyles, style) {
-    let polyStyle = style.styleRowMap[style.default.styles[GeometryType.nameFromType(GeometryType.POLYGON)]]
-    let polygonStyleRow = featureTableStyles.getStyleDao().newRow()
-    polygonStyleRow.setColor(polyStyle.color, polyStyle.opacity)
-    polygonStyleRow.setFillColor(polyStyle.fillColor, polyStyle.fillOpacity)
-    polygonStyleRow.setWidth(polyStyle.width)
-    polygonStyleRow.setName(polyStyle.name)
-    featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(polygonStyleRow)
-
-    let lineStyle = style.styleRowMap[style.default.styles[GeometryType.nameFromType(GeometryType.LINESTRING)]]
-    let lineStringStyleRow = featureTableStyles.getStyleDao().newRow()
-    lineStringStyleRow.setColor(lineStyle.color, lineStyle.opacity)
-    lineStringStyleRow.setWidth(lineStyle.width)
-    lineStringStyleRow.setName(lineStyle.name)
-    featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(lineStringStyleRow)
-
-    let pointStyle = style.styleRowMap[style.default.styles[GeometryType.nameFromType(GeometryType.POINT)]]
-    let pointStyleRow = featureTableStyles.getStyleDao().newRow()
-    pointStyleRow.setColor(pointStyle.color, pointStyle.opacity)
-    pointStyleRow.setWidth(pointStyle.width)
-    pointStyleRow.setName(pointStyle.name)
-    featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(pointStyleRow)
-
-    featureTableStyles.setTableStyle(GeometryType.POLYGON, polygonStyleRow)
-    featureTableStyles.setTableStyle(GeometryType.LINESTRING, lineStringStyleRow)
-    featureTableStyles.setTableStyle(GeometryType.POINT, pointStyleRow)
-    featureTableStyles.setTableStyle(GeometryType.MULTIPOLYGON, polygonStyleRow)
-    featureTableStyles.setTableStyle(GeometryType.MULTILINESTRING, lineStringStyleRow)
-    featureTableStyles.setTableStyle(GeometryType.MULTIPOINT, pointStyleRow)
-  }
-
-  /**
-   * Creates geopackage table icons using the style passed in
-   * @param featureTableStyles
-   * @param style
-   */
-  static createGeoPackageTableIcons (featureTableStyles, style) {
-    if (style.default.iconOrStyle[GeometryType.nameFromType(GeometryType.POINT)] === 'icon') {
-      let pointIcon = style.iconRowMap[style.default.icons[GeometryType.nameFromType(GeometryType.POINT)]]
-      let pointIconRow = featureTableStyles.getIconDao().newRow()
-      pointIconRow.data = pointIcon.data
-      pointIconRow.contentType = pointIcon.contentType
-      pointIconRow.width = pointIcon.width
-      pointIconRow.height = pointIcon.height
-      pointIconRow.anchorU = pointIcon.anchor_u
-      pointIconRow.anchorV = pointIcon.anchor_v
-      pointIconRow.name = pointIcon.name
-      featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(pointIconRow)
-      featureTableStyles.setTableIcon(GeometryType.POINT, pointIconRow)
-      featureTableStyles.setTableIcon(GeometryType.MULTIPOINT, pointIconRow)
-    }
-  }
-
-  /**
    * Gets or Creates a geopackage at the filePath
    * @param filePath
    * @returns {Promise<GeoPackage>}
@@ -511,8 +453,6 @@ export default class GeoPackageUtilities {
         featureTableStyles.createTableIconRelationship()
         featureTableStyles.createStyleRelationship()
         featureTableStyles.createIconRelationship()
-        GeoPackageUtilities.createGeoPackageTableStyles(featureTableStyles, style)
-        GeoPackageUtilities.createGeoPackageTableIcons(featureTableStyles, style)
       }
 
       let icons = {}
@@ -532,7 +472,7 @@ export default class GeoPackageUtilities {
         let featureRowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName)
         if (!_.isNil(style) && !_.isNil(style.features[feature.id])) {
           const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
-          if (style.features[feature.id].iconOrStyle === 'icon') {
+          if (!_.isNil(style.features[feature.id].icon)) {
             let iconId = style.features[feature.id].icon
             let featureIconRow = icons[iconId]
             if (_.isNil(featureIconRow)) {
@@ -553,7 +493,7 @@ export default class GeoPackageUtilities {
             }
             style.features[feature.id].icon = iconIdToIconRowId[iconId]
             featureTableStyles.setIcon(featureRowId, geometryType, featureIconRow)
-          } else {
+          } else if (!_.isNil(style.features[feature.id].style)) {
             let styleId = style.features[feature.id].style
             let featureStyleRow = styles[styleId]
             if (_.isNil(featureStyleRow)) {
@@ -700,6 +640,7 @@ export default class GeoPackageUtilities {
         currentProperties[key] = currentProperties[key] || {
           name: key
         }
+        // TODO: do a better job of checking if property is date and also provide mechanism for converting into Date object before it goes to geopackage API
         let type = typeof feature.properties[key]
         if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
           if (type === 'object') {

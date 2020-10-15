@@ -1,6 +1,6 @@
 {
-  "name": "MapCache",
-  "version": "0.0.10",
+  "name": "mapcache",
+  "version": "0.2.0",
   "author": "Dan Barela <daniel.barela@gmail.com>",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "license": null,

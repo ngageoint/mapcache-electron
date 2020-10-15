@@ -46,8 +46,11 @@
       :headers="headers"
       :items="tableEntries"
       item-key="key"
+      hide-default-footer
+      :page.sync="page"
+      :options="{hideDefaultFooter: true, itemsPerPage: 5}"
       class="elevation-1"
-      :options="{itemsPerPage: 5}"
+      @page-count="pageCount = $event"
       @click:row="handleClick"
     >
       <template v-slot:item.actions="{ item }">
@@ -100,6 +103,13 @@
         </v-btn>
       </template>
     </v-data-table>
+    <div class="text-center pt-2">
+      <v-pagination
+        v-model="page"
+        :length="pageCount"
+        :total-visible="7"
+      ></v-pagination>
+    </div>
     <v-dialog
       v-model="editDialog"
       max-width="500"
@@ -140,7 +150,9 @@
         editFeature: null,
         editFeatureColumns: {},
         assignStyleDialog: false,
-        styleAssignment: null
+        styleAssignment: null,
+        page: 1,
+        pageCount: 0
       }
     },
     computed: {

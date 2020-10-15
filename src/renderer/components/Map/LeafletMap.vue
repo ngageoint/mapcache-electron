@@ -285,7 +285,7 @@
             map.fitBounds([
               [extent[1], extent[0]],
               [extent[3], extent[2]]
-            ])
+            ], {padding: [2, 2]})
           }
         })
       },
@@ -439,7 +439,7 @@
             _this.map.fitBounds([
               [extent[1], extent[0]],
               [extent[3], extent[2]]
-            ])
+            ], {padding: [2, 2]})
           }
         })
       },
@@ -794,7 +794,7 @@
             this.map.fitBounds([
               [updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]],
               [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]
-            ])
+            ], {padding: [2, 2]})
           }
         },
         deep: true

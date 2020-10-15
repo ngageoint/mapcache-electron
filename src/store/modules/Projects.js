@@ -201,6 +201,9 @@ const actions = {
       name: 'New Project',
       sources: {},
       geopackages: {},
+      zoomToExtent: {
+        key: 0
+      },
       zoomControlEnabled: true,
       displayZoomEnabled: true,
       maxFeatures: 1000,

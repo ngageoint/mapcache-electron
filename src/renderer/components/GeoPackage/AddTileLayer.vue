@@ -35,8 +35,7 @@
           Tile Layer Content Selection
         </v-card-title>
         <v-card-subtitle>
-          Select imagery and features from <b>Data Sources</b> and existing <b>GeoPackges</b> to populate your new GeoPackage
-          tile layer.
+          Select imagery and features from <b>Data Sources</b> and existing <b>GeoPackages</b> to populate your new GeoPackage tile layer.
         </v-card-subtitle>
         <v-container v-if="dataSourceLayers.length > 0" class="ma-0 pa-0">
           <v-card-title class="pb-0" style="font-size: 1rem;">
@@ -54,8 +53,8 @@
                   >
                     <template>
                       <v-list-item-icon>
-                        <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
-                        <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                        <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
+                        <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
                       </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
@@ -90,8 +89,8 @@
                   >
                     <template>
                       <v-list-item-icon>
-                        <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
-                        <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                        <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
+                        <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
                       </v-list-item-icon>
                       <v-list-item-content>
                         <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
@@ -127,8 +126,8 @@
                 :value="item.value"
                 class="v-list-item--link">
                 <v-list-item-icon>
-                  <img v-if="item.type === 'feature'" :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
-                  <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px">
+                  <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
+                  <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
                 </v-list-item-icon>
                 <v-list-item-content>
                   <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
@@ -273,7 +272,8 @@
         setGeoPackageTileTableVisible: 'Projects/setGeoPackageTileTableVisible',
         setGeoPackageFeatureTableVisible: 'Projects/setGeoPackageFeatureTableVisible',
         setBoundingBoxFilterEditingEnabled: 'Projects/setBoundingBoxFilterEditingEnabled',
-        clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter'
+        clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter',
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
       async addTileLayer () {
         this.processing = true
@@ -360,6 +360,12 @@
                 type: 'tile',
                 changeVisibility: () => {
                   self.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                },
+                zoomTo: (e) => {
+                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    self.zoomToExtent({projectId, extent})
+                  })
+                  e.stopPropagation()
                 }
               })
             })
@@ -375,6 +381,12 @@
                 type: 'feature',
                 changeVisibility: () => {
                   self.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                },
+                zoomTo: (e) => {
+                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    self.zoomToExtent({projectId, extent})
+                  })
+                  e.stopPropagation()
                 }
               })
             })
@@ -396,6 +408,10 @@
             type: source.pane === 'vector' ? 'feature' : 'tile',
             changeVisibility: () => {
               self.setDataSourceVisible({projectId, sourceId, visible})
+            },
+            zoomTo: (e) => {
+              self.zoomToExtent({projectId, extent: source.extent})
+              e.stopPropagation()
             }
           }
         })
