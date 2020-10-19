@@ -112,6 +112,34 @@
               v-model="token"
               :rules="tokenAuthRules"
               required/>
+
+          <v-card-title style="font-size: 1rem;">
+            Previously used
+          </v-card-title>
+          <v-card-text>
+            <v-list style="max-height: 150px" class="overflow-y-auto">
+              <v-list-item-group
+                multiple
+              >
+                <template v-for="(item, i) in this.urls.savedUrls">
+                  <v-list-item
+                    :key="`saved-url-${i}`"
+                    :value="item.value"
+                  >
+                    <template>
+                      <v-list-item-content @click.stop="setUrlToLink(item.url)">
+                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.url"></v-list-item-title>
+                      </v-list-item-content>
+                      <v-btn text dark color="#ff4444" @click.stop="removeUrlFromHistory(item.url)">
+                        <v-icon>mdi-trash-can</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-item-group>
+            </v-list>
+          </v-card-text>
+
             <v-row justify="end" align="center">
               <v-btn
                 text
@@ -213,7 +241,7 @@
 <script>
   import { remote } from 'electron'
   import jetpack from 'fs-jetpack'
-  import { mapActions } from 'vuex'
+  import { mapActions, mapState } from 'vuex'
   import ProcessingSource from './ProcessingSource'
   import xml2js from 'xml2js'
   import Modal from '../Modal'
@@ -287,6 +315,13 @@
       project: Object,
       back: Function
     },
+    computed: {
+      ...mapState({
+        urls: state => {
+          return state.URLs
+        }
+      })
+    },
     data () {
       return {
         selectedDataSource,
@@ -321,7 +356,9 @@
     },
     methods: {
       ...mapActions({
-        addDataSources: 'Projects/addDataSources'
+        addDataSources: 'Projects/addDataSources',
+        addUrl: 'URLs/addUrl',
+        removeUrl: 'URLs/removeUrl'
       }),
       cancelProvideLink () {
         this.linkToValidate = ''
@@ -588,6 +625,7 @@
           path: url,
           xyz: true
         }])
+        this.addUrlToHistory(url)
         this.resetURLValidation()
       },
       validateWMSVersion (version) {
@@ -620,6 +658,18 @@
       },
       deselectDataSource () {
         this.selectedDataSource = null
+      },
+      removeUrlFromHistory (url) {
+        // Remove a URL from the Tile URL history state
+        this.removeUrl(url)
+      },
+      addUrlToHistory (url) {
+        // Save a given URL to the Tile URL history state
+        this.addUrl({url: url})
+      },
+      setUrlToLink (url) {
+        // Sets the url text box to the clicked-on url
+        this.linkToValidate = url
       }
     },
     watch: {
