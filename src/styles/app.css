@@ -1,3 +1,6 @@
+.v-stepper__step__step .v-icon {
+	font-size: 16px !important;
+}
 .v-label {
 	font-size: 14px;
 }
@@ -64,4 +67,24 @@
 }
 .detail-bg {
 	background-color: var(--v-detailbg-base) !important;
+}
+
+/* The emerging W3C standard
+   that is currently Firefox-only */
+* {
+	scrollbar-width: thin;
+	scrollbar-color:  var(--v-scroll_thumb-base) var(--v-scroll_track-base);
+}
+
+/* Works on Chrome/Edge/Safari */
+*::-webkit-scrollbar {
+	width: 12px;
+}
+*::-webkit-scrollbar-track {
+	background: var(--v-scroll_track-base);
+}
+*::-webkit-scrollbar-thumb {
+	background-color:  var(--v-scroll_thumb-base);
+	border-radius: 10px;
+	border: 2px solid var(--v-scroll_track-base);
 }

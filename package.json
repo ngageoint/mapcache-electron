@@ -161,7 +161,7 @@
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
     "vuedraggable": "^2.24.2",
-    "vuetify": "^2.1.10",
+    "vuetify": "^2.3.14",
     "vuex": "^3.1.0",
     "vuex-electron": "^1.0.3",
     "wkx": "^0.4.6",
