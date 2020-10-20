@@ -491,6 +491,7 @@
             credentials: this.getCredentials(),
             layers: this.layerSelection.slice()
           }
+          this.addUrlToHistory(this.linkToValidate)
           processing.sources.push(sourceToProcess)
           setTimeout(() => {
             this.addSource(sourceToProcess)
