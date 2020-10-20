@@ -149,6 +149,7 @@
     methods: {
       ...mapActions({
         setProjectName: 'Projects/setProjectName',
+        setActiveGeoPackage: 'Projects/setActiveGeoPackage',
         addProjectState: 'UIState/addProjectState'
       }),
       saveProjectName (val) {
@@ -175,6 +176,7 @@
       if (!uistate) {
         this.addProjectState({projectId: this.project.id})
       }
+      this.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
     }
   }
 </script>

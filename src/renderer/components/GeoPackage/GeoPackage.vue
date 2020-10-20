@@ -450,7 +450,8 @@
         removeGeoPackage: 'Projects/removeGeoPackage',
         setGeoPackageLayersVisible: 'Projects/setGeoPackageLayersVisible',
         renameGeoPackage: 'Projects/renameGeoPackage',
-        addGeoPackage: 'Projects/addGeoPackage'
+        addGeoPackage: 'Projects/addGeoPackage',
+        setActiveGeoPackageFeatureLayer: 'Projects/setActiveGeoPackageFeatureLayer'
       }),
       zoomToExtent (extent) {
         this.$emit('zoom-to', extent)
@@ -479,12 +480,15 @@
       },
       layerSelected (layer) {
         this.selectedLayer = layer
+        this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
       },
       selectedLayerRenamed (layer) {
         this.selectedLayer = layer
+        this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
       },
       deselectLayer () {
         this.selectedLayer = null
+        this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: null})
       },
       addFeatureLayer () {
         this.fab = false

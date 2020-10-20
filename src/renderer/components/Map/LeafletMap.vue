@@ -752,13 +752,20 @@
       },
       geoPackageSelection: {
         handler (updatedGeoPackageSelection, oldValue) {
-          this.geoPackageFeatureLayerSelection = 0
           let layers = [NEW_FEATURE_LAYER_OPTION]
           if (updatedGeoPackageSelection !== 0) {
             Object.keys(this.geopackages[updatedGeoPackageSelection].tables.features).forEach((tableName, index) => {
               layers.push({text: tableName, value: index + 1})
             })
           }
+          let geoPackageFeatureLayerSelection = 0
+          if (!_.isNil(this.project.activeGeoPackage) && !_.isNil(this.project.activeGeoPackage.geopackageId) && this.project.activeGeoPackage.geopackageId === updatedGeoPackageSelection && !_.isNil(this.project.activeGeoPackage.tableName)) {
+            const tableNameIndex = layers.findIndex(choice => choice.text === this.project.activeGeoPackage.tableName)
+            if (tableNameIndex > 0) {
+              geoPackageFeatureLayerSelection = layers[tableNameIndex].value
+            }
+          }
+          this.geoPackageFeatureLayerSelection = geoPackageFeatureLayerSelection
           this.geoPackageFeatureLayerChoices = layers
         }
       },
@@ -915,6 +922,14 @@
           })
           _this.createdLayer = e.layer
           _this.geoPackageChoices = layers
+          if (!_.isNil(_this.project.activeGeoPackage)) {
+            if (!_.isNil(_this.project.activeGeoPackage.geopackageId)) {
+              const index = _this.geoPackageChoices.findIndex(choice => choice.value === _this.project.activeGeoPackage.geopackageId)
+              if (index > 0) {
+                _this.geoPackageSelection = _this.geoPackageChoices[index].value
+              }
+            }
+          }
           _this.layerSelectionVisible = true
         }
       })

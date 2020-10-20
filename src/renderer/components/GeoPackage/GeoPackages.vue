@@ -117,7 +117,8 @@
     },
     methods: {
       ...mapActions({
-        addGeoPackage: 'Projects/addGeoPackage'
+        addGeoPackage: 'Projects/addGeoPackage',
+        setActiveGeoPackage: 'Projects/setActiveGeoPackage'
       }),
       createNewGeoPackage () {
         this.fab = false
@@ -164,9 +165,11 @@
       },
       geopackageSelected (geopackageId) {
         this.selectedGeoPackage = this.geopackages[geopackageId]
+        this.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
       },
       deselectGeoPackage () {
         this.selectedGeoPackage = null
+        this.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
       }
     },
     watch: {

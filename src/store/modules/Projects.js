@@ -191,6 +191,17 @@ const mutations = {
     project.boundingBoxFilterEditingEnabled = false
     delete project.boundingBoxFilter
     Vue.set(state, projectId, project)
+  },
+  setActiveGeoPackage (state, {projectId, geopackageId}) {
+    Vue.set(state[projectId], 'activeGeoPackage', {
+      geopackageId: geopackageId
+    })
+  },
+  setActiveGeoPackageFeatureLayer (state, {projectId, geopackageId, tableName}) {
+    Vue.set(state[projectId], 'activeGeoPackage', {
+      geopackageId: geopackageId,
+      tableName: tableName
+    })
   }
 }
 
@@ -210,7 +221,11 @@ const actions = {
       boundingBoxFilterEditingEnabled: false,
       boundingBoxFilter: undefined,
       showToolTips: true,
-      displayAddressSearchBar: true
+      displayAddressSearchBar: true,
+      activeGeoPackage: {
+        geopackageId: null,
+        tableName: null
+      }
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)
@@ -519,6 +534,12 @@ const actions = {
       })
       commit('setGeoPackage', {projectId, geopackage})
     })
+  },
+  setActiveGeoPackage ({ commit, state }, {projectId, geopackageId}) {
+    commit('setActiveGeoPackage', {projectId, geopackageId})
+  },
+  setActiveGeoPackageFeatureLayer ({ commit, state }, {projectId, geopackageId, tableName}) {
+    commit('setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
   }
 }
 
