@@ -12,6 +12,8 @@ const opts = {
     themes: {
       light: {
         main: '#326482',
+        main_active_background: '#ffffff',
+        main_active_text: '#326482',
         primary: '#326482',
         accent: '#37A5AC',
         secondary: '#089247',
@@ -24,6 +26,8 @@ const opts = {
       },
       dark: {
         main: '#192F43',
+        main_active_background: '#1e1e1e',
+        main_active_text: '#f5f5f5',
         primary: '#37A5AC',
         accent: '#76C043',
         secondary: '#76C043',

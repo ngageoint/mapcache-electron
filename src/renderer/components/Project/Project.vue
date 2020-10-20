@@ -217,8 +217,8 @@
     color: whitesmoke
   }
   .list-item-active {
-    background-color: whitesmoke;
-    color: var(--v-main-base)
+    background-color: var(--v-main_active_background-base);
+    color: var(--v-main_active_text-base)
   }
   .list-item-active:hover {
     background-color: var(--v-main-base);
