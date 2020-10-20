@@ -12,7 +12,7 @@
       <v-card-title>{{'Adding ' + layerName + ' Feature Layer'}}</v-card-title>
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
-        <v-progress-linear :value="error ? 100 : status.progress"
+        <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
                            :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
@@ -186,14 +186,14 @@
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-<!--        <v-btn-->
-<!--          v-if="processing && !done"-->
-<!--          text-->
-<!--          :disabled="cancelling"-->
-<!--          color="warning"-->
-<!--          @click="cancelAddFeatureLayer">-->
-<!--          {{cancelling ? 'Cancelling' : 'Cancel'}}-->
-<!--        </v-btn>-->
+        <v-btn
+          v-if="processing && !done"
+          text
+          :disabled="cancelling"
+          color="warning"
+          @click="cancelAddFeatureLayer">
+          {{cancelling ? 'Cancelling' : 'Cancel'}}
+        </v-btn>
         <v-btn
           v-if="done || !processing"
           color="primary"
@@ -264,13 +264,22 @@
         const self = this
         this.cancelling = true
         this.$electron.ipcRenderer.removeAllListeners('build_feature_layer_status_' + this.configuration.id)
+        this.$electron.ipcRenderer.removeAllListeners('build_feature_layer_completed_' + this.configuration.id)
         this.status.message = 'Cancelling...'
+        self.status.progress = -1
         this.$electron.ipcRenderer.once('cancel_build_feature_layer_completed_' + this.configuration.id, () => {
           GeoPackageUtilities.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
             self.done = true
             self.cancelling = false
-            self.processing = false
             self.status.message = 'Cancelled'
+            self.status.progress = 100
+            self.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          }).catch(() => {
+            // table may not have been created yet
+            self.done = true
+            self.cancelling = false
+            self.status.message = 'Cancelled'
+            self.status.progress = 100
             self.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
           })
         })
@@ -446,21 +455,6 @@
           this.selectedGeoPackageFeatureLayers = this.geopackageFeatureLayers.filter(item => item.visible).map(item => item.value)
         },
         deep: true
-      },
-      selectedGeoPackageFeatureLayers: {
-        handler (newValue) {
-          console.log(newValue)
-        }
-      },
-      selectedDataSourceLayers: {
-        handler (newValue) {
-          console.log(newValue)
-        }
-      },
-      step: {
-        handler (newValue) {
-          console.log('step: ' + newValue)
-        }
       }
     },
     mounted () {

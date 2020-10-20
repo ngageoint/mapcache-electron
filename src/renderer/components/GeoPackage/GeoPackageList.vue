@@ -97,22 +97,8 @@
       executeDialogAction: function () {
         this.dialogAction()
         this.clearDialog()
-      }
-    },
-    data () {
-      return {
-        snackBar: false,
-        snackBarText: '',
-        showDialog: false,
-        dialogText: '',
-        dialogSubText: '',
-        dialogGeoPackageId: '',
-        dialogActionText: '',
-        dialogAction: () => {}
-      }
-    },
-    asyncComputed: {
-      async items () {
+      },
+      async getItems () {
         const _this = this
         const items = []
         const keys = Object.keys(this.geopackages)
@@ -168,6 +154,31 @@
           })
         }
         return items
+      }
+    },
+    data () {
+      return {
+        snackBar: false,
+        snackBarText: '',
+        showDialog: false,
+        dialogText: '',
+        dialogSubText: '',
+        dialogGeoPackageId: '',
+        dialogActionText: '',
+        dialogAction: () => {}
+      }
+    },
+    watch: {
+      geopackages: {
+        async handler (newValue, oldValue) {
+          this.items = await this.getItems()
+        },
+        deep: true
+      }
+    },
+    asyncComputed: {
+      async items () {
+        return this.getItems()
       }
     }
   }

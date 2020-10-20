@@ -18,9 +18,10 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
-          color="warning"
-          @click="closeCard">
+        v-if="!cancelling"
+        text
+        color="warning"
+        @click="closeCard">
         {{source.error ? 'Close' : 'Cancel Processing'}}
       </v-btn>
     </v-card-actions>
@@ -34,19 +35,30 @@
     props: {
       source: Object
     },
+    data () {
+      return {
+        cancelling: false
+      }
+    },
     computed: {
       displayName () {
         if (this.source.isUrl) {
           return URLUtilities.getBaseUrlAndQueryParams(this.source.file.path).baseUrl
         } else {
-          path.basename(this.source.file.path)
+          return path.basename(this.source.file.path)
         }
       }
     },
     methods: {
       closeCard () {
-        this.$electron.ipcRenderer.send('cancel_process_source', this.source)
-        this.$emit('clear-processing', this.source)
+        const self = this
+        this.$electron.ipcRenderer.removeAllListeners('process_source_completed_' + self.source.id)
+        this.$electron.ipcRenderer.once('cancel_process_source_completed_' + self.source.id, () => {
+          self.$emit('clear-processing', self.source)
+        })
+        self.source.status = 'Cancelling...'
+        self.cancelling = true
+        self.$electron.ipcRenderer.send('cancel_process_source', self.source)
       }
     }
   }

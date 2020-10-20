@@ -98,7 +98,6 @@
         setTableIcon: 'Projects/setTableIcon'
       }),
       save () {
-        console.log(this.model)
         if (this.model !== null && this.model !== undefined && this.model >= 0) {
           const items = this.styles.concat(this.icons)
           const selection = items[this.model]

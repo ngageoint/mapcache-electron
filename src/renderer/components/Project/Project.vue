@@ -210,6 +210,7 @@
     right: 15rem;
     text-align: center;
     top: 16px;
+    z-index: 20;
   }
   .list-item:hover {
     background-color: var(--v-main-darken2) !important;

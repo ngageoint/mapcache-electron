@@ -199,5 +199,6 @@
     right: 15rem;
     text-align: center;
     top: 16px;
+    z-index: 20;
   }
 </style>

@@ -26,7 +26,9 @@ ipcMain.on('process_source', (event, payload) => {
   })
 })
 ipcMain.on('cancel_process_source', (event, payload) => {
-  WorkerPool.cancelProcessSource(payload.id)
+  WorkerPool.cancelProcessSource(payload.id).then(() => {
+    event.sender.send('cancel_process_source_completed_' + payload.id)
+  })
 })
 ipcMain.on('build_feature_layer', (event, payload) => {
   const id = payload.configuration.id
@@ -39,7 +41,7 @@ ipcMain.on('build_feature_layer', (event, payload) => {
 })
 ipcMain.on('cancel_build_feature_layer', (event, payload) => {
   WorkerPool.cancelBuildFeatureLayer(payload).then(function () {
-    event.sender.send('cancel_build_feature_layer_completed_' + payload.id)
+    event.sender.send('cancel_build_feature_layer_completed_' + payload.configuration.id)
   })
 })
 ipcMain.on('build_tile_layer', (event, payload) => {
@@ -53,7 +55,7 @@ ipcMain.on('build_tile_layer', (event, payload) => {
 })
 ipcMain.on('cancel_build_tile_layer', (event, payload) => {
   WorkerPool.cancelBuildTileLayer(payload).then(function () {
-    event.sender.send('cancel_build_tile_layer_completed_' + payload.id)
+    event.sender.send('cancel_build_tile_layer_completed_' + payload.configuration.id)
   })
 })
 ipcMain.on('quick_download_geopackage', (event, payload) => {

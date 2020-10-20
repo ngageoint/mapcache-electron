@@ -9,6 +9,10 @@ class WorkerWindowPool {
   launchWorkerWindows () {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
+      const workerURL = process.env.NODE_ENV === 'development'
+        ? `http://localhost:9080/?id=${id}#/worker`
+        : `file://${__dirname}/index.html?id=${id}#worker`
+
       let worker = {
         id: id,
         window: new BrowserWindow({
@@ -22,14 +26,39 @@ class WorkerWindowPool {
       worker.window.toggleDevTools()
       // worker.window.toggleDevTools()
       this.workerWindows.push(worker)
-      const workerURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${id}#/worker`
-        : `file://${__dirname}/index.html?id=${id}#worker`
       worker.window.loadURL(workerURL)
       worker.window.on('ready-to-show', () => {
         worker.available = true
       })
     }
+  }
+
+  async restartWorkerWindow (id) {
+    return new Promise(resolve => {
+      const workerWindow = this.workerWindows.find(worker => worker.id === id)
+      if (workerWindow) {
+        workerWindow.available = false
+        workerWindow.window.on('closed', () => {
+          workerWindow.window = new BrowserWindow({
+            show: false,
+            webPreferences: {
+              nodeIntegration: true
+            }
+          })
+          const workerURL = process.env.NODE_ENV === 'development'
+            ? `http://localhost:9080/?id=${id}#/worker`
+            : `file://${__dirname}/index.html?id=${id}#worker`
+          workerWindow.window.loadURL(workerURL)
+          workerWindow.window.on('ready-to-show', () => {
+            workerWindow.available = true
+            resolve()
+          })
+        })
+        workerWindow.window.destroy()
+      } else {
+        resolve()
+      }
+    })
   }
 
   async getOrWaitForAvailableWorker (sourceId) {
@@ -70,18 +99,23 @@ class WorkerWindowPool {
     })
   }
 
-  cancelProcessSource (sourceId) {
-    if (this.workerWindowAssignment[sourceId]) {
-      const workerWindow = this.workerWindowAssignment[sourceId]
-      const workerURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-        : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-      workerWindow.window.loadURL(workerURL)
-      workerWindow.window.on('ready-to-show', () => {
-        this.releaseWorker(workerWindow, sourceId)
-      })
-      delete this.workerWindowAssignment[sourceId]
-    }
+  async cancelProcessSource (sourceId) {
+    return new Promise(resolve => {
+      if (this.workerWindowAssignment[sourceId]) {
+        const workerWindow = this.workerWindowAssignment[sourceId]
+        if (workerWindow) {
+          ipcMain.removeAllListeners('worker_process_source_completed_' + workerWindow.id)
+          this.restartWorkerWindow(workerWindow.id).then(() => {
+            delete this.workerWindowAssignment[sourceId]
+            resolve()
+          })
+        } else {
+          resolve()
+        }
+      } else {
+        resolve()
+      }
+    })
   }
 
   async executeBuildFeatureLayer (payload, statusCallback) {
@@ -105,15 +139,17 @@ class WorkerWindowPool {
       try {
         if (this.workerWindowAssignment[payload.configuration.id]) {
           const workerWindow = this.workerWindowAssignment[payload.configuration.id]
-          const workerURL = process.env.NODE_ENV === 'development'
-            ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-            : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-          ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
-          workerWindow.window.loadURL(workerURL)
-          workerWindow.window.on('ready-to-show', () => {
-            this.releaseWorker(workerWindow, payload.configuration.id)
+          if (workerWindow) {
+            ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
+            this.restartWorkerWindow(workerWindow.id).then(() => {
+              delete this.workerWindowAssignment[payload.configuration.id]
+              resolve()
+            })
+          } else {
             resolve()
-          })
+          }
+        } else {
+          resolve()
         }
       } catch (error) {
         console.error(error)
@@ -138,20 +174,22 @@ class WorkerWindowPool {
     })
   }
 
-  async cancelBuildTileLayer (payload) {
+  cancelBuildTileLayer (payload) {
     return new Promise(resolve => {
       try {
         if (this.workerWindowAssignment[payload.configuration.id]) {
           const workerWindow = this.workerWindowAssignment[payload.configuration.id]
-          const workerURL = process.env.NODE_ENV === 'development'
-            ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-            : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-          ipcMain.removeAllListeners('worker_build_tile_layer_status_' + workerWindow.id)
-          workerWindow.window.loadURL(workerURL)
-          workerWindow.window.on('ready-to-show', () => {
-            this.releaseWorker(workerWindow, payload.configuration.id)
+          if (workerWindow) {
+            ipcMain.removeAllListeners('worker_build_tile_layer_status_' + workerWindow.id)
+            this.restartWorkerWindow(workerWindow.id).then(() => {
+              delete this.workerWindowAssignment[payload.configuration.id]
+              resolve()
+            })
+          } else {
             resolve()
-          })
+          }
+        } else {
+          resolve()
         }
       } catch (error) {
         console.error(error)
