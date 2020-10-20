@@ -86,6 +86,7 @@
   import * as vendor from '../../../lib/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
+  import Vue from 'vue'
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
@@ -183,7 +184,8 @@
         addFeatureTableToGeoPackage: 'Projects/addFeatureTableToGeoPackage',
         addGeoPackage: 'Projects/addGeoPackage',
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
-        clearActiveLayers: 'Projects/clearActiveLayers'
+        clearActiveLayers: 'Projects/clearActiveLayers',
+        showActiveGeoPackageFeatureLayerFeaturesTable: 'Projects/showActiveGeoPackageFeatureLayerFeaturesTable'
       }),
       hideFeatureTable () {
         this.showFeatureTable = false
@@ -311,6 +313,27 @@
         this.featureToAddColumns = null
         this.featureToAddGeoPackage = null
         this.featureToAddTableName = null
+      },
+      async displayFeaturesForTable (geopackageId, tableName) {
+        try {
+          this.tableFeaturesLatLng = null
+          const geopackage = this.geopackages[geopackageId]
+          const tableFeatures = {
+            geopackageTables: [{
+              id: geopackage.id + '_' + tableName,
+              tabName: geopackage.name + ': ' + tableName,
+              geopackageId: geopackage.id,
+              tableName: tableName,
+              columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
+              features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
+            }],
+            sourceTables: []
+          }
+          this.tableFeatures = tableFeatures
+          this.showFeatureTable = true
+        } catch (e) {
+          console.error(e)
+        }
       },
       removeDataSource (sourceId) {
         const sourceLayer = sourceLayers[sourceId]
@@ -746,6 +769,8 @@
           // geopackage was changed
           if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
             this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+          } else if (this.showFeatureTable && !_.isNil(this.project.activeGeoPackage)) {
+            this.displayFeaturesForTable(this.project.activeGeoPackage.geopackageId, this.project.activeGeoPackage.tableName)
           }
         },
         deep: true
@@ -819,6 +844,12 @@
             bounds = bounds.pad(0.05)
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox)
+          }
+          if (!_.isNil(updatedProject.activeGeoPackage) && !_.isNil(updatedProject.activeGeoPackage.showFeaturesTable)) {
+            this.displayFeaturesForTable(updatedProject.activeGeoPackage.geopackageId, updatedProject.activeGeoPackage.tableName)
+            Vue.nextTick(() => {
+              this.showActiveGeoPackageFeatureLayerFeaturesTable({projectId: this.projectId})
+            })
           }
         },
         deep: true

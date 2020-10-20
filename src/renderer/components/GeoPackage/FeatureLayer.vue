@@ -371,7 +371,7 @@
                 </v-row>
               </v-col>
             </v-row>
-            <v-row no-gutters>
+            <v-row no-gutters justify="space-between">
               <v-col>
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Features
@@ -379,6 +379,15 @@
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{featureCount}}
                 </p>
+              </v-col>
+              <v-col>
+                <v-row no-gutters justify="end">
+                  <v-btn class="btn-background" @click.stop="showFeatureTable">
+                    <v-icon left>
+                      mdi-table-eye
+                    </v-icon>View features
+                  </v-btn>
+                </v-row>
               </v-col>
             </v-row>
             <v-row no-gutters>
@@ -578,7 +587,8 @@
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
         addGeoPackageFeatureTableColumn: 'Projects/addGeoPackageFeatureTableColumn',
         updateFeatureTable: 'Projects/updateFeatureTable',
-        zoomToExtent: 'Projects/zoomToExtent'
+        zoomToExtent: 'Projects/zoomToExtent',
+        showActiveGeoPackageFeatureLayerFeaturesTable: 'Projects/showActiveGeoPackageFeatureLayerFeaturesTable'
       }),
       async styleExtensionEnabled () {
         let hasStyle = false
@@ -665,6 +675,9 @@
         this.addFieldDialog = false
         this.addFieldValue = ''
         this.addFieldType = GeoPackageDataType.TEXT
+      },
+      showFeatureTable () {
+        this.showActiveGeoPackageFeatureLayerFeaturesTable({projectId: this.projectId})
       }
     },
     watch: {
@@ -686,5 +699,7 @@
 </script>
 
 <style scoped>
-
+  .btn-background {
+    background-color: var(--v-main_active_background-base) !important;
+  }
 </style>

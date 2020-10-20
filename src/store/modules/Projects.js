@@ -202,6 +202,9 @@ const mutations = {
       geopackageId: geopackageId,
       tableName: tableName
     })
+  },
+  showActiveGeoPackageFeatureLayerFeaturesTable (state, {projectId}) {
+    Vue.set(state[projectId].activeGeoPackage, 'showFeaturesTable', _.isNil(state[projectId].activeGeoPackage.showFeaturesTable) ? true : undefined)
   }
 }
 
@@ -540,6 +543,9 @@ const actions = {
   },
   setActiveGeoPackageFeatureLayer ({ commit, state }, {projectId, geopackageId, tableName}) {
     commit('setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
+  },
+  showActiveGeoPackageFeatureLayerFeaturesTable ({ commit, state }, {projectId}) {
+    commit('showActiveGeoPackageFeatureLayerFeaturesTable', {projectId})
   }
 }
 
