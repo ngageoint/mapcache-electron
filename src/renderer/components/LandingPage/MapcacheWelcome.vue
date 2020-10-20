@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <div class="app-title-block">
       <img class="gp-img" src="~@/assets/256x256.png">
       <h4>MapCache</h4>
@@ -114,7 +113,7 @@
     width: 150px;
     height: 2px;
     float: right;
-    background-color: rgb(22, 117, 170);
+    background-color: #192F43;
     opacity: .07;
     margin-bottom: 10px;
   }
@@ -146,10 +145,14 @@
     border-radius: 1em;
     display: inline-block;
     color: rgba(255, 255, 255, .87);
-    background-color: rgb(68, 152, 192);
+    background-color: #192F43;
     transition: all 0.15s ease;
     box-sizing: border-box;
-    border: 1px solid rgb(68, 152, 192);
+    border: 1px solid #192F43;
+  }
+
+  button:hover {
+    background-color: #326482;
   }
 
   button.alt {

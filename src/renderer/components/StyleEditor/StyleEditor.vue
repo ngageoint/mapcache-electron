@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -11,13 +11,12 @@
     </v-toolbar>
     <v-dialog
       v-model="removeDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-icon>mdi-trash-can-outline</v-icon>{{'Remove'}}<b class="pl-1 pr-1">{{tableName}}</b>{{'Styling'}}
-          </v-row>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          {{'Remove'}}<b class="pl-1 pr-1">{{tableName}}</b>{{'Styling'}}
         </v-card-title>
         <v-card-text>
           When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or icons will be deleted. Are you sure you want to remove styling?

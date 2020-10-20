@@ -37,6 +37,11 @@ ipcMain.on('build_feature_layer', (event, payload) => {
     event.sender.send('build_feature_layer_completed_' + id, result)
   })
 })
+ipcMain.on('cancel_build_feature_layer', (event, payload) => {
+  WorkerPool.cancelBuildFeatureLayer(payload).then(function () {
+    event.sender.send('cancel_build_feature_layer_completed_' + payload.id)
+  })
+})
 ipcMain.on('build_tile_layer', (event, payload) => {
   const id = payload.configuration.id
   const statusCallback = (status) => {
@@ -44,6 +49,11 @@ ipcMain.on('build_tile_layer', (event, payload) => {
   }
   WorkerPool.executeBuildTileLayer(payload, statusCallback).then(function (result) {
     event.sender.send('build_tile_layer_completed_' + id, result)
+  })
+})
+ipcMain.on('cancel_build_tile_layer', (event, payload) => {
+  WorkerPool.cancelBuildTileLayer(payload).then(function () {
+    event.sender.send('cancel_build_tile_layer_completed_' + payload.id)
   })
 })
 ipcMain.on('quick_download_geopackage', (event, payload) => {

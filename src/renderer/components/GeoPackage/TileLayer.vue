@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -12,13 +12,12 @@
     <v-container fluid>
       <v-dialog
         v-model="renameDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-pencil-outline</v-icon>Rename {{tableName}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            Rename {{tableName}}
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
@@ -55,13 +54,12 @@
       </v-dialog>
       <v-dialog
         v-model="copyDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-content-copy</v-icon>Copy {{tableName}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+            Copy {{geopackage.name}}
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
@@ -98,14 +96,16 @@
       </v-dialog>
       <v-dialog
         v-model="deleteDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-trash-can-outline</v-icon>Delete {{tableName}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Delete {{tableName}}
           </v-card-title>
+          <v-card-text>
+            Are you sure you want to delete the <b>{{tableName}}</b> tile layer from the <b>{{geopackage.name}}</b> GeoPackage? This action can't be undone.
+          </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
@@ -117,28 +117,29 @@
               color="warning"
               text
               @click="deleteTable">
-              Remove
+              Delete
             </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-row no-gutters class="mb-2">
+      <v-row no-gutters>
         <v-col>
-          <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            <v-btn icon @click="zoomToLayer">
-              <img src="../../assets/colored_layers.png" alt="Tile Layer" width="24px" height="20px">
+          <p class="text-subtitle-1">
+            <v-btn icon @click="zoomToLayer" color="whitesmoke">
+              <img v-if="$vuetify.theme.dark" src="../../assets/white_layers.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-else src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"/>
             </v-btn>
-            <span>Tile Layer</span>
+            <span style="vertical-align: middle;">Tile Layer</span>
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters class="pt-2" justify="center" align-content="center">
+      <v-row no-gutters class="pb-2" justify="center" align-content="center">
         <v-hover>
           <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil-outline</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -166,10 +167,10 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can-outline</v-icon>
+                  <v-icon small>mdi-trash-can</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
-                  Remove
+                  Delete
                 </v-row>
               </v-card-text>
             </v-card>
@@ -180,48 +181,48 @@
         <v-col>
           <v-row no-gutters justify="space-between">
             <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 GeoPackage
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{geopackage.name}}
               </p>
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Enable
                 </p>
-                <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
               </v-row>
             </v-col>
           </v-row>
           <v-row no-gutters>
             <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Tiles
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{tileCount}}
               </p>
             </v-col>
           </v-row>
           <v-row no-gutters>
             <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Zoom Levels
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{minZoom + ' - ' + maxZoom}}
               </p>
             </v-col>
           </v-row>
           <v-row no-gutters>
             <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Description
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{description}}
               </p>
             </v-col>
@@ -274,14 +275,14 @@
         renamedTable: this.tableName,
         renamedTableRules: [
           v => !!v || 'Layer name is required',
-          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name already exists'
         ],
         copyDialog: false,
         copyValid: false,
         copiedTable: this.tableName + '_copy',
         copiedTableRules: [
           v => !!v || 'Layer name is required',
-          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name already exists'
         ]
       }
     },

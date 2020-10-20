@@ -14,14 +14,14 @@
         <v-btn
           text
           v-if="cancel"
-          :color="cancelColor || 'light darken-1'"
+          :color="cancelColor || ''"
           @click="modalCancel">
           {{cancelText || "Cancel"}}
         </v-btn>
         <v-btn
           text
           v-if="ok"
-          :color="okColor || 'primary darken-1'"
+          :color="okColor || 'primary'"
           @click="modalOK">
           {{okText || "Ok"}}
         </v-btn>

@@ -1,6 +1,6 @@
 import {app, BrowserWindow, Menu, shell} from 'electron'
 import WindowState from './WindowState'
-import path from 'path'
+// import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
@@ -19,19 +19,34 @@ class WindowLauncher {
     const menu = Menu.buildFromTemplate(this.getMenuTemplate())
     Menu.setApplicationMenu(menu)
 
-    const mainWindowState = new WindowState('main')
-    let windowOptions = mainWindowState.retrieveState()
-    windowOptions.title = 'MapCache'
-    windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
-    windowOptions.webPreferences = {
-      nodeIntegration: true,
-      contextIsolation: false
+    // const mainWindowState = new WindowState('main')
+    // let windowOptions = mainWindowState.retrieveState()
+    // windowOptions.title = 'MapCache'
+    // windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
+    // if (_.isNil(windowOptions.minHeight) || windowOptions.minHeight < 600) {
+    //   windowOptions.minHeight = 600
+    // }
+    // if (_.isNil(windowOptions.minWidth) || windowOptions.minWidth < 665) {
+    //   windowOptions.minHeight = 665
+    // }
+    // windowOptions.webPreferences = {
+    //   nodeIntegration: true,
+    //   contextIsolation: false
+    // }
+    let windowOptions = {
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      },
+      show: false,
+      width: 920,
+      height: 665,
+      minHeight: 665,
+      minWidth: 700
     }
-    windowOptions.show = false
     this.mainWindow = new BrowserWindow(windowOptions)
     this.mainWindow.setMenu(menu)
-    // this.mainWindow.toggleDevTools()
-    mainWindowState.track(this.mainWindow)
+    // mainWindowState.track(this.mainWindow)
     this.mainWindow.loadURL(winURL)
     this.mainWindow.on('ready-to-show', () => {
       this.loadingWindow.hide()
@@ -69,9 +84,10 @@ class WindowLauncher {
       },
       show: false,
       width: 1200,
-      height: 800,
-      minHeight: 800,
-      minWidth: 1000
+      height: 700,
+      minHeight: 700,
+      minWidth: 1000,
+      useContentSize: true
     }
     this.projectWindow = new BrowserWindow(windowOptions)
     this.projectWindow.on('close', (e) => {

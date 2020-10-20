@@ -7,10 +7,8 @@
         max-width="500"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              Add Drawing
-            </v-row>
+          <v-card-title>
+            Add Drawing
           </v-card-title>
           <v-card-text>
             Add drawing to the selected GeoPackage and feature layer.

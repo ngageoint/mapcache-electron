@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -38,7 +38,7 @@
                 </v-col>
               </v-row>
               <v-row class="ma-0 pa-0">
-                <v-switch v-model="stretchToMinMax" label="Stretch Band to Min/Max">
+                <v-switch color="primary" v-model="stretchToMinMax" label="Stretch Band to Min/Max">
                 </v-switch>
               </v-row>
               <v-row no-gutters>
@@ -103,7 +103,7 @@
               Stretch Bands to Min/Max
             </v-list-item-content>
             <v-list-item-action>
-              <v-switch v-model="stretchToMinMax"></v-switch>
+              <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
             </v-list-item-action>
           </v-list-item>
         </v-list>
@@ -131,7 +131,7 @@
               Specify No Data Value
             </v-list-item-content>
             <v-list-item-action>
-              <v-switch v-model="enableGlobalNoDataValue"></v-switch>
+              <v-switch color="primary" v-model="enableGlobalNoDataValue"></v-switch>
             </v-list-item-action>
           </v-list-item>
           <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
@@ -144,7 +144,7 @@
               Enable opacity
             </v-list-item-content>
             <v-list-item-action>
-              <v-switch v-model="enableGlobalOpacity"></v-switch>
+              <v-switch color="primary" v-model="enableGlobalOpacity"></v-switch>
             </v-list-item-action>
           </v-list-item>
           <v-list-item v-if="enableGlobalOpacity">
@@ -446,87 +446,4 @@
 </script>
 
 <style scoped>
-  .flex-column {
-    display: flex;
-    flex-direction: column;
-  }
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-  }
-  .layer__face__stats {
-    color: #777;
-    text-transform: uppercase;
-    font-size: 12px;
-  }
-  .layer__face__stats p {
-    font-size: 15px;
-    color: #777;
-    font-weight: bold;
-  }
-  .option-block {
-    width: 100%;
-  }
-  .preset-select {
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    border-width: 4px;
-    border-style: solid;
-    margin: 10px;
-    color: #222;
-  }
-  .preset-select select {
-    display: flex;
-    flex-direction: row;
-    font-weight: bold;
-    font-size: 20px;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align-last: center;
-  }
-  .preset-select select:focus {
-    outline: none;
-  }
-  .color-band-name {
-    font-size: 8px;
-    text-align: center;
-  }
-  .red-color, .red-color select {
-    border-color: #C21807;
-    color: #C21807;
-  }
-  .green-color, .green-color select {
-    border-color: #0b6623;
-    color: #0b6623;
-  }
-  .blue-color, .blue-color select {
-    border-color: #1034A6;
-    color: #1034A6;
-  }
-  .alpha-color, .alpha-color select {
-    border-color: rgba(0, 0, 0, .3);
-    color: rgba(0, 0, 0, .3);
-  }
-  .palette-color, .palette-color select {
-    border-color: black;
-    color: black;
-  }
-  .gray-color, .gray-color select {
-    border-color: gray;
-    color: gray;
-  }
-  .text-box {
-    height: 32px;
-    font-size: 15px;
-  }
-  .text-box-label {
-    font-size: 12px;
-    text-align: center;
-    padding-right: 8px;
-    padding-bottom: 8px;
-    padding-top: 8px;
-    margin-bottom: 8px;
-  }
 </style>

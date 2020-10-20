@@ -26,7 +26,7 @@
     </v-sheet>
     <v-sheet v-else>
       <v-toolbar
-        color="primary"
+        color="main"
         dark
         flat
         class="sticky-toolbar"
@@ -34,49 +34,51 @@
         <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
         <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
       </v-toolbar>
-      <v-container fluid>
+      <v-container>
         <v-dialog
           v-model="indexDialog"
-          max-width="500"
+          max-width="400"
           persistent>
           <v-card>
-            <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters justify="start" align="center">
-                <v-icon>mdi-speedometer</v-icon><span class="pl-1 pr-1">Indexing</span><b>{{tableName}}</b>
-              </v-row>
+            <v-card-title>
+              <v-icon color="primary" class="pr-2">mdi-speedometer</v-icon>
+              Indexing {{tableName}}
             </v-card-title>
             <v-card-text>
               <v-row
-                align-content="center"
-                justify="center"
+                no-gutters
+                class="pt-2 pb-2"
               >
-                <v-col
-                  class="subtitle-1 text-center"
-                  cols="12"
-                >
-                  {{indexMessage}}
-                </v-col>
-                <v-col cols="6">
-                  <v-progress-linear
-                    color="primary"
-                    indeterminate
-                    rounded
-                    height="6"
-                  ></v-progress-linear>
-                </v-col>
+                {{indexMessage}}
+              </v-row>
+              <v-row no-gutters class="pb-4" v-if="!indexingDone">
+                <v-progress-linear
+                  color="primary"
+                  indeterminate
+                  rounded
+                  height="6"
+                ></v-progress-linear>
               </v-row>
             </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                v-if="indexingDone"
+                text
+                @click="indexDialog = false">
+                Close
+              </v-btn>
+            </v-card-actions>
           </v-card>
         </v-dialog>
         <v-dialog
           v-model="renameDialog"
-          max-width="500"
+          max-width="400"
           persistent>
           <v-card>
-            <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters justify="start" align="center">
-                <v-icon>mdi-pencil-outline</v-icon>Rename {{tableName}}
-              </v-row>
+            <v-card-title>
+              <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+              Rename {{tableName}}
             </v-card-title>
             <v-card-text>
               <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
@@ -113,13 +115,12 @@
         </v-dialog>
         <v-dialog
           v-model="copyDialog"
-          max-width="500"
+          max-width="400"
           persistent>
           <v-card>
-            <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters justify="start" align="center">
-                <v-icon>mdi-content-copy</v-icon>Copy {{tableName}}
-              </v-row>
+            <v-card-title>
+              <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+              Copy {{tableName}}
             </v-card-title>
             <v-card-text>
               <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
@@ -159,9 +160,9 @@
           max-width="575"
           persistent>
           <v-card>
-            <v-card-title style="color: grey; font-weight: 600;">
+            <v-card-title>
               <v-row no-gutters justify="start" align="center">
-                <v-icon>mdi-content-copy</v-icon>New Field
+                New Field
               </v-row>
             </v-card-title>
             <v-card-text>
@@ -241,14 +242,16 @@
         </v-dialog>
         <v-dialog
           v-model="deleteDialog"
-          max-width="500"
+          max-width="400"
           persistent>
           <v-card>
-            <v-card-title style="color: grey; font-weight: 600;">
-              <v-row no-gutters justify="start" align="center">
-                <v-icon>mdi-trash-can-outline</v-icon>Remove {{tableName}}
-              </v-row>
+            <v-card-title>
+              <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+              Delete {{tableName}}
             </v-card-title>
+            <v-card-text>
+              Are you sure you want to delete the <b>{{tableName}}</b> feature layer from the <b>{{geopackage.name}}</b> GeoPackage? This action can't be undone.
+            </v-card-text>
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn
@@ -260,28 +263,29 @@
                 color="warning"
                 text
                 @click="deleteTable">
-                Remove
+                Delete
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
-        <v-row no-gutters justify="center" class="mb-2">
+        <v-row no-gutters justify="center">
           <v-col>
-            <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-              <v-btn icon @click="zoomToLayer">
-                <img src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px">
+            <p class="text-subtitle-1">
+              <v-btn icon @click="zoomToLayer" color="whitesmoke">
+                <img v-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
               </v-btn>
-              <span>Feature Layer</span>
+              <span style="vertical-align: middle;">Feature Layer</span>
             </p>
           </v-col>
         </v-row>
-        <v-row no-gutters class="pt-2" justify="center" align-content="center">
+        <v-row no-gutters class="pb-2" justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
+              <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-pencil-outline</v-icon>
+                    <v-icon small>mdi-pencil</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Rename
@@ -323,16 +327,16 @@
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-trash-can-outline</v-icon>
+                    <v-icon small>mdi-trash-can</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
-                    Remove
+                    Delete
                   </v-row>
                 </v-card-text>
               </v-card>
             </template>
           </v-hover>
-          <v-hover v-if="!indexed" >
+          <v-hover v-if="!indexed">
             <template v-slot="{ hover }">
               <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
                 <v-card-text class="pa-2">
@@ -351,38 +355,38 @@
           <v-col>
             <v-row no-gutters justify="space-between">
               <v-col>
-                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   GeoPackage
                 </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{geopackage.name}}
                 </p>
               </v-col>
               <v-col>
                 <v-row no-gutters justify="end">
-                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     Enable
                   </p>
-                  <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                  <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
                 </v-row>
               </v-col>
             </v-row>
             <v-row no-gutters>
               <v-col>
-                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Features
                 </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{featureCount}}
                 </p>
               </v-col>
             </v-row>
             <v-row no-gutters>
               <v-col>
-                <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Description
                 </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{description}}
                 </p>
               </v-col>
@@ -392,7 +396,7 @@
         <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
           <v-container class="ma-0 pa-0">
             <v-row no-gutters>
-              <p style="color: black; font-size: 16px; font-weight: 500;">Fields</p>
+              <p style="font-size: 16px; font-weight: 500;">Fields</p>
             </v-row>
             <v-row no-gutters>
               <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
@@ -478,7 +482,7 @@
         featureColumnNames: [],
         featureLayerField: null,
         indexDialog: false,
-        indexProgressPercentage: 0,
+        indexingDone: false,
         indexMessage: 'Indexing Started',
         loading: true,
         hasStyleExtension: false,
@@ -488,21 +492,21 @@
         renamedTable: this.tableName,
         renamedTableRules: [
           v => !!v || 'Layer name is required',
-          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name already exists'
         ],
         copyDialog: false,
         copyValid: false,
         copiedTable: this.tableName + '_copy',
         copiedTableRules: [
           v => !!v || 'Layer name is required',
-          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
+          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name already exists'
         ],
         addFieldDialog: false,
         addFieldValid: false,
         addFieldValue: '',
         addFieldRules: [
           v => !!v || 'Field name is required',
-          v => this.columnNames.map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Field name must be unique'
+          v => this.columnNames.map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Field name already exists'
         ],
         addFieldType: GeoPackageDataType.TEXT,
         TEXT: GeoPackageDataType.TEXT,
@@ -550,6 +554,7 @@
                   click: () => {
                     this.featureLayerField = {
                       name: column.name,
+                      icon: GeoPackageUtilities.getSimplifiedTypeIcon(column.dataType),
                       type: GeoPackageUtilities.getSimplifiedType(column.dataType)
                     }
                     this.featureColumnNames = this.columnNames
@@ -620,18 +625,17 @@
       },
       indexTable () {
         let _this = this
+        this.indexingDone = false
+        this.indexMessage = 'Indexing Started'
         this.indexDialog = true
         setTimeout(function () {
           _this.indexMessage = 'Indexing...'
           GeoPackageUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
             setTimeout(function () {
+              _this.indexingDone = true
               _this.indexMessage = 'Indexing Completed'
-              setTimeout(function () {
-                _this.indexDialog = false
-                _this.indexMessage = 'Indexing Started'
-                _this.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
-              }, 1000)
-            }, 1000)
+              _this.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
+            }, 2000)
           })
         }, 1000)
       },

@@ -6,7 +6,7 @@
     <v-sheet v-else>
       <v-toolbar
         dark
-        color="primary"
+        color="main"
         flat
         class="sticky-toolbar"
       >
@@ -20,12 +20,12 @@
             <v-col>
               <v-row class="pa-0" no-gutters>
                 <v-col class="pa-0 align-center">
-                  <h5 class="align-self-center"style="color: #9A9E9E">No GeoPackage files found</h5>
+                  <h5 class="align-self-center">No GeoPackage files found</h5>
                 </v-col>
               </v-row>
               <v-row class="pa-0" no-gutters>
                 <v-col class="pa-0 align-center">
-                  <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
+                  <h5 class="align-self-center primary--text">Get Started</h5>
                 </v-col>
               </v-row>
             </v-col>
@@ -60,7 +60,7 @@
               fab
               small
               color="accent"
-              @click="importGeoPackage"
+              @click.stop="importGeoPackage"
               v-bind="attrs"
               v-on="on">
               <v-icon>mdi-file-document-outline</v-icon>
@@ -74,7 +74,7 @@
               fab
               small
               color="accent"
-              @click="createNewGeoPackage"
+              @click.stop="createNewGeoPackage"
               v-bind="attrs"
               v-on="on">
               <v-icon>mdi-plus</v-icon>
@@ -137,6 +137,7 @@
         })
       },
       importGeoPackage () {
+        this.fab = false
         const geopackages = this.geopackages
         remote.dialog.showOpenDialog({
           filters: [
@@ -160,7 +161,6 @@
             }
           }
         })
-        this.fab = false
       },
       geopackageSelected (geopackageId) {
         this.selectedGeoPackage = this.geopackages[geopackageId]
@@ -185,7 +185,6 @@
 <style scoped>
   .card-position {
     position: absolute;
-    background-color: white;
     padding: 16px;
     height: 72px;
     width: 384px;

@@ -1,6 +1,7 @@
 // Keeps a history of any tile URLs that the user has added, accessible across all projects
 
 const state = {
+  savedUrls: []
 }
 
 const getters = {
@@ -12,7 +13,7 @@ const getters = {
 const mutations = {
   addUrl (state, urlObject) {
     let exists = false
-    for (var i = 0; i < state.savedUrls.length; i++) {
+    for (let i = 0; i < state.savedUrls.length; i++) {
       if (state.savedUrls[i].url === urlObject.url) {
         exists = true
       }

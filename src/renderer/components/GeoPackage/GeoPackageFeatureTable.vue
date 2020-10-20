@@ -2,16 +2,15 @@
   <v-sheet>
     <v-dialog
       v-model="removeDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card v-if="featureToRemove !== null">
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-icon>mdi-trash-can-outline</v-icon>Delete Feature {{featureToRemove.id}}
-          </v-row>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Delete Feature {{featureToRemove.id}}
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete the feature?
+          Are you sure you want to delete the feature from the {{table.tableName}} feature table? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -24,7 +23,7 @@
             color="warning"
             text
             @click="remove">
-            Remove
+            Delete
           </v-btn>
         </v-card-actions>
       </v-card>

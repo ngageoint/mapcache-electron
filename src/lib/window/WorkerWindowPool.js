@@ -1,6 +1,5 @@
 import {BrowserWindow, ipcMain} from 'electron'
 import _ from 'lodash'
-import fs from 'fs'
 
 class WorkerWindowPool {
   windowPoolSize = 4
@@ -85,43 +84,6 @@ class WorkerWindowPool {
     }
   }
 
-  async executeBuildGeoPackage (payload) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
-      this.workerWindowAssignment[payload.geopackage.id] = workerWindow
-      workerWindow.window.webContents.send('worker_build_geopackage', payload)
-      ipcMain.once('worker_build_geopackage_completed_' + workerWindow.id, (event, result) => {
-        this.releaseWorker(workerWindow, payload.geopackage.id)
-        resolve(result)
-      })
-    })
-  }
-
-  cancelGeoPackageBuild (geopackage) {
-    const geopackageId = geopackage.id
-    try {
-      fs.unlinkSync(geopackage.fileName)
-    } catch (error) {
-      console.error(error)
-    }
-
-    try {
-      if (this.workerWindowAssignment[geopackageId]) {
-        const workerWindow = this.workerWindowAssignment[geopackageId]
-        const workerURL = process.env.NODE_ENV === 'development'
-          ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-          : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-        workerWindow.window.loadURL(workerURL)
-        workerWindow.window.on('ready-to-show', () => {
-          this.releaseWorker(workerWindow, geopackageId)
-        })
-        delete this.workerWindowAssignment[geopackageId]
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
   async executeBuildFeatureLayer (payload, statusCallback) {
     return new Promise(async (resolve) => {
       const workerWindow = await this.getOrWaitForAvailableWorker()
@@ -138,6 +100,28 @@ class WorkerWindowPool {
     })
   }
 
+  cancelBuildFeatureLayer (payload) {
+    return new Promise(resolve => {
+      try {
+        if (this.workerWindowAssignment[payload.configuration.id]) {
+          const workerWindow = this.workerWindowAssignment[payload.configuration.id]
+          const workerURL = process.env.NODE_ENV === 'development'
+            ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
+            : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
+          ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
+          workerWindow.window.loadURL(workerURL)
+          workerWindow.window.on('ready-to-show', () => {
+            this.releaseWorker(workerWindow, payload.configuration.id)
+            resolve()
+          })
+        }
+      } catch (error) {
+        console.error(error)
+        resolve()
+      }
+    })
+  }
+
   async executeBuildTileLayer (payload, statusCallback) {
     return new Promise(async (resolve) => {
       const workerWindow = await this.getOrWaitForAvailableWorker()
@@ -151,6 +135,28 @@ class WorkerWindowPool {
       ipcMain.on('worker_build_tile_layer_status_' + workerWindow.id, (event, status) => {
         statusCallback(status)
       })
+    })
+  }
+
+  async cancelBuildTileLayer (payload) {
+    return new Promise(resolve => {
+      try {
+        if (this.workerWindowAssignment[payload.configuration.id]) {
+          const workerWindow = this.workerWindowAssignment[payload.configuration.id]
+          const workerURL = process.env.NODE_ENV === 'development'
+            ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
+            : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
+          ipcMain.removeAllListeners('worker_build_tile_layer_status_' + workerWindow.id)
+          workerWindow.window.loadURL(workerURL)
+          workerWindow.window.on('ready-to-show', () => {
+            this.releaseWorker(workerWindow, payload.configuration.id)
+            resolve()
+          })
+        }
+      } catch (error) {
+        console.error(error)
+        resolve()
+      }
     })
   }
 }

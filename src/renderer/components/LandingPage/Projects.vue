@@ -3,16 +3,16 @@
     <v-dialog
       v-if="removeProject"
       v-model="removeDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-col>
-              <v-icon>mdi-trash-can-outline</v-icon>Remove <b>{{removeProject.name}}</b>
-            </v-col>
-          </v-row>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Remove {{removeProject.name}}
         </v-card-title>
+        <v-card-text>
+          Are you sure you want to remove <b>{{removeProject.name}}</b>? This action can't be undone.
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn

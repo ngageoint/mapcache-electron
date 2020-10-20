@@ -16,10 +16,10 @@ export default class WindowState {
       this.windowState = {
         x: undefined,
         y: undefined,
-        width: 1200,
-        height: 800,
-        minHeight: 800,
-        minWidth: 800
+        width: 800,
+        height: 625,
+        minHeight: 625,
+        minWidth: 700
       }
     }
   }

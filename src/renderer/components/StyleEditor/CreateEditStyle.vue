@@ -5,11 +5,13 @@
       max-width="350"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-icon>mdi-trash-can-outline</v-icon>Delete Style
-          </v-row>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Delete Style
         </v-card-title>
+        <v-card-text>
+          Are you sure you want to delete the <b>{{this.styleRow.name}}</b> style? This action can't be undone.
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn

@@ -2,7 +2,7 @@
   <v-layout id="project" class="project-holder ma-0 pa-0">
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
-        color="primary"
+        color="main"
         v-model="drawer"
         expand-on-hover
         mini-variant
@@ -21,13 +21,13 @@
               <v-list-item-subtitle>{{project.name}}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item-group v-model="item" :activeClass="darkTheme ? 'list-item-active-dark' : 'list-item-active-light'">
+          <v-list-item-group v-model="item" activeClass="list-item-active">
             <v-list-item
-              :class="darkTheme ? 'list-item-hover-dark' : 'list-item-hover-light'"
+              class="list-item"
               v-for="(item, i) in items"
               :key="i"
               :onclick="item.onclick"
-              v-ripple="{ class: `primary--text` }"
+              v-ripple="{ class: `main--text` }"
             >
               <v-list-item-icon>
                 <v-icon v-text="item.icon"></v-icon>
@@ -211,26 +211,16 @@
     text-align: center;
     top: 16px;
   }
-  .list-item-hover-light:hover {
-    background-color: #192F43;
+  .list-item:hover {
+    background-color: var(--v-main-darken2) !important;
+    color: whitesmoke
   }
-  .list-item-active-light {
+  .list-item-active {
     background-color: whitesmoke;
-    color: #1E4D7C
+    color: var(--v-main-base)
   }
-  .list-item-active-light:hover {
-    background-color: #192F43;
-    color: whitesmoke
-  }
-  .list-item-hover-dark:hover {
-    background-color: #414042;
-  }
-  .list-item-active-dark {
-    background-color: #414042;
-    color: whitesmoke
-  }
-  .list-item-active-dark:hover {
-    background-color: #414042;
+  .list-item-active:hover {
+    background-color: var(--v-main-base);
     color: whitesmoke
   }
 </style>

@@ -1,22 +1,17 @@
 <template>
-  <v-card class="mt-2 mb-2">
-    <v-progress-linear v-if="!source.error"
-            :active="true"
-            :indeterminate="true"
-            color="light-blue"
-    ></v-progress-linear>
+  <v-card :loading="!source.error">
     <v-card-title>
-      {{'Processing ' + source.file.path}}
+      {{'Processing ' + displayName}}
     </v-card-title>
     <v-card-text>
       <div v-if="source.error">
         <div class="card__header__close-btn" @click="closeCard"></div>
         <div class="card__face__source-error-name contrast-text">
-          Error - {{source.file.name}}
+          Error - {{displayName}}
         </div>
       </div>
-      <v-row class="align-start left-margin">Path: {{source.file.path}}</v-row>
-      <v-row class="align-start left-margin">Size: {{source.file.size}}</v-row>
+      <v-row v-if="source.isUrl" class="align-start left-margin">Url: {{displayName}}</v-row>
+      <v-row v-else class="align-start left-margin">File name: {{displayName}}</v-row>
       <v-row class="align-start left-margin" v-if="source.status">Status: {{source.status}}</v-row>
       <v-row class="align-start left-margin" v-if="source.error">{{source.error}}</v-row>
     </v-card-text>
@@ -24,7 +19,7 @@
       <v-spacer></v-spacer>
       <v-btn
           text
-          color="light darken-1"
+          color="warning"
           @click="closeCard">
         {{source.error ? 'Close' : 'Cancel Processing'}}
       </v-btn>
@@ -33,9 +28,20 @@
 </template>
 
 <script>
+  import path from 'path'
+  import URLUtilities from '../../../lib/URLUtilities'
   export default {
     props: {
       source: Object
+    },
+    computed: {
+      displayName () {
+        if (this.source.isUrl) {
+          return URLUtilities.getBaseUrlAndQueryParams(this.source.file.path).baseUrl
+        } else {
+          path.basename(this.source.file.path)
+        }
+      }
     },
     methods: {
       closeCard () {

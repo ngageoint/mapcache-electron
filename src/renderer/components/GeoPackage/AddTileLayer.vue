@@ -1,207 +1,287 @@
 <template>
   <v-container class="ma-0 pa-0">
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
     >
-      <!--      <v-btn icon @click="cancel"><v-icon large>mdi-chevron-left</v-icon></v-btn>-->
       <v-toolbar-title>{{geopackage.name + ': Add Tile Layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-card flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
-      <v-card-title>{{'Creating ' + layerName + ' Tile Layer'}}</v-card-title>
+      <v-card-title>{{'Adding ' + layerName + ' Tile Layer'}}</v-card-title>
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
         <v-progress-linear :value="error ? 100 : status.progress"
                            :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
-    <v-card flat class="ma-0 pa-0" v-else>
-      <v-card-text>
-        <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
-          <v-container>
-            <v-row no-gutters>
-              <v-text-field
-                v-model="layerName"
-                :rules="layerNameRules"
-                label="Tile Layer Name"
-                required
-              ></v-text-field>
-            </v-row>
-          </v-container>
-        </v-form>
-        <v-card-title>
-          Tile Layer Content Selection
-        </v-card-title>
-        <v-card-subtitle>
-          Select imagery and features from <b>Data Sources</b> and existing <b>GeoPackages</b> to populate your new GeoPackage tile layer.
-        </v-card-subtitle>
-        <v-container v-if="dataSourceLayers.length > 0" class="ma-0 pa-0">
-          <v-card-title class="pb-0" style="font-size: 1rem;">
-            Data Source Layers
-          </v-card-title>
-          <v-card-text>
-            <v-list style="max-height: 150px" class="overflow-y-auto">
-              <v-list-item-group
-                multiple
-              >
-                <template v-for="(item, i) in dataSourceLayers">
-                  <v-list-item
-                    :key="`data-source-item-${i}`"
-                    :value="item.value"
-                  >
-                    <template>
-                      <v-list-item-icon>
-                        <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                        <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
-                      </v-list-item-content>
-                      <v-list-item-action>
-                        <v-switch
-                          @click.stop="item.changeVisibility"
-                          :input-value="item.visible"
-                          color="primary"
-                        ></v-switch>
-                      </v-list-item-action>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-list-item-group>
-            </v-list>
-          </v-card-text>
-        </v-container>
-        <v-container v-if="geopackageLayers.length > 0" class="ma-0 pa-0">
-          <v-card-title class="pb-0" style="font-size: 1rem;">
-            GeoPackage Layers
-          </v-card-title>
-          <v-card-text>
-            <v-list style="max-height: 150px" class="overflow-y-auto">
-              <v-list-item-group
-                multiple
-              >
-                <template v-for="(item, i) in geopackageLayers">
-                  <v-list-item
-                    :key="`geopackage-tile-layer-item-${i}`"
-                    :value="item.value"
-                  >
-                    <template>
-                      <v-list-item-icon>
-                        <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                        <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
-                      </v-list-item-content>
-                      <v-list-item-action>
-                        <v-switch
-                          @click.stop="item.changeVisibility"
-                          :input-value="item.visible"
-                          color="primary"
-                        ></v-switch>
-                      </v-list-item-action>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-list-item-group>
-            </v-list>
-          </v-card-text>
-        </v-container>
-        <v-container v-if="sortedLayers.length > 0" class="ma-0 pa-0">
-          <v-card-title>
-            Layer Rendering Order
-          </v-card-title>
-          <v-card-subtitle>
-            Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
-          </v-card-subtitle>
-          <v-card-text>
-            <draggable
-              v-model="sortedLayers"
-              ghost-class="ghost">
-              <v-list-item
-                v-for="(item, i) in sortedLayers"
-                :key="`sorted-item-${i}`"
-                :value="item.value"
-                class="v-list-item--link">
-                <v-list-item-icon>
-                  <v-btn icon v-if="item.type === 'feature'" @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                  <v-btn icon v-else @click="item.zoomTo"><img :style="{verticalAlign: 'middle'}" src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"></v-btn>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.text"></v-list-item-title>
-                </v-list-item-content>
-              </v-list-item>
-            </draggable>
-          </v-card-text>
-        </v-container>
-        <v-container class="ma-0 pa-0 mt-4">
-          <v-card-title>
-            Bounding Box Filter
-          </v-card-title>
-          <v-card-subtitle>
-            Provide a bounding box to specify the area to pull content from selected data sources and GeoPackage layers
-          </v-card-subtitle>
-          <v-card-text>
-            <v-row no-gutters justify="end">
-              <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
-                Clear
-              </v-btn>
-              <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
-                {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds')}}
-              </v-btn>
-            </v-row>
-          </v-card-text>
-        </v-container>
-        <v-container class="ma-0 pa-0 mt-4">
-          <v-card-title>
-            Zoom Levels and Tile Scaling
-          </v-card-title>
-          <v-card-subtitle>
-            Specify the zoom levels you wish to view your content at. Enable tile scaling to reduce the number of tiles generated.
-          </v-card-subtitle>
-          <v-card-text>
-            <v-container>
-              <v-row no-gutters>
-                <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+    <v-sheet v-else>
+      <v-stepper v-model="step" non-linear vertical>
+        <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => layerNameValid]" color="primary">
+          Name the layer
+          <small class="pt-1">{{layerName}}</small>
+        </v-stepper-step>
+        <v-stepper-content step="1">
+          <v-card flat>
+            <v-card-subtitle>
+              Specify a name for the new GeoPackage tile layer.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
+                <v-text-field
+                  v-model="layerName"
+                  :rules="layerNameRules"
+                  label="Layer Name"
+                  required
+                ></v-text-field>
+              </v-form>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 2" v-if="layerNameValid">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 2" step="2" color="primary">
+          Select Data Sources
+          <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
+        </v-stepper-step>
+        <v-stepper-content step="2">
+          <v-card flat>
+            <v-card-subtitle>
+              Select imagery and features from <b>Data Sources</b> to populate the <b>{{layerName}}</b> tile layer.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-list dense>
+                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
+                  <template v-for="(item, i) in dataSourceLayers">
+                    <v-list-item
+                      :key="`data-source-item-${i}`"
+                      :value="item.id"
+                      @click.stop="item.changeVisibility">
+                      <template v-slot:default="{ active }">
+                        <v-list-item-icon>
+                          <v-btn icon @click.stop="item.zoomTo">
+                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                          </v-btn>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                          <v-list-item-title v-text="item.title"></v-list-item-title>
+                        </v-list-item-content>
+                        <v-list-item-action>
+                          <v-switch
+                            dense
+                            @click.stop="item.changeVisibility"
+                            :input-value="active"
+                            color="primary"
+                          ></v-switch>
+                        </v-list-item-action>
+                      </template>
+                    </v-list-item>
+                    <v-divider
+                      v-if="i < dataSourceLayers.length - 1"
+                      :key="'data_source_layer_divider_' + i"
+                    ></v-divider>
+                  </template>
+                </v-list-item-group>
+              </v-list>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 3">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 3" step="3" color="primary">
+          Select GeoPackage layers
+          <small class="pt-1">{{selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length}} selected</small>
+        </v-stepper-step>
+        <v-stepper-content step="3">
+          <v-card flat>
+            <v-card-subtitle>
+              Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{layerName}}</b> tile layer.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-list dense>
+                <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
+                  <template v-for="(item, i) in geopackageLayers">
+                    <v-list-item
+                      :key="`geopackage-layer-item-${i}`"
+                      :value="item.id"
+                      @click.stop="item.changeVisibility">
+                      <template v-slot:default="{ active }">
+                        <v-list-item-icon>
+                          <v-btn icon @click.stop="item.zoomTo">
+                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                          </v-btn>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                          <v-list-item-title v-text="item.title"></v-list-item-title>
+                          <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
+                        </v-list-item-content>
+                        <v-list-item-action>
+                          <v-switch
+                            dense
+                            @click.stop="item.changeVisibility"
+                            :input-value="active"
+                            color="primary"
+                          ></v-switch>
+                        </v-list-item-action>
+                      </template>
+                    </v-list-item>
+                    <v-divider
+                      v-if="i < geopackageLayers.length - 1"
+                      :key="'geopackage_layer_divider_' + i"
+                    ></v-divider>
+                  </template>
+                </v-list-item-group>
+              </v-list>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 4">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
+          Layer rendering order
+          <small class="pt-1">{{selectedGeoPackageLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
+        </v-stepper-step>
+        <v-stepper-content step="4">
+          <v-card flat>
+            <v-card-subtitle>
+              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
+            </v-card-subtitle>
+            <v-card-text>
+              <draggable
+                v-model="sortedLayers"
+                class="list-group pl-0"
+                ghost-class="ghost"
+                tag="ul"
+                v-bind="dragOptions"
+                @start="drag = true"
+                @end="drag = false">
+                <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
+                  <li v-for="(item) in sortedLayers" :key="item.id" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
+                    <v-list-item-icon>
+                      <v-btn icon @click.stop="item.zoomTo">
+                        <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                      </v-btn>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title v-text="item.title"></v-list-item-title>
+                      <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+                    </v-list-item-content>
+                  </li>
+                </transition-group>
+              </draggable>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 5">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => (project.boundingBoxFilter || Number(step) < 6) && (!project.boundingBoxFilterEditingEnabled || (Number(step) === 5 && project.boundingBoxFilterEditingEnabled))]" color="primary">
+          Specify tile bounds
+          <small class="pt-1">{{project.boundingBoxFilterEditingEnabled ? 'Setting bounds' : (project.boundingBoxFilter ? 'Bounds set' : 'Bounds not set')}}</small>
+        </v-stepper-step>
+        <v-stepper-content step="5">
+          <v-card flat>
+            <v-card-subtitle>
+              Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
+            </v-card-subtitle>
+            <v-card-text>
+              <v-row no-gutters justify="end">
+                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
+                  Clear
+                </v-btn>
+                <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
+                  {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds')}}
+                </v-btn>
               </v-row>
-              <v-row no-gutters>
-                <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
-              </v-row>
-              <v-row no-gutters justify="start" align="center">
-                <v-container class="ma-0 pa-0">
-                  <v-switch v-model="tileScaling"
-                            class="v-input--reverse v-input--expand"
-                            hint="Tile scaling reduces the number of tiles by allowing geopackage to search for tiles at nearby zoom levels and scale them"
-                            persistent-hint
-                            label="Tile Scaling">
-                  </v-switch>
-                </v-container>
-              </v-row>
-            </v-container>
-          </v-card-text>
-        </v-container>
-        <v-container
-          class="ma-0 pa-0 mt-2"
-          v-if="!project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)">
-          <v-card-title>
-            Summary
-          </v-card-title>
-          <v-card-subtitle>
-            <b :style="estimatedTileCount > tileWarningThreshold ? 'color: #A12D0F;' : 'color: black;'">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
-          </v-card-subtitle>
-          <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" color="warning">
-            {{'This configuration will generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or decreasing the max zoom.'}}
-          </v-card-subtitle>
-        </v-container>
-      </v-card-text>
-    </v-card>
+            </v-card-text>
+          </v-card>
+          <v-btn
+            text
+            color="primary"
+            @click="step = 6">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 6" step="6" color="primary">
+          Zoom Levels and Tile Scaling
+        </v-stepper-step>
+        <v-stepper-content step="6">
+          <v-card flat>
+            <v-card-subtitle>
+              Specify the zoom levels you wish to view your content at. Enable tile scaling to reduce the number of tiles generated.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-container>
+                <v-row no-gutters>
+                  <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+                </v-row>
+                <v-row no-gutters>
+                  <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+                </v-row>
+                <v-row no-gutters justify="start" align="center">
+                  <v-container class="ma-0 pa-0">
+                    <v-switch v-model="tileScaling"
+                              color="primary"
+                              class="v-input--reverse v-input--expand"
+                              hint="Tile scaling reduces the number of tiles by allowing geopackage to search for tiles at nearby zoom levels and scale them"
+                              persistent-hint
+                              label="Tile Scaling">
+                    </v-switch>
+                  </v-container>
+                </v-row>
+              </v-container>
+            </v-card-text>
+          </v-card>
+          <v-btn
+            text
+            color="primary"
+            @click="step = 7">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable step="7" color="primary">
+          Summary
+        </v-stepper-step>
+        <v-stepper-content step="7">
+          <v-card flat>
+            <v-card-text>
+              <v-card-subtitle>
+                <b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+              </v-card-subtitle>
+              <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" color="warning">
+                {{'This configuration will generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or decreasing the max zoom.'}}
+              </v-card-subtitle>
+            </v-card-text>
+          </v-card>
+        </v-stepper-content>
+      </v-stepper>
+    </v-sheet>
 
-    <div v-if="!processing || done" class="sticky-card-action-footer">
+    <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
+<!--        <v-btn-->
+<!--          v-if="processing && !done"-->
+<!--          text-->
+<!--          :disabled="cancelling"-->
+<!--          color="warning"-->
+<!--          @click.stop="cancelAddTileLayer">-->
+<!--          {{cancelling ? 'Cancelling' : 'Cancel'}}-->
+<!--        </v-btn>-->
         <v-btn
           v-if="done || !processing"
           color="primary"
@@ -210,7 +290,7 @@
           {{done ? 'Close' : 'Cancel'}}
         </v-btn>
         <v-btn
-          v-if="!done && !processing && project.boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
+          v-if="Number(step) === 7 && !done && !processing && project.boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
           color="primary"
           text
           @click.stop="addTileLayer">
@@ -225,11 +305,11 @@
   import Vue from 'vue'
   import { mapActions } from 'vuex'
   import _ from 'lodash'
+  import draggable from 'vuedraggable'
   import ViewEditText from '../Common/ViewEditText'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
   import NumberPicker from '../Common/NumberPicker'
-  import draggable from 'vuedraggable'
 
   export default {
     props: {
@@ -244,7 +324,8 @@
     },
     data () {
       return {
-        layerNameValid: false,
+        step: 1,
+        layerNameValid: true,
         layerName: 'New Tile Layer',
         layerNameRules: [
           v => !!v || 'Layer name is required',
@@ -262,7 +343,10 @@
         minZoom: 0,
         maxZoom: 20,
         tileWarningThreshold: 1000,
-        sortedRenderingLayers: undefined
+        sortedRenderingLayers: undefined,
+        configuration: null,
+        cancelling: false,
+        drag: false
       }
     },
     methods: {
@@ -275,17 +359,37 @@
         clearBoundingBoxFilter: 'Projects/clearBoundingBoxFilter',
         zoomToExtent: 'Projects/zoomToExtent'
       }),
+      async cancelAddTileLayer () {
+        const self = this
+        this.cancelling = true
+        this.$electron.ipcRenderer.removeAllListeners('build_tile_layer_status_' + this.configuration.id)
+        this.status.message = 'Cancelling...'
+        this.$electron.ipcRenderer.once('cancel_build_tile_layer_completed_' + this.configuration.id, () => {
+          console.log('all done, now let us delete')
+          GeoPackageUtilities.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+            console.log('well i made it in here!')
+            self.done = true
+            self.cancelling = false
+            self.processing = false
+            self.status.message = 'Cancelled'
+            self.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          }).catch(() => {
+            console.log('hmm did this work?')
+          })
+        })
+        this.$electron.ipcRenderer.send('cancel_build_tile_layer', {configuration: this.configuration})
+      },
       async addTileLayer () {
         this.processing = true
-        const configuration = {
+        this.configuration = {
           id: UniqueIDUtilities.createUniqueID(),
           path: this.geopackage.path,
           projectId: this.project.id,
           table: this.layerName,
-          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value]),
+          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id]),
           boundingBoxFilter: this.project.boundingBoxFilter,
-          geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(({value, type}) => {
-            return {geopackage: this.project.geopackages[value.geopackageId], table: value.table, type}
+          geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(item => {
+            return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type}
           }),
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
@@ -293,7 +397,7 @@
           renderingOrder: this.sortedLayers
         }
 
-        this.$electron.ipcRenderer.once('build_tile_layer_completed_' + configuration.id, (event, result) => {
+        this.$electron.ipcRenderer.once('build_tile_layer_completed_' + this.configuration.id, (event, result) => {
           this.done = true
           if (result && result.error) {
             this.status.message = result.error
@@ -302,15 +406,15 @@
             this.status.message = 'Completed'
             this.status.progress = 100
           }
-          this.$electron.ipcRenderer.removeAllListeners('build_tile_layer_status_' + configuration.id)
+          this.$electron.ipcRenderer.removeAllListeners('build_tile_layer_status_' + this.configuration.id)
           this.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         })
-        this.$electron.ipcRenderer.on('build_tile_layer_status_' + configuration.id, (event, status) => {
+        this.$electron.ipcRenderer.on('build_tile_layer_status_' + this.configuration.id, (event, status) => {
           if (!this.done) {
             this.status = status
           }
         })
-        this.$electron.ipcRenderer.send('build_tile_layer', {configuration: configuration})
+        this.$electron.ipcRenderer.send('build_tile_layer', {configuration: this.configuration})
       },
       cancel () {
         this.back()
@@ -334,9 +438,9 @@
         this.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, enabled: !this.project.boundingBoxFilterEditingEnabled})
       },
       getEstimatedTileCount () {
-        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value])
-        const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(({value, type}) => {
-          return {geopackage: this.project.geopackages[value.geopackageId], table: value.table, type}
+        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id])
+        const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => {
+          return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type}
         })
         return GeoPackageUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
       },
@@ -354,19 +458,21 @@
               const geopackageId = geopackage.id
               items.push({
                 id: geopackageId + '_' + tableName,
-                value: {geopackageId: geopackage.id, table: table},
-                text: geopackage.name + ': ' + table,
+                geopackageId: geopackageId,
+                tableName: tableName,
+                title: geopackage.name,
+                subtitle: table,
                 visible,
                 type: 'tile',
-                changeVisibility: () => {
+                changeVisibility: _.debounce(() => {
                   self.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
-                },
-                zoomTo: (e) => {
+                }, 100),
+                zoomTo: _.debounce((e) => {
+                  e.stopPropagation()
                   GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
                     self.zoomToExtent({projectId, extent})
                   })
-                  e.stopPropagation()
-                }
+                }, 100)
               })
             })
             _.keys(geopackage.tables.features).forEach(table => {
@@ -375,19 +481,21 @@
               const geopackageId = geopackage.id
               items.push({
                 id: geopackageId + '_' + tableName,
-                value: {geopackageId: geopackage.id, table: table},
-                text: geopackage.name + ': ' + table,
+                geopackageId: geopackageId,
+                tableName: tableName,
+                title: geopackage.name,
+                subtitle: table,
                 visible,
                 type: 'feature',
-                changeVisibility: () => {
+                changeVisibility: _.debounce(() => {
                   self.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
-                },
-                zoomTo: (e) => {
+                }, 100),
+                zoomTo: _.debounce((e) => {
+                  e.stopPropagation()
                   GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
                     self.zoomToExtent({projectId, extent})
                   })
-                  e.stopPropagation()
-                }
+                }, 100)
               })
             })
           }
@@ -401,18 +509,17 @@
           const sourceId = source.id
           const visible = !source.visible
           return {
+            title: source.displayName ? source.displayName : source.name,
             id: source.id,
-            text: source.displayName ? source.displayName : source.name,
-            value: source.id,
             visible: source.visible,
             type: source.pane === 'vector' ? 'feature' : 'tile',
-            changeVisibility: () => {
+            changeVisibility: _.debounce(() => {
               self.setDataSourceVisible({projectId, sourceId, visible})
-            },
-            zoomTo: (e) => {
-              self.zoomToExtent({projectId, extent: source.extent})
+            }, 100),
+            zoomTo: _.debounce((e) => {
               e.stopPropagation()
-            }
+              self.zoomToExtent({projectId, extent: source.extent})
+            }, 100)
           }
         })
       },
@@ -424,6 +531,18 @@
       geopackageLayers: {
         async get () {
           return this.getGeoPackageLayerItems()
+        },
+        default: []
+      },
+      selectedGeoPackageLayers: {
+        async get () {
+          return (await this.getGeoPackageLayerItems()).filter(item => item.visible).map(item => item.id)
+        },
+        default: []
+      },
+      selectedDataSourceLayers: {
+        get () {
+          return this.getDataSourceLayers().filter(item => item.visible).map(item => item.id)
         },
         default: []
       }
@@ -450,13 +569,21 @@
         set (val) {
           this.sortedRenderingLayers = val
         }
+      },
+      dragOptions () {
+        return {
+          animation: 200,
+          group: 'layers'
+        }
       }
     },
     watch: {
       project: {
         async handler () {
           this.dataSourceLayers = this.getDataSourceLayers()
+          this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
           this.geopackageLayers = await this.getGeoPackageLayerItems()
+          this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
           if (!_.isNil(this.sortedRenderingLayers)) {
             const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
             const newRenderingLayers = this.getRenderingLayers()
@@ -497,8 +624,14 @@
 
 <style scoped>
   .ghost {
-    opacity: 0.5;
-    background: #3b779a;
+    opacity: 0.5 !important;
+    background-color: var(--v-primary-lighten2) !important;
+  }
+  .flip-list-move {
+    transition: transform 0.5s;
+  }
+  .no-move {
+    transition: transform 0s;
   }
   .v-input--reverse .v-input__slot {
     flex-direction: row-reverse;
@@ -513,5 +646,16 @@
       display: block;
       flex: 1;
     }
+  }
+  ul {
+    list-style-type: none;
+  }
+  .list-item {
+    min-height: 50px;
+    cursor: move !important;
+    background: var(--v-background-base);
+  }
+  .list-item i {
+    cursor: pointer !important;
   }
 </style>

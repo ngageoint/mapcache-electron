@@ -22,7 +22,7 @@
     </v-sheet>
     <v-sheet v-else>
       <v-toolbar
-        color="primary"
+        color="main"
         dark
         flat
         class="sticky-toolbar"
@@ -32,13 +32,12 @@
       </v-toolbar>
       <v-dialog
         v-model="renameDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-pencil-outline</v-icon>Rename {{initialDisplayName}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            Rename {{initialDisplayName}}
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent v-model="renameValid">
@@ -75,16 +74,16 @@
       </v-dialog>
       <v-dialog
         v-model="deleteDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-col>
-                <v-icon>mdi-trash-can-outline</v-icon>Remove {{initialDisplayName}}
-              </v-col>
-            </v-row>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Remove {{initialDisplayName}}
           </v-card-title>
+          <v-card-text>
+            Removing the <b>{{initialDisplayName}}</b> data source will remove it from the application but the file/url will not be impacted. Are you sure you want to remove the <b>{{initialDisplayName}}</b> data source?
+          </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
@@ -103,15 +102,12 @@
       </v-dialog>
       <v-dialog
         v-model="showOverwriteDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-col>
-                <v-icon>mdi-export-variant</v-icon>Overwrite {{overwriteFileName}}
-              </v-col>
-            </v-row>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-export-variant</v-icon>
+            Overwrite {{overwriteFileName}}
           </v-card-title>
           <v-card-text>
             Are you sure you want to overwrite {{overwriteFileName}}?
@@ -134,141 +130,138 @@
       </v-dialog>
       <v-dialog
         v-model="exportingProgressDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-col>
-                <v-icon>mdi-export-variant</v-icon>Exporting {{initialDisplayName}}
-              </v-col>
-            </v-row>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-export-variant</v-icon>
+            Exporting {{initialDisplayName}}
           </v-card-title>
           <v-card-text>
             <v-progress-linear indeterminate color="primary"></v-progress-linear>
           </v-card-text>
         </v-card>
       </v-dialog>
-      <div class="layer-body">
-        <v-container fluid class="text-left">
-          <v-row no-gutters>
-            <v-col>
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                <v-btn icon @click="zoomToSource">
-                  <img v-if="source.pane === 'vector'" src="../../assets/polygon.png" alt="Feature Data Source" width="20px" height="20px">
-                  <img v-if="source.pane === 'tile'" src="../../assets/colored_layers.png" alt="Tile Data Source" width="20px" height="20px">
-                </v-btn>
-                <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} Data Source</span>
-              </p>
-            </v-col>
-          </v-row>
-          <v-row no-gutters class="pt-2" style="margin-left: -12px" justify="center" align-content="center">
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-pencil-outline</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Rename
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-hover v-if="source.pane === 'vector' || source.layerType === 'GeoTIFF'">
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-palette</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Style
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-            <v-tooltip bottom :disabled="!project.showToolTips">
-              <template v-slot:activator="{ on, attrs }">
-                <v-hover v-if="source.pane === 'vector'">
-                  <template v-slot="{ hover }">
-                    <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="downloadGeoPackage" v-bind="attrs" v-on="on">
-                      <v-card-text class="pa-2">
-                        <v-row no-gutters align-content="center" justify="center">
-                          <v-icon small>mdi-export-variant</v-icon>
-                        </v-row>
-                        <v-row no-gutters align-content="center" justify="center">
-                          Export
-                        </v-row>
-                      </v-card-text>
-                    </v-card>
-                  </template>
-                </v-hover>
-              </template>
-              <span>Export as GeoPackage</span>
-            </v-tooltip>
-            <v-hover>
-              <template v-slot="{ hover }">
-                <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
-                  <v-card-text class="pa-2">
-                    <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-trash-can-outline</v-icon>
-                    </v-row>
-                    <v-row no-gutters align-content="center" justify="center">
-                      Remove
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </template>
-            </v-hover>
-          </v-row>
-          <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
-            <v-col>
-              <v-row no-gutters justify="space-between">
-                <v-col>
-                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Data Source Type
-                  </p>
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
-                    {{source.pane === 'vector' ? source.sourceType : source.layerType}}
-                  </p>
-                </v-col>
-                <v-col>
-                  <v-row no-gutters justify="end">
-                    <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                      Enable
-                    </p>
-                    <v-switch class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+      <v-container fluid class="text-left">
+        <v-row no-gutters>
+          <v-col>
+            <p class="text-subtitle-1">
+              <v-btn icon @click="zoomToSource" color="whitesmoke">
+                <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                <img v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                <img v-else-if="source.pane === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              </v-btn>
+              <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} Data Source</span>
+            </p>
+          </v-col>
+        </v-row>
+        <v-row no-gutters class="pb-2" style="margin-left: -12px" justify="center" align-content="center">
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-pencil</v-icon>
                   </v-row>
-                </v-col>
-              </v-row>
-              <v-row no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
-                <v-col>
-                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Data Source URL
+                  <v-row no-gutters align-content="center" justify="center">
+                    Rename
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-hover v-if="source.pane === 'vector' || source.layerType === 'GeoTIFF'">
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-palette</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Style
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+          <v-tooltip bottom :disabled="!project.showToolTips">
+            <template v-slot:activator="{ on, attrs }">
+              <v-hover v-if="source.pane === 'vector'">
+                <template v-slot="{ hover }">
+                  <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="downloadGeoPackage" v-bind="attrs" v-on="on">
+                    <v-card-text class="pa-2">
+                      <v-row no-gutters align-content="center" justify="center">
+                        <v-icon small>mdi-export-variant</v-icon>
+                      </v-row>
+                      <v-row no-gutters align-content="center" justify="center">
+                        Export
+                      </v-row>
+                    </v-card-text>
+                  </v-card>
+                </template>
+              </v-hover>
+            </template>
+            <span>Export as GeoPackage</span>
+          </v-tooltip>
+          <v-hover>
+            <template v-slot="{ hover }">
+              <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+                <v-card-text class="pa-2">
+                  <v-row no-gutters align-content="center" justify="center">
+                    <v-icon small>mdi-trash-can</v-icon>
+                  </v-row>
+                  <v-row no-gutters align-content="center" justify="center">
+                    Remove
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </v-row>
+        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
+          <v-col>
+            <v-row no-gutters justify="space-between">
+              <v-col>
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Data Source Type
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  {{source.pane === 'vector' ? source.sourceType : source.layerType}}
+                </p>
+              </v-col>
+              <v-col>
+                <v-row no-gutters justify="end">
+                  <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                    Enable
                   </p>
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black', wordWrap: 'break-word'}">
-                    {{source.filePath}}
-                  </p>
-                </v-col>
-              </v-row>
-              <v-row no-gutters v-if="source.pane === 'vector'">
-                <v-col>
-                  <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Features
-                  </p>
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
-                    {{source.count}}
-                  </p>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
+                  <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                </v-row>
+              </v-col>
+            </v-row>
+            <v-row no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
+              <v-col>
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Data Source URL
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+                  {{source.filePath}}
+                </p>
+              </v-col>
+            </v-row>
+            <v-row no-gutters v-if="source.pane === 'vector'">
+              <v-col>
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Features
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  {{source.count}}
+                </p>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-sheet>
     <v-snackbar
       v-model="showExportSnackBar"

@@ -209,7 +209,8 @@ const actions = {
       maxFeatures: 1000,
       boundingBoxFilterEditingEnabled: false,
       boundingBoxFilter: undefined,
-      showToolTips: true
+      showToolTips: true,
+      displayAddressSearchBar: true
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
     commit('pushProjectToProjects', project)

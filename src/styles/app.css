@@ -1,14 +1,5 @@
-.sub-card {
-	background: #f0f0f0 !important;
-}
 .v-label {
 	font-size: 14px;
-}
-.header {
-	color: #000;
-}
-.detail {
-	color: dimgray;
 }
 .clickable {
 	cursor: pointer;
@@ -16,26 +7,17 @@
 .clickable:hover {
 	cursor: pointer;
 }
-.accent {
-	color: #3b779a;
-}
-.secondary {
-	color: #73c1c5;
-}
 .v-input--selection-controls {
 	margin-top: 0;
 }
 .card-button {
 	width: 64px;
 }
-.detail-bg {
-	background-color: rgba(226, 233, 236, 0.71);
-}
-.settings-header {
-	background-color: rgba(204, 224, 236, 1.0);
+.card-button:hover {
+	background-color: var(--v-hover-base)
 }
 .detail-section-margins-and-padding {
-	padding: 8px 24px 24px !important;
+	padding: 16px 24px 24px !important;
 	margin: 12px -12px -12px -12px !important;
 }
 .content-panel {
@@ -47,6 +29,7 @@
 	max-height: 100vh;
 	overflow-y: auto;
 	z-index: 2;
+	background-color: var(--v-detailbg-base) !important;
 }
 .sticky-toolbar {
 	position: -webkit-sticky !important;
@@ -60,7 +43,7 @@
 	bottom: 0 !important;
 	z-index: 3 !important;
 	min-height: 53px !important;
-	background: white !important;
+	background: var(--v-background-base) !important;
 }
 .v-toolbar__title {
 	padding-left: 4px !important;
@@ -72,4 +55,13 @@
 }
 .v-btn {
 	text-transform: none !important;
+}
+.warning-text {
+	color: var(--v-warning-base) !important;
+}
+.detail--text {
+	color: var(--v-detail-base) !important;
+}
+.detail-bg {
+	background-color: var(--v-detailbg-base) !important;
 }

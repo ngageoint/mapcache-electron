@@ -1,6 +1,6 @@
 {
   "name": "mapcache",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "author": "Dan Barela <daniel.barela@gmail.com>",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "license": null,
@@ -160,7 +160,7 @@
     "vue-color": "^2.7.0",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
-    "vuedraggable": "^2.21.0",
+    "vuedraggable": "^2.24.2",
     "vuetify": "^2.1.10",
     "vuex": "^3.1.0",
     "vuex-electron": "^1.0.3",

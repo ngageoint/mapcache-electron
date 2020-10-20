@@ -1,7 +1,7 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <div flat class="mx-auto" style="width: 100%;">
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -9,11 +9,11 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>Settings</v-toolbar-title>
     </v-toolbar>
-    <v-dialog v-model="editProjectNameDialog" max-width="500" persistent>
-      <edit-text-modal icon="mdi-pencil-outline" :title="'Rename ' + project.name" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+    <v-dialog v-model="editProjectNameDialog" max-width="400" persistent>
+      <edit-text-modal icon="mdi-pencil" :title="'Rename ' + project.name" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
-    <v-dialog v-model="editMaxFeaturesDialog" max-width="500" persistent>
-      <edit-number-modal icon="mdi-pencil-outline" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+    <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent>
+      <edit-number-modal icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-list two-line subheader>
       <v-subheader>General</v-subheader>
@@ -23,16 +23,18 @@
           <v-list-item-subtitle>Edit project name</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
-<!--      <v-list-item>-->
-<!--        <v-list-item-content class="pl-4" style="margin-left: -16px;">-->
-<!--          <v-list-item-title>Theme</v-list-item-title>-->
-<!--          <v-switch-->
-<!--            v-model="darkTheme"-->
-<!--            inset-->
-<!--            label="Dark"-->
-<!--          ></v-switch>-->
-<!--        </v-list-item-content>-->
-<!--      </v-list-item>-->
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title>Theme</v-list-item-title>
+          <v-list-item-subtitle>Dark</v-list-item-subtitle>
+        </v-list-item-content>
+        <v-list-item-action>
+          <v-switch
+            v-model="darkTheme"
+            color="primary"
+          ></v-switch>
+        </v-list-item-action>
+      </v-list-item>
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title>Tooltips</v-list-item-title>

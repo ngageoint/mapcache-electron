@@ -31,7 +31,7 @@
           @click="() => item.click(item)"
         >
           <v-list-item-content>
-            <v-list-item-title class="header" :style="{fontSize: '22px', fontWeight: '700', marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
+            <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
             <v-list-item-subtitle v-html="item.featureLayersText"></v-list-item-subtitle>
             <v-list-item-subtitle v-html="item.tileLayersText"></v-list-item-subtitle>
           </v-list-item-content>

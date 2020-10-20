@@ -12,7 +12,12 @@
             >
               <v-list-item-content class="pa-4" style="margin: -16px;">
                 <v-text-field :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
-                <v-switch :label="column.name.toLowerCase()" v-else-if="column.dataType === BOOLEAN" v-model="column.value"></v-switch>
+                <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
+                  <v-col>
+                    <v-list-item-subtitle>{{column.name.toLowerCase()}}</v-list-item-subtitle>
+                  </v-col>
+                  <v-switch color="primary" v-model="column.value" class="pt-0" hide-details></v-switch>
+                </v-row>
                 <v-row no-gutters justify="space-between" v-else-if="column.dataType === DATE || column.dataType === DATETIME">
                   <v-col v-if="column.showDate">
                     <v-menu

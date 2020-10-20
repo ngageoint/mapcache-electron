@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -12,13 +12,12 @@
     <v-container fluid>
       <v-dialog
         v-model="renameDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-pencil-outline</v-icon>Rename {{column.name}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            Rename {{column.name}}
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
@@ -55,14 +54,16 @@
       </v-dialog>
       <v-dialog
         v-model="deleteDialog"
-        max-width="500"
+        max-width="400"
         persistent>
         <v-card>
-          <v-card-title style="color: grey; font-weight: 600;">
-            <v-row no-gutters justify="start" align="center">
-              <v-icon>mdi-trash-can-outline</v-icon>Remove {{column.name}}
-            </v-row>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Delete {{column.name}}
           </v-card-title>
+          <v-card-text>
+            Deleting the <b>{{column.name}}</b> field will also delete the value tied to this field, for each feature. Are you sure you want to delete the <b>{{column.name}}</b> field from the <b>{{tableName}}</b> feature layer? This action can't be undone.
+          </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
@@ -75,25 +76,26 @@
               color="warning"
               text
               @click="deleteField">
-              Remove
+              Delete
             </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-row no-gutters justify="center" class="mb-2">
+      <v-row no-gutters justify="start" align="center">
         <v-col>
-          <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-            <span>Feature Layer Field</span>
+          <p class="text-subtitle-1">
+            <v-icon color="primary" class="mr-1">{{column.icon}}</v-icon>
+            <span style="vertical-align: middle;">Feature Layer Field</span>
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters class="pt-2" justify="center" align-content="center">
+      <v-row no-gutters justify="center" align-content="center">
         <v-hover>
           <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil-outline</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -107,10 +109,10 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can-outline</v-icon>
+                  <v-icon small>mdi-trash-can</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
-                  Remove
+                  Delete
                 </v-row>
               </v-card-text>
             </v-card>
@@ -121,30 +123,30 @@
         <v-col>
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 GeoPackage
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{geopackage.name}}
               </p>
             </v-col>
           </v-row>
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Feature Layer
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{tableName}}
               </p>
             </v-col>
           </v-row>
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
-              <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Field Type
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', color: 'black'}">
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{column.type}}
               </p>
             </v-col>

@@ -10,7 +10,7 @@
   </v-sheet>
   <v-sheet v-else>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -71,6 +71,7 @@
     <v-dialog v-model="urlSourceDialog" max-width="500" persistent>
       <v-card>
         <v-card-title>
+          <v-icon color="primary" class="pr-2">mdi-cloud-download-outline</v-icon>
           Import URL Source
         </v-card-title>
         <v-card-text>
@@ -113,33 +114,29 @@
               :rules="tokenAuthRules"
               required/>
 
-          <v-card-title style="font-size: 1rem;">
+          <v-card-title class="pl-0 pb-0" style="font-size: 1rem;" v-if="urls.length > 0">
             Previously used
           </v-card-title>
-          <v-card-text>
-            <v-list style="max-height: 150px" class="overflow-y-auto">
-              <v-list-item-group
-                multiple
+          <v-card-text class="mt-0 pt-0" v-if="urls.length > 0">
+            <v-list style="max-height: 150px" class="overflow-y-auto" dense>
+              <v-list-item
+                v-for="(item, i) in urls"
+                :key="`saved-url-${i}`"
+                :value="item.value"
+                dense
+                link
               >
-                <template v-for="(item, i) in this.urls.savedUrls">
-                  <v-list-item
-                    :key="`saved-url-${i}`"
-                    :value="item.value"
-                  >
-                    <template>
-                      <v-list-item-content @click.stop="setUrlToLink(item.url)">
-                        <v-list-item-title style="color: rgba(0, 0, 0, .6)" v-text="item.url"></v-list-item-title>
-                      </v-list-item-content>
-                      <v-btn text dark color="#ff4444" @click.stop="removeUrlFromHistory(item.url)">
-                        <v-icon>mdi-trash-can</v-icon>
-                      </v-btn>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-list-item-group>
+                <v-list-item-content @click.stop="setUrlToLink(item.url)">
+                  <v-list-item-title v-text="item.url"></v-list-item-title>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn icon color="warning" @click.stop="removeUrlFromHistory(item.url)">
+                    <v-icon>mdi-trash-can</v-icon>
+                  </v-btn>
+                </v-list-item-action>
+              </v-list-item>
             </v-list>
           </v-card-text>
-
             <v-row justify="end" align="center">
               <v-btn
                 text
@@ -176,12 +173,12 @@
         <v-col>
           <v-row class="pa-0" no-gutters>
             <v-col class="pa-0 align-center">
-              <h5 class="align-self-center" style="color: #9A9E9E">No data sources found</h5>
+              <h5 class="align-self-center">No data sources found</h5>
             </v-col>
           </v-row>
           <v-row class="pa-0" no-gutters>
             <v-col class="pa-0 align-center">
-              <h5 class="align-self-center" style="color: #3b779a">Get Started</h5>
+              <h5 class="align-self-center primary--text">Get Started</h5>
             </v-col>
           </v-row>
         </v-col>
@@ -212,7 +209,7 @@
             fab
             small
             color="accent"
-            @click="addFileClick"
+            @click.stop="addFileClick"
             v-bind="attrs"
             v-on="on">
             <v-icon>mdi-file-document-outline</v-icon>
@@ -226,7 +223,7 @@
             fab
             small
             color="accent"
-            @click="displayURLModal"
+            @click.stop="displayURLModal"
             v-bind="attrs"
             v-on="on">
             <v-icon>mdi-cloud-download-outline</v-icon>
@@ -318,7 +315,7 @@
     computed: {
       ...mapState({
         urls: state => {
-          return state.URLs
+          return state.URLs.savedUrls || []
         }
       })
     },
@@ -488,6 +485,7 @@
             file: {
               path: this.linkToValidate
             },
+            isUrl: true,
             wms: this.layerSelection[0].wms,
             wfs: this.layerSelection[0].wfs,
             credentials: this.getCredentials(),
@@ -501,11 +499,12 @@
         }
       },
       addFileClick () {
+        this.fab = false
         remote.dialog.showOpenDialog({
           filters: [
             {
               name: 'All Files',
-              extensions: ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp']
+              extensions: ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip']
             }
           ],
           properties: ['openFile', 'multiSelections']
@@ -525,28 +524,6 @@
             this.processFiles(fileInfos)
           }
         })
-      },
-      onDragOver (ev) {
-        let items = Object.values(ev.dataTransfer.items)
-        let draggingText = items.length + ' Files:'
-        items.forEach((item) => {
-          let kind = item.kind
-          let type = item.type
-          draggingText += '\n\t' + type + ' ' + kind
-        })
-        if (!processing.dataDragOver) {
-          processing.dragging = draggingText
-          processing.dataDragOver = true
-        }
-      },
-      onDrop (ev) {
-        processing.dragging = undefined
-        processing.dataDragOver = false
-        this.processFiles(Object.values(ev.dataTransfer.files))
-      },
-      onDragLeave (ev) {
-        processing.dataDragOver = false
-        processing.dragging = undefined
       },
       async addSource (source) {
         let _this = this
@@ -579,6 +556,7 @@
               type: file.type,
               path: file.path
             },
+            isUrl: file.xyz,
             status: undefined,
             error: undefined,
             wms: false,
@@ -651,6 +629,7 @@
         return error
       },
       displayURLModal () {
+        this.fab = false
         this.urlSourceDialog = true
       },
       dataSourceSelected (dataSourceId) {
@@ -700,7 +679,6 @@
 
   .card-position {
     position: absolute;
-    background-color: white;
     padding: 16px;
     height: 72px;
     width: 384px;

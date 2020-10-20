@@ -1,5 +1,5 @@
 <template>
-  <v-container class="detail ma-0 pa-0 mt-2">
+  <v-container class="detail--text ma-0 pa-0 mt-2">
     <v-row no-gutters class="mb-2">
       <v-col cols="12">
         <p class="ma-0 pa-0">Size: {{details.size}}</p>

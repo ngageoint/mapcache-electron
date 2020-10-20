@@ -26,7 +26,7 @@
   </v-sheet>
   <v-sheet v-else>
     <v-toolbar
-      color="primary"
+      color="main"
       dark
       flat
       class="sticky-toolbar"
@@ -40,7 +40,7 @@
       scrollable
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">{{geopackage.name}}</v-card-title>
+        <v-card-title>{{geopackage.name}}</v-card-title>
         <v-divider/>
         <v-card-text style="max-width: 500px; overflow-x: hidden;">
           <geo-package-details :geopackage="geopackage"/>
@@ -58,13 +58,12 @@
     </v-dialog>
     <v-dialog
       v-model="renameDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-icon>mdi-pencil-outline</v-icon>Rename {{geopackage.name}}
-          </v-row>
+        <v-card-title>
+          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+          Rename {{geopackage.name}}
         </v-card-title>
         <v-card-text>
           <v-form v-on:submit.prevent v-model="renameValid">
@@ -101,13 +100,12 @@
     </v-dialog>
     <v-dialog
       v-model="copyDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-icon>mdi-content-copy</v-icon>Copy {{geopackage.name}}
-          </v-row>
+        <v-card-title>
+          <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+          Copy {{geopackage.name}}
         </v-card-title>
         <v-card-text>
           <v-form v-on:submit.prevent v-model="copyValid">
@@ -144,16 +142,16 @@
     </v-dialog>
     <v-dialog
       v-model="removeDialog"
-      max-width="500"
+      max-width="400"
       persistent>
       <v-card>
-        <v-card-title style="color: grey; font-weight: 600;">
-          <v-row no-gutters justify="start" align="center">
-            <v-col>
-              <v-icon>mdi-trash-can-outline</v-icon>Remove {{geopackage.name}}
-            </v-col>
-          </v-row>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Remove {{geopackage.name}}
         </v-card-title>
+        <v-card-text>
+          Removing the <b>{{geopackage.name}}</b> GeoPackage will remove it from the application but the GeoPackage will remain on your file system. Are you sure you want to remove the <b>{{geopackage.name}}</b> GeoPackage?
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -170,29 +168,29 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-container fluid class="text-left pb-0 mb-0">
+    <v-container>
       <v-row no-gutters>
         <v-col>
-          <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+          <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
             {{size}}
           </p>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col>
-          <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+          <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
             {{"Feature layers: " + Object.keys(geopackage.tables.features).length}}
           </p>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col>
-          <p class="detail" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+          <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500'}">
             {{"Tile layers: " + Object.keys(geopackage.tables.tiles).length}}
           </p>
         </v-col>
       </v-row>
-      <v-container class="ma-0 pa-0">
+      <v-container class="ma-0 pa-0 pb-4">
         <v-row no-gutters justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
@@ -227,7 +225,7 @@
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-pencil-outline</v-icon>
+                    <v-icon small>mdi-pencil</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Rename
@@ -255,7 +253,7 @@
               <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-trash-can-outline</v-icon>
+                    <v-icon small>mdi-trash-can</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Remove
@@ -270,8 +268,8 @@
     <v-container class="ma-0 pa-0">
       <v-row v-if="hasLayers" no-gutters align="center" justify="start" class="ma-2">
         <v-col>
-          <p class="header" :style="{fontSize: '16px', fontWeight: '700', marginBottom: '0px'}">
-            {{"Layers"}}
+          <p class="text-h6 ml-2 mb-0">
+            Layers
           </p>
         </v-col>
       </v-row>
@@ -391,14 +389,16 @@
         renamedGeoPackage: this.geopackage.name,
         renamedGeoPackageRules: [
           v => !!v || 'Name is required',
-          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name'
+          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
+          v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ],
         copyDialog: false,
         copyValid: false,
         copiedGeoPackage: this.geopackage.name + '_copy',
         copiedGeoPackageRules: [
           v => !!v || 'Name is required',
-          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name'
+          v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
+          v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ]
       }
     },
