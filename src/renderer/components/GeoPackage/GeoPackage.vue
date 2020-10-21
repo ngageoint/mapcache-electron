@@ -480,11 +480,15 @@
       },
       layerSelected (layer) {
         this.selectedLayer = layer
-        this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+        if (!_.isNil(this.geopackage.tables.features[layer])) {
+          this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+        }
       },
       selectedLayerRenamed (layer) {
+        if (!_.isNil(this.geopackage.tables.features[this.selectedLayer])) {
+          this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+        }
         this.selectedLayer = layer
-        this.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
       },
       deselectLayer () {
         this.selectedLayer = null

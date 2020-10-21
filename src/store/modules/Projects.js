@@ -194,22 +194,29 @@ const mutations = {
   },
   setActiveGeoPackage (state, {projectId, geopackageId}) {
     Vue.set(state[projectId], 'activeGeoPackage', {
-      geopackageId: geopackageId
+      geopackageId: geopackageId,
+      tableName: undefined,
+      showFeaturesTableEvent: 0
     })
   },
   setActiveGeoPackageFeatureLayer (state, {projectId, geopackageId, tableName}) {
     Vue.set(state[projectId], 'activeGeoPackage', {
       geopackageId: geopackageId,
-      tableName: tableName
+      tableName: tableName,
+      showFeaturesTableEvent: 0
     })
   },
   showActiveGeoPackageFeatureLayerFeaturesTable (state, {projectId}) {
-    Vue.set(state[projectId].activeGeoPackage, 'showFeaturesTable', _.isNil(state[projectId].activeGeoPackage.showFeaturesTable) ? true : undefined)
+    Vue.set(state[projectId], 'activeGeoPackage', {
+      geopackageId: state[projectId].activeGeoPackage.geopackageId,
+      tableName: state[projectId].activeGeoPackage.tableName,
+      showFeaturesTableEvent: state[projectId].activeGeoPackage.showFeaturesTableEvent + 1
+    })
   }
 }
 
 const actions = {
-  newProject ({ dispatch, commit, state }) {
+  newProject ({ commit, state }) {
     let project = {
       id: UniqueIDUtilities.createUniqueID(),
       name: 'New Project',
@@ -226,8 +233,9 @@ const actions = {
       showToolTips: true,
       displayAddressSearchBar: true,
       activeGeoPackage: {
-        geopackageId: null,
-        tableName: null
+        geopackageId: undefined,
+        tableName: undefined,
+        showFeaturesTableEvent: 0
       }
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
@@ -281,19 +289,13 @@ const actions = {
     commit('removeGeoPackage', {projectId, geopackageId})
   },
   renameGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, oldTableName, newTableName}) {
-    return new Promise((resolve) => {
-      return GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-        commit('renameGeoPackageTileTable', {projectId, geopackageId, oldTableName, newTableName})
-        resolve()
-      })
+    GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
+      commit('renameGeoPackageTileTable', {projectId, geopackageId, oldTableName, newTableName})
     })
   },
   copyGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, tableName, copyTableName}) {
-    return new Promise((resolve) => {
-      return GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-        commit('copyGeoPackageTileTable', {projectId, geopackageId, tableName, copyTableName})
-        resolve()
-      })
+    GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
+      commit('copyGeoPackageTileTable', {projectId, geopackageId, tableName, copyTableName})
     })
   },
   deleteGeoPackageTileTable ({ commit, state }, {projectId, geopackageId, tableName}) {
@@ -302,19 +304,13 @@ const actions = {
     })
   },
   renameGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, oldTableName, newTableName}) {
-    return new Promise((resolve) => {
-      return GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-        commit('renameGeoPackageFeatureTable', {projectId, geopackageId, oldTableName, newTableName})
-        resolve()
-      })
+    GeoPackageUtilities.renameGeoPackageTable(state[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
+      commit('renameGeoPackageFeatureTable', {projectId, geopackageId, oldTableName, newTableName})
     })
   },
   copyGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, tableName, copyTableName}) {
-    return new Promise((resolve) => {
-      return GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-        commit('copyGeoPackageFeatureTable', {projectId, geopackageId, tableName, copyTableName})
-        resolve()
-      })
+    GeoPackageUtilities.copyGeoPackageTable(state[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
+      commit('copyGeoPackageFeatureTable', {projectId, geopackageId, tableName, copyTableName})
     })
   },
   deleteGeoPackageFeatureTable ({ commit, state }, {projectId, geopackageId, tableName}) {
@@ -323,11 +319,8 @@ const actions = {
     })
   },
   renameGeoPackageFeatureTableColumn ({ commit, state }, {projectId, geopackageId, tableName, oldColumnName, newColumnName}) {
-    return new Promise((resolve) => {
-      return GeoPackageUtilities.renameGeoPackageFeatureTableColumn(state[projectId].geopackages[geopackageId].path, tableName, oldColumnName, newColumnName).then(() => {
-        commit('renameGeoPackageFeatureTableColumn', {projectId, geopackageId})
-        resolve()
-      })
+    GeoPackageUtilities.renameGeoPackageFeatureTableColumn(state[projectId].geopackages[geopackageId].path, tableName, oldColumnName, newColumnName).then(() => {
+      commit('renameGeoPackageFeatureTableColumn', {projectId, geopackageId})
     })
   },
   deleteGeoPackageFeatureTableColumn ({ commit, state }, {projectId, geopackageId, tableName, columnName}) {

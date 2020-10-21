@@ -86,7 +86,6 @@
   import * as vendor from '../../../lib/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
-  import Vue from 'vue'
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
@@ -113,6 +112,7 @@
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let maxFeatures
   let isDrawing = false
+  let oldProjectActiveGeoPackage = null
 
   function normalize (longitude) {
     let lon = longitude
@@ -176,7 +176,8 @@
         featureToAdd: null,
         featureToAddColumns: null,
         featureToAddGeoPackage: null,
-        featureToAddTableName: null
+        featureToAddTableName: null,
+        oldProjectActiveGeoPackage
       }
     },
     methods: {
@@ -184,11 +185,14 @@
         addFeatureTableToGeoPackage: 'Projects/addFeatureTableToGeoPackage',
         addGeoPackage: 'Projects/addGeoPackage',
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
-        clearActiveLayers: 'Projects/clearActiveLayers',
-        showActiveGeoPackageFeatureLayerFeaturesTable: 'Projects/showActiveGeoPackageFeatureLayerFeaturesTable'
+        clearActiveLayers: 'Projects/clearActiveLayers'
       }),
       hideFeatureTable () {
         this.showFeatureTable = false
+        this.tableFeatures = {
+          geopackageTables: [],
+          sourceTables: []
+        }
       },
       async confirmGeoPackageFeatureLayerSelection () {
         let _this = this
@@ -315,24 +319,28 @@
         this.featureToAddTableName = null
       },
       async displayFeaturesForTable (geopackageId, tableName) {
-        try {
-          this.tableFeaturesLatLng = null
-          const geopackage = this.geopackages[geopackageId]
-          const tableFeatures = {
-            geopackageTables: [{
-              id: geopackage.id + '_' + tableName,
-              tabName: geopackage.name + ': ' + tableName,
-              geopackageId: geopackage.id,
-              tableName: tableName,
-              columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
-              features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
-            }],
-            sourceTables: []
+        if (!_.isNil(geopackageId) && !_.isNil(tableName) && !_.isNil(this.geopackages[geopackageId]) && !_.isNil(this.geopackages[geopackageId].tables.features[tableName])) {
+          try {
+            this.tableFeaturesLatLng = null
+            const geopackage = this.geopackages[geopackageId]
+            this.tableFeatures = {
+              geopackageTables: [{
+                id: geopackage.id + '_' + tableName,
+                tabName: geopackage.name + ': ' + tableName,
+                geopackageId: geopackage.id,
+                tableName: tableName,
+                columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
+                features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
+              }],
+              sourceTables: []
+            }
+            this.showFeatureTable = true
+          } catch (e) {
+            console.error(e)
+            this.hideFeatureTable()
           }
-          this.tableFeatures = tableFeatures
-          this.showFeatureTable = true
-        } catch (e) {
-          console.error(e)
+        } else {
+          this.hideFeatureTable()
         }
       },
       removeDataSource (sourceId) {
@@ -594,10 +602,6 @@
           this.tableFeatures = tableFeatures
           this.showFeatureTable = true
         } else {
-          this.tableFeatures = {
-            geopackageTables: [],
-            sourceTables: []
-          }
           this.hideFeatureTable()
         }
       }
@@ -622,8 +626,6 @@
           let updatedSourceIds = Object.keys(updatedSources)
           let existingSourceIds = Object.keys(sourceLayers)
 
-          let zoomToExtentOfAllContent = false
-
           // layer configs that have been removed completely
           existingSourceIds.filter((i) => updatedSourceIds.indexOf(i) < 0).forEach(sourceId => {
             _this.removeDataSource(sourceId)
@@ -634,7 +636,6 @@
             let sourceConfig = updatedSources[sourceId]
             _this.removeDataSource(sourceId)
             _this.addDataSource(sourceConfig, map)
-            zoomToExtentOfAllContent = zoomToExtentOfAllContent || sourceConfig.visible
           })
 
           // see if any of the layers have changed
@@ -651,7 +652,6 @@
                 let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                 mapLayer.addTo(map)
                 sourceLayers[sourceId].mapLayer = mapLayer
-                zoomToExtentOfAllContent = true
               } else {
                 // hide it
                 let mapLayer = sourceLayers[sourceId].mapLayer
@@ -679,15 +679,6 @@
               })
             }
           })
-
-          // if (zoomToExtentOfAllContent) {
-          //   this.zoomToContent()
-          // }
-
-          // // data source was changed
-          // if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
-          //   this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-          // }
         },
         deep: true
       },
@@ -698,8 +689,6 @@
           let updatedGeoPackageKeys = Object.keys(updatedGeoPackages)
           let existingGeoPackageKeys = Object.keys(geopackageLayers)
 
-          let zoomToExtentOfAllContent = false
-
           // remove geopackages that were removed
           existingGeoPackageKeys.filter((i) => updatedGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
             _this.removeGeoPackage(geoPackageId)
@@ -709,9 +698,6 @@
           updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
             _this.removeGeoPackage(geoPackageId)
             _this.addGeoPackageToMap(updatedGeoPackages[geoPackageId], map)
-            zoomToExtentOfAllContent = zoomToExtentOfAllContent ||
-              (Object.keys(updatedGeoPackages[geoPackageId].tables.features).filter(table => updatedGeoPackages[geoPackageId].tables.features[table].visible).length > 0 ||
-              Object.keys(updatedGeoPackages[geoPackageId].tables.tiles).filter(table => updatedGeoPackages[geoPackageId].tables.tiles[table].visible).length > 0)
           })
 
           updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) >= 0).forEach(geoPackageId => {
@@ -759,18 +745,22 @@
                 this.removeGeoPackageFeatureTable(updatedGeoPackage, tableName)
                 this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
               })
-              zoomToExtentOfAllContent = zoomToExtentOfAllContent || (featureTablesTurnedOn.length + tileTablesTurnedOn.length) > 0
             }
-            // if (zoomToExtentOfAllContent) {
-            //   this.zoomToContent()
-            // }
           })
 
-          // geopackage was changed
+          // geopackages changed, so let's ensure the content in the table is updated
           if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
             this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-          } else if (this.showFeatureTable && !_.isNil(this.project.activeGeoPackage)) {
+            // the feature table is showing because a user clicked the view features button in the feature layer view
+            // this requires the active geopackage to be set with a valid geopackageId and tableName
+          } else if (this.showFeatureTable &&
+            !_.isNil(this.project.activeGeoPackage) &&
+            !_.isNil(this.project.activeGeoPackage.geopackageId) &&
+            !_.isNil(this.project.activeGeoPackage.tableName)) {
             this.displayFeaturesForTable(this.project.activeGeoPackage.geopackageId, this.project.activeGeoPackage.tableName)
+          } else {
+            // clear out any feature tables
+            this.hideFeatureTable()
           }
         },
         deep: true
@@ -845,18 +835,25 @@
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox)
           }
-          if (!_.isNil(updatedProject.activeGeoPackage) && !_.isNil(updatedProject.activeGeoPackage.showFeaturesTable)) {
+          // there is an active geopackage and the user has requested to show the features table for that geopackage/table
+          if (!_.isNil(updatedProject.activeGeoPackage) &&
+            !_.isNil(updatedProject.activeGeoPackage.geopackageId) &&
+            !_.isNil(updatedProject.activeGeoPackage.tableName) &&
+            updatedProject.activeGeoPackage.showFeaturesTableEvent > 0 &&
+            updatedProject.activeGeoPackage.showFeaturesTableEvent > (_.isNil(this.oldProjectActiveGeoPackage) ? -1 : this.oldProjectActiveGeoPackage.showFeaturesTableEvent)) {
             this.displayFeaturesForTable(updatedProject.activeGeoPackage.geopackageId, updatedProject.activeGeoPackage.tableName)
-            Vue.nextTick(() => {
-              this.showActiveGeoPackageFeatureLayerFeaturesTable({projectId: this.projectId})
-            })
+            // if a table is showing and the project was changed and there is no longer an active table name, hide the features table
+          } else if (this.showFeatureTable && _.isNil(this.tableFeaturesLatLng) && (_.isNil(updatedProject.activeGeoPackage) || (_.isNil(updatedProject.activeGeoPackage.tableName)))) {
+            this.hideFeatureTable()
           }
+          this.oldProjectActiveGeoPackage = _.cloneDeep(this.project.activeGeoPackage)
         },
         deep: true
       }
     },
     mounted: async function () {
       let _this = this
+      this.oldProjectActiveGeoPackage = _.cloneDeep(this.project.activeGeoPackage)
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 3
       const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
