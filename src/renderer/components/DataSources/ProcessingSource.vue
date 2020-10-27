@@ -42,8 +42,8 @@
     },
     computed: {
       displayName () {
-        if (this.source.isUrl) {
-          return URLUtilities.getBaseUrlAndQueryParams(this.source.file.path).baseUrl
+        if (this.source.url) {
+          return URLUtilities.getBaseUrlAndQueryParams(this.source.url).baseUrl
         } else {
           return path.basename(this.source.file.path)
         }

@@ -10,29 +10,35 @@ import FileUtilities from '../FileUtilities'
 
 export default class WFSSource extends Source {
   async retrieveLayers () {
-    this.geopackageLayers = []
-    for (const layer of this.layers) {
-      const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
-      let featureCollection = await this.getFeatureCollectionInLayer(layer.name)
-      let fileName = layer.name + '.gpkg'
-      let filePath = path.join(sourceDirectory, fileName)
-      await GeoPackageUtilities.buildGeoPackage(filePath, layer.name, featureCollection)
-      const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, layer.name)
-      this.geopackageLayers.push(new VectorLayer({
-        id: sourceId,
-        geopackageFilePath: filePath,
-        sourceFilePath: this.filePath,
-        sourceDirectory: sourceDirectory,
-        sourceId: sourceId,
-        sourceLayerName: layer.name,
-        sourceType: 'WFS',
-        extent: extent
-      }))
+    const geopackageLayers = []
+    let featureCollection = {
+      type: 'FeatureCollection',
+      features: []
     }
-    return this.geopackageLayers
+    for (const layer of this.layers) {
+      let features = await this.getFeaturesInLayer(layer.name)
+      featureCollection.features = featureCollection.features.concat(features)
+    }
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+    let fileName = this.sourceName + '.gpkg'
+    let filePath = path.join(sourceDirectory, fileName)
+    await GeoPackageUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection)
+    const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, this.sourceName)
+    geopackageLayers.push(new VectorLayer({
+      id: sourceId,
+      name: this.sourceName,
+      geopackageFilePath: filePath,
+      sourceFilePath: this.filePath,
+      sourceDirectory: sourceDirectory,
+      sourceId: sourceId,
+      sourceLayerName: this.sourceName,
+      sourceType: 'WFS',
+      extent: extent
+    }))
+    return geopackageLayers
   }
 
-  getFeatureCollectionInLayer (layer) {
+  getFeaturesInLayer (layer) {
     return new Promise((resolve) => {
       let options = {
         method: 'GET',
@@ -60,7 +66,7 @@ export default class WFSSource extends Source {
               features: []
             }
           }
-          resolve(featureCollection)
+          resolve(featureCollection.features.filter(f => f !== undefined))
         }
       })
     })

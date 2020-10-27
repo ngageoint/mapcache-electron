@@ -11,10 +11,11 @@ export default class WMSLayer {
     let bounds = Vendor.L.latLngBounds(southWest, northEast)
     // parse options...
     const options = {
-      layers: layerModel.sourceLayerName,
+      layers: layerModel.layers.join(),
       bounds: bounds,
       transparent: true,
-      format: 'image/png'
+      format: 'image/png',
+      zIndex: 201
     }
     Vendor.L.TileLayer.WMSHeader = Vendor.L.TileLayer.WMS.extend({
       initialize: function (url, options, headers) {

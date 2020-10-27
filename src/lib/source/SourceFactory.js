@@ -7,16 +7,16 @@ import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
 
 export default class SourceFactory {
-  static async constructXYZSource (parameterizedUrl, credentials) {
-    return new XYZServerSource(parameterizedUrl, [], credentials)
+  static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
+    return new XYZServerSource(parameterizedUrl, [], credentials, sourceName)
   }
 
-  static async constructWMSSource (url, layers, credentials) {
-    return new WMSSource(url, layers, credentials)
+  static async constructWMSSource (url, layers, credentials, sourceName) {
+    return new WMSSource(url, layers, credentials, sourceName)
   }
 
-  static async constructWFSSource (url, layers, credentials) {
-    return new WFSSource(url, layers, credentials)
+  static async constructWFSSource (url, layers, credentials, sourceName) {
+    return new WFSSource(url, layers, credentials, sourceName)
   }
 
   static async constructSource (filePath) {

@@ -1,7 +1,8 @@
+import _ from 'lodash'
 export default class URLUtilities {
   static getBaseUrlAndQueryParams (url) {
     let query = ''
-    let baseUrl = url + ''
+    let baseUrl = url.slice()
     let queryIndex = url.indexOf('?')
     if (queryIndex > 0) {
       query = url.substring(queryIndex + 1)
@@ -21,10 +22,12 @@ export default class URLUtilities {
   static generateUrlWithQueryParams (url, queryParams) {
     let newUrl = url + '?'
     Object.keys(queryParams).forEach(key => {
-      if (newUrl.endsWith('?')) {
-        newUrl += key + '=' + queryParams[key]
-      } else {
-        newUrl += '&' + key + '=' + queryParams[key]
+      if (!_.isNil(key) && !_.isNil(queryParams[key])) {
+        if (newUrl.endsWith('?')) {
+          newUrl += key + '=' + queryParams[key]
+        } else {
+          newUrl += '&' + key + '=' + queryParams[key]
+        }
       }
     })
     return newUrl

@@ -6,6 +6,11 @@ import { remote } from 'electron'
 import GeoServiceUtilities from '../../../GeoServiceUtilities'
 
 export default class WMSLayer extends TileLayer {
+  constructor (configuration = {}) {
+    super(configuration)
+    this.layers = configuration.layers
+  }
+
   async initialize () {
     this.version = this._configuration.version
     await super.initialize()
@@ -17,7 +22,8 @@ export default class WMSLayer extends TileLayer {
       ...super.configuration,
       ...{
         layerType: 'WMS',
-        version: this.version
+        version: this.version,
+        layers: this.layers
       }
     }
   }
@@ -61,7 +67,7 @@ export default class WMSLayer extends TileLayer {
 
     let options = {
       method: 'GET',
-      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.sourceLayerName, 256, 256, bbox, referenceSystemName),
+      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName),
       encoding: null,
       headers: {
         'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
