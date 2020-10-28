@@ -40,6 +40,7 @@ export default class WMSLayer extends TileLayer {
     let {x, y, z} = coords
 
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    // assumes projection from 3857 to 4326
     let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
     let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
     let fullExtent = this.extent
@@ -60,14 +61,14 @@ export default class WMSLayer extends TileLayer {
     ctx.clearRect(0, 0, tile.width, tile.height)
 
     let referenceSystemName = 'srs'
-    let bbox = tileLowerLeft[0] + ',' + tileLowerLeft[1] + ',' + tileUpperRight[0] + ',' + tileUpperRight[1]
+    let bbox = tileBbox.minLon + ',' + tileBbox.minLat + ',' + tileBbox.maxLon + ',' + tileBbox.maxLat
     if (this.version === '1.3.0') {
       referenceSystemName = 'crs'
     }
 
     let options = {
       method: 'GET',
-      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName),
+      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version),
       encoding: null,
       headers: {
         'User-Agent': remote.getCurrentWebContents().session.getUserAgent()

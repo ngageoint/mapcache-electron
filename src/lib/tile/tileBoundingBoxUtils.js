@@ -41,7 +41,7 @@ export default class TileBoundingBoxUtils {
    *  @param y    y
    *  @param zoom zoom level
    *
-   *  @return web mercator bounding box
+   *  @return Object web mercator bounding box
    */
   static getWebMercatorBoundingBoxFromXYZ (x, y, zoom, options) {
     var tilesPerSide = TileBoundingBoxUtils.tilesPerSideWithZoom(zoom)
@@ -72,7 +72,7 @@ export default class TileBoundingBoxUtils {
    *
    *  @param tilesPerSide tiles per side
    *
-   *  @return meters
+   *  @return number meters
    */
   static tileSizeWithTilesPerSide (tilesPerSide) {
     return (2 * TileBoundingBoxUtils.WEB_MERCATOR_HALF_WORLD_WIDTH) / tilesPerSide
@@ -83,7 +83,7 @@ export default class TileBoundingBoxUtils {
    *
    *  @param zoom zoom level
    *
-   *  @return tiles per side
+   *  @return number tiles per side
    */
   static tilesPerSideWithZoom (zoom) {
     return Math.pow(2, zoom)

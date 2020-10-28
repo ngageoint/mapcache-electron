@@ -217,29 +217,31 @@ export default class GeoServiceUtilities {
     return layers
   }
 
-  static getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName) {
+  static getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName, version) {
     let {baseUrl, queryParams} = URLUtilities.getBaseUrlAndQueryParams(wmsUrl)
     if (queryParams['service']) {
       delete queryParams['service']
     }
     queryParams['request'] = 'GetMap'
+    queryParams['version'] = version
     queryParams['layers'] = layers.join()
     queryParams['width'] = width
     queryParams['height'] = height
     queryParams['format'] = 'image/png'
     queryParams['transparent'] = 'true'
-    queryParams[referenceSystemName] = 'crs:84'
+    queryParams[referenceSystemName] = 'EPSG:3857'
     queryParams['bbox'] = bbox
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
 
-  static getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName) {
+  static getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName, version) {
     let {baseUrl, queryParams} = URLUtilities.getBaseUrlAndQueryParams(wfsUrl)
     if (queryParams['service']) {
       delete queryParams['service']
     }
     queryParams['request'] = 'GetFeature'
     queryParams['typeNames'] = layer
+    queryParams['version'] = version
     queryParams['outputFormat'] = outputFormat
     queryParams['srsName'] = referenceSystemName
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)

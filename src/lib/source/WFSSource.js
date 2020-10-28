@@ -42,7 +42,7 @@ export default class WFSSource extends Source {
     return new Promise((resolve) => {
       let options = {
         method: 'GET',
-        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84'),
+        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version),
         encoding: null,
         gzip: true,
         headers: {
