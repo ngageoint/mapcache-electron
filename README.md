@@ -1,4 +1,6 @@
 # MapCache Desktop
+![MapCache](images/screenshots/application.png)
+
 
 # About
 MapCache Desktop is a desktop application running in Electron, built for Windows, Linux, and MacOS, providing the ability to create GeoPackages from geospatial data sources. Supported geospatial data formats include WMS, WFS, XYZ, GeoTIFF, KMZ/KML, GeoJSON, and SHP.
