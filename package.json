@@ -6,6 +6,7 @@
   "license": null,
   "main": "./dist/electron/main.js",
   "scripts": {
+    "cleanInstall": "rm -rf node_modules",
     "copyResources": "mkdir -p build && cp -R buildResources/* build",
     "build": "npm run copyResources && node .electron-vue/build.js && electron-builder",
     "build-windows": "npm run copyResources && node .electron-vue/build.js && electron-builder --win portable nsis",
