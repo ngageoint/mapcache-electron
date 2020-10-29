@@ -42,7 +42,7 @@
           <v-card>
             <v-card-title>
               <v-icon color="primary" class="pr-2">mdi-speedometer</v-icon>
-              Indexing {{tableName}}
+              Indexing feature table
             </v-card-title>
             <v-card-text>
               <v-row
@@ -78,7 +78,7 @@
           <v-card>
             <v-card-title>
               <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-              Rename {{tableName}}
+              Rename feature layer
             </v-card-title>
             <v-card-text>
               <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
@@ -120,7 +120,7 @@
           <v-card>
             <v-card-title>
               <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
-              Copy {{tableName}}
+              Copy feature layer
             </v-card-title>
             <v-card-text>
               <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">

@@ -540,7 +540,7 @@
         }
         setTimeout(() => {
           this.accessDeniedOrForbidden = accessDeniedOrForbidden
-          if (!_.isNil(this.serviceInfo)) {
+          if (!_.isNil(serviceInfo)) {
             if (serviceType === 0) {
               this.summaryStep = 6
             } else if (serviceType === 1) {

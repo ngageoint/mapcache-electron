@@ -17,7 +17,7 @@
         <v-card>
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-            Rename {{column.name}}
+            Rename field
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">

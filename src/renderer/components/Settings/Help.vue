@@ -68,7 +68,23 @@
           action: 'mdi-package-variant',
           items: [
             {
-              title: 'Description',
+              title: '',
+              content: '\'GeoPackage is an open, standards-based, platform-independent, portable, self-describing, compact format for transferring geospatial information\' - OGC. This section provides functionality for creating and managing GeoPackages.'
+            },
+            {
+              title: 'Create new GeoPackage',
+              content: 'A new geopackage can be created by navigating to \'GeoPackage > Add GeoPackage > New GeoPackage\'. Enter the file name for your GeoPackage and the tool will create an empty GeoPackage ready for your data to be added.'
+            },
+            {
+              title: 'Import GeoPackage',
+              content: ''
+            },
+            {
+              title: 'Delete GeoPackage',
+              content: ''
+            },
+            {
+              title: '',
               content: ''
             }
           ],

@@ -63,7 +63,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-          Rename {{geopackage.name}}
+          Rename GeoPackage
         </v-card-title>
         <v-card-text>
           <v-form v-on:submit.prevent v-model="renameValid">
@@ -105,7 +105,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
-          Copy {{geopackage.name}}
+          Copy GeoPackage
         </v-card-title>
         <v-card-text>
           <v-form v-on:submit.prevent v-model="copyValid">

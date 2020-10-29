@@ -37,7 +37,7 @@
         <v-card>
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-            Rename {{initialDisplayName}}
+            Rename data source
           </v-card-title>
           <v-card-text>
             <v-form v-on:submit.prevent v-model="renameValid">
