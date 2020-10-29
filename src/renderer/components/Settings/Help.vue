@@ -81,11 +81,31 @@
             },
             {
               title: 'Delete GeoPackage',
-              content: 'A GeoPackage can be deleted by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to delete. This will display the GeoPackage and it\'s contents. Click on the \'Delete\' button and confirm you wish to delete the GeoPackage.'
+              content: 'A GeoPackage can be deleted by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to delete. Click on the \'Delete\' button.'
             },
             {
-              title: '',
-              content: ''
+              title: 'Copy GeoPackage',
+              content: 'A GeoPackage can be copied by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to copy. Click on the \'Copy\' button.'
+            },
+            {
+              title: 'Rename GeoPackage',
+              content: 'A GeoPackage can be renamed by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to rename. Click on the \'Rename\' button.'
+            },
+            {
+              title: 'Show GeoPackage',
+              content: 'Showing the GeoPackage will open the folder on the file system containing the GeoPackage. This can be done by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to show. Click on the \'Show\' button.'
+            },
+            {
+              title: 'View GeoPackage Details',
+              content: 'Showing the GeoPackage\'s details can be done by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to view. Click on the \'Details\' button.'
+            },
+            {
+              title: 'Add Feature Layer',
+              content: 'To add a feature layer to your GeoPackage, first, navigate to the \'GeoPackage\' tab and click on the GeoPackage you wish to add the layer to. Second, click on the \'Add Layer\' button at the bottom of the page. Select the \'Add feature layer\' button and complete the steps.'
+            },
+            {
+              title: 'Add Tile Layer',
+              content: 'To add a tile layer to your GeoPackage, first, navigate to the \'GeoPackage\' tab and click on the GeoPackage you wish to add the layer to. Second, click on the \'Add Layer\' button at the bottom of the page. Select the \'Add tile layer\' button and complete the steps.'
             }
           ],
           title: 'GeoPackage'
@@ -96,6 +116,26 @@
             {
               title: '',
               content: 'Data sources consist of files in a variety of supported geospatial formats (KML, GeoJSON, SHP) or online services such as WMS, WFS, XYZ. The contents of a data source can either be features or imagery.'
+            },
+            {
+              title: 'Import Data Source from file',
+              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (not the zip, only .shp), and GeoTIFF.'
+            },
+            {
+              title: 'Import Data Source from URL',
+              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Download from URL\' button and complete the steps to import. Supported geospatial services include WMS, WFS, and XYZ.'
+            },
+            {
+              title: 'Export Data Source as GeoPackage',
+              content: 'A data source containing features can be exported as a GeoPackage by navigating to the \'Data Source\' tab and clicking on the feature data source you wish to export. Click on the \'Export\' button'
+            },
+            {
+              title: 'Delete Data Source',
+              content: 'A data source can be deleted by navigating to the \'Data Source\' tab and clicking on the data source you wish to delete. Click on the \'Delete\' button.'
+            },
+            {
+              title: 'Rename Data Source',
+              content: 'A data source can be renamed by navigating to the \'Data Source\' tab and clicking on the data source you wish to rename. Click on the \'Rename\' button.'
             }
           ],
           title: 'Data Source'
