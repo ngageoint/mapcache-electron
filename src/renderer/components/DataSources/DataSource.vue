@@ -79,7 +79,7 @@
         <v-card>
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-            Remove {{initialDisplayName}}
+            Remove data source
           </v-card-title>
           <v-card-text>
             Removing the <b>{{initialDisplayName}}</b> data source will remove it from the application but the file/url will not be impacted. Are you sure you want to remove the <b>{{initialDisplayName}}</b> data source?

@@ -247,7 +247,7 @@
           <v-card>
             <v-card-title>
               <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-              Delete {{tableName}}
+              Delete feature layer
             </v-card-title>
             <v-card-text>
               Are you sure you want to delete the <b>{{tableName}}</b> feature layer from the <b>{{geopackage.name}}</b> GeoPackage? This action can't be undone.

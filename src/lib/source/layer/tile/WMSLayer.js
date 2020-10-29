@@ -76,7 +76,7 @@ export default class WMSLayer extends TileLayer {
       resolveWithFullResponse: true
     }
     if (this.credentials) {
-      if (this.credentials.type === 'basic') {
+      if (this.credentials.type === 'basic' || this.credentials.type === 'bearer') {
         if (!options.headers) {
           options.headers = {}
         }

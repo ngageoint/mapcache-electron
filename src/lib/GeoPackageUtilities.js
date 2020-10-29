@@ -2158,6 +2158,17 @@ export default class GeoPackageUtilities {
       let sourceColumnMap = {}
       let sourceNameChanges = {}
 
+      // TODO: get styles for each data source and each geopackage feature layer
+      // need to get all style and icon rows that are applicable for the table being added
+      // the table styles/icons will need to be treated as feature styles/icons as we are merging
+      // the name can remain the same, but we could prepend the source table name to help the user know where the style came from?
+      // we also need to determine feature styles and keep a record of which style was used for a feature, or table style
+      // maybe the easy solution is to retrieve the associated style for each feature, make that a set of styles/icons
+      // then we take that merged set across all tables and add to database and map style to new id
+      // then while we add features we can cross reference associated style/icon id in feature with new style/icon ids and set feature style
+      // no table styles will be set by default, though it should be easy enough for a user to establish that later...
+      // This may become a setting for the user to specify
+
       // retrieve layers
       status.message = 'Retrieving features from data sources and geopackage feature layers...'
       status.progress = 0.0

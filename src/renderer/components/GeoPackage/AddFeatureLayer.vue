@@ -23,7 +23,7 @@
           <small class="pt-1">{{layerName}}</small>
         </v-stepper-step>
         <v-stepper-content step="1">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Specify a name for the new GeoPackage feature layer.
             </v-card-subtitle>
@@ -47,7 +47,7 @@
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="2">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Select <b>Data Sources</b> to populate the <b>{{layerName}}</b> feature layer.
             </v-card-subtitle>
@@ -97,7 +97,7 @@
           <small class="pt-1">{{selectedGeoPackageFeatureLayers.length === 0 ? 'None' : selectedGeoPackageFeatureLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="3">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Select existing <b>GeoPackage</b> feature layers to populate the <b>{{layerName}}</b> feature layer.
             </v-card-subtitle>
@@ -148,7 +148,7 @@
           <small class="pt-1">{{project.boundingBoxFilterEditingEnabled ? 'Setting filter' : (project.boundingBoxFilter ? 'Filter applied' : 'No filter')}}</small>
         </v-stepper-step>
         <v-stepper-content step="4">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
             </v-card-subtitle>
@@ -174,7 +174,7 @@
           Summary
         </v-stepper-step>
         <v-stepper-content step="5">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-text>
               <b>{{filteredFeatureCount}}</b>{{(project.boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layer' + (geopackageFeatureLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
             </v-card-text>

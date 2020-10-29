@@ -7,7 +7,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Delete Style
+          Delete style
         </v-card-title>
         <v-card-text>
           Are you sure you want to delete the <b>{{this.styleRow.name}}</b> style? This action can't be undone.

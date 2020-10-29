@@ -59,7 +59,7 @@
         <v-card>
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-            Delete {{column.name}}
+            Delete field
           </v-card-title>
           <v-card-text>
             Deleting the <b>{{column.name}}</b> field will also delete the value tied to this field, for each feature. Are you sure you want to delete the <b>{{column.name}}</b> field from the <b>{{tableName}}</b> feature layer? This action can't be undone.

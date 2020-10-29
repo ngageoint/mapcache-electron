@@ -1,31 +1,33 @@
 <template>
-  <v-card :loading="!source.error">
-    <v-card-title>
-      {{'Processing ' + displayName}}
-    </v-card-title>
-    <v-card-text>
-      <div v-if="source.error">
-        <div class="card__header__close-btn" @click="closeCard"></div>
-        <div class="card__face__source-error-name contrast-text">
-          Error - {{displayName}}
+  <v-sheet>
+    <v-card flat tile :loading="!source.error">
+      <v-card-title>
+        {{'Processing ' + displayName}}
+      </v-card-title>
+      <v-card-text>
+        <div v-if="source.error">
+          <div class="card__header__close-btn" @click="closeCard"></div>
+          <div class="card__face__source-error-name contrast-text">
+            Error - {{displayName}}
+          </div>
         </div>
-      </div>
-      <v-row v-if="source.isUrl" class="align-start left-margin">Url: {{displayName}}</v-row>
-      <v-row v-else class="align-start left-margin">File name: {{displayName}}</v-row>
-      <v-row class="align-start left-margin" v-if="source.status">Status: {{source.status}}</v-row>
-      <v-row class="align-start left-margin" v-if="source.error">{{source.error}}</v-row>
-    </v-card-text>
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn
-        v-if="!cancelling"
-        text
-        color="warning"
-        @click="closeCard">
-        {{source.error ? 'Close' : 'Cancel Processing'}}
-      </v-btn>
-    </v-card-actions>
-  </v-card>
+        <v-row v-if="source.isUrl" class="align-start left-margin">Url: {{displayName}}</v-row>
+        <v-row v-else class="align-start left-margin">File name: {{displayName}}</v-row>
+        <v-row class="align-start left-margin" v-if="source.status">Status: {{source.status}}</v-row>
+        <v-row class="align-start left-margin" v-if="source.error">{{source.error}}</v-row>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          v-if="!cancelling"
+          text
+          color="warning"
+          @click="closeCard">
+          {{source.error ? 'Close' : 'Cancel Processing'}}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-sheet>
 </template>
 
 <script>

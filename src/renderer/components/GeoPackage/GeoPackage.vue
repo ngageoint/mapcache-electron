@@ -147,7 +147,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Remove {{geopackage.name}}
+          Remove GeoPackage
         </v-card-title>
         <v-card-text>
           Removing the <b>{{geopackage.name}}</b> GeoPackage will remove it from the application but the GeoPackage will remain on your file system. Are you sure you want to remove the <b>{{geopackage.name}}</b> GeoPackage?

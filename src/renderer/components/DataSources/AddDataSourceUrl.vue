@@ -15,7 +15,7 @@
           <small class="pt-1">{{dataSourceName}}</small>
         </v-stepper-step>
         <v-stepper-content step="1">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Specify a name for the new data source.
             </v-card-subtitle>
@@ -30,7 +30,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" v-if="dataSourceNameValid">
+          <v-btn class="mb-2" text color="primary" @click="step = 2" v-if="dataSourceNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -39,7 +39,7 @@
           <small class="pt-1">{{dataSourceUrl}}</small>
         </v-stepper-step>
         <v-stepper-content step="2">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Specify the data source's URL.
             </v-card-subtitle>
@@ -61,8 +61,9 @@
                   </template>
                   <template v-slot:item="{ index, item }">
                     <v-list-item dense link @click="setUrlToLink(item)">
-                      {{item}}
-                      <v-spacer></v-spacer>
+                      <v-list-item-content>
+                        {{item}}
+                      </v-list-item-content>
                       <v-list-item-action>
                         <v-btn icon color="warning" @click.stop.prevent="removeUrlFromHistory(item)">
                           <v-icon>mdi-trash-can</v-icon>
@@ -71,7 +72,7 @@
                     </v-list-item>
                   </template>
                 </v-combobox>
-                <h4 v-if="error" class="warning--text">{{error}}</h4>
+                <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
                 <div v-if="dataSourceUrlValid && !serviceTypeAutoDetected">
                   <v-card-subtitle>
                     The service type could not be determined, please select from the available options.
@@ -88,17 +89,23 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 3" v-if="dataSourceUrlValid && selectedServiceType !== -1">
+          <v-btn class="mb-2" text color="primary" @click="step = 3" v-if="dataSourceUrlValid && ((serviceInfo !== null && serviceInfo !== undefined) || accessDeniedOrForbidden)">
             Continue
           </v-btn>
+          <v-progress-circular
+            class="mb-2"
+            v-else-if="dataSourceUrlValid && loading"
+            indeterminate
+            color="primary"
+          ></v-progress-circular>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 3" step="3" :rules="[() => authValid && !accessDeniedOrForbidden]" color="primary">
           Credentials
           <small v-if="dataSourceUrlValid && accessDeniedOrForbidden" class="pt-1 warning--text">access denied or forbidden</small>
-          <small v-else-if="dataSourceUrlValid && !loading && serviceInfoRetrieved" class="pt-1 success--text">access granted</small>
+          <small v-else-if="dataSourceUrlValid && !loading && (serviceInfo !== null && serviceInfo !== undefined)" class="pt-1 success--text">access granted</small>
         </v-stepper-step>
         <v-stepper-content step="3">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Provide credentials if your data source requires user authentication.
             </v-card-subtitle>
@@ -134,16 +141,22 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 4" v-if="authValid">
+          <v-btn class="mb-2" text color="primary" @click="step = 4" v-if="authValid && (serviceInfo !== null && serviceInfo !== undefined)">
             Continue
           </v-btn>
+          <v-progress-circular
+            class="mb-2"
+            v-else-if="authValid && loading"
+            indeterminate
+            color="primary"
+          ></v-progress-circular>
         </v-stepper-content>
-        <v-stepper-step v-if="selectedServiceType === 0 || selectedServiceType === 1" editable :complete="step > 4" step="4" color="primary">
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1)" editable :complete="step > 4" step="4" color="primary">
           {{'Select ' + (selectedServiceType === 0 ? 'WMS' : 'WFS') + ' layers'}}
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
-        <v-stepper-content v-if="selectedServiceType === 0 || selectedServiceType === 1" step="4">
-          <v-card flat v-if="selectedServiceType <= 1">
+        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1)" step="4">
+          <v-card flat tile v-if="selectedServiceType <= 1">
             <v-card-text v-if="serviceInfo">
               <h4 class="primary--text">{{serviceInfo.title}}</h4>
               <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{serviceInfo.abstract}}</p>
@@ -151,7 +164,7 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{'Contact Person: ' + serviceInfo.contactName}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact Organization:' + serviceInfo.contactOrg}}</p>
             </v-card-text>
-            <v-card flat v-if="!loading && serviceLayers.length > 0 && !error">
+            <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 layers available for import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
               <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
@@ -163,19 +176,17 @@
                   >
                     <template v-for="(item, i) in serviceLayers">
                       <v-list-item
-                        three-line
                         :key="`item-${i}`"
                         :value="item"
                         link
                       >
                         <template v-slot:default="{ active }">
                           <v-list-item-content>
-                            <v-list-item-title v-if="item.title" v-html="item.title"></v-list-item-title>
-                            <v-list-item-subtitle v-if="item.subtitles.length > 0" class="wrap-text" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></v-list-item-subtitle>
+                            <div class="list-item-title no-clamp" v-if="item.title" v-html="item.title"></div>
+                            <div class="list-item-subtitle no-clamp" v-if="item.subtitles.length > 0" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div>
                           </v-list-item-content>
                           <v-list-item-action>
                             <v-switch
-                              class="mx-auto"
                               :input-value="active"
                               color="primary"
                             ></v-switch>
@@ -187,35 +198,34 @@
                 </v-list>
               </v-card-text>
             </v-card>
-            <v-card flat v-if="unsupportedServiceLayers.length > 0">
+            <v-card flat tile v-if="unsupportedServiceLayers.length > 0">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WMS service.'}}</v-card-subtitle>
               <v-card-text class="pt-0 mt-1">
                 <v-list dense v-if="unsupportedServiceLayers.length > 0">
                   <v-list-item
                     v-for="(item, i) in unsupportedServiceLayers"
-                    two-line
                     :key="`item-${i}`"
                     :value="item"
                   >
                     <v-list-item-content>
-                      <v-list-item-title v-if="item.title" v-html="item.title"></v-list-item-title>
-                      <v-list-item-subtitle v-if="item.subtitles.length > 0" class="wrap-text" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></v-list-item-subtitle>
+                      <div class="list-item-title no-clamp" v-if="item.title" v-html="item.title"></div>
+                      <div class="list-item-subtitle no-clamp" v-if="item.subtitles.length > 0" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div>
                     </v-list-item-content>
                   </v-list-item>
                 </v-list>
               </v-card-text>
             </v-card>
           </v-card>
-          <v-btn text color="primary" @click="step = 5">
+          <v-btn class="mb-2" text color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step v-if="selectedServiceType === 0" editable :complete="step > 5" step="5" color="primary">
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 0" editable :complete="step > 5" step="5" color="primary">
           Layer rendering order
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
         </v-stepper-step>
-        <v-stepper-content  v-if="selectedServiceType === 0" step="5">
-          <v-card flat>
+        <v-stepper-content  v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0)" step="5">
+          <v-card flat tile>
             <v-card-subtitle>
               Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
             </v-card-subtitle>
@@ -229,17 +239,17 @@
                 @start="drag = true"
                 @end="drag = false">
                 <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
-                  <li v-for="(item) in sortedLayers" :key="item.name" :class="`list-item v-list-item v-list-item--three-line ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
+                  <li v-for="(item) in sortedLayers" :key="item.name" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
                     <v-list-item-content>
-                      <v-list-item-title v-if="item.title" v-html="item.title"></v-list-item-title>
-                      <v-list-item-subtitle v-if="item.subtitles.length > 0" class="wrap-text" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></v-list-item-subtitle>
+                      <div class="list-item-title no-clamp" v-if="item.title" v-html="item.title"></div>
+                      <div class="list-item-subtitle no-clamp" v-if="item.subtitles.length > 0" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div>
                     </v-list-item-content>
                   </li>
                 </transition-group>
               </draggable>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 6">
+          <v-btn class="mb-2" text color="primary" @click="step = 6">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -247,7 +257,7 @@
           Summary
         </v-stepper-step>
         <v-stepper-content :step="summaryStep">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-text>
               <p v-if="!loading && selectedServiceType === 0 && !error && selectedDataSourceLayers.length > 0">
                 <b>{{selectedDataSourceLayers.length}}</b> {{' WMS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
@@ -368,7 +378,7 @@
         username: '',
         password: '',
         token: '',
-        authItems: [{text: 'No Authorization', value: 'none'}, {text: 'Basic', value: 'basic'}, {
+        authItems: [{text: 'None', value: 'none'}, {text: 'Basic', value: 'basic'}, {
           text: 'Bearer Token',
           value: 'bearer'
         }],
@@ -382,8 +392,7 @@
         menuProps: {
           closeOnClick: true,
           closeOnContentClick: true
-        },
-        serviceInfoRetrieved: true
+        }
       }
     },
     components: {
@@ -402,12 +411,15 @@
         }
       },
       async getServiceInfo (serviceType) {
+        this.loading = true
         this.serviceInfo = null
         this.serviceLayers = []
+        this.sortedLayers = []
+        this.sortedRenderingLayers = []
         this.unsupportedServiceLayers = []
         this.error = null
-        let serviceInfoRetrieved = false
         let accessDeniedOrForbidden = false
+        let serviceInfo = null
         try {
           if (!_.isNil(this.dataSourceUrl) && !_.isEmpty(this.dataSourceUrl) && !_.isNil(serviceType) && serviceType !== -1) {
             if (serviceType === 2) {
@@ -419,7 +431,7 @@
               }
               try {
                 await request
-                serviceInfoRetrieved = true
+                serviceInfo = {}
               } catch (e) {
                 if (e.response.status === 401 || e.response.status === 403) {
                   accessDeniedOrForbidden = true
@@ -453,7 +465,7 @@
               if (!_.isNil(result)) {
                 try {
                   let wmsInfo = GeoServiceUtilities.getWMSInfo(result)
-                  this.serviceInfo = {
+                  serviceInfo = {
                     title: wmsInfo.title || 'WMS Service',
                     abstract: wmsInfo.abstract,
                     version: version,
@@ -462,7 +474,6 @@
                   }
                   this.serviceLayers = wmsInfo.layers
                   this.unsupportedServiceLayers = wmsInfo.unsupportedLayers
-                  serviceInfoRetrieved = true
                 } catch (error) {
                   this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
                 }
@@ -500,7 +511,7 @@
               if (!_.isNil(result)) {
                 try {
                   let wfsInfo = GeoServiceUtilities.getWFSInfo(result)
-                  this.serviceInfo = {
+                  serviceInfo = {
                     title: wfsInfo.title || 'WFS Service',
                     abstract: wfsInfo.abstract,
                     version: version,
@@ -508,7 +519,6 @@
                     contactOrg: wfsInfo.contactOrg
                   }
                   this.serviceLayers = wfsInfo.layers
-                  serviceInfoRetrieved = true
                 } catch (error) {
                   this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
                 }
@@ -528,9 +538,20 @@
         } catch (e) {
           console.error(e)
         }
-        this.serviceInfoRetrieved = serviceInfoRetrieved
-        this.accessDeniedOrForbidden = accessDeniedOrForbidden
-        this.loading = false
+        setTimeout(() => {
+          this.accessDeniedOrForbidden = accessDeniedOrForbidden
+          if (!_.isNil(this.serviceInfo)) {
+            if (serviceType === 0) {
+              this.summaryStep = 6
+            } else if (serviceType === 1) {
+              this.summaryStep = 5
+            } else {
+              this.summaryStep = 4
+            }
+          }
+          this.serviceInfo = serviceInfo
+          this.loading = false
+        }, 500)
       },
       resetAuth () {
         this.authSelection = 'none'
@@ -590,6 +611,23 @@
           this.$refs.authForm.validate()
         }
       },
+      determineListItemStyle (item) {
+        let numberOfLines = 0
+        if (!_.isNil(item.title)) {
+          const lines = Math.floor(item.title.length / 25)
+          numberOfLines += (lines + 1)
+        }
+        if (!_.isNil(item.subtitles)) {
+          item.subtitles.forEach(subtitle => {
+            const lines = Math.floor(subtitle.length / 25)
+            numberOfLines += (lines + 1)
+          })
+        }
+        return {
+          minHeight: ((4 + 24 * numberOfLines) + 'px'),
+          '-webkitLineClamp': 'unset'
+        }
+      },
       processXYZUrl (url) {
         let sourceToProcess = {
           id: UniqueIDUtilities.createUniqueID(),
@@ -640,6 +678,8 @@
       },
       setUrlToLink (url) {
         // Sets the url text box to the clicked-on url
+        this.selectedDataSourceLayers = []
+        this.resetAuth()
         this.dataSourceUrl = url
       }
     },
@@ -672,15 +712,17 @@
             } else {
               serviceTypeAutoDetected = false
             }
+            this.loading = true
             if (this.selectedServiceType !== selectedServiceType) {
               this.selectedServiceType = selectedServiceType
               this.serviceTypeAutoDetected = serviceTypeAutoDetected
             } else {
-              this.loading = true
               this.debounceGetServiceInfo(this.selectedServiceType)
             }
           } else {
             this.resetAuth()
+            this.sortedLayers = []
+            this.sortedRenderingLayers = []
             this.selectedServiceType = -1
             this.serviceTypeAutoDetected = true
           }
@@ -689,36 +731,31 @@
       selectedServiceType: {
         handler (newValue, oldValue) {
           this.loading = true
-          if (newValue === 0) {
-            this.summaryStep = 6
-          } else if (newValue === 1) {
-            this.summaryStep = 5
-          } else {
-            this.summaryStep = 4
-          }
-
-          if (this.step > this.summaryStep) {
-            this.step = this.summaryStep
-          }
-          this.debounceGetServiceInfo(newValue)
+          this.summaryStep = 4
+          Vue.nextTick(() => {
+            this.debounceGetServiceInfo(newValue)
+          })
         }
       },
       username: {
         handler (newValue, oldValue) {
-          this.loading = true
-          this.debounceGetServiceInfo(this.selectedServiceType)
+          if (this.authSelection === 'basic' && !_.isNil(newValue) && !_.isNil(this.password) && this.password.length > 0) {
+            this.debounceGetServiceInfo(this.selectedServiceType)
+          }
         }
       },
       password: {
         handler (newValue, oldValue) {
-          this.loading = true
-          this.debounceGetServiceInfo(this.selectedServiceType)
+          if (this.authSelection === 'basic' && !_.isNil(newValue) && !_.isNil(this.username) && this.username.length > 0) {
+            this.debounceGetServiceInfo(this.selectedServiceType)
+          }
         }
       },
       token: {
         handler (newValue, oldValue) {
-          this.loading = true
-          this.debounceGetServiceInfo(this.selectedServiceType)
+          if (this.authSelection === 'bearer' && !_.isNil(newValue) && newValue.length > 0) {
+            this.debounceGetServiceInfo(this.selectedServiceType)
+          }
         }
       },
       authSelection: {
@@ -733,16 +770,16 @@
           if (!_.isNil(this.sortedRenderingLayers)) {
             const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
             const newRenderingLayers = newValue.slice()
-            const idsRemoved = _.difference(sortedRenderingLayersCopy.map(item => item.name), newRenderingLayers.map(item => item.name))
-            const idsAdded = _.difference(newRenderingLayers.map(item => item.name), sortedRenderingLayersCopy.map(item => item.name))
-            idsRemoved.forEach(id => {
-              const index = sortedRenderingLayersCopy.findIndex(item => item.name === id)
+            const namesRemoved = _.difference(sortedRenderingLayersCopy.map(item => item.name), newRenderingLayers.map(item => item.name))
+            const namesAdded = _.difference(newRenderingLayers.map(item => item.name), sortedRenderingLayersCopy.map(item => item.name))
+            namesRemoved.forEach(name => {
+              const index = sortedRenderingLayersCopy.findIndex(item => item.name === name)
               if (index !== -1) {
                 sortedRenderingLayersCopy.splice(index, 1)
               }
             })
-            idsAdded.forEach(id => {
-              const index = newRenderingLayers.findIndex(item => item.name === id)
+            namesAdded.forEach(name => {
+              const index = newRenderingLayers.findIndex(item => item.name === name)
               if (index !== -1) {
                 sortedRenderingLayersCopy.push(newRenderingLayers[index])
               }
@@ -756,10 +793,6 @@
 </script>
 
 <style scoped>
-  .wrap-text {
-    line-clamp: unset !important;
-    -webkit-line-clamp: unset !important;
-  }
   .ghost {
     opacity: 0.5 !important;
     background-color: var(--v-primary-lighten2) !important;
@@ -787,6 +820,10 @@
   ul {
     list-style-type: none;
   }
+  .no-clamp {
+    -webkit-line-clamp: unset !important;
+    word-wrap: normal !important;
+  }
   .list-item {
     min-height: 50px;
     cursor: move !important;
@@ -794,5 +831,16 @@
   }
   .list-item i {
     cursor: pointer !important;
+  }
+  .list-item-title {
+    font-size: .8125rem;
+    font-weight: 500;
+    line-height: 1rem;
+  }
+  .list-item-subtitle {
+    font-size: .8125rem;
+    font-weight: 500;
+    line-height: 1rem;
+    color: rgba(0,0,0,.6);
   }
 </style>

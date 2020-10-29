@@ -7,7 +7,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Delete Icon
+          Delete icon
         </v-card-title>
         <v-card-text>
           Are you sure you want to delete the <b>{{this.iconRow.name}}</b> icon? This action can't be undone.

@@ -8,7 +8,7 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Remove {{removeProject.name}}
+          Remove project
         </v-card-title>
         <v-card-text>
           Are you sure you want to remove <b>{{removeProject.name}}</b>? This action can't be undone.

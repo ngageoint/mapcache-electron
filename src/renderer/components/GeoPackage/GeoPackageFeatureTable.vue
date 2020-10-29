@@ -7,10 +7,10 @@
       <v-card v-if="featureToRemove !== null">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Delete Feature {{featureToRemove.id}}
+          Delete feature
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete the feature from the {{table.tableName}} feature table? This action can't be undone.
+          Are you sure you want to delete feature <b>{{featureToRemove.id}}</b> from the {{table.tableName}} feature table? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>

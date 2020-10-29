@@ -8,7 +8,7 @@
     >
       <v-toolbar-title>{{geopackage.name + ': Add Tile Layer'}}</v-toolbar-title>
     </v-toolbar>
-    <v-card flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
+    <v-card flat tile class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
       <v-card-title>{{'Adding ' + layerName + ' Tile Layer'}}</v-card-title>
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
@@ -23,7 +23,7 @@
           <small class="pt-1">{{layerName}}</small>
         </v-stepper-step>
         <v-stepper-content step="1">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Specify a name for the new GeoPackage tile layer.
             </v-card-subtitle>
@@ -47,7 +47,7 @@
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="2">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Select imagery and features from <b>Data Sources</b> to populate the <b>{{layerName}}</b> tile layer.
             </v-card-subtitle>
@@ -99,7 +99,7 @@
           <small class="pt-1">{{selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="3">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{layerName}}</b> tile layer.
             </v-card-subtitle>
@@ -152,7 +152,7 @@
           <small class="pt-1">{{selectedGeoPackageLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
         </v-stepper-step>
         <v-stepper-content step="4">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
             </v-card-subtitle>
@@ -193,7 +193,7 @@
           <small class="pt-1">{{project.boundingBoxFilterEditingEnabled ? 'Setting bounds' : (project.boundingBoxFilter ? 'Bounds set' : 'Bounds not set')}}</small>
         </v-stepper-step>
         <v-stepper-content step="5">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
             </v-card-subtitle>
@@ -219,7 +219,7 @@
           Zoom Levels and Tile Scaling
         </v-stepper-step>
         <v-stepper-content step="6">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-subtitle>
               Specify the zoom levels you wish to view your content at. Enable tile scaling to reduce the number of tiles generated.
             </v-card-subtitle>
@@ -256,7 +256,7 @@
           Summary
         </v-stepper-step>
         <v-stepper-content step="7">
-          <v-card flat>
+          <v-card flat tile>
             <v-card-text>
               <v-card-subtitle>
                 <b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}

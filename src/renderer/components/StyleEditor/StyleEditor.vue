@@ -16,10 +16,10 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          {{'Remove'}}<b class="pl-1 pr-1">{{tableName}}</b>{{'Styling'}}
+          Remove styling
         </v-card-title>
         <v-card-text>
-          When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or icons will be deleted. Are you sure you want to remove styling?
+          When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or icons will be deleted. Are you sure you want to remove styling for <b>{{tableName}}</b>?
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
