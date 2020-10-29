@@ -73,15 +73,15 @@
             },
             {
               title: 'Create new GeoPackage',
-              content: 'A new geopackage can be created by navigating to \'GeoPackage > Add GeoPackage > New GeoPackage\'. Enter the file name for your GeoPackage and the tool will create an empty GeoPackage ready for your data to be added.'
+              content: 'A new GeoPackage can be created by navigating to the \'GeoPackage\' tab and clicking on the Add GeoPackage button at the bottom of the page. Click the \'New GeoPackage\' button. Enter the file name for your GeoPackage and the tool will create an empty GeoPackage ready for your data to be added.'
             },
             {
               title: 'Import GeoPackage',
-              content: ''
+              content: 'A GeoPackage can be imported by navigating to the \'GeoPackage\' tab and clicking on the Add GeoPackage button at the bottom of the page. Click the \'Import from file\' button and navigate to the GeoPackage file you wish to import.'
             },
             {
               title: 'Delete GeoPackage',
-              content: ''
+              content: 'A GeoPackage can be deleted by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to delete. This will display the GeoPackage and it\'s contents. Click on the \'Delete\' button and confirm you wish to delete the GeoPackage.'
             },
             {
               title: '',
@@ -94,8 +94,8 @@
           action: 'mdi-layers-outline',
           items: [
             {
-              title: 'Description',
-              content: ''
+              title: '',
+              content: 'Data sources consist of files in a variety of supported geospatial formats (KML, GeoJSON, SHP) or online services such as WMS, WFS, XYZ. The contents of a data source can either be features or imagery.'
             }
           ],
           title: 'Data Source'

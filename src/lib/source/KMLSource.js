@@ -52,29 +52,35 @@ export default class KMLSource extends Source {
   }
 
   getStyleFromFeature (feature) {
-    let style = {
-      width: 0,
-      color: '#000000',
-      opacity: 1.0,
-      fillColor: '#000000',
-      fillOpacity: 1.0,
-      name: 'KML Style'
-    }
-    const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
-    if (geometryType === GeometryType.LINESTRING || geometryType === GeometryType.MULTILINESTRING) {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
-    } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
-      style.fillColor = feature.properties['fill']
-      style.fillOpacity = feature.properties['fill-opacity']
-    } else if (geometryType === GeometryType.POINT || geometryType === GeometryType.MULTIPOINT) {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
+    let style = null
+    // check if feature contains style properties
+    if (_.keys(feature.properties).map(key => key.toLowerCase()).findIndex(key => key === 'stroke' || key === 'stroke-width' || key === 'stroke-opacity' || key === 'fill' || key === 'fill-opacity') !== -1) {
+      style = {
+        width: 1,
+        color: '#000000',
+        opacity: 1.0,
+        fillColor: '#000000',
+        fillOpacity: 1.0,
+        name: 'KML Style'
+      }
+      const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      if (geometryType === GeometryType.LINESTRING || geometryType === GeometryType.MULTILINESTRING) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+      } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+        style.fillColor = feature.properties['fill']
+        style.fillOpacity = feature.properties['fill-opacity']
+      } else if (geometryType === GeometryType.POINT || geometryType === GeometryType.MULTIPOINT) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+      } else {
+        style = null
+      }
     }
     return style
   }
@@ -88,10 +94,9 @@ export default class KMLSource extends Source {
     let fileIcons = {}
     let iconNumber = 1
     for (let feature of features) {
-      layerStyle.features[feature.id] = {
-        icon: null,
-        style: null
-      }
+      const id = feature.id
+      let featureStyle = null
+      let featureIcon = null
       if (feature.properties.icon) {
         let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
@@ -147,15 +152,26 @@ export default class KMLSource extends Source {
         if (_.isNil(layerStyle.iconRowMap[iconHash])) {
           layerStyle.iconRowMap[iconHash] = icon
         }
-        layerStyle.features[feature.id].icon = iconHash
+        featureIcon = iconHash
       } else {
         let style = this.getStyleFromFeature(feature)
-        let styleHash = VectorStyleUtilities.hashCode(style)
-        if (_.isNil(layerStyle.styleRowMap[styleHash])) {
-          layerStyle.styleRowMap[styleHash] = style
+        if (!_.isNil(style)) {
+          let styleHash = VectorStyleUtilities.hashCode(style)
+          if (_.isNil(layerStyle.styleRowMap[styleHash])) {
+            layerStyle.styleRowMap[styleHash] = style
+          }
+          featureStyle = styleHash
         }
-        layerStyle.features[feature.id].style = styleHash
       }
+      if (!_.isNil(featureIcon) || !_.isNil(featureStyle)) {
+        layerStyle.features[id] = {
+          icon: featureIcon,
+          style: featureStyle
+        }
+      }
+    }
+    if (_.isEmpty(layerStyle.features) && _.isEmpty(layerStyle.styleRowMap) && _.isEmpty(layerStyle.iconRowMap)) {
+      layerStyle = null
     }
     return layerStyle
   }
