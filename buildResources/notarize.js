@@ -6,15 +6,15 @@ exports.default = async function notarizing(context) {
   if (electronPlatformName !== 'darwin') {
     return;
   }
+  const notarizeApp = process.env.notarizeApp;
+
+  if (notarizeApp === 'false' || notarizeApp === false) {
+    return;
+  }
 
   const appName = context.packager.appInfo.productFilename;
   const appleId = process.env.appleId;
   const password = process.env.appleIdPassword;
-  const notarizeApp = process.env.notarizeApp;
-
-  if (!notarizeApp) {
-    return;
-  }
 
   return await notarize({
     appBundleId: 'mil.nga.mapcache',
