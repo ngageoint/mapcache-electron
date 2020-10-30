@@ -2,6 +2,16 @@
   "name": "mapcache",
   "version": "1.0.0",
   "author": "Dan Barela <daniel.barela@gmail.com>",
+  "contributors": [
+    {
+      "name": "Christopher Caldwel",
+      "email": "c.caldwell90@gmail.com"
+    },
+    {
+      "name": "Joe Clark",
+      "email": "jclark118@gmail.com"
+    }
+  ],
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "license": null,
   "main": "./dist/electron/main.js",
@@ -60,6 +70,7 @@
   "build": {
     "productName": "MapCache",
     "appId": "mil.nga.mapcache",
+    "afterSign": "build/notarize.js",
     "asar": false,
     "directories": {
       "output": "build"
@@ -80,14 +91,19 @@
           "y": 150,
           "type": "file"
         }
-      ]
+      ],
+      "sign": false
     },
     "mac": {
       "target": [
         "dmg",
         "pkg"
       ],
-      "icon": "build/icons/icon.icns"
+      "icon": "build/icons/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
       "target": [
@@ -131,7 +147,7 @@
     "file-url": "^3.0.0",
     "float-labels.js": "^3.3.8",
     "fs-jetpack": "^2.2.0",
-    "gdal": "^0.9.8",
+    "gdal-next": "^2.2.2",
     "geojson-vt": "^3.2.1",
     "geotiff": "1.0.0-beta.6",
     "image-size": "^0.8.3",
@@ -213,10 +229,12 @@
     "del": "^3.0.0",
     "devtron": "^1.4.0",
     "dezalgo": "^1.0.3",
+    "dotenv": "^8.2.0",
     "electron": "^2.0.4",
     "electron-builder": "^21.2.0",
     "electron-debug": "^1.5.0",
     "electron-devtools-installer": "^2.2.4",
+    "electron-notarize": "^1.0.0",
     "electron-rebuild": "^1.8.2",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",

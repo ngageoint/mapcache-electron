@@ -10,8 +10,8 @@ These instructions were written for development on mac.
 
 You need a basic understanding of the following tools that you should install via package manager (brew, apt, etc.):  
 * git 2.25.0
-* npm 5.6.0
-* node 8.11.2
+* npm 6.14.8
+* node 10.23.0
 * Xcode 11.3 or greater
 
 # Building and Running MapCache Desktop
@@ -56,6 +56,9 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `npm run build:mac`
 4. The newly created installers are located in the build folder:  
 `cd build`
+
+# Notarizing App
+During mac build, the app can be notarized by updating the .env file. Set the notarizeApp flag to true and specify the appleId and appleIdPassword. Note: the appleIdPassword must be an app specific password, which can be generated on your Apple ID account page.
 
 ## Testing
 Any changes made in development should be tested in the production version of the application for all supported platforms.

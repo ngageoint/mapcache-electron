@@ -1,4 +1,4 @@
-import gdal from 'gdal'
+import gdal from 'gdal-next'
 import * as GeoTIFFGlobals from 'geotiff/src/globals'
 
 export default class GDALUtilities {
@@ -33,7 +33,7 @@ export default class GDALUtilities {
       'Bottom Left ': {x: 0, y: size.y}
     }
 
-    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+    let wgs84 = gdal.SpatialReference.fromProj4('+init=epsg:4326')
     let coordTransform = new gdal.CoordinateTransformation(ds.srs, wgs84)
 
     let cornerNames = Object.keys(corners)
@@ -64,7 +64,7 @@ export default class GDALUtilities {
   static getWebMercatorZoomLevelForGeoTIFF (ds) {
     let size = ds.rasterSize
     let geotransform = ds.geoTransform
-    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+    let wgs84 = gdal.SpatialReference.fromProj4('+init=epsg:4326')
     let coordTransform = new gdal.CoordinateTransformation(ds.srs, wgs84)
     let uLWgs84 = coordTransform.transformPoint({
       x: geotransform[0],
@@ -129,7 +129,7 @@ export default class GDALUtilities {
       'Bottom Left ': {x: 0, y: size.y}
     }
 
-    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+    let wgs84 = gdal.SpatialReference.fromProj4('+init=epsg:4326')
     let coordTransform = new gdal.CoordinateTransformation(ds.srs, wgs84)
 
     info += 'Corner Coordinates:'

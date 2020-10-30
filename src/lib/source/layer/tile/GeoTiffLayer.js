@@ -1,7 +1,7 @@
 import GeoTiffRenderer from '../renderer/GeoTiffRenderer'
 import TileLayer from './TileLayer'
 import * as GeoTIFF from 'geotiff'
-import gdal from 'gdal'
+import gdal from 'gdal-next'
 import GDALUtilities from '../../../GDALUtilities'
 
 export default class GeoTiffLayer extends TileLayer {

@@ -1,6 +1,6 @@
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 import proj4 from 'proj4'
-import gdal from 'gdal'
+import gdal from 'gdal-next'
 import GeoTiffLayer from '../tile/GeoTiffLayer'
 
 var defs = require('../../../projection/proj4Defs')
@@ -50,7 +50,7 @@ export default class GeoTiffRenderer {
     let target = ctx.createImageData(tile.width, tile.height)
     let targetData = target.data
 
-    var tileCutline = this.createCutlineInProjection({west: tileLowerLeft[0], south: tileLowerLeft[1], east: tileUpperRight[0], north: tileUpperRight[1]}, gdal.SpatialReference.fromEPSG(3857))
+    var tileCutline = this.createCutlineInProjection({west: tileLowerLeft[0], south: tileLowerLeft[1], east: tileUpperRight[0], north: tileUpperRight[1]}, gdal.SpatialReference.fromProj4('+init=epsg:3857'))
     var srcCutline = this.createPixelCoordinateCutline({west: fullExtent[0], south: fullExtent[1], east: fullExtent[2], north: fullExtent[3]}, this.layer.ds)
 
     let srcBands = []
@@ -239,7 +239,7 @@ export default class GeoTiffRenderer {
 
   reproject (ds, epsgCode, tileCutline, srcCutline, srcBands, dstBands, alphaBand, width, height) {
     let tileExtent = tileCutline.getEnvelope()
-    let targetSrs = gdal.SpatialReference.fromEPSG(epsgCode)
+    let targetSrs = gdal.SpatialReference.fromProj4('+init=epsg:' + epsgCode)
 
     let gt = ds.geoTransform
 
@@ -298,7 +298,7 @@ export default class GeoTiffRenderer {
 
   createPixelCoordinateCutline (envelope, ds) {
     var sourcePixels = new gdal.CoordinateTransformation(ds.srs, ds)
-    var sourceCoords = new gdal.CoordinateTransformation(gdal.SpatialReference.fromEPSG(4326), ds.srs)
+    var sourceCoords = new gdal.CoordinateTransformation(gdal.SpatialReference.fromProj4('+init=epsg:4326'), ds.srs)
 
     var ul = sourceCoords.transformPoint(envelope.west, envelope.north)
     var ur = sourceCoords.transformPoint(envelope.east, envelope.north)
@@ -318,7 +318,7 @@ export default class GeoTiffRenderer {
   }
 
   createCutlineInProjection (envelope, srs) {
-    var tx = new gdal.CoordinateTransformation(gdal.SpatialReference.fromEPSG(4326), srs)
+    var tx = new gdal.CoordinateTransformation(gdal.SpatialReference.fromProj4('+init=epsg:4326'), srs)
 
     var ul = tx.transformPoint(envelope.west, envelope.north)
     var ur = tx.transformPoint(envelope.east, envelope.north)
@@ -384,7 +384,7 @@ export default class GeoTiffRenderer {
       'Bottom Left ': {x: 0, y: size.y}
     }
 
-    let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+    let wgs84 = gdal.SpatialReference.fromProj4('+init=epsg:4326')
     let coordTransform = new gdal.CoordinateTransformation(ds.srs, wgs84)
 
     info += 'Corner Coordinates:'

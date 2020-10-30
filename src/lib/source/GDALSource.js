@@ -1,5 +1,5 @@
 import Source from './Source'
-import gdal from 'gdal'
+import gdal from 'gdal-next'
 import fs from 'fs'
 import GeoTiffLayer from './layer/tile/GeoTiffLayer'
 import path from 'path'
@@ -35,7 +35,7 @@ export default class GDALSource extends Source {
         } else {
           name = layer.name
         }
-        let wgs84 = gdal.SpatialReference.fromEPSG(4326)
+        let wgs84 = gdal.SpatialReference.fromProj4('+init=epsg:4326')
         let toNative = new gdal.CoordinateTransformation(layer.srs, wgs84)
         let features = layer.features.map((feature) => {
           try {
