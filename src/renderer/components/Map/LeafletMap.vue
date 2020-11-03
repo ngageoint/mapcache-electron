@@ -61,7 +61,7 @@
         max-width="500"
         scrollable
         persistent>
-        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :geopackage="featureToAddGeoPackage" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature"></feature-editor>
+        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
       </v-dialog>
     </div>
     <transition name="slide-up">
@@ -81,7 +81,7 @@
 
 <script>
   import { mapActions } from 'vuex'
-  import { remote } from 'electron'
+  import { remote, ipcRenderer } from 'electron'
   import _ from 'lodash'
   import * as vendor from '../../../lib/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
@@ -96,7 +96,7 @@
   import LeafletMapLayerFactory from '../../../lib/map/mapLayers/LeafletMapLayerFactory'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-  import FeatureEditor from '../GeoPackage/FeatureEditor'
+  import FeatureEditor from '../Common/FeatureEditor'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -112,7 +112,6 @@
   let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
   let maxFeatures
   let isDrawing = false
-  let oldProjectActiveGeoPackage = null
 
   function normalize (longitude) {
     let lon = longitude
@@ -177,7 +176,7 @@
         featureToAddColumns: null,
         featureToAddGeoPackage: null,
         featureToAddTableName: null,
-        oldProjectActiveGeoPackage
+        lastShowFeatureTableEvent: null
       }
     },
     methods: {
@@ -318,21 +317,41 @@
         this.featureToAddGeoPackage = null
         this.featureToAddTableName = null
       },
-      async displayFeaturesForTable (geopackageId, tableName) {
-        if (!_.isNil(geopackageId) && !_.isNil(tableName) && !_.isNil(this.geopackages[geopackageId]) && !_.isNil(this.geopackages[geopackageId].tables.features[tableName])) {
+      async displayFeaturesForTable (id, tableName, isGeoPackage) {
+        if (!_.isNil(id) && !_.isNil(tableName) && ((isGeoPackage && !_.isNil(this.geopackages[id]) && !_.isNil(this.geopackages[id].tables.features[tableName])) || (!isGeoPackage && !_.isNil(this.sources[id])))) {
           try {
+            this.lastShowFeatureTableEvent = {
+              id,
+              tableName,
+              isGeoPackage
+            }
             this.tableFeaturesLatLng = null
-            const geopackage = this.geopackages[geopackageId]
-            this.tableFeatures = {
-              geopackageTables: [{
-                id: geopackage.id + '_' + tableName,
-                tabName: geopackage.name + ': ' + tableName,
-                geopackageId: geopackage.id,
-                tableName: tableName,
-                columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
-                features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
-              }],
-              sourceTables: []
+            if (isGeoPackage) {
+              const geopackage = this.geopackages[id]
+              this.tableFeatures = {
+                geopackageTables: [{
+                  id: geopackage.id + '_' + tableName,
+                  tabName: geopackage.name + ': ' + tableName,
+                  geopackageId: geopackage.id,
+                  tableName: tableName,
+                  columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
+                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
+                }],
+                sourceTables: []
+              }
+            } else {
+              const sourceLayerConfig = this.sources[id]
+              this.tableFeatures = {
+                geopackageTables: [],
+                sourceTables: [{
+                  id: sourceLayerConfig.id,
+                  tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
+                  sourceId: sourceLayerConfig.id,
+                  tableName: sourceLayerConfig.sourceLayerName,
+                  columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                }]
+              }
             }
             this.showFeatureTable = true
           } catch (e) {
@@ -566,7 +585,7 @@
               const geopackageTables = []
               for (let i = 0; i < tables.length; i++) {
                 const tableName = tables[i]
-                const features = GeoPackageUtilities._queryForFeaturesAt(gp, geopackage.id, geopackage.name, tableName, e.latlng, this.map.getZoom())
+                const features = GeoPackageUtilities._queryForFeaturesAt(gp, tableName, e.latlng, this.map.getZoom())
                 if (!_.isEmpty(features)) {
                   featuresFound = true
                   const tableId = geopackage.id + '_' + tableName
@@ -585,19 +604,27 @@
             tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
           }
         }
-        // for (let sourceId in sourceLayers) {
-        //   const sourceLayerConfig = sourceLayers[sourceId].configuration
-        //   if (sourceLayerConfig.visible) {
-        //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-        //       features = features.concat(await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom()).map(f => {
-        //         f.fromGeoPackage = false
-        //         f.layerName = _.isNil(sourceLayerConfig.displayName) ? sourceLayerConfig.sourceLayerName : sourceLayerConfig.displayName
-        //         return f
-        //       }))
-        //     }
-        //   }
-        // }
+        for (let sourceId in sourceLayers) {
+          const sourceLayerConfig = sourceLayers[sourceId].configuration
+          if (sourceLayerConfig.visible) {
+            if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
+              const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, e.latlng, this.map.getZoom())
+              if (!_.isEmpty(features)) {
+                featuresFound = true
+                tableFeatures.sourceTables.push({
+                  id: sourceLayerConfig.id,
+                  tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
+                  sourceId: sourceLayerConfig.id,
+                  tableName: sourceLayerConfig.sourceLayerName,
+                  columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  features: features
+                })
+              }
+            }
+          }
+        }
         if (featuresFound) {
+          this.lastShowFeatureTableEvent = null
           this.tableFeaturesLatLng = e.latlng
           this.tableFeatures = tableFeatures
           this.showFeatureTable = true
@@ -679,6 +706,18 @@
               })
             }
           })
+
+          // geopackages changed, so let's ensure the content in the table is updated
+          if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+            this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+            // the feature table is showing because a user clicked the view features button in the feature layer view
+            // this requires the active geopackage to be set with a valid geopackageId and tableName
+          } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
+            this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
+          } else {
+            // clear out any feature tables
+            this.hideFeatureTable()
+          }
         },
         deep: true
       },
@@ -753,11 +792,8 @@
             this.queryForFeatures({latlng: this.tableFeaturesLatLng})
             // the feature table is showing because a user clicked the view features button in the feature layer view
             // this requires the active geopackage to be set with a valid geopackageId and tableName
-          } else if (this.showFeatureTable &&
-            !_.isNil(this.project.activeGeoPackage) &&
-            !_.isNil(this.project.activeGeoPackage.geopackageId) &&
-            !_.isNil(this.project.activeGeoPackage.tableName)) {
-            this.displayFeaturesForTable(this.project.activeGeoPackage.geopackageId, this.project.activeGeoPackage.tableName)
+          } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
+            this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
           } else {
             // clear out any feature tables
             this.hideFeatureTable()
@@ -835,25 +871,16 @@
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox)
           }
-          // there is an active geopackage and the user has requested to show the features table for that geopackage/table
-          if (!_.isNil(updatedProject.activeGeoPackage) &&
-            !_.isNil(updatedProject.activeGeoPackage.geopackageId) &&
-            !_.isNil(updatedProject.activeGeoPackage.tableName) &&
-            updatedProject.activeGeoPackage.showFeaturesTableEvent > 0 &&
-            updatedProject.activeGeoPackage.showFeaturesTableEvent > (_.isNil(this.oldProjectActiveGeoPackage) ? -1 : this.oldProjectActiveGeoPackage.showFeaturesTableEvent)) {
-            this.displayFeaturesForTable(updatedProject.activeGeoPackage.geopackageId, updatedProject.activeGeoPackage.tableName)
-            // if a table is showing and the project was changed and there is no longer an active table name, hide the features table
-          } else if (this.showFeatureTable && _.isNil(this.tableFeaturesLatLng) && (_.isNil(updatedProject.activeGeoPackage) || (_.isNil(updatedProject.activeGeoPackage.tableName)))) {
-            this.hideFeatureTable()
-          }
-          this.oldProjectActiveGeoPackage = _.cloneDeep(this.project.activeGeoPackage)
         },
         deep: true
       }
     },
     mounted: async function () {
       let _this = this
-      this.oldProjectActiveGeoPackage = _.cloneDeep(this.project.activeGeoPackage)
+      ipcRenderer.on('show_feature_table', (e, id, tableName, isGeoPackage) => {
+        this.displayFeaturesForTable(id, tableName, isGeoPackage)
+      })
+
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 3
       const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
@@ -911,17 +938,17 @@
             const geopackage = geopackageValues[i]
             const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
             if (tables.length > 0) {
-              count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, geopackage.id, geopackage.name, tables, e.latlng, this.map.getZoom())
+              count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, tables, e.latlng, this.map.getZoom())
             }
           }
-          // for (let sourceId in sourceLayers) {
-          //   const sourceLayerConfig = sourceLayers[sourceId].configuration
-          //   if (sourceLayerConfig.visible) {
-          //     if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-          //       count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceId, sourceLayerConfig.displayName || sourceLayerConfig.name, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom())
-          //     }
-          //   }
-          // }
+          for (let sourceId in sourceLayers) {
+            const sourceLayerConfig = sourceLayers[sourceId].configuration
+            if (sourceLayerConfig.visible) {
+              if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
+                count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayerConfig.geopackageFilePath, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom())
+              }
+            }
+          }
           if (count > 0) {
             document.getElementById('map').style.cursor = 'pointer'
           } else {

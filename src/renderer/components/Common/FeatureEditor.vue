@@ -6,96 +6,96 @@
     <v-card-text style="max-height: 500px;">
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
-          <template v-for="column in editableColumns">
-            <v-list-item
-              :key="'editor-' + column.name"
-            >
-              <v-list-item-content class="pa-4" style="margin: -16px;">
-                <v-text-field :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
-                <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
-                  <v-col>
-                    <v-list-item-subtitle>{{column.name.toLowerCase()}}</v-list-item-subtitle>
-                  </v-col>
-                  <v-switch color="primary" v-model="column.value" class="pt-0" hide-details></v-switch>
-                </v-row>
-                <v-row no-gutters justify="space-between" v-else-if="column.dataType === DATE || column.dataType === DATETIME">
-                  <v-col v-if="column.showDate">
-                    <v-menu
-                      v-model="column.dateMenu"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="290px"
-                    >
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-text-field
-                          v-model="column.dateValue"
-                          :label="column.name"
-                          prepend-icon="mdi-calendar"
-                          readonly
-                          clearable
-                          v-bind="attrs"
-                          v-on="on"
-                        ></v-text-field>
-                      </template>
-                      <v-date-picker
+          <v-list-item
+            :key="'editor-' + column.name"
+            v-for="column in editableColumns"
+          >
+            <v-list-item-content class="pa-4" style="margin: -16px;">
+              <v-text-field :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
+              <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
+                <v-col>
+                  <v-list-item-subtitle>{{column.name.toLowerCase()}}</v-list-item-subtitle>
+                </v-col>
+                <v-switch color="primary" v-model="column.value" class="pt-0" hide-details></v-switch>
+              </v-row>
+              <v-row no-gutters justify="space-between" v-else-if="column.dataType === DATE || column.dataType === DATETIME">
+                <v-col v-if="column.showDate">
+                  <v-menu
+                    v-model="column.dateMenu"
+                    :close-on-content-click="false"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-text-field
                         v-model="column.dateValue"
-                        no-title
-                        scrollable
-                      >
-                        <v-spacer></v-spacer>
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="column.dateMenu = false"
-                        >
-                          OK
-                        </v-btn>
-                      </v-date-picker>
-                    </v-menu>
-                  </v-col>
-                  <v-col v-if="column.showTime">
-                    <v-menu
-                      v-model="column.timeMenu"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="290px"
+                        :label="column.name"
+                        prepend-icon="mdi-calendar"
+                        readonly
+                        clearable
+                        v-bind="attrs"
+                        v-on="on"
+                      ></v-text-field>
+                    </template>
+                    <v-date-picker
+                      v-model="column.dateValue"
+                      no-title
+                      scrollable
                     >
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-text-field
-                          v-model="column.timeValue"
-                          label="time"
-                          prepend-icon="mdi-clock"
-                          readonly
-                          clearable
-                          v-bind="attrs"
-                          v-on="on"
-                        ></v-text-field>
-                      </template>
-                      <v-time-picker
-                        v-model="column.timeValue"
-                        format="ampm"
-                        use-seconds
+                      <v-spacer></v-spacer>
+                      <v-btn
+                        text
+                        color="primary"
+                        @click="column.dateMenu = false"
                       >
-                        <v-spacer></v-spacer>
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="column.timeMenu = false"
-                        >
-                          OK
-                        </v-btn>
-                      </v-time-picker>
-                    </v-menu>
-                  </v-col>
-                </v-row>
-                <v-text-field :label="column.name.toLowerCase()" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
-              </v-list-item-content>
-            </v-list-item>
-          </template>
+                        OK
+                      </v-btn>
+                    </v-date-picker>
+                  </v-menu>
+                </v-col>
+                <v-col v-if="column.showTime">
+                  <v-menu
+                    v-model="column.timeMenu"
+                    :close-on-content-click="false"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-text-field
+                        v-model="column.timeValue"
+                        label="time"
+                        prepend-icon="mdi-clock"
+                        readonly
+                        clearable
+                        v-bind="attrs"
+                        v-on="on"
+                      ></v-text-field>
+                    </template>
+                    <v-time-picker
+                      v-model="column.timeValue"
+                      format="ampm"
+                      use-seconds
+                    >
+                      <v-spacer></v-spacer>
+                      <v-btn
+                        text
+                        color="primary"
+                        @click="column.timeMenu = false"
+                      >
+                        OK
+                      </v-btn>
+                    </v-time-picker>
+                  </v-menu>
+                </v-col>
+              </v-row>
+              <v-text-field :label="column.name.toLowerCase()" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
+            </v-list-item-content>
+          </v-list-item>
         </v-list>
       </v-form>
+      <v-card-subtitle v-if="editableColumns.length === 0">No fields to edit.</v-card-subtitle>
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
@@ -135,14 +135,15 @@
   import _ from 'lodash'
   import moment from 'moment'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
-  import ViewEditText from '../Common/ViewEditText'
+  import ViewEditText from './ViewEditText'
   import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
-  import FeatureLayerField from './FeatureLayerField'
+  import FeatureLayerField from '../GeoPackage/FeatureLayerField'
 
   export default {
     props: {
       projectId: String,
-      geopackage: Object,
+      geopackagePath: String,
+      id: String,
       tableName: String,
       columns: Object,
       feature: Object,
@@ -150,6 +151,10 @@
       isEditing: {
         type: Boolean,
         default: false
+      },
+      isGeoPackage: {
+        type: Boolean,
+        default: true
       }
     },
     components: {
@@ -176,7 +181,7 @@
           if (_.isNil(this.columns) || _.isNil(this.columns._columns)) {
             return []
           }
-          const features = await GeoPackageUtilities.getAllFeatureRows(this.geopackage.path, this.tableName)
+          const features = await GeoPackageUtilities.getAllFeatureRows(this.geopackagePath, this.tableName)
           const properties = _.isNil(this.feature) ? {} : _.cloneDeep(this.feature.properties)
           const columns = this.columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id')
           const columnObjects = columns.map((column) => {
@@ -250,11 +255,12 @@
     methods: {
       ...mapActions({
         addFeatureToGeoPackage: 'Projects/addFeatureToGeoPackage',
-        synchronizeGeoPackage: 'Projects/synchronizeGeoPackage'
+        synchronizeGeoPackage: 'Projects/synchronizeGeoPackage',
+        synchronizeDataSource: 'Projects/synchronizeDataSource'
       }),
       async save () {
         if (this.isEditing) {
-          const filePath = this.geopackage.path
+          const filePath = this.geopackagePath
           const featureRow = await GeoPackageUtilities.getFeatureRow(filePath, this.tableName, this.feature.id)
           this.editableColumns.forEach(column => {
             let value = column.value
@@ -288,7 +294,11 @@
           })
           const result = await GeoPackageUtilities.updateFeatureRow(filePath, this.tableName, featureRow)
           if (result.changes > 0) {
-            this.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id})
+            if (this.isGeoPackage) {
+              this.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
+            } else {
+              this.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})
+            }
             this.close()
           } else if (result.error) {
             this.failedToSaveErrorMessage = result.error
@@ -328,7 +338,11 @@
               feature.properties[column.name] = value
             }
           })
-          this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, feature: feature})
+          if (this.isGeoPackage) {
+            this.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
+          } else {
+            // not supported - adding feature to data source
+          }
           this.close()
         }
       }

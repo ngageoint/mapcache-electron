@@ -249,7 +249,7 @@
                 </p>
               </v-col>
             </v-row>
-            <v-row no-gutters v-if="source.pane === 'vector'">
+            <v-row no-gutters justify="space-between" v-if="source.pane === 'vector'">
               <v-col>
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Features
@@ -257,6 +257,15 @@
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{source.count}}
                 </p>
+              </v-col>
+              <v-col>
+                <v-row no-gutters justify="end">
+                  <v-btn class="btn-background" @click.stop="showFeatureTable">
+                    <v-icon left>
+                      mdi-table-eye
+                    </v-icon>View features
+                  </v-btn>
+                </v-row>
               </v-col>
             </v-row>
           </v-col>
@@ -283,7 +292,7 @@
 
 <script>
   import { mapActions, mapState } from 'vuex'
-  import { remote } from 'electron'
+  import { remote, ipcRenderer } from 'electron'
   import fs from 'fs'
   import path from 'path'
   import _ from 'lodash'
@@ -405,6 +414,9 @@
       },
       zoomToSource () {
         this.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
+      },
+      showFeatureTable () {
+        ipcRenderer.send('show_feature_table', this.source.id, this.source.sourceLayerName, false)
       }
     }
   }

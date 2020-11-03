@@ -25,6 +25,9 @@ ipcMain.on('process_source', (event, payload) => {
     event.sender.send('process_source_completed_' + id, result)
   })
 })
+ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
+  event.sender.send('show_feature_table', id, tableName, isGeoPackage)
+})
 ipcMain.on('cancel_process_source', (event, payload) => {
   WorkerPool.cancelProcessSource(payload.id).then(() => {
     event.sender.send('cancel_process_source_completed_' + payload.id)

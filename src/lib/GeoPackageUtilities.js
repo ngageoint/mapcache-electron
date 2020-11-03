@@ -1504,7 +1504,7 @@ export default class GeoPackageUtilities {
     const featureDao = gp.getFeatureDao(tableName)
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
     const feature = featureDao.queryForId(featureId)
-    const geometryType = GeometryType.fromName(feature.geometryType)
+    const geometryType = GeometryType.fromName(feature.geometryType.toUpperCase())
     if (iconId === -1) {
       return featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, geometryType, null)
     } else {
@@ -2046,14 +2046,12 @@ export default class GeoPackageUtilities {
   /**
    * Qeuries for features at a coordinate with a buffer based on zoom level
    * @param gp
-   * @param geopackageId
-   * @param geopackageName
    * @param tableName
    * @param coordinate
    * @param zoom
    * @returns {Object}
    */
-  static _queryForFeaturesAt (gp, geopackageId, geopackageName, tableName, coordinate, zoom) {
+  static _queryForFeaturesAt (gp, tableName, coordinate, zoom) {
     let features
     if (gp.getFeatureDao(tableName).isIndexed()) {
       features = gp.queryForGeoJSONFeaturesInTable(tableName, GeoPackageUtilities.getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom)).filter(feature => !_.isNil(feature))
@@ -2064,30 +2062,26 @@ export default class GeoPackageUtilities {
   /**
    * Queries for features at a coordinate with a buffer based on zoom level
    * @param filePath
-   * @param geopackageId
-   * @param geopackageName
    * @param tableName
    * @param coordinate
    * @param zoom
    * @returns {Promise<any>}
    */
-  static async queryForFeaturesAt (filePath, geopackageId, geopackageName, tableName, coordinate, zoom) {
+  static async queryForFeaturesAt (filePath, tableName, coordinate, zoom) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._queryForFeaturesAt(gp, geopackageId, geopackageName, tableName, coordinate, zoom)
+      return GeoPackageUtilities._queryForFeaturesAt(gp, tableName, coordinate, zoom)
     })
   }
 
   /**
    * Gets the count for the features near a coordinate based on zoom
    * @param gp
-   * @param geopackageId
-   * @param geopackageName
    * @param tableNames
    * @param coordinate
    * @param zoom
    * @returns {number}
    */
-  static _countOfFeaturesAt (gp, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+  static _countOfFeaturesAt (gp, tableNames, coordinate, zoom) {
     let count = 0
     for (let i = 0; i < tableNames.length; i++) {
       const tableName = tableNames[i]
@@ -2102,16 +2096,14 @@ export default class GeoPackageUtilities {
   /**
    * Gets the count for the features near a coordinate based on zoom
    * @param filePath
-   * @param geopackageId
-   * @param geopackageName
    * @param tableNames
    * @param coordinate
    * @param zoom
    * @returns {Promise<any>}
    */
-  static async countOfFeaturesAt (filePath, geopackageId, geopackageName, tableNames, coordinate, zoom) {
+  static async countOfFeaturesAt (filePath, tableNames, coordinate, zoom) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._countOfFeaturesAt(gp, geopackageId, geopackageName, tableNames, coordinate, zoom)
+      return GeoPackageUtilities._countOfFeaturesAt(gp, tableNames, coordinate, zoom)
     })
   }
 

@@ -205,13 +205,6 @@ const mutations = {
       tableName: tableName,
       showFeaturesTableEvent: 0
     })
-  },
-  showActiveGeoPackageFeatureLayerFeaturesTable (state, {projectId}) {
-    Vue.set(state[projectId], 'activeGeoPackage', {
-      geopackageId: state[projectId].activeGeoPackage.geopackageId,
-      tableName: state[projectId].activeGeoPackage.tableName,
-      showFeaturesTableEvent: state[projectId].activeGeoPackage.showFeaturesTableEvent + 1
-    })
   }
 }
 
@@ -234,8 +227,7 @@ const actions = {
       displayAddressSearchBar: true,
       activeGeoPackage: {
         geopackageId: undefined,
-        tableName: undefined,
-        showFeaturesTableEvent: 0
+        tableName: undefined
       }
     }
     commit('UIState/addProjectState', {projectId: project.id}, { root: true })
@@ -469,6 +461,16 @@ const actions = {
       })
     })
   },
+  removeFeatureFromDataSource ({ commit, state }, {projectId, sourceId, featureId}) {
+    const sourceCopy = _.cloneDeep(state[projectId].sources[sourceId])
+    const filePath = sourceCopy.geopackageFilePath
+    GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      GeoPackageUtilities._deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
+      sourceCopy.extent = GeoPackageUtilities._getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
+      sourceCopy.count = gp.getFeatureDao(sourceCopy.sourceLayerName).count()
+      commit('updateSource', {projectId, source: sourceCopy})
+    })
+  },
   deleteProject ({ commit, state }, project) {
     _.keys(state[project.id].sources).forEach(sourceId => {
       try {
@@ -531,14 +533,20 @@ const actions = {
       commit('setGeoPackage', {projectId, geopackage})
     })
   },
+  synchronizeDataSource ({ commit, state }, {projectId, sourceId}) {
+    const sourceCopy = _.cloneDeep(state[projectId].sources[sourceId])
+    const filePath = sourceCopy.geopackageFilePath
+    GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      sourceCopy.extent = GeoPackageUtilities._getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
+      sourceCopy.count = gp.getFeatureDao(sourceCopy.sourceLayerName).count()
+      commit('updateSource', {projectId, source: sourceCopy})
+    })
+  },
   setActiveGeoPackage ({ commit, state }, {projectId, geopackageId}) {
     commit('setActiveGeoPackage', {projectId, geopackageId})
   },
   setActiveGeoPackageFeatureLayer ({ commit, state }, {projectId, geopackageId, tableName}) {
     commit('setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
-  },
-  showActiveGeoPackageFeatureLayerFeaturesTable ({ commit, state }, {projectId}) {
-    commit('showActiveGeoPackageFeatureLayerFeaturesTable', {projectId})
   }
 }
 

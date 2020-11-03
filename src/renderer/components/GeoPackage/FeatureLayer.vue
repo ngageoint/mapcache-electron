@@ -454,6 +454,7 @@
 <script>
   import Vue from 'vue'
   import { mapActions } from 'vuex'
+  import { ipcRenderer } from 'electron'
   import _ from 'lodash'
   import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
   import ViewEditText from '../Common/ViewEditText'
@@ -587,8 +588,7 @@
         deleteGeoPackageFeatureTable: 'Projects/deleteGeoPackageFeatureTable',
         addGeoPackageFeatureTableColumn: 'Projects/addGeoPackageFeatureTableColumn',
         updateFeatureTable: 'Projects/updateFeatureTable',
-        zoomToExtent: 'Projects/zoomToExtent',
-        showActiveGeoPackageFeatureLayerFeaturesTable: 'Projects/showActiveGeoPackageFeatureLayerFeaturesTable'
+        zoomToExtent: 'Projects/zoomToExtent'
       }),
       async styleExtensionEnabled () {
         let hasStyle = false
@@ -677,7 +677,7 @@
         this.addFieldType = GeoPackageDataType.TEXT
       },
       showFeatureTable () {
-        this.showActiveGeoPackageFeatureLayerFeaturesTable({projectId: this.projectId})
+        ipcRenderer.send('show_feature_table', this.geopackage.id, this.tableName, true)
       }
     },
     watch: {

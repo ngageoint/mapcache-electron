@@ -10,7 +10,7 @@
           Delete feature
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete feature <b>{{featureToRemove.id}}</b> from the {{table.tableName}} feature layer? This action can't be undone.
+          Are you sure you want to delete feature <b>{{featureToRemove.id}}</b> from the {{sourceName}} data source? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -34,8 +34,8 @@
         :assignment="styleAssignment"
         :table-name="table.tableName"
         :project-id="projectId"
-        :id="geopackage.id"
-        :is-geo-package="true"
+        :id="source.id"
+        :is-geo-package="false"
         :close="closeStyleAssignment"/>
     </v-dialog>
     <v-data-table
@@ -114,7 +114,7 @@
       max-width="500"
       scrollable
       persistent>
-      <feature-editor v-if="editDialog" :projectId="projectId" :geopackage-path="geopackage.path" :id="geopackage.id" :tableName="table.tableName" :columns="editFeatureColumns" :feature="editFeature" :close="closeEditor" :is-editing="true"></feature-editor>
+      <feature-editor v-if="editDialog" :projectId="projectId" :is-geo-package="false" :geopackage-path="source.geopackageFilePath" :id="source.id" :tableName="table.tableName" :columns="editFeatureColumns" :feature="editFeature" :close="closeEditor" :is-editing="true"></feature-editor>
     </v-dialog>
   </v-sheet>
 </template>
@@ -131,7 +131,7 @@
   export default {
     props: {
       projectId: String,
-      geopackage: Object,
+      source: Object,
       table: Object,
       zoomToFeature: Function,
       close: Function
@@ -155,12 +155,15 @@
       }
     },
     computed: {
+      sourceName () {
+        return this.source.displayName ? this.source.displayName : this.source.name
+      },
       tableEntries () {
         return this.table.features.map(feature => {
           const item = {
-            key: feature.id + '_' + this.table.tableName + '_' + this.geopackage.name,
-            geopackage: this.geopackage.name,
-            geopackageId: this.geopackage.id,
+            key: feature.id + '_' + this.source.id,
+            source: this.sourceName,
+            sourceId: this.source.id,
             layer: this.table.tableName,
             id: feature.id,
             type: feature.geometry.type
@@ -212,12 +215,12 @@
     },
     methods: {
       ...mapActions({
-        removeFeatureFromGeopackage: 'Projects/removeFeatureFromGeopackage'
+        removeFeatureFromDataSource: 'Projects/removeFeatureFromDataSource'
       }),
       editItem (item) {
         const self = this
         this.editFeature = this.table.features.find(feature => feature.id === item.id)
-        GeoPackageUtilities.getFeatureColumns(this.geopackage.path, this.table.tableName).then(columns => {
+        GeoPackageUtilities.getFeatureColumns(this.source.geopackageFilePath, this.table.tableName).then(columns => {
           self.editFeatureColumns = columns
           self.editDialog = true
         })
@@ -232,7 +235,7 @@
       },
       remove () {
         if (!_.isNil(this.featureToRemove)) {
-          this.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.table.tableName, featureId: this.featureToRemove.id})
+          this.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.source.id, featureId: this.featureToRemove.id})
           this.table.features = this.table.features.filter(f => f.id !== this.featureToRemove.id)
           if (this.table.features.length === 0) {
             this.close()
@@ -242,7 +245,7 @@
         }
       },
       async showStyleAssignment (item) {
-        this.styleAssignment = await GeoPackageUtilities.getStyleItemsForFeature(this.geopackage.path, this.table.tableName, item.id)
+        this.styleAssignment = await GeoPackageUtilities.getStyleItemsForFeature(this.source.geopackageFilePath, this.table.tableName, item.id)
         this.assignStyleDialog = true
       },
       closeStyleAssignment () {
@@ -258,7 +261,7 @@
       },
       handleClick (value) {
         if (!this.removeDialog) {
-          this.zoomToFeature(this.geopackage.path, value.layer, value.id)
+          this.zoomToFeature(this.source.geopackageFilePath, value.layer, value.id)
         }
       }
     }

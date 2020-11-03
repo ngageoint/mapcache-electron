@@ -30,7 +30,7 @@
         v-for="table in sourceTables"
         :key="table.id"
       >
-        TODO
+        <data-source-feature-table :project-id="projectId" :source="sources[table.sourceId]" :table="table" :close="() => removeSourceTab(table.id)" :zoom-to-feature="zoomToFeature"></data-source-feature-table>
       </v-tab-item>
     </v-tabs-items>
   </v-sheet>
@@ -38,10 +38,12 @@
 
 <script>
   import GeoPackageFeatureTable from '../GeoPackage/GeoPackageFeatureTable'
+  import DataSourceFeatureTable from '../DataSources/DataSourceFeatureTable'
 
   export default {
     components: {
-      GeoPackageFeatureTable
+      GeoPackageFeatureTable,
+      DataSourceFeatureTable
     },
     props: {
       projectId: String,
