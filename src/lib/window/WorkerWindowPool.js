@@ -53,6 +53,7 @@ class WorkerWindowPool {
             workerWindow.available = true
             resolve()
           })
+          workerWindow.window.toggleDevTools()
         })
         workerWindow.window.destroy()
       } else {

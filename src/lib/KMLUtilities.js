@@ -1,11 +1,11 @@
 import path from 'path'
-import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
-import GDALUtilities from './GDALUtilities'
 import { select } from 'xpath'
 import fs from 'fs'
-import request from 'request'
+import superagent from 'superagent'
 import { remote } from 'electron'
 import FileUtilities from './FileUtilities'
+import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
+import GDALUtilities from './GDALUtilities'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir) => {
@@ -26,27 +26,12 @@ export default class KMLUtilities {
         let iconPath = groundOverlayDOM.getElementsByTagNameNS('*', 'href')[0].childNodes[0].nodeValue
         let errored = false
         if (iconPath.startsWith('http')) {
-          let options = {
-            method: 'GET',
-            uri: iconPath,
-            encoding: null,
-            headers: {
-              'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
-            }
-          }
           try {
             let fullFile = path.join(sourceCacheDir, path.basename(iconPath))
-            let body = await new Promise(function (resolve, reject) {
-              // Do async job
-              request(options, function (err, resp, body) {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve(body)
-                }
-              })
-            })
-            const buffer = Buffer.from(body, 'utf8')
+            let request = await superagent.get(iconPath)
+            request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
+            const response = await request.buffer(true).parse(superagent.parse.image)
+            const buffer = Buffer.from(response.body, 'utf8')
             fs.writeFileSync(fullFile, buffer)
             iconPath = path.basename(iconPath)
             iconBaseDir = sourceCacheDir

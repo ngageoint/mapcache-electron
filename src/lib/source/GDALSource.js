@@ -1,5 +1,5 @@
 import Source from './Source'
-import gdal from 'gdal-next'
+import gdal from 'gdal'
 import fs from 'fs'
 import GeoTiffLayer from './layer/tile/GeoTiffLayer'
 import path from 'path'

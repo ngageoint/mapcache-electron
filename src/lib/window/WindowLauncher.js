@@ -90,11 +90,10 @@ class WindowLauncher {
       useContentSize: true
     }
     this.projectWindow = new BrowserWindow(windowOptions)
-    this.projectWindow.on('close', (e) => {
+    this.projectWindow.on('close', () => {
       if (!this.isShuttingDown) {
-        e.preventDefault()
-        this.projectWindow.hide()
         this.mainWindow.show()
+        this.launchProjectWindow()
       }
     })
   }

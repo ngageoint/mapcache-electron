@@ -1,6 +1,6 @@
 import Source from './Source'
 import {remote} from 'electron'
-import request from 'request-promise-native'
+import superagent from 'superagent'
 import path from 'path'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
@@ -40,34 +40,22 @@ export default class WFSSource extends Source {
 
   getFeaturesInLayer (layer) {
     return new Promise((resolve) => {
-      let options = {
-        method: 'GET',
-        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version),
-        encoding: null,
-        gzip: true,
-        headers: {
-          'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
-        }
+      let request = superagent.get(GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version))
+      request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
+      if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
+        request.set('Authorization', this.credentials.authorization)
       }
-      if (this.credentials) {
-        if (this.credentials.type === 'basic' || this.credentials.type === 'bearer') {
-          if (!options.headers) {
-            options.headers = {}
+      request.accept('json').then(res => {
+        let featureCollection = res.body
+        if (_.isNil(featureCollection)) {
+          featureCollection = {
+            type: 'FeatureCollection',
+            features: []
           }
-          options.headers['Authorization'] = this.credentials.authorization
         }
-      }
-      request(options, (error, response, body) => {
-        if (!error) {
-          let featureCollection = JSON.parse(body)
-          if (_.isNil(featureCollection)) {
-            featureCollection = {
-              type: 'FeatureCollection',
-              features: []
-            }
-          }
-          resolve(featureCollection.features.filter(f => f !== undefined))
-        }
+        resolve(featureCollection.features.filter(f => f !== undefined))
+      }).catch(err => {
+        console.error(err)
       })
     })
   }

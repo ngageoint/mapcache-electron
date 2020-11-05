@@ -300,26 +300,10 @@
   import draggable from 'vuedraggable'
   import superagent from 'superagent'
   import { mapActions, mapState } from 'vuex'
-  import { parseString } from 'xml2js'
   import GeoServiceUtilities from '../../../lib/GeoServiceUtilities'
   import URLUtilities from '../../../lib/URLUtilities'
   import _ from 'lodash'
   import UniqueIDUtilities from '../../../lib/UniqueIDUtilities'
-
-  let parseXML = function (res, cb) {
-    res.text = ''
-    res.setEncoding('utf8')
-    res.on('data', function (chunk) {
-      res.text += chunk
-    })
-    res.on('end', function () {
-      try {
-        parseString(res.text, cb)
-      } catch (e) {
-        cb(e)
-      }
-    })
-  }
 
   export default {
     props: {
@@ -454,7 +438,7 @@
                   request.set('Authorization', credentials.authorization)
                 }
                 try {
-                  result = (await request.accept('xml').buffer(true).parse(parseXML)).body
+                  result = (await request.accept('xml').buffer(true).parse(URLUtilities.parseXML)).body
                   break
                 } catch (e) {
                   if (e.response) {
@@ -500,7 +484,7 @@
                   request.set('Authorization', credentials.authorization)
                 }
                 try {
-                  result = (await request.accept('xml').buffer(true).parse(parseXML)).body
+                  result = (await request.accept('xml').buffer(true).parse(URLUtilities.parseXML)).body
                   break
                 } catch (e) {
                   if (e.response) {
