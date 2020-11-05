@@ -64,6 +64,7 @@ ipcMain.on('cancel_build_tile_layer', (event, payload) => {
 ipcMain.on('quick_download_geopackage', (event, payload) => {
   WindowLauncher.downloadURL(payload.url)
 })
-app.on('window-all-closed', () => {
-  WindowLauncher.launchMainWindow()
+app.on('before-quit', () => {
+  WorkerPool.quit()
+  WindowLauncher.quit()
 })

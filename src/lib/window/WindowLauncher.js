@@ -10,6 +10,21 @@ class WindowLauncher {
   projectWindow
   loadingWindow
   isShuttingDown = false
+  quitFromParent = false
+
+  quit () {
+    this.quitFromParent = true
+    this.isShuttingDown = true
+    if (!_.isNil(this.mainWindow)) {
+      this.mainWindow.destroy()
+    }
+    if (!_.isNil(this.projectWindow)) {
+      this.projectWindow.destroy()
+    }
+    if (!_.isNil(this.loadingWindow)) {
+      this.loadingWindow.destroy()
+    }
+  }
 
   launchMainWindow () {
     const winURL = process.env.NODE_ENV === 'development'
@@ -53,8 +68,15 @@ class WindowLauncher {
       this.mainWindow.show()
     })
     this.mainWindow.on('close', () => {
-      this.isShuttingDown = true
-      app.quit()
+      if (!this.quitFromParent) {
+        app.quit()
+      } else {
+        this.isShuttingDown = true
+        if (this.projectWindow !== null) {
+          this.projectWindow.destroy()
+        }
+        this.mainWindow = null
+      }
     })
   }
 
@@ -94,6 +116,8 @@ class WindowLauncher {
       if (!this.isShuttingDown) {
         this.mainWindow.show()
         this.launchProjectWindow()
+      } else {
+        this.projectWindow = null
       }
     })
   }

@@ -6,6 +6,12 @@ class WorkerWindowPool {
   workerWindows = []
   workerWindowAssignment = {}
 
+  quit () {
+    for (let i = 0; i < this.workerWindows.length; i++) {
+      this.workerWindows[i].window.destroy()
+    }
+  }
+
   launchWorkerWindows () {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
