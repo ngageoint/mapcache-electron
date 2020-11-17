@@ -36,7 +36,6 @@ module.exports = {
         appId: "mil.nga.mapcache",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
-        asar: false,
         directories: {
           buildResources: "buildResources"
         },
@@ -59,9 +58,28 @@ module.exports = {
         mac: {
           category: "public.app-category.productivity",
           target: [
-            "dmg"
+            "dmg",
+            "pkg"
           ],
           icon: "buildResources/icon.icns"
+        },
+        win: {
+          target: [
+            "portable"
+          ],
+          icon: "dist_electron/icon.png"
+        },
+        nsis: {
+          oneClick: false,
+          allowToChangeInstallationDirectory: true
+        },
+        linux: {
+          icon: "dist_electron/icons",
+          target: [
+            "deb",
+            "rpm",
+            "tar.gz"
+          ]
         }
       }
     }

@@ -10,8 +10,9 @@ These instructions were written for development on mac.
 
 You need a basic understanding of the following tools that you should install via package manager (brew, apt, etc.):  
 * git 2.25.0
-* npm 6.13.4
-* node 12.14.1
+* npm 6.14.4
+* yarn 0.21.3
+* node 12.16.3
 * Xcode 11.3 or greater
 
 # Building and Running MapCache Desktop
@@ -19,20 +20,20 @@ Once you have set up a development environment, these steps will let you build a
 1. Download the code:  
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
 2. Install dependencies:  
-`npm run install`
+`yarm`
 3. Run:  
-`npm run electron:serve` (run locally in development mode)
+`yarn electron:serve` (run locally in development mode)
 
 # Cleaning MapCache Desktop
 The MapCache Desktop build and runtime processes will generate several files. The following commands will help cleanup your environment.
 * Remove previously built resources:  
-`npm run build:clean`
+`rm -rf dist_electron`
 * To remove the MapCache Desktop development runtime application data:  
 `rm -rf ~/Library/Application\ Support/Electron`
 * To remove the MapCache Desktop production runtime application data:  
 `rm -rf ~/Library/Application\ Support/MapCache`
 * To remove all the client (javascript) dependencies installed by `npm run install` use:  
-`npm run cleanInstall`
+`rm -rf node_modules`
 
 # Debugging, Building, and Testing
 
@@ -47,13 +48,13 @@ The renderer processes can be debugged using the chrome developer tools.
 The following will help you create binaries for windows, linux, and macOS. Due to native libraries within the application, each build must occur on its specific platform.  
 
 1. Build Windows
-`npm run electron:build:windows`
+`yarn electron:build-win`
 2. Build Linux
-`npm run electron:build:linux`
+`yarn electron:build-linux`
 3. Build Mac
-`npm run electron:build:mac`
+`yarn electron:build-mac`
 4. Build All
-`npm run electron:build`
+`yarn electron:build`
 4. The newly created installers are located in the build folder:  
 `cd dist_electron`
 
