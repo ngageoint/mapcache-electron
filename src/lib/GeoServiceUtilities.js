@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import URLUtilities from './URLUtilities'
 import _ from 'lodash'
 export default class GeoServiceUtilities {

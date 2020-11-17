@@ -10,8 +10,8 @@ These instructions were written for development on mac.
 
 You need a basic understanding of the following tools that you should install via package manager (brew, apt, etc.):  
 * git 2.25.0
-* npm 6.14.8
-* node 10.23.0
+* npm 6.13.4
+* node 12.14.1
 * Xcode 11.3 or greater
 
 # Building and Running MapCache Desktop
@@ -20,10 +20,8 @@ Once you have set up a development environment, these steps will let you build a
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
 2. Install dependencies:  
 `npm run install`
-3. Build:  
-`npm run rebuild` (this will build gdal, canvas, and some other deps)
-4. Run:  
-`npm run dev` (run locally in development mode)
+3. Run:  
+`npm run electron:serve` (run locally in development mode)
 
 # Cleaning MapCache Desktop
 The MapCache Desktop build and runtime processes will generate several files. The following commands will help cleanup your environment.
@@ -49,16 +47,24 @@ The renderer processes can be debugged using the chrome developer tools.
 The following will help you create binaries for windows, linux, and macOS. Due to native libraries within the application, each build must occur on its specific platform.  
 
 1. Build Windows
-`npm run build:windows`
+`npm run electron:build:windows`
 2. Build Linux
-`npm run build:linux`
+`npm run electron:build:linux`
 3. Build Mac
-`npm run build:mac`
+`npm run electron:build:mac`
+4. Build All
+`npm run electron:build`
 4. The newly created installers are located in the build folder:  
-`cd build`
+`cd dist_electron`
 
-# Notarizing App
-During mac build, the app can be notarized by updating the .env file. Set the notarizeApp flag to true and specify the appleId and appleIdPassword. Note: the appleIdPassword must be an app specific password, which can be generated on your Apple ID account page.
+# Limitations and Notes
+It is worth noting that there are several libraries using native dependencies. The native depdencies are
+1. better-sqlite3
+2. node-gdal
+3. canvas
+
+Better-sqlite3 also has a dependency on the bindings library which currently has a bug preventing the loading on native libraries in electron 9. A pull request has been submitted but until bindings updates and better-sqlite3 updates to that version, `npm shrinkwrap` is used to inject a working version.
+
 
 ## Testing
 Any changes made in development should be tested in the production version of the application for all supported platforms.

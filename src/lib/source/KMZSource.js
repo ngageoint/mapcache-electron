@@ -27,12 +27,14 @@ export default class KMZSource extends Source {
              if (destinationFileName.endsWith('.kml')) {
                this.kmlFileName = destinationFileName
              }
-             mkdirp(path.dirname(destinationFilePath), function (err) {
-               if (err) reject(err);
+             try {
+               mkdirp.sync(path.dirname(destinationFilePath))
                jetpack.write(destinationFilePath, content)
                resolve()
-             });
-           });
+             } catch (e) {
+               reject(e)
+             }
+           })
          }
        } catch (e) {
          reject(e)

@@ -1,8 +1,7 @@
 import path from 'path'
 import { select } from 'xpath'
 import fs from 'fs'
-import superagent from 'superagent'
-import { remote } from 'electron'
+import axios from 'axios'
 import FileUtilities from './FileUtilities'
 import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
 import GDALUtilities from './GDALUtilities'
@@ -28,10 +27,8 @@ export default class KMLUtilities {
         if (iconPath.startsWith('http')) {
           try {
             let fullFile = path.join(sourceCacheDir, path.basename(iconPath))
-            let request = await superagent.get(iconPath)
-            request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
-            const response = await request.buffer(true).parse(superagent.parse.image)
-            const buffer = Buffer.from(response.body, 'utf8')
+            const response = axios.get(iconPath, {responseType: 'arraybuffer'})
+            const buffer = Buffer.from(response.data, 'binary')
             fs.writeFileSync(fullFile, buffer)
             iconPath = path.basename(iconPath)
             iconBaseDir = sourceCacheDir

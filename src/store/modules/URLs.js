@@ -32,10 +32,10 @@ const mutations = {
 }
 
 const actions = {
-  addUrl ({commit, state}, url) {
+  addUrl ({commit}, url) {
     commit('addUrl', url)
   },
-  removeUrl ({commit, state}, url) {
+  removeUrl ({commit}, url) {
     commit('removeUrl', url)
   }
 }

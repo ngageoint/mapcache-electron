@@ -31,16 +31,16 @@ const mutations = {
 }
 
 const actions = {
-  addProjectState ({ commit, state }, id) {
+  addProjectState ({ commit }, id) {
     commit('addProjectState', id)
   },
-  setProjectExtents ({ commit, state }, {projectId, extents}) {
+  setProjectExtents ({ commit }, {projectId, extents}) {
     commit('setProjectExtents', {projectId, extents})
   },
-  deleteProject ({ commit, state }, projectId) {
+  deleteProject ({ commit }, projectId) {
     commit('deleteProject', projectId)
   },
-  setDarkTheme ({ commit, state }, {projectId, enabled}) {
+  setDarkTheme ({ commit }, {projectId, enabled}) {
     commit('setDarkTheme', {projectId, enabled})
   }
 }

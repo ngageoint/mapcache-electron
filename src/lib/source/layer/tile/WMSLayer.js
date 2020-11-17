@@ -1,6 +1,5 @@
 import proj4 from 'proj4'
-import superagent from 'superagent'
-import { remote } from 'electron'
+import axios from 'axios'
 import GeoServiceUtilities from '../../../GeoServiceUtilities'
 import TileLayer from './TileLayer'
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
@@ -66,13 +65,18 @@ export default class WMSLayer extends TileLayer {
       referenceSystemName = 'crs'
     }
 
-    let request = superagent.get(GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version))
-    request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
-    if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
-      request.set('Authorization', this.credentials.authorization)
+    let headers = {}
+    let credentials = this.credentials
+    if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
+      headers['authorization'] = credentials.authorization
     }
-    const response = await request
-    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.body).toString('base64'))
+    const response = await axios({
+      method: 'get',
+      responseType: 'arraybuffer',
+      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version),
+      headers: headers
+    })
+    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))
     return response.body
   }
 }

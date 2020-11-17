@@ -1,5 +1,4 @@
 import Layer from '../Layer'
-import * as vtpbf from 'vt-pbf'
 import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
 import GeoPackageUtilities from '../../../GeoPackageUtilities'
 
@@ -12,7 +11,6 @@ import GeoPackageUtilities from '../../../GeoPackageUtilities'
 export default class VectorLayer extends Layer {
   _extent
   _vectorTileRenderer
-  _tileIndex
   _geopackageFilePath
   _features
   _layerKey
@@ -66,13 +64,6 @@ export default class VectorLayer extends Layer {
     }
   }
 
-  get featureCollection () {
-    return {
-      type: 'FeatureCollection',
-      features: this._features
-    }
-  }
-
   get count () {
     return this._features.length
   }
@@ -90,20 +81,5 @@ export default class VectorLayer extends Layer {
 
   async renderTile (coords, tileCanvas, done) {
     return this.vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
-  }
-
-  getTile (coords) {
-    return new Promise((resolve) => {
-      let gjvt = {}
-      Object.keys(this._tileIndex).forEach(key => {
-        let tile = this._tileIndex[key].getTile(coords.z, coords.x, coords.y)
-        if (tile) {
-          gjvt[key] = tile
-        } else {
-          gjvt[key] = {features: []}
-        }
-      })
-      resolve(vtpbf.fromGeojsonVt(gjvt))
-    })
   }
 }

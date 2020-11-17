@@ -1,5 +1,5 @@
 import * as Vendor from '../../vendor'
-import superagent from 'superagent'
+import axios from 'axios'
 
 export default class XYZServerLayer {
   static constructMapLayer (layerModel) {
@@ -19,25 +19,29 @@ export default class XYZServerLayer {
           this.headers = headers
         },
         createTile (coords, done) {
-          const url = this.getTileUrl(coords)
           const img = document.createElement('img')
-          let getUrl = superagent.get(url)
-
+          let headers = {}
           for (let i = 0; i < this.headers.length; i++) {
-            getUrl = getUrl.set(this.headers[i].header, this.headers[i].value)
+            headers[this.headers[i].header.toLowerCase()] = this.headers[i].value
           }
-          getUrl.responseType('blob')
-            .then((response) => {
-              img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.body).toString('base64')
-              done(null, img)
-            })
+          axios({
+            method: 'get',
+            url: this.getTileUrl(coords),
+            responseType: 'arraybuffer',
+            headers: headers
+          }).then((response) => {
+            img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
+            done(null, img)
+          })
+          .catch((err) => {
+            console.error(err)
+          })
           return img
         }
       })
       let tileLayerWithHeaders = function (url, options, headers) {
         return new TileLayerWithHeaders(url, options, headers)
       }
-      console.log(layerModel.filePath)
       mapLayer = tileLayerWithHeaders(layerModel.filePath, options, headers)
     } else {
       mapLayer = Vendor.L.tileLayer(layerModel.filePath, options)

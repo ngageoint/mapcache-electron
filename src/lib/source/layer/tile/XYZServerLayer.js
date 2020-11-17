@@ -1,6 +1,5 @@
-import { remote } from 'electron'
-import superagent from 'superagent'
 import TileLayer from './TileLayer'
+import axios from 'axios'
 
 export default class XYZServerLayer extends TileLayer {
   async initialize () {
@@ -33,13 +32,18 @@ export default class XYZServerLayer extends TileLayer {
     }
     let ctx = tileCanvas.getContext('2d')
     ctx.clearRect(0, 0, tileCanvas.width, tileCanvas.height)
-    let request = superagent.get(this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y))
-    request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
-    if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
-      request.set('Authorization', this.credentials.authorization)
+    let headers = {}
+    let credentials = this.credentials
+    if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
+      headers['authorization'] = credentials.authorization
     }
-    const response = await request
-    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.body).toString('base64'))
+    const response = await axios({
+      method: 'get',
+      responseType: 'arraybuffer',
+      url: this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y),
+      headers: headers
+    })
+    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))
     return response.body
   }
 }

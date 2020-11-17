@@ -62,7 +62,7 @@ export default class GeoTiffRenderer {
 
     let reprojectedFile = this.reproject(this.layer.ds, 3857, tileCutline, srcCutline, srcBands, dstBands, this.layer.alphaBand, tile.width, tile.height)
 
-    let result = this.populateTargetData(targetData, reprojectedFile, tile.width, tile.height, true)
+    let result = this.populateTargetData(targetData, reprojectedFile, tile.width, tile.height)
 
     reprojectedFile.close()
     ctx.clearRect(0, 0, tile.width, tile.height)
@@ -104,7 +104,7 @@ export default class GeoTiffRenderer {
     return stretchedValue
   }
 
-  populateTargetData (targetData, ds, width, height, log) {
+  populateTargetData (targetData, ds, width, height) {
     let result = {
       hasAlpha: false,
       blank: true
@@ -332,7 +332,7 @@ export default class GeoTiffRenderer {
     return cutline
   }
 
-  gdalInfo (ds, image) {
+  gdalInfo (ds) {
     let info = ''
     let size = ds.rasterSize
     if (ds.rasterSize) {

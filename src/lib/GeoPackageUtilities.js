@@ -18,7 +18,6 @@ import moment from 'moment'
 import reproject from 'reproject'
 import path from 'path'
 import fs from 'fs'
-import geojsonExtent from '@mapbox/geojson-extent'
 import VectorStyleUtilities from './VectorStyleUtilities'
 import XYZTileUtilities from './XYZTileUtilities'
 import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
@@ -210,7 +209,7 @@ export default class GeoPackageUtilities {
         columns.push(FeatureColumn.createColumn(columnCount++, column.name, GeoPackageDataType.fromName(column.dataType), column.notNull, column.defaultValue))
       }
     }
-    let extent = geojsonExtent(featureCollection)
+    let extent = bbox(featureCollection)
     let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
     gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
     if (addFeatures) {
@@ -290,6 +289,7 @@ export default class GeoPackageUtilities {
     const filename = path.basename(filePath)
     const geopackage = {
       id: UniqueIDUtilities.createUniqueID(),
+      modifiedDate: FileUtilities.getLastModifiedDate(filePath),
       size: FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size),
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
@@ -1588,7 +1588,7 @@ export default class GeoPackageUtilities {
     const featureRow = featureDao.queryForId(featureRowId)
     if (featureRow) {
       const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, featureDao.srs)
-      extent = geojsonExtent(feature)
+      extent = bbox(feature)
     }
     return extent
   }
@@ -1629,7 +1629,7 @@ export default class GeoPackageUtilities {
       type: 'FeatureCollection',
       features: features
     }
-    const extent = geojsonExtent(featureCollection)
+    const extent = bbox(featureCollection)
     contents.min_x = extent[0]
     contents.min_y = extent[1]
     contents.max_x = extent[2]
@@ -2238,7 +2238,7 @@ export default class GeoPackageUtilities {
       }
 
       const featureCount = featureCollection.features.length
-      let extent = geojsonExtent(featureCollection)
+      let extent = bbox(featureCollection)
       let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
 
       status.progress = 30.0

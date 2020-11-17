@@ -1,20 +1,9 @@
 import _ from 'lodash'
-import { parseString } from 'xml2js'
+import { parseStringPromise } from 'xml2js'
 
 export default class URLUtilities {
-  static parseXML = function (res, cb) {
-    res.text = ''
-    res.setEncoding('utf8')
-    res.on('data', function (chunk) {
-      res.text += chunk
-    })
-    res.on('end', function () {
-      try {
-        parseString(res.text, cb)
-      } catch (e) {
-        cb(e)
-      }
-    })
+  static parseXMLString = function (text) {
+    return parseStringPromise(text)
   }
   static getBaseUrlAndQueryParams (url) {
     let query = ''

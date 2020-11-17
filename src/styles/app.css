@@ -88,3 +88,13 @@
 	border-radius: 10px;
 	border: 2px solid var(--v-scroll_track-base);
 }
+.alert-position {
+	position: absolute;
+	margin-left: auto;
+	margin-right: auto;
+	left: calc(((100% - 456px) / 2) + 456px - ((100% - 456px) / 4));
+	width: calc(((100% - 456px) / 2));
+	text-align: center;
+	top: 16px;
+	z-index: 20;
+}

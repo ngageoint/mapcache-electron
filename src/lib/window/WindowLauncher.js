@@ -1,9 +1,9 @@
 import {app, BrowserWindow, Menu, shell} from 'electron'
-import WindowState from './WindowState'
-// import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
+
+const isMac = process.platform === 'darwin'
 
 class WindowLauncher {
   mainWindow
@@ -11,6 +11,10 @@ class WindowLauncher {
   loadingWindow
   isShuttingDown = false
   quitFromParent = false
+
+  isWindowVisible () {
+    return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
+  }
 
   quit () {
     this.quitFromParent = true
@@ -28,8 +32,8 @@ class WindowLauncher {
 
   launchMainWindow () {
     const winURL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:9080`
-      : `file://${__dirname}/index.html`
+      ? `${process.env.WEBPACK_DEV_SERVER_URL}`
+      : `app://./index.html`
 
     const menu = Menu.buildFromTemplate(this.getMenuTemplate())
     Menu.setApplicationMenu(menu)
@@ -50,20 +54,19 @@ class WindowLauncher {
     // }
     let windowOptions = {
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+        enableRemoteModule: true
       },
       show: false,
-      width: 920,
+      width: 940,
       height: 665,
       minHeight: 665,
-      minWidth: 700
+      minWidth: 720
     }
     this.mainWindow = new BrowserWindow(windowOptions)
     this.mainWindow.setMenu(menu)
     // mainWindowState.track(this.mainWindow)
-    this.mainWindow.loadURL(winURL)
-    this.mainWindow.on('ready-to-show', () => {
+    this.loadContent(this.mainWindow, winURL, () => {
       this.loadingWindow.hide()
       this.mainWindow.show()
     })
@@ -80,29 +83,34 @@ class WindowLauncher {
     })
   }
 
+  loadContent (window, url, onFulfilled = () => {}) {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      console.error(e)
+    })
+  }
+
   launchLoaderWindow () {
-    const winURL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:9080/static/loader.html`
-      : `file://${__dirname}/../../../static/loader.html`
+    const winURL = process.env.WEBPACK_DEV_SERVER_URL
+      ? `${process.env.WEBPACK_DEV_SERVER_URL}/loader.html`
+      : `app://./loader.html`
     let windowOptions = {
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
-      },
       frame: false,
-      width: 264,
-      height: 264,
-      transparent: true
+      width: 256,
+      height: 256,
+      transparent: false,
+      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
     }
     this.loadingWindow = new BrowserWindow(windowOptions)
-    this.loadingWindow.loadURL(winURL)
+    setTimeout(() => {
+      this.loadContent(this.loadingWindow, winURL)
+    }, 0)
   }
 
   launchProjectWindow () {
     let windowOptions = {
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+        enableRemoteModule: true
       },
       show: false,
       width: 1200,
@@ -130,22 +138,27 @@ class WindowLauncher {
     }
   }
 
+  closeProject() {
+    if (this.projectWindow !== null) {
+      this.projectWindow.close()
+    }
+  }
+
   showProject (projectId) {
     try {
-      const winURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${projectId}#/project`
-        : `file://${__dirname}/index.html?id=${projectId}#project`
+      const winURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}/?id=${projectId}#/project`
+        : `app://./index.html?id=${projectId}#project`
 
-      const projectWindowState = new WindowState('project-' + projectId)
-      let windowState = _.clone(projectWindowState.retrieveState())
-      if (windowState) {
-        if (windowState.width && windowState.height) {
-          this.projectWindow.setSize(windowState.width, windowState.height)
-        }
-      }
-      projectWindowState.track(this.projectWindow)
-      this.projectWindow.loadURL(winURL)
-      this.projectWindow.on('ready-to-show', () => {
+      // const projectWindowState = new WindowState('project-' + projectId)
+      // let windowState = _.clone(projectWindowState.retrieveState())
+      // if (windowState) {
+      //   if (windowState.width && windowState.height) {
+      //     this.projectWindow.setSize(windowState.width, windowState.height)
+      //   }
+      // }
+      // projectWindowState.track(this.projectWindow)
+      this.loadContent(this.projectWindow, winURL, () => {
         this.projectWindow.show()
         this.mainWindow.send('show-project-completed')
         setTimeout(() => {
@@ -159,39 +172,10 @@ class WindowLauncher {
 
   getMenuTemplate () {
     const viewSubmenu = [
-      {
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click: function (item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.reload()
-          }
-        }
-      },
-      {
-        label: 'Toggle Full Screen',
-        accelerator: (function () {
-          if (process.platform === 'darwin') {
-            return 'Ctrl+Command+F'
-          } else {
-            return 'F11'
-          }
-        })(),
-        click: function (item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.setFullScreen(!focusedWindow.isFullScreen())
-          }
-        }
-      },
-      {
-        label: 'Toggle Developer Tools',
-        accelerator: (function () {
-          if (process.platform === 'darwin') { return 'Alt+Command+I' } else { return 'Ctrl+Shift+I' }
-        })(),
-        click: function (item, focusedWindow) {
-          if (focusedWindow) { focusedWindow.toggleDevTools() }
-        }
-      }
+      { role: 'reload' },
+      { role: 'forcereload' },
+      { role: 'togglefullscreen' },
+      { role: 'toggledevtools' }
     ]
 
     const template = [
@@ -239,7 +223,7 @@ class WindowLauncher {
       }
     ]
 
-    if (process.platform === 'darwin') {
+    if (isMac) {
       template.unshift({
         label: 'MapCache',
         submenu: [

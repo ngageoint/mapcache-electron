@@ -12,19 +12,26 @@ class WorkerWindowPool {
     }
   }
 
+  loadContent (window, url, onFulfilled = () => {}) {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      console.error(e)
+    })
+  }
+
   launchWorkerWindows () {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
-      const workerURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${id}#/worker`
-        : `file://${__dirname}/index.html?id=${id}#worker`
+      const workerURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
+        : `app://./index.html?id=${id}#worker`
 
       let worker = {
         id: id,
         window: new BrowserWindow({
           show: false,
           webPreferences: {
-            nodeIntegration: true
+            nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+            enableRemoteModule: true,
           }
         }),
         available: false
@@ -32,7 +39,7 @@ class WorkerWindowPool {
       worker.window.toggleDevTools()
       // worker.window.toggleDevTools()
       this.workerWindows.push(worker)
-      worker.window.loadURL(workerURL)
+      this.loadContent(worker.window, workerURL)
       worker.window.on('ready-to-show', () => {
         worker.available = true
       })
@@ -48,13 +55,14 @@ class WorkerWindowPool {
           workerWindow.window = new BrowserWindow({
             show: false,
             webPreferences: {
-              nodeIntegration: true
+              nodeIntegration: true,
+              enableRemoteModule: true
             }
           })
           const workerURL = process.env.NODE_ENV === 'development'
             ? `http://localhost:9080/?id=${id}#/worker`
-            : `file://${__dirname}/index.html?id=${id}#worker`
-          workerWindow.window.loadURL(workerURL)
+            : `app://./index.html?id=${id}#worker`
+          this.loadContent(workerWindow.window, workerURL)
           workerWindow.window.on('ready-to-show', () => {
             workerWindow.available = true
             resolve()
@@ -95,8 +103,8 @@ class WorkerWindowPool {
   }
 
   async executeProcessSource (payload) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
+    const workerWindow = await this.getOrWaitForAvailableWorker()
+    return new Promise(resolve => {
       this.workerWindowAssignment[payload.source.id] = workerWindow
       workerWindow.window.webContents.send('worker_process_source', payload)
       ipcMain.once('worker_process_source_completed_' + workerWindow.id, (event, result) => {
@@ -126,8 +134,8 @@ class WorkerWindowPool {
   }
 
   async executeBuildFeatureLayer (payload, statusCallback) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
+    const workerWindow = await this.getOrWaitForAvailableWorker()
+    return new Promise(resolve => {
       this.workerWindowAssignment[payload.configuration.id] = workerWindow
       workerWindow.window.webContents.send('worker_build_feature_layer', payload)
       ipcMain.once('worker_build_feature_layer_completed_' + workerWindow.id, (event, result) => {
@@ -166,8 +174,8 @@ class WorkerWindowPool {
   }
 
   async executeBuildTileLayer (payload, statusCallback) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
+    const workerWindow = await this.getOrWaitForAvailableWorker()
+    return new Promise(resolve => {
       this.workerWindowAssignment[payload.configuration.id] = workerWindow
       workerWindow.window.webContents.send('worker_build_tile_layer', payload)
       ipcMain.once('worker_build_tile_layer_completed_' + workerWindow.id, (event, result) => {

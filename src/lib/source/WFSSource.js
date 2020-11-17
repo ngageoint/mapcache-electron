@@ -1,6 +1,5 @@
 import Source from './Source'
-import {remote} from 'electron'
-import superagent from 'superagent'
+import axios from 'axios'
 import path from 'path'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
@@ -39,14 +38,18 @@ export default class WFSSource extends Source {
   }
 
   getFeaturesInLayer (layer) {
-    return new Promise((resolve) => {
-      let request = superagent.get(GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version))
-      request.set('User-Agent', remote.getCurrentWebContents().session.getUserAgent())
-      if (this.credentials && (this.credentials.type === 'basic' || this.credentials.type === 'bearer')) {
-        request.set('Authorization', this.credentials.authorization)
+    return new Promise( (resolve) => {
+      let headers = {}
+      let credentials = this.credentials
+      if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
+        headers['authorization'] = credentials.authorization
       }
-      request.accept('json').then(res => {
-        let featureCollection = res.body
+      axios({
+        method: 'get',
+        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version),
+        headers: headers
+      }).then(response => {
+        let featureCollection = response.data
         if (_.isNil(featureCollection)) {
           featureCollection = {
             type: 'FeatureCollection',

@@ -16,6 +16,7 @@ export default class VectorStyleUtilities {
       name: iconName,
       description: '',
       contentType: 'image/png',
+      // eslint-disable-next-line no-undef
       data: fs.readFileSync(path.join(__static, 'map-marker.png'))
     }
   }
