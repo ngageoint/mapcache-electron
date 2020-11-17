@@ -10,7 +10,7 @@
     "test:e2e": "vue-cli-service test:e2e",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
-    "electron:build-mac": "vue-cli-service electron:build -- --mmac",
+    "electron:build-mac": "vue-cli-service electron:build -- --mac",
     "electron:build-win": "vue-cli-service electron:build -- --win portable nsis",
     "electron:build-linux": "vue-cli-service electron:build -- --linux",
     "build:dir": "node .electron-vue/build.js && electron-builder --dir",
