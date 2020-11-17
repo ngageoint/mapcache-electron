@@ -341,7 +341,7 @@
         dataSourceLayers: this.getDataSourceLayers(),
         tileScaling: false,
         minZoom: 0,
-        maxZoom: 20,
+        maxZoom: 10,
         tileWarningThreshold: 1000,
         sortedRenderingLayers: undefined,
         configuration: null,
