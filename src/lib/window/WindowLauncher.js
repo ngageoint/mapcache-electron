@@ -97,7 +97,7 @@ class WindowLauncher {
       frame: false,
       width: 256,
       height: 256,
-      transparent: false,
+      transparent: true,
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
     }
     this.loadingWindow = new BrowserWindow(windowOptions)
