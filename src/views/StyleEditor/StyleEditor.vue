@@ -77,19 +77,17 @@
       </v-dialog>
       <v-list class="pt-0">
         <v-list-group
-          v-for="item in styleListItems"
-          :key="item.title"
-          v-model="item.active"
-          :prepend-icon="item.action"
+          v-model="styleListItems.active"
+          :prepend-icon="styleListItems.action"
           no-action
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="item.title"></v-list-item-title>
+              <v-list-item-title v-text="styleListItems.title"></v-list-item-title>
             </v-list-item-content>
           </template>
           <v-list-item
-            v-for="style in item.items"
+            v-for="style in styleListItems.items"
             :key="style.id"
             link
             @click="() => showStyleEditor({
@@ -127,26 +125,22 @@
               </v-row>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="item.hint" key="style-hint">
+          <v-list-item v-if="styleListItems.hint" key="style-hint">
             <v-list-item-title>No styles found</v-list-item-title>
           </v-list-item>
         </v-list-group>
-      </v-list>
-      <v-list class="pt-0">
         <v-list-group
-          v-for="item in iconListItems"
-          :key="item.title"
-          v-model="item.active"
-          :prepend-icon="item.action"
+          v-model="iconListItems.active"
+          :prepend-icon="iconListItems.action"
           no-action
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="item.title"></v-list-item-title>
+              <v-list-item-title v-text="iconListItems.title"></v-list-item-title>
             </v-list-item-content>
           </template>
           <v-list-item
-            v-for="icon in item.items"
+            v-for="icon in iconListItems.items"
             :key="icon.id"
             link
             @click="() => showIconEditor(icon.iconRow)"
@@ -164,26 +158,22 @@
               </v-row>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="item.hint" key="icon-hint">
+          <v-list-item v-if="iconListItems.hint" key="icon-hint">
             <v-list-item-title>No icons found</v-list-item-title>
           </v-list-item>
         </v-list-group>
-      </v-list>
-      <v-list class="pt-0">
         <v-list-group
-          v-for="item in assignmentListItems"
-          :key="item.title"
-          v-model="item.active"
-          :prepend-icon="item.action"
+          v-model="assignmentListItems.active"
+          :prepend-icon="assignmentListItems.action"
           no-action
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="item.title"></v-list-item-title>
+              <v-list-item-title v-text="assignmentListItems.title"></v-list-item-title>
             </v-list-item-content>
           </template>
           <v-list-item
-            v-for="assignment in item.items"
+            v-for="assignment in assignmentListItems.items"
             :key="'assignment' + assignment.id"
             link
             @click="() => showStyleAssignment(assignment)">
@@ -230,7 +220,7 @@
               </v-row>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="item.hint" key="style-hint">
+          <v-list-item v-if="assignmentListItems.hint" key="style-hint">
             <v-list-item-title>No styles or icons to assign</v-list-item-title>
           </v-list-item>
         </v-list-group>
@@ -341,17 +331,20 @@
         styleListItems: {
           action: 'mdi-palette',
           items: [],
-          title: 'Styles'
+          title: 'Styles',
+          active: false
         },
         iconListItems: {
           action: 'mdi-map-marker',
           items: [],
-          title: 'Icons'
+          title: 'Icons',
+          active: false
         },
         assignmentListItems: {
           action: 'mdi-link-variant',
           items: [],
-          title: 'Feature Type Assignment'
+          title: 'Feature Type Assignment',
+          active: false
         },
         editIcon: null,
         editIconDialog: false,
