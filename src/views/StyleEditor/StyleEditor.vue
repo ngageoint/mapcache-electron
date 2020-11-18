@@ -83,7 +83,9 @@
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="styleListItems.title"></v-list-item-title>
+              <v-row no-gutters justify="start" align="center">
+                <span v-text="styleListItems.title"></span>
+              </v-row>
             </v-list-item-content>
           </template>
           <v-list-item
@@ -125,8 +127,15 @@
               </v-row>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="styleListItems.hint" key="style-hint">
-            <v-list-item-title>No styles found</v-list-item-title>
+          <v-list-item key="add-style-item">
+            <v-row no-gutters justify="space-between" align="center">
+              <span>{{styleListItems.hint ? 'No styles found' : ''}}</span>
+              <v-btn
+                @click.stop.prevent="addStyle"
+                color="primary">
+                <v-icon small class="mr-1">mdi-plus</v-icon> Add Style
+              </v-btn>
+            </v-row>
           </v-list-item>
         </v-list-group>
         <v-list-group
@@ -136,7 +145,9 @@
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="iconListItems.title"></v-list-item-title>
+              <v-row no-gutters justify="space-between" align="center">
+                <span v-text="iconListItems.title"></span>
+              </v-row>
             </v-list-item-content>
           </template>
           <v-list-item
@@ -158,8 +169,15 @@
               </v-row>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="iconListItems.hint" key="icon-hint">
-            <v-list-item-title>No icons found</v-list-item-title>
+          <v-list-item key="add-icon-item">
+            <v-row no-gutters justify="space-between" align="center">
+              <span>{{iconListItems.hint ? 'No icons found' : ''}}</span>
+              <v-btn
+                @click.stop.prevent="addIcon"
+                color="primary">
+                <v-icon small class="mr-1">mdi-plus</v-icon> Add Icon
+              </v-btn>
+            </v-row>
           </v-list-item>
         </v-list-group>
         <v-list-group
@@ -240,59 +258,6 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-    <v-speed-dial
-      v-if="!loading && hasStyleExtension"
-      class="fab-position"
-      v-model="fab"
-      transition="slide-y-reverse-transition"
-    >
-      <template v-slot:activator>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-model="fab"
-              color="primary"
-              fab
-              v-bind="attrs"
-              v-on="on"
-            >
-              <v-icon>mdi-plus</v-icon>
-            </v-btn>
-          </template>
-          <span>Add style or icon</span>
-        </v-tooltip>
-      </template>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            small
-            color="accent"
-            @click="addIcon"
-            v-bind="attrs"
-            v-on="on"
-          >
-            <v-icon>mdi-map-marker</v-icon>
-          </v-btn>
-        </template>
-        <span>Add icon</span>
-      </v-tooltip>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            small
-            color="accent"
-            @click="addStyle"
-            v-bind="attrs"
-            v-on="on"
-          >
-            <v-icon>mdi-palette</v-icon>
-          </v-btn>
-        </template>
-        <span>Add style</span>
-      </v-tooltip>
-    </v-speed-dial>
   </v-sheet>
 </template>
 
@@ -327,7 +292,6 @@
         updatingStyle: true,
         features: [],
         iconFeatures: [],
-        fab: false,
         styleListItems: {
           action: 'mdi-palette',
           items: [],
