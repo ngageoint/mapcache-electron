@@ -36,7 +36,9 @@ module.exports = {
         appId: "mil.nga.mapcache",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
-        asar: false,
+        asarUnpack: [
+          "node_modules/gdal/**/*"
+        ],
         directories: {
           buildResources: "buildResources"
         },
