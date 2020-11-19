@@ -67,7 +67,11 @@ module.exports = {
             "dmg",
             "pkg"
           ],
-          icon: "buildResources/icon.icns"
+          icon: "buildResources/icon.icns",
+          hardenedRuntime : true,
+          gatekeeperAssess: false,
+          entitlements: "buildResources/entitlements.mac.plist",
+          entitlementsInherit: "buildResources/entitlements.mac.plist"
         },
         win: {
           target: [
