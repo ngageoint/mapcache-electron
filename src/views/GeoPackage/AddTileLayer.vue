@@ -11,9 +11,10 @@
     <v-card flat tile class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
       <v-card-title>{{'Adding ' + layerName + ' Tile Layer'}}</v-card-title>
       <v-card-text>
-        <v-card-subtitle>{{status.message}}</v-card-subtitle>
-        <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
-                           :color="error ? 'warning' : 'primary'"></v-progress-linear>
+        <v-card-subtitle :class="index === 0 ? 'mt-2 mb-0 pa-0' : 'mt-1 mb-0 pa-0'" v-for="(text, index) in status.message.split('\n')" :key="index">
+          {{ text }}
+        </v-card-subtitle>
+        <v-progress-linear class="mt-4" :indeterminate="status.progress === -1" :value="error ? 100 : status.progress" :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
     <v-sheet v-else>

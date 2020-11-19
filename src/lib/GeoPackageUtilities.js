@@ -2559,7 +2559,7 @@ export default class GeoPackageUtilities {
         }
         tilesAdded += 1
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
-        status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '<br/>Time remaining: ' + GeoPackageUtilities.prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
+        status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nApprox. time remaining: ' + GeoPackageUtilities.prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
         throttleStatusCallback(status)
       })
