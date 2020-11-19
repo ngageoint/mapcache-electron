@@ -2326,11 +2326,11 @@ export default class GeoPackageUtilities {
     const seconds = Math.floor(msRemaining / 1000)
 
     if (days > 0) {
-      return days + ' days and ' + hours + ' hours'
+      return days + ' days, ' + hours + ' hours'
     } else if (hours > 0) {
-      return hours + ' hours and ' + minutes + ' minutes'
+      return hours + ' hours, ' + minutes + ' minutes'
     } else if (minutes > 0) {
-      return minutes + ' minutes and ' + seconds + ' seconds'
+      return minutes + ' minutes, ' + seconds + ' seconds'
     } else {
       return seconds + " seconds"
     }
@@ -2559,7 +2559,7 @@ export default class GeoPackageUtilities {
         }
         tilesAdded += 1
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
-        status.message = 'Generating tiles...\t' + tilesAdded + ' of ' + estimatedNumberOfTiles + ' tiles processed.\nEstimated time remaining: ' + GeoPackageUtilities.prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
+        status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nTime remaining: ' + GeoPackageUtilities.prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
         throttleStatusCallback(status)
       })
