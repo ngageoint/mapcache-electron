@@ -66,6 +66,21 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 4. The newly created installers are located in the build folder:  
 `cd dist_electron`
 
+# Notarization
+1. Build mac build
+`yarn electron:build-mac`
+2. Navigate to build folder
+`cd dist_electron`
+3. Ensure you have the Developer ID Application cert loaded into your keychain
+4. Submit .dmg and .pkg for notarization
+`xcrun altool --notarize-app -f MapCache-{version}.dmg --primary-bundle-id mil.nga.mapcache -u [apple developer id] --asc-provider [team id]`
+`xcrun altool --notarize-app -f MapCache-{version}.pkg --primary-bundle-id mil.nga.mapcache -u [apple developer id] --asc-provider [team id]`
+5. Check status of notarization (using requestUUID in previous command's response)
+`xcrun altool --notarization-info [requestUUID] -u [apple developer id]`
+6. Staple .dmg and .pkg once notarization completed (be on the lookout for an email)
+`xcrun stapler staple “MapCache-{version}.dmg”`
+`xcrun stapler staple “MapCache-{version}.pkg”`
+
 # Limitations and Notes
 It is worth noting that there are several libraries using native dependencies. The native depdencies are
 1. better-sqlite3

@@ -71,7 +71,9 @@ class WorkerWindowPool {
             workerWindow.available = true
             resolve()
           })
-          workerWindow.window.toggleDevTools()
+          if (process.env.WEBPACK_DEV_SERVER_URL) {
+            worker.window.toggleDevTools()
+          }
         })
         workerWindow.window.destroy()
       } else {
