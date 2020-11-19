@@ -113,7 +113,8 @@ export default class GeoServiceUtilities {
         layers.push(...this.getLayers(wmsCapability))
       }
     } catch (e) {
-      console.log(e)
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
     wmsInfo.layers = layers.filter(layer => layer.has3857)
     wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
@@ -131,7 +132,8 @@ export default class GeoServiceUtilities {
         layers.push(...this.getLayers(wmsCapability))
       }
     } catch (e) {
-      console.log(e)
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
     return layers
   }
@@ -192,7 +194,8 @@ export default class GeoServiceUtilities {
         }
       }
     } catch (e) {
-      console.log(e)
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
     wfsInfo.layers = layers
     return wfsInfo

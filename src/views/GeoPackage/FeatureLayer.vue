@@ -575,11 +575,13 @@
         try {
           hasStyle = gp.featureStyleExtension.has(this.tableName)
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
         try {
           gp.close()
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
         return hasStyle

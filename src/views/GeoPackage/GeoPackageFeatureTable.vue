@@ -182,6 +182,7 @@
                 value = value.substring(0, 15) + '...'
               }
             } catch (e) {
+              // eslint-disable-next-line no-console
               console.error(e)
             }
             item[key.toLowerCase() + '_table'] = value

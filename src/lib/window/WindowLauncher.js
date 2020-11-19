@@ -1,4 +1,5 @@
 import {app, BrowserWindow, Menu, shell} from 'electron'
+import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
@@ -38,21 +39,9 @@ class WindowLauncher {
     const menu = Menu.buildFromTemplate(this.getMenuTemplate())
     Menu.setApplicationMenu(menu)
 
-    // const mainWindowState = new WindowState('main')
-    // let windowOptions = mainWindowState.retrieveState()
-    // windowOptions.title = 'MapCache'
-    // windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
-    // if (_.isNil(windowOptions.minHeight) || windowOptions.minHeight < 600) {
-    //   windowOptions.minHeight = 600
-    // }
-    // if (_.isNil(windowOptions.minWidth) || windowOptions.minWidth < 665) {
-    //   windowOptions.minHeight = 665
-    // }
-    // windowOptions.webPreferences = {
-    //   nodeIntegration: true,
-    //   contextIsolation: false
-    // }
     let windowOptions = {
+      title: 'MapCache',
+      icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
         enableRemoteModule: true
@@ -85,6 +74,7 @@ class WindowLauncher {
 
   loadContent (window, url, onFulfilled = () => {}) {
     window.loadURL(url).then(onFulfilled).catch((e) => {
+      // eslint-disable-next-line no-console
       console.error(e)
     })
   }
@@ -108,9 +98,12 @@ class WindowLauncher {
 
   launchProjectWindow () {
     let windowOptions = {
+      title: 'MapCache',
+      icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-        enableRemoteModule: true
+        enableRemoteModule: true,
+        webSecurity: false
       },
       show: false,
       width: 1200,
@@ -134,6 +127,7 @@ class WindowLauncher {
     try {
       await download(this.projectWindow, fileUrl(url))
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
   }
@@ -166,6 +160,7 @@ class WindowLauncher {
         }, 250)
       })
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e)
     }
   }

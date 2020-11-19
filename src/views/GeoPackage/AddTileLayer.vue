@@ -56,7 +56,6 @@
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
                   <template v-for="(item, i) in dataSourceLayers">
                     <v-list-item
-                      v-for="(item, i) in dataSourceLayers"
                       :key="`data-source-item-${i}`"
                       :value="item.id"
                       @click.stop="item.changeVisibility">
@@ -390,7 +389,7 @@
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
           tileScaling: this.tileScaling,
-          renderingOrder: this.sortedLayers
+          renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
         }
 
         ipcRenderer.once('build_tile_layer_completed_' + this.configuration.id, (event, result) => {

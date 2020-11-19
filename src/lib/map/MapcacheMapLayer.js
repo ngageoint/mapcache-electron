@@ -11,6 +11,7 @@ export default class MapcacheMapLayer extends vendor.L.GridLayer {
     try {
       this.options.layer.renderTile(coords, tile, done)
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('error', e)
     }
     return tile

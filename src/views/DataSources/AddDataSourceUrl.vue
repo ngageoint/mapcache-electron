@@ -406,7 +406,7 @@
           let headers = {}
           let credentials = this.getCredentials()
           if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
-            headers['authorization'] = credentials.authorization
+            headers['Authorization'] = credentials.authorization
           }
           if (!_.isNil(this.dataSourceUrl) && !_.isEmpty(this.dataSourceUrl) && !_.isNil(serviceType) && serviceType !== -1) {
             if (serviceType === 2) {
@@ -519,6 +519,7 @@
             }
           }
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error(e)
         }
         setTimeout(() => {

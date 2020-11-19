@@ -119,7 +119,7 @@
       createNewGeoPackage () {
         this.fab = false
         const geopackages = this.geopackages
-        remote.dialog.showSaveDialog((filePath) => {
+        remote.dialog.showSaveDialog().then(({filePath}) => {
           if (!_.isNil(filePath)) {
             if (!filePath.endsWith('.gpkg')) {
               filePath = filePath + '.gpkg'

@@ -1,5 +1,6 @@
 import Source from './Source'
 import { DOMParser } from 'xmldom'
+import URLUtilities  from '../URLUtilities'
 import * as ToGeoJSON from '@ccaldwell/togeojson'
 import fs from 'fs'
 import path from 'path'
@@ -7,10 +8,10 @@ import KMLUtilities from '../KMLUtilities'
 import VectorStyleUtilities from '../VectorStyleUtilities'
 import { imageSize } from 'image-size'
 import _ from 'lodash'
+import axios from 'axios'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
 import UniqueIDUtilities from '../UniqueIDUtilities'
-import http from 'http'
 import { GeometryType } from '@ngageoint/geopackage'
 import FileUtilities from '../FileUtilities'
 
@@ -102,21 +103,23 @@ export default class KMLSource extends Source {
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
-            const file = fs.createWriteStream(iconFile)
+            const writer = fs.createWriteStream(iconFile)
             await new Promise((resolve) => {
-              http.get(feature.properties.icon, (response) => {
-                if (response.statusCode === 200) {
-                  response.pipe(file)
-                  file.on('finish', () => {
-                    file.close()
-                    resolve()
-                  })
-                } else {
-                  fs.unlinkSync(iconFile)
+              return axios({
+                method: 'get',
+                url: feature.properties.icon,
+                responseType: 'arraybuffer'
+              })
+              .then(response => {
+                URLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                writer.on('finish', () => {
+                  writer.close()
                   resolve()
-                }
-              }).on('error', (err) => {
+                })
+              })
+              .catch(err => {
                 fs.unlinkSync(iconFile)
+                // eslint-disable-next-line no-console
                 console.error(err)
                 resolve()
               })
@@ -139,7 +142,9 @@ export default class KMLSource extends Source {
                 name: 'Icon #' + iconNumber
               }
             } catch (exception) {
+              // eslint-disable-next-line no-console
               console.error(exception)
+              // eslint-disable-next-line no-console
               fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {

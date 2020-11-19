@@ -38,6 +38,7 @@ export default class WMSLayer {
           done(null, img)
         })
         .catch((err) => {
+          // eslint-disable-next-line no-console
           console.error(err)
         })
         return img

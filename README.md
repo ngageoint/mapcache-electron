@@ -35,12 +35,20 @@ The MapCache Desktop build and runtime processes will generate several files. Th
 * To remove all the client (javascript) dependencies installed by `npm run install` use:  
 `rm -rf node_modules`
 
-# Debugging, Building, and Testing
+# Logging, Debugging, Building, and Testing
+
+## Logging
+The application uses https://www.npmjs.com/package/electron-log for logging.
+
+Log files can be found:
+1. on Linux: ~/.config/MapCache/logs/{process type}.log
+2. on macOS: ~/Library/Logs/MapCache/{process type}.log
+3. on Windows: %USERPROFILE%\AppData\Roaming\{app name}\logs\{process type}.log
+
+where `process type` can be one of `(renderer, main)`
 
 ## Debugging
 The application is broken up into a main process and renderer processes inside of electron. 
-
-The main process uses **port 5858** for debugging and you can use your IDE to connect.
 
 The renderer processes can be debugged using the chrome developer tools.
 

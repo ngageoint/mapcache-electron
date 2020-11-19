@@ -452,6 +452,7 @@
           fs.copyFileSync(oldPath, newPath)
           ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: newPath})
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error(e)
         }
         this.showCopiedAlert = true

@@ -987,10 +987,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@ngageoint/geopackage@4.0.0-beta.15":
-  version "4.0.0-beta.15"
-  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.15.tgz#6b7911ed1ddfceb3e657e7e317b1fdcf9db83901"
-  integrity sha512-mCVQZY4bExDswfprYcTVD4AeHY1YHXpD+l8KcJBa8OTQotwk1GbHEhFgAa0jCjYuXcikhxmqjt6MdbfLqMs17A==
+"@ngageoint/geopackage@4.0.0-beta.16":
+  version "4.0.0-beta.16"
+  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.16.tgz#a7056d6ff0712b02651515bbe6d7597dbd238b76"
+  integrity sha512-Cwql3YnPYFDWjb2p7Phh65N4vnUQwwUNmbzYlpuAVpIXkNY87zDhH0Jb/6AK4ShlGZT/YEwJrJD2JaaKMCGQYQ==
   dependencies:
     "@turf/bbox" "6.0.1"
     "@turf/boolean-point-in-polygon" "^6.0.1"
@@ -3566,7 +3566,7 @@ bcrypt-pbkdf@^1.0.0:
   dependencies:
     tweetnacl "^0.14.3"
 
-better-sqlite3@7.1.1, better-sqlite3@^7.1.1:
+better-sqlite3@7.1.1:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-7.1.1.tgz#107457a8b770cfb16be646e347c17b42bc204dd3"
   integrity sha512-AkvGGyhAVZhRBOul2WT+5CB2EuveM3ZkebEKe1wxMqDZUy1XB/1RBgM66t0ybHC4DIni8+pr7NaLqEX87NUTwg==
@@ -5711,6 +5711,11 @@ electron-dl@3.0.2:
     pupa "^2.0.1"
     unused-filename "^2.1.0"
 
+electron-log@^4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-4.3.0.tgz#6e841a5c9af34ed3ca83e5a8a4156fdc39bed464"
+  integrity sha512-iuJjH/ZEJkDyCbuAMvvFxAjCMDLMXIQ5NqvppETGrbtf4b/007r5P36BSvexdy0UzwDNzDtIuEXLR34vRXWZrg==
+
 electron-publish@22.9.1:
   version "22.9.1"
   resolved "https://registry.yarnpkg.com/electron-publish/-/electron-publish-22.9.1.tgz#7cc76ac4cc53efd29ee31c1e5facb9724329068e"
@@ -5768,10 +5773,10 @@ electron-to-chromium@^1.3.591:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.598.tgz#8f757018902ab6190323a8c5f6124d854893a35b"
   integrity sha512-G5Ztk23/ubLYVPxPXnB1uu105uzIPd4xB/D8ld8x1GaSC9+vU9NZL16nYZya8H77/7CCKKN7dArzJL3pBs8N7A==
 
-electron@10.1.5:
-  version "10.1.5"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-10.1.5.tgz#f2b161310f627063e73fbac44efcb35dece83a90"
-  integrity sha512-fys/KnEfJq05TtMij+lFvLuKkuVH030CHYx03iZrW5DNNLwjE6cW3pysJ420lB0FRSfPjTHBMu2eVCf5TG71zQ==
+electron@10.1.6:
+  version "10.1.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-10.1.6.tgz#1b74838fc5f8263dcf198dc16bd6a88b095a59bb"
+  integrity sha512-Wyiq5Fy64KAa51i72m+5zayYKSm9O5lnittUdaElAn3PAzGl3yDifYO2QsXR7k/iKxWVSROOPzf43mXYytL67Q==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -7645,10 +7650,9 @@ image-size@0.9.3:
   dependencies:
     queue "6.0.1"
 
-imagemin-pngquant@9.0.1:
+"imagemin-pngquant@git://github.com/caldwellc/imagemin-pngquant.git#master":
   version "9.0.1"
-  resolved "https://registry.yarnpkg.com/imagemin-pngquant/-/imagemin-pngquant-9.0.1.tgz#ecf22f522bdb734a503ecc21bdd7bc3d0230edcc"
-  integrity sha512-PYyo9G/xwddf+Qqlqe3onz5ZH7p6vHYVVkiuuczUjxZmfekyY77RXaOA/AR6FnVoeQxGa/pDtEK5xUKOcVo+sA==
+  resolved "git://github.com/caldwellc/imagemin-pngquant.git#911bc37d74b3414f2b6c05a474e12bc72dca1654"
   dependencies:
     execa "^4.0.0"
     is-png "^2.0.0"

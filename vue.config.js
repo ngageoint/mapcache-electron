@@ -37,7 +37,10 @@ module.exports = {
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
         asarUnpack: [
-          "node_modules/gdal/**/*"
+          "**/node_modules/gdal/**/*",
+          "**/node_modules/imagemin-pngquant/**/*",
+          "**/node_modules/pngquant-bin/**/*",
+          "**/node_modules/bin-wrapper/**/*"
         ],
         directories: {
           buildResources: "buildResources"

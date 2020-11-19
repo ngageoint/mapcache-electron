@@ -282,10 +282,8 @@
             featureRow.setValueNoValidationWithIndex(column.index, value)
           })
           const result = await GeoPackageUtilities.updateFeatureRow(filePath, this.tableName, featureRow)
-          console.log(result)
           if (result.changes > 0) {
             if (this.isGeoPackage) {
-              console.log('syncing geo package')
               ActionUtilities.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
             } else {
               ActionUtilities.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})

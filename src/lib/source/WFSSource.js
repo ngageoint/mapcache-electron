@@ -58,6 +58,7 @@ export default class WFSSource extends Source {
         }
         resolve(featureCollection.features.filter(f => f !== undefined))
       }).catch(err => {
+        // eslint-disable-next-line no-console
         console.error(err)
       })
     })

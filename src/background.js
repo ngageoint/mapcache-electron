@@ -1,6 +1,7 @@
 'use strict'
-
 import { app, protocol, ipcMain } from 'electron'
+import log from 'electron-log'
+Object.assign(console, log.functions)
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import WindowLauncher from './lib/window/WindowLauncher'
@@ -9,6 +10,7 @@ import './store'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 app.allowRendererProcessReuse = false
+app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -28,6 +30,7 @@ async function start() {
     WorkerPool.executeProcessSource(payload).then(function (result) {
       event.sender.send('process_source_completed_' + id, result)
     }).catch(e => {
+      // eslint-disable-next-line no-console
       console.error(e)
     })
   })
@@ -107,6 +110,7 @@ app.on('ready', async () => {
     try {
       await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }

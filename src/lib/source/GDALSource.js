@@ -50,6 +50,7 @@ export default class GDALSource extends Source {
               geometry: geom.toObject()
             }
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e)
           }
         }).filter(feature => feature !== undefined)

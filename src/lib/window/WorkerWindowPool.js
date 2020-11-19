@@ -14,6 +14,7 @@ class WorkerWindowPool {
 
   loadContent (window, url, onFulfilled = () => {}) {
     window.loadURL(url).then(onFulfilled).catch((e) => {
+      // eslint-disable-next-line no-console
       console.error(e)
     })
   }
@@ -32,12 +33,14 @@ class WorkerWindowPool {
           webPreferences: {
             nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
             enableRemoteModule: true,
+            webSecurity: false
           }
         }),
         available: false
       }
-      worker.window.toggleDevTools()
-      // worker.window.toggleDevTools()
+      if (process.env.WEBPACK_DEV_SERVER_URL) {
+        worker.window.toggleDevTools()
+      }
       this.workerWindows.push(worker)
       this.loadContent(worker.window, workerURL)
       worker.window.on('ready-to-show', () => {
@@ -56,11 +59,12 @@ class WorkerWindowPool {
             show: false,
             webPreferences: {
               nodeIntegration: true,
-              enableRemoteModule: true
+              enableRemoteModule: true,
+              webSecurity: false
             }
           })
-          const workerURL = process.env.NODE_ENV === 'development'
-            ? `http://localhost:9080/?id=${id}#/worker`
+          const workerURL = process.env.WEBPACK_DEV_SERVER_URL
+            ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
             : `app://./index.html?id=${id}#worker`
           this.loadContent(workerWindow.window, workerURL)
           workerWindow.window.on('ready-to-show', () => {
@@ -167,6 +171,7 @@ class WorkerWindowPool {
           resolve()
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
         resolve()
       }
@@ -207,6 +212,7 @@ class WorkerWindowPool {
           resolve()
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
         resolve()
       }

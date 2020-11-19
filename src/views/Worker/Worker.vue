@@ -32,13 +32,16 @@
             let initLayer = await layers[i].initialize()
             dataSources.push({project: project, sourceId: initLayer.id, config: initLayer.configuration})
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('unable to initialize data source: ' + layers[i].sourceLayerName)
+            // eslint-disable-next-line no-console
             console.error(error)
           }
         }
         createdSource.removeSourceDir()
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e)
       error = e
     }

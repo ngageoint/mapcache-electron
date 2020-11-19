@@ -333,6 +333,7 @@
         _this.loading = false
         _this.updatingStyle = false
       }).catch((e) => {
+        // eslint-disable-next-line no-console
         console.error(e)
         _this.updatingStyle = false
         _this.loading = false
@@ -458,11 +459,13 @@
             }
           }
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
         try {
           gp.close()
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
       },

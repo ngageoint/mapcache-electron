@@ -18,6 +18,7 @@ export default class FileUtilities {
         try {
           FileUtilities.rmDir(sourceDirectory)
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
       }

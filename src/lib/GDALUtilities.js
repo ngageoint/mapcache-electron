@@ -16,6 +16,7 @@ export default class GDALUtilities {
       copyDataset.close()
     } catch (error) {
       success = false
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     return success

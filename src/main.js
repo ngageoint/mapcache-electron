@@ -1,3 +1,4 @@
+import log from 'electron-log'
 import gdal from 'gdal'
 import path from 'path'
 import Vue from 'vue'
@@ -8,6 +9,7 @@ import AsyncComputed from 'vue-async-computed'
 import vuetify from './vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
+Object.assign(console, log.functions)
 
 /*
  * The gdal library, when packaged for production is unable to find the GDAL_DATA directory. To work around this

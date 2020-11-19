@@ -178,6 +178,7 @@ export default class ActionUtilities {
     try {
       FileUtilities.rmSourceDirectory(store.state.Projects[projectId].sources[sourceId].sourceId)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     store.dispatch('Projects/removeDataSource', {projectId, sourceId})
@@ -344,6 +345,7 @@ export default class ActionUtilities {
       try {
         FileUtilities.rmSourceDirectory(store.state.Projects[project.id].sources[sourceId].sourceId)
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
       }
     })

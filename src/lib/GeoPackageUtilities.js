@@ -52,12 +52,14 @@ export default class GeoPackageUtilities {
         }
       } catch (error) {
         result = {error: error}
-        console.log(error)
+        // eslint-disable-next-line no-console
+        console.error(error)
       }
       try {
         await gp.close()
       } catch (e) {
         result = {error: e}
+        // eslint-disable-next-line no-console
         console.error(e)
       }
     }
@@ -319,6 +321,7 @@ export default class GeoPackageUtilities {
     try {
       gp.close()
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
 
@@ -518,11 +521,13 @@ export default class GeoPackageUtilities {
       }
       await GeoPackageUtilities._indexFeatureTable(gp, tableName)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     try {
       gp.close()
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
   }
@@ -2311,6 +2316,26 @@ export default class GeoPackageUtilities {
     }, true)
   }
 
+  static prettyPrintMs(milliseconds) {
+    const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24))
+    let msRemaining = milliseconds - days * (1000 * 60 * 60 * 24)
+    const hours = Math.floor(msRemaining / (1000 * 60 * 60))
+    msRemaining = msRemaining - hours * (1000 * 60 * 60)
+    const minutes = Math.floor(msRemaining / (1000 * 60))
+    msRemaining = msRemaining - minutes * (1000 * 60)
+    const seconds = Math.floor(msRemaining / 1000)
+
+    if (days > 0) {
+      return days + ' days and ' + hours + ' hours'
+    } else if (hours > 0) {
+      return hours + ' hours and ' + minutes + ' minutes'
+    } else if (minutes > 0) {
+      return minutes + ' minutes and ' + seconds + ' seconds'
+    } else {
+      return seconds + " seconds"
+    }
+  }
+
   /**
    * Builds a tile layer
    * @param configuration
@@ -2344,7 +2369,15 @@ export default class GeoPackageUtilities {
       const contentsSrsId = 4326
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857
-      await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      try {
+        await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+        status.message = 'Failed: Table already exists...'
+        throttleStatusCallback(status)
+        return
+      }
 
       if (!_.isNil(tileScaling)) {
         const tileScalingExtension = gp.getTileScalingExtension(tableName)
@@ -2394,8 +2427,8 @@ export default class GeoPackageUtilities {
       // sort layers into rendering order
       let sortedLayers = []
       for (let i = 0; i < configuration.renderingOrder.length; i++) {
-        let layer = configuration.renderingOrder[i]
-        let layerIdx = layers.findIndex(l => l.id === layer.id)
+        let layerId = configuration.renderingOrder[i]
+        let layerIdx = layers.findIndex(l => l.id === layerId)
         if (layerIdx > -1) {
           sortedLayers.push(layers[layerIdx])
         }
@@ -2407,6 +2440,7 @@ export default class GeoPackageUtilities {
       status.message = 'Generating tiles...'
       throttleStatusCallback(status)
       let tilesAdded = 0
+      let timeStart = new Date().getTime()
       await XYZTileUtilities.iterateAllTilesInExtentForZoomLevels(boundingBox, zoomLevels, async ({z, x, y}) => {
         // setup canvas that we will draw each layer into
         let canvas = document.createElement('canvas')
@@ -2451,6 +2485,7 @@ export default class GeoPackageUtilities {
             let layer = sortedLayers[i]
             layer.renderTile({x, y, z}, null, (err, result) => {
               if (err) {
+                // eslint-disable-next-line no-console
                 console.error(err)
                 reject(err)
               } else if (!_.isNil(result)) {
@@ -2468,11 +2503,13 @@ export default class GeoPackageUtilities {
                     resolve()
                   }
                   img.onerror = (error) => {
-                    console.log(error)
+                    // eslint-disable-next-line no-console
+                    console.error(error)
                     resolve()
                   }
                   img.src = image
                 } catch (error) {
+                  // eslint-disable-next-line no-console
                   console.error(error)
                   resolve()
                 }
@@ -2490,15 +2527,20 @@ export default class GeoPackageUtilities {
               canvas.toBlob((blob) => {
                 let reader = new FileReader()
                 reader.addEventListener('loadend', async function () {
-                  const buffer = await imagemin.buffer(Buffer.from(reader.result), {
-                    plugins: [
-                      imageminPngquant({
-                        speed: 8,
-                        quality: [0.5, 0.8]
-                      })
-                    ]
-                  })
-                  gp.addTile(buffer, tableName, z, y, x)
+                  try {
+                    const buffer = await imagemin.buffer(Buffer.from(reader.result), {
+                      plugins: [
+                        imageminPngquant({
+                          speed: 8,
+                          quality: [0.5, 0.8]
+                        })
+                      ]
+                    })
+                    gp.addTile(buffer, tableName, z, y, x)
+                  } catch (e) {
+                    // eslint-disable-next-line no-console
+                    console.error(e)
+                  }
                   resolve(false)
                 })
                 reader.readAsArrayBuffer(blob)
@@ -2516,6 +2558,8 @@ export default class GeoPackageUtilities {
           })
         }
         tilesAdded += 1
+        const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
+        status.message = 'Generating tiles...\t' + tilesAdded + ' of ' + estimatedNumberOfTiles + ' tiles processed.\nEstimated time remaining: ' + GeoPackageUtilities.prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
         throttleStatusCallback(status)
       })

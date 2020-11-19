@@ -5,6 +5,7 @@ import axios from 'axios'
 import FileUtilities from './FileUtilities'
 import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
 import GDALUtilities from './GDALUtilities'
+import URLUtilities from './URLUtilities'
 
 export default class KMLUtilities {
   static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir) => {
@@ -19,6 +20,7 @@ export default class KMLUtilities {
       try {
         name = groundOverlayDOM.getElementsByTagNameNS('*', 'name')[0].childNodes[0].nodeValue
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
       }
       try {
@@ -27,12 +29,32 @@ export default class KMLUtilities {
         if (iconPath.startsWith('http')) {
           try {
             let fullFile = path.join(sourceCacheDir, path.basename(iconPath))
-            const response = axios.get(iconPath, {responseType: 'arraybuffer'})
-            const buffer = Buffer.from(response.data, 'binary')
-            fs.writeFileSync(fullFile, buffer)
+            const writer = fs.createWriteStream(fullFile)
+            await new Promise((resolve) => {
+              return axios({
+                method: 'get',
+                url: iconPath,
+                responseType: 'arraybuffer'
+              })
+                .then(response => {
+                  URLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                  writer.on('finish', () => {
+                    writer.close()
+                    resolve()
+                  })
+                })
+                .catch(err => {
+                  fs.unlinkSync(fullFile)
+                  // eslint-disable-next-line no-console
+                  console.error(err)
+                  resolve()
+                })
+            })
+
             iconPath = path.basename(iconPath)
             iconBaseDir = sourceCacheDir
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e)
             errored = true
           }
@@ -73,6 +95,7 @@ export default class KMLUtilities {
           }
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
       }
     }
@@ -89,6 +112,7 @@ export default class KMLUtilities {
         parsedKML.documents.push({name, xmlDoc})
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('error looking for all documents, will just look for all geojson in file instead')
     }
     return parsedKML

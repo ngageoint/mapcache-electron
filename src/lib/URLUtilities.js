@@ -1,10 +1,19 @@
 import _ from 'lodash'
 import { parseStringPromise } from 'xml2js'
+import { Readable } from 'stream'
 
 export default class URLUtilities {
   static parseXMLString = function (text) {
     return parseStringPromise(text)
   }
+
+  static bufferToStream(buffer) {
+    let stream = new Readable()
+    stream.push(buffer)
+    stream.push(null)
+    return stream
+  }
+
   static getBaseUrlAndQueryParams (url) {
     let query = ''
     let baseUrl = url.slice()
