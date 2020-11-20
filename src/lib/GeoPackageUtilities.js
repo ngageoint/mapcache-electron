@@ -178,24 +178,34 @@ export default class GeoPackageUtilities {
    * @param tableName
    * @param featureCollection
    * @param addFeatures
+   * @param fields
    * @returns {Promise<void>}
    */
-  static async _createFeatureTable (gp, tableName, featureCollection, addFeatures = false) {
-    // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
-    featureCollection.features.forEach(feature => {
-      Object.keys(feature.properties).forEach(key => {
-        let type = typeof feature.properties[key]
-        if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
-          if (type === 'object') {
-            if (!(feature.properties[key] instanceof Date)) {
-              feature.properties[key] = JSON.stringify(feature.properties[key])
+  static async _createFeatureTable (gp, tableName, featureCollection, addFeatures = false, fields = null) {
+    if (_.isNil(fields)) {
+      // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
+      featureCollection.features.forEach(feature => {
+        Object.keys(feature.properties).forEach(key => {
+          let type = typeof feature.properties[key]
+          if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
+            if (type === 'object') {
+              if (!(feature.properties[key] instanceof Date)) {
+                feature.properties[key] = JSON.stringify(feature.properties[key])
+              }
             }
           }
-        }
+        })
       })
-    })
-
-    let layerColumns = GeoPackageUtilities.getLayerColumns(featureCollection)
+    }
+    let layerColumns = _.isNil(fields) ? GeoPackageUtilities.getLayerColumns(featureCollection) : {
+      columns: fields,
+      geom: {
+        name: 'geometry'
+      },
+      id: {
+        name: 'id'
+      }
+    }
     let geometryColumns = new GeometryColumns()
     geometryColumns.table_name = tableName
     geometryColumns.column_name = layerColumns.geom.name
@@ -437,14 +447,15 @@ export default class GeoPackageUtilities {
    * @param tableName
    * @param featureCollection
    * @param style
+   * @param fields
    * @returns {Promise<void>}
    */
-  static async buildGeoPackage (fileName, tableName, featureCollection, style) {
+  static async buildGeoPackage (fileName, tableName, featureCollection, style = null, fields = null) {
     // create the geopackage
     let gp = await GeoPackageAPI.create(fileName)
     try {
       // setup the columns for the feature table
-      await this._createFeatureTable(gp, tableName, featureCollection)
+      await this._createFeatureTable(gp, tableName, featureCollection, fields)
 
       let featureTableStyles
       if (!_.isNil(style)) {

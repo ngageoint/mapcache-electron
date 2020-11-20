@@ -5,6 +5,7 @@ import KMLSource from './KMLSource'
 import KMZSource from './KMZSource'
 import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
+import ArcGISFeatureServiceSource from './ArcGISFeatureServiceSource'
 
 export default class SourceFactory {
   static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
@@ -17,6 +18,10 @@ export default class SourceFactory {
 
   static async constructWFSSource (url, layers, credentials, sourceName) {
     return new WFSSource(url, layers, credentials, sourceName)
+  }
+
+  static async constructArcGISFeatureServiceSource (url, layers, credentials, sourceName) {
+    return new ArcGISFeatureServiceSource(url, layers, credentials, sourceName)
   }
 
   static async constructSource (filePath) {

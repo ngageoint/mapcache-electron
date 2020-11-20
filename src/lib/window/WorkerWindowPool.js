@@ -72,7 +72,7 @@ class WorkerWindowPool {
             resolve()
           })
           if (process.env.WEBPACK_DEV_SERVER_URL) {
-            worker.window.toggleDevTools()
+            workerWindow.window.toggleDevTools()
           }
         })
         workerWindow.window.destroy()

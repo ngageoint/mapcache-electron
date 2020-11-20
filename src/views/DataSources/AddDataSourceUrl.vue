@@ -151,22 +151,24 @@
             color="primary"
           ></v-progress-circular>
         </v-stepper-content>
-        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1)" editable :complete="step > 4" step="4" color="primary">
-          {{'Select ' + (selectedServiceType === 0 ? 'WMS' : 'WFS') + ' layers'}}
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 4" step="4" color="primary">
+          {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers'}}
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
-        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1)" step="4">
-          <v-card flat tile v-if="selectedServiceType <= 1">
+        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" step="4">
+          <v-card flat tile>
             <v-card-text v-if="serviceInfo">
               <h4 class="primary--text">{{serviceInfo.title}}</h4>
               <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{serviceInfo.abstract}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.version">{{supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{'Contact Person: ' + serviceInfo.contactName}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact Organization:' + serviceInfo.contactOrg}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
             <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 layers available for import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
+              <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
               <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
                 <v-list dense>
                   <v-list-item-group
@@ -264,6 +266,9 @@
               <p v-if="!loading && selectedServiceType === 1 && !error && selectedDataSourceLayers.length > 0">
                 <b>{{selectedDataSourceLayers.length}}</b> {{' WFS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
               </p>
+              <p v-if="!loading && selectedServiceType === 3 && !error && selectedDataSourceLayers.length > 0">
+                <b>{{selectedDataSourceLayers.length}}</b> {{' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
+              </p>
               <p v-if="!loading && selectedServiceType === 2 && !error">{{'XYZ layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}</p>
               <h4 v-if="error" class="warning--text">{{error}}</h4>
               <h4 v-if="!dataSourceUrlValid || (selectedDataSourceLayers.length === 0 && selectedServiceType !== 2)" class="warning--text">Nothing to import.</h4>
@@ -325,7 +330,7 @@
         }
       },
       importReady () {
-        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && ((this.selectedServiceType < 2 && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === 2)
+        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === 3) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === 2)
       },
       dragOptions () {
         return {
@@ -347,7 +352,7 @@
         dataSourceUrl: 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png',
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
-        supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}],
+        supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}, {value: 2, name: 'ArcGIS FS'}],
         selectedServiceType: 2,
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
@@ -409,7 +414,28 @@
             headers['Authorization'] = credentials.authorization
           }
           if (!_.isNil(this.dataSourceUrl) && !_.isEmpty(this.dataSourceUrl) && !_.isNil(serviceType) && serviceType !== -1) {
-            if (serviceType === 2) {
+            if (serviceType === 3) {
+              const response = await axios({
+                method: 'get',
+                url: this.dataSourceUrl.split('?')[0] + '?f=pjson',
+                headers: headers
+              })
+              serviceInfo = {
+                title: 'ArcGIS REST Feature Service',
+                abstract: response.data.serviceDescription || '',
+                version: response.data.currentVersion,
+                copyright: response.data.copyrightText || ''
+              }
+              this.serviceLayers = response.data.layers.map(layer => {
+                let title = !_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1 ? response.data.layers.find(l => l.id === layer.parentLayerId).name : layer.name
+                let subtitles = []
+                if (!_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1) {
+                  subtitles.push(layer.name)
+                }
+                return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
+              })
+              this.unsupportedServiceLayers = []
+            } else if (serviceType === 2) {
               try {
                 await axios({
                   method: 'get',
@@ -502,6 +528,7 @@
                     contactOrg: wfsInfo.contactOrg
                   }
                   this.serviceLayers = wfsInfo.layers
+                  this.unsupportedServiceLayers = []
                 } catch (error) {
                   this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
                 }
@@ -527,7 +554,7 @@
           if (!_.isNil(serviceInfo)) {
             if (serviceType === 0) {
               this.summaryStep = 6
-            } else if (serviceType === 1) {
+            } else if (serviceType === 1 || serviceType === 3) {
               this.summaryStep = 5
             } else {
               this.summaryStep = 4
@@ -676,6 +703,8 @@
               selectedServiceType = 1
             } else if (URLUtilities.isWMS(newValue)) {
               selectedServiceType = 0
+            } else if (URLUtilities.isArcGISFeatureService(newValue)) {
+              selectedServiceType = 3
             } else {
               serviceTypeAutoDetected = false
             }

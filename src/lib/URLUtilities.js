@@ -55,4 +55,7 @@ export default class URLUtilities {
   static isWFS (url) {
     return url.toLowerCase().indexOf('wfs') > 0
   }
+  static isArcGISFeatureService (url) {
+    return url.toLowerCase().indexOf('featureserver') > 0
+  }
 }
