@@ -232,15 +232,17 @@
           features: [feature]
         }
         if (this.geoPackageSelection === 0) {
-          remote.dialog.showSaveDialog().then(({filePath}) => {
-            if (!filePath.endsWith('.gpkg')) {
-              filePath = filePath + '.gpkg'
-            }
-            GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
-              GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
-                ActionUtilities.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+          remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
+            if (!canceled) {
+              if (!filePath.endsWith('.gpkg')) {
+                filePath = filePath + '.gpkg'
+              }
+              GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
+                GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+                  ActionUtilities.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+                })
               })
-            })
+            }
           })
         } else {
           const geopackage = this.geopackages[this.geoPackageSelection]

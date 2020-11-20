@@ -1937,6 +1937,34 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Gets all features id's and respective geometry types
+   * @param gp
+   * @param tableName
+   * @returns {any[]}
+   */
+  static _getAllFeatureIdsAndGeometryTypes (gp, tableName) {
+    const featureDao = gp.getFeatureDao(tableName)
+    let each = featureDao.queryForEach()
+    const results = []
+    for (let row of each) {
+      if (!_.isNil(row)) {
+        const featureRow = featureDao.getRow(row)
+        const geometry = featureRow.geometry
+        let geometryType = GeometryType.GEOMETRY
+        if (!_.isNil(geometry) && !geometry.empty && geometry.geometry) {
+          geometryType = GeometryType.fromName(geometry.toGeoJSON().type.toUpperCase())
+        }
+        const id = featureRow.id
+        results.push({
+          id,
+          geometryType
+        })
+      }
+    }
+    return results
+  }
+
+  /**
    * Gets all features in a table as geojson
    * @param filePath
    * @param tableName
@@ -2165,17 +2193,7 @@ export default class GeoPackageUtilities {
       let sourceFeatureMap = {}
       let sourceColumnMap = {}
       let sourceNameChanges = {}
-
-      // TODO: get styles for each data source and each geopackage feature layer
-      // need to get all style and icon rows that are applicable for the table being added
-      // the table styles/icons will need to be treated as feature styles/icons as we are merging
-      // the name can remain the same, but we could prepend the source table name to help the user know where the style came from?
-      // we also need to determine feature styles and keep a record of which style was used for a feature, or table style
-      // maybe the easy solution is to retrieve the associated style for each feature, make that a set of styles/icons
-      // then we take that merged set across all tables and add to database and map style to new id
-      // then while we add features we can cross reference associated style/icon id in feature with new style/icon ids and set feature style
-      // no table styles will be set by default, though it should be easy enough for a user to establish that later...
-      // This may become a setting for the user to specify
+      let sourceStyleMap = {}
 
       // retrieve layers
       status.message = 'Retrieving features from data sources and geopackage feature layers...'
@@ -2195,30 +2213,48 @@ export default class GeoPackageUtilities {
       // copy data from source layers
       for (let i = 0; i < configuration.sourceLayers.length; i++) {
         const sourceLayer = configuration.sourceLayers[i]
-        sourceFeatureMap[sourceIdx] = await GeoPackageUtilities.getAllFeatureRowsIn4326(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName, 4326, boundingBoxFilter)
-        sourceColumnMap[sourceIdx] = await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName)
-        const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName))
-        featureColumns = result.mergedColumns
-        sourceNameChanges[sourceIdx] = result.nameChanges
-        sourceIdx++
-        layersRetrieved++
-        status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
-        throttleStatusCallback(status)
+        await GeoPackageUtilities.performSafeGeoPackageOperation(sourceLayer.geopackageFilePath, async (geopackage) => {
+          sourceFeatureMap[sourceIdx] = GeoPackageUtilities._getAllFeatureRowsIn4326(geopackage, sourceLayer.sourceLayerName, 4326, boundingBoxFilter)
+          sourceColumnMap[sourceIdx] = GeoPackageUtilities._getFeatureColumns(geopackage, sourceLayer.sourceLayerName)
+          sourceStyleMap[sourceIdx] = {
+            styles: GeoPackageUtilities._getStyleRows(geopackage, sourceLayer.sourceLayerName),
+            icons: GeoPackageUtilities._getIconRows(geopackage, sourceLayer.sourceLayerName),
+            featureStyleMapping: GeoPackageUtilities._getFeatureStyleMapping(geopackage, sourceLayer.sourceLayerName, numberLayersToRetrieve > 1),
+            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, sourceLayer.sourceLayerName)
+          }
+          const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, sourceLayer.sourceLayerName))
+          featureColumns = result.mergedColumns
+          sourceNameChanges[sourceIdx] = result.nameChanges
+          sourceIdx++
+          layersRetrieved++
+          status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
+          throttleStatusCallback(status)
+        })
       }
 
       // copy data from geopackage feature layers
       for (let i = 0; i < configuration.geopackageLayers.length; i++) {
         const geopackageLayer = configuration.geopackageLayers[i]
-        sourceFeatureMap[sourceIdx] = await GeoPackageUtilities.getAllFeatureRowsIn4326(geopackageLayer.geopackage.path, geopackageLayer.table, 4326, boundingBoxFilter)
-        sourceColumnMap[sourceIdx] = await GeoPackageUtilities.getFeatureColumns(geopackageLayer.geopackage.path, geopackageLayer.table)
-        const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, await GeoPackageUtilities.getFeatureColumns(geopackageLayer.geopackage.path, geopackageLayer.table))
-        featureColumns = result.mergedColumns
-        sourceNameChanges[sourceIdx] = result.nameChanges
-        sourceIdx++
-        layersRetrieved++
-        status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
-        throttleStatusCallback(status)
+        await GeoPackageUtilities.performSafeGeoPackageOperation(geopackageLayer.geopackage.path, async (geopackage) => {
+          sourceFeatureMap[sourceIdx] = GeoPackageUtilities._getAllFeatureRowsIn4326(geopackage, geopackageLayer.table, 4326, boundingBoxFilter)
+          sourceColumnMap[sourceIdx] = GeoPackageUtilities._getFeatureColumns(geopackage, geopackageLayer.table)
+          sourceStyleMap[sourceIdx] = {
+            styles: GeoPackageUtilities._getStyleRows(geopackage, geopackageLayer.table),
+            icons: GeoPackageUtilities._getIconRows(geopackage, geopackageLayer.table),
+            featureStyleMapping: GeoPackageUtilities._getFeatureStyleMapping(geopackage, geopackageLayer.table, numberLayersToRetrieve > 1),
+            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, geopackageLayer.table)
+          }
+          const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, geopackageLayer.table))
+          featureColumns = result.mergedColumns
+          sourceNameChanges[sourceIdx] = result.nameChanges
+          sourceIdx++
+          layersRetrieved++
+          status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
+          throttleStatusCallback(status)
+        })
       }
+
+      const stylesAndIconsExist = _.keys(sourceStyleMap).filter(id => (_.keys(sourceStyleMap[id].styles).length + _.keys(sourceStyleMap[id].icons).length) > 0).length > 0
 
       await GeoPackageUtilities.wait(500)
 
@@ -2266,7 +2302,17 @@ export default class GeoPackageUtilities {
       await GeoPackageUtilities.wait(500)
       gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
       const featureDao = gp.getFeatureDao(tableName)
-
+      let featureTableStyles
+      if (stylesAndIconsExist) {
+        featureTableStyles = new FeatureTableStyles(gp, tableName)
+        featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
+        featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+        featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+        featureTableStyles.createTableStyleRelationship()
+        featureTableStyles.createTableIconRelationship()
+        featureTableStyles.createStyleRelationship()
+        featureTableStyles.createIconRelationship()
+      }
       const columnTypes = {}
       for (let i = 0; i < featureDao.table.getColumnCount(); i++) {
         const column = featureDao.table.getColumnWithIndex(i)
@@ -2278,6 +2324,41 @@ export default class GeoPackageUtilities {
         const featureRows = sourceFeatureMap[sourceIdx]
         const columns = sourceColumnMap[sourceIdx]
         const nameChanges = sourceNameChanges[sourceIdx]
+
+        const styles = sourceStyleMap[sourceIdx].styles
+        const icons = sourceStyleMap[sourceIdx].icons
+        const featureStyleMapping = sourceStyleMap[sourceIdx].featureStyleMapping
+
+        const newStyleMapping = {}
+        const newIconMapping = {}
+
+        // insert styles and icons
+        if (!_.isNil(featureTableStyles)) {
+          _.keys(styles).forEach(styleId => {
+            const styleRow = styles[styleId]
+            styleRow.id = null
+            newStyleMapping[styleId] = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
+          })
+          _.keys(icons).forEach(iconId => {
+            const iconRow = icons[iconId]
+            iconRow.id = null
+            newIconMapping[iconId] = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
+          })
+        }
+
+        // only one layer being added to this feature table, so we can migrate over table style/icon relationships
+        if (numberLayersToRetrieve === 1) {
+          const tableStyleMapping = sourceStyleMap[sourceIdx].tableStyleMappings
+          const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName)
+          tableStyleMapping.tableStyleMappings.forEach(mapping => {
+            featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, newStyleMapping[mapping.id], mapping.geometryType)
+          })
+          tableStyleMapping.tableIconMappings.forEach(mapping => {
+            featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, newIconMapping[mapping.id], mapping.geometryType)
+          })
+        }
+
+        // insert features
         featureRows.forEach(featureRow => {
           const values = {}
 
@@ -2305,7 +2386,19 @@ export default class GeoPackageUtilities {
           values.geometry = featureRow.geometry
 
           // create the new row
-          featureDao.create(featureDao.newRow(columnTypes, values))
+          const featureId = featureDao.create(featureDao.newRow(columnTypes, values))
+
+          // add style mapping if necessary
+          if (!_.isNil(featureTableStyles)) {
+            let geometryType = !_.isNil(featureRow.geometry) ? featureRow.geometry.toGeoJSON().type.toUpperCase() : 'GEOMETRY'
+            const styleMapping = featureStyleMapping[featureRow.id]
+            if (!_.isNil(styleMapping.iconId) && styleMapping.iconId.id > -1) {
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), featureId, newIconMapping[styleMapping.iconId.id], GeometryType.fromName(geometryType))
+            }
+            if (!_.isNil(styleMapping.styleId) && styleMapping.styleId.id > -1) {
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), featureId, newStyleMapping[styleMapping.styleId.id], GeometryType.fromName(geometryType))
+            }
+          }
 
           status.progress = 30 + (50 * id / featureCount)
           throttleStatusCallback(status)
@@ -2765,5 +2858,90 @@ export default class GeoPackageUtilities {
         break
     }
     return simplifiedTypeIcon
+  }
+
+  /**
+   * Gets mapping of featureRows -> respective styles
+   * @param gp
+   * @param tableName
+   * @param checkForTableStyles
+   * @private
+   */
+  static _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
+    const featureTableStyles = new FeatureTableStyles(gp, tableName)
+    const features = GeoPackageUtilities._getAllFeatureIdsAndGeometryTypes(gp, tableName)
+    const styleMappings = featureTableStyles.getFeatureStyleExtension().getStyleMappingDao(tableName).queryForAll().map(record => {
+      return {
+        featureId: record.base_id,
+        id: record.related_id
+      }
+    })
+    const iconMappings = featureTableStyles.getFeatureStyleExtension().getIconMappingDao(tableName).queryForAll().map(record => {
+      return {
+        featureId: record.base_id,
+        id: record.related_id
+      }
+    })
+    const tableStyleMappings = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName).queryForAll().map(record => {
+      return {
+        id: record.related_id,
+        geometryType: GeometryType.fromName(record.geometry_type_name)
+      }
+    })
+    const tableIconMappings = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName).queryForAll().map(record => {
+      return {
+        id: record.related_id,
+        geometryType: GeometryType.fromName(record.geometry_type_name)
+      }
+    })
+    const featureStyleMapping = {}
+    features.forEach(feature => {
+      if (checkForTableStyles) {
+        featureStyleMapping[feature.id] = {
+          styleId: tableStyleMappings.find(mapping => mapping.geometryType === feature.geometryType),
+          iconId: tableIconMappings.find(mapping => mapping.geometryType === feature.geometryType)
+        }
+      } else {
+        featureStyleMapping[feature.id] = {
+          styleId: undefined,
+          iconId: undefined
+        }
+      }
+      const featureIcon = iconMappings.find(mapping => mapping.featureId === feature.id)
+      const featureStyle = styleMappings.find(mapping => mapping.featureId === feature.id)
+      if (!_.isNil(featureIcon)) {
+        featureStyleMapping[feature.id].iconId = featureIcon
+      }
+      if (!_.isNil(featureStyle)) {
+        featureStyleMapping[feature.id].styleId = featureStyle
+      }
+    })
+    return featureStyleMapping
+  }
+
+  /**
+   * Gets table styles/icons as list of {id, geometryType}
+   * @param gp
+   * @param tableName
+   * @private
+   */
+  static _getTableStyleMappings(gp, tableName) {
+    const featureTableStyles = new FeatureTableStyles(gp, tableName)
+    const tableStyleMappings = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName).queryForAll().map(record => {
+      return {
+        id: record.related_id,
+        geometryType: GeometryType.fromName(record.geometry_type_name)
+      }
+    })
+    const tableIconMappings = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName).queryForAll().map(record => {
+      return {
+        id: record.related_id,
+        geometryType: GeometryType.fromName(record.geometry_type_name)
+      }
+    })
+    return {
+      tableIconMappings,
+      tableStyleMappings
+    }
   }
 }

@@ -9,7 +9,7 @@
       <v-toolbar-title>{{geopackage.name + ': Add Tile Layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-card flat tile class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
-      <v-card-title>{{'Adding ' + layerName + ' Tile Layer'}}</v-card-title>
+      <v-card-title>{{'Adding ' + layerName}}</v-card-title>
       <v-card-text>
         <v-card-subtitle :class="index === 0 ? 'mt-2 mb-0 pa-0' : 'mt-1 mb-0 pa-0'" v-for="(text, index) in status.message.split('\n')" :key="index">
           {{ text }}

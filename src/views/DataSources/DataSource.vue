@@ -365,17 +365,19 @@
       },
       downloadGeoPackage () {
         try {
-          remote.dialog.showSaveDialog().then(({filePath}) => {
-            if (!_.isNil(filePath)) {
-              if (!filePath.endsWith('.gpkg')) {
-                filePath = filePath + '.gpkg'
-              }
-              if (!fs.existsSync(filePath)) {
-                this.copyAndAddGeoPackage(filePath)
-              } else {
-                this.overwriteFile = filePath
-                this.overwriteFileName = path.basename(filePath)
-                this.showOverwriteDialog = true
+          remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
+            if (!canceled) {
+              if (!_.isNil(filePath)) {
+                if (!filePath.endsWith('.gpkg')) {
+                  filePath = filePath + '.gpkg'
+                }
+                if (!fs.existsSync(filePath)) {
+                  this.copyAndAddGeoPackage(filePath)
+                } else {
+                  this.overwriteFile = filePath
+                  this.overwriteFileName = path.basename(filePath)
+                  this.showOverwriteDialog = true
+                }
               }
             }
           })

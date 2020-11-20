@@ -9,7 +9,7 @@
       <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-card tile flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
-      <v-card-title>{{'Adding ' + layerName + ' Feature Layer'}}</v-card-title>
+      <v-card-title>{{'Adding ' + layerName}}</v-card-title>
       <v-card-text>
         <v-card-subtitle>{{status.message}}</v-card-subtitle>
         <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
