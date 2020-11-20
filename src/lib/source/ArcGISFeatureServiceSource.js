@@ -18,7 +18,8 @@ export default class ArcGISFeatureServiceSource extends Source {
     for (const layer of this.layers) {
       let content = await this.getContent(layer)
       featureCollection.features = featureCollection.features.concat(content.features)
-      fields = fields.concat(content.fields)
+      // only add new fields
+      fields = fields.concat(content.fields.filter(f => fields.findIndex(field => field.name.toLowerCase() === f.name.toLowerCase()) === -1))
     }
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     let fileName = this.sourceName + '.gpkg'
