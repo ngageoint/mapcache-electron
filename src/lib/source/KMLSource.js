@@ -39,7 +39,7 @@ export default class KMLSource extends Source {
         const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
         let fileName = name + '.gpkg'
         let filePath = path.join(sourceDirectory, fileName)
-        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir)
+        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir, this.sourceCacheFolder)
         await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection, style)
         this.vectorLayers.push(new VectorLayer({
           geopackageFilePath: filePath,
@@ -86,7 +86,7 @@ export default class KMLSource extends Source {
     return style
   }
 
-  async generateStyleForKML (features, originalFileDir) {
+  async generateStyleForKML (features, originalFileDir, cacheFolder) {
     let layerStyle = {
       features: {},
       styleRowMap: {},
@@ -99,7 +99,7 @@ export default class KMLSource extends Source {
       let featureStyle = null
       let featureIcon = null
       if (feature.properties.icon) {
-        let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+        let iconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
