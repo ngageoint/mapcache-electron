@@ -143,9 +143,9 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" :rules="[() => !project.boundingBoxFilterEditingEnabled || (Number(step) === 4 && project.boundingBoxFilterEditingEnabled)]" color="primary">
+        <v-stepper-step editable :complete="step > 4" step="4" :rules="[() => !project.boundingBoxFilterEditing || (Number(step) === 4 && project.boundingBoxFilterEditing)]" color="primary">
           Apply bounding box filter
-          <small class="pt-1">{{project.boundingBoxFilterEditingEnabled ? 'Setting filter' : (project.boundingBoxFilter ? 'Filter applied' : 'No filter')}}</small>
+          <small class="pt-1">{{project.boundingBoxFilterEditing ? 'Setting filter' : (project.boundingBoxFilter ? 'Filter applied' : 'No filter')}}</small>
         </v-stepper-step>
         <v-stepper-content step="4">
           <v-card flat tile>
@@ -154,12 +154,42 @@
             </v-card-subtitle>
             <v-card-text>
               <v-row no-gutters justify="end">
-                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
+                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditing && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
                   Clear
                 </v-btn>
-                <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
-                  {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds')}}
+                <v-btn v-if="project.boundingBoxFilterEditing" outlined color="warning" @click.stop="stopEditingBoundingBox">
+                  Finish
                 </v-btn>
+                <v-menu
+                  v-else
+                  top
+                  close-on-click
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      color="primary"
+                      dark
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      {{project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds'}}
+                    </v-btn>
+                  </template>
+
+                  <v-list>
+                    <v-list-item-group>
+                      <v-list-item @click="() => editBoundingBox('manual')">
+                        <v-list-item-title>Manually</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="setBoundingBoxFilterToExtent">
+                        <v-list-item-title>Use Extent</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="() => editBoundingBox('grid')">
+                        <v-list-item-title>Use Grid</v-list-item-title>
+                      </v-list-item>
+                    </v-list-item-group>
+                  </v-list>
+                </v-menu>
               </v-row>
             </v-card-text>
           </v-card>
@@ -202,7 +232,7 @@
           {{done ? 'Close' : 'Cancel'}}
         </v-btn>
         <v-btn
-          v-if="Number(step) === 5 && !done && !processing && !project.boundingBoxFilterEditingEnabled && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
+          v-if="Number(step) === 5 && !done && !processing && !project.boundingBoxFilterEditing && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
           color="primary"
           text
           @click.stop="addFeatureLayer">
@@ -308,16 +338,24 @@
         ipcRenderer.send('build_feature_layer', {configuration: this.configuration})
       },
       cancel () {
-        if (this.project.boundingBoxFilterEditingEnabled) {
+        if (!_.isNil(this.project.boundingBoxFilterEditing)) {
           ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
         }
         this.back()
       },
+      setBoundingBoxFilterToExtent () {
+        ActionUtilities.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+          console.error(e)
+        })
+      },
       resetBoundingBox () {
         ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
       },
-      editBoundingBox () {
-        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, enabled: !this.project.boundingBoxFilterEditingEnabled})
+      editBoundingBox (mode) {
+        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+      },
+      stopEditingBoundingBox () {
+        ActionUtilities.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       async getFilteredFeatures () {
         let numberOfFeatures = 0
@@ -450,6 +488,7 @@
           this.$refs.layerNameForm.validate()
         }
       })
+      ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
     },
     beforeUnmount () {
       ActionUtilities.resetBoundingBox()

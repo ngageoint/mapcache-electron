@@ -3,11 +3,6 @@ import _ from 'lodash'
 import ActionUtilities from '../../lib/ActionUtilities'
 
 export default {
-  data () {
-    return {
-      enabled: false
-    }
-  },
   methods: {
     disableBoundingBoxDrawing () {
       if (this.r && this.map) {
@@ -15,12 +10,8 @@ export default {
         this.map.removeLayer(this.r)
         this.r = undefined
       }
-      this.map.fire('boundingBoxDisabled')
-      this.enabled = false
     },
     enableBoundingBoxDrawing (boundingBoxFilter) {
-      this.disableBoundingBoxDrawing()
-      this.map.fire('boundingBoxEnabled')
       let boundingBox = boundingBoxFilter
       let bounds
       if (_.isNil(boundingBox)) {
@@ -45,19 +36,17 @@ export default {
         let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
         ActionUtilities.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
       })
-      this.enabled = true
-      ActionUtilities.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
+      if (_.isNil(this.project.boundingBoxFilter)) {
+        ActionUtilities.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
+      }
     }
   },
   watch: {
     project: {
-      async handler (project) {
-        if (project.boundingBoxFilterEditingEnabled) {
-          if (!this.enabled) {
+      handler (project) {
+        if (!_.isNil(project.boundingBoxFilterEditing) && project.boundingBoxFilterEditing === 'manual') {
+          if (_.isNil(this.r)) {
             let boundingBox = project.boundingBoxFilter
-            // if (_.isNil(boundingBox)) {
-            //   boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
-            // }
             if (!_.isNil(boundingBox)) {
               boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
             }
@@ -69,19 +58,5 @@ export default {
       },
       deep: true
     }
-  },
-  mounted: function () {
-    this.$nextTick(async function () {
-      if (this.project.boundingBoxFilterEditingEnabled) {
-        let boundingBox = this.project.boundingBoxFilter
-        if (_.isNil(boundingBox)) {
-          boundingBox = await this.getExtentForVisibleGeoPackagesAndLayers()
-        }
-        boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
-        this.enableBoundingBoxDrawing(boundingBox)
-      } else {
-        this.disableBoundingBoxDrawing()
-      }
-    })
   }
 }

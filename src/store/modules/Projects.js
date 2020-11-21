@@ -85,15 +85,18 @@ const mutations = {
   setBoundingBoxFilter (state, {projectId, boundingBoxFilter}) {
     Vue.set(state[projectId], 'boundingBoxFilter', boundingBoxFilter)
   },
-  setBoundingBoxFilterEditingEnabled (state, {projectId, enabled}) {
-    Vue.set(state[projectId], 'boundingBoxFilterEditingEnabled', enabled)
+  setBoundingBoxFilterEditingEnabled (state, {projectId, mode}) {
+    Vue.set(state[projectId], 'boundingBoxFilterEditing', mode)
+  },
+  setBoundingBoxFilterEditingDisabled (state, {projectId}) {
+    Vue.delete(state[projectId], 'boundingBoxFilterEditing')
   },
   showToolTips (state, {projectId, show}) {
     Vue.set(state[projectId], 'showToolTips', show)
   },
   clearBoundingBoxFilter (state, {projectId}) {
     const project = Object.assign({}, state[projectId])
-    project.boundingBoxFilterEditingEnabled = false
+    delete project.boundingBoxFilterEditing
     delete project.boundingBoxFilter
     Vue.set(state, projectId, project)
   },
@@ -126,7 +129,7 @@ const actions = {
       zoomControlEnabled: true,
       displayZoomEnabled: true,
       maxFeatures: 1000,
-      boundingBoxFilterEditingEnabled: false,
+      boundingBoxFilterEditing: undefined,
       boundingBoxFilter: undefined,
       showToolTips: true,
       displayAddressSearchBar: true,
@@ -187,8 +190,11 @@ const actions = {
   setBoundingBoxFilter ({ commit }, {projectId, boundingBoxFilter}) {
     commit('setBoundingBoxFilter', {projectId, boundingBoxFilter})
   },
-  setBoundingBoxFilterEditingEnabled ({ commit }, {projectId, enabled}) {
-    commit('setBoundingBoxFilterEditingEnabled', {projectId, enabled})
+  setBoundingBoxFilterEditingEnabled ({ commit }, {projectId, mode}) {
+    commit('setBoundingBoxFilterEditingEnabled', {projectId, mode})
+  },
+  setBoundingBoxFilterEditingDisabled ({ commit }, {projectId}) {
+    commit('setBoundingBoxFilterEditingDisabled', {projectId})
   },
   clearBoundingBoxFilter ({ commit }, {projectId}) {
     commit('clearBoundingBoxFilter', {projectId})

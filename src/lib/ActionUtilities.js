@@ -380,8 +380,92 @@ export default class ActionUtilities {
     store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter})
   }
 
-  static setBoundingBoxFilterEditingEnabled ({projectId, enabled}) {
-    store.dispatch('Projects/setBoundingBoxFilterEditingEnabled', {projectId, enabled})
+  static async setBoundingBoxFilterToExtent (projectId) {
+    let overallExtent = null
+    try {
+      let keys = Object.keys(store.state.Projects[projectId].geopackages)
+      for (let i = 0; i < keys.length; i++) {
+        const geopackageId = keys[i]
+        const geopackage = store.state.Projects[projectId].geopackages[geopackageId]
+        const tablesToZoomTo = _.keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(_.keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
+        const extentForGeoPackage = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, function (gp) {
+          let extent = null
+          tablesToZoomTo.forEach(table => {
+            const ext = GeoPackageUtilities._getBoundingBoxForTable(gp, table)
+            if (!_.isNil(ext)) {
+              if (_.isNil(extent)) {
+                extent = ext
+              } else {
+                if (ext[0] < extent[0]) {
+                  extent[0] = ext[0]
+                }
+                if (ext[1] < extent[1]) {
+                  extent[1] = ext[1]
+                }
+                if (ext[2] > extent[2]) {
+                  extent[2] = ext[2]
+                }
+                if (ext[3] > extent[3]) {
+                  extent[3] = ext[3]
+                }
+              }
+            }
+          })
+          return extent
+        })
+        if (!_.isNil(extentForGeoPackage)) {
+          if (_.isNil(overallExtent)) {
+            overallExtent = extentForGeoPackage
+          } else {
+            if (extentForGeoPackage[0] < overallExtent[0]) {
+              overallExtent[0] = extentForGeoPackage[0]
+            }
+            if (extentForGeoPackage[1] < overallExtent[1]) {
+              overallExtent[1] = extentForGeoPackage[1]
+            }
+            if (extentForGeoPackage[2] > overallExtent[2]) {
+              overallExtent[2] = extentForGeoPackage[2]
+            }
+            if (extentForGeoPackage[3] > overallExtent[3]) {
+              overallExtent[3] = extentForGeoPackage[3]
+            }
+          }
+        }
+      }
+      keys = Object.keys(store.state.Projects[projectId].sources).filter(key => store.state.Projects[projectId].sources[key].visible)
+      for (let i = 0; i < keys.length; i++) {
+        const layerExtent = store.state.Projects[projectId].sources[keys[i]].extent
+        if (!_.isNil(layerExtent)) {
+          if (_.isNil(overallExtent)) {
+            overallExtent = layerExtent
+          } else {
+            if (layerExtent[0] < overallExtent[0]) {
+              overallExtent[0] = layerExtent[0]
+            }
+            if (layerExtent[1] < overallExtent[1]) {
+              overallExtent[1] = layerExtent[1]
+            }
+            if (layerExtent[2] > overallExtent[2]) {
+              overallExtent[2] = layerExtent[2]
+            }
+            if (layerExtent[3] > overallExtent[3]) {
+              overallExtent[3] = layerExtent[3]
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter: overallExtent})
+  }
+
+  static setBoundingBoxFilterEditingEnabled ({projectId, mode}) {
+    store.dispatch('Projects/setBoundingBoxFilterEditingEnabled', {projectId, mode})
+  }
+
+  static setBoundingBoxFilterEditingDisabled ({projectId}) {
+    store.dispatch('Projects/setBoundingBoxFilterEditingDisabled', {projectId})
   }
 
   static clearBoundingBoxFilter ({projectId}) {

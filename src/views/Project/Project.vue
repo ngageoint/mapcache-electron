@@ -107,7 +107,7 @@
               displayZoomEnabled: true,
               displayAddressSearchBar: true,
               maxFeatures: 1000,
-              boundingBoxFilterEditingEnabled: false,
+              boundingBoxFilterEditing: undefined,
               boundingBoxFilter: undefined
             }
           }

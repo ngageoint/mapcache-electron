@@ -89,6 +89,7 @@
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
+  import GridBounds from './GridBounds'
   import FeatureTable from './FeatureTable'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LeafletDraw from './LeafletDraw'
@@ -127,7 +128,8 @@
 
   export default {
     mixins: [
-      DrawBounds
+      DrawBounds,
+      GridBounds
     ],
     props: {
       sources: Object,
@@ -568,66 +570,68 @@
         return overallExtent
       },
       async queryForFeatures (e) {
-        let tableFeatures = {
-          geopackageTables: [],
-          sourceTables: []
-        }
-        let featuresFound = false
-        // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
-        const geopackageValues = Object.values(this.geopackages)
-        for (let i = 0; i < geopackageValues.length; i++) {
-          const geopackage = geopackageValues[i]
-          const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
-          if (tables.length > 0) {
-            const geopackageTables = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, (gp) => {
-              const geopackageTables = []
-              for (let i = 0; i < tables.length; i++) {
-                const tableName = tables[i]
-                const features = GeoPackageUtilities._queryForFeaturesAt(gp, tableName, e.latlng, this.map.getZoom())
+        if (_.isNil(this.project.boundingBoxFilterEditing) && !this.drawingControl.isDrawing) {
+          let tableFeatures = {
+            geopackageTables: [],
+            sourceTables: []
+          }
+          let featuresFound = false
+          // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
+          const geopackageValues = Object.values(this.geopackages)
+          for (let i = 0; i < geopackageValues.length; i++) {
+            const geopackage = geopackageValues[i]
+            const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
+            if (tables.length > 0) {
+              const geopackageTables = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, (gp) => {
+                const geopackageTables = []
+                for (let i = 0; i < tables.length; i++) {
+                  const tableName = tables[i]
+                  const features = GeoPackageUtilities._queryForFeaturesAt(gp, tableName, e.latlng, this.map.getZoom())
+                  if (!_.isEmpty(features)) {
+                    featuresFound = true
+                    const tableId = geopackage.id + '_' + tableName
+                    geopackageTables.push({
+                      id: tableId,
+                      tabName: geopackage.name + ': ' + tableName,
+                      geopackageId: geopackage.id,
+                      tableName: tableName,
+                      columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
+                      features: features
+                    })
+                  }
+                }
+                return geopackageTables
+              })
+              tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
+            }
+          }
+          for (let sourceId in sourceLayers) {
+            const sourceLayerConfig = sourceLayers[sourceId].configuration
+            if (sourceLayerConfig.visible) {
+              if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
+                const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, e.latlng, this.map.getZoom())
                 if (!_.isEmpty(features)) {
                   featuresFound = true
-                  const tableId = geopackage.id + '_' + tableName
-                  geopackageTables.push({
-                    id: tableId,
-                    tabName: geopackage.name + ': ' + tableName,
-                    geopackageId: geopackage.id,
-                    tableName: tableName,
-                    columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
+                  tableFeatures.sourceTables.push({
+                    id: sourceLayerConfig.id,
+                    tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
+                    sourceId: sourceLayerConfig.id,
+                    tableName: sourceLayerConfig.sourceLayerName,
+                    columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
                     features: features
                   })
                 }
               }
-              return geopackageTables
-            })
-            tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
-          }
-        }
-        for (let sourceId in sourceLayers) {
-          const sourceLayerConfig = sourceLayers[sourceId].configuration
-          if (sourceLayerConfig.visible) {
-            if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-              const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, e.latlng, this.map.getZoom())
-              if (!_.isEmpty(features)) {
-                featuresFound = true
-                tableFeatures.sourceTables.push({
-                  id: sourceLayerConfig.id,
-                  tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
-                  sourceId: sourceLayerConfig.id,
-                  tableName: sourceLayerConfig.sourceLayerName,
-                  columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                  features: features
-                })
-              }
             }
           }
-        }
-        if (featuresFound) {
-          this.lastShowFeatureTableEvent = null
-          this.tableFeaturesLatLng = e.latlng
-          this.tableFeatures = tableFeatures
-          this.showFeatureTable = true
-        } else {
-          this.hideFeatureTable()
+          if (featuresFound) {
+            this.lastShowFeatureTableEvent = null
+            this.tableFeaturesLatLng = e.latlng
+            this.tableFeatures = tableFeatures
+            this.showFeatureTable = true
+          } else {
+            this.hideFeatureTable()
+          }
         }
       }
     },
@@ -872,6 +876,11 @@
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox)
           }
+          if (_.isNil(updatedProject.boundingBoxFilterEditing)) {
+            this.drawingControl.enableDrawingLinks()
+          } else {
+            this.drawingControl.disableDrawingLinks()
+          }
         },
         deep: true
       }
@@ -931,7 +940,7 @@
       this.project.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
       this.map.on('click', this.queryForFeatures)
       const checkFeatureCount = _.throttle(async function (e) {
-        if (!_this.drawingControl.isDrawing) {
+        if (!_this.drawingControl.isDrawing && _.isNil(_this.project.boundingBoxFilterEditing)) {
           let count = 0
           // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
           const geopackageValues = Object.values(this.geopackages)
@@ -970,7 +979,7 @@
         }
       })
       this.map.on('editable:drawing:end', function (e) {
-        if (!_this.isDrawingBounds && !_this.drawingControl.cancelled) {
+        if (!_this.drawingControl.isDrawing && !_this.drawingControl.cancelled) {
           e.layer.toggleEdit()
           let layers = [NEW_GEOPACKAGE_OPTION]
           Object.values(_this.geopackages).forEach((geopackage) => {

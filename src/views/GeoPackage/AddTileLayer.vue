@@ -189,9 +189,9 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => (project.boundingBoxFilter || Number(step) < 6) && (!project.boundingBoxFilterEditingEnabled || (Number(step) === 5 && project.boundingBoxFilterEditingEnabled))]" color="primary">
+        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => (project.boundingBoxFilter || Number(step) < 6) && (!project.boundingBoxFilterEditing || (Number(step) === 5 && project.boundingBoxFilterEditingEnabled))]" color="primary">
           Specify tile bounds
-          <small class="pt-1">{{project.boundingBoxFilterEditingEnabled ? 'Setting bounds' : (project.boundingBoxFilter ? 'Bounds set' : 'Bounds not set')}}</small>
+          <small class="pt-1">{{project.boundingBoxFilterEditing ? 'Setting bounds' : (project.boundingBoxFilter ? 'Bounds set' : 'Bounds not set')}}</small>
         </v-stepper-step>
         <v-stepper-content step="5">
           <v-card flat tile>
@@ -200,12 +200,41 @@
             </v-card-subtitle>
             <v-card-text>
               <v-row no-gutters justify="end">
-                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditingEnabled && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
+                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditing && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
                   Clear
                 </v-btn>
-                <v-btn outlined :color="project.boundingBoxFilterEditingEnabled ? 'warning' : 'primary'" @click.stop="editBoundingBox">
-                  {{project.boundingBoxFilterEditingEnabled ? 'Finish' : (project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds')}}
+                <v-btn v-if="project.boundingBoxFilterEditing" outlined color="warning" @click.stop="stopEditingBoundingBox">
+                  Finish
                 </v-btn>
+                <v-menu
+                  v-else
+                  top
+                  close-on-click
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      color="primary"
+                      dark
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      {{project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds'}}
+                    </v-btn>
+                  </template>
+                  <v-list>
+                    <v-list-item-group>
+                      <v-list-item @click="() => editBoundingBox('manual')">
+                        <v-list-item-title>Manual</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="setBoundingBoxFilterToExtent">
+                        <v-list-item-title>Use Extent</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="() => editBoundingBox('grid')">
+                        <v-list-item-title>Use Grid</v-list-item-title>
+                      </v-list-item>
+                    </v-list-item-group>
+                  </v-list>
+                </v-menu>
               </v-row>
             </v-card-text>
           </v-card>
@@ -413,6 +442,9 @@
         ipcRenderer.send('build_tile_layer', {configuration: this.configuration})
       },
       cancel () {
+        if (!_.isNil(this.project.boundingBoxFilterEditing)) {
+          ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+        }
         this.back()
       },
       updateMinZoom (val) {
@@ -427,11 +459,19 @@
         }
         this.maxZoom = val
       },
+      setBoundingBoxFilterToExtent () {
+        ActionUtilities.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+          console.error(e)
+        })
+      },
       resetBoundingBox () {
         ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
       },
-      editBoundingBox () {
-        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, enabled: !this.project.boundingBoxFilterEditingEnabled})
+      editBoundingBox (mode) {
+        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+      },
+      stopEditingBoundingBox () {
+        ActionUtilities.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       getEstimatedTileCount () {
         const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id])
@@ -609,6 +649,7 @@
       Vue.nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
+      ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
     },
     beforeUnmount () {
       ActionUtilities.resetBoundingBox()

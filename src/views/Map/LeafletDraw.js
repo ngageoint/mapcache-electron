@@ -133,13 +133,6 @@ export default class LeafletDraw extends vendor.L.Control {
       vendor.L.DomUtil.addClass(this._cancelLink, 'hidden')
     }.bind(this))
 
-    map.on('boundingBoxDisabled', function () {
-      this.enableDrawingLinks()
-    }.bind(this))
-    map.on('boundingBoxEnabled', function () {
-      this.disableDrawingLinks()
-    }.bind(this))
-
     this.enableDrawingLinks()
 
     const tooltip = vendor.L.DomUtil.get('tooltip')

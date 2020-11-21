@@ -915,10 +915,12 @@ export default class GeoPackageUtilities {
     let styleRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let styleDao = featureTableStyles.getStyleDao()
-    styleDao.queryForAll().forEach((result) => {
-      let styleRow = styleDao.createObject(result)
-      styleRows[styleRow.id] = styleRow
-    })
+    if (!_.isNil(styleDao)) {
+      styleDao.queryForAll().forEach((result) => {
+        let styleRow = styleDao.createObject(result)
+        styleRows[styleRow.id] = styleRow
+      })
+    }
     return styleRows
   }
 
@@ -943,10 +945,12 @@ export default class GeoPackageUtilities {
     let iconRows = {}
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     let iconDao = featureTableStyles.getIconDao()
-    iconDao.queryForAll().forEach((result) => {
-      let iconRow = iconDao.createObject(result)
-      iconRows[iconRow.id] = iconRow
-    })
+    if (!_.isNil(iconDao)) {
+      iconDao.queryForAll().forEach((result) => {
+        let iconRow = iconDao.createObject(result)
+        iconRows[iconRow.id] = iconRow
+      })
+    }
     return iconRows
   }
 
@@ -2194,6 +2198,7 @@ export default class GeoPackageUtilities {
       let sourceColumnMap = {}
       let sourceNameChanges = {}
       let sourceStyleMap = {}
+      let parentStyleMapping = {}
 
       // retrieve layers
       status.message = 'Retrieving features from data sources and geopackage feature layers...'
@@ -2220,7 +2225,8 @@ export default class GeoPackageUtilities {
             styles: GeoPackageUtilities._getStyleRows(geopackage, sourceLayer.sourceLayerName),
             icons: GeoPackageUtilities._getIconRows(geopackage, sourceLayer.sourceLayerName),
             featureStyleMapping: GeoPackageUtilities._getFeatureStyleMapping(geopackage, sourceLayer.sourceLayerName, numberLayersToRetrieve > 1),
-            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, sourceLayer.sourceLayerName)
+            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, sourceLayer.sourceLayerName),
+            parentId: sourceLayer.id
           }
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, sourceLayer.sourceLayerName))
           featureColumns = result.mergedColumns
@@ -2242,7 +2248,8 @@ export default class GeoPackageUtilities {
             styles: GeoPackageUtilities._getStyleRows(geopackage, geopackageLayer.table),
             icons: GeoPackageUtilities._getIconRows(geopackage, geopackageLayer.table),
             featureStyleMapping: GeoPackageUtilities._getFeatureStyleMapping(geopackage, geopackageLayer.table, numberLayersToRetrieve > 1),
-            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, geopackageLayer.table)
+            tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, geopackageLayer.table),
+            parentId: geopackageLayer.geopackage.id
           }
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, geopackageLayer.table))
           featureColumns = result.mergedColumns
@@ -2328,34 +2335,36 @@ export default class GeoPackageUtilities {
         const styles = sourceStyleMap[sourceIdx].styles
         const icons = sourceStyleMap[sourceIdx].icons
         const featureStyleMapping = sourceStyleMap[sourceIdx].featureStyleMapping
-
-        const newStyleMapping = {}
-        const newIconMapping = {}
+        const parentId = sourceStyleMap[sourceIdx].parentId
 
         // insert styles and icons
-        if (!_.isNil(featureTableStyles)) {
+        if (!_.isNil(featureTableStyles) && _.isNil(parentStyleMapping[parentId])) {
+          parentStyleMapping[parentId] = {
+            iconMapping: {},
+            styleMapping: {}
+          }
           _.keys(styles).forEach(styleId => {
             const styleRow = styles[styleId]
             styleRow.id = null
-            newStyleMapping[styleId] = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
+            parentStyleMapping[parentId].styleMapping[styleId] = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
           })
           _.keys(icons).forEach(iconId => {
             const iconRow = icons[iconId]
             iconRow.id = null
-            newIconMapping[iconId] = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
+            parentStyleMapping[parentId].iconMapping[iconId] = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
           })
-        }
 
-        // only one layer being added to this feature table, so we can migrate over table style/icon relationships
-        if (numberLayersToRetrieve === 1) {
-          const tableStyleMapping = sourceStyleMap[sourceIdx].tableStyleMappings
-          const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName)
-          tableStyleMapping.tableStyleMappings.forEach(mapping => {
-            featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, newStyleMapping[mapping.id], mapping.geometryType)
-          })
-          tableStyleMapping.tableIconMappings.forEach(mapping => {
-            featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, newIconMapping[mapping.id], mapping.geometryType)
-          })
+          // only one layer being added to this feature table, so we can migrate over table style/icon relationships
+          if (numberLayersToRetrieve === 1) {
+            const tableStyleMapping = sourceStyleMap[sourceIdx].tableStyleMappings
+            const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName)
+            tableStyleMapping.tableStyleMappings.forEach(mapping => {
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, parentStyleMapping[parentId].iconMapping[mapping.id], mapping.geometryType)
+            })
+            tableStyleMapping.tableIconMappings.forEach(mapping => {
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, parentStyleMapping[parentId].styleMapping[mapping.id], mapping.geometryType)
+            })
+          }
         }
 
         // insert features
@@ -2393,10 +2402,10 @@ export default class GeoPackageUtilities {
             let geometryType = !_.isNil(featureRow.geometry) ? featureRow.geometry.toGeoJSON().type.toUpperCase() : 'GEOMETRY'
             const styleMapping = featureStyleMapping[featureRow.id]
             if (!_.isNil(styleMapping.iconId) && styleMapping.iconId.id > -1) {
-              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), featureId, newIconMapping[styleMapping.iconId.id], GeometryType.fromName(geometryType))
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), featureId, parentStyleMapping[parentId].iconMapping[styleMapping.iconId.id], GeometryType.fromName(geometryType))
             }
             if (!_.isNil(styleMapping.styleId) && styleMapping.styleId.id > -1) {
-              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), featureId, newStyleMapping[styleMapping.styleId.id], GeometryType.fromName(geometryType))
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), featureId, parentStyleMapping[parentId].styleMapping[styleMapping.styleId.id], GeometryType.fromName(geometryType))
             }
           }
 
@@ -2870,31 +2879,47 @@ export default class GeoPackageUtilities {
   static _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
     const features = GeoPackageUtilities._getAllFeatureIdsAndGeometryTypes(gp, tableName)
-    const styleMappings = featureTableStyles.getFeatureStyleExtension().getStyleMappingDao(tableName).queryForAll().map(record => {
-      return {
-        featureId: record.base_id,
-        id: record.related_id
-      }
-    })
-    const iconMappings = featureTableStyles.getFeatureStyleExtension().getIconMappingDao(tableName).queryForAll().map(record => {
-      return {
-        featureId: record.base_id,
-        id: record.related_id
-      }
-    })
-    const tableStyleMappings = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName).queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
-    const tableIconMappings = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName).queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
     const featureStyleMapping = {}
+    const styleMappingDao = featureTableStyles.getFeatureStyleExtension().getStyleMappingDao(tableName)
+    let styleMappings = []
+    if (!_.isNil(styleMappingDao)) {
+      styleMappings = styleMappingDao.queryForAll().map(record => {
+        return {
+          featureId: record.base_id,
+          id: record.related_id
+        }
+      })
+    }
+    const iconMappingDao = featureTableStyles.getFeatureStyleExtension().getIconMappingDao(tableName)
+    let iconMappings = []
+    if (!_.isNil(iconMappingDao)) {
+      iconMappings = iconMappingDao.queryForAll().map(record => {
+        return {
+          featureId: record.base_id,
+          id: record.related_id
+        }
+      })
+    }
+    const tableStyleMappingDao = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName)
+    let tableStyleMappings = []
+    if (!_.isNil(tableStyleMappingDao)) {
+      tableStyleMappings = tableStyleMappingDao.queryForAll().map(record => {
+        return {
+          id: record.related_id,
+          geometryType: GeometryType.fromName(record.geometry_type_name)
+        }
+      })
+    }
+    const tableIconMappingDao = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName)
+    let tableIconMappings = []
+    if (!_.isNil(tableIconMappingDao)) {
+      tableIconMappings = tableIconMappingDao.queryForAll().map(record => {
+        return {
+          id: record.related_id,
+          geometryType: GeometryType.fromName(record.geometry_type_name)
+        }
+      })
+    }
     features.forEach(feature => {
       if (checkForTableStyles) {
         featureStyleMapping[feature.id] = {
@@ -2927,21 +2952,33 @@ export default class GeoPackageUtilities {
    */
   static _getTableStyleMappings(gp, tableName) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
-    const tableStyleMappings = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName).queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
-    const tableIconMappings = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName).queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
+    const tableStyleMappingDao = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName)
+    let tableStyleMappings = []
+    if (!_.isNil(tableStyleMappingDao)) {
+      tableStyleMappings = tableStyleMappingDao.queryForAll().map(record => {
+        return {
+          id: record.related_id,
+          geometryType: GeometryType.fromName(record.geometry_type_name)
+        }
+      })
+    }
+    const tableIconMappingDao = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName)
+    let tableIconMappings = []
+    if (!_.isNil(tableIconMappingDao)) {
+      tableIconMappings = tableIconMappingDao.queryForAll().map(record => {
+        return {
+          id: record.related_id,
+          geometryType: GeometryType.fromName(record.geometry_type_name)
+        }
+      })
+    }
     return {
       tableIconMappings,
       tableStyleMappings
     }
+  }
+
+  static _hasStyleExtension(gp, tableName) {
+    return gp.featureStyleExtension.has(tableName);
   }
 }

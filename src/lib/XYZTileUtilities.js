@@ -33,14 +33,13 @@ export default class XYZTileUtilities {
   static tileBboxCalculator (x, y, z) {
     x = Number(x)
     y = Number(y)
-    var tileBounds = {
+
+    return {
       north: XYZTileUtilities.tile2lat(y, z),
       east: XYZTileUtilities.tile2lon(x + 1, z),
       south: XYZTileUtilities.tile2lat(y + 1, z),
       west: XYZTileUtilities.tile2lon(x, z)
     }
-
-    return tileBounds
   }
 
   static calculateXTileRange (bbox, z) {
