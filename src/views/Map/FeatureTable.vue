@@ -1,5 +1,8 @@
 <template>
   <v-sheet v-if="tableFeatures">
+    <v-row class="mb-2" no-gutters justify="end">
+      <v-btn small @click.stop.prevent="close" icon><v-icon>mdi-close</v-icon></v-btn>
+    </v-row>
     <v-tabs
       v-model="tab"
       grow
