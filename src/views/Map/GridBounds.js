@@ -10,7 +10,10 @@ export default {
       }
     },
     enableGridSelection () {
-      this.gridLayer = new TileSelectionMapLayer()
+      this.gridLayer = new TileSelectionMapLayer({
+        pane: 'gridSelectionPane',
+        zIndex: 625
+      })
       this.gridLayer.setProjectId(this.project.id)
       this.gridLayer.addTo(this.map)
     }

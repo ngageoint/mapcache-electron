@@ -8,7 +8,7 @@ export default class TileSelectionMapLayer extends vendor.L.GridLayer {
   createTile (coords) {
     const self = this
     // create a <canvas> element for drawing
-    var tile = vendor.L.DomUtil.create('button', '')
+    var tile = vendor.L.DomUtil.create('button', 'leaflet-tile')
 
     tile.style.pointerEvents = 'initial'
     tile.style.background = '#4e9cca22'

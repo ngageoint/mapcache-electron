@@ -900,6 +900,9 @@
         minZoom: 3,
         layers: [defaultBaseMap]
       })
+      this.map.createPane('gridSelectionPane')
+      this.map.getPane('gridSelectionPane').style.zIndex = 625;
+
       const host = 'https://osm-nominatim.gs.mil'
       const searchUrl = `${host}/search`
       const reverseUrl = `${host}/reverse`
