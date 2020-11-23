@@ -2,12 +2,33 @@ import path from 'path'
 import { select } from 'xpath'
 import fs from 'fs'
 import axios from 'axios'
+import { BoundingBox } from '@ngageoint/geopackage'
+import Jimp from 'jimp'
+import { transformRotate, bbox } from '@turf/turf'
+import _ from 'lodash'
 import FileUtilities from './FileUtilities'
 import GeoTiffLayer from './source/layer/tile/GeoTiffLayer'
 import GDALUtilities from './GDALUtilities'
 import URLUtilities from './URLUtilities'
 
+
 export default class KMLUtilities {
+
+  static rotateBoundingBox(boundingBox, rotation) {
+    // Convert to geoJson polygon format which turf can read.
+    // turf rotates and returns a geoJson polygon
+    const rotatedPoly = transformRotate(boundingBox.toGeoJSON().geometry, rotation);
+    // Coverts the geoJson polygon to a geoJson bbox
+    const rotatedBBox = bbox(rotatedPoly);
+    // Converts geoJson bbox into a Geopackage js bounding box.
+    const rotMinLongitude = rotatedBBox[0];
+    const rotMinLatitude = rotatedBBox[1];
+    const rotMaxLongitude = rotatedBBox[2];
+    const rotMaxLatitude = rotatedBBox[3];
+    return new BoundingBox(rotMinLongitude, rotMaxLongitude, rotMinLatitude, rotMaxLatitude);
+  }
+
+
   static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir) => {
     let parsedKML = {
       geotiffs: [],
@@ -64,10 +85,12 @@ export default class KMLUtilities {
 
         if (!errored) {
           let fullFile = path.join(iconBaseDir, iconPath)
+          let image = await Jimp.read(fullFile)
           let east = groundOverlayDOM.getElementsByTagNameNS('*', 'east')[0].childNodes[0].nodeValue
           let north = groundOverlayDOM.getElementsByTagNameNS('*', 'north')[0].childNodes[0].nodeValue
           let west = groundOverlayDOM.getElementsByTagNameNS('*', 'west')[0].childNodes[0].nodeValue
           let south = groundOverlayDOM.getElementsByTagNameNS('*', 'south')[0].childNodes[0].nodeValue
+          let rotation = groundOverlayDOM.getElementsByTagNameNS('*', 'rotation')[0].childNodes[0].nodeValue
 
           if (west > 180.0) {
             west -= 360.0
@@ -85,7 +108,29 @@ export default class KMLUtilities {
             south -= 180.0
           }
 
-          const extent = [Number(west), Number(south), Number(east), Number(north)]
+          let boundingBox = new BoundingBox(
+            parseFloat(west), // minLongitude
+            parseFloat(east), // maxLongitude
+            parseFloat(south), // minLatitude
+            parseFloat(north), // maxLatitude
+          )
+
+
+          if (!_.isNil(rotation)) {
+            if (fullFile.endsWith('.jpg') || fullFile.endsWith('.jpeg')) {
+              fullFile = fullFile.substr(0, fullFile.lastIndexOf('.')) + '.png';
+              await image.writeAsync(fullFile)
+              image = await Jimp.read(fullFile)
+            }
+            rotation = parseFloat(rotation)
+            image.rotate(rotation)
+            boundingBox = KMLUtilities.rotateBoundingBox(boundingBox, rotation)
+
+            // overwrite image
+            await image.writeAsync(fullFile)
+          }
+
+          const extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
           // ensure there is a unique directory for each geotiff
           const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
           const fileName = iconPath.substring(0, iconPath.lastIndexOf('.')) + '.tif'

@@ -41,6 +41,7 @@
     "image-size": "0.9.3",
     "imagemin": "7.0.1",
     "imagemin-pngquant": "git://github.com/caldwellc/imagemin-pngquant.git#master",
+    "jimp": "^0.16.1",
     "jszip": "3.5.0",
     "leaflet": "1.7.1",
     "leaflet-draw": "1.0.4",
