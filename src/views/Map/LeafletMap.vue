@@ -115,17 +115,6 @@
   let maxFeatures
   let isDrawing = false
 
-  function normalize (longitude) {
-    let lon = longitude
-    while (lon < -180) {
-      lon += 360
-    }
-    while (lon > 180) {
-      lon -= 360
-    }
-    return lon
-  }
-
   export default {
     mixins: [
       DrawBounds,
@@ -199,12 +188,12 @@
         }
         switch (feature.geometry.type.toLowerCase()) {
           case 'point': {
-            feature.geometry.coordinates[0] = normalize(feature.geometry.coordinates[0])
+            feature.geometry.coordinates[0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[0])
             break
           }
           case 'linestring': {
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-              feature.geometry.coordinates[i][0] = normalize(feature.geometry.coordinates[i][0])
+              feature.geometry.coordinates[i][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][0])
             }
             break
           }
@@ -212,7 +201,7 @@
           case 'multilinestring': {
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
               for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
-                feature.geometry.coordinates[i][j][0] = normalize(feature.geometry.coordinates[i][j][0])
+                feature.geometry.coordinates[i][j][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][j][0])
               }
             }
             break
@@ -221,7 +210,7 @@
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
               for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
                 for (let k = 0; k < feature.geometry.coordinates[i][j].length; k++) {
-                  feature.geometry.coordinates[i][j][k][0] = normalize(feature.geometry.coordinates[i][j][k][0])
+                  feature.geometry.coordinates[i][j][k][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][j][k][0])
                 }
               }
             }
@@ -821,7 +810,9 @@
           this.geoPackageFeatureLayerSelection = geoPackageFeatureLayerSelection
           this.geoPackageFeatureLayerChoices = layers
           Vue.nextTick(() => {
-            this.$refs.featureTableNameForm.validate()
+            if (!_.isNil(this.$refs.featureTableNameForm)) {
+              this.$refs.featureTableNameForm.validate()
+            }
           })
         }
       },
@@ -997,7 +988,9 @@
           }
           _this.layerSelectionVisible = true
           Vue.nextTick(() => {
-            _this.$refs.featureTableNameForm.validate()
+            if (!_.isNil(_this.$refs.featureTableNameForm)) {
+              _this.$refs.featureTableNameForm.validate()
+            }
           })
         }
       })

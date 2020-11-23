@@ -2080,6 +2080,10 @@ export default class GeoPackageUtilities {
     })
   }
 
+  static normalizeLongitude (longitude) {
+    return (longitude % 360 + 540) % 360 - 180
+  }
+
   /**
    * Gets a bounding box to perform a query using a coordinate and zoom
    * @param coordinate
@@ -2088,7 +2092,7 @@ export default class GeoPackageUtilities {
    */
   static getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
     const queryDistanceDegrees = 10.0 / Math.pow(2, zoom)
-    return new BoundingBox(coordinate.lng - queryDistanceDegrees, coordinate.lng + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
+    return new BoundingBox(GeoPackageUtilities.normalizeLongitude(coordinate.lng) - queryDistanceDegrees, GeoPackageUtilities.normalizeLongitude(coordinate.lng) + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
   }
 
   /**
