@@ -184,6 +184,11 @@
               _this.clearProcessing(result.source)
               ActionUtilities.addDataSources({dataSources: result.dataSources})
             }, 1000)
+          } else {
+            const source = processing.sources.find(s => s.id === result.source.id)
+            if (!_.isNil(source)) {
+              source.error = result.error
+            }
           }
         })
         ipcRenderer.send('process_source', {project: _this.project, source: source})

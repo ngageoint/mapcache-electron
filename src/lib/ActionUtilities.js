@@ -455,6 +455,7 @@ export default class ActionUtilities {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter: overallExtent})

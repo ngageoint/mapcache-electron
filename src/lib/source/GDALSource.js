@@ -8,8 +8,8 @@ import VectorLayer from './layer/vector/VectorLayer'
 import FileUtilities from '../FileUtilities'
 
 export default class GDALSource extends Source {
-  constructor (filePath, sourceId) {
-    super(filePath, sourceId)
+  constructor (filePath) {
+    super(filePath)
     // verify this can be opened
     gdal.config.set('OGR_ENABLE_PARTIAL_REPROJECTION', 'YES')
     this.dataset = gdal.open(this.filePath, 'r')

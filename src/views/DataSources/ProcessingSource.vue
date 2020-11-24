@@ -7,14 +7,13 @@
       <v-card-text>
         <div v-if="source.error">
           <div class="card__header__close-btn" @click="closeCard"></div>
-          <div class="card__face__source-error-name contrast-text">
-            Error - {{displayName}}
-          </div>
+          <v-row no-gutters class="align-start left-margin" v-if="source.error"><p class="text-wrap full-width">{{source.error}}</p></v-row>
         </div>
-        <v-row v-if="source.isUrl" class="align-start left-margin">Url: {{displayName}}</v-row>
-        <v-row v-else class="align-start left-margin">File name: {{displayName}}</v-row>
-        <v-row class="align-start left-margin" v-if="source.status">Status: {{source.status}}</v-row>
-        <v-row class="align-start left-margin" v-if="source.error">{{source.error}}</v-row>
+        <div v-else>
+          <v-row no-gutters v-if="source.isUrl" class="align-start left-margin"><p class="text-wrap full-width">Url: {{displayName}}</p></v-row>
+          <v-row no-gutters v-else class="align-start left-margin"><p class="text-wrap full-width">File name: {{displayName}}</p></v-row>
+          <v-row no-gutters class="align-start left-margin" v-if="source.status"><p class="text-wrap full-width">Status: {{source.status}}</p></v-row>
+        </div>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -68,7 +67,10 @@
 </script>
 
 <style scoped>
-.left-margin {
-  margin-left: 8px;
-}
+  .left-margin {
+    margin-left: 8px;
+  }
+  .full-width {
+    width: 100%;
+  }
 </style>

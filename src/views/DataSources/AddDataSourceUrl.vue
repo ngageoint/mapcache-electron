@@ -80,7 +80,7 @@
                   <v-radio-group row v-model="selectedServiceType">
                     <v-radio
                       v-for="serviceType in supportedServiceTypes"
-                      :key="serviceType.value"
+                      :key="'service-type-' + serviceType.value"
                       :label="`${serviceType.name}`"
                       :value="serviceType.value"
                     ></v-radio>
@@ -139,6 +139,10 @@
                   :rules="tokenAuthRules"
                   required/>
               </v-form>
+              <v-card-actions>
+                <v-spacer/>
+                <v-btn v-if="authValid" :disabled="loading" @click="connect">Connect</v-btn>
+              </v-card-actions>
             </v-card-text>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 4" v-if="authValid && (serviceInfo !== null && serviceInfo !== undefined)">
@@ -178,14 +182,14 @@
                   >
                     <v-list-item
                       v-for="(item, i) in serviceLayers"
-                      :key="`item-${i}`"
+                      :key="`service-layer-${i}`"
                       :value="item"
                       link
                     >
                       <template v-slot:default="{ active }">
                         <v-list-item-content>
                           <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                          <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div></div>
+                          <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + 'service-layer-title'" v-html="title"></div></div>
                         </v-list-item-content>
                         <v-list-item-action>
                           <v-switch
@@ -205,12 +209,12 @@
                 <v-list dense v-if="unsupportedServiceLayers.length > 0">
                   <v-list-item
                     v-for="(item, i) in unsupportedServiceLayers"
-                    :key="`item-${i}`"
+                    :key="`unsupported-service-layer-${i}`"
                     :value="item"
                   >
                     <v-list-item-content>
                       <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div></div>
+                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-unsupported-service-layer-title'" v-html="title"></div></div>
                     </v-list-item-content>
                   </v-list-item>
                 </v-list>
@@ -240,10 +244,10 @@
                 @start="drag = true"
                 @end="drag = false">
                 <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
-                  <li v-for="(item) in sortedLayers" :key="item.name" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
+                  <li v-for="(item) in sortedLayers" :key="item.name + '-sorted-layer'" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
                     <v-list-item-content>
                       <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '_title'" v-html="title"></div></div>
+                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-sorted-layer-title'" v-html="title"></div></div>
                     </v-list-item-content>
                   </li>
                 </transition-group>
@@ -390,6 +394,9 @@
         addUrl: 'URLs/addUrl',
         removeUrl: 'URLs/removeUrl'
       }),
+      connect () {
+        this.debounceGetServiceInfo(this.selectedServiceType)
+      },
       addLayer () {
         if (this.selectedServiceType === 2) {
           this.processXYZUrl(this.dataSourceUrl)
@@ -415,26 +422,43 @@
           }
           if (!_.isNil(this.dataSourceUrl) && !_.isEmpty(this.dataSourceUrl) && !_.isNil(serviceType) && serviceType !== -1) {
             if (serviceType === 3) {
-              const response = await axios({
-                method: 'get',
-                url: this.dataSourceUrl.split('?')[0] + '?f=pjson',
-                headers: headers
-              })
-              serviceInfo = {
-                title: 'ArcGIS REST Feature Service',
-                abstract: response.data.serviceDescription || '',
-                version: response.data.currentVersion,
-                copyright: response.data.copyrightText || ''
+              const { baseUrl, queryParams } = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
+
+              let url = baseUrl + '?f=pjson'
+              if (!_.isNil(queryParams['token'])) {
+                url = url + '&token=' + queryParams['token']
               }
-              this.serviceLayers = response.data.layers.map(layer => {
-                let title = !_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1 ? response.data.layers.find(l => l.id === layer.parentLayerId).name : layer.name
-                let subtitles = []
-                if (!_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1) {
-                  subtitles.push(layer.name)
+              try {
+                const response = await axios({
+                  method: 'get',
+                  url: url,
+                  headers: headers
+                })
+                serviceInfo = {
+                  title: 'ArcGIS REST Feature Service',
+                  abstract: response.data.serviceDescription || '',
+                  version: response.data.currentVersion,
+                  copyright: response.data.copyrightText || ''
                 }
-                return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
-              })
-              this.unsupportedServiceLayers = []
+                this.serviceLayers = response.data.layers.map(layer => {
+                  let title = !_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1 ? response.data.layers.find(l => l.id === layer.parentLayerId).name : layer.name
+                  let subtitles = []
+                  if (!_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1) {
+                    subtitles.push(layer.name)
+                  }
+                  return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
+                })
+                this.unsupportedServiceLayers = []
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error(e)
+                if (e.response && (e.response.status === 401 || e.response.status === 403)) {
+                  accessDeniedOrForbidden = true
+                  this.error = 'Access to ArcGIS feature service is denied. Check your credentials'
+                } else {
+                  this.error = 'ArcGIS feature service not found.'
+                }
+              }
             } else if (serviceType === 2) {
               try {
                 await axios({
@@ -731,27 +755,6 @@
           Vue.nextTick(() => {
             this.debounceGetServiceInfo(newValue)
           })
-        }
-      },
-      username: {
-        handler (newValue) {
-          if (this.authSelection === 'basic' && !_.isNil(newValue) && !_.isNil(this.password) && this.password.length > 0) {
-            this.debounceGetServiceInfo(this.selectedServiceType)
-          }
-        }
-      },
-      password: {
-        handler (newValue) {
-          if (this.authSelection === 'basic' && !_.isNil(newValue) && !_.isNil(this.username) && this.username.length > 0) {
-            this.debounceGetServiceInfo(this.selectedServiceType)
-          }
-        }
-      },
-      token: {
-        handler (newValue) {
-          if (this.authSelection === 'bearer' && !_.isNil(newValue) && newValue.length > 0) {
-            this.debounceGetServiceInfo(this.selectedServiceType)
-          }
         }
       },
       authSelection: {

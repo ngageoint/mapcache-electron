@@ -6,6 +6,7 @@ import KMZSource from './KMZSource'
 import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
 import ArcGISFeatureServiceSource from './ArcGISFeatureServiceSource'
+import ZipSource from './ZipSource'
 
 export default class SourceFactory {
   static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
@@ -35,6 +36,10 @@ export default class SourceFactory {
           break
         case 'kmz':
           source = new KMZSource(filePath)
+          await source.initialize()
+          break
+        case 'zip':
+          source = new ZipSource(filePath)
           await source.initialize()
           break
         default:

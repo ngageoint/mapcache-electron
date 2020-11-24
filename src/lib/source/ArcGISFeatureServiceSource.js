@@ -1,11 +1,13 @@
 import Source from './Source'
 import axios from 'axios'
+import _ from 'lodash'
 import path from 'path'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import { GeoPackageDataType } from '@ngageoint/geopackage'
 import VectorLayer from './layer/vector/VectorLayer'
 import { arcgisToGeoJSON } from '@esri/arcgis-to-geojson-utils'
 import FileUtilities from '../FileUtilities'
+import URLUtilities from '../URLUtilities'
 
 export default class ArcGISFeatureServiceSource extends Source {
   async retrieveLayers () {
@@ -17,9 +19,15 @@ export default class ArcGISFeatureServiceSource extends Source {
     let fields = []
     for (const layer of this.layers) {
       let content = await this.getContent(layer)
-      featureCollection.features = featureCollection.features.concat(content.features)
-      // only add new fields
-      fields = fields.concat(content.fields.filter(f => fields.findIndex(field => field.name.toLowerCase() === f.name.toLowerCase()) === -1))
+      if (content.error) {
+        // eslint-disable-next-line no-console
+        console.error(content.error)
+        throw content.error
+      } else {
+        featureCollection.features = featureCollection.features.concat(content.features)
+        // only add new fields
+        fields = fields.concat(content.fields.filter(f => fields.findIndex(field => field.name.toLowerCase() === f.name.toLowerCase()) === -1))
+      }
     }
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     let fileName = this.sourceName + '.gpkg'
@@ -64,8 +72,9 @@ export default class ArcGISFeatureServiceSource extends Source {
         headers['authorization'] = credentials.authorization
       }
 
-      const url =
-        this.filePath.split('?')[0] + '/' + layer.id + '/query/?f=json&' +
+      const { baseUrl, queryParams } = URLUtilities.getBaseUrlAndQueryParams(this.filePath)
+      let url =
+        baseUrl + '/' + layer.id + '/query/?f=json&' +
         'returnGeometry=true&spatialRel=esriSpatialRelIntersects&geometry=' +
         encodeURIComponent(
           '{"xmin":' +
@@ -79,7 +88,10 @@ export default class ArcGISFeatureServiceSource extends Source {
           ',"spatialReference":{"wkid":4326}}'
         ) +
         '&geometryType=esriGeometryEnvelope&inSR=4326&outFields=*' +
-        '&outSR=4326';
+        '&outSR=4326'
+      if (!_.isNil(queryParams['token'])) {
+        url = url + '&token=' + queryParams['token']
+      }
       axios({
         method: 'get',
         url: url,
@@ -108,7 +120,7 @@ export default class ArcGISFeatureServiceSource extends Source {
         resolve({ features: featureCollection.features.filter(f => f !== undefined), fields: fields })
       }).catch(err => {
         // eslint-disable-next-line no-console
-        console.error(err)
+        resolve({ error: err })
       })
     })
   }
