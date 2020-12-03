@@ -2479,10 +2479,12 @@ export default class GeoPackageUtilities {
 
       status.message = 'Preparing layers...'
 
-      const { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
+      let { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
+
+      boundingBox = XYZTileUtilities.trimToWebMercatorMax(boundingBox)
 
       throttleStatusCallback(status)
-      const contentsBounds = new BoundingBox(configuration.boundingBoxFilter[0], configuration.boundingBoxFilter[2], configuration.boundingBoxFilter[1], configuration.boundingBoxFilter[3])
+      const contentsBounds = new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
       const contentsSrsId = 4326
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857

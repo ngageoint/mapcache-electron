@@ -7,7 +7,6 @@ export default class WMSSource extends Source {
     this.wmsLayers = []
     if (this.layers.length > 0) {
       const layerNames = this.layers.map(layer => layer.name)
-      // let extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
       let extent = this.layers[0].extent
       this.layers.forEach(layer => {
         if (layer.extent[0] < extent[0]) {
