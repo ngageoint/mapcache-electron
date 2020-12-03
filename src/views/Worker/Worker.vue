@@ -41,6 +41,8 @@
           }
         }
         createdSource.removeSourceDir()
+      } else {
+        error = 'Unable to create source.'
       }
     } catch (e) {
       // eslint-disable-next-line no-console

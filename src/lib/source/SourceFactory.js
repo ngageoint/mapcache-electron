@@ -1,12 +1,14 @@
 import path from 'path'
-import GDALSource from './GDALSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
 import KMZSource from './KMZSource'
 import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
 import ArcGISFeatureServiceSource from './ArcGISFeatureServiceSource'
+import ShapeFileSource from './ShapeFileSource'
 import ZipSource from './ZipSource'
+import GeoTIFFSource from './GeoTIFFSource'
+import GeoJSONSource from './GeoJSONSource'
 
 export default class SourceFactory {
   static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
@@ -42,8 +44,20 @@ export default class SourceFactory {
           source = new ZipSource(filePath)
           await source.initialize()
           break
+        case 'shp':
+          source = new ShapeFileSource(filePath)
+          break
+        case 'json':
+        case 'geojson':
+          source = new GeoJSONSource(filePath)
+          break
+        case 'geotiff':
+        case 'geotif':
+        case 'tif':
+        case 'tiff':
+          source = new GeoTIFFSource(filePath)
+          break
         default:
-          source = new GDALSource(filePath)
           break
       }
       return source

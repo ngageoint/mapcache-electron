@@ -2,14 +2,14 @@ import Source from './Source'
 import path from 'path'
 import JSZip from 'jszip'
 import jetpack from 'fs-jetpack'
-import GDALSource from './GDALSource'
+import ShapeFileSource from './ShapeFileSource'
 import _ from 'lodash'
 import mkdirp from 'mkdirp'
 
 export default class ZipSource extends Source {
   constructor (filePath) {
     super (filePath)
-    this.gdalSource = null
+    this.shapeFileSource = null
     this.layers = []
     this.shapeFile = null
   }
@@ -51,8 +51,8 @@ export default class ZipSource extends Source {
       }
       try {
         this.filePath = path.join(destinationFolder, this.shapeFile)
-        this.gdalSource = new GDALSource(this.filePath)
-        this.gdalSource.removeSourceDir()
+        this.shapeFileSource = new ShapeFileSource(this.filePath)
+        this.shapeFileSource.removeSourceDir()
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(e)
@@ -61,7 +61,7 @@ export default class ZipSource extends Source {
   }
 
   retrieveLayers () {
-    return _.isNil(this.gdalSource) ? [] : this.gdalSource.retrieveLayers()
+    return _.isNil(this.shapeFileSource) ? [] : this.shapeFileSource.retrieveLayers()
   }
 
 }

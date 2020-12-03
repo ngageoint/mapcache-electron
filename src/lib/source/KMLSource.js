@@ -19,7 +19,7 @@ export default class KMLSource extends Source {
   async initialize () {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder)
+    let parsedKML = await KMLUtilities.parseKML(kml/*, originalFileDir, this.sourceCacheFolder*/)
     this.geotiffs = parsedKML.geotiffs
     this.vectorLayers = []
     let documents = parsedKML.documents
