@@ -9,7 +9,6 @@ import jetpack from 'fs-jetpack'
 export default class ShapeFileSource extends Source {
   async retrieveLayers () {
     const geopackageLayers = []
-    console.log(this.filePath)
     let featureCollection = {
       type: 'FeatureCollection',
       features: []
@@ -31,8 +30,6 @@ export default class ShapeFileSource extends Source {
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     let fileName = name + '.gpkg'
     let filePath = path.join(sourceDirectory, fileName)
-    console.log(filePath)
-    console.log(name)
     await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection)
     const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, name)
     geopackageLayers.push(new VectorLayer({
