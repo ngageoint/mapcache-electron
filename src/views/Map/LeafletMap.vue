@@ -282,19 +282,26 @@
         })
       },
       addDataSource (sourceConfiguration, map) {
+        const sourceId = sourceConfiguration.id
         let source = LayerFactory.constructLayer(sourceConfiguration)
         source._maxFeatures = this.project.maxFeatures
+        sourceLayers[sourceId] = {
+          configuration: _.cloneDeep(sourceConfiguration),
+          visible: sourceConfiguration.visible
+        }
         source.initialize().then(function () {
-          let mapLayer
-          if (sourceConfiguration.visible) {
-            mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
-            mapLayer.addTo(map)
-          }
-          sourceLayers[sourceConfiguration.id] = {
-            configuration: _.cloneDeep(sourceConfiguration),
-            initializedSource: source,
-            visible: sourceConfiguration.visible,
-            mapLayer: mapLayer
+          // update style just in case during the initialization the layer was modified
+          if (!_.isNil(sourceLayers[sourceId])) {
+            if (source.layerType === 'GeoTIFF') {
+              source.updateStyle(sourceLayers[sourceId].configuration)
+            }
+            let mapLayer
+            if (sourceLayers[sourceId].configuration.visible) {
+              mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
+              mapLayer.addTo(map)
+            }
+            sourceLayers[sourceId].initializedSource = source
+            sourceLayers[sourceId].mapLayer = mapLayer
           }
         })
       },
@@ -661,21 +668,40 @@
             let updatedSource = updatedSources[sourceId]
             let oldLayerConfig = sourceLayers[sourceId].configuration
             // something other than sourceKey, maxFeatures, visible, or feature assignments changed
-            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']), _.omit(oldLayerConfig, ['styleKey', 'visible', 'styleAssignmentFeature', 'iconAssignmentFeature']))) {
-              _this.removeDataSource(sourceId)
-              _this.addDataSource(updatedSource, map)
+            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible']), _.omit(oldLayerConfig, ['styleKey', 'visible']))) {
+              if (updatedSource.layerType === 'GeoTIFF') {
+                sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
+                if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
+                  sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
+                  if (sourceLayers[sourceId].configuration.visible) {
+                    let mapLayer = sourceLayers[sourceId].mapLayer
+                    if (mapLayer) {
+                      mapLayer.remove()
+                      delete sourceLayers[sourceId].mapLayer
+                    }
+                    mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
+                    mapLayer.addTo(map)
+                    sourceLayers[sourceId].mapLayer = mapLayer
+                  }
+                }
+              } else {
+                _this.removeDataSource(sourceId)
+                _this.addDataSource(updatedSource, map)
+              }
             } else if (!_.isEqual(updatedSource.visible, oldLayerConfig.visible)) {
               sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              if (updatedSource.visible) {
-                let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                mapLayer.addTo(map)
-                sourceLayers[sourceId].mapLayer = mapLayer
-              } else {
-                // hide it
-                let mapLayer = sourceLayers[sourceId].mapLayer
-                if (mapLayer) {
-                  mapLayer.remove()
-                  delete sourceLayers[sourceId].mapLayer
+              if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
+                if (updatedSource.visible) {
+                  let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
+                  mapLayer.addTo(map)
+                  sourceLayers[sourceId].mapLayer = mapLayer
+                } else {
+                  // hide it
+                  let mapLayer = sourceLayers[sourceId].mapLayer
+                  if (mapLayer) {
+                    mapLayer.remove()
+                    delete sourceLayers[sourceId].mapLayer
+                  }
                 }
               }
             } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector') {
@@ -999,7 +1025,7 @@
       })
       // add sources to map
       for (const sourceId in this.sources) {
-        this.addDataSource(this.sources[sourceId], this.map, false)
+        this.addDataSource(this.sources[sourceId], this.map)
       }
       // add geopackages to map on mount
       for (const geopackageId in this.geopackages) {

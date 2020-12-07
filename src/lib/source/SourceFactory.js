@@ -52,7 +52,6 @@ export default class SourceFactory {
           source = new GeoJSONSource(filePath)
           break
         case 'geotiff':
-        case 'geotif':
         case 'tif':
         case 'tiff':
           source = new GeoTIFFSource(filePath)

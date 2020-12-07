@@ -32,6 +32,7 @@ class WorkerWindowPool {
           show: false,
           webPreferences: {
             nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+            nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
             enableRemoteModule: true,
             webSecurity: false
           }
@@ -193,6 +194,18 @@ class WorkerWindowPool {
       ipcMain.on('worker_build_tile_layer_status_' + workerWindow.id, (event, status) => {
         statusCallback(status)
       })
+    })
+  }
+
+  async readRaster (payload) {
+    const workerWindow = await this.getOrWaitForAvailableWorker()
+    return new Promise(resolve => {
+      this.workerWindowAssignment[payload.id] = workerWindow
+      ipcMain.once('worker_read_raster_completed_' + workerWindow.id, (event, result) => {
+        this.releaseWorker(workerWindow, payload.id)
+        resolve(result)
+      })
+      workerWindow.window.webContents.send('worker_read_raster', payload)
     })
   }
 

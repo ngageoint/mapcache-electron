@@ -6,6 +6,7 @@
   import { ipcRenderer } from 'electron'
   import SourceFactory from '../../lib/source/SourceFactory'
   import GeoPackageUtilties from '../../lib/GeoPackageUtilities'
+  import GeoTIFFUtilities from '../../lib/GeoTIFFUtilities'
   import _ from 'lodash'
 
   const workerId = new URL(location.href).searchParams.get('id')
@@ -31,7 +32,7 @@
         let layers = await createdSource.retrieveLayers()
         for (let i = 0; i < layers.length; i++) {
           try {
-            let initLayer = await layers[i].initialize()
+            let initLayer = await layers[i].initialize(true)
             dataSources.push({project: project, sourceId: initLayer.id, config: initLayer.configuration})
           } catch (error) {
             // eslint-disable-next-line no-console
@@ -78,6 +79,13 @@
         }
         GeoPackageUtilties.buildTileLayer(data.configuration, statusCallback).then((result) => {
           ipcRenderer.send('worker_build_tile_layer_completed_' + workerId, result)
+        })
+      })
+      ipcRenderer.on('worker_read_raster', (e, data) => {
+        GeoTIFFUtilities.readRasters(data.filePath).then(rasters => {
+          setTimeout(() => {
+            ipcRenderer.send('worker_read_raster_completed_' + workerId, rasters)
+          }, 5000)
         })
       })
     }

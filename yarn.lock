@@ -7204,7 +7204,7 @@ geojson-stream@0.1.0:
     JSONStream "^1.0.0"
     through "^2.3.4"
 
-geotiff@1.0.0-beta.14:
+geotiff@^1.0.0-beta.14:
   version "1.0.0-beta.14"
   resolved "https://registry.yarnpkg.com/geotiff/-/geotiff-1.0.0-beta.14.tgz#dd73843af5994544d0a95e1f9d448aa4664d5b58"
   integrity sha512-Y0OKqXNUKBbWfMaz7RwjlWGypVIl2x7AM4EWbVBtE8LSjEJueQrQ16CNGw3js54MdBSIHi/mnGAtldBLaL5nrw==

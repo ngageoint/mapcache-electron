@@ -49,35 +49,65 @@ async function start() {
     })
   })
   ipcMain.on('build_feature_layer', (event, payload) => {
-    const id = payload.configuration.id
-    const statusCallback = (status) => {
-      event.sender.send('build_feature_layer_status_' + id, status)
+    try {
+      const id = payload.configuration.id
+      const statusCallback = (status) => {
+        event.sender.send('build_feature_layer_status_' + id, status)
+      }
+      WorkerPool.executeBuildFeatureLayer(payload, statusCallback).then(function (result) {
+        event.sender.send('build_feature_layer_completed_' + id, result)
+      })
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
-    WorkerPool.executeBuildFeatureLayer(payload, statusCallback).then(function (result) {
-      event.sender.send('build_feature_layer_completed_' + id, result)
-    })
   })
   ipcMain.on('cancel_build_feature_layer', (event, payload) => {
-    WorkerPool.cancelBuildFeatureLayer(payload).then(function () {
-      event.sender.send('cancel_build_feature_layer_completed_' + payload.configuration.id)
-    })
+    try {
+      WorkerPool.cancelBuildFeatureLayer(payload).then(function () {
+        event.sender.send('cancel_build_feature_layer_completed_' + payload.configuration.id)
+      })
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
   })
   ipcMain.on('build_tile_layer', (event, payload) => {
-    const id = payload.configuration.id
-    const statusCallback = (status) => {
-      event.sender.send('build_tile_layer_status_' + id, status)
+    try {
+      const id = payload.configuration.id
+      const statusCallback = (status) => {
+        event.sender.send('build_tile_layer_status_' + id, status)
+      }
+      WorkerPool.executeBuildTileLayer(payload, statusCallback).then(function (result) {
+        event.sender.send('build_tile_layer_completed_' + id, result)
+      })
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
-    WorkerPool.executeBuildTileLayer(payload, statusCallback).then(function (result) {
-      event.sender.send('build_tile_layer_completed_' + id, result)
-    })
   })
   ipcMain.on('cancel_build_tile_layer', (event, payload) => {
-    WorkerPool.cancelBuildTileLayer(payload).then(function () {
-      event.sender.send('cancel_build_tile_layer_completed_' + payload.configuration.id)
-    })
+    try {
+      WorkerPool.cancelBuildTileLayer(payload).then(function () {
+        event.sender.send('cancel_build_tile_layer_completed_' + payload.configuration.id)
+      })
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
   })
   ipcMain.on('quick_download_geopackage', (event, payload) => {
     WindowLauncher.downloadURL(payload.url)
+  })
+  ipcMain.on('read_raster', (event, payload) => {
+    try {
+      WorkerPool.readRaster(payload).then(function (result) {
+        event.sender.send('read_raster_completed_' + payload.id, { rasters: result })
+      })
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
   })
   app.on('before-quit', () => {
     WorkerPool.quit()

@@ -102,6 +102,7 @@ class WindowLauncher {
       icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
         enableRemoteModule: true,
         webSecurity: false
       },
