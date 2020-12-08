@@ -2512,7 +2512,7 @@ export default class GeoPackageUtilities {
         const sourceLayer = configuration.sourceLayers[i]
         const layer = LayerFactory.constructLayer(sourceLayer)
         layer._maxFeatures = undefined
-        layers.push(await layer.initialize())
+        layers.push(await layer.initialize(true))
         layersPrepared++
         status.progress = 20.0 * layersPrepared / numberOfLayers
         throttleStatusCallback(status)

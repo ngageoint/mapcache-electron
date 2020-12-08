@@ -283,27 +283,28 @@
       },
       addDataSource (sourceConfiguration, map) {
         const sourceId = sourceConfiguration.id
-        let source = LayerFactory.constructLayer(sourceConfiguration)
-        source._maxFeatures = this.project.maxFeatures
         sourceLayers[sourceId] = {
           configuration: _.cloneDeep(sourceConfiguration),
           visible: sourceConfiguration.visible
         }
-        source.initialize().then(function () {
-          // update style just in case during the initialization the layer was modified
-          if (!_.isNil(sourceLayers[sourceId])) {
-            if (source.layerType === 'GeoTIFF') {
-              source.updateStyle(sourceLayers[sourceId].configuration)
-            }
-            let mapLayer
-            if (sourceLayers[sourceId].configuration.visible) {
-              mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
+        if (sourceLayers[sourceId].configuration.visible) {
+          sourceLayers[sourceId].initializing = true
+          let source = LayerFactory.constructLayer(sourceConfiguration)
+          source._maxFeatures = this.project.maxFeatures
+          source.initialize().then(function () {
+            // update style just in case during the initialization the layer was modified
+            if (!_.isNil(sourceLayers[sourceId])) {
+              if (source.layerType === 'GeoTIFF') {
+                source.updateStyle(sourceLayers[sourceId].configuration)
+              }
+              let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
               mapLayer.addTo(map)
+              sourceLayers[sourceId].initializedSource = source
+              sourceLayers[sourceId].mapLayer = mapLayer
+              sourceLayers[sourceId].initializing = false
             }
-            sourceLayers[sourceId].initializedSource = source
-            sourceLayers[sourceId].mapLayer = mapLayer
-          }
-        })
+          })
+        }
       },
       cancelAddFeature () {
         this.showAddFeatureDialog = false
@@ -689,19 +690,54 @@
                 _this.addDataSource(updatedSource, map)
               }
             } else if (!_.isEqual(updatedSource.visible, oldLayerConfig.visible)) {
+              // copy configuration for source
               sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
-                if (updatedSource.visible) {
+              // if visible, ensure it is initialized
+              if (updatedSource.visible) {
+                if (_.isNil(sourceLayers[sourceId].initializedSource) && !sourceLayers[sourceId].initializing) {
+                  sourceLayers[sourceId].initializing = true
+                  let source = LayerFactory.constructLayer(sourceLayers[sourceId].configuration)
+                  source._maxFeatures = this.project.maxFeatures
+                  source.initialize().then(function () {
+                    // update style just in case during the initialization the layer was modified
+                    if (!_.isNil(sourceLayers[sourceId])) {
+                      sourceLayers[sourceId].initializedSource = source
+                      if (source.layerType === 'GeoTIFF') {
+                        sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
+                      }
+                      // it is possible that the user could have disabled the source while waiting, or cleared sources...
+                      if (sourceLayers[sourceId].configuration.visible) {
+                        let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
+                        mapLayer.addTo(map)
+                        sourceLayers[sourceId].mapLayer = mapLayer
+                        sourceLayers[sourceId].initializing = false
+                      }
+                    }
+                  })
                   let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                   mapLayer.addTo(map)
                   sourceLayers[sourceId].mapLayer = mapLayer
-                } else {
-                  // hide it
-                  let mapLayer = sourceLayers[sourceId].mapLayer
-                  if (mapLayer) {
-                    mapLayer.remove()
-                    delete sourceLayers[sourceId].mapLayer
+                } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
+                  if (sourceLayers[sourceId].initializedSource.layerType === 'GeoTIFF') {
+                    sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
                   }
+                  if (!_.isNil(sourceLayers[sourceId].mapLayer)) {
+                    let mapLayer = sourceLayers[sourceId].mapLayer
+                    if (mapLayer) {
+                      mapLayer.remove()
+                      delete sourceLayers[sourceId].mapLayer
+                    }
+                  }
+                  let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
+                  mapLayer.addTo(map)
+                  sourceLayers[sourceId].mapLayer = mapLayer
+                }
+              } else {
+                // hide and remove the map layer
+                let mapLayer = sourceLayers[sourceId].mapLayer
+                if (mapLayer) {
+                  mapLayer.remove()
+                  delete sourceLayers[sourceId].mapLayer
                 }
               }
             } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector') {

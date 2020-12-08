@@ -1,25 +1,135 @@
-import {BrowserWindow, ipcMain} from 'electron'
+import { BrowserWindow } from 'electron'
 import _ from 'lodash'
+import os from 'os'
 
 class WorkerWindowPool {
-  windowPoolSize = 4
+  windowPoolSize = Math.min(os.cpus().length, 4)
   workerWindows = []
-  workerWindowAssignment = {}
+  activeTasks = {}
+  queue = []
+  running = 0
 
-  quit () {
-    for (let i = 0; i < this.workerWindows.length; i++) {
-      this.workerWindows[i].window.destroy()
+  /**
+   * Destroy worker windows
+   */
+  quit() {
+    this.cancelTasks().then(() => {
+      for (let i = 0; i < this.workerWindows.length; i++) {
+        this.workerWindows[i].window.destroy()
+      }
+    })
+  }
+
+  /**
+   * Worker pool has ongoing tasks
+   * @returns {boolean}
+   */
+  hasTasks() {
+    return this.running + this.queue.length > 0
+  }
+
+  /**
+   * Worker has completed, check for remaining tasks
+   */
+  next() {
+    this.running--
+    this.start()
+  }
+
+  /**
+   * Try to execute tasks
+   * @returns {boolean}
+   */
+  async start() {
+    // too many tasks are running, need to wait for one to complete
+    if (this.running >= this.windowPoolSize) {
+      return true
+    }
+    const task = this.queue.shift()
+    // no tasks left
+    if (!task) {
+      return false
+    }
+    this.running++
+    const worker = await this.getOrWaitForAvailableWorker()
+    this.activeTasks[task.id] = {
+      task: task,
+      worker: worker
+    }
+    task.fn(worker).then((result) => {
+      task.cb(result)
+      delete this.activeTasks[task.id]
+      worker.available = true
+      this.next()
+    }).catch(e => {
+      task.error(e)
+      delete this.activeTasks[task.id]
+      worker.available = true
+      this.next()
+    })
+    return true
+  }
+
+  /**
+   * Add task to queue
+   * @param task
+   */
+  addTask(task) {
+    this.queue.push(task)
+    this.start()
+  }
+
+  /**
+   * Cancels a task if it exists and hasn't already finished
+   * @param taskId
+   */
+  async cancelTask(taskId) {
+    // task is active
+    const activeTask = this.activeTasks[taskId]
+    if (!_.isNil(activeTask)) {
+      activeTask.task.cancel()
+      try {
+        await this.restartWorkerWindow(activeTask.worker.id)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e)
+      }
+      delete this.activeTasks[taskId]
+    } else {
+      // try to remove it from queue
+      this.queue = this.queue.filter(task => task.id !== taskId)
+    }
+    this.next()
+  }
+
+  /**
+   * Cancel any unstarted or ongoing tasks
+   */
+  async cancelTasks() {
+    this.queue = []
+    for (let key of _.keys(this.activeTasks)) {
+      this.cancelTask(key)
     }
   }
 
-  loadContent (window, url, onFulfilled = () => {}) {
+  /**
+   * Load worker page
+   * @param window
+   * @param url
+   * @param onFulfilled
+   */
+  loadContent(window, url, onFulfilled = () => {
+  }) {
     window.loadURL(url).then(onFulfilled).catch((e) => {
       // eslint-disable-next-line no-console
       console.error(e)
     })
   }
 
-  launchWorkerWindows () {
+  /**
+   * Initialize the worker pool
+   */
+  launchWorkerWindows() {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
       const workerURL = process.env.WEBPACK_DEV_SERVER_URL
@@ -50,7 +160,12 @@ class WorkerWindowPool {
     }
   }
 
-  async restartWorkerWindow (id) {
+  /**
+   * Restart a worker
+   * @param id
+   * @returns {Promise<*>}
+   */
+  async restartWorkerWindow(id) {
     return new Promise(resolve => {
       const workerWindow = this.workerWindows.find(worker => worker.id === id)
       if (workerWindow) {
@@ -83,7 +198,11 @@ class WorkerWindowPool {
     })
   }
 
-  async getOrWaitForAvailableWorker (sourceId) {
+  /**
+   * Will try to acquire a worker and will continue to wait until one becomes available
+   * @returns {Promise<null>}
+   */
+  async getOrWaitForAvailableWorker() {
     const sleep = m => new Promise(resolve => setTimeout(resolve, m))
     let availableWorker = null
     while (_.isNil(availableWorker)) {
@@ -100,138 +219,7 @@ class WorkerWindowPool {
       }
     }
     availableWorker.available = false
-    this.workerWindowAssignment[sourceId] = availableWorker
     return availableWorker
-  }
-
-  releaseWorker (worker, sourceId) {
-    worker.available = true
-    delete this.workerWindowAssignment[sourceId]
-  }
-
-  async executeProcessSource (payload) {
-    const workerWindow = await this.getOrWaitForAvailableWorker()
-    return new Promise(resolve => {
-      this.workerWindowAssignment[payload.source.id] = workerWindow
-      workerWindow.window.webContents.send('worker_process_source', payload)
-      ipcMain.once('worker_process_source_completed_' + workerWindow.id, (event, result) => {
-        this.releaseWorker(workerWindow, payload.source.id)
-        resolve(result)
-      })
-    })
-  }
-
-  async cancelProcessSource (sourceId) {
-    return new Promise(resolve => {
-      if (this.workerWindowAssignment[sourceId]) {
-        const workerWindow = this.workerWindowAssignment[sourceId]
-        if (workerWindow) {
-          ipcMain.removeAllListeners('worker_process_source_completed_' + workerWindow.id)
-          this.restartWorkerWindow(workerWindow.id).then(() => {
-            delete this.workerWindowAssignment[sourceId]
-            resolve()
-          })
-        } else {
-          resolve()
-        }
-      } else {
-        resolve()
-      }
-    })
-  }
-
-  async executeBuildFeatureLayer (payload, statusCallback) {
-    const workerWindow = await this.getOrWaitForAvailableWorker()
-    return new Promise(resolve => {
-      this.workerWindowAssignment[payload.configuration.id] = workerWindow
-      workerWindow.window.webContents.send('worker_build_feature_layer', payload)
-      ipcMain.once('worker_build_feature_layer_completed_' + workerWindow.id, (event, result) => {
-        ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
-        this.releaseWorker(workerWindow, payload.configuration.id)
-        resolve(result)
-      })
-      ipcMain.on('worker_build_feature_layer_status_' + workerWindow.id, (event, status) => {
-        statusCallback(status)
-      })
-    })
-  }
-
-  cancelBuildFeatureLayer (payload) {
-    return new Promise(resolve => {
-      try {
-        if (this.workerWindowAssignment[payload.configuration.id]) {
-          const workerWindow = this.workerWindowAssignment[payload.configuration.id]
-          if (workerWindow) {
-            ipcMain.removeAllListeners('worker_build_feature_layer_status_' + workerWindow.id)
-            this.restartWorkerWindow(workerWindow.id).then(() => {
-              delete this.workerWindowAssignment[payload.configuration.id]
-              resolve()
-            })
-          } else {
-            resolve()
-          }
-        } else {
-          resolve()
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error)
-        resolve()
-      }
-    })
-  }
-
-  async executeBuildTileLayer (payload, statusCallback) {
-    const workerWindow = await this.getOrWaitForAvailableWorker()
-    return new Promise(resolve => {
-      this.workerWindowAssignment[payload.configuration.id] = workerWindow
-      workerWindow.window.webContents.send('worker_build_tile_layer', payload)
-      ipcMain.once('worker_build_tile_layer_completed_' + workerWindow.id, (event, result) => {
-        ipcMain.removeAllListeners('worker_build_tile_layer_status_' + workerWindow.id)
-        this.releaseWorker(workerWindow, payload.configuration.id)
-        resolve(result)
-      })
-      ipcMain.on('worker_build_tile_layer_status_' + workerWindow.id, (event, status) => {
-        statusCallback(status)
-      })
-    })
-  }
-
-  async readRaster (payload) {
-    const workerWindow = await this.getOrWaitForAvailableWorker()
-    return new Promise(resolve => {
-      this.workerWindowAssignment[payload.id] = workerWindow
-      ipcMain.once('worker_read_raster_completed_' + workerWindow.id, (event, result) => {
-        this.releaseWorker(workerWindow, payload.id)
-        resolve(result)
-      })
-      workerWindow.window.webContents.send('worker_read_raster', payload)
-    })
-  }
-
-  cancelBuildTileLayer (payload) {
-    return new Promise(resolve => {
-      try {
-        if (this.workerWindowAssignment[payload.configuration.id]) {
-          const workerWindow = this.workerWindowAssignment[payload.configuration.id]
-          if (workerWindow) {
-            ipcMain.removeAllListeners('worker_build_tile_layer_status_' + workerWindow.id)
-            this.restartWorkerWindow(workerWindow.id).then(() => {
-              delete this.workerWindowAssignment[payload.configuration.id]
-              resolve()
-            })
-          } else {
-            resolve()
-          }
-        } else {
-          resolve()
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error)
-        resolve()
-      }
-    })
   }
 }
 export default new WorkerWindowPool()

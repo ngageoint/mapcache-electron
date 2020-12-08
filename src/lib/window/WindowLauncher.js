@@ -1,8 +1,10 @@
-import {app, BrowserWindow, Menu, shell} from 'electron'
+import {app, BrowserWindow, Menu, shell, dialog, ipcMain} from 'electron'
 import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
+import WorkerPool from './WorkerWindowPool'
+import Task from './Task'
 
 const isMac = process.platform === 'darwin'
 
@@ -17,9 +19,139 @@ class WindowLauncher {
     return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
   }
 
+  start () {
+    this.launchLoaderWindow()
+    this.launchMainWindow()
+    this.launchProjectWindow()
+    WorkerPool.launchWorkerWindows()
+    this.registerEventHandlers()
+  }
+
+  registerEventHandlers () {
+    ipcMain.on('show-project', (event, payload) => {
+      this.showProject(payload)
+    })
+    ipcMain.on('close-project', () => {
+      this.closeProject()
+    })
+    ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
+      event.sender.send('show_feature_table', id, tableName, isGeoPackage)
+    })
+    ipcMain.on('process_source', (event, payload) => {
+      const taskId = payload.source.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          worker.window.webContents.send('worker_process_source', payload)
+          ipcMain.once('worker_process_source_completed_' + taskId, (event, result) => {
+            resolve(result)
+          })
+        })
+      }, (result) => {
+        event.sender.send('process_source_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_process_source_completed_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_process_source', (event, payload) => {
+      const taskId = payload.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_process_source_completed_' + taskId)
+      })
+    })
+    ipcMain.on('build_feature_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          const statusCallback = (status) => {
+            event.sender.send('build_feature_layer_status_' + taskId, status)
+          }
+          worker.window.webContents.send('worker_build_feature_layer', payload)
+          ipcMain.once('worker_build_feature_layer_completed_' + taskId, (event, result) => {
+            ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+            resolve(result)
+          })
+          ipcMain.on('worker_build_feature_layer_status_' + taskId, (event, status) => {
+            statusCallback(status)
+          })
+        })
+      }, (result) => {
+        event.sender.send('build_feature_layer_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_build_feature_layer_completed_' + taskId)
+        ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_build_feature_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_build_feature_layer_completed_' + taskId)
+      })
+    })
+    ipcMain.on('build_tile_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          const statusCallback = (status) => {
+            event.sender.send('build_tile_layer_status_' + taskId, status)
+          }
+          worker.window.webContents.send('worker_build_tile_layer', payload)
+          ipcMain.once('worker_build_tile_layer_completed_' + taskId, (event, result) => {
+            ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+            resolve(result)
+          })
+          ipcMain.on('worker_build_tile_layer_status_' + taskId, (event, status) => {
+            statusCallback(status)
+          })
+        })
+      }, (result) => {
+        event.sender.send('build_tile_layer_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_build_tile_layer_completed_' + taskId)
+        ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_build_tile_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_build_tile_layer_completed_' + taskId)
+      })
+    })
+    ipcMain.on('quick_download_geopackage', (event, payload) => {
+      this.downloadURL(payload.url).then(() => {
+      }).catch(e => {
+        // eslint-disable-next-line no-console
+        console.error(e)
+      })
+    })
+    ipcMain.on('read_raster', (event, payload) => {
+      const taskId = payload.id
+      const task = new Task(taskId, event, (workerWindow) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          workerWindow.window.webContents.send('worker_read_raster', payload)
+          ipcMain.once('worker_read_raster_completed_' + taskId, (event, result) => {
+            resolve(result)
+          })
+        })
+      }, (result) => {
+        event.sender.send('read_raster_completed_' + taskId, {rasters: result})
+      }, () => {
+        ipcMain.removeAllListeners('worker_read_raster_completed_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+  }
+
   quit () {
     this.quitFromParent = true
     this.isShuttingDown = true
+    WorkerPool.quit()
     if (!_.isNil(this.mainWindow)) {
       this.mainWindow.destroy()
     }
@@ -114,10 +246,27 @@ class WindowLauncher {
       useContentSize: true
     }
     this.projectWindow = new BrowserWindow(windowOptions)
-    this.projectWindow.on('close', () => {
+    this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
-        this.mainWindow.show()
-        this.launchProjectWindow()
+        let leave = true
+        if (WorkerPool.hasTasks()) {
+          const choice = dialog.showMessageBoxSync(this.projectWindow, {
+            type: 'question',
+            buttons: ['Close', 'Wait'],
+            title: 'Close Project',
+            message: 'There are one or more background tasks running. Are you sure you want to close the project?',
+            defaultId: 0,
+            cancelId: 1
+          })
+          leave = (choice === 0)
+        }
+        if (leave) {
+          WorkerPool.cancelTasks()
+          this.mainWindow.show()
+          this.launchProjectWindow()
+        } else {
+          event.preventDefault()
+        }
       } else {
         this.projectWindow = null
       }
@@ -144,15 +293,6 @@ class WindowLauncher {
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
         ? `${process.env.WEBPACK_DEV_SERVER_URL}/?id=${projectId}#/project`
         : `app://./index.html?id=${projectId}#project`
-
-      // const projectWindowState = new WindowState('project-' + projectId)
-      // let windowState = _.clone(projectWindowState.retrieveState())
-      // if (windowState) {
-      //   if (windowState.width && windowState.height) {
-      //     this.projectWindow.setSize(windowState.width, windowState.height)
-      //   }
-      // }
-      // projectWindowState.track(this.projectWindow)
       this.loadContent(this.projectWindow, winURL, () => {
         this.projectWindow.show()
         this.mainWindow.send('show-project-completed')

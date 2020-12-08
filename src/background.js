@@ -1,11 +1,10 @@
 'use strict'
-import { app, protocol, ipcMain } from 'electron'
+import { app, protocol } from 'electron'
 import log from 'electron-log'
 Object.assign(console, log.functions)
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import WindowLauncher from './lib/window/WindowLauncher'
-import WorkerPool from './lib/window/WorkerWindowPool'
 import './store'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -21,96 +20,8 @@ async function start() {
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     createProtocol('app')
   }
-  WindowLauncher.launchLoaderWindow()
-  WindowLauncher.launchMainWindow()
-  WindowLauncher.launchProjectWindow()
-  WorkerPool.launchWorkerWindows()
-  ipcMain.on('process_source', (event, payload) => {
-    const id = payload.source.id
-    WorkerPool.executeProcessSource(payload).then(function (result) {
-      event.sender.send('process_source_completed_' + id, result)
-    }).catch(e => {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    })
-  })
-  ipcMain.on('show-project', (event, payload) => {
-    WindowLauncher.showProject(payload)
-  })
-  ipcMain.on('close-project', () => {
-    WindowLauncher.closeProject()
-  })
-  ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
-    event.sender.send('show_feature_table', id, tableName, isGeoPackage)
-  })
-  ipcMain.on('cancel_process_source', (event, payload) => {
-    WorkerPool.cancelProcessSource(payload.id).then(() => {
-      event.sender.send('cancel_process_source_completed_' + payload.id)
-    })
-  })
-  ipcMain.on('build_feature_layer', (event, payload) => {
-    try {
-      const id = payload.configuration.id
-      const statusCallback = (status) => {
-        event.sender.send('build_feature_layer_status_' + id, status)
-      }
-      WorkerPool.executeBuildFeatureLayer(payload, statusCallback).then(function (result) {
-        event.sender.send('build_feature_layer_completed_' + id, result)
-      })
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  })
-  ipcMain.on('cancel_build_feature_layer', (event, payload) => {
-    try {
-      WorkerPool.cancelBuildFeatureLayer(payload).then(function () {
-        event.sender.send('cancel_build_feature_layer_completed_' + payload.configuration.id)
-      })
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  })
-  ipcMain.on('build_tile_layer', (event, payload) => {
-    try {
-      const id = payload.configuration.id
-      const statusCallback = (status) => {
-        event.sender.send('build_tile_layer_status_' + id, status)
-      }
-      WorkerPool.executeBuildTileLayer(payload, statusCallback).then(function (result) {
-        event.sender.send('build_tile_layer_completed_' + id, result)
-      })
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  })
-  ipcMain.on('cancel_build_tile_layer', (event, payload) => {
-    try {
-      WorkerPool.cancelBuildTileLayer(payload).then(function () {
-        event.sender.send('cancel_build_tile_layer_completed_' + payload.configuration.id)
-      })
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  })
-  ipcMain.on('quick_download_geopackage', (event, payload) => {
-    WindowLauncher.downloadURL(payload.url)
-  })
-  ipcMain.on('read_raster', (event, payload) => {
-    try {
-      WorkerPool.readRaster(payload).then(function (result) {
-        event.sender.send('read_raster_completed_' + payload.id, { rasters: result })
-      })
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  })
+  WindowLauncher.start()
   app.on('before-quit', () => {
-    WorkerPool.quit()
     WindowLauncher.quit()
   })
 }

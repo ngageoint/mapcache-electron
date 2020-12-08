@@ -157,6 +157,8 @@ export default class GeoTiffLayer extends TileLayer {
           })
           ipcRenderer.send('read_raster', {id: this.id, filePath: this.filePath})
         })
+      } else {
+        this.rasters = await this.image.readRasters()
       }
     }
 

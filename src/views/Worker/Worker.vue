@@ -9,7 +9,6 @@
   import GeoTIFFUtilities from '../../lib/GeoTIFFUtilities'
   import _ from 'lodash'
 
-  const workerId = new URL(location.href).searchParams.get('id')
   async function processSource (project, source) {
     let dataSources = []
     let error = null
@@ -62,30 +61,28 @@
     created: function () {
       ipcRenderer.on('worker_process_source', (e, data) => {
         processSource(data.project, data.source).then((result) => {
-          ipcRenderer.send('worker_process_source_completed_' + workerId, result)
+          ipcRenderer.send('worker_process_source_completed_' + data.taskId, result)
         })
       })
       ipcRenderer.on('worker_build_feature_layer', (e, data) => {
         const statusCallback = (status) => {
-          ipcRenderer.send('worker_build_feature_layer_status_' + workerId, status)
+          ipcRenderer.send('worker_build_feature_layer_status_' + data.taskId, status)
         }
         GeoPackageUtilties.buildFeatureLayer(data.configuration, statusCallback).then((result) => {
-          ipcRenderer.send('worker_build_feature_layer_completed_' + workerId, result)
+          ipcRenderer.send('worker_build_feature_layer_completed_' + data.taskId, result)
         })
       })
       ipcRenderer.on('worker_build_tile_layer', (e, data) => {
         const statusCallback = (status) => {
-          ipcRenderer.send('worker_build_tile_layer_status_' + workerId, status)
+          ipcRenderer.send('worker_build_tile_layer_status_' + data.taskId, status)
         }
         GeoPackageUtilties.buildTileLayer(data.configuration, statusCallback).then((result) => {
-          ipcRenderer.send('worker_build_tile_layer_completed_' + workerId, result)
+          ipcRenderer.send('worker_build_tile_layer_completed_' + data.taskId, result)
         })
       })
       ipcRenderer.on('worker_read_raster', (e, data) => {
         GeoTIFFUtilities.readRasters(data.filePath).then(rasters => {
-          setTimeout(() => {
-            ipcRenderer.send('worker_read_raster_completed_' + workerId, rasters)
-          }, 5000)
+          ipcRenderer.send('worker_read_raster_completed_' + data.taskId, rasters)
         })
       })
     }
