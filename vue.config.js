@@ -75,7 +75,8 @@ module.exports = {
         },
         win: {
           target: [
-            "portable"
+            "portable",
+            "nsis"
           ],
           icon: "buildResources/icon.ico"
         },
