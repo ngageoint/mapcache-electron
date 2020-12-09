@@ -84,11 +84,7 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 # Limitations and Notes
 It is worth noting that there are several libraries using native dependencies. The native depdencies are
 1. better-sqlite3
-2. node-gdal
-3. canvas
-
-Better-sqlite3 also has a dependency on the bindings library which currently has a bug preventing the loading on native libraries in electron 9. A pull request has been submitted but until bindings updates and better-sqlite3 updates to that version, `npm shrinkwrap` is used to inject a working version.
-
+2. canvas
 
 ## Testing
 Any changes made in development should be tested in the production version of the application for all supported platforms.
