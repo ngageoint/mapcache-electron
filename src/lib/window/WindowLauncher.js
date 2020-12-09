@@ -1,82 +1,274 @@
-import {app, BrowserWindow, Menu, shell} from 'electron'
-import WindowState from './WindowState'
+import {app, BrowserWindow, Menu, shell, dialog, ipcMain} from 'electron'
 import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
+import WorkerPool from './WorkerWindowPool'
+import Task from './Task'
+
+const isMac = process.platform === 'darwin'
 
 class WindowLauncher {
   mainWindow
   projectWindow
   loadingWindow
   isShuttingDown = false
+  quitFromParent = false
+
+  isWindowVisible () {
+    return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
+  }
+
+  start () {
+    this.launchLoaderWindow()
+    this.launchMainWindow()
+    this.launchProjectWindow()
+    WorkerPool.launchWorkerWindows()
+    this.registerEventHandlers()
+  }
+
+  registerEventHandlers () {
+    ipcMain.on('show-project', (event, payload) => {
+      this.showProject(payload)
+    })
+    ipcMain.on('close-project', () => {
+      this.closeProject()
+    })
+    ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
+      event.sender.send('show_feature_table', id, tableName, isGeoPackage)
+    })
+    ipcMain.on('process_source', (event, payload) => {
+      const taskId = payload.source.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          worker.window.webContents.send('worker_process_source', payload)
+          ipcMain.once('worker_process_source_completed_' + taskId, (event, result) => {
+            resolve(result)
+          })
+        })
+      }, (result) => {
+        event.sender.send('process_source_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_process_source_completed_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_process_source', (event, payload) => {
+      const taskId = payload.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_process_source_completed_' + taskId)
+      })
+    })
+    ipcMain.on('build_feature_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          const statusCallback = (status) => {
+            event.sender.send('build_feature_layer_status_' + taskId, status)
+          }
+          worker.window.webContents.send('worker_build_feature_layer', payload)
+          ipcMain.once('worker_build_feature_layer_completed_' + taskId, (event, result) => {
+            ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+            resolve(result)
+          })
+          ipcMain.on('worker_build_feature_layer_status_' + taskId, (event, status) => {
+            statusCallback(status)
+          })
+        })
+      }, (result) => {
+        event.sender.send('build_feature_layer_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_build_feature_layer_completed_' + taskId)
+        ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_build_feature_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_build_feature_layer_completed_' + taskId)
+      })
+    })
+    ipcMain.on('build_tile_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      const task = new Task(taskId, event, (worker) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          const statusCallback = (status) => {
+            event.sender.send('build_tile_layer_status_' + taskId, status)
+          }
+          worker.window.webContents.send('worker_build_tile_layer', payload)
+          ipcMain.once('worker_build_tile_layer_completed_' + taskId, (event, result) => {
+            ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+            resolve(result)
+          })
+          ipcMain.on('worker_build_tile_layer_status_' + taskId, (event, status) => {
+            statusCallback(status)
+          })
+        })
+      }, (result) => {
+        event.sender.send('build_tile_layer_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_build_tile_layer_completed_' + taskId)
+        ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_build_tile_layer', (event, payload) => {
+      const taskId = payload.configuration.id
+      WorkerPool.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_build_tile_layer_completed_' + taskId)
+      })
+    })
+    ipcMain.on('quick_download_geopackage', (event, payload) => {
+      this.downloadURL(payload.url).then(() => {
+      }).catch(e => {
+        // eslint-disable-next-line no-console
+        console.error(e)
+      })
+    })
+    ipcMain.on('read_raster', (event, payload) => {
+      const taskId = payload.id
+      const task = new Task(taskId, event, (workerWindow) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          workerWindow.window.webContents.send('worker_read_raster', payload)
+          ipcMain.once('worker_read_raster_completed_' + taskId, (event, result) => {
+            resolve(result)
+          })
+        })
+      }, (result) => {
+        event.sender.send('read_raster_completed_' + taskId, {rasters: result})
+      }, () => {
+        ipcMain.removeAllListeners('worker_read_raster_completed_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+  }
+
+  quit () {
+    this.quitFromParent = true
+    this.isShuttingDown = true
+    WorkerPool.quit()
+    if (!_.isNil(this.mainWindow)) {
+      this.mainWindow.destroy()
+    }
+    if (!_.isNil(this.projectWindow)) {
+      this.projectWindow.destroy()
+    }
+    if (!_.isNil(this.loadingWindow)) {
+      this.loadingWindow.destroy()
+    }
+  }
 
   launchMainWindow () {
     const winURL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:9080`
-      : `file://${__dirname}/index.html`
+      ? `${process.env.WEBPACK_DEV_SERVER_URL}`
+      : `app://./index.html`
 
     const menu = Menu.buildFromTemplate(this.getMenuTemplate())
     Menu.setApplicationMenu(menu)
 
-    const mainWindowState = new WindowState('main')
-    let windowOptions = mainWindowState.retrieveState()
-    windowOptions.title = 'MapCache'
-    windowOptions.icon = path.join(__dirname, 'assets/64x64.png')
-    windowOptions.webPreferences = {
-      nodeIntegration: true,
-      contextIsolation: false
+    let windowOptions = {
+      title: 'MapCache',
+      icon: path.join(__dirname, 'assets', '64x64.png'),
+      webPreferences: {
+        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+        enableRemoteModule: true
+      },
+      show: false,
+      width: 940,
+      height: 665,
+      minHeight: 665,
+      minWidth: 720
     }
-    windowOptions.show = false
     this.mainWindow = new BrowserWindow(windowOptions)
     this.mainWindow.setMenu(menu)
-    // this.mainWindow.toggleDevTools()
-    mainWindowState.track(this.mainWindow)
-    this.mainWindow.loadURL(winURL)
-    this.mainWindow.on('ready-to-show', () => {
+    // mainWindowState.track(this.mainWindow)
+    this.loadContent(this.mainWindow, winURL, () => {
       this.loadingWindow.hide()
       this.mainWindow.show()
     })
     this.mainWindow.on('close', () => {
-      this.isShuttingDown = true
-      app.quit()
+      if (!this.quitFromParent) {
+        app.quit()
+      } else {
+        this.isShuttingDown = true
+        if (this.projectWindow !== null) {
+          this.projectWindow.destroy()
+        }
+        this.mainWindow = null
+      }
+    })
+  }
+
+  loadContent (window, url, onFulfilled = () => {}) {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error(e)
     })
   }
 
   launchLoaderWindow () {
-    const winURL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:9080/static/loader.html`
-      : `file://${__dirname}/../../../static/loader.html`
+    const winURL = process.env.WEBPACK_DEV_SERVER_URL
+      ? `${process.env.WEBPACK_DEV_SERVER_URL}/loader.html`
+      : `app://./loader.html`
     let windowOptions = {
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
-      },
       frame: false,
-      width: 264,
-      height: 264,
-      transparent: true
+      width: 256,
+      height: 256,
+      transparent: true,
+      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
     }
     this.loadingWindow = new BrowserWindow(windowOptions)
-    this.loadingWindow.loadURL(winURL)
+    setTimeout(() => {
+      this.loadContent(this.loadingWindow, winURL)
+    }, 0)
   }
 
   launchProjectWindow () {
     let windowOptions = {
+      title: 'MapCache',
+      icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
+        enableRemoteModule: true,
+        webSecurity: false
       },
       show: false,
-      width: 1000,
-      height: 800
+      width: 1200,
+      height: 700,
+      minHeight: 700,
+      minWidth: 1000,
+      useContentSize: true
     }
     this.projectWindow = new BrowserWindow(windowOptions)
-    this.projectWindow.on('close', (e) => {
+    this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
-        e.preventDefault()
-        this.projectWindow.hide()
-        this.mainWindow.show()
+        let leave = true
+        if (WorkerPool.hasTasks()) {
+          const choice = dialog.showMessageBoxSync(this.projectWindow, {
+            type: 'question',
+            buttons: ['Close', 'Wait'],
+            title: 'Close Project',
+            message: 'There are one or more background tasks running. Are you sure you want to close the project?',
+            defaultId: 0,
+            cancelId: 1
+          })
+          leave = (choice === 0)
+        }
+        if (leave) {
+          WorkerPool.cancelTasks()
+          this.mainWindow.show()
+          this.launchProjectWindow()
+        } else {
+          event.preventDefault()
+        }
+      } else {
+        this.projectWindow = null
       }
     })
   }
@@ -85,26 +277,23 @@ class WindowLauncher {
     try {
       await download(this.projectWindow, fileUrl(url))
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
+    }
+  }
+
+  closeProject() {
+    if (this.projectWindow !== null) {
+      this.projectWindow.close()
     }
   }
 
   showProject (projectId) {
     try {
-      const winURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${projectId}#/project`
-        : `file://${__dirname}/index.html?id=${projectId}#project`
-
-      const projectWindowState = new WindowState('project-' + projectId)
-      let windowState = _.clone(projectWindowState.retrieveState())
-      if (windowState) {
-        if (windowState.width && windowState.height) {
-          this.projectWindow.setSize(windowState.width, windowState.height)
-        }
-      }
-      projectWindowState.track(this.projectWindow)
-      this.projectWindow.loadURL(winURL)
-      this.projectWindow.on('ready-to-show', () => {
+      const winURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}/?id=${projectId}#/project`
+        : `app://./index.html?id=${projectId}#project`
+      this.loadContent(this.projectWindow, winURL, () => {
         this.projectWindow.show()
         this.mainWindow.send('show-project-completed')
         setTimeout(() => {
@@ -112,45 +301,17 @@ class WindowLauncher {
         }, 250)
       })
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e)
     }
   }
 
   getMenuTemplate () {
     const viewSubmenu = [
-      {
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click: function (item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.reload()
-          }
-        }
-      },
-      {
-        label: 'Toggle Full Screen',
-        accelerator: (function () {
-          if (process.platform === 'darwin') {
-            return 'Ctrl+Command+F'
-          } else {
-            return 'F11'
-          }
-        })(),
-        click: function (item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.setFullScreen(!focusedWindow.isFullScreen())
-          }
-        }
-      },
-      {
-        label: 'Toggle Developer Tools',
-        accelerator: (function () {
-          if (process.platform === 'darwin') { return 'Alt+Command+I' } else { return 'Ctrl+Shift+I' }
-        })(),
-        click: function (item, focusedWindow) {
-          if (focusedWindow) { focusedWindow.toggleDevTools() }
-        }
-      }
+      { role: 'reload' },
+      { role: 'forcereload' },
+      { role: 'togglefullscreen' },
+      { role: 'toggledevtools' }
     ]
 
     const template = [
@@ -198,7 +359,7 @@ class WindowLauncher {
       }
     ]
 
-    if (process.platform === 'darwin') {
+    if (isMac) {
       template.unshift({
         label: 'MapCache',
         submenu: [

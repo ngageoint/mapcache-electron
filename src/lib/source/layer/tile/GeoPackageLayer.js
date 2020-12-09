@@ -46,4 +46,17 @@ export default class GeoPackageLayer extends TileLayer {
       return image
     }
   }
+
+  close () {
+    if (this.geopackage) {
+      try {
+        this.geopackage.close()
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+      this.geopackage = undefined
+      this.dao = undefined
+    }
+  }
 }

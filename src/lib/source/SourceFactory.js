@@ -1,23 +1,30 @@
 import path from 'path'
-import GDALSource from './GDALSource'
-import GeoPackageSource from './GeoPackageSource'
 import XYZServerSource from './XYZServerSource'
 import KMLSource from './KMLSource'
 import KMZSource from './KMZSource'
 import WMSSource from './WMSSource'
 import WFSSource from './WFSSource'
+import ArcGISFeatureServiceSource from './ArcGISFeatureServiceSource'
+import ShapeFileSource from './ShapeFileSource'
+import ZipSource from './ZipSource'
+import GeoTIFFSource from './GeoTIFFSource'
+import GeoJSONSource from './GeoJSONSource'
 
 export default class SourceFactory {
-  static async constructXYZSource (parameterizedUrl, credentials) {
-    return new XYZServerSource(parameterizedUrl, [], credentials)
+  static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
+    return new XYZServerSource(parameterizedUrl, [], credentials, sourceName)
   }
 
-  static async constructWMSSource (url, layers, credentials) {
-    return new WMSSource(url, layers, credentials)
+  static async constructWMSSource (url, layers, credentials, sourceName) {
+    return new WMSSource(url, layers, credentials, sourceName)
   }
 
-  static async constructWFSSource (url, layers, credentials) {
-    return new WFSSource(url, layers, credentials)
+  static async constructWFSSource (url, layers, credentials, sourceName) {
+    return new WFSSource(url, layers, credentials, sourceName)
+  }
+
+  static async constructArcGISFeatureServiceSource (url, layers, credentials, sourceName) {
+    return new ArcGISFeatureServiceSource(url, layers, credentials, sourceName)
   }
 
   static async constructSource (filePath) {
@@ -25,10 +32,6 @@ export default class SourceFactory {
     try {
       let source = null
       switch (type) {
-        case 'gpkg':
-        case 'geopackage':
-          source = new GeoPackageSource(filePath)
-          break
         case 'kml':
           source = new KMLSource(filePath)
           await source.initialize()
@@ -37,8 +40,23 @@ export default class SourceFactory {
           source = new KMZSource(filePath)
           await source.initialize()
           break
+        case 'zip':
+          source = new ZipSource(filePath)
+          await source.initialize()
+          break
+        case 'shp':
+          source = new ShapeFileSource(filePath)
+          break
+        case 'json':
+        case 'geojson':
+          source = new GeoJSONSource(filePath)
+          break
+        case 'geotiff':
+        case 'tif':
+        case 'tiff':
+          source = new GeoTIFFSource(filePath)
+          break
         default:
-          source = new GDALSource(filePath)
           break
       }
       return source

@@ -25,27 +25,33 @@ export default class XYZTileUtilities {
     return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)))
   }
 
-  static getZoomLevelResolution (z) {
-    let zoomLevelResolutions = [156412, 78206, 39103, 19551, 9776, 4888, 2444, 1222, 610.984, 305.492, 152.746, 76.373, 38.187, 19.093, 9.547, 4.773, 2.387, 1.193, 0.596, 0.298]
-    return zoomLevelResolutions[z]
+  static trimToWebMercatorMax(boundingBox) {
+    if (boundingBox) {
+      const copy = boundingBox.slice()
+      copy[0][0] = Math.max(boundingBox[0][0], -85.0511)
+      copy[1][0] = Math.min(boundingBox[1][0], 85.0511)
+      return copy
+    } else {
+      return boundingBox
+    }
   }
 
   static tileBboxCalculator (x, y, z) {
     x = Number(x)
     y = Number(y)
-    var tileBounds = {
+
+    return {
       north: XYZTileUtilities.tile2lat(y, z),
       east: XYZTileUtilities.tile2lon(x + 1, z),
       south: XYZTileUtilities.tile2lat(y + 1, z),
       west: XYZTileUtilities.tile2lon(x, z)
     }
-
-    return tileBounds
   }
 
   static calculateXTileRange (bbox, z) {
-    var west = XYZTileUtilities.long2tile(bbox[0][1], z)
-    var east = XYZTileUtilities.long2tile(bbox[1][1], z)
+    const trimmedBbox = XYZTileUtilities.trimToWebMercatorMax(bbox)
+    var west = XYZTileUtilities.long2tile(trimmedBbox[0][1], z)
+    var east = XYZTileUtilities.long2tile(trimmedBbox[1][1], z)
     return {
       min: Math.max(0, Math.min(west, east)),
       max: Math.max(0, Math.max(west, east))
@@ -53,8 +59,9 @@ export default class XYZTileUtilities {
   }
 
   static calculateYTileRange (bbox, z) {
-    var south = XYZTileUtilities.lat2tile(bbox[0][0], z)
-    var north = XYZTileUtilities.lat2tile(bbox[1][0], z)
+    const trimmedBbox = XYZTileUtilities.trimToWebMercatorMax(bbox)
+    var south = XYZTileUtilities.lat2tile(trimmedBbox[0][0], z)
+    var north = XYZTileUtilities.lat2tile(trimmedBbox[1][0], z)
     return {
       min: Math.max(0, Math.min(south, north)),
       max: Math.max(0, Math.max(south, north)),
@@ -63,46 +70,34 @@ export default class XYZTileUtilities {
   }
 
   static tileCountInExtent (extent, minZoom, maxZoom) {
+    const trimmedBbox = XYZTileUtilities.trimToWebMercatorMax(extent)
     var tiles = 0
     for (var zoom = minZoom; zoom <= maxZoom; zoom++) {
-      var yRange = XYZTileUtilities.calculateYTileRange(extent, zoom)
-      var xRange = XYZTileUtilities.calculateXTileRange(extent, zoom)
+      var yRange = XYZTileUtilities.calculateYTileRange(trimmedBbox, zoom)
+      var xRange = XYZTileUtilities.calculateXTileRange(trimmedBbox, zoom)
       tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
     }
     return tiles
   }
 
   static tileCountInExtentForZoomLevels (extent, zoomLevels) {
+    const trimmedBbox = XYZTileUtilities.trimToWebMercatorMax(extent)
     var tiles = 0
     zoomLevels.forEach(zoom => {
-      var yRange = XYZTileUtilities.calculateYTileRange(extent, zoom)
-      var xRange = XYZTileUtilities.calculateXTileRange(extent, zoom)
+      var yRange = XYZTileUtilities.calculateYTileRange(trimmedBbox, zoom)
+      var xRange = XYZTileUtilities.calculateXTileRange(trimmedBbox, zoom)
       tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
     })
     return tiles
   }
 
-  static async iterateAllTilesInExtent (extent, minZoom, maxZoom, tileCallback) {
-    let stop = false
-    minZoom = Number(minZoom)
-    maxZoom = Number(maxZoom)
-    for (let z = minZoom; z <= maxZoom && !stop; z++) {
-      var yRange = XYZTileUtilities.calculateYTileRange(extent, z)
-      var xRange = XYZTileUtilities.calculateXTileRange(extent, z)
-      for (let x = xRange.min; x <= xRange.max && !stop; x++) {
-        for (let y = yRange.min; y <= yRange.max && !stop; y++) {
-          stop = await tileCallback({z, x, y})
-        }
-      }
-    }
-  }
-
   static async iterateAllTilesInExtentForZoomLevels (extent, zoomLevels, tileCallback) {
+    const trimmedBbox = XYZTileUtilities.trimToWebMercatorMax(extent)
     let stop = false
     for (let i = 0; i <= zoomLevels.length && !stop; i++) {
       let z = zoomLevels[i]
-      var yRange = XYZTileUtilities.calculateYTileRange(extent, z)
-      var xRange = XYZTileUtilities.calculateXTileRange(extent, z)
+      var yRange = XYZTileUtilities.calculateYTileRange(trimmedBbox, z)
+      var xRange = XYZTileUtilities.calculateXTileRange(trimmedBbox, z)
       for (let x = xRange.min; x <= xRange.max && !stop; x++) {
         for (let y = yRange.min; y <= yRange.max && !stop; y++) {
           stop = await tileCallback({z, x, y})

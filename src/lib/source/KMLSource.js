@@ -1,5 +1,6 @@
 import Source from './Source'
 import { DOMParser } from 'xmldom'
+import URLUtilities  from '../URLUtilities'
 import * as ToGeoJSON from '@ccaldwell/togeojson'
 import fs from 'fs'
 import path from 'path'
@@ -7,17 +8,18 @@ import KMLUtilities from '../KMLUtilities'
 import VectorStyleUtilities from '../VectorStyleUtilities'
 import { imageSize } from 'image-size'
 import _ from 'lodash'
+import axios from 'axios'
 import GeoPackageUtilities from '../GeoPackageUtilities'
 import VectorLayer from './layer/vector/VectorLayer'
-import { userDataDir } from '../settings/Settings'
 import UniqueIDUtilities from '../UniqueIDUtilities'
-import http from 'http'
+import { GeometryType } from '@ngageoint/geopackage'
+import FileUtilities from '../FileUtilities'
 
 export default class KMLSource extends Source {
   async initialize () {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder.path())
+    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder)
     this.geotiffs = parsedKML.geotiffs
     this.vectorLayers = []
     let documents = parsedKML.documents
@@ -34,85 +36,96 @@ export default class KMLSource extends Source {
             feature.id = UniqueIDUtilities.createUniqueID()
           }
         }
-        let id = UniqueIDUtilities.createUniqueID()
+        const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
         let fileName = name + '.gpkg'
-        let filePath = userDataDir().dir(id).file(fileName).path()
-        let fullFile = path.join(filePath, fileName)
-        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir)
-        let gp = await GeoPackageUtilities.buildGeoPackage(fullFile, name, featureCollection, style)
+        let filePath = path.join(sourceDirectory, fileName)
+        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir, this.sourceCacheFolder)
+        await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection, style)
         this.vectorLayers.push(new VectorLayer({
-          id: id,
-          geopackageFilePath: fullFile,
-          sourceFilePath: this.filePath,
+          geopackageFilePath: filePath,
+          sourceDirectory: sourceDirectory,
+          sourceId: sourceId,
           sourceLayerName: name,
-          sourceType: 'KML',
-          tablePointIconRowId: GeoPackageUtilities.getTableIconId(gp, name, 'Point')
+          sourceType: 'KML'
         }))
       }
     }
   }
 
   getStyleFromFeature (feature) {
-    let style = {
-      width: 0,
-      color: '#000000',
-      opacity: 1.0,
-      fillColor: '#000000',
-      fillOpacity: 1.0,
-      name: 'KML Style'
-    }
-    if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
-    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
-      style.fillColor = feature.properties['fill']
-      style.fillOpacity = feature.properties['fill-opacity']
-    } else if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') {
-      style.width = feature.properties['stroke-width']
-      style.color = feature.properties['stroke']
-      style.opacity = feature.properties['stroke-opacity']
+    let style = null
+    // check if feature contains style properties
+    if (_.keys(feature.properties).map(key => key.toLowerCase()).findIndex(key => key === 'stroke' || key === 'stroke-width' || key === 'stroke-opacity' || key === 'fill' || key === 'fill-opacity') !== -1) {
+      style = {
+        width: 1,
+        color: '#000000',
+        opacity: 1.0,
+        fillColor: '#000000',
+        fillOpacity: 1.0,
+        name: 'KML Style'
+      }
+      const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      if (geometryType === GeometryType.LINESTRING || geometryType === GeometryType.MULTILINESTRING) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+      } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+        style.fillColor = feature.properties['fill']
+        style.fillOpacity = feature.properties['fill-opacity']
+      } else if (geometryType === GeometryType.POINT || geometryType === GeometryType.MULTIPOINT) {
+        style.width = feature.properties['stroke-width']
+        style.color = feature.properties['stroke']
+        style.opacity = feature.properties['stroke-opacity']
+      } else {
+        style = null
+      }
     }
     return style
   }
 
-  async generateStyleForKML (features, originalFileDir) {
-    let layerStyle = VectorStyleUtilities.defaultRandomColorStyle()
+  async generateStyleForKML (features, originalFileDir, cacheFolder) {
+    let layerStyle = {
+      features: {},
+      styleRowMap: {},
+      iconRowMap: {}
+    }
     let fileIcons = {}
     let iconNumber = 1
     for (let feature of features) {
-      layerStyle.features[feature.id] = {
-        icon: layerStyle.default.icons[feature.geometry.type],
-        style: layerStyle.default.styles[feature.geometry.type],
-        iconOrStyle: layerStyle.default.iconOrStyle[feature.geometry.type]
-      }
+      const id = feature.id
+      let featureStyle = null
+      let featureIcon = null
       if (feature.properties.icon) {
         let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+        let cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
-            const file = fs.createWriteStream(iconFile)
+            const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
-              http.get(feature.properties.icon, (response) => {
-                if (response.statusCode === 200) {
-                  response.pipe(file)
-                  file.on('finish', () => {
-                    file.close()
-                    resolve()
-                  })
-                } else {
-                  fs.unlinkSync(iconFile)
+              return axios({
+                method: 'get',
+                url: feature.properties.icon,
+                responseType: 'arraybuffer'
+              })
+              .then(response => {
+                URLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                writer.on('finish', () => {
+                  writer.close()
                   resolve()
-                }
-              }).on('error', (err) => {
+                })
+              })
+              .catch(err => {
                 fs.unlinkSync(iconFile)
+                // eslint-disable-next-line no-console
                 console.error(err)
                 resolve()
               })
             })
+            iconFile = cachedIconFile
           }
 
           if (fs.existsSync(iconFile)) {
@@ -121,6 +134,8 @@ export default class KMLSource extends Source {
               let dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
               fileIcons[iconFile] = {
                 url: dataUrl,
+                contentType: 'image/' + path.extname(iconFile).substring(1),
+                data: fs.readFileSync(iconFile),
                 width: image.width,
                 height: image.height,
                 anchor_x: image.width / 2.0,
@@ -129,11 +144,14 @@ export default class KMLSource extends Source {
                 name: 'Icon #' + iconNumber
               }
             } catch (exception) {
+              // eslint-disable-next-line no-console
               console.error(exception)
-              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
+              // eslint-disable-next-line no-console
+              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {
-            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon()
+            console.log('icon file doesn\'t exist')
+            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
           }
           iconNumber++
         }
@@ -142,17 +160,26 @@ export default class KMLSource extends Source {
         if (_.isNil(layerStyle.iconRowMap[iconHash])) {
           layerStyle.iconRowMap[iconHash] = icon
         }
-        layerStyle.features[feature.id].icon = iconHash
-        layerStyle.features[feature.id].iconOrStyle = 'icon'
+        featureIcon = iconHash
       } else {
         let style = this.getStyleFromFeature(feature)
-        let styleHash = VectorStyleUtilities.hashCode(style)
-        if (_.isNil(layerStyle.styleRowMap[styleHash])) {
-          layerStyle.styleRowMap[styleHash] = style
+        if (!_.isNil(style)) {
+          let styleHash = VectorStyleUtilities.hashCode(style)
+          if (_.isNil(layerStyle.styleRowMap[styleHash])) {
+            layerStyle.styleRowMap[styleHash] = style
+          }
+          featureStyle = styleHash
         }
-        layerStyle.features[feature.id].style = styleHash
-        layerStyle.features[feature.id].iconOrStyle = 'style'
       }
+      if (!_.isNil(featureIcon) || !_.isNil(featureStyle)) {
+        layerStyle.features[id] = {
+          icon: featureIcon,
+          style: featureStyle
+        }
+      }
+    }
+    if (_.isEmpty(layerStyle.features) && _.isEmpty(layerStyle.styleRowMap) && _.isEmpty(layerStyle.iconRowMap)) {
+      layerStyle = null
     }
     return layerStyle
   }

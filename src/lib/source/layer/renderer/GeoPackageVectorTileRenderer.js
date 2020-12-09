@@ -1,37 +1,53 @@
-import { FeatureTiles, NumberFeaturesTile } from '@ngageoint/geopackage'
+import { FeatureTiles, NumberFeaturesTile, GeoPackageAPI } from '@ngageoint/geopackage'
 
 export default class GeoPackageVectorTileRenderer {
+  filePath
   geopackage
   featureTableName
   featureDao
   featureTile
   maxFeatures
 
-  constructor (geopackage, featureTableName, maxFeatures) {
-    this.geopackage = geopackage
+  constructor (filePath, featureTableName, maxFeatures) {
+    this.filePath = filePath
     this.featureTableName = featureTableName
     this.maxFeatures = maxFeatures
   }
 
   async init () {
+    this.geopackage = await GeoPackageAPI.open(this.filePath)
     this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
-    this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
-    this.featureTile.maxFeaturesPerTile = this.maxFeatures
+    if (this.maxFeatures && this.maxFeatures > 0) {
+      this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
+      this.featureTile.maxFeaturesPerTile = this.maxFeatures
+    }
     this.featureTile.iconCacheSize = 1000
   }
 
-  async styleChanged (geopackage, maxFeatures) {
-    this.geopackage = geopackage
+  close () {
+    if (this.geopackage) {
+      this.featureDao = undefined
+      this.featureTile = undefined
+      try {
+        this.geopackage.close()
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+      this.geopackage = undefined
+    }
+  }
+
+  async styleChanged (maxFeatures) {
     this.maxFeatures = maxFeatures
+    this.close()
     await this.init()
   }
   async renderVectorTile (coords, tileCanvas, done) {
-    // console.time(JSON.stringify(coords))
     let {x, y, z} = coords
     if (tileCanvas) {
       this.featureTile.drawTile(x, y, z, tileCanvas).then(() => {
-        // console.timeEnd(JSON.stringify(coords))
         if (done) {
           done(null, tileCanvas)
         }

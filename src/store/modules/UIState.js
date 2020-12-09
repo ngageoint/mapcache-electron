@@ -12,10 +12,11 @@ const getters = {
 const mutations = {
   addProjectState (state, {projectId}) {
     Vue.set(state, projectId, {
-      extents: [-180, -90, 180, 90],
+      extents: [-53.4, -79.1, 53.64, 79.1],
       drawBounds: {},
       boundsBeingDrawn: {},
-      activeCount: 0
+      activeCount: 0,
+      dark: false
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -23,18 +24,24 @@ const mutations = {
   },
   deleteProject (state, projectId) {
     Vue.delete(state, projectId)
+  },
+  setDarkTheme (state, {projectId, enabled}) {
+    Vue.set(state[projectId], 'dark', enabled)
   }
 }
 
 const actions = {
-  addProjectState ({ commit, state }, id) {
+  addProjectState ({ commit }, id) {
     commit('addProjectState', id)
   },
-  setProjectExtents ({ commit, state }, {projectId, extents}) {
+  setProjectExtents ({ commit }, {projectId, extents}) {
     commit('setProjectExtents', {projectId, extents})
   },
-  deleteProject ({ commit, state }, projectId) {
+  deleteProject ({ commit }, projectId) {
     commit('deleteProject', projectId)
+  },
+  setDarkTheme ({ commit }, {projectId, enabled}) {
+    commit('setDarkTheme', {projectId, enabled})
   }
 }
 

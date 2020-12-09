@@ -1,39 +1,208 @@
-import {BrowserWindow, ipcMain} from 'electron'
+import { BrowserWindow } from 'electron'
 import _ from 'lodash'
-import fs from 'fs'
+import os from 'os'
 
 class WorkerWindowPool {
-  windowPoolSize = 4
+  windowPoolSize = Math.min(os.cpus().length, 4)
   workerWindows = []
-  workerWindowAssignment = {}
+  activeTasks = {}
+  queue = []
+  running = 0
 
-  launchWorkerWindows () {
+  /**
+   * Destroy worker windows
+   */
+  quit() {
+    this.cancelTasks().then(() => {
+      for (let i = 0; i < this.workerWindows.length; i++) {
+        this.workerWindows[i].window.destroy()
+      }
+    })
+  }
+
+  /**
+   * Worker pool has ongoing tasks
+   * @returns {boolean}
+   */
+  hasTasks() {
+    return this.running + this.queue.length > 0
+  }
+
+  /**
+   * Worker has completed, check for remaining tasks
+   */
+  next() {
+    this.running--
+    this.start()
+  }
+
+  /**
+   * Try to execute tasks
+   * @returns {boolean}
+   */
+  async start() {
+    // too many tasks are running, need to wait for one to complete
+    if (this.running >= this.windowPoolSize) {
+      return true
+    }
+    const task = this.queue.shift()
+    // no tasks left
+    if (!task) {
+      return false
+    }
+    this.running++
+    const worker = await this.getOrWaitForAvailableWorker()
+    this.activeTasks[task.id] = {
+      task: task,
+      worker: worker
+    }
+    task.fn(worker).then((result) => {
+      task.cb(result)
+      delete this.activeTasks[task.id]
+      worker.available = true
+      this.next()
+    }).catch(e => {
+      task.error(e)
+      delete this.activeTasks[task.id]
+      worker.available = true
+      this.next()
+    })
+    return true
+  }
+
+  /**
+   * Add task to queue
+   * @param task
+   */
+  addTask(task) {
+    this.queue.push(task)
+    this.start()
+  }
+
+  /**
+   * Cancels a task if it exists and hasn't already finished
+   * @param taskId
+   */
+  async cancelTask(taskId) {
+    // task is active
+    const activeTask = this.activeTasks[taskId]
+    if (!_.isNil(activeTask)) {
+      activeTask.task.cancel()
+      try {
+        await this.restartWorkerWindow(activeTask.worker.id)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e)
+      }
+      delete this.activeTasks[taskId]
+    } else {
+      // try to remove it from queue
+      this.queue = this.queue.filter(task => task.id !== taskId)
+    }
+    this.next()
+  }
+
+  /**
+   * Cancel any unstarted or ongoing tasks
+   */
+  async cancelTasks() {
+    this.queue = []
+    for (let key of _.keys(this.activeTasks)) {
+      this.cancelTask(key)
+    }
+  }
+
+  /**
+   * Load worker page
+   * @param window
+   * @param url
+   * @param onFulfilled
+   */
+  loadContent(window, url, onFulfilled = () => {
+  }) {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    })
+  }
+
+  /**
+   * Initialize the worker pool
+   */
+  launchWorkerWindows() {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
+      const workerURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
+        : `app://./index.html?id=${id}#worker`
+
       let worker = {
         id: id,
         window: new BrowserWindow({
           show: false,
           webPreferences: {
-            nodeIntegration: true
+            nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+            nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
+            enableRemoteModule: true,
+            webSecurity: false
           }
         }),
         available: false
       }
-      worker.window.toggleDevTools()
-      // worker.window.toggleDevTools()
+      if (process.env.WEBPACK_DEV_SERVER_URL) {
+        worker.window.toggleDevTools()
+      }
       this.workerWindows.push(worker)
-      const workerURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${id}#/worker`
-        : `file://${__dirname}/index.html?id=${id}#worker`
-      worker.window.loadURL(workerURL)
+      this.loadContent(worker.window, workerURL)
       worker.window.on('ready-to-show', () => {
         worker.available = true
       })
     }
   }
 
-  async getOrWaitForAvailableWorker (sourceId) {
+  /**
+   * Restart a worker
+   * @param id
+   * @returns {Promise<*>}
+   */
+  async restartWorkerWindow(id) {
+    return new Promise(resolve => {
+      const workerWindow = this.workerWindows.find(worker => worker.id === id)
+      if (workerWindow) {
+        workerWindow.available = false
+        workerWindow.window.on('closed', () => {
+          workerWindow.window = new BrowserWindow({
+            show: false,
+            webPreferences: {
+              nodeIntegration: true,
+              enableRemoteModule: true,
+              webSecurity: false
+            }
+          })
+          const workerURL = process.env.WEBPACK_DEV_SERVER_URL
+            ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
+            : `app://./index.html?id=${id}#worker`
+          this.loadContent(workerWindow.window, workerURL)
+          workerWindow.window.on('ready-to-show', () => {
+            workerWindow.available = true
+            resolve()
+          })
+          if (process.env.WEBPACK_DEV_SERVER_URL) {
+            workerWindow.window.toggleDevTools()
+          }
+        })
+        workerWindow.window.destroy()
+      } else {
+        resolve()
+      }
+    })
+  }
+
+  /**
+   * Will try to acquire a worker and will continue to wait until one becomes available
+   * @returns {Promise<null>}
+   */
+  async getOrWaitForAvailableWorker() {
     const sleep = m => new Promise(resolve => setTimeout(resolve, m))
     let availableWorker = null
     while (_.isNil(availableWorker)) {
@@ -50,76 +219,7 @@ class WorkerWindowPool {
       }
     }
     availableWorker.available = false
-    this.workerWindowAssignment[sourceId] = availableWorker
     return availableWorker
-  }
-
-  releaseWorker (worker, sourceId) {
-    worker.available = true
-    delete this.workerWindowAssignment[sourceId]
-  }
-
-  async executeProcessSource (payload) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
-      this.workerWindowAssignment[payload.source.id] = workerWindow
-      workerWindow.window.webContents.send('worker_process_source', payload)
-      ipcMain.once('worker_process_source_completed_' + workerWindow.id, (event, result) => {
-        this.releaseWorker(workerWindow, payload.source.id)
-        resolve(result)
-      })
-    })
-  }
-
-  cancelProcessSource (sourceId) {
-    if (this.workerWindowAssignment[sourceId]) {
-      const workerWindow = this.workerWindowAssignment[sourceId]
-      const workerURL = process.env.NODE_ENV === 'development'
-        ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-        : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-      workerWindow.window.loadURL(workerURL)
-      workerWindow.window.on('ready-to-show', () => {
-        this.releaseWorker(workerWindow, sourceId)
-      })
-      delete this.workerWindowAssignment[sourceId]
-    }
-  }
-
-  async executeBuildGeoPackage (payload) {
-    return new Promise(async (resolve) => {
-      const workerWindow = await this.getOrWaitForAvailableWorker()
-      this.workerWindowAssignment[payload.geopackage.id] = workerWindow
-      workerWindow.window.webContents.send('worker_build_geopackage', payload)
-      ipcMain.once('worker_build_geopackage_completed_' + workerWindow.id, (event, result) => {
-        this.releaseWorker(workerWindow, payload.geopackage.id)
-        resolve(result)
-      })
-    })
-  }
-
-  cancelGeoPackageBuild (geopackage) {
-    const geopackageId = geopackage.id
-    try {
-      fs.unlinkSync(geopackage.fileName)
-    } catch (error) {
-      console.error(error)
-    }
-
-    try {
-      if (this.workerWindowAssignment[geopackageId]) {
-        const workerWindow = this.workerWindowAssignment[geopackageId]
-        const workerURL = process.env.NODE_ENV === 'development'
-          ? `http://localhost:9080/?id=${workerWindow.id}#/worker`
-          : `file://${__dirname}/index.html?id=${workerWindow.id}#worker`
-        workerWindow.window.loadURL(workerURL)
-        workerWindow.window.on('ready-to-show', () => {
-          this.releaseWorker(workerWindow, geopackageId)
-        })
-        delete this.workerWindowAssignment[geopackageId]
-      }
-    } catch (error) {
-      console.error(error)
-    }
   }
 }
 export default new WorkerWindowPool()

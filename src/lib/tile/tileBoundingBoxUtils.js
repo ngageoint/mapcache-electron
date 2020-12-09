@@ -15,10 +15,10 @@ export default class TileBoundingBoxUtils {
     if (extentsArray.length === 0) {
       return null
     }
-    let mergedExtent = extentsArray[0]
+    let mergedExtent
     extentsArray.forEach(extent => {
       if (_.isNil(mergedExtent)) {
-        mergedExtent = extent
+        mergedExtent = extent.slice()
       } else {
         mergedExtent[0] = Math.min(mergedExtent[0], extent[0])
         mergedExtent[1] = Math.min(mergedExtent[1], extent[1])
@@ -26,7 +26,7 @@ export default class TileBoundingBoxUtils {
         mergedExtent[3] = Math.max(mergedExtent[3], extent[3])
       }
     })
-    return [[mergedExtent[1], mergedExtent[0]], [mergedExtent[3], mergedExtent[2]]]
+    return mergedExtent
   }
 
   static intersection (boundingBoxA, boundingBoxB) {
@@ -41,7 +41,7 @@ export default class TileBoundingBoxUtils {
    *  @param y    y
    *  @param zoom zoom level
    *
-   *  @return web mercator bounding box
+   *  @return Object web mercator bounding box
    */
   static getWebMercatorBoundingBoxFromXYZ (x, y, zoom, options) {
     var tilesPerSide = TileBoundingBoxUtils.tilesPerSideWithZoom(zoom)
@@ -72,7 +72,7 @@ export default class TileBoundingBoxUtils {
    *
    *  @param tilesPerSide tiles per side
    *
-   *  @return meters
+   *  @return number meters
    */
   static tileSizeWithTilesPerSide (tilesPerSide) {
     return (2 * TileBoundingBoxUtils.WEB_MERCATOR_HALF_WORLD_WIDTH) / tilesPerSide
@@ -83,7 +83,7 @@ export default class TileBoundingBoxUtils {
    *
    *  @param zoom zoom level
    *
-   *  @return tiles per side
+   *  @return number tiles per side
    */
   static tilesPerSideWithZoom (zoom) {
     return Math.pow(2, zoom)

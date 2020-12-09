@@ -1,11 +1,15 @@
+import proj4 from 'proj4'
+import axios from 'axios'
+import GeoServiceUtilities from '../../../GeoServiceUtilities'
 import TileLayer from './TileLayer'
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
-import proj4 from 'proj4'
-import request from 'request-promise-native'
-import { remote } from 'electron'
-import GeoServiceUtilities from '../../../GeoServiceUtilities'
 
 export default class WMSLayer extends TileLayer {
+  constructor (configuration = {}) {
+    super(configuration)
+    this.layers = configuration.layers
+  }
+
   async initialize () {
     this.version = this._configuration.version
     await super.initialize()
@@ -17,7 +21,8 @@ export default class WMSLayer extends TileLayer {
       ...super.configuration,
       ...{
         layerType: 'WMS',
-        version: this.version
+        version: this.version,
+        layers: this.layers
       }
     }
   }
@@ -34,6 +39,7 @@ export default class WMSLayer extends TileLayer {
     let {x, y, z} = coords
 
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    // assumes projection from 3857 to 4326
     let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
     let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
     let fullExtent = this.extent
@@ -54,30 +60,23 @@ export default class WMSLayer extends TileLayer {
     ctx.clearRect(0, 0, tile.width, tile.height)
 
     let referenceSystemName = 'srs'
-    let bbox = tileLowerLeft[0] + ',' + tileLowerLeft[1] + ',' + tileUpperRight[0] + ',' + tileUpperRight[1]
+    let bbox = tileBbox.minLon + ',' + tileBbox.minLat + ',' + tileBbox.maxLon + ',' + tileBbox.maxLat
     if (this.version === '1.3.0') {
       referenceSystemName = 'crs'
     }
 
-    let options = {
-      method: 'GET',
-      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.sourceLayerName, 256, 256, bbox, referenceSystemName),
-      encoding: null,
-      headers: {
-        'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
-      },
-      resolveWithFullResponse: true
+    let headers = {}
+    let credentials = this.credentials
+    if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
+      headers['authorization'] = credentials.authorization
     }
-    if (this.credentials) {
-      if (this.credentials.type === 'basic') {
-        if (!options.headers) {
-          options.headers = {}
-        }
-        options.headers['Authorization'] = this.credentials.authorization
-      }
-    }
-    const result = await request(options)
-    done(null, 'data:' + result.headers['content-type'] + ';base64,' + Buffer.from(result.body).toString('base64'))
-    return result.body
+    const response = await axios({
+      method: 'get',
+      responseType: 'arraybuffer',
+      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version),
+      headers: headers
+    })
+    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))
+    return response.body
   }
 }

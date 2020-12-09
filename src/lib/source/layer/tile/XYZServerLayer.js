@@ -1,6 +1,5 @@
-import request from 'request-promise-native'
 import TileLayer from './TileLayer'
-import { remote } from 'electron'
+import axios from 'axios'
 
 export default class XYZServerLayer extends TileLayer {
   async initialize () {
@@ -33,25 +32,18 @@ export default class XYZServerLayer extends TileLayer {
     }
     let ctx = tileCanvas.getContext('2d')
     ctx.clearRect(0, 0, tileCanvas.width, tileCanvas.height)
-    let options = {
-      method: 'GET',
+    let headers = {}
+    let credentials = this.credentials
+    if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
+      headers['authorization'] = credentials.authorization
+    }
+    const response = await axios({
+      method: 'get',
+      responseType: 'arraybuffer',
       url: this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y),
-      encoding: null,
-      headers: {
-        'User-Agent': remote.getCurrentWebContents().session.getUserAgent()
-      },
-      resolveWithFullResponse: true
-    }
-    if (this.credentials) {
-      if (this.credentials.type === 'basic') {
-        if (!options.headers) {
-          options.headers = {}
-        }
-        options.headers['Authorization'] = this.credentials.authorization
-      }
-    }
-    const result = await request(options)
-    done(null, 'data:' + result.headers['content-type'] + ';base64,' + Buffer.from(result.body).toString('base64'))
-    return result.body
+      headers: headers
+    })
+    done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))
+    return response.body
   }
 }

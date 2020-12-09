@@ -18,17 +18,22 @@ export default class Layer {
     this.name = this._configuration.name || this.sourceLayerName
     this.pane = configuration.pane
     this.style = this._configuration.style
-    this.shown = this._configuration.shown || true
-    this.expanded = this._configuration.expanded || true
+    this.visible = this._configuration.visible || false
     this.images = this._configuration.images
-    this.sourceFilePath = this._configuration.sourceFilePath
     this.sourceType = this._configuration.sourceType
     this.displayName = this._configuration.displayName || this.name
     this.layerType = this._configuration.layerType
+    this.sourceDirectory = this._configuration.sourceDirectory
+    this.sourceId = this._configuration.sourceId
+    this.styleKey = this._configuration.styleKey || 0
   }
 
   async initialize () {
     throw new Error('Abstract method to be implemented in sublcass')
+  }
+
+  close () {
+
   }
 
   get configuration () {
@@ -41,12 +46,13 @@ export default class Layer {
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         displayName: this.displayName,
-        shown: this.shown || true,
-        expanded: this.expanded || true,
+        visible: this.visible || false,
         style: this.style,
         images: this.images,
-        sourceFilePath: this.sourceFilePath,
-        sourceType: this.sourceType
+        sourceType: this.sourceType,
+        sourceDirectory: this.sourceDirectory,
+        sourceId: this.sourceId,
+        styleKey: this.styleKey
       }
     }
   }
