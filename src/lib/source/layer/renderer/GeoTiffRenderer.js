@@ -68,11 +68,10 @@ export default class GeoTiffRenderer {
         const dx = this.layer.image.getResolution()[0]
         const dy = this.layer.image.getResolution()[1]
 
-        const alphaBandVal = this.layer.alphaBand
         if (this.layer.renderingMethod === 0) {
           if (this.layer.grayBand > 0) {
             let grayBand = this.layer.rasters[this.layer.grayBand - 1]
-            let alphaBand = this.layer.rasters[alphaBandVal]
+            let alphaBand = this.layer.alphaBand > 0 ? this.layer.rasters[this.layer.alphaBand - 1] : []
             let noDataValue = this.layer.globalNoDataValue
             let grayBandDataTypeMax = GeoTiffLayer.getMaxForDataType(this.layer.bitsPerSample[this.layer.grayBand])
 
@@ -100,7 +99,11 @@ export default class GeoTiffRenderer {
                 targetData[position] = value
                 targetData[position + 1] = value
                 targetData[position + 2] = value
-                targetData[position + 3] = alphaBand[sourcePosition]
+                if (this.layer.alphaBand > 0) {
+                  targetData[position + 3] = alphaBand[sourcePosition]
+                } else {
+                  targetData[position + 3] = 255
+                }
 
                 if (targetData[position + 3] !== 0) {
                   // alpha was good, check if it is a no data though...
@@ -195,7 +198,7 @@ export default class GeoTiffRenderer {
           let colorMap = new Uint16Array(this.layer.colorMap.buffer)
           if (this.layer.paletteBand > 0) {
             let paletteBand = this.layer.rasters[this.layer.paletteBand - 1]
-            let alphaBand = this.layer.alphaBand > 0 ? this.layer.rasters[alphaBandVal] : []
+            let alphaBand = this.layer.alphaBand > 0 ? this.layer.rasters[this.layer.alphaBand - 1] : []
             for (let x = xMin; x <= xMax; x++) {
               const longitude = tileBbox.minLon + tx * x
               for (let y = yMin; y <= yMax; y++) {
@@ -209,8 +212,6 @@ export default class GeoTiffRenderer {
                 targetData[position] = colorMap[mapIndex] / 65535 * maxByteValue
                 targetData[position + 1] = colorMap[mapIndex + colorMap.length / 3] / 65535 * maxByteValue
                 targetData[position + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
-                targetData[position + 3] = alphaBand[sourcePosition]
-
                 if (this.layer.alphaBand > 0) {
                   targetData[position + 3] = alphaBand[sourcePosition]
                 } else {

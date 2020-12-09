@@ -37,15 +37,19 @@
                   <v-text-field type="number" label="Max" v-model="grayBandMax" dense></v-text-field>
                 </v-col>
               </v-row>
-              <v-row class="ma-0 pa-0">
-                <v-switch color="primary" v-model="stretchToMinMax" label="Stretch Band to Min/Max">
-                </v-switch>
-              </v-row>
               <v-row no-gutters>
                 <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color Gradient" dense>
                 </v-select>
               </v-row>
             </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+              Stretch Bands to Min/Max
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
+            </v-list-item-action>
           </v-list-item>
         </v-list>
         <v-list two-line subheader v-if="renderingMethod === 1">
