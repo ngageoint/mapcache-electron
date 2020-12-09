@@ -714,9 +714,6 @@
                       }
                     }
                   })
-                  let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                  mapLayer.addTo(map)
-                  sourceLayers[sourceId].mapLayer = mapLayer
                 } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
                   if (sourceLayers[sourceId].initializedSource.layerType === 'GeoTIFF') {
                     sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
