@@ -77,14 +77,14 @@ module.exports = {
           target: [
             "portable"
           ],
-          icon: "dist_electron/icon.png"
+          icon: "buildResources/icon.ico"
         },
         nsis: {
           oneClick: false,
-          allowToChangeInstallationDirectory: true
+          allowToChangeInstallationDirectory: true,
         },
         linux: {
-          icon: "dist_electron/icons",
+          icon: "buildResources/icons",
           target: [
             "deb",
             "rpm",
