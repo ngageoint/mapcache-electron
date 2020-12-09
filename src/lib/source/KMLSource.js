@@ -19,7 +19,7 @@ export default class KMLSource extends Source {
   async initialize () {
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml/*, originalFileDir, this.sourceCacheFolder*/)
+    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder)
     this.geotiffs = parsedKML.geotiffs
     this.vectorLayers = []
     let documents = parsedKML.documents
@@ -99,11 +99,12 @@ export default class KMLSource extends Source {
       let featureStyle = null
       let featureIcon = null
       if (feature.properties.icon) {
-        let iconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
+        let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+        let cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
-            const writer = fs.createWriteStream(iconFile)
+            const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
               return axios({
                 method: 'get',
@@ -124,6 +125,7 @@ export default class KMLSource extends Source {
                 resolve()
               })
             })
+            iconFile = cachedIconFile
           }
 
           if (fs.existsSync(iconFile)) {
@@ -148,6 +150,7 @@ export default class KMLSource extends Source {
               fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {
+            console.log('icon file doesn\'t exist')
             fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
           }
           iconNumber++

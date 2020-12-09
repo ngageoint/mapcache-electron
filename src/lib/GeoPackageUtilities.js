@@ -492,12 +492,12 @@ export default class GeoPackageUtilities {
             if (_.isNil(featureIconRow)) {
               let featureIcon = style.iconRowMap[iconId]
               featureIconRow = featureTableStyles.getIconDao().newRow()
-              featureIconRow.data = Buffer.from(featureIcon.url.split(',')[1], 'base64')
-              featureIconRow.contentType = featureIcon.url.substring(featureIcon.url.indexOf(':') + 1, featureIcon.url.indexOf(';'))
+              featureIconRow.data = featureIcon.data
+              featureIconRow.contentType = featureIcon.contentType
               featureIconRow.width = featureIcon.width
               featureIconRow.height = featureIcon.height
-              featureIconRow.anchorU = featureIcon.anchor_u
-              featureIconRow.anchorV = featureIcon.anchor_v
+              featureIconRow.anchorU = featureIcon.anchorU
+              featureIconRow.anchorV = featureIcon.anchorV
               featureIconRow.name = featureIcon.name
               let featureIconRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(featureIconRow)
               delete style.iconRowMap[iconId]

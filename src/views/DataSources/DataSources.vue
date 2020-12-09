@@ -110,6 +110,7 @@
   import DataSourceList from './DataSourceList'
   import AddDataSourceUrl from './AddDataSourceUrl'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import Vue from 'vue'
 
   let processing = {
     dataDragOver: false,
@@ -220,9 +221,9 @@
             status: undefined,
             error: undefined
           }
-          setTimeout(() => {
+          Vue.nextTick(() => {
             this.addSource(sourceToProcess)
-          }, 100)
+          })
         })
       },
       dataSourceSelected (dataSourceId) {

@@ -89,7 +89,7 @@ export default class GeoTiffLayer extends TileLayer {
     let crs = 0
     if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTModelTypeGeoKey') === false) {
       crs = 0
-    } else if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey ) ==='ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
+    } else if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey ) === 'ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
       crs = image.getGeoKeys()['GeographicTypeGeoKey'];
     } else {
       if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'ModelTypeProjected' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'ProjectedCSTypeGeoKey')) {
