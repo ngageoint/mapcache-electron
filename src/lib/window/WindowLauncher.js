@@ -14,6 +14,7 @@ class WindowLauncher {
   loadingWindow
   isShuttingDown = false
   quitFromParent = false
+  forceClose = false
 
   isWindowVisible () {
     return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
@@ -32,6 +33,7 @@ class WindowLauncher {
       this.showProject(payload)
     })
     ipcMain.on('close-project', () => {
+      this.forceClose = true
       this.closeProject()
     })
     ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
@@ -249,7 +251,7 @@ class WindowLauncher {
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
         let leave = true
-        if (WorkerPool.hasTasks()) {
+        if (WorkerPool.hasTasks() && !this.forceClose) {
           const choice = dialog.showMessageBoxSync(this.projectWindow, {
             type: 'question',
             buttons: ['Close', 'Wait'],

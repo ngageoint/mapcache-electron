@@ -1,9 +1,8 @@
 <template>
   <v-card>
-    <v-card-title style="color: grey; font-weight: 600;">
-      <v-row no-gutters justify="start" align="center">
-        <v-icon>{{icon}}</v-icon>{{title}}
-      </v-row>
+    <v-card-title>
+      <v-icon color="primary" class="pr-2">{{icon}}</v-icon>
+      {{title}}
     </v-card-title>
     <v-card-text>
       <v-form v-on:submit.prevent>

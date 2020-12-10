@@ -8,10 +8,10 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Remove project
+          Delete project
         </v-card-title>
         <v-card-text>
-          Are you sure you want to remove <b>{{removeProject.name}}</b>? This action can't be undone.
+          Deleting this project will delete any downloaded data sources. Data sources and GeoPackages imported from the file system will not be deleted. Are you sure you want to delete <b>{{removeProject.name}}</b>? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -24,7 +24,7 @@
             color="warning"
             text
             @click="remove">
-            Remove
+            Delete
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -35,7 +35,7 @@
           <div class="project-thumb">
             <v-icon class="new-project-icon">mdi-plus</v-icon>
           </div>
-          <div class="project-thumb-name">Create A New Project</div>
+          <div class="project-thumb-name">Create a new project</div>
         </li>
         <li v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)" class="project">
           <v-btn dark class="project-delete" icon @click.stop.prevent="showRemoveProjectDialog(project)"><v-icon>mdi-close-circle</v-icon></v-btn>

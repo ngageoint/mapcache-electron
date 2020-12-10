@@ -3,6 +3,36 @@
     <div id="map" :style="{width: '100%', zIndex: 0, flex: 1}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
+        v-model="geopackageExistsDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
+            Create GeoPackage Warning
+          </v-card-title>
+          <v-card-text>
+            <v-card-subtitle>
+              The name of the geopackage you tried to create already exists. Would you like try another file name?
+            </v-card-subtitle>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="geopackageExistsDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              text
+              @click="confirmGeoPackageFeatureLayerSelection">
+              OK
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
         v-model="layerSelectionVisible"
         max-width="500"
         persistent>
@@ -86,6 +116,7 @@
   import * as vendor from '../../lib/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
+  import jetpack from 'fs-jetpack'
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
@@ -168,7 +199,8 @@
         featureToAddColumns: null,
         featureToAddGeoPackage: null,
         featureToAddTableName: null,
-        lastShowFeatureTableEvent: null
+        lastShowFeatureTableEvent: null,
+        geopackageExistsDialog: false
       }
     },
     methods: {
@@ -180,6 +212,8 @@
         }
       },
       async confirmGeoPackageFeatureLayerSelection () {
+        this.geopackageExistsDialog = false
+        this.layerSelectionVisible = false
         let _this = this
         let feature = this.createdLayer.toGeoJSON()
         feature.id = UniqueIDUtilities.createUniqueID()
@@ -228,11 +262,21 @@
               if (!filePath.endsWith('.gpkg')) {
                 filePath = filePath + '.gpkg'
               }
-              GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
-                GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
-                  ActionUtilities.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+              const existsOnFileSystem = jetpack.exists(filePath)
+              if (existsOnFileSystem) {
+                this.geopackageExistsDialog = true
+              } else {
+                this.cancelDrawing()
+                Vue.nextTick(() => {
+                  GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
+                    GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+                      ActionUtilities.addGeoPackage({projectId: _this.projectId, filePath: filePath})
+                    })
+                  })
                 })
-              })
+              }
+            } else {
+              this.cancelDrawing()
             }
           })
         } else {
@@ -249,15 +293,8 @@
               this.showAddFeatureDialog = true
             })
           }
+          this.cancelDrawing()
         }
-        this.layerSelectionVisible = false
-        this.geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
-        this.geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
-        this.geoPackageSelection = 0
-        this.geoPackageFeatureLayerSelection = 0
-        this.map.removeLayer(this.createdLayer)
-        this.createdLayer = null
-        this.featureTableName = 'Feature layer'
       },
       cancelDrawing () {
         this.layerSelectionVisible = false
