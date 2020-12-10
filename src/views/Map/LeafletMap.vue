@@ -888,6 +888,15 @@
         },
         deep: true
       },
+      geoPackageFeatureLayerSelection: {
+        handler () {
+          Vue.nextTick(() => {
+            if (!_.isNil(this.$refs.featureTableNameForm)) {
+              this.$refs.featureTableNameForm.validate()
+            }
+          })
+        }
+      },
       geoPackageSelection: {
         handler (updatedGeoPackageSelection) {
           let layers = [NEW_FEATURE_LAYER_OPTION]
