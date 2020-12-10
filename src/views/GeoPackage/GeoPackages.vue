@@ -159,7 +159,7 @@
             if (existsOnFileSystem) {
               this.geopackageExistsDialog = true
             } else {
-              this.addGeoPackageError = true
+              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: filePath})
             }
           }
         })
