@@ -34,6 +34,36 @@
         <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
           GeoPackage already exists in project.
         </v-alert>
+        <v-dialog
+          v-model="geopackageExistsDialog"
+          max-width="400"
+          persistent>
+          <v-card>
+            <v-card-title>
+              <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
+              Create GeoPackage Warning
+            </v-card-title>
+            <v-card-text>
+              <v-card-subtitle>
+                The name of the geopackage you tried to create already exists. Would you like try another file name?
+              </v-card-subtitle>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                text
+                @click="geopackageExistsDialog = false">
+                Cancel
+              </v-btn>
+              <v-btn
+                color="primary"
+                text
+                @click="createNewGeoPackage">
+                OK
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-sheet>
       <v-speed-dial
         class="fab-position"
@@ -99,6 +129,7 @@
   let options = {
     fab: false,
     addGeoPackageError: false,
+    geopackageExistsDialog: false,
     selectedGeoPackage: null
   }
 
@@ -118,15 +149,15 @@
     methods: {
       createNewGeoPackage () {
         this.fab = false
-        const geopackages = this.geopackages
+        this.geopackageExistsDialog = false
         remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
           if (!canceled && !_.isNil(filePath)) {
             if (!filePath.endsWith('.gpkg')) {
               filePath = filePath + '.gpkg'
             }
-            const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === filePath) !== -1
-            if (!exists) {
-              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: filePath})
+            const existsOnFileSystem = jetpack.exists(filePath)
+            if (existsOnFileSystem) {
+              this.geopackageExistsDialog = true
             } else {
               this.addGeoPackageError = true
             }
@@ -139,7 +170,7 @@
         remote.dialog.showOpenDialog({
           filters: [
             {
-              name: 'GeoPackage Extensions',
+              name: 'GeoPackages',
               extensions: ['gpkg', 'geopackage']
             }
           ],
@@ -150,10 +181,11 @@
               times: true,
               absolutePath: true
             })
-            const exists = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
-            if (!exists) {
+            const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
+            if (!existsInApp) {
               ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
             } else {
+              // exists in app, show error
               this.addGeoPackageError = true
             }
           }

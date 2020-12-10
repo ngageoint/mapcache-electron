@@ -23,7 +23,7 @@
           v-if="ok"
           :color="okColor || 'primary'"
           @click="modalOK">
-          {{okText || "Ok"}}
+          {{okText || "OK"}}
         </v-btn>
       </v-card-actions>
     </v-card>
