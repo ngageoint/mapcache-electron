@@ -139,7 +139,7 @@
         deleteDialog: false,
         aspectRatioLock: true,
         isNew: _.isNil(this.iconRow.id),
-        aspectRatio: 1.0,
+        aspectRatio: this.iconRow.width / this.iconRow.height,
         widthRules: [
           v => !!v || 'Width is required',
           v => v >= 1 || 'Width must be at least 1 pixel',
