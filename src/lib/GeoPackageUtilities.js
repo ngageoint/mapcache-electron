@@ -1257,6 +1257,7 @@ export default class GeoPackageUtilities {
     styleRow.setFillColor(style.fillColor, style.fillOpacity)
     styleRow.setWidth(style.width)
     styleRow.setName(style.name)
+    styleRow.setDescription(style.description)
     featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
   }
 
