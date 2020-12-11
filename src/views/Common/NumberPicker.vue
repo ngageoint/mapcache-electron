@@ -41,6 +41,11 @@
           }
           this.$emit('update-number', updatedNumber)
         }
+      },
+      number: {
+        handler (val) {
+          this.numberValue = Number(val)
+        }
       }
     }
   }
