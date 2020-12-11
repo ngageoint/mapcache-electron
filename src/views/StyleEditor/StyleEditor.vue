@@ -250,11 +250,11 @@
         <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5"
                @click.stop="addStyleExtensionAndDefaultStyles()">
           <v-icon>mdi-palette</v-icon>
-          Enable Styling
+          Enable styling
         </v-btn>
         <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
           <v-icon>mdi-trash-can</v-icon>
-          Remove Styling
+          Remove styling
         </v-btn>
       </v-card-actions>
     </v-card>
