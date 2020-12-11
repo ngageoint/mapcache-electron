@@ -1,7 +1,7 @@
 module.exports = {
   pluginOptions: {
     electronBuilder: {
-      externals: ['better-sqlite3', 'canvas', 'gdal', 'bindings'],
+      externals: ['better-sqlite3', 'canvas', 'bindings'],
       nodeIntegration: true,
       chainWebpackMainProcess: config => {
         config.module
@@ -37,7 +37,6 @@ module.exports = {
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
         asarUnpack: [
-          "**/node_modules/gdal/**/*",
           "**/node_modules/imagemin-pngquant/**/*",
           "**/node_modules/pngquant-bin/**/*",
           "**/node_modules/bin-wrapper/**/*"
