@@ -115,15 +115,15 @@
           items: [
             {
               title: '',
-              content: 'Data sources consist of files in a variety of supported geospatial formats (KML, GeoJSON, SHP) or online services such as WMS, WFS, XYZ. The contents of a data source can either be features or imagery.'
+              content: 'Data sources consist of files in a variety of supported geospatial formats (KML/KMZ, GeoJSON, Shapefile, and GeoTIFF) or online services such as WMS, WFS, XYZ, and ArcGIS Feature Service. The contents of a data source can either be features or imagery.'
             },
             {
               title: 'Import Data Source from file',
-              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (not the zip, only .shp), and GeoTIFF.'
+              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (.zip or .shp), and GeoTIFF.'
             },
             {
               title: 'Import Data Source from URL',
-              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Download from URL\' button and complete the steps to import. Supported geospatial services include WMS, WFS, and XYZ.'
+              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Download from URL\' button and complete the steps to import. Supported geospatial services include WMS, WFS, XYZ, and ArcGIS Feature Service.'
             },
             {
               title: 'Export Data Source as GeoPackage',
