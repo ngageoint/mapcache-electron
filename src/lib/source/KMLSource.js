@@ -150,7 +150,6 @@ export default class KMLSource extends Source {
               fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {
-            console.log('icon file doesn\'t exist')
             fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
           }
           iconNumber++

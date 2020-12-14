@@ -28,7 +28,9 @@
         createdSource = await SourceFactory.constructSource(source.file.path)
       }
       if (!_.isNil(createdSource)) {
-        let layers = await createdSource.retrieveLayers()
+        let layers = await createdSource.retrieveLayers().catch(err => {
+          throw err
+        })
         for (let i = 0; i < layers.length; i++) {
           try {
             let initLayer = await layers[i].initialize(true)

@@ -73,7 +73,7 @@
                   </template>
                 </v-combobox>
                 <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
-                <div v-if="dataSourceUrlValid && !serviceTypeAutoDetected">
+                <div v-if="!serviceTypeAutoDetected">
                   <v-card-subtitle>
                     The service type could not be determined, please select from the available options.
                   </v-card-subtitle>
@@ -169,9 +169,9 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact Organization:' + serviceInfo.contactOrg}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
-            <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
+            <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 layers available for import.'}}</v-card-subtitle>
-              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
+              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available layers from the WFS service to import.' : 'The WFS service does not have any layers supporting an output format of GeoJSON available for import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
               <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
                 <v-list dense>
@@ -205,6 +205,7 @@
             </v-card>
             <v-card flat tile v-if="unsupportedServiceLayers.length > 0">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WMS service.'}}</v-card-subtitle>
+              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WFS service.'}}</v-card-subtitle>
               <v-card-text class="pt-0 mt-1">
                 <v-list dense v-if="unsupportedServiceLayers.length > 0">
                   <v-list-item
@@ -356,7 +357,7 @@
         dataSourceUrl: 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png',
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
-        supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}, {value: 2, name: 'ArcGIS FS'}],
+        supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}, {value: 3, name: 'ArcGIS FS'}],
         selectedServiceType: 2,
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
@@ -551,8 +552,8 @@
                     contactName: wfsInfo.contactName,
                     contactOrg: wfsInfo.contactOrg
                   }
-                  this.serviceLayers = wfsInfo.layers
-                  this.unsupportedServiceLayers = []
+                  this.serviceLayers = wfsInfo.layers.filter(layer => layer.geoJSONSupported)
+                  this.unsupportedServiceLayers = wfsInfo.layers.filter(layer => !layer.geoJSONSupported)
                 } catch (error) {
                   this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
                 }
@@ -738,6 +739,7 @@
               this.serviceTypeAutoDetected = serviceTypeAutoDetected
             } else {
               this.debounceGetServiceInfo(this.selectedServiceType)
+              this.serviceTypeAutoDetected = serviceTypeAutoDetected
             }
           } else {
             this.resetAuth()

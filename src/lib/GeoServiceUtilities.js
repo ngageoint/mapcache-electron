@@ -151,46 +151,111 @@ export default class GeoServiceUtilities {
   static getWFSInfo (json) {
     let wfsInfo = {}
     let layers = []
+    let outputFormats = ['application/json']
     try {
       if (!_.isNil(json['WFS_Capabilities'])) {
         try {
           const service = json['WFS_Capabilities']['Service'][0]
-          wfsInfo.title = service['Title'][0]
-          const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
-          wfsInfo.contactName = contactInformation['ContactPerson'][0]
-          wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
-          wfsInfo.abstract = service['Abstract'][0]
+          if (!_.isNil(service)) {
+            wfsInfo.title = service['Title'][0]
+            const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
+            wfsInfo.contactName = contactInformation['ContactPerson'][0]
+            wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
+            wfsInfo.abstract = service['Abstract'][0]
+          }
+        } catch (error) {}
+        try {
+          const capability = json['WFS_Capabilities']['Capability'][0]['Request'][0]
+          if (!_.isNil(capability) && !_.isNil(capability['GetFeature'])) {
+            const getFeatureOp = capability['GetFeature'][0]
+            if (!_.isNil(getFeatureOp) && !_.isNil(getFeatureOp['ResultFormat'])) {
+              const featureOutputFormats = _.keys(getFeatureOp['ResultFormat'][0])
+              if (!_.isNil(featureOutputFormats)) {
+                outputFormats = featureOutputFormats.map(key => {
+                  let mime = ''
+                  switch (key) {
+                    case 'JSON':
+                      mime = 'application/json'
+                      break
+                    case 'GML2':
+                      mime = 'GML2'
+                      break
+                    case 'GML3':
+                      mime = 'GML3'
+                      break
+                    case 'CSV':
+                      mime = 'csv'
+                      break
+                    case 'SHAPE-ZIP':
+                      mime = 'shape-zip'
+                      break
+                    default:
+                      break
+                  }
+                  return mime
+                }).filter(val => val !== '')
+              }
+            }
+          }
         } catch (error) {}
         for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
           const bbox = layer['LatLongBoundingBox'][0]['$']
           const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
           const name = layer['Name'][0]
           let title = !_.isNil(layer['Title']) ? layer['Title'][0] : name
+          if (!_.isNil(layer['OutputFormats'])) {
+            outputFormats = layer['OutputFormats'].map(format => format['Format'][0])
+          }
           if (_.isNil(title) || _.isEmpty(title)) {
             title = name
           }
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json)})
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       } else if (!_.isNil(json['wfs:WFS_Capabilities'])) {
+        let outputFormats = ['application/json']
         try {
           const service = json['wfs:WFS_Capabilities']['Service'][0]
-          wfsInfo.title = service['Title'][0]
-          const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
-          wfsInfo.contactName = contactInformation['ContactPerson'][0]
-          wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
-          wfsInfo.abstract = service['Abstract'][0]
+          if (!_.isNil(service)) {
+            wfsInfo.title = service['Title'][0]
+            const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
+            wfsInfo.contactName = contactInformation['ContactPerson'][0]
+            wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
+            wfsInfo.abstract = service['Abstract'][0]
+          }
         } catch (error) {}
-        for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
+        try {
+          const operationMetadata = json['wfs:WFS_Capabilities']['ows:OperationsMetadata'][0]
+          if (!_.isNil(operationMetadata)) {
+            const getFeatureOp = operationMetadata['ows:Operation'].find(operation => operation['$']['name'] === 'GetFeature')
+            if (!_.isNil(getFeatureOp) && !_.isNil(getFeatureOp['ows:Parameter'])) {
+              const featureOutputFormats = getFeatureOp['ows:Parameter'].find(param => param['$']['name'] === 'outputFormat')
+              if (!_.isNil(featureOutputFormats)) {
+                outputFormats = featureOutputFormats['ows:AllowedValues'][0]['ows:Value']
+              }
+            }
+          }
+        } catch (error) {}
+        const capabilites = json['wfs:WFS_Capabilities']
+        let featureTypeList
+        if (!_.isNil(capabilites['wfs:FeatureTypeList'])) {
+          featureTypeList = json['wfs:WFS_Capabilities']['wfs:FeatureTypeList'][0]['wfs:FeatureType']
+        } else {
+          featureTypeList = json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']
+        }
+        for (const layer of featureTypeList) {
           const bbox = layer['ows:WGS84BoundingBox'][0]
           const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
           const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
+          if (!_.isNil(layer['OutputFormats'])) {
+            outputFormats = layer['OutputFormats'].map(format => format['Format'][0])
+          }
           const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
-          const name = layer['Name'][0]
-          let title = !_.isNil(layer['Title']) ? layer['Title'][0] : name
+          const name = !_.isNil(layer['wfs:Name']) ? layer['wfs:Name'][0] : layer['Name'][0]
+          let title = !_.isNil(layer['wfs:Title']) ? layer['wfs:Title'][0] : (!_.isNil(layer['Title']) ? layer['Title'][0] : name)
           if (_.isNil(title) || _.isEmpty(title)) {
             title = name
           }
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json)})
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       }
     } catch (e) {
@@ -199,26 +264,6 @@ export default class GeoServiceUtilities {
     }
     wfsInfo.layers = layers
     return wfsInfo
-  }
-
-  static getWFSLayersFromGetCapabilities (json) {
-    let layers = []
-    if (!_.isNil(json['WFS_Capabilities'])) {
-      for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
-        const bbox = layer['LatLongBoundingBox'][0]['$']
-        const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-        layers.push({name: layer['Name'][0], extent: extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json)})
-      }
-    } else if (!_.isNil(json['wfs:WFS_Capabilities'])) {
-      for (const layer of json['wfs:WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
-        const bbox = layer['ows:WGS84BoundingBox'][0]
-        const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
-        const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
-        const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
-        layers.push({name: layer['Name'][0], extent: extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json)})
-      }
-    }
-    return layers
   }
 
   static getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName, version) {
@@ -243,10 +288,15 @@ export default class GeoServiceUtilities {
     if (queryParams['service']) {
       delete queryParams['service']
     }
-    queryParams['request'] = 'GetFeature'
-    queryParams['typeNames'] = layer
-    queryParams['version'] = version
+    queryParams['service'] = 'WFS'
+    if (version !== '2.0.0') {
+      queryParams['typeName'] = layer
+    } else {
+      queryParams['typeNames'] = layer
+    }
     queryParams['outputFormat'] = outputFormat
+    queryParams['request'] = 'GetFeature'
+    queryParams['version'] = version
     queryParams['srsName'] = referenceSystemName
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }

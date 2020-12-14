@@ -15,13 +15,17 @@ export default class WFSSource extends Source {
       features: []
     }
     for (const layer of this.layers) {
-      let features = await this.getFeaturesInLayer(layer.name)
+      let features = await this.getFeaturesInLayer(layer).catch(err => {
+        throw err
+      })
       featureCollection.features = featureCollection.features.concat(features)
     }
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(sourceDirectory, fileName)
-    await GeoPackageUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection)
+    await GeoPackageUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection).catch(err => {
+      throw err
+    })
     const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, this.sourceName)
     geopackageLayers.push(new VectorLayer({
       id: sourceId,
@@ -38,7 +42,7 @@ export default class WFSSource extends Source {
   }
 
   getFeaturesInLayer (layer) {
-    return new Promise( (resolve) => {
+    return new Promise( (resolve, reject) => {
       let headers = {}
       let credentials = this.credentials
       if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
@@ -46,7 +50,7 @@ export default class WFSSource extends Source {
       }
       axios({
         method: 'get',
-        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer, 'application/json', 'crs:84', layer.version),
+        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer.name, 'application/json', 'crs:84', layer.version),
         headers: headers
       }).then(response => {
         let featureCollection = response.data
@@ -56,10 +60,12 @@ export default class WFSSource extends Source {
             features: []
           }
         }
+        if (_.isNil(featureCollection.features)) {
+          throw new Error("No features retrieved from service")
+        }
         resolve(featureCollection.features.filter(f => f !== undefined))
       }).catch(err => {
-        // eslint-disable-next-line no-console
-        console.error(err)
+        reject(err)
       })
     })
   }

@@ -24,13 +24,14 @@
     <div style="margin-bottom: 80px;">
       <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
       </data-source-list>
-      <processing-source
-        v-for="source in processing.sources"
-        :source="source"
-        :key="source.id"
-        class="sources processing-source"
-        @clear-processing="clearProcessing">
-      </processing-source>
+      <template v-for="source in processingSourceList">
+        <processing-source
+          :source="source"
+          :key="source.id"
+          class="sources processing-source"
+          @clear-processing="clearProcessing">
+        </processing-source>
+      </template>
     </div>
     <v-card class="card-position" v-if="Object.keys(project.sources).length === 0">
       <v-row no-gutters justify="space-between" align="end">
@@ -112,12 +113,6 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import Vue from 'vue'
 
-  let processing = {
-    dataDragOver: false,
-    sources: [],
-    dragging: undefined,
-    url: undefined
-  }
   let selectedDataSource = null
   let fab = false
 
@@ -139,7 +134,7 @@
         selectedDataSource,
         fab,
         urlSourceDialog: false,
-        processing
+        processingSourceList: []
       }
     },
     components: {
@@ -177,31 +172,36 @@
         })
       },
       async addSource (source) {
-        processing.sources.push(source)
-        let _this = this
+        this.processingSourceList.push(source)
+        let self = this
         ipcRenderer.once('process_source_completed_' + source.id, (event, result) => {
-          if (!result.error) {
+          if (_.isNil(result.error)) {
             setTimeout(() => {
-              _this.clearProcessing(result.source)
+              self.clearProcessing(result.source)
               ActionUtilities.addDataSources({dataSources: result.dataSources})
             }, 1000)
           } else {
-            const source = processing.sources.find(s => s.id === result.source.id)
-            if (!_.isNil(source)) {
-              source.error = result.error
+            for (let i = 0; i < this.processingSourceList.length; i++) {
+              let s = this.processingSourceList[i]
+              if (s.id && source.id) {
+                const sCopy = _.cloneDeep(s)
+                sCopy.error = result.error
+                this.processingSourceList.splice(i, 1, sCopy)
+                break
+              }
             }
           }
         })
-        ipcRenderer.send('process_source', {project: _this.project, source: source})
+        ipcRenderer.send('process_source', {project: self.project, source: source})
       },
       clearProcessing (processingSource) {
-        for (let i = 0; i < processing.sources.length; i++) {
-          let source = processing.sources[i]
+        for (let i = 0; i < this.processingSourceList.length; i++) {
+          let source = this.processingSourceList[i]
           if (source.url && source.url === processingSource.url) {
-            processing.sources.splice(i, 1)
+            this.processingSourceList.splice(i, 1)
             break
           } else if (source.file && source.file.path === processingSource.file.path) {
-            processing.sources.splice(i, 1)
+            this.processingSourceList.splice(i, 1)
             break
           }
         }

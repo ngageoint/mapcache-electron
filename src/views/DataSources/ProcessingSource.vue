@@ -1,13 +1,13 @@
 <template>
   <v-sheet>
-    <v-card flat tile :loading="!source.error">
+    <v-card flat tile :loading="!error">
       <v-card-title>
         {{'Processing ' + displayName}}
       </v-card-title>
       <v-card-text>
-        <div v-if="source.error">
+        <div v-if="error">
           <div class="card__header__close-btn" @click="closeCard"></div>
-          <v-row no-gutters class="align-start left-margin" v-if="source.error"><p class="text-wrap full-width">{{source.error}}</p></v-row>
+          <v-row no-gutters class="align-start left-margin" v-if="error"><p class="text-wrap full-width">{{error}}</p></v-row>
         </div>
         <div v-else>
           <v-row no-gutters v-if="source.isUrl" class="align-start left-margin"><p class="text-wrap full-width">Url: {{displayName}}</p></v-row>
@@ -22,7 +22,7 @@
           text
           color="warning"
           @click="closeCard">
-          {{source.error ? 'Close' : 'Cancel Processing'}}
+          {{error ? 'Close' : 'Cancel Processing'}}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -43,6 +43,9 @@
       }
     },
     computed: {
+      error () {
+        return this.source.error
+      },
       displayName () {
         if (this.source.url) {
           return URLUtilities.getBaseUrlAndQueryParams(this.source.url).baseUrl

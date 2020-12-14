@@ -23,6 +23,7 @@ export default class ShapeFileSource extends Source {
         try {
           featureCollection.features = shp.parseShp(jetpack.read(this.filePath, 'buffer'))
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(error)
         }
       }
