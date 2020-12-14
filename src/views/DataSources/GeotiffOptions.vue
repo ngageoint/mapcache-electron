@@ -151,11 +151,11 @@
               <v-switch color="primary" v-model="enableGlobalOpacity"></v-switch>
             </v-list-item-action>
           </v-list-item>
-          <v-list-item v-if="enableGlobalOpacity">
-            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
+          <v-list-item v-if="enableGlobalOpacity" class="pt-2">
+            <v-list-item-content style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
               Opacity mask
             </v-list-item-content>
-            <v-slider class="mx-auto" hide-details dense v-model="globalOpacity" :min="0" :max="100" :interval="1"></v-slider>
+            <v-slider class="mx-auto" thumb-label="always" hide-details dense v-model="opacity" :min="0" :max="100" :interval="1"></v-slider>
           </v-list-item>
         </v-list>
       </v-card-text>
@@ -170,13 +170,12 @@
   export default {
     data () {
       return {
-        globalNoDataValue: this.source.globalNoDataValue,
-        globalOpacity: this.source.globalOpacity
+        globalNoDataValue: this.source.globalNoDataValue
       }
     },
     created () {
       this.debounceLayerField = _.debounce((value, key) => {
-        if (value) {
+        if (!_.isNil(value)) {
           let updatedLayer = Object.assign({}, this.source)
           updatedLayer[key] = value
           ActionUtilities.setDataSource({
@@ -184,7 +183,7 @@
             source: updatedLayer
           })
         }
-      }, 500)
+      }, 250)
     },
     props: {
       source: Object,
@@ -214,6 +213,14 @@
             projectId: this.projectId,
             source: updatedLayer
           })
+        }
+      },
+      opacity: {
+        get () {
+          return this.source.globalOpacity
+        },
+        set (value) {
+          this.debounceLayerField(Number(value), 'globalOpacity')
         }
       },
       redBand: {
@@ -440,7 +447,7 @@
         this.debounceLayerField(Number(value), 'globalNoDataValue')
       },
       globalOpacity (value) {
-        this.debounceLayerField(Number(value), 'globalOpacity')
+        this.opacity = value
       }
     }
   }
