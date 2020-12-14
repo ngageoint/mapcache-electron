@@ -107,7 +107,7 @@ export default class GeoTiffRenderer {
 
                 if (targetData[position + 3] !== 0) {
                   // alpha was good, check if it is a no data though...
-                  if (targetData[position] === noDataValue) {
+                  if (this.layer.enableGlobalNoDataValue && targetData[position] === noDataValue) {
                     targetData[position + 3] = 0
                     hasAlpha = true
                   } else if (targetData[position + 3] === 0) {
@@ -177,7 +177,7 @@ export default class GeoTiffRenderer {
                 targetData[position + 3] = 255
               }
               if (targetData[position + 3] !== 0) {
-                if (targetData[position] === this.layer.globalNoDataValue && targetData[(position) + 1] === this.layer.globalNoDataValue && targetData[(position) + 2] === this.layer.globalNoDataValue) {
+                if (this.layer.enableGlobalNoDataValue && targetData[position] === this.layer.globalNoDataValue && targetData[(position) + 1] === this.layer.globalNoDataValue && targetData[(position) + 2] === this.layer.globalNoDataValue) {
                   targetData[position + 3] = 0
                   hasAlpha = true
                 }

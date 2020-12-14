@@ -417,7 +417,7 @@
         if (this.source.colorMap) {
           methods.push({text: 'Palette', value: 2})
         } else {
-          methods.push({text: 'Gray Scale', value: 0})
+          methods.push({text: 'Gray scale', value: 0})
           methods.push({text: 'RGB', value: 1})
         }
         return methods
