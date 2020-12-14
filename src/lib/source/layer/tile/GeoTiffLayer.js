@@ -207,7 +207,7 @@ export default class GeoTiffLayer extends TileLayer {
       this.grayScaleColorGradient = 1
       this.bandOptions = [{
         value: 0,
-        name: 'No Band'
+        name: 'No band'
       }]
       // setup band options
       for (let i = 1; i <= this.bitsPerSample.length; i++) {

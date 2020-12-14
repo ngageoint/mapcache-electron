@@ -12,7 +12,7 @@
     <v-card>
       <v-card-text>
         <v-list two-line subheader>
-          <v-subheader>Rendering Method</v-subheader>
+          <v-subheader>Rendering method</v-subheader>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
               <v-select v-model="renderingMethod" :items="renderMethods" label="Rendering Method" dense>
@@ -22,11 +22,11 @@
         </v-list>
         <v-divider></v-divider>
         <v-list two-line subheader v-if="renderingMethod === 0">
-          <v-subheader>Gray Scale Options</v-subheader>
+          <v-subheader>Gray scale options</v-subheader>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
               <v-row no-gutters class="ma-0 pa-0">
-                <v-select v-model="grayBand" :items="bandOptions" label="Gray Scale Band" dense>
+                <v-select v-model="grayBand" :items="bandOptions" label="Gray scale band" dense>
                 </v-select>
               </v-row>
               <v-row no-gutters v-if="grayBand > 0">
@@ -38,14 +38,14 @@
                 </v-col>
               </v-row>
               <v-row no-gutters>
-                <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color Gradient" dense>
+                <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient" dense>
                 </v-select>
               </v-row>
             </v-list-item-content>
           </v-list-item>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              Stretch Bands to Min/Max
+              Stretch bands to min/max
             </v-list-item-content>
             <v-list-item-action>
               <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
@@ -53,11 +53,11 @@
           </v-list-item>
         </v-list>
         <v-list two-line subheader v-if="renderingMethod === 1">
-          <v-subheader>RGB Options</v-subheader>
+          <v-subheader>RGB options</v-subheader>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
               <v-row no-gutters class="ma-0 pa-0">
-                <v-select v-model="redBand" :items="bandOptions" label="Red Band" dense>
+                <v-select v-model="redBand" :items="bandOptions" label="Red band" dense>
                 </v-select>
               </v-row>
               <v-row no-gutters v-if="redBand > 0">
@@ -73,7 +73,7 @@
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
               <v-row no-gutters class="ma-0 pa-0">
-                <v-select v-model="greenBand" :items="bandOptions" label="Green Band" dense>
+                <v-select v-model="greenBand" :items="bandOptions" label="Green band" dense>
                 </v-select>
               </v-row>
               <v-row no-gutters v-if="greenBand > 0">
@@ -89,7 +89,7 @@
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
               <v-row no-gutters class="ma-0 pa-0">
-                <v-select v-model="blueBand" :items="bandOptions" label="Blue Band" dense>
+                <v-select v-model="blueBand" :items="bandOptions" label="Blue band" dense>
                 </v-select>
               </v-row>
               <v-row no-gutters v-if="blueBand > 0">
@@ -104,7 +104,7 @@
           </v-list-item>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              Stretch Bands to Min/Max
+              Stretch bands to min/max
             </v-list-item-content>
             <v-list-item-action>
               <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
@@ -113,26 +113,26 @@
         </v-list>
         <v-divider></v-divider>
         <v-list two-line subheader v-if="renderingMethod === 2">
-          <v-subheader>Palette Options</v-subheader>
+          <v-subheader>Palette options</v-subheader>
           <v-list-item>
             <v-list-item-content style="padding-right: 12px;">
-              <v-select v-model="paletteBand" :items="bandOptions" label="Palette Band" dense>
+              <v-select v-model="paletteBand" :items="bandOptions" label="Palette band" dense>
               </v-select>
             </v-list-item-content>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
         <v-list two-line subheader>
-          <v-subheader>Transparency Options</v-subheader>
+          <v-subheader>Transparency options</v-subheader>
           <v-list-item v-if="renderingMethod < 2">
             <v-list-item-content style="padding-right: 12px;">
-              <v-select v-model="alphaBand" :items="bandOptions" label="Alpha Band" dense>
+              <v-select v-model="alphaBand" :items="bandOptions" label="Alpha band" dense>
               </v-select>
             </v-list-item-content>
           </v-list-item>
           <v-list-item v-if="renderingMethod < 2">
             <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              Specify No Data Value
+              Specify No Data value
             </v-list-item-content>
             <v-list-item-action>
               <v-switch color="primary" v-model="enableGlobalNoDataValue"></v-switch>
@@ -140,7 +140,7 @@
           </v-list-item>
           <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
             <v-list-item-content style="padding-right: 12px;">
-              <v-text-field type="number" label="NO_DATA Value" v-model="globalNoDataValue" dense hide-details></v-text-field>
+              <v-text-field type="number" label="NO_DATA value" v-model="globalNoDataValue" dense hide-details></v-text-field>
             </v-list-item-content>
           </v-list-item>
           <v-list-item>
@@ -153,7 +153,7 @@
           </v-list-item>
           <v-list-item v-if="enableGlobalOpacity">
             <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              Opacity Mask
+              Opacity mask
             </v-list-item-content>
             <v-slider class="mx-auto" hide-details dense v-model="globalOpacity" :min="0" :max="100" :interval="1"></v-slider>
           </v-list-item>
