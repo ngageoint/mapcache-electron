@@ -1031,6 +1031,10 @@
       }, function () {
         ActionUtilities.clearActiveLayers({projectId: _this.projectId})
       })
+
+      // add scale to map
+      vendor.L.control.scale().addTo(this.map)
+
       this.map.addControl(this.activeLayersControl)
       this.drawingControl = new LeafletDraw()
       this.map.addControl(this.drawingControl)
