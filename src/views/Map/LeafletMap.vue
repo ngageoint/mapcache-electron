@@ -33,6 +33,50 @@
         </v-card>
       </v-dialog>
       <v-dialog
+        v-model="showDialogPopup"
+        max-width="350"
+        v-on:click:outside="copiedToClipboard = false">
+        <v-card>
+          <v-card-title>
+            Coordinate
+          </v-card-title>
+          <v-card-text>
+            <v-card-text>
+              <v-row justify="space-between" align="center">
+                <v-col>
+                  {{dialogCoordinate ? (dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6)) : ''}}
+                </v-col>
+                <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+              </v-row>
+              <v-row justify="space-between" align="center">
+                <v-col>
+                  {{dialogCoordinate ? (convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true)) : ''}}
+                </v-col>
+                <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+              </v-row>
+            </v-card-text>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="() => {
+                copiedToClipboard = false
+                showDialogPopup = false
+              }">
+              Close
+            </v-btn>
+          </v-card-actions>
+          <v-snackbar
+            v-if="copiedToClipboard"
+            v-model="copiedToClipboard"
+            timeout="2000"
+          >
+            Copied to clipboard.
+          </v-snackbar>
+        </v-card>
+      </v-dialog>
+      <v-dialog
         v-model="layerSelectionVisible"
         max-width="500"
         persistent>
@@ -110,7 +154,7 @@
 </template>
 
 <script>
-  import { remote, ipcRenderer } from 'electron'
+  import { remote, ipcRenderer, clipboard } from 'electron'
   import Vue from 'vue'
   import _ from 'lodash'
   import * as vendor from '../../lib/vendor'
@@ -200,7 +244,10 @@
         featureToAddGeoPackage: null,
         featureToAddTableName: null,
         lastShowFeatureTableEvent: null,
-        geopackageExistsDialog: false
+        geopackageExistsDialog: false,
+        dialogCoordinate: null,
+        showDialogPopup: false,
+        copiedToClipboard: false
       }
     },
     methods: {
@@ -210,6 +257,12 @@
           geopackageTables: [],
           sourceTables: []
         }
+      },
+      copyText (text) {
+        clipboard.writeText(text)
+        setTimeout(() => {
+          this.copiedToClipboard = true
+        }, 250)
       },
       async confirmGeoPackageFeatureLayerSelection () {
         this.geopackageExistsDialog = false
@@ -342,6 +395,20 @@
             }
           })
         }
+      },
+      convertToDms (dd, isLng) {
+        const dir = dd < 0
+          ? isLng ? 'W' : 'S'
+          : isLng ? 'E' : 'N';
+
+        const absDd = Math.abs(dd);
+        const deg = absDd | 0;
+        const frac = absDd - deg;
+        const min = (frac * 60) | 0;
+        let sec = frac * 3600 - min * 60;
+        // Round it to 2 decimal points.
+        sec = Math.round(sec * 100) / 100;
+        return deg + "°" + min + "'" + sec + '"' + dir;
       },
       cancelAddFeature () {
         this.showAddFeatureDialog = false
@@ -1080,6 +1147,12 @@
             }
           })
         }
+      })
+      this.map.on('contextmenu', e => {
+        this.dialogCoordinate = e.latlng
+        Vue.nextTick(() => {
+          this.showDialogPopup = true
+        })
       })
       this.map.on('editable:drawing:end', function (e) {
         if (!_this.drawingControl.isDrawing && !_this.drawingControl.cancelled) {
