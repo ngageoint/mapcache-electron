@@ -2943,9 +2943,11 @@ export default class GeoPackageUtilities {
       const featureStyle = styleMappings.find(mapping => mapping.featureId === feature.id)
       if (!_.isNil(featureIcon)) {
         featureStyleMapping[feature.id].iconId = featureIcon
+        featureStyleMapping[feature.id].styleId = null
       }
       if (!_.isNil(featureStyle)) {
         featureStyleMapping[feature.id].styleId = featureStyle
+        featureStyleMapping[feature.id].iconId = null
       }
     })
     return featureStyleMapping
