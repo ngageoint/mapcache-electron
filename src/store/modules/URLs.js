@@ -28,6 +28,13 @@ const mutations = {
         state.savedUrls.splice(i, 1)
       }
     }
+  },
+  editUrl (state, {oldUrl, newUrl}) {
+    for (var i = 0; i < state.savedUrls.length; i++) {
+      if (state.savedUrls[i].url === oldUrl) {
+        state.savedUrls.splice(i, 1, {url: newUrl})
+      }
+    }
   }
 }
 
@@ -37,6 +44,9 @@ const actions = {
   },
   removeUrl ({commit}, url) {
     commit('removeUrl', url)
+  },
+  editUrl ({commit}, {oldUrl, newUrl}) {
+    commit('editUrl', {oldUrl, newUrl})
   }
 }
 

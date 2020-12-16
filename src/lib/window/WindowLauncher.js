@@ -344,7 +344,7 @@ class WindowLauncher {
         role: 'help',
         submenu: [
           {
-            label: 'Learn More',
+            label: 'Learn more',
             click () {
               shell.openExternal('https://github.com/ngageoint/mapcache-electron')
             }
@@ -353,7 +353,15 @@ class WindowLauncher {
             label: 'Documentation',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/0.0.10/README.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.3/README.md`
+              )
+            }
+          },
+          {
+            label: 'What\'s New...',
+            click () {
+              shell.openExternal(
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.3/changelog/v1.0.3.md`
               )
             }
           }
