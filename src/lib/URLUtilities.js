@@ -58,4 +58,14 @@ export default class URLUtilities {
   static isArcGISFeatureService (url) {
     return url.toLowerCase().indexOf('featureserver') > 0
   }
+  static isUrlValid (string) {
+    let url
+    try {
+      url = new URL(string)
+    } catch (e) {
+      return false
+    }
+
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  }
 }

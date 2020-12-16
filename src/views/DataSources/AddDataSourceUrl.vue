@@ -171,7 +171,7 @@
             </v-card-text>
             <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 layers available for import.'}}</v-card-subtitle>
-              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available layers from the WFS service to import.' : 'The WFS service does not have any layers supporting an output format of GeoJSON available for import.'}}</v-card-subtitle>
+              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
               <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
                 <v-list dense>
@@ -205,7 +205,6 @@
             </v-card>
             <v-card flat tile v-if="unsupportedServiceLayers.length > 0">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WMS service.'}}</v-card-subtitle>
-              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WFS service.'}}</v-card-subtitle>
               <v-card-text class="pt-0 mt-1">
                 <v-list dense v-if="unsupportedServiceLayers.length > 0">
                   <v-list-item
@@ -384,7 +383,8 @@
         menuProps: {
           closeOnClick: true,
           closeOnContentClick: true
-        }
+        },
+        urlIsValid: false
       }
     },
     components: {
@@ -535,7 +535,21 @@
                     headers: headers
                   })
                   result = await URLUtilities.parseXMLString(response.data)
-                  break
+                  let skipVersion = false
+                  let wfsInfo = GeoServiceUtilities.getWFSInfo(result)
+                  if (version === '2.0.0') {
+                    for (let i = 0; i < wfsInfo.layers.length; i++) {
+                      const layer = wfsInfo.layers[i]
+                      const outputFormat = GeoServiceUtilities.getLayerOutputFormat(layer)
+                      skipVersion = outputFormat === 'GML32'
+                      if (skipVersion) {
+                        break
+                      }
+                    }
+                  }
+                  if (!skipVersion) {
+                    break
+                  }
                 } catch (e) {
                   if (e.response) {
                     errStatusCodes.push(e.response.status)
@@ -552,8 +566,8 @@
                     contactName: wfsInfo.contactName,
                     contactOrg: wfsInfo.contactOrg
                   }
-                  this.serviceLayers = wfsInfo.layers.filter(layer => layer.geoJSONSupported)
-                  this.unsupportedServiceLayers = wfsInfo.layers.filter(layer => !layer.geoJSONSupported)
+                  this.serviceLayers = wfsInfo.layers
+                  this.unsupportedServiceLayers = []
                 } catch (error) {
                   this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
                 }
@@ -722,24 +736,33 @@
           if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
+            let valid = false
             if (URLUtilities.isXYZ(newValue)) {
               selectedServiceType = 2
+              valid = true
             } else if (URLUtilities.isWFS(newValue)) {
               selectedServiceType = 1
+              valid = true
             } else if (URLUtilities.isWMS(newValue)) {
               selectedServiceType = 0
+              valid = true
             } else if (URLUtilities.isArcGISFeatureService(newValue)) {
               selectedServiceType = 3
+              valid = true
             } else {
               serviceTypeAutoDetected = false
+              valid = URLUtilities.isUrlValid(newValue)
             }
-            this.loading = true
-            if (this.selectedServiceType !== selectedServiceType) {
-              this.selectedServiceType = selectedServiceType
-              this.serviceTypeAutoDetected = serviceTypeAutoDetected
-            } else {
-              this.debounceGetServiceInfo(this.selectedServiceType)
-              this.serviceTypeAutoDetected = serviceTypeAutoDetected
+            this.urlIsValid = valid
+            if (valid) {
+              this.loading = true
+              if (this.selectedServiceType !== selectedServiceType) {
+                this.selectedServiceType = selectedServiceType
+                this.serviceTypeAutoDetected = serviceTypeAutoDetected
+              } else {
+                this.debounceGetServiceInfo(this.selectedServiceType)
+                this.serviceTypeAutoDetected = serviceTypeAutoDetected
+              }
             }
           } else {
             this.resetAuth()

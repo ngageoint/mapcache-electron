@@ -1069,7 +1069,7 @@
         attributionControl: false,
         center: defaultCenter,
         zoom: defaultZoom,
-        minZoom: 3,
+        minZoom: 2,
         layers: [defaultBaseMap]
       })
       this.map.createPane('gridSelectionPane')

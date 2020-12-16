@@ -148,6 +148,36 @@ export default class GeoServiceUtilities {
     return version
   }
 
+  static getLayerOutputFormat (layer) {
+    const geoJSONSupported = !_.isNil(layer.outputFormats.find(f => f.toLowerCase() === 'application/json' || f.toLowerCase() === 'json'))
+    const gml2Supported = !_.isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML2' || f.toLowerCase().startsWith('text/xml; subtype=gml/2')))
+    const gml3Supported = !_.isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML3' || f.toLowerCase().startsWith('text/xml; subtype=gml/3.1')))
+    const gml32Supported = !_.isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML32' || f.toLowerCase().startsWith('text/xml; subtype=gml/3.2')))
+
+    let outputFormat
+    if (geoJSONSupported) {
+      outputFormat = 'application/json'
+    } else if (gml2Supported) {
+      outputFormat = 'GML2'
+    } else if (gml3Supported) {
+      outputFormat = 'GML3'
+    } else if (gml32Supported) {
+      outputFormat = 'GML32'
+    }
+
+    // output format not found in capabilities document, use default for version
+    if (_.isNil(outputFormat)) {
+      if (layer.version === '1.0.0') {
+        outputFormat = 'GML2'
+      } else if (layer.version === '1.1.0') {
+        outputFormat = 'GML3'
+      } else {
+        outputFormat = 'GML32'
+      }
+    }
+    return outputFormat
+  }
+
   static getWFSInfo (json) {
     let wfsInfo = {}
     let layers = []
@@ -209,7 +239,9 @@ export default class GeoServiceUtilities {
           if (_.isNil(title) || _.isEmpty(title)) {
             title = name
           }
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
+          let defaultSRS = !_.isNil(layer['SRS']) ? layer['SRS'][0] : ''
+          const otherSRS = []
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       } else if (!_.isNil(json['wfs:WFS_Capabilities'])) {
         let outputFormats = ['application/json']
@@ -251,11 +283,16 @@ export default class GeoServiceUtilities {
           }
           const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
           const name = !_.isNil(layer['wfs:Name']) ? layer['wfs:Name'][0] : layer['Name'][0]
+          let defaultSRS = !_.isNil(layer['wfs:DefaultSRS']) ? layer['wfs:DefaultSRS'][0] : (!_.isNil(layer['DefaultSRS']) ? layer['DefaultSRS'][0] : '')
+          if (_.isEmpty(defaultSRS)) {
+            defaultSRS = !_.isNil(layer['wfs:DefaultCRS']) ? layer['wfs:DefaultCRS'][0] : (!_.isNil(layer['DefaultCRS']) ? layer['DefaultCRS'][0] : '')
+          }
+          const otherSRS = !_.isNil(layer['wfs:OtherSRS']) ? layer['wfs:OtherSRS'] : (!_.isNil(layer['OtherSRS']) ? layer['OtherSRS'] : [])
           let title = !_.isNil(layer['wfs:Title']) ? layer['wfs:Title'][0] : (!_.isNil(layer['Title']) ? layer['Title'][0] : name)
           if (_.isNil(title) || _.isEmpty(title)) {
             title = name
           }
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       }
     } catch (e) {
@@ -289,15 +326,17 @@ export default class GeoServiceUtilities {
       delete queryParams['service']
     }
     queryParams['service'] = 'WFS'
-    if (version !== '2.0.0') {
-      queryParams['typeName'] = layer
-    } else {
+    if (version === '2.0.0') {
       queryParams['typeNames'] = layer
+    } else {
+      queryParams['typeName'] = layer
     }
     queryParams['outputFormat'] = outputFormat
     queryParams['request'] = 'GetFeature'
     queryParams['version'] = version
-    queryParams['srsName'] = referenceSystemName
+    if (referenceSystemName !== null) {
+      queryParams['srsName'] = referenceSystemName
+    }
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
 }
