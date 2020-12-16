@@ -86,3 +86,13 @@ Any changes made in development should be tested in the production version of th
 If you'd like to contribute to this project, please make a pull request. We'll review the pull request and discuss the changes. All pull request contributions to this project will be released under the MIT license.
 
 Software source code previously released under an open source license and then modified by NGA staff is considered a "joint work" (see 17 USC § 101); it is partially copyrighted, partially public domain, and as a whole is protected by the copyrights of the non-government authors and must be released according to the terms of the original open source license.
+
+# Releasing a New Version
+1. Update package.json version
+2. Add a changelog file for the version describing new features added and bugs fixed
+3. Update WindowsLauncher.js to reference correct version tag
+4. Commit changes
+5. Tag version
+6. Build windows, linux and mac installers
+7. Notarize mac installers
+8. Create release on github for the new version and upload all the installer files
