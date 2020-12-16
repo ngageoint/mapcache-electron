@@ -37,6 +37,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog
+      v-model="savedUrlDialog"
+      max-width="600"
+      persistent>
+      <saved-urls :close="() => {savedUrlDialog = false}"/>
+    </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent>
       <edit-text-modal icon="mdi-pencil" title="Rename project" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
@@ -66,7 +72,7 @@
           <span>Help</span>
         </v-tooltip>
       </v-row>
-      <v-list-item>
+      <v-list-item selectable @click.stop.prevent="toggleDarkTheme">
         <v-list-item-content>
           <v-list-item-title>Theme</v-list-item-title>
           <v-list-item-subtitle>Dark</v-list-item-subtitle>
@@ -78,7 +84,7 @@
           ></v-switch>
         </v-list-item-action>
       </v-list-item>
-      <v-list-item>
+      <v-list-item selectable @click.stop.prevent="toggleShowToolTip">
         <v-list-item-content>
           <v-list-item-title>Tooltips</v-list-item-title>
           <v-list-item-subtitle>Show tooltips in application</v-list-item-subtitle>
@@ -89,6 +95,12 @@
             color="primary"
           ></v-switch>
         </v-list-item-action>
+      </v-list-item>
+      <v-list-item selectable @click.stop.prevent="savedUrlDialog = true">
+        <v-list-item-content>
+          <v-list-item-title>Saved URLs</v-list-item-title>
+          <v-list-item-subtitle>Manage saved URLs</v-list-item-subtitle>
+        </v-list-item-content>
       </v-list-item>
     </v-list>
 
@@ -191,13 +203,8 @@
   import EditNumberModal from '../Common/EditNumberModal'
   import Help from './Help'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import SavedUrls from './SavedUrls'
 
-  let options = {
-    editProjectNameDialog: false,
-    editMaxFeaturesDialog: false,
-    helpDialog: false,
-    deleteProjectDialog: false
-  }
   export default {
     props: {
       project: Object,
@@ -208,6 +215,7 @@
       back: Function
     },
     components: {
+      SavedUrls,
       EditTextModal,
       EditNumberModal,
       Help
@@ -264,7 +272,13 @@
       }
     },
     data () {
-      return options
+      return {
+        editProjectNameDialog: false,
+        editMaxFeaturesDialog: false,
+        helpDialog: false,
+        deleteProjectDialog: false,
+        savedUrlDialog: false
+      }
     },
     methods: {
       saveProjectName (val) {
@@ -274,6 +288,12 @@
       saveMaxFeatures (val) {
         ActionUtilities.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
         this.toggleEditMaxFeaturesDialog()
+      },
+      toggleShowToolTip () {
+        ActionUtilities.showToolTips({projectId: this.project.id, show: !this.project.showToolTips})
+      },
+      toggleDarkTheme () {
+        ActionUtilities.setDarkTheme({projectId: this.project.id, enabled: !this.dark})
       },
       toggleEditProjectNameDialog () {
         this.editProjectNameDialog = !this.editProjectNameDialog
