@@ -39,7 +39,7 @@
     </v-dialog>
     <v-dialog
       v-model="savedUrlDialog"
-      max-width="600"
+      max-width="450"
       persistent>
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
