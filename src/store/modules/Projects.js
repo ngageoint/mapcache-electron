@@ -1,7 +1,9 @@
 import Vue from 'vue'
 
-const state = {
+const getDefaultState = () => {
+  return {}
 }
+const state = getDefaultState()
 
 const getters = {
   getProjectById: (state) => (id) => {
@@ -113,6 +115,12 @@ const mutations = {
       tableName: tableName,
       showFeaturesTableEvent: 0
     })
+  },
+  resetState (state) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
+    Object.assign(state, getDefaultState())
   }
 }
 
@@ -210,6 +218,9 @@ const actions = {
   },
   setDataSource ({ commit }, {projectId, source}) {
     commit('setDataSource', {projectId, source})
+  },
+  resetState ({ commit }) {
+    return commit('resetState')
   }
 }
 

@@ -516,7 +516,9 @@ export default class ActionUtilities {
   }
 
   static setActiveGeoPackageFeatureLayer ({projectId, geopackageId, tableName}) {
-    store.dispatch('Projects/setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
+    if (!_.isNil(projectId)) {
+      store.dispatch('Projects/setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
+    }
   }
 
   static updateStyleKey (projectId, id, tableName, isGeoPackage) {

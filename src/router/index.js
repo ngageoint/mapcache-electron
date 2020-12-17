@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import LandingPage from '../views/LandingPage.vue'
+import LandingPage from '../views/LandingPage/LandingPage.vue'
 import Worker from '../views/Worker/Worker.vue'
 import Project from '../views/Project/Project.vue'
 

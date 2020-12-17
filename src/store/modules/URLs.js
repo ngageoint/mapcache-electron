@@ -1,8 +1,13 @@
 // Keeps a history of any tile URLs that the user has added, accessible across all projects
+import Vue from 'vue'
 
-const state = {
-  savedUrls: []
+const getDefaultState = () => {
+  return {
+    savedUrls: []
+  }
 }
+
+const state = getDefaultState()
 
 const getters = {
   getUrls: (state) => {
@@ -35,18 +40,27 @@ const mutations = {
         state.savedUrls.splice(i, 1, {url: newUrl})
       }
     }
+  },
+  resetState (state) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
+    Object.assign(state, getDefaultState())
   }
 }
 
 const actions = {
-  addUrl ({commit}, url) {
+  addUrl ({ commit }, url) {
     commit('addUrl', url)
   },
-  removeUrl ({commit}, url) {
+  removeUrl ({ commit }, url) {
     commit('removeUrl', url)
   },
-  editUrl ({commit}, {oldUrl, newUrl}) {
+  editUrl ({ commit }, {oldUrl, newUrl}) {
     commit('editUrl', {oldUrl, newUrl})
+  },
+  resetState ({ commit }) {
+    return commit('resetState')
   }
 }
 

@@ -5,8 +5,10 @@ Object.assign(console, log.functions)
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import WindowLauncher from './lib/window/WindowLauncher'
-import './store'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+import store from './store'
+import _ from 'lodash'
+import { mapcache } from '../package.json'
 
 app.allowRendererProcessReuse = false
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
@@ -17,6 +19,17 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function start() {
+  // check if store is out of date, if so, delete content
+  const storeVersion = store.state.Version ? store.state.Version.version : '-1'
+  if (_.isNil(storeVersion) || storeVersion !== mapcache.store.version) {
+    // store version not set or major revision is off, delete store
+    await Promise.all([store.dispatch('Counter/resetState'),
+      store.dispatch('UIState/resetState'),
+      store.dispatch('URLs/resetState'),
+      store.dispatch('Projects/resetState'),
+      store.dispatch('Version/setVersion', mapcache.store.version)])
+  }
+
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     createProtocol('app')
   }

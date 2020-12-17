@@ -3,6 +3,11 @@
   "version": "1.0.3",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "author": "Dan Barela <daniel.barela@gmail.com>",
+  "mapcache": {
+    "store": {
+      "version": "1"
+    }
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",

@@ -1,7 +1,10 @@
 import Vue from 'vue'
 
-const state = {
+const getDefaultState = () => {
+  return {}
 }
+
+const state = getDefaultState()
 
 const getters = {
   getUIStateByProjectId: (state) => (id) => {
@@ -27,6 +30,12 @@ const mutations = {
   },
   setDarkTheme (state, {projectId, enabled}) {
     Vue.set(state[projectId], 'dark', enabled)
+  },
+  resetState (state) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
+    Object.assign(state, getDefaultState())
   }
 }
 
@@ -42,6 +51,9 @@ const actions = {
   },
   setDarkTheme ({ commit }, {projectId, enabled}) {
     commit('setDarkTheme', {projectId, enabled})
+  },
+  resetState ({ commit }) {
+    return commit('resetState')
   }
 }
 

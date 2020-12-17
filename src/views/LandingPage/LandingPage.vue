@@ -13,8 +13,8 @@
 </template>
 
 <script>
-  import MapcacheWelcome from './LandingPage/MapcacheWelcome'
-  import Projects from './LandingPage/Projects'
+  import MapcacheWelcome from './MapcacheWelcome'
+  import Projects from './Projects'
 
   export default {
     name: 'landing-page',
@@ -32,7 +32,7 @@
         ellipse at bottom right,
         rgba(30, 77, 124, .5) 5%,
         rgba(0, 0, 0, 0.87) 100%
-      ), url("../assets/nasa_earth.png") bottom right no-repeat;
+      ), url("../../assets/nasa_earth.png") bottom right no-repeat;
     background-size: cover;
   }
 
