@@ -1,12 +1,36 @@
 # Setting Up a Development Environment
-These instructions were written for development on mac.
 
-You need a basic understanding of the following tools that you should install via package manager (brew, apt, etc.):  
-* git 2.25.0
-* npm 6.14.4
-* yarn 0.21.3
-* node 12.16.3
-* Xcode 11.3 or greater
+### Windows
+* Install Visual Studio 19
+* Install Node 12.16.3
+* Install Git for windows
+* Install GTK+ (version 2.22.1, do NOT get version 3)
+* Install libjpeg-turbo64
+* Install Yarn
+  * npm install yarn -g
+
+### Mac
+* Install Xcode 11.3 or greater
+* Install homebrew
+* Install python
+* Install node-canvas dependencies
+  * brew install pkg-config cairo pango libpng jpeg giflib librsvg
+* Install Node Version Manager
+  * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+* Install Node
+  * nvm install 12.16.3
+* Install Yarn
+  * npm install yarn -g
+
+### Linux - Ubuntu
+* Install Git, Pip, Build tools, and Canvas dependencies 
+  * sudo apt-get install pip git build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev build-essential g++
+* Install Node Version Manager
+  * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+* Install Node
+  * nvm install 12.16.3
+* Install Yarn
+  * npm install yarn -g
 
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:
@@ -51,7 +75,7 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 1. Build Windows
 `yarn electron:build-win`
 2. Build Linux
-`yarn electron:build-linux`
+`npm run electron:build-linux`
 3. Build Mac
 `yarn electron:build-mac`
 4. Build All
