@@ -1,7 +1,8 @@
 # Setting Up a Development Environment
 
 ### Windows
-* Install Visual Studio 19
+* Install Visual Studio 19 w/ Desktop development with C++ workload
+* Install Python 2.7
 * Install Node 12.16.3
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
