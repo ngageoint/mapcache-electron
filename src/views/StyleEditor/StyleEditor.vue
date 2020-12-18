@@ -197,42 +197,38 @@
             @click="() => showStyleAssignment(assignment)">
             <v-list-item-content>
               <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="3">
-                  <v-list-item-title v-text="assignment.name"></v-list-item-title>
+                <v-col cols="8">
+                  <v-row no-gutters>
+                    <v-list-item-title v-text="assignment.name"></v-list-item-title>
+                  </v-row>
+                  <v-row no-gutters>
+                    <v-list-item-subtitle v-if="assignment.icon" v-text="assignment.icon.name"></v-list-item-subtitle>
+                    <v-list-item-subtitle v-else-if="assignment.style">{{assignment.style.getName()}}</v-list-item-subtitle>
+                    <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>
+                  </v-row>
                 </v-col>
-                <v-col cols="6" v-if="assignment.icon">
-                  <v-list-item-title v-text="assignment.icon.name"></v-list-item-title>
-                </v-col>
-                <v-col cols="3" v-if="assignment.icon">
+                <v-col cols="4" v-if="assignment.icon">
                   <v-row no-gutters justify="end" class="mr-5">
                     <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.iconUrl"/>
                   </v-row>
                 </v-col>
-                <v-col cols="6" v-if="assignment.style">
-                  {{assignment.style.getName()}}
-                </v-col>
-                <v-col cols="3" v-if="assignment.style">
+                <v-col cols="4" v-if="assignment.style">
                   <v-row no-gutters justify="end" class="mr-5">
-                    <svg height="25" width="25" v-if="assignment.geometryType === 1">
+                    <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
                       <circle cx="12.5" cy="12.5" r="5" :stroke="assignment.style.getHexColor()"
                               :fill="assignment.style.getHexColor()"
                               :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></circle>
                     </svg>
-                    <svg height="25" width="25" v-if="assignment.geometryType === 2">
+                    <svg height="25" width="25" v-if="assignment.geometryType === 2 ||assignment.geometryType === 5 ||  assignment.geometryType === 7">
                       <polyline points="5,20 20,15, 5,10, 20,5" :stroke="assignment.style.getHexColor()"
                                 :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"
                                 fill="none"></polyline>
                     </svg>
-                    <svg height="25" width="25" v-if="assignment.geometryType === 3">
+                    <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
                       <polygon points="5,10 20,5 20,20 5,20" :stroke="assignment.style.getHexColor()"
                                :fill="assignment.style.getFillHexColor()"
                                :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></polygon>
                     </svg>
-                  </v-row>
-                </v-col>
-                <v-col cols="9" v-if="!assignment.icon && !assignment.style">
-                  <v-row no-gutters align="start">
-                    <v-list-item-subtitle>Unassigned</v-list-item-subtitle>
                   </v-row>
                 </v-col>
               </v-row>
@@ -431,6 +427,10 @@
               const pointAssignment = this.determineAssignment(gp, GeometryType.POINT)
               const lineAssignment = this.determineAssignment(gp, GeometryType.LINESTRING)
               const polygonAssignment = this.determineAssignment(gp, GeometryType.POLYGON)
+              const multipointAssignment = this.determineAssignment(gp, GeometryType.MULTIPOINT)
+              const multilineAssignment = this.determineAssignment(gp, GeometryType.MULTILINESTRING)
+              const multipolygonAssignment = this.determineAssignment(gp, GeometryType.MULTIPOLYGON)
+              const geometryCollectionAssignment = this.determineAssignment(gp, GeometryType.GEOMETRYCOLLECTION)
               this.assignmentListItems.items = [
                 {
                   id: 'assignment_point',
@@ -451,6 +451,32 @@
                   name: 'Polygon',
                   geometryType: GeometryType.POLYGON,
                   style: polygonAssignment.style
+                },
+                {
+                  id: 'assignment_multipoint',
+                  name: 'Multi Point',
+                  geometryType: GeometryType.MULTIPOINT,
+                  style: multilineAssignment.style,
+                  icon: multilineAssignment.icon,
+                  iconUrl: multipointAssignment.iconUrl
+                },
+                {
+                  id: 'assignment_multiline',
+                  name: 'Multi Line',
+                  geometryType: GeometryType.MULTILINESTRING,
+                  style: multilineAssignment.style
+                },
+                {
+                  id: 'assignment_multipolygon',
+                  name: 'Multi Polygon',
+                  geometryType: GeometryType.MULTIPOLYGON,
+                  style: multipolygonAssignment.style
+                },
+                {
+                  id: 'assignment_geometrycollection',
+                  name: 'Geometry Collection',
+                  geometryType: GeometryType.GEOMETRYCOLLECTION,
+                  style: geometryCollectionAssignment.style
                 }
               ]
               this.assignmentListItems.hint = false

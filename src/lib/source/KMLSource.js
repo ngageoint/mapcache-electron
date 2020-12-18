@@ -69,7 +69,7 @@ export default class KMLSource extends Source {
         style.width = feature.properties['stroke-width']
         style.color = feature.properties['stroke']
         style.opacity = feature.properties['stroke-opacity']
-      } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
+      } else if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON || geometryType === GeometryType.GEOMETRYCOLLECTION) {
         style.width = feature.properties['stroke-width']
         style.color = feature.properties['stroke']
         style.opacity = feature.properties['stroke-opacity']

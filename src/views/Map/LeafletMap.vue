@@ -33,50 +33,6 @@
         </v-card>
       </v-dialog>
       <v-dialog
-        v-model="showDialogPopup"
-        max-width="350"
-        v-on:click:outside="copiedToClipboard = false">
-        <v-card>
-          <v-card-title>
-            Coordinate
-          </v-card-title>
-          <v-card-text>
-            <v-card-text>
-              <v-row justify="space-between" align="center">
-                <v-col>
-                  {{dialogCoordinate ? (dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6)) : ''}}
-                </v-col>
-                <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>mdi-content-copy</v-icon></v-btn>
-              </v-row>
-              <v-row justify="space-between" align="center">
-                <v-col>
-                  {{dialogCoordinate ? (convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true)) : ''}}
-                </v-col>
-                <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>mdi-content-copy</v-icon></v-btn>
-              </v-row>
-            </v-card-text>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              text
-              @click="() => {
-                copiedToClipboard = false
-                showDialogPopup = false
-              }">
-              Close
-            </v-btn>
-          </v-card-actions>
-          <v-snackbar
-            v-if="copiedToClipboard"
-            v-model="copiedToClipboard"
-            timeout="2000"
-          >
-            Copied to clipboard.
-          </v-snackbar>
-        </v-card>
-      </v-dialog>
-      <v-dialog
         v-model="layerSelectionVisible"
         max-width="500"
         persistent>
@@ -150,6 +106,40 @@
         </v-card-text>
       </v-card>
     </transition>
+    <div v-show="coordinatePopup !== null" id="leaflet-coordinate-popup" ref="leafletCoordinatePopup" style="width: 300px; height: 132px;">
+      <v-card flat>
+        <v-row class="mb-2" no-gutters justify="space-between">
+          <v-card-title class="pa-0 ma-0">
+            Coordinate
+          </v-card-title>
+          <v-btn class="mr-1" small @click.stop.prevent="closePopup" icon><v-icon>mdi-close</v-icon></v-btn>
+        </v-row>
+        <v-card-text class="pa-0 ma-0">
+          <v-card-text class="pt-1 pb-1 pr-0">
+            <v-row no-gutters justify="space-between" align="center">
+              <v-col>
+                {{dialogCoordinate ? (dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6)) : ''}}
+              </v-col>
+              <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+            </v-row>
+            <v-row no-gutters  justify="space-between" align="center">
+              <v-col>
+                {{dialogCoordinate ? (convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true)) : ''}}
+              </v-col>
+              <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+            </v-row>
+          </v-card-text>
+        </v-card-text>
+      </v-card>
+    </div>
+    <v-snackbar
+      v-if="copiedToClipboard"
+      v-model="copiedToClipboard"
+      timeout="1500"
+      absolute
+    >
+      Copied to clipboard.
+    </v-snackbar>
   </div>
 </template>
 
@@ -226,6 +216,7 @@
           geopackageTables: [],
           sourceTables: []
         },
+        coordinatePopup: null,
         tableFeaturesLatLng: null,
         geoPackageFeatureLayerChoices,
         geoPackageSelection: 0,
@@ -246,7 +237,6 @@
         lastShowFeatureTableEvent: null,
         geopackageExistsDialog: false,
         dialogCoordinate: null,
-        showDialogPopup: false,
         copiedToClipboard: false
       }
     },
@@ -395,6 +385,13 @@
             }
           })
         }
+      },
+      closePopup() {
+        this.map.removeLayer(this.coordinatePopup)
+        Vue.nextTick(() => {
+          this.copiedToClipboard = false
+        })
+
       },
       convertToDms (dd, isLng) {
         const dir = dd < 0
@@ -1149,10 +1146,18 @@
         }
       })
       this.map.on('contextmenu', e => {
-        this.dialogCoordinate = e.latlng
-        Vue.nextTick(() => {
-          this.showDialogPopup = true
-        })
+        if (this.coordinatePopup && this.coordinatePopup.isOpen()) {
+          this.dialogCoordinate = e.latlng
+          this.coordinatePopup.setLatLng(e.latlng)
+        } else {
+          this.dialogCoordinate = e.latlng
+          Vue.nextTick(() => {
+            this.coordinatePopup = vendor.L.popup({minWidth: 300, closeButton: false})
+              .setLatLng(e.latlng)
+              .setContent(this.$refs['leafletCoordinatePopup'])
+              .openOn(this.map)
+          })
+        }
       })
       this.map.on('editable:drawing:end', function (e) {
         if (!_this.drawingControl.isDrawing && !_this.drawingControl.cancelled) {

@@ -516,7 +516,7 @@ export default class GeoPackageUtilities {
               featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
               featureStyleRow.setWidth(featureStyle.width)
               featureStyleRow.setName(featureStyle.name)
-              if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON) {
+              if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON || geometryType === GeometryType.GEOMETRYCOLLECTION) {
                 featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
               }
               let featureStyleRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
