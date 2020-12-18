@@ -1034,6 +1034,55 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Gets the assignment types for each feature
+   * @param gp
+   * @param tableName
+   * @param features
+   */
+  static _getStyleAssignmentTypeForFeatures (gp, tableName, features) {
+    let styleAssignmentTypeMap = {}
+    let featureTableStyles = new FeatureTableStyles(gp, tableName)
+    const iconMappings = featureTableStyles.getIconMappingDao().queryForAll().map(record => {
+      return {
+        featureId: record.base_id,
+        id: record.related_id
+      }
+    })
+    const styleMappings = featureTableStyles.getStyleMappingDao().queryForAll().map(record => {
+      return {
+        featureId: record.base_id,
+        id: record.related_id
+      }
+    })
+    for (let i = 0; i < features.length; i++) {
+      let assignmentType = 'None'
+      const feature = features[i]
+      const rowId = feature.id
+      const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      if (!_.isNil(iconMappings.find(mapping => mapping.featureId === rowId)) || !_.isNil(styleMappings.find(mapping => mapping.featureId === rowId))) {
+        assignmentType = 'Custom'
+      } else if (!_.isNil(featureTableStyles.getTableStyle(geometryType))) {
+        assignmentType = 'Default'
+      }
+      styleAssignmentTypeMap[rowId] = assignmentType
+    }
+    return styleAssignmentTypeMap
+  }
+
+  /**
+   * Gets the assignment types for each feature
+   * @param filePath
+   * @param tableName
+   * @param features
+   * @returns {Promise<any>}
+   */
+  static async getStyleAssignmentTypeForFeatures (filePath, tableName, features) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getStyleAssignmentTypeForFeatures(gp, tableName, features)
+    })
+  }
+
+  /**
    * Renames a geopackage table
    * @param gp
    * @param tableName
@@ -1490,7 +1539,7 @@ export default class GeoPackageUtilities {
     const featureDao = gp.getFeatureDao(tableName)
     const feature = featureDao.queryForId(featureId)
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
-    const geometryType = GeometryType.fromName(feature.geometryType)
+    const geometryType = GeometryType.fromName(feature.geometryType.toUpperCase())
     if (styleId === -1) {
       return featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, geometryType, null)
     } else {

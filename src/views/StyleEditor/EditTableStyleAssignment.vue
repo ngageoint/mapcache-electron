@@ -18,19 +18,17 @@
                       <v-radio class="ma-0 pa-0" dense :label="style.name" :value="style.id"></v-radio>
                     </v-radio-group>
                   </v-col>
-                  <v-col cols="2">
-                    <v-row no-gutters justify="center" align="center">
-                      <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
-                        <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
-                      </svg>
-                      <svg height="25" width="25" v-if="assignment.geometryType === 2 || assignment.geometryType === 5 || assignment.geometryType === 7">
-                        <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
-                      </svg>
-                      <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
-                        <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor" :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
-                      </svg>
-                    </v-row>
-                  </v-col>
+                  <v-row no-gutters justify="end" align="center">
+                    <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
+                      <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
+                    </svg>
+                    <svg height="25" width="25" v-if="assignment.geometryType === 2 || assignment.geometryType === 5 || assignment.geometryType === 7">
+                      <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color" :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
+                    </svg>
+                    <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
+                      <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor" :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
+                    </svg>
+                  </v-row>
                 </v-row>
               </v-list-item-content>
             </template>
@@ -49,11 +47,9 @@
                         <v-radio class="ma-0 pa-0" dense :label="icon.name" :value="icon.id"></v-radio>
                       </v-radio-group>
                     </v-col>
-                    <v-col cols="2">
-                      <v-row no-gutters justify="center" align="center">
-                        <img class="icon-box" :src="icon.url"/>
-                      </v-row>
-                    </v-col>
+                    <v-row no-gutters justify="end" align="center">
+                      <img class="icon-box" :src="icon.url"/>
+                    </v-row>
                   </v-row>
                 </v-list-item-content>
               </template>

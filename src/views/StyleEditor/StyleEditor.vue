@@ -41,7 +41,7 @@
       </v-card>
     </v-dialog>
     <v-sheet v-if="!loading && hasStyleExtension">
-      <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable>
+      <v-dialog v-model="assignStyleDialog" max-width="420" persistent scrollable>
         <edit-table-style-assignment
           v-if="styleAssignment"
           :assignment="styleAssignment"
@@ -303,7 +303,7 @@
         assignmentListItems: {
           action: 'mdi-link-variant',
           items: [],
-          title: 'Feature Type Assignment',
+          title: 'Default Assignment',
           active: false
         },
         editIcon: null,
@@ -456,8 +456,8 @@
                   id: 'assignment_multipoint',
                   name: 'Multi Point',
                   geometryType: GeometryType.MULTIPOINT,
-                  style: multilineAssignment.style,
-                  icon: multilineAssignment.icon,
+                  style: multipointAssignment.style,
+                  icon: multipointAssignment.icon,
                   iconUrl: multipointAssignment.iconUrl
                 },
                 {

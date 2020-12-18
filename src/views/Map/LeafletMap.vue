@@ -100,7 +100,7 @@
         v-show="showFeatureTable"
         ref="featuresPopup"
         class="mx-auto"
-        style="max-height: 350px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
+        style="max-height: 375px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
         <v-card-text>
           <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>
@@ -425,6 +425,7 @@
             this.tableFeaturesLatLng = null
             if (isGeoPackage) {
               const geopackage = this.geopackages[id]
+              const features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
               this.tableFeatures = {
                 geopackageTables: [{
                   id: geopackage.id + '_' + tableName,
@@ -432,12 +433,14 @@
                   geopackageId: geopackage.id,
                   tableName: tableName,
                   columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
-                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
+                  features: features,
+                  featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(geopackage.path, tableName, features)
                 }],
                 sourceTables: []
               }
             } else {
               const sourceLayerConfig = this.sources[id]
+              const features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
               this.tableFeatures = {
                 geopackageTables: [],
                 sourceTables: [{
@@ -446,7 +449,8 @@
                   sourceId: sourceLayerConfig.id,
                   tableName: sourceLayerConfig.sourceLayerName,
                   columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, features)
                 }]
               }
             }
@@ -694,7 +698,8 @@
                       geopackageId: geopackage.id,
                       tableName: tableName,
                       columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
-                      features: features
+                      features: features,
+                      featureStyleAssignmentTypes: GeoPackageUtilities._getStyleAssignmentTypeForFeatures(gp, tableName, features)
                     })
                   }
                 }
@@ -716,7 +721,8 @@
                     sourceId: sourceLayerConfig.id,
                     tableName: sourceLayerConfig.sourceLayerName,
                     columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                    features: features
+                    features: features,
+                    featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, features)
                   })
                 }
               }

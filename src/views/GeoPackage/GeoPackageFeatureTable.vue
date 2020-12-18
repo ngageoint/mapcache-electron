@@ -163,7 +163,8 @@
             geopackageId: this.geopackage.id,
             layer: this.table.tableName,
             id: feature.id,
-            type: feature.geometry.type
+            type: feature.geometry.type,
+            styleAssignmentType: this.table.featureStyleAssignmentTypes[feature.id] || 'None'
           }
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
@@ -193,6 +194,7 @@
       headers () {
         const headers = [
           { text: 'Actions', value: 'actions', sortable: false, width: 150 },
+          { text: 'Style Assignment', value: 'styleAssignmentType', width: 150 },
           { text: 'Geometry Type', value: 'type', width: 150 }
         ]
         const tableHeaders = []

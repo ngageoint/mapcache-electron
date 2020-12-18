@@ -176,6 +176,15 @@ export default class KMLSource extends Source {
           style: featureStyle
         }
       }
+      delete feature.properties['icon']
+      delete feature.properties['styleMapHash']
+      delete feature.properties['styleHash']
+      delete feature.properties['styleUrl']
+      delete feature.properties['stroke']
+      delete feature.properties['stroke-opacity']
+      delete feature.properties['stroke-width']
+      delete feature.properties['fill']
+      delete feature.properties['fill-opacity']
     }
     if (_.isEmpty(layerStyle.features) && _.isEmpty(layerStyle.styleRowMap) && _.isEmpty(layerStyle.iconRowMap)) {
       layerStyle = null
