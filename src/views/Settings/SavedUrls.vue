@@ -10,13 +10,13 @@
           Delete URL
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete the url? This action can't be undone.
+          Are you sure you want to delete {{urlToDelete}} from your saved URLs?
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
             text
-            @click="deleteUrlDialog = false">
+            @click="cancelDeleteUrl">
             Cancel
           </v-btn>
           <v-btn
@@ -196,6 +196,12 @@
         this.addUrlDialog = false
         Vue.nextTick(() => {
           this.addUrlValue = 'https://'
+        })
+      },
+      cancelDeleteUrl () {
+        this.deleteUrlDialog = false
+        Vue.nextTick(() => {
+          this.urlToDelete = null
         })
       },
       showDeleteUrlDialog (url) {

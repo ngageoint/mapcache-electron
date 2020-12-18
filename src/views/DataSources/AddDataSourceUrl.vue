@@ -9,6 +9,34 @@
       <v-toolbar-title>Add Data Source from URL</v-toolbar-title>
     </v-toolbar>
     <v-sheet>
+      <v-dialog
+        v-model="deleteUrlDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Delete URL
+          </v-card-title>
+          <v-card-text>
+            Are you sure you want to delete {{urlToDelete}} from your saved URLs?
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="cancelDeleteUrl">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="warning"
+              text
+              @click="removeUrlFromHistory">
+              Delete
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-stepper v-model="step" non-linear vertical>
         <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => dataSourceNameValid]" color="primary">
           Name the data source
@@ -65,7 +93,7 @@
                         {{item}}
                       </v-list-item-content>
                       <v-list-item-action>
-                        <v-btn icon color="warning" @click.stop.prevent="removeUrlFromHistory(item)">
+                        <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
                           <v-icon>mdi-trash-can</v-icon>
                         </v-btn>
                       </v-list-item-action>
@@ -348,6 +376,8 @@
         step: 1,
         drag: false,
         summaryStep: 4,
+        urlToDelete: null,
+        deleteUrlDialog: false,
         accessDeniedOrForbidden: false,
         sortedRenderingLayers: undefined,
         dataSourceNameValid: true,
@@ -701,9 +731,13 @@
         }
         return error
       },
-      removeUrlFromHistory (url) {
+      removeUrlFromHistory () {
         // Remove a URL from the Tile URL history state
-        this.removeUrl(url)
+        this.removeUrl(this.urlToDelete)
+        this.deleteUrlDialog = false
+        Vue.nextTick(() => {
+          this.urlToDelete = null
+        })
       },
       addUrlToHistory (url) {
         // Save a given URL to the Tile URL history state
@@ -714,6 +748,16 @@
         this.selectedDataSourceLayers = []
         this.resetAuth()
         this.dataSourceUrl = url
+      },
+      cancelDeleteUrl () {
+        this.deleteUrlDialog = false
+        Vue.nextTick(() => {
+          this.urlToDelete = null
+        })
+      },
+      showDeleteUrlDialog (url) {
+        this.urlToDelete = url
+        this.deleteUrlDialog = true
       }
     },
     mounted () {
