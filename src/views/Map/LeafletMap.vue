@@ -1168,17 +1168,19 @@
         }
       })
       this.map.on('contextmenu', e => {
-        if (this.coordinatePopup && this.coordinatePopup.isOpen()) {
-          this.dialogCoordinate = e.latlng
-          this.coordinatePopup.setLatLng(e.latlng)
-        } else {
-          this.dialogCoordinate = e.latlng
-          Vue.nextTick(() => {
-            this.coordinatePopup = vendor.L.popup({minWidth: 300, closeButton: false})
-              .setLatLng(e.latlng)
-              .setContent(this.$refs['leafletCoordinatePopup'])
-              .openOn(this.map)
-          })
+        if (!this.drawingControl.isDrawing) {
+          if (this.coordinatePopup && this.coordinatePopup.isOpen()) {
+            this.dialogCoordinate = e.latlng
+            this.coordinatePopup.setLatLng(e.latlng)
+          } else {
+            this.dialogCoordinate = e.latlng
+            Vue.nextTick(() => {
+              this.coordinatePopup = vendor.L.popup({minWidth: 300, closeButton: false})
+                .setLatLng(e.latlng)
+                .setContent(this.$refs['leafletCoordinatePopup'])
+                .openOn(this.map)
+            })
+          }
         }
       })
       this.map.on('editable:drawing:end', function (e) {
@@ -1381,5 +1383,11 @@
   .leaflet-geosearch-bar {
     margin-left: 10px !important;
     margin-top: 10px !important;
+  }
+  .overlay-tooltip {
+    position: absolute;
+    display: flex;
+    width: 200px;
+    border: none;
   }
 </style>

@@ -1041,30 +1041,33 @@ export default class GeoPackageUtilities {
    */
   static _getStyleAssignmentTypeForFeatures (gp, tableName, features) {
     let styleAssignmentTypeMap = {}
-    let featureTableStyles = new FeatureTableStyles(gp, tableName)
-    const iconMappings = featureTableStyles.getIconMappingDao().queryForAll().map(record => {
-      return {
-        featureId: record.base_id,
-        id: record.related_id
+    const hasStyleExtension = gp.featureStyleExtension.has(tableName)
+    if (hasStyleExtension) {
+      let featureTableStyles = new FeatureTableStyles(gp, tableName)
+      const iconMappings = featureTableStyles.getIconMappingDao().queryForAll().map(record => {
+        return {
+          featureId: record.base_id,
+          id: record.related_id
+        }
+      })
+      const styleMappings = featureTableStyles.getStyleMappingDao().queryForAll().map(record => {
+        return {
+          featureId: record.base_id,
+          id: record.related_id
+        }
+      })
+      for (let i = 0; i < features.length; i++) {
+        let assignmentType = 'None'
+        const feature = features[i]
+        const rowId = feature.id
+        const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+        if (!_.isNil(iconMappings.find(mapping => mapping.featureId === rowId)) || !_.isNil(styleMappings.find(mapping => mapping.featureId === rowId))) {
+          assignmentType = 'Custom'
+        } else if (!_.isNil(featureTableStyles.getTableStyle(geometryType))) {
+          assignmentType = 'Default'
+        }
+        styleAssignmentTypeMap[rowId] = assignmentType
       }
-    })
-    const styleMappings = featureTableStyles.getStyleMappingDao().queryForAll().map(record => {
-      return {
-        featureId: record.base_id,
-        id: record.related_id
-      }
-    })
-    for (let i = 0; i < features.length; i++) {
-      let assignmentType = 'None'
-      const feature = features[i]
-      const rowId = feature.id
-      const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
-      if (!_.isNil(iconMappings.find(mapping => mapping.featureId === rowId)) || !_.isNil(styleMappings.find(mapping => mapping.featureId === rowId))) {
-        assignmentType = 'Custom'
-      } else if (!_.isNil(featureTableStyles.getTableStyle(geometryType))) {
-        assignmentType = 'Default'
-      }
-      styleAssignmentTypeMap[rowId] = assignmentType
     }
     return styleAssignmentTypeMap
   }
