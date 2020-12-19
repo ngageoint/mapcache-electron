@@ -63,7 +63,7 @@
           }">
           <v-icon
             small
-            title="Edit"
+            title="Edit feature"
           >
             mdi-pencil
           </v-icon>
@@ -78,7 +78,7 @@
             }">
           <v-icon
             small
-            title="Style"
+            title="Style assignment"
           >
             mdi-palette
           </v-icon>
@@ -95,7 +95,7 @@
           <v-icon
             small
             color="warning"
-            title="Delete"
+            title="Delete feature"
           >
             mdi-trash-can
           </v-icon>

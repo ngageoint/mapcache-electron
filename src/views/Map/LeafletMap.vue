@@ -1,6 +1,6 @@
 <template>
   <div :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
-    <div id="map" :style="{width: '100%', zIndex: 0, flex: 1}">
+    <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
         v-model="geopackageExistsDialog"
@@ -94,18 +94,6 @@
         <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
       </v-dialog>
     </div>
-    <transition name="slide-up">
-      <v-card
-        tile
-        v-show="showFeatureTable"
-        ref="featuresPopup"
-        class="mx-auto"
-        style="max-height: 375px; overflow-y: auto; position: absolute; bottom: 0; z-index: 400; width: 100%">
-        <v-card-text>
-          <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
-        </v-card-text>
-      </v-card>
-    </transition>
     <div v-show="coordinatePopup !== null" id="leaflet-coordinate-popup" ref="leafletCoordinatePopup" style="width: 300px; height: 132px;">
       <v-card flat>
         <v-row class="mb-2" no-gutters justify="space-between">
@@ -140,6 +128,19 @@
     >
       Copied to clipboard.
     </v-snackbar>
+    <v-expand-transition>
+      <v-card
+        tile
+        id="feature-table-ref"
+        ref="featureTableRef"
+        v-show="showFeatureTable"
+        class="mx-auto"
+        style="max-height: 375px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
+        <v-card-text>
+          <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
+        </v-card-text>
+      </v-card>
+    </v-expand-transition>
   </div>
 </template>
 
@@ -247,6 +248,11 @@
           geopackageTables: [],
           sourceTables: []
         }
+      },
+      displayFeatureTable () {
+        Vue.nextTick(() => {
+          this.showFeatureTable = true
+        })
       },
       copyText (text) {
         clipboard.writeText(text)
@@ -454,7 +460,7 @@
                 }]
               }
             }
-            this.showFeatureTable = true
+            this.displayFeatureTable()
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)
@@ -732,7 +738,7 @@
             this.lastShowFeatureTableEvent = null
             this.tableFeaturesLatLng = e.latlng
             this.tableFeatures = tableFeatures
-            this.showFeatureTable = true
+            this.displayFeatureTable()
           } else {
             this.hideFeatureTable()
           }
@@ -1057,6 +1063,16 @@
         this.displayFeaturesForTable(id, tableName, isGeoPackage)
       })
 
+      if (this.observer) {
+        this.observer.disconnect()
+      }
+      this.observer = new ResizeObserver(() => {
+        const height = document.getElementById('feature-table-ref').offsetHeight
+        const map = document.getElementById('map')
+        map.style.maxHeight = `calc(100% - ${height}px)`
+        _this.map.invalidateSize()
+      }).observe(document.getElementById('feature-table-ref'))
+
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 3
       const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
@@ -1337,17 +1353,6 @@
   .leaflet-touch .leaflet-control-layers-toggle {
     width: 30px;
     height: 30px;
-  }
-  .slide-up-enter-active {
-    transition: all 0.5s ease;
-  }
-  .slide-up-leave-active {
-    transition: all .25s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-  }
-  .slide-up-enter, .slide-up-leave-to
-    /* .slide-fade-leave-active below version 2.1.8 */ {
-    transform: translateY(100px);
-    opacity: 0;
   }
   #tooltip {
     display: none;
