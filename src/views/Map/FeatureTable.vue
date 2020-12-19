@@ -1,8 +1,16 @@
 <template>
   <v-sheet v-if="tableFeatures">
-    <v-row class="mb-2" no-gutters justify="end">
-      <v-btn small @click.stop.prevent="close" icon><v-icon>mdi-close</v-icon></v-btn>
-    </v-row>
+    <v-toolbar
+      flat
+      color="primary"
+      dark
+      dense
+    >
+      <v-toolbar-title>{{geopackageTables.length + sourceTables.length > 1 ? 'Feature Tables' : 'Feature Table' }}</v-toolbar-title>
+      <v-row class="mb-1" no-gutters justify="end">
+        <v-btn small @click.stop.prevent="close" icon><v-icon>mdi-close</v-icon></v-btn>
+      </v-row>
+    </v-toolbar>
     <v-tabs
       v-model="tab"
       grow

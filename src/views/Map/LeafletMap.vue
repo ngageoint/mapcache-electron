@@ -136,7 +136,7 @@
         v-show="showFeatureTable"
         class="mx-auto"
         style="max-height: 375px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
-        <v-card-text>
+        <v-card-text class="pa-0 ma-0 mb-2">
           <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>
       </v-card>
