@@ -82,6 +82,7 @@ module.exports = {
         nsis: {
           oneClick: false,
           allowToChangeInstallationDirectory: true,
+          include: "buildResources/uninstaller.nsh"
         },
         linux: {
           icon: "buildResources/icons",
