@@ -416,6 +416,12 @@
         let methods = []
         if (this.source.colorMap) {
           methods.push({text: 'Palette', value: 2})
+        } else if (this.source.photometricInterpretation === 6) {
+          methods.push({text: 'YCbCr', value: 3})
+        } else if (this.source.photometricInterpretation === 5) {
+          methods.push({text: 'CMYK', value: 4})
+        } else if (this.source.photometricInterpretation === 8) {
+          methods.push({text: 'CIELab', value: 5})
         } else {
           methods.push({text: 'Gray scale', value: 0})
           methods.push({text: 'RGB', value: 1})

@@ -33,7 +33,7 @@
         })
         for (let i = 0; i < layers.length; i++) {
           try {
-            let initLayer = await layers[i].initialize(true)
+            let initLayer = await layers[i].initialize(true, false)
             dataSources.push({project: project, sourceId: initLayer.id, config: initLayer.configuration})
           } catch (error) {
             // eslint-disable-next-line no-console

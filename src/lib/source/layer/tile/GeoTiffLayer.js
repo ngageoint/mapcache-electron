@@ -138,7 +138,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.renderer = new GeoTiffRenderer(this)
   }
 
-  async initialize (inWorker = false) {
+  async initialize (inWorker = false, buildRasters = true) {
     this.geotiff = await GeoTIFF.fromFile(this.filePath)
     this.image = await this.geotiff.getImage()
     this.srs = GeoTiffLayer.getCRSForGeoTiff(this.image)
@@ -149,7 +149,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.samplesPerPixel = this.fileDirectory.SamplesPerPixel
     this.bitsPerSample = this.fileDirectory.BitsPerSample
 
-    if (_.isNil(this.rasters)) {
+    if (_.isNil(this.rasters) && buildRasters) {
       if (!inWorker) {
         this.rasters = await new Promise(resolve => {
           ipcRenderer.once('read_raster_completed_' + this.id, (event, result) => {
@@ -211,13 +211,9 @@ export default class GeoTiffLayer extends TileLayer {
       }]
       // setup band options
       for (let i = 1; i <= this.bitsPerSample.length; i++) {
-        // let band = this.ds[i]
         let name = 'Band ' + i
-        // if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) !== 0) {
-        //   name += ' (' + band.colorInterpretation + ')'
-        // }
-        let min = /*band.minimum ||*/0
-        let max = /*band.maximum || */GeoTiffLayer.getMaxForDataType(this.bitsPerSample[i])
+        let min = 0
+        let max = GeoTiffLayer.getMaxForDataType(this.bitsPerSample[i])
         this.bandOptions.push({
           value: i,
           name: name,
@@ -226,27 +222,20 @@ export default class GeoTiffLayer extends TileLayer {
         })
       }
 
-      // determine initial rendering method
-      if (this.photometricInterpretation === 3) {
+      // determine rendering method
+      if (this.photometricInterpretation === 6) {
+        this.renderingMethod = 3
+      } else if (this.photometricInterpretation === 5) {
+        this.renderingMethod = 4
+      } else if (this.photometricInterpretation === 8) {
+        this.renderingMethod = 5
+      } else if (this.photometricInterpretation === 3) {
         this.renderingMethod = 2
         // this is the default
         this.paletteBand = 1
-
         if (this.samplesPerPixel > 1) {
           this.alphaBand = 2
         }
-        // for (let i = 1; i <= this.ds.bands.count(); i++) {
-        //   let band = this.ds.bands.get(i)
-        //   if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 2) {
-        //     this.paletteBand = i
-        //   } else if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 6) {
-        //     let prevAlphaBand = this.alphaBand
-        //     this.alphaBand = i
-        //     if (this.paletteBand === this.alphaBand) {
-        //       this.paletteBand = prevAlphaBand
-        //     }
-        //   }
-        // }
       } else if (this.samplesPerPixel >= 3 || this.photometricInterpretation === 2) {
         this.renderingMethod = 1
         // this is the default
@@ -256,45 +245,6 @@ export default class GeoTiffLayer extends TileLayer {
         if (this.samplesPerPixel > 3) {
           this.alphaBand = 4
         }
-        // // check if these bands have a color interp assigned, if so, reorder appropriately
-        // for (let i = 1; i <= this.ds.bands.count(); i++) {
-        //   let band = this.ds.bands.get(i)
-        //   if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 3) {
-        //     let prevRedBand = this.redBand
-        //     this.redBand = i
-        //     if (this.greenBand === this.redBand) {
-        //       this.greenBand = prevRedBand
-        //     } else if (this.blueBand === this.redBand) {
-        //       this.blueBand = prevRedBand
-        //     }
-        //   } else if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 4) {
-        //     let prevGreenBand = this.greenBand
-        //     this.greenBand = i
-        //     if (this.redBand === this.greenBand) {
-        //       this.redBand = prevGreenBand
-        //     } else if (this.blueBand === this.greenBand) {
-        //       this.blueBand = prevGreenBand
-        //     }
-        //   } else if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 5) {
-        //     let prevBlueBand = this.blueBand
-        //     this.blueBand = i
-        //     if (this.redBand === this.blueBand) {
-        //       this.redBand = prevBlueBand
-        //     } else if (this.greenBand === this.blueBand) {
-        //       this.greenBand = prevBlueBand
-        //     }
-        //   } else if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 6) {
-        //     let prevAlphaBand = this.alphaBand
-        //     this.alphaBand = i
-        //     if (this.redBand === this.alphaBand) {
-        //       this.redBand = prevAlphaBand
-        //     } else if (this.greenBand === this.alphaBand) {
-        //       this.greenBand = prevAlphaBand
-        //     } else if (this.blueBand === this.alphaBand) {
-        //       this.blueBand = prevAlphaBand
-        //     }
-        //   }
-        // }
         this.redBandMin = this.bandOptions[this.redBand].min
         this.redBandMax = this.bandOptions[this.redBand].max
         this.greenBandMin = this.bandOptions[this.greenBand].min
@@ -304,33 +254,12 @@ export default class GeoTiffLayer extends TileLayer {
       } else if (this.samplesPerPixel === 1 || this.photometricInterpretation <= 1) {
         this.renderingMethod = 0
         this.grayScaleColorGradient = this.photometricInterpretation
-        // this is the default
         this.grayBand = 1
-        // for (let i = 1; i <= this.ds.bands.count(); i++) {
-        //   let band = this.ds.bands.get(i)
-        //   if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 1) {
-        //     this.grayBand = i
-        //   } else if (GeoTiffLayer.getColorInterpretationNum(band.colorInterpretation) === 6) {
-        //     let prevAlphaBand = this.alphaBand
-        //     this.alphaBand = i
-        //     if (this.grayBand === this.alphaBand) {
-        //       this.grayBand = prevAlphaBand
-        //     }
-        //   }
-        // }
         this.grayBandMin = this.bandOptions[this.grayBand].min
         this.grayBandMax = this.bandOptions[this.grayBand].max
       } else {
         this.photometricInterpretation = 1
       }
-      // should we enable stretch to min max by default
-      // let shouldStretch = true
-      // for (let i = 1; i <= this.ds.bands.count(); i++) {
-      //   let band = this.ds.bands.get(i)
-      //   if (!band.minimum || !band.maximum) {
-      //     shouldStretch = true
-      //   }
-      // }
       this.stretchToMinMax = false
     }
     this.renderer = new GeoTiffRenderer(this)
