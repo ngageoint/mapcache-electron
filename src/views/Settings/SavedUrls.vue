@@ -102,7 +102,8 @@
         Saved URLs
       </v-card-title>
       <v-card-text>
-        <v-list>
+        <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
+        <v-list v-else>
           <v-list-item dense :key="item" v-for="item in urls.map(url => url.url)">
             <v-list-item-content>
               <span class="text-break">{{item}}</span>
