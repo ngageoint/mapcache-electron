@@ -565,21 +565,7 @@
                     headers: headers
                   })
                   result = await URLUtilities.parseXMLString(response.data)
-                  let skipVersion = false
-                  let wfsInfo = GeoServiceUtilities.getWFSInfo(result)
-                  if (version === '2.0.0') {
-                    for (let i = 0; i < wfsInfo.layers.length; i++) {
-                      const layer = wfsInfo.layers[i]
-                      const outputFormat = GeoServiceUtilities.getLayerOutputFormat(layer)
-                      skipVersion = outputFormat === 'GML32'
-                      if (skipVersion) {
-                        break
-                      }
-                    }
-                  }
-                  if (!skipVersion) {
-                    break
-                  }
+                  break
                 } catch (e) {
                   if (e.response) {
                     errStatusCodes.push(e.response.status)

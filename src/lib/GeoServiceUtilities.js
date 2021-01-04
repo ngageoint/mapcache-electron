@@ -157,12 +157,12 @@ export default class GeoServiceUtilities {
     let outputFormat
     if (geoJSONSupported) {
       outputFormat = 'application/json'
-    } else if (gml2Supported) {
-      outputFormat = 'GML2'
-    } else if (gml3Supported) {
-      outputFormat = 'GML3'
     } else if (gml32Supported) {
       outputFormat = 'GML32'
+    } else if (gml3Supported) {
+      outputFormat = 'GML3'
+    } else if (gml2Supported) {
+      outputFormat = 'GML2'
     }
 
     // output format not found in capabilities document, use default for version

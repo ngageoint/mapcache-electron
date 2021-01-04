@@ -8,6 +8,7 @@ import GeoServiceUtilities from '../GeoServiceUtilities'
 import FileUtilities from '../FileUtilities'
 import GML2 from 'ol/format/GML2'
 import GML3 from 'ol/format/GML3'
+import GML32 from 'ol/format/GML32'
 import GeoJSON from 'ol/format/GeoJSON'
 import WFS from 'ol/format/WFS'
 import proj4 from 'proj4'
@@ -74,7 +75,7 @@ export default class WFSSource extends Source {
   /**
    * Will attempt to make a GetFeature request.
    * Supports WFS 1.0.0, 1.1.0 and 2.0.0
-   * Supports GeoJSON, GML2, and GML3 but not GML32
+   * Supports GeoJSON, GML2, and GML3 and GML32
    * @param layer
    * @returns {Promise<any>}
    */
@@ -136,13 +137,14 @@ export default class WFSSource extends Source {
         let features = {}
         if (outputFormat === 'application/json') {
           features = new GeoJSON().readFeatures(response.data, options)
+        } else if (outputFormat === 'GML32') {
+          features = new WFS({gmlFormat: new GML32(), version: layer.version}).readFeatures(response.data, options)
+        } else if (outputFormat === 'GML3') {
+          features = new WFS({gmlFormat: new GML3(), version: layer.version}).readFeatures(response.data, options)
         } else if (outputFormat === 'GML2') {
-          features = new WFS({gmlFormat: new GML2()}).readFeatures(response.data, options)
-        } else if (outputFormat === 'GML3' && layer.version !== '2.0.0') {
-          features = new WFS({gmlFormat: new GML3()}).readFeatures(response.data, options)
+          features = new WFS({gmlFormat: new GML2(), version: layer.version}).readFeatures(response.data, options)
         } else {
-          // TODO: waiting for openlayers to release their next version, current verison is 6.4.3
-          throw new Error('Service in unsupported format WFS 2.0.0 + GML 3.2')
+          throw new Error('Service in unsupported WFS format: ' + outputFormat)
         }
         featureCollection = new GeoJSON().writeFeaturesObject(features)
         if (_.isNil(featureCollection) || _.isNil(featureCollection.features) || _.isEmpty(featureCollection.features)) {
