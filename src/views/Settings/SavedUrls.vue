@@ -124,7 +124,7 @@
         <v-btn
           text
           color="primary"
-          @click="addUrlDialog = true">
+          @click="showAddUrlDialog">
           Add URL
         </v-btn>
         <v-spacer></v-spacer>
@@ -187,16 +187,16 @@
       }),
       cancelAddNewUrl () {
         this.addUrlDialog = false
+      },
+      showAddUrlDialog () {
+        this.addUrlValue = 'https://'
         Vue.nextTick(() => {
-          this.addUrlValue = 'https://'
+          this.addUrlDialog = true
         })
       },
       addNewUrl () {
-        this.addUrl({url: this.addUrlValue})
         this.addUrlDialog = false
-        Vue.nextTick(() => {
-          this.addUrlValue = 'https://'
-        })
+        this.addUrl({url: this.addUrlValue})
       },
       cancelDeleteUrl () {
         this.deleteUrlDialog = false
