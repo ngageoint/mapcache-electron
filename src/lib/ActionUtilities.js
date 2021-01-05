@@ -36,6 +36,7 @@ export default class ActionUtilities {
   static addGeoPackage ({projectId, filePath}) {
     GeoPackageUtilities.getOrCreateGeoPackageForApp(filePath).then(geopackage => {
       store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+      ActionUtilities.notifyTab({projectId, tabId: 0})
     })
   }
 

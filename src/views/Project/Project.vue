@@ -224,17 +224,12 @@
           }
         }
 
-        let geopackageNotify = false
         for (let i = 0; i < geopackagesToAdd.length; i++) {
           const path = geopackagesToAdd[i]
           const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
           if (!existsInApp) {
             ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: path})
-            geopackageNotify = true
           }
-        }
-        if (geopackageNotify) {
-          ActionUtilities.notifyTab({projectId: this.project.id, tabId: 0})
         }
 
         let fileInfos = []
