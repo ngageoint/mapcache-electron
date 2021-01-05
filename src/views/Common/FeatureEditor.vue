@@ -4,6 +4,9 @@
       {{isEditing ? 'Edit Feature' : 'New Feature'}}
     </v-card-title>
     <v-card-text style="max-height: 500px;">
+      <v-card-subtitle class="pb-0 mb-0">
+        {{isEditing ? 'Edit the feature\'s fields' : 'Set the new feature\'s fields'}}
+      </v-card-subtitle>
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
           <v-list-item

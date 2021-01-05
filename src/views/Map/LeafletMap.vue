@@ -34,7 +34,7 @@
       </v-dialog>
       <v-dialog
         v-model="layerSelectionVisible"
-        max-width="500"
+        max-width="450"
         persistent>
         <v-card>
           <v-card-title>
@@ -50,7 +50,7 @@
             </v-row>
             <v-row v-if="geoPackageSelection !== 0" no-gutters>
               <v-col cols="12">
-                <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Select Feature Layer" dense>
+                <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Feature layer" dense>
                 </v-select>
               </v-col>
             </v-row>
@@ -152,6 +152,7 @@
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
   import jetpack from 'fs-jetpack'
+  import { GeoPackageDataType } from '@ngageoint/geopackage'
 
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
@@ -174,12 +175,6 @@
   const geopackageLayers = {}
   let initializedGeoPackageTables = {}
   let visibleGeoPackageTables = {}
-
-  let layerSelectionVisible = false
-  let geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
-  let geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
-  let maxFeatures
-  let isDrawing = false
 
   export default {
     mixins: [
@@ -205,12 +200,12 @@
     data () {
       return {
         zoomToExtentKey: this.project && this.project.zoomToExtent ? this.project.zoomToExtent.key || 0 : 0,
-        isDrawing,
-        maxFeatures,
+        isDrawing: false,
+        maxFeatures: undefined,
         NEW_GEOPACKAGE_OPTION,
         NEW_FEATURE_LAYER_OPTION,
-        layerSelectionVisible,
-        geoPackageChoices,
+        layerSelectionVisible: false,
+        geoPackageChoices: [NEW_GEOPACKAGE_OPTION],
         popup: null,
         showFeatureTable: false,
         tableFeatures: {
@@ -219,9 +214,10 @@
         },
         coordinatePopup: null,
         tableFeaturesLatLng: null,
-        geoPackageFeatureLayerChoices,
+        geoPackageFeatureLayerChoices: [NEW_FEATURE_LAYER_OPTION],
         geoPackageSelection: 0,
         geoPackageFeatureLayerSelection: 0,
+        geoPackageFeatureLayerSelectionHasEditableFields: false,
         lastCreatedFeature: null,
         featureTableNameValid: false,
         featureTableName: 'Feature Layer',
@@ -262,7 +258,10 @@
       },
       async confirmGeoPackageFeatureLayerSelection () {
         this.geopackageExistsDialog = false
-        this.layerSelectionVisible = false
+        this.featureToAdd = null
+        this.featureToAddColumns = null
+        this.featureToAddGeoPackage = null
+        this.featureToAddTableName = null
         let _this = this
         let feature = this.createdLayer.toGeoJSON()
         feature.id = UniqueIDUtilities.createUniqueID()
@@ -332,28 +331,36 @@
           const geopackage = this.geopackages[this.geoPackageSelection]
           if (this.geoPackageFeatureLayerSelection === 0) {
             ActionUtilities.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection})
+            this.cancelDrawing()
           } else {
             const self = this
-            this.featureToAdd = feature
-            this.featureToAddTableName = this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text
-            this.featureToAddGeoPackage = geopackage
-            GeoPackageUtilities.getFeatureColumns(geopackage.path, this.featureToAddTableName).then(columns => {
-              self.featureToAddColumns = columns
-              this.showAddFeatureDialog = true
+            const featureTable = this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text
+            GeoPackageUtilities.getFeatureColumns(geopackage.path, featureTable).then(columns => {
+              if (!_.isNil(columns) && !_.isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
+                this.featureToAdd = feature
+                this.featureToAddGeoPackage = geopackage
+                this.featureToAddTableName = featureTable
+                self.featureToAddColumns = columns
+                Vue.nextTick(() => {
+                  this.showAddFeatureDialog = true
+                  Vue.nextTick(() => {
+                    this.cancelDrawing()
+                  })
+                })
+              } else {
+                ActionUtilities.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTable, feature: feature})
+                this.cancelDrawing()
+              }
             })
           }
-          this.cancelDrawing()
         }
       },
       cancelDrawing () {
-        this.layerSelectionVisible = false
-        this.geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
-        this.geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
-        this.geoPackageSelection = 0
-        this.geoPackageFeatureLayerSelection = 0
-        this.map.removeLayer(this.createdLayer)
-        this.createdLayer = null
-        this.featureTableName = 'Feature layer'
+        Vue.nextTick(() => {
+          this.layerSelectionVisible = false
+          this.map.removeLayer(this.createdLayer)
+          this.createdLayer = null
+        })
       },
       zoomToFeature (path, table, featureId) {
         const map = this.map
@@ -414,11 +421,9 @@
         return deg + "°" + min + "'" + sec + '"' + dir;
       },
       cancelAddFeature () {
-        this.showAddFeatureDialog = false
-        this.featureToAdd = null
-        this.featureToAddColumns = null
-        this.featureToAddGeoPackage = null
-        this.featureToAddTableName = null
+        Vue.nextTick(() => {
+          this.showAddFeatureDialog = false
+        })
       },
       async displayFeaturesForTable (id, tableName, isGeoPackage) {
         if (!_.isNil(id) && !_.isNil(tableName) && ((isGeoPackage && !_.isNil(this.geopackages[id]) && !_.isNil(this.geopackages[id].tables.features[tableName])) || (!isGeoPackage && !_.isNil(this.sources[id])))) {
@@ -966,6 +971,8 @@
       },
       geoPackageFeatureLayerSelection: {
         handler () {
+          // check if it has editable fields, instead of confirm, it will say continue and display the edit fields dialog
+
           Vue.nextTick(() => {
             if (!_.isNil(this.$refs.featureTableNameForm)) {
               this.$refs.featureTableNameForm.validate()
@@ -1185,6 +1192,11 @@
       })
       this.map.on('editable:drawing:end', function (e) {
         if (!_this.drawingControl.isDrawing && !_this.drawingControl.cancelled) {
+          this.geoPackageChoices = [NEW_GEOPACKAGE_OPTION]
+          this.geoPackageFeatureLayerChoices = [NEW_FEATURE_LAYER_OPTION]
+          this.geoPackageSelection = 0
+          this.geoPackageFeatureLayerSelection = 0
+          this.featureTableName = 'Feature layer'
           e.layer.toggleEdit()
           let layers = [NEW_GEOPACKAGE_OPTION]
           Object.values(_this.geopackages).forEach((geopackage) => {
