@@ -30,7 +30,15 @@
               v-ripple="{ class: `main--text` }"
             >
               <v-list-item-icon>
-                <v-icon v-text="item.icon"></v-icon>
+                <v-badge
+                  v-if="tabNotification[item.id]"
+                  color="red"
+                  dot
+                  overlap
+                >
+                  <v-icon v-text="item.icon"></v-icon>
+                </v-badge>
+                <v-icon v-else v-text="item.icon"></v-icon>
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title v-text="item.text"></v-list-item-title>
@@ -42,7 +50,7 @@
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="item >= 0">
           <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
-          <data-sources v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
+          <data-sources ref="dataSourceRef" v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
           <settings v-if="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
         </v-col>
         <v-col>
@@ -57,9 +65,6 @@
         </v-col>
       </v-row>
     </v-layout>
-    <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
-      GeoPackage already exists in project.
-    </v-alert>
   </v-layout>
 </template>
 
@@ -67,6 +72,8 @@
   import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
   import Vue from 'vue'
+  import path from 'path'
+  import jetpack from 'fs-jetpack'
 
   import LeafletMap from '../Map/LeafletMap'
   import Settings from '../Settings/Settings'
@@ -78,13 +85,12 @@
     contentShown: -1,
     titleColor: '#ffffff',
     addGeoPackageDialog: false,
-    addGeoPackageError: false,
     drawer: true,
     item: 0,
     items: [
-      { text: 'GeoPackages', icon: 'mdi-package-variant' },
-      { text: 'Data Sources', icon: 'mdi-layers-outline' },
-      { text: 'Settings', icon: 'mdi-cog-outline' }
+      { id: 0, text: 'GeoPackages', icon: 'mdi-package-variant', notify: false },
+      { id: 1, text: 'Data Sources', icon: 'mdi-layers-outline', notify: false },
+      { id: 2, text: 'Settings', icon: 'mdi-cog-outline', notify: false }
     ]
   }
 
@@ -122,6 +128,19 @@
           }
           this.$vuetify.theme.dark = isDark
           return isDark
+        },
+        tabNotification (state) {
+          let tabNotification = {}
+          const projectId = new URL(location.href).searchParams.get('id')
+          let project = state.UIState[projectId]
+          if (!_.isNil(project)) {
+            tabNotification = Object.assign({}, project.tabNotification || {0: false, 1: false, 2: false})
+          }
+          if (!_.isNil(this.item) && this.item >= 0 && tabNotification[this.item]) {
+            tabNotification[this.item] = false
+            ActionUtilities.clearNotification({projectId: this.project.id, tabId: this.item})
+          }
+          return tabNotification
         },
         showToolTips (state) {
           let show = true
@@ -163,6 +182,11 @@
         handler (newValue) {
           Vue.prototype.$showToolTips = newValue
         }
+      },
+      item: {
+        handler (newValue) {
+          ActionUtilities.clearNotification({projectId: this.project.id, tabId: newValue})
+        }
       }
     },
     mounted: function () {
@@ -171,6 +195,63 @@
         ActionUtilities.addProjectState({projectId: this.project.id})
       }
       ActionUtilities.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+      ActionUtilities.clearNotifications({projectId: this.project.id})
+      const project = document.getElementById('project')
+      project.ondragover = () => {
+        return false
+      }
+
+      project.ondragleave = () => {
+        return false
+      }
+
+      project.ondragend = () => {
+        return false
+      }
+
+      project.ondrop = (e) => {
+        e.preventDefault()
+        let geopackagesToAdd = []
+        let dataSourcesToAdd = []
+        const supportedExtensions = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip']
+        for (let f of e.dataTransfer.files) {
+          const extension = path.extname(f.path)
+          // try to add a geopackage to the project
+          if (extension === '.gpkg') {
+            geopackagesToAdd.push(f.path)
+          } else if (supportedExtensions.findIndex(e => e === extension) !== -1) {
+            dataSourcesToAdd.push(f.path)
+          }
+        }
+
+        let geopackageNotify = false
+        for (let i = 0; i < geopackagesToAdd.length; i++) {
+          const path = geopackagesToAdd[i]
+          const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
+          if (!existsInApp) {
+            ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: path})
+            geopackageNotify = true
+          }
+        }
+        if (geopackageNotify) {
+          ActionUtilities.notifyTab({projectId: this.project.id, tabId: 0})
+        }
+
+        let fileInfos = []
+        for (let i = 0; i < dataSourcesToAdd.length; i++) {
+          const file = dataSourcesToAdd[i]
+          let fileInfo = jetpack.inspect(file, {
+            times: true,
+            absolutePath: true
+          })
+          fileInfo.lastModified = fileInfo.modifyTime.getTime()
+          fileInfo.lastModifiedDate = fileInfo.modifyTime
+          fileInfo.path = fileInfo.absolutePath
+          fileInfos.push(fileInfo)
+        }
+        this.$refs.dataSourceRef.processFiles(fileInfos)
+        return false
+      }
     }
   }
 </script>

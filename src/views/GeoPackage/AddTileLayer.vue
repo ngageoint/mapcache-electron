@@ -433,6 +433,7 @@
           }
           ipcRenderer.removeAllListeners('build_tile_layer_status_' + this.configuration.id)
           ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          ActionUtilities.notifyTab({projectId: this.project.id, tabId: 0})
         })
         ipcRenderer.on('build_tile_layer_status_' + this.configuration.id, (event, status) => {
           if (!this.done) {

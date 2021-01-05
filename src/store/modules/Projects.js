@@ -45,8 +45,8 @@ const mutations = {
   removeDataSource (state, {projectId, sourceId}) {
     Vue.delete(state[projectId].sources, sourceId)
   },
-  deleteProject (state, {project}) {
-    Vue.delete(state, project.id)
+  deleteProject (state, { projectId }) {
+    Vue.delete(state, projectId)
   },
   removeGeoPackage (state, {projectId, geopackageId}) {
     Vue.delete(state[projectId].geopackages, geopackageId)
@@ -173,9 +173,8 @@ const actions = {
   removeFeatureFromDataSource ({ commit }, {projectId, source}) {
     commit('setDataSource', {projectId, source: source})
   },
-  deleteProject ({ commit }, project) {
-    commit('deleteProject', project)
-    commit('UIState/deleteProject', project.id, {root: true})
+  deleteProject ({ commit }, { projectId }) {
+    commit('deleteProject', { projectId })
   },
   setProjectMaxFeatures ({ commit }, {projectId, maxFeatures}) {
     commit('setProjectMaxFeatures', {projectId, maxFeatures})

@@ -199,9 +199,11 @@
           let source = this.processingSourceList[i]
           if (source.url && source.url === processingSource.url) {
             this.processingSourceList.splice(i, 1)
+            ActionUtilities.notifyTab({projectId: this.project.id, tabId: 1})
             break
           } else if (source.file && source.file.path === processingSource.file.path) {
             this.processingSourceList.splice(i, 1)
+            ActionUtilities.notifyTab({projectId: this.project.id, tabId: 1})
             break
           }
         }

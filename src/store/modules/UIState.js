@@ -25,7 +25,7 @@ const mutations = {
   setProjectExtents (state, {projectId, extents}) {
     state[projectId].extents = extents
   },
-  deleteProject (state, projectId) {
+  deleteProject (state, { projectId }) {
     Vue.delete(state, projectId)
   },
   setDarkTheme (state, {projectId, enabled}) {
@@ -36,6 +36,19 @@ const mutations = {
       Vue.delete(state, key)
     })
     Object.assign(state, getDefaultState())
+  },
+  notifyTab (state, {projectId, tabId}) {
+    const notify = Object.assign({}, state[projectId].tabNotification || {})
+    notify[tabId] = true
+    Vue.set(state[projectId], 'tabNotification', notify)
+  },
+  clearNotification (state, {projectId, tabId}) {
+    const notify = Object.assign({}, state[projectId].tabNotification || {})
+    notify[tabId] = false
+    Vue.set(state[projectId], 'tabNotification', notify)
+  },
+  clearNotifications (state, {projectId}) {
+    Vue.delete(state[projectId], 'tabNotification')
   }
 }
 
@@ -46,14 +59,23 @@ const actions = {
   setProjectExtents ({ commit }, {projectId, extents}) {
     commit('setProjectExtents', {projectId, extents})
   },
-  deleteProject ({ commit }, projectId) {
-    commit('deleteProject', projectId)
+  deleteProject ({ commit }, { projectId }) {
+    commit('deleteProject', { projectId })
   },
   setDarkTheme ({ commit }, {projectId, enabled}) {
     commit('setDarkTheme', {projectId, enabled})
   },
   resetState ({ commit }) {
     return commit('resetState')
+  },
+  notifyTab ({ commit }, {projectId, tabId}) {
+    return commit('notifyTab', {projectId, tabId})
+  },
+  clearNotification ({ commit }, {projectId, tabId}) {
+    return commit('clearNotification', {projectId, tabId})
+  },
+  clearNotifications ({ commit }, {projectId}) {
+    return commit('clearNotifications', {projectId})
   }
 }
 

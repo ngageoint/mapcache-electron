@@ -349,7 +349,8 @@ export default class ActionUtilities {
         console.error(error)
       }
     })
-    store.dispatch('Projects/deleteProject', {project})
+    store.dispatch('UIState/deleteProject', { projectId: project.id.slice() })
+    store.dispatch('Projects/deleteProject', { projectId: project.id.slice() })
   }
 
   static setProjectMaxFeatures ({projectId, maxFeatures}) {
@@ -540,5 +541,17 @@ export default class ActionUtilities {
 
   static setDarkTheme ({projectId, enabled}) {
     store.dispatch('UIState/setDarkTheme', {projectId, enabled})
+  }
+
+  static notifyTab ({projectId, tabId}) {
+    store.dispatch('UIState/notifyTab', {projectId, tabId})
+  }
+
+  static clearNotification ({projectId, tabId}) {
+    store.dispatch('UIState/clearNotification', {projectId, tabId})
+  }
+
+  static clearNotifications ({projectId}) {
+    store.dispatch('UIState/clearNotifications', {projectId})
   }
 }
