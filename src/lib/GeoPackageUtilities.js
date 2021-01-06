@@ -2416,10 +2416,10 @@ export default class GeoPackageUtilities {
             const tableStyleMapping = sourceStyleMap[sourceIdx].tableStyleMappings
             const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName)
             tableStyleMapping.tableStyleMappings.forEach(mapping => {
-              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, parentStyleMapping[parentId].iconMapping[mapping.id], mapping.geometryType)
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, parentStyleMapping[parentId].styleMapping[mapping.id], mapping.geometryType)
             })
             tableStyleMapping.tableIconMappings.forEach(mapping => {
-              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, parentStyleMapping[parentId].styleMapping[mapping.id], mapping.geometryType)
+              featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, parentStyleMapping[parentId].iconMapping[mapping.id], mapping.geometryType)
             })
           }
         }
