@@ -49,6 +49,9 @@ const mutations = {
   },
   clearNotifications (state, {projectId}) {
     Vue.delete(state[projectId], 'tabNotification')
+  },
+  setMapZoom (state, {projectId, mapZoom}) {
+    Vue.set(state[projectId], 'mapZoom', mapZoom)
   }
 }
 
@@ -76,6 +79,9 @@ const actions = {
   },
   clearNotifications ({ commit }, {projectId}) {
     return commit('clearNotifications', {projectId})
+  },
+  setMapZoom ({ commit }, {projectId, mapZoom}) {
+    return commit('setMapZoom', {projectId, mapZoom})
   }
 }
 

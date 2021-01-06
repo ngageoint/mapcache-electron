@@ -333,6 +333,7 @@
 
 <script>
   import Vue from 'vue'
+  import { mapState } from 'vuex'
   import _ from 'lodash'
   import { ipcRenderer } from 'electron'
   import draggable from 'vuedraggable'
@@ -584,6 +585,17 @@
       }
     },
     computed: {
+      ...mapState({
+        mapZoom (state) {
+          let mapZoom = 3
+          const projectId = new URL(location.href).searchParams.get('id')
+          let project = state.UIState[projectId]
+          if (!_.isNil(project)) {
+            mapZoom = project.mapZoom
+          }
+          return mapZoom
+        }
+      }),
       prettyEstimatedTileCount () {
         return this.getEstimatedTileCount().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       },
@@ -652,6 +664,9 @@
         this.$refs.layerNameForm.validate()
       })
       ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+      const mapZoom = _.isNil(this.mapZoom) ? 3 : this.mapZoom
+      this.minZoom = Math.min(20, Math.max(0, mapZoom))
+      this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
     },
     beforeUnmount () {
       ActionUtilities.resetBoundingBox()

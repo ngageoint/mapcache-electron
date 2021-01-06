@@ -1098,6 +1098,8 @@
         minZoom: 2,
         layers: [defaultBaseMap]
       })
+      ActionUtilities.setMapZoom({projectId: _this.project.id, mapZoom: defaultZoom})
+
       this.map.createPane('gridSelectionPane')
       this.map.getPane('gridSelectionPane').style.zIndex = 625;
 
@@ -1219,6 +1221,9 @@
             }
           })
         }
+      })
+      this.map.on('zoomend', () => {
+        ActionUtilities.setMapZoom({projectId: _this.project.id, mapZoom: _this.map.getZoom()})
       })
       // add sources to map
       for (const sourceId in this.sources) {

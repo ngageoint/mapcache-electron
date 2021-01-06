@@ -555,4 +555,8 @@ export default class ActionUtilities {
   static clearNotifications ({projectId}) {
     store.dispatch('UIState/clearNotifications', {projectId})
   }
+
+  static setMapZoom ({projectId, mapZoom}) {
+    store.dispatch('UIState/setMapZoom', {projectId, mapZoom})
+  }
 }
