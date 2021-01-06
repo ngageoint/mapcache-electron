@@ -44,7 +44,7 @@
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent>
-      <edit-text-modal icon="mdi-pencil" title="Rename project" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+      <edit-text-modal v-if="editProjectNameDialog" focusOnMount icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent>
       <edit-number-modal icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
@@ -277,7 +277,8 @@
         editMaxFeaturesDialog: false,
         helpDialog: false,
         deleteProjectDialog: false,
-        savedUrlDialog: false
+        savedUrlDialog: false,
+        projectNameRules: [v => !!v || 'Project name is required.']
       }
     },
     methods: {

@@ -9,7 +9,7 @@
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" :rules="rules" />
+              <v-text-field :id="id" :label="label" v-model="editedValue" :dark="this.darkMode" :rules="rules" />
             </v-col>
           </v-row>
         </v-container>
