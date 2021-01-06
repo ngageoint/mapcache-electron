@@ -317,6 +317,7 @@ export default class GeoServiceUtilities {
     queryParams['transparent'] = 'true'
     queryParams[referenceSystemName] = 'EPSG:3857'
     queryParams['bbox'] = bbox
+    queryParams['styles'] = ''
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
 

@@ -2,9 +2,7 @@ import Layer from '../Layer'
 
 export default class TileLayer extends Layer {
   async initialize () {
-    this.style = this._configuration.style || {
-      opacity: 1
-    }
+    this.style = this._configuration.style || {}
   }
 
   get configuration () {

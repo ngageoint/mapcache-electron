@@ -40,8 +40,6 @@ export default class GeoTiffLayer extends TileLayer {
   alphaBand
   enableGlobalNoDataValue
   globalNoDataValue
-  enableGlobalOpacity
-  globalOpacity
   bandOptions
 
   static getMaxForDataType (bitsPerSample) {
@@ -133,8 +131,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.bandOptions = configuration.bandOptions
     this.globalNoDataValue = configuration.globalNoDataValue
     this.enableGlobalNoDataValue = configuration.enableGlobalNoDataValue
-    this.globalOpacity = configuration.globalOpacity
-    this.enableGlobalOpacity = configuration.enableGlobalOpacity
+    this.opacity = configuration.opacity
     this.renderer = new GeoTiffRenderer(this)
   }
 
@@ -186,8 +183,6 @@ export default class GeoTiffLayer extends TileLayer {
       this.alphaBand = this._configuration.alphaBand
       this.globalNoDataValue = this._configuration.globalNoDataValue
       this.enableGlobalNoDataValue = this._configuration.enableGlobalNoDataValue
-      this.globalOpacity = this._configuration.globalOpacity
-      this.enableGlobalOpacity = this._configuration.enableGlobalOpacity
       // available bands to assign
       this.bandOptions = this._configuration.bandOptions
     } else {
@@ -196,8 +191,7 @@ export default class GeoTiffLayer extends TileLayer {
       if (this.globalNoDataValue !== null) {
         this.enableGlobalNoDataValue = true
       }
-      this.enableGlobalOpacity = false
-      this.globalOpacity = 100.0
+
       this.redBand = 0
       this.greenBand = 0
       this.blueBand = 0
@@ -296,9 +290,7 @@ export default class GeoTiffLayer extends TileLayer {
         paletteBand: this.paletteBand,
         bandOptions: this.bandOptions,
         globalNoDataValue: this.globalNoDataValue,
-        enableGlobalNoDataValue: this.enableGlobalNoDataValue,
-        globalOpacity: this.globalOpacity,
-        enableGlobalOpacity: this.enableGlobalOpacity
+        enableGlobalNoDataValue: this.enableGlobalNoDataValue
       }
     }
   }

@@ -16,8 +16,11 @@
           :table-icon-assignment="source.tableIconAssignment"
           :is-geo-package="false"/>
       </v-sheet>
-      <div v-if="source.layerType === 'GeoTIFF'">
+      <div v-else-if="source.layerType === 'GeoTIFF'">
         <geotiff-options :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
+      </div>
+      <div v-else>
+        <transparency-options :source="source" :projectId="project.id" :back="hideStyleEditor"></transparency-options>
       </div>
     </v-sheet>
     <v-sheet v-else>
@@ -177,7 +180,7 @@
               </v-card>
             </template>
           </v-hover>
-          <v-hover v-if="source.pane === 'vector' || source.layerType === 'GeoTIFF'">
+          <v-hover>
             <template v-slot="{ hover }">
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
                 <v-card-text class="pa-2">
@@ -288,6 +291,7 @@
   import path from 'path'
   import _ from 'lodash'
   import GeotiffOptions from './GeotiffOptions'
+  import TransparencyOptions from './TransparencyOptions'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
 
@@ -305,6 +309,7 @@
       back: Function
     },
     components: {
+      TransparencyOptions,
       GeotiffOptions,
       StyleEditor
     },

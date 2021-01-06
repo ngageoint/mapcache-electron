@@ -143,19 +143,15 @@
               <v-text-field type="number" label="NO_DATA value" v-model="globalNoDataValue" dense hide-details></v-text-field>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item>
-            <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-              Enable opacity
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-switch color="primary" v-model="enableGlobalOpacity"></v-switch>
-            </v-list-item-action>
-          </v-list-item>
-          <v-list-item v-if="enableGlobalOpacity" class="pt-2">
+          <v-list-item class="pt-2">
             <v-list-item-content style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
-              Opacity mask
+              Opacity
             </v-list-item-content>
-            <v-slider class="mx-auto" thumb-label="always" hide-details dense v-model="opacity" :min="0" :max="100" :interval="1"></v-slider>
+            <v-slider class="mx-auto" thumb-label="always" hide-details dense v-model="opacity" :min="0" :max="100" :interval="1">
+              <template v-slot:thumb-label="{ value }">
+                {{ value / 100.0 }}
+              </template>
+            </v-slider>
           </v-list-item>
         </v-list>
       </v-card-text>
@@ -217,10 +213,10 @@
       },
       opacity: {
         get () {
-          return this.source.globalOpacity
+          return (this.source.opacity === null || this.source.opacity === undefined ? 1.0 : this.source.opacity) * 100.0
         },
         set (value) {
-          this.debounceLayerField(Number(value), 'globalOpacity')
+          this.debounceLayerField(Number(value) / 100.0, 'opacity')
         }
       },
       redBand: {
@@ -399,19 +395,6 @@
           })
         }
       },
-      enableGlobalOpacity: {
-        get () {
-          return this.source.enableGlobalOpacity
-        },
-        set () {
-          let updatedLayer = _.cloneDeep(this.source)
-          updatedLayer.enableGlobalOpacity = !this.source.enableGlobalOpacity
-          ActionUtilities.setDataSource({
-            projectId: this.projectId,
-            source: updatedLayer
-          })
-        }
-      },
       renderMethods () {
         let methods = []
         if (this.source.colorMap) {
@@ -451,9 +434,6 @@
     watch: {
       globalNoDataValue (value) {
         this.debounceLayerField(Number(value), 'globalNoDataValue')
-      },
-      globalOpacity (value) {
-        this.opacity = value
       }
     }
   }

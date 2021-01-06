@@ -2655,6 +2655,7 @@ export default class GeoPackageUtilities {
         for (let i = 0; i < sortedLayers.length; i++) {
           await new Promise((resolve, reject) => {
             let layer = sortedLayers[i]
+            const layerAlpha = layer.opacity !== null && layer.opacity !== undefined ? layer.opacity : 1.0
             layer.renderTile({x, y, z}, null, (err, result) => {
               if (err) {
                 // eslint-disable-next-line no-console
@@ -2671,7 +2672,9 @@ export default class GeoPackageUtilities {
                   }
                   let img = new Image()
                   img.onload = () => {
+                    ctx.globalAlpha = layerAlpha
                     ctx.drawImage(img, 0, 0)
+                    ctx.globalAlpha = 1.0
                     resolve()
                   }
                   img.onerror = (error) => {

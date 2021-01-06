@@ -26,6 +26,10 @@ export default class Layer {
     this.sourceDirectory = this._configuration.sourceDirectory
     this.sourceId = this._configuration.sourceId
     this.styleKey = this._configuration.styleKey || 0
+    this.opacity = this._configuration.opacity
+    if (this._configuration.opacity === null || this._configuration.opacity === undefined) {
+      this.opacity = 1.0
+    }
   }
 
   async initialize () {
@@ -52,7 +56,8 @@ export default class Layer {
         sourceType: this.sourceType,
         sourceDirectory: this.sourceDirectory,
         sourceId: this.sourceId,
-        styleKey: this.styleKey
+        styleKey: this.styleKey,
+        opacity: this.opacity
       }
     }
   }

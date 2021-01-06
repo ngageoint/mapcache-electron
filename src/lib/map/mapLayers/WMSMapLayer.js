@@ -54,6 +54,11 @@ export default class WMSLayer {
     // headers.push({ header: 'User-Agent', value: 'MapCache/1.0.0' })
     let mapLayer = wmsHeader(GeoServiceUtilities.getBaseURL(layerModel.filePath), options, headers)
     mapLayer.id = layerModel.id
+    let opacity = 1.0
+    if (layerModel.opacity !== null && layerModel.opacity !== undefined) {
+      opacity = layerModel.opacity
+    }
+    mapLayer.setOpacity(opacity)
     return mapLayer
   }
 }

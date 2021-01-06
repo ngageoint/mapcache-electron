@@ -48,6 +48,12 @@ export default class XYZServerLayer {
       mapLayer = Vendor.L.tileLayer(layerModel.filePath, options)
     }
     mapLayer.id = layerModel.id
+
+    let opacity = 1.0
+    if (layerModel.opacity !== null && layerModel.opacity !== undefined) {
+      opacity = layerModel.opacity
+    }
+    mapLayer.setOpacity(opacity)
     return mapLayer
   }
 }

@@ -21,9 +21,6 @@ export default class GeoTiffRenderer {
   async renderTile (coords, tile, done) {
     let {x, y, z} = coords
 
-    let hasAlpha = false
-    let blank = true
-
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
     let tileUpperRightBuffered = proj4('EPSG:3857').inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
     let tileLowerLeftBuffered = proj4('EPSG:3857').inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])
@@ -116,17 +113,7 @@ export default class GeoTiffRenderer {
                   // alpha was good, check if it is a no data though...
                   if (this.layer.enableGlobalNoDataValue && targetData[position] === noDataValue) {
                     targetData[position + 3] = 0
-                    hasAlpha = true
-                  } else if (targetData[position + 3] === 0) {
-                    hasAlpha = true
                   }
-                }
-                if (this.layer.enableGlobalOpacity) {
-                  targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                  hasAlpha = true
-                }
-                if (targetData[position + 3] !== 0) {
-                  blank = false
                 }
               }
             }
@@ -187,18 +174,7 @@ export default class GeoTiffRenderer {
               if (targetData[position + 3] !== 0) {
                 if (this.layer.enableGlobalNoDataValue && targetData[position] === this.layer.globalNoDataValue && targetData[(position) + 1] === this.layer.globalNoDataValue && targetData[(position) + 2] === this.layer.globalNoDataValue) {
                   targetData[position + 3] = 0
-                  hasAlpha = true
                 }
-              }
-              if (targetData[position + 3] === 0) {
-                hasAlpha = true
-              }
-              if (this.layer.enableGlobalOpacity) {
-                targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                hasAlpha = true
-              }
-              if (targetData[position + 3] !== 0) {
-                blank = false
               }
             }
           }
@@ -226,17 +202,6 @@ export default class GeoTiffRenderer {
                 } else {
                   targetData[position + 3] = 255
                 }
-
-                if (alphaBand[sourcePosition] === 0) {
-                  hasAlpha = true
-                }
-                if (this.layer.enableGlobalOpacity) {
-                  targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                  hasAlpha = true
-                }
-                if (targetData[position + 3] !== 0) {
-                  blank = false
-                }
               }
             }
           }
@@ -258,13 +223,6 @@ export default class GeoTiffRenderer {
               targetData[position + 1] = (y - (0.34414 * (cb - 0x80)) - (0.71414 * (cr - 0x80)))
               targetData[position + 2] = (y + (1.77200 * (cb - 0x80)))
               targetData[position + 3] = 255
-              if (this.layer.enableGlobalOpacity) {
-                targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                hasAlpha = true
-              }
-              if (targetData[position + 3] !== 0) {
-                blank = false
-              }
             }
           }
         } else if (this.layer.renderingMethod === 4) {
@@ -286,13 +244,6 @@ export default class GeoTiffRenderer {
               targetData[position + 1] = 255 * ((255 - m) / 256) * ((255 - k) / 256)
               targetData[position + 2] = 255 * ((255 - y) / 256) * ((255 - k) / 256)
               targetData[position + 3] = 255
-              if (this.layer.enableGlobalOpacity) {
-                targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                hasAlpha = true
-              }
-              if (targetData[position + 3] !== 0) {
-                blank = false
-              }
             }
           }
         } else if (this.layer.renderingMethod === 5) {
@@ -336,13 +287,6 @@ export default class GeoTiffRenderer {
               targetData[position + 1] = Math.max(0, Math.min(1, g)) * 255
               targetData[position + 2] = Math.max(0, Math.min(1, b)) * 255
               targetData[position + 3] = 255
-              if (this.layer.enableGlobalOpacity) {
-                targetData[position + 3] = targetData[position + 3] * this.layer.globalOpacity / 100.0
-                hasAlpha = true
-              }
-              if (targetData[position + 3] !== 0) {
-                blank = false
-              }
             }
           }
         }
@@ -356,9 +300,7 @@ export default class GeoTiffRenderer {
       }
     }, 0)
     return {
-      canvas: tile,
-      hasAlpha: hasAlpha,
-      blank: blank
+      canvas: tile
     }
   }
 
