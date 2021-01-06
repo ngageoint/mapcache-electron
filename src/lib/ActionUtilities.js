@@ -9,8 +9,8 @@ import store from '../store'
  * ActionUtilities is a helper class for performing actions prior to updating the store
  */
 export default class ActionUtilities {
-  static newProject ({id}) {
-    store.dispatch('Projects/newProject', {id})
+  static newProject ({id, name}) {
+    store.dispatch('Projects/newProject', {id, name})
   }
 
   static setDataSource ({projectId, source}) {

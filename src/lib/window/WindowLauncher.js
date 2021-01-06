@@ -181,10 +181,13 @@ class WindowLauncher {
         enableRemoteModule: true
       },
       show: false,
-      width: 940,
-      height: 665,
-      minHeight: 665,
-      minWidth: 720
+      width: 790,
+      height: 620,
+      minHeight: 620,
+      minWidth: 790,
+      fullscreenable: false,
+      resizable: false,
+      maximizable: false
     }
     this.mainWindow = new BrowserWindow(windowOptions)
     this.mainWindow.setMenu(menu)

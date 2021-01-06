@@ -5,11 +5,11 @@
       {{title}}
     </v-card-title>
     <v-card-text>
-      <v-form v-on:submit.prevent>
+      <v-form v-on:submit.prevent v-model="valid">
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" />
+              <v-text-field :id="id" :label="label" v-model="editedValue" hide-details :dark="this.darkMode" :rules="rules" />
             </v-col>
           </v-row>
         </v-container>
@@ -23,6 +23,7 @@
         {{cancelText}}
       </v-btn>
       <v-btn
+        v-if="valid"
         color="primary"
         text
         @click="save">
@@ -37,10 +38,18 @@
 
   export default {
     props: {
+      focusOnMount: {
+        type: Boolean,
+        default: false
+      },
       title: String,
       icon: String,
       label: String,
       value: String,
+      rules: {
+        type: Array,
+        default: () => []
+      },
       saveText: {
         type: String,
         default: 'Save'
@@ -79,7 +88,8 @@
     data () {
       return {
         editedValue: this.value,
-        id: UniqueIDUtilities.createUniqueID()
+        id: UniqueIDUtilities.createUniqueID(),
+        valid: true
       }
     },
     methods: {
@@ -101,6 +111,11 @@
     watch: {
       value: function () {
         this.editedValue = this.value
+      }
+    },
+    mounted() {
+      if (this.focusOnMount) {
+        this.editValue()
       }
     }
   }

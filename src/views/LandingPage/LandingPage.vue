@@ -60,8 +60,7 @@
 
   .welcome-sidebar {
     display: inline-block;
-    margin: 0 2em;
-    padding-top: 2em;
+    margin: 2em;
     text-align: center;
     width: 350px;
     height: 100vh;
@@ -72,7 +71,12 @@
   .work-area {
     position: absolute;
     top: 0;
-    left: 350px;
+    left: 410px;
+    width: 350px;
+    height: 100vh;
     flex: 1;
+    margin-top: 2em;
+    margin-bottom: 2em;
+    margin-right: 2em;
   }
 </style>

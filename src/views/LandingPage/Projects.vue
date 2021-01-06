@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="project-container" id="projects">
     <v-dialog
       v-if="removeProject"
       v-model="removeDialog"
@@ -29,41 +29,58 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <div class="project-container" id="projects">
-      <ul class="projects" id="project-list">
-        <li class="project" @click="onClickNewProject">
-          <div class="project-thumb">
-            <v-icon class="new-project-icon">mdi-plus</v-icon>
-          </div>
-          <div class="project-thumb-name">Create a new project</div>
-        </li>
-        <li v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)" class="project">
-          <v-btn dark class="project-delete" icon @click.stop.prevent="showRemoveProjectDialog(project)"><v-icon>mdi-close-circle</v-icon></v-btn>
-          <div class="project-thumb">
-            <img class="project-thumb-icon" src="../../assets/Icon.png"/>
-          </div>
-          <p class="project-thumb-name">{{project.name}}</p>
-        </li>
-        <v-dialog
-          v-model="dialog"
-          persistent
-          class="padding-top"
-          width="400">
-          <v-card
-            color="#426e91" dark>
-            <v-card-text
-              class="padding-top">
-              {{dialogText}}
-              <v-progress-linear
-                indeterminate
-                color="white"
-                class="mb-0">
-              </v-progress-linear>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
-      </ul>
-    </div>
+    <v-dialog
+      v-model="dialog"
+      persistent
+      width="400">
+      <v-card
+        color="#426e91" dark class="pt-2">
+        <v-card-text
+          class="padding-top">
+          {{dialogText}}
+          <v-progress-linear
+            indeterminate
+            color="white"
+            class="mb-0">
+          </v-progress-linear>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="addProjectDialog"
+      persistent
+      class="padding-top"
+      width="400">
+      <edit-text-modal v-if="addProjectDialog" focusOnMount icon="mdi-plus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" :darkMode="false" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
+    </v-dialog>
+    <v-row class="mt-4 mb-2" no-gutters justify="end">
+      <v-btn dark text @click="onClickNewProject"><v-icon small>mdi-plus</v-icon> Create Project</v-btn>
+    </v-row>
+    <v-row no-gutters justify="center" class="flex-grow-1">
+      <v-list dark class="semi-transparent project-list" v-if="Object.keys(projects).length > 0">
+        <v-list-item class="semi-transparent" v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)">
+          <v-list-item-content>
+            <v-list-item-title style="font-weight: 600;">
+              {{project.name}}
+            </v-list-item-title>
+            <v-list-item-subtitle class="ml-2">
+              {{Object.keys(project.geopackages).length + ' GeoPackage' + (Object.keys(project.geopackages).length !== 1 ? 's' : '')}}
+            </v-list-item-subtitle>
+            <v-list-item-subtitle class="ml-2">
+              {{Object.keys(project.sources).length + ' data source' + (Object.keys(project.sources).length !== 1 ? 's' : '')}}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-btn icon @click.stop.prevent="showRemoveProjectDialog(project)"><v-icon>mdi-trash-can-outline</v-icon></v-btn>
+          </v-list-item-action>
+        </v-list-item>
+      </v-list>
+      <v-card dark flat v-else class="semi-transparent project-list">
+        <v-card-text>
+          No projects. Click the <b><v-icon small>mdi-plus</v-icon>Create Project</b> button to get started.
+        </v-card-text>
+      </v-card>
+    </v-row>
   </div>
 </template>
 
@@ -73,8 +90,10 @@
   import { ipcRenderer } from 'electron'
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import EditTextModal from '../Common/EditTextModal'
 
   export default {
+    components: {EditTextModal},
     computed: {
       ...mapState({
         projects: state => {
@@ -87,21 +106,33 @@
         dialog: false,
         dialogText: '',
         removeDialog: false,
-        removeProject: null
+        removeProject: null,
+        addProjectDialog: false,
+        projectName: '',
+        projectNameRules: [v => !!v || 'Project name is required.']
       }
     },
     methods: {
-      onClickNewProject () {
-        this.dialogText = 'Loading New Project...'
+      cancelNewProject () {
+        this.addProjectDialog = false
+      },
+      createNewProject(projectName) {
+        this.addProjectDialog = false
+        this.dialogText = 'Creating '  + projectName + '...'
         this.dialog = true
+        this.projectName = ''
         const id = UniqueIDUtilities.createUniqueID()
-        ActionUtilities.newProject({id: id})
+        ActionUtilities.newProject({id: id, name: projectName})
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })
         Vue.nextTick(() => {
           ipcRenderer.send('show-project', id)
         })
+      },
+      onClickNewProject () {
+        this.projectName = ''
+        this.addProjectDialog = true
       },
       showRemoveProjectDialog (project) {
         this.removeProject = project
@@ -128,69 +159,19 @@
 
   .project-container {
     overflow-y: auto;
-    height: 100vh;
+    height: 100%;
+    width: 100%;
     overflow-x: hidden;
   }
-
-  .padding-top {
-    padding-top: 12px !important;
+  .semi-transparent {
+    background-color: #00000020 !important;
+    border-color: #00000040 !important;
   }
-
-  .projects {
-    list-style: none;
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: center;
+  .project-list {
+    height: 480px;
+    max-height: 480px;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
-
-  .project {
-    position: relative;
-    margin: 2em;
-  }
-
-  .project-thumb {
-    background: rgb(150, 150, 150);
-    padding: 5px;
-    width: 6em;
-    height: 6em;
-    border-radius: 1em;
-    color: white;
-    text-align: center;
-    font-size: 2em;
-    cursor: pointer;
-  }
-
-  .project-thumb:hover {
-    background: rgb(100, 100, 100);
-  }
-
-  .project-thumb-name {
-    max-width: 12em;
-    text-align: center;
-    font-weight: 700;
-    font-size: 1em;
-    color: rgba(255, 255, 255, .87);
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .project-thumb-icon {
-    width:100%;
-    height:100%;
-    border-radius: .8em;
-  }
-
-  .project-delete {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    color: rgba(255, 255, 255, .87);
-  }
-
-  .new-project-icon {
-    font-size: 64px !important;
-    text-align: center;
-    margin-top: 58px;
-  }
-
 </style>
