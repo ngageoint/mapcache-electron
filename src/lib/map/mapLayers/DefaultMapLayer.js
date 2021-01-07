@@ -4,8 +4,8 @@ export default class DefaultMapLayer {
   static constructMapLayer (layerModel) {
     let mapLayer = new MapcacheMapLayer({
       layer: layerModel,
-      pane: layerModel.pane === 'tile' ? 'tilePane' : 'overlayPane',
-      zIndex: layerModel.pane === 'tile' ? 201 : 401
+      pane: 'tilePane',
+      zIndex: 201
     })
     mapLayer.id = layerModel.id
     let opacity = 1.0

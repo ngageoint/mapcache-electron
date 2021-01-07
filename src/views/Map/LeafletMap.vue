@@ -159,6 +159,7 @@
   import GridBounds from './GridBounds'
   import FeatureTable from './FeatureTable'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
+  import LeafletEdit from './LeafletEdit'
   import LeafletDraw from './LeafletDraw'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
@@ -234,7 +235,8 @@
         lastShowFeatureTableEvent: null,
         geopackageExistsDialog: false,
         dialogCoordinate: null,
-        copiedToClipboard: false
+        copiedToClipboard: false,
+        isEditing: false
       }
     },
     methods: {
@@ -763,6 +765,17 @@
           }
         }
       },
+      isEditing: {
+        handler (newValue) {
+          if (newValue) {
+            this.drawingControl.hide()
+            this.editingControl.show()
+          } else {
+            this.drawingControl.show()
+            this.editingControl.hide()
+          }
+        }
+      },
       sources: {
         async handler (updatedSources) {
           let _this = this
@@ -1060,12 +1073,35 @@
           } else {
             this.drawingControl.disableDrawingLinks()
           }
+
+          let clearEditing = true
+          if (!_.isNil(updatedProject.editingFeature)) {
+            let id = updatedProject.editingFeature.id
+            let isGeoPackage = updatedProject.editingFeature.isGeoPackage
+            let tableName = updatedProject.editingFeature.tableName
+            let featureId = updatedProject.editingFeature.featureToEdit.id
+            let geoPackageObject = isGeoPackage ? updatedProject.geopackages[id] : updatedProject.sources[id]
+            // did geopackage or data source get deleted
+            if (!_.isNil(geoPackageObject)) {
+              let exists = await GeoPackageUtilities.featureExists(isGeoPackage ? geoPackageObject.path : geoPackageObject.geopackageFilePath, tableName, featureId)
+              if (exists) {
+                clearEditing = false
+                this.editingControl.editFeature(this.map, updatedProject.id, updatedProject.editingFeature)
+                this.isEditing = true
+              }
+            }
+          }
+          if (clearEditing) {
+            this.editingControl.cancelEdit()
+            this.isEditing = false
+          }
         },
         deep: true
       }
     },
     mounted: async function () {
       let _this = this
+      ActionUtilities.clearEditFeatureGeometry({projectId: this.project.id})
       ipcRenderer.on('show_feature_table', (e, id, tableName, isGeoPackage) => {
         this.displayFeaturesForTable(id, tableName, isGeoPackage)
       })
@@ -1132,7 +1168,9 @@
 
       this.map.addControl(this.activeLayersControl)
       this.drawingControl = new LeafletDraw()
+      this.editingControl = new LeafletEdit()
       this.map.addControl(this.drawingControl)
+      this.map.addControl(this.editingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
       this.project.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
@@ -1165,17 +1203,6 @@
         }
       }.bind(this), 100)
       this.map.on('mousemove', checkFeatureCount)
-      this.map.on('layeradd', function (e) {
-        if (!_this.isDrawingBounds && (e.layer instanceof vendor.L.Path || e.layer instanceof vendor.L.Marker)) {
-          e.layer.on('dblclick', vendor.L.DomEvent.stop).on('dblclick', () => {
-            if (e.layer.editEnabled()) {
-              e.layer.disableEdit()
-            } else {
-              e.layer.enableEdit()
-            }
-          })
-        }
-      })
       this.map.on('contextmenu', e => {
         if (!this.drawingControl.isDrawing) {
           if (this.coordinatePopup && this.coordinatePopup.isOpen()) {
@@ -1295,6 +1322,9 @@
   }
   .leaflet-control-draw-cancel {
     background: url('../../assets/close.svg') no-repeat;
+  }
+  .leaflet-control-edit-save {
+    background: url('../../assets/save.svg') no-repeat;
   }
   .leaflet-control-disabled {
     color: currentColor;

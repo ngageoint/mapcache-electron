@@ -49,6 +49,16 @@ export default class LeafletDraw extends vendor.L.Control {
       tooltipComplete: 'Click on last point to finish line.'
     }
 
+    this.show = function () {
+      if (vendor.L.DomUtil.hasClass(container, 'hidden')) {
+        vendor.L.DomUtil.removeClass(container, 'hidden')
+      }
+    }
+
+    this.hide = function () {
+      vendor.L.DomUtil.addClass(container, 'hidden')
+    }
+
     this.disableDrawingLinks = function () {
       this._drawingLinks.forEach(function (link) {
         link.onclick = function () {}

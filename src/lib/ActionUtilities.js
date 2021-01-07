@@ -282,6 +282,13 @@ export default class ActionUtilities {
     })
   }
 
+  static updateFeatureGeometry ({projectId, id, isGeoPackage, tableName, featureGeoJson}) {
+    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+    GeoPackageUtilities.updateFeatureGeometry(filePath, tableName, featureGeoJson).then(function () {
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+    })
+  }
+
   static addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature}) {
     const geopackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
     const existingTable = geopackage.tables.features[tableName]
@@ -337,7 +344,7 @@ export default class ActionUtilities {
       GeoPackageUtilities._deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
       sourceCopy.extent = GeoPackageUtilities._getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
       sourceCopy.count = gp.getFeatureDao(sourceCopy.sourceLayerName).count()
-      store.dispatch('Projects/setGeoPackage', {projectId, source: sourceCopy})
+      store.dispatch('Projects/setDataSource', {projectId, source: sourceCopy})
     })
   }
 
@@ -558,5 +565,30 @@ export default class ActionUtilities {
 
   static setMapZoom ({projectId, mapZoom}) {
     store.dispatch('UIState/setMapZoom', {projectId, mapZoom})
+  }
+
+  /**
+   * Edits a feature's geometry on the map
+   * @param projectId
+   * @param id
+   * @param isGeoPackage
+   * @param tableName
+   * @param featureToEdit
+   */
+  static editFeatureGeometry ({projectId, id, isGeoPackage, tableName, featureToEdit}) {
+    if (!_.isNil(projectId)) {
+      store.dispatch('Projects/editFeatureGeometry', {projectId, id, isGeoPackage, tableName, featureToEdit})
+    }
+  }
+
+  /**
+   * Will cancel the editing of that feature
+   * This should only be called if the feature is successfully edited, deleted or if it's source is deleted.
+   * @param projectId
+   */
+  static clearEditFeatureGeometry ({projectId}) {
+    if (!_.isNil(projectId)) {
+      store.dispatch('Projects/clearEditFeatureGeometry', {projectId})
+    }
   }
 }

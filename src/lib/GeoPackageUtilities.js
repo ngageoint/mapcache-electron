@@ -31,6 +31,7 @@ import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import proj4 from 'proj4'
 import { intersect, bbox } from '@turf/turf'
+import { GeometryData } from '@ngageoint/geopackage'
 
 export default class GeoPackageUtilities {
   /**
@@ -133,6 +134,54 @@ export default class GeoPackageUtilities {
       gp = await GeoPackageAPI.open(filePath)
     }
     return gp
+  }
+
+  /**
+   * Update feature geometry
+   * @param gp
+   * @param tableName
+   * @param featureGeoJson
+   * @param updateBoundingBox
+   * @private
+   */
+  static _updateFeatureGeometry (gp, tableName, featureGeoJson, updateBoundingBox = true) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const srs = featureDao.srs
+    const featureRow = featureDao.queryForId(featureGeoJson.id)
+    const geometryData = new GeometryData()
+    geometryData.setSrsId(srs.srs_id)
+    let feature = _.cloneDeep(featureGeoJson)
+    if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
+      feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+    }
+
+    const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
+    if (featureGeometry !== null) {
+      const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+      geometryData.setGeometry(geometry)
+    } else {
+      const temp = wkx.Geometry.parse('POINT EMPTY')
+      geometryData.setGeometry(temp)
+    }
+    featureRow.geometry = geometryData
+    featureDao.update(featureRow)
+    if (updateBoundingBox) {
+      this._updateBoundingBoxForFeatureTable(gp, tableName)
+    }
+  }
+
+  /**
+   * Updates a feature's geometry to the geojson passed in (id must be in the feature)
+   * @param filePath
+   * @param tableName
+   * @param featureGeoJson
+   * @param updateBoundingBox
+   * @returns {Promise<any>}
+   */
+  static async updateFeatureGeometry (filePath, tableName, featureGeoJson, updateBoundingBox = true) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._updateFeatureGeometry(gp, tableName, featureGeoJson, updateBoundingBox)
+    })
   }
 
   /**
@@ -2263,6 +2312,7 @@ export default class GeoPackageUtilities {
       throttleStatusCallback(status)
 
       const numberLayersToRetrieve = configuration.sourceLayers.length + configuration.geopackageLayers.length
+
       let layersRetrieved = 0
       let featureColumns = null
 
@@ -3044,5 +3094,34 @@ export default class GeoPackageUtilities {
 
   static _hasStyleExtension(gp, tableName) {
     return gp.featureStyleExtension.has(tableName);
+  }
+
+  /**
+   * Check if a feature exists
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @returns {boolean}
+   * @private
+   */
+  static _featureExists (gp, tableName, featureId) {
+    let exists = false
+    if (gp.getFeatureTables().indexOf(tableName) !== -1) {
+      exists = !_.isNil(gp.getFeatureDao(tableName).queryForId(featureId))
+    }
+    return exists
+  }
+
+  /**
+   * Check if a feature exists
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @returns {Promise<any>}
+   */
+  static async featureExists (filePath, tableName, featureId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._featureExists(gp, tableName, featureId)
+    })
   }
 }

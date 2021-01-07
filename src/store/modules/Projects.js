@@ -121,6 +121,17 @@ const mutations = {
       Vue.delete(state, key)
     })
     Object.assign(state, getDefaultState())
+  },
+  editFeatureGeometry (state, {projectId, id, isGeoPackage, tableName, featureToEdit}) {
+    Vue.set(state[projectId], 'editingFeature', {
+      id: id,
+      tableName: tableName,
+      isGeoPackage: isGeoPackage,
+      featureToEdit: featureToEdit
+    })
+  },
+  clearEditFeatureGeometry (state, {projectId}) {
+    Vue.delete(state[projectId], 'editingFeature')
   }
 }
 
@@ -220,6 +231,12 @@ const actions = {
   },
   resetState ({ commit }) {
     return commit('resetState')
+  },
+  editFeatureGeometry ({ commit }, {projectId, id, isGeoPackage, tableName, featureToEdit}) {
+    commit('editFeatureGeometry', {projectId, id, isGeoPackage, tableName, featureToEdit})
+  },
+  clearEditFeatureGeometry ({ commit }, {projectId}) {
+    commit('clearEditFeatureGeometry', {projectId})
   }
 }
 

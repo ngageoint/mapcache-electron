@@ -85,6 +85,21 @@
         </v-btn>
         <v-btn
           icon
+          small
+          @click="(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            editDrawing(item)
+          }">
+          <v-icon
+            small
+            title="Edit feature geometry"
+          >
+            mdi-vector-polyline-edit
+          </v-icon>
+        </v-btn>
+        <v-btn
+          icon
           color="warning"
           small
           @click="(e) => {
@@ -246,6 +261,9 @@
       async showStyleAssignment (item) {
         this.styleAssignment = await GeoPackageUtilities.getStyleItemsForFeature(this.geopackage.path, this.table.tableName, item.id)
         this.assignStyleDialog = true
+      },
+      async editDrawing (item) {
+        ActionUtilities.editFeatureGeometry({projectId: this.projectId, id: this.geopackage.id, isGeoPackage: true, tableName: this.table.tableName, featureToEdit: this.table.features.find(feature => feature.id === item.id)})
       },
       closeStyleAssignment () {
         this.assignStyleDialog = false
