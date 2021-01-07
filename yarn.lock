@@ -1311,10 +1311,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@ngageoint/geopackage@4.0.0-beta.18":
-  version "4.0.0-beta.18"
-  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.18.tgz#3e51836a02d8125f343de0706a6a263a98b85759"
-  integrity sha512-2lNZrkShogxHu7yk+9TR3iXxydg6cx5bHOyX56mFbm7LnEx3pmLAZTS1meOMeD2xPwV2TzePuwg7ecgeLOjJwQ==
+"@ngageoint/geopackage@4.0.0-beta.19":
+  version "4.0.0-beta.19"
+  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.19.tgz#6d8f75392bc1a2d2bc74b49c2ef36272b4e5e00a"
+  integrity sha512-uktAi9s+AqVlAm8C1sm0BxskGQUol6iQQhnmqk6u06+yXoX1Tv8/VRZhBAlPr1MiyfVSd2WZyM4zKoWdxHKITg==
   dependencies:
     "@turf/bbox" "6.0.1"
     "@turf/boolean-point-in-polygon" "^6.0.1"
