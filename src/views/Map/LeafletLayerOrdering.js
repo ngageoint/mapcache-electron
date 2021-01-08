@@ -18,7 +18,7 @@ export default class LeafletLayerOrdering extends vendor.L.Control {
     let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control')
     this._reorderLink = vendor.L.DomUtil.create('a', 'leaflet-control-layer-ordering leaflet-control-disabled', container)
     this._reorderLink.id = 'order-map-layers-control'
-    this._reorderLink.title = 'Order layers'
+    this._reorderLink.title = 'Layer Order'
 
     const reorderFunction = function (e) {
       EventBus.$emit('toggle-layer-render-order')

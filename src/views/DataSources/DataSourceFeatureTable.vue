@@ -95,7 +95,7 @@
             small
             title="Edit feature geometry"
           >
-            mdi-vector-polyline-edit
+            mdi-vector-square
           </v-icon>
         </v-btn>
 
