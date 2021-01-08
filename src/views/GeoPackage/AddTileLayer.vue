@@ -341,6 +341,7 @@
   import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import NumberPicker from '../Common/NumberPicker'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import EventBus from '../../EventBus'
 
   export default {
     props: {
@@ -373,10 +374,10 @@
         minZoom: 0,
         maxZoom: 10,
         tileWarningThreshold: 1000,
-        sortedRenderingLayers: undefined,
         configuration: null,
         cancelling: false,
-        drag: false
+        drag: false,
+        internalRenderingOrder: []
       }
     },
     methods: {
@@ -560,9 +561,9 @@
           }
         })
       },
-      getRenderingLayers () {
-        return this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-      }
+      fireReorderMapLayers: _.debounce((layers) => {
+        EventBus.$emit('reorder-map-layers', layers)
+      }, 100)
     },
     asyncComputed: {
       geopackageLayers: {
@@ -612,10 +613,16 @@
       },
       sortedLayers: {
         get () {
-          return this.sortedRenderingLayers || this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+          return this.internalRenderingOrder
+
         },
-        set (val) {
-          this.sortedRenderingLayers = val
+        set (layers) {
+          this.internalRenderingOrder = layers
+          const newMapRenderingOrder = []
+          layers.forEach(item => {
+            newMapRenderingOrder.push(item.id)
+          })
+          this.fireReorderMapLayers(newMapRenderingOrder)
         }
       },
       dragOptions () {
@@ -632,29 +639,8 @@
           this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
           this.geopackageLayers = await this.getGeoPackageLayerItems()
           this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
-          if (!_.isNil(this.sortedRenderingLayers)) {
-            const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
-            const newRenderingLayers = this.getRenderingLayers()
-
-            const idsRemoved = _.difference(sortedRenderingLayersCopy.map(item => item.id), newRenderingLayers.map(item => item.id))
-            const idsAdded = _.difference(newRenderingLayers.map(item => item.id), sortedRenderingLayersCopy.map(item => item.id))
-
-            idsRemoved.forEach(id => {
-              const index = sortedRenderingLayersCopy.findIndex(item => item.id === id)
-              if (index !== -1) {
-                sortedRenderingLayersCopy.splice(index, 1)
-              }
-            })
-
-            idsAdded.forEach(id => {
-              const index = newRenderingLayers.findIndex(item => item.id === id)
-              if (index !== -1) {
-                sortedRenderingLayersCopy.push(newRenderingLayers[index])
-              }
-            })
-
-            this.sortedLayers = sortedRenderingLayersCopy
-          }
+          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+          this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !_.isNil(item))
         },
         deep: true
       }
@@ -667,6 +653,9 @@
       const mapZoom = _.isNil(this.mapZoom) ? 3 : this.mapZoom
       this.minZoom = Math.min(20, Math.max(0, mapZoom))
       this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
+      const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+      this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !_.isNil(item))
+
     },
     beforeUnmount () {
       ActionUtilities.resetBoundingBox()
@@ -700,12 +689,12 @@
     }
   }
   ul {
-    list-style-type: none;
+    list-style-type: none !important;
   }
   .list-item {
-    min-height: 50px;
+    min-height: 50px !important;
     cursor: move !important;
-    background: var(--v-background-base);
+    background: var(--v-background-base) !important;
   }
   .list-item i {
     cursor: pointer !important;

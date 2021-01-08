@@ -286,7 +286,7 @@
 
 <script>
   import { mapState } from 'vuex'
-  import { remote, ipcRenderer } from 'electron'
+  import { remote } from 'electron'
   import fs from 'fs'
   import path from 'path'
   import _ from 'lodash'
@@ -294,6 +294,7 @@
   import TransparencyOptions from './TransparencyOptions'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import EventBus from '../../EventBus'
 
   export default {
     props: {
@@ -406,7 +407,12 @@
         ActionUtilities.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
       },
       showFeatureTable () {
-        ipcRenderer.send('show_feature_table', this.source.id, this.source.sourceLayerName, false)
+        const payload = {
+          id: this.source.id,
+          tableName: this.source.sourceLayerName,
+          isGeoPackage: false
+        }
+        EventBus.$emit('show-feature-table', payload)
       },
       removeDataSource () {
         ActionUtilities.removeDataSource({projectId: this.project.id, sourceId: this.source.id})

@@ -36,9 +36,6 @@ class WindowLauncher {
       this.forceClose = true
       this.closeProject()
     })
-    ipcMain.on('show_feature_table', (event, id, tableName, isGeoPackage) => {
-      event.sender.send('show_feature_table', id, tableName, isGeoPackage)
-    })
     ipcMain.on('process_source', (event, payload) => {
       const taskId = payload.source.id
       const task = new Task(taskId, event, (worker) => {

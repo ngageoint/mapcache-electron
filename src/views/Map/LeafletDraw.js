@@ -23,6 +23,12 @@ export default class LeafletDraw extends vendor.L.Control {
     this._linestringLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-linestring', container)
     this._cancelLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-cancel hidden', container)
 
+    this._pointLink.title = 'Draw Point'
+    this._polyLink.title = 'Draw Polygon'
+    this._rectLink.title = 'Draw Rectangle'
+    this._linestringLink.title = 'Draw Line'
+    this._cancelLink.title = 'Cancel'
+
     this._drawingLinks = [this._pointLink, this._polyLink, this._rectLink, this._linestringLink]
 
     const point = {
@@ -130,11 +136,6 @@ export default class LeafletDraw extends vendor.L.Control {
       e.preventDefault()
     }.bind(this)
 
-    this.mouseMove = function (e) {
-      if (this._tooltip) {
-        this._tooltip.updatePosition(e.latlng)
-      }
-    }.bind(this)
 
     map.on('editable:drawing:commit', function () {
       this.enableDrawingLinks()

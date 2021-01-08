@@ -132,6 +132,9 @@ const mutations = {
   },
   clearEditFeatureGeometry (state, {projectId}) {
     Vue.delete(state[projectId], 'editingFeature')
+  },
+  setMapRenderingOrder (state, {projectId, mapRenderingOrder}) {
+    Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
   }
 }
 
@@ -237,6 +240,9 @@ const actions = {
   },
   clearEditFeatureGeometry ({ commit }, {projectId}) {
     commit('clearEditFeatureGeometry', {projectId})
+  },
+  setMapRenderingOrder ({ commit }, {projectId, mapRenderingOrder}) {
+    commit('setMapRenderingOrder', {projectId, mapRenderingOrder})
   }
 }
 

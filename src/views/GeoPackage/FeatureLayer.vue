@@ -443,13 +443,13 @@
 
 <script>
   import Vue from 'vue'
-  import { ipcRenderer } from 'electron'
   import _ from 'lodash'
   import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import FeatureLayerField from './FeatureLayerField'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import EventBus from '../../EventBus'
 
   export default {
     props: {
@@ -658,7 +658,12 @@
         this.addFieldType = GeoPackageDataType.TEXT
       },
       showFeatureTable () {
-        ipcRenderer.send('show_feature_table', this.geopackage.id, this.tableName, true)
+        const payload = {
+          id: this.geopackage.id,
+          tableName: this.tableName,
+          isGeoPackage: true
+        }
+        EventBus.$emit('show-feature-table', payload)
       }
     },
     watch: {

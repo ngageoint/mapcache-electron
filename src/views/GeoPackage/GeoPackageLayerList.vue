@@ -51,30 +51,7 @@
       items () {
         const _this = this
         const items = []
-        Object.keys(this.geopackage.tables.features).forEach(key => {
-          const featureLayer = this.geopackage.tables.features[key]
-          items.push({
-            id: key + '_' + this.geopackage.id,
-            isTile: false,
-            isFeature: true,
-            name: key,
-            click: function () {
-              _this.layerSelected(key)
-            },
-            setVisible: function (e) {
-              ActionUtilities.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
-              e.stopPropagation()
-            },
-            zoomTo: function (e) {
-              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                ActionUtilities.zoomToExtent({projectId: _this.projectId, extent})
-              })
-              e.stopPropagation()
-            },
-            visible: featureLayer.visible
-          })
-        })
-        Object.keys(this.geopackage.tables.tiles).forEach(key => {
+        Object.keys(this.geopackage.tables.tiles).sort().forEach(key => {
           const tileLayer = this.geopackage.tables.tiles[key]
           items.push({
             id: key + '_' + this.geopackage.id,
@@ -95,6 +72,29 @@
               e.stopPropagation()
             },
             visible: tileLayer.visible
+          })
+        })
+        Object.keys(this.geopackage.tables.features).sort().forEach(key => {
+          const featureLayer = this.geopackage.tables.features[key]
+          items.push({
+            id: key + '_' + this.geopackage.id,
+            isTile: false,
+            isFeature: true,
+            name: key,
+            click: function () {
+              _this.layerSelected(key)
+            },
+            setVisible: function (e) {
+              ActionUtilities.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
+              e.stopPropagation()
+            },
+            zoomTo: function (e) {
+              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                ActionUtilities.zoomToExtent({projectId: _this.projectId, extent})
+              })
+              e.stopPropagation()
+            },
+            visible: featureLayer.visible
           })
         })
         return items

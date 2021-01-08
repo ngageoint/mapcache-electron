@@ -591,4 +591,13 @@ export default class ActionUtilities {
       store.dispatch('Projects/clearEditFeatureGeometry', {projectId})
     }
   }
+
+  /**
+   * Sets the rendering order of the map
+   * @param projectId
+   * @param renderingOrder
+   */
+  static setMapRenderingOrder ({projectId, mapRenderingOrder}) {
+    store.dispatch('Projects/setMapRenderingOrder', {projectId, mapRenderingOrder})
+  }
 }

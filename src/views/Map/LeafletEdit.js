@@ -20,6 +20,8 @@ export default class LeafletEdit extends vendor.L.Control {
     let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control hidden')
     this._saveLink = vendor.L.DomUtil.create('a', 'leaflet-control-edit-save', container)
     this._cancelLink = vendor.L.DomUtil.create('a', 'leaflet-control-draw-cancel', container)
+    this._saveLink.title = 'Save'
+    this._cancelLink.title = 'Cancel'
 
 
     this.show = function () {
