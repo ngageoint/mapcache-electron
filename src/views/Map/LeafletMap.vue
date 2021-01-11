@@ -1,6 +1,6 @@
 <template>
-  <div :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
-    <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1}">
+  <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
+    <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1, backgroundColor: mapBackground}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
         v-model="geopackageExistsDialog"
@@ -196,7 +196,6 @@
   import FeatureTable from './FeatureTable'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LeafletEdit from './LeafletEdit'
-  import LeafletLayerOrdering from './LeafletLayerOrdering'
   import LeafletDraw from './LeafletDraw'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
@@ -205,6 +204,7 @@
   import FeatureEditor from '../Common/FeatureEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
   import draggable from 'vuedraggable'
+  import countries from './countries-land-10km.geo.json'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -262,7 +262,8 @@
       geopackages: Object,
       projectId: String,
       project: Object,
-      resizeListener: Number
+      resizeListener: Number,
+      visible: Boolean
     },
     computed: {
       dragOptions () {
@@ -318,10 +319,14 @@
         isEditing: false,
         showLayerOrderingDialog: false,
         drag: false,
-        layerOrder: []
+        layerOrder: [],
+        mapBackground: '#ddd'
       }
     },
     methods: {
+      getMapCenterAndZoom () {
+        return {center: this.map.getCenter(), zoom: this.map.getZoom()}
+      },
       getReorderCardOffset () {
         let yOffset = 248
         if (!this.project.zoomControlEnabled) {
@@ -882,10 +887,23 @@
         const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
         const streetsBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
         const satelliteBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/humanitarian/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
+        const offline = vendor.L.geoJSON(countries, {
+          pane: 'tilePane',
+          style: function() {
+            return {
+              color: '#BBBBBB',
+              weight: 0.5,
+              fill: true,
+              fillColor: '#F9F9F6',
+              fillOpacity: 1,
+            };
+          },
+        })
         const baseMaps = {
           'Default': defaultBaseMap,
           'Bright': streetsBaseMap,
-          'Humanitarian': satelliteBaseMap
+          'Humanitarian': satelliteBaseMap,
+          'Offline': offline
         }
         this.map = vendor.L.map('map', {
           editable: true,
@@ -894,6 +912,20 @@
           zoom: defaultZoom,
           minZoom: 2,
           layers: [defaultBaseMap]
+        })
+        this.map.on('baselayerchange', (e) => {
+          let name = 'default'
+          if (e.name) {
+            name = e.name.toLowerCase()
+          }
+          switch (name) {
+            case 'offline':
+              this.mapBackground = '#c0d9e4'
+              break
+            default:
+              this.mapBackground = '#ddd'
+              break
+          }
         })
         ActionUtilities.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
         this.map.createPane('gridSelectionPane')
@@ -925,14 +957,14 @@
           self.zoomToContent()
         }, function () {
           ActionUtilities.clearActiveLayers({projectId: self.projectId})
+        }, function () {
+          this.showLayerOrderingDialog = !this.showLayerOrderingDialog
         })
 
         vendor.L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
         this.drawingControl = new LeafletDraw()
         this.editingControl = new LeafletEdit()
-        this.layerOrderingControl = new LeafletLayerOrdering()
-        this.map.addControl(this.layerOrderingControl)
         this.map.addControl(this.drawingControl)
         this.map.addControl(this.editingControl)
         this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
@@ -1031,6 +1063,16 @@
       }
     },
     watch: {
+      visible: {
+        handler() {
+          const self = this
+          this.$nextTick(() => {
+            if (self.map) {
+              self.map.invalidateSize()
+            }
+          })
+        }
+      },
       resizeListener: {
         handler (newValue, oldValue) {
           if (newValue !== oldValue) {
@@ -1071,9 +1113,9 @@
           })
           ActionUtilities.setMapRenderingOrder({projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id)})
           if (layers.length > 0) {
-            this.layerOrderingControl.enable()
+            this.activeLayersControl.enable()
           } else {
-            this.layerOrderingControl.disable()
+            this.activeLayersControl.disable()
             this.showLayerOrderingDialog = false
           }
         }
@@ -1407,16 +1449,13 @@
       ActionUtilities.clearEditFeatureGeometry({projectId: this.project.id})
       EventBus.$on('show-feature-table', payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
       EventBus.$on('reorder-map-layers', this.reorderMapLayers)
-      EventBus.$on('toggle-layer-render-order', () => {
-        this.showLayerOrderingDialog = !this.showLayerOrderingDialog
-      })
       this.maxFeatures = this.project.maxFeatures
       this.registerResizeObserver()
       this.initializeMap()
       this.addLayersToMap()
     },
     beforeDestroy: function () {
-      EventBus.$off(['show-feature-table', 'reorder-map-layers', 'show-layer-render-order'])
+      EventBus.$off(['show-feature-table', 'reorder-map-layers'])
       _.keys(initializedGeoPackageTables).forEach(geopackageId => {
         _.keys(initializedGeoPackageTables[geopackageId].featureTables).forEach(table => {
           let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
@@ -1451,7 +1490,6 @@
 
 <style>
   @import '~leaflet/dist/leaflet.css';
-
   .leaflet-control-zoom-to-active {
     background: url('../../assets/zoom-to-active.svg') no-repeat;
   }
@@ -1485,9 +1523,12 @@
   }
   .leaflet-control-disabled {
     color: currentColor;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
     opacity: 0.5;
     text-decoration: none;
+  }
+  .leaflet-control-disabled:hover {
+    background-color: #fff !important;
   }
   .layer__request-btn {
     position: relative;

@@ -5,8 +5,8 @@ export default class XYZServerLayer {
   static constructMapLayer (layerModel) {
     let mapLayer = null
     let options = {
-      pane: 'tilePane',
-      zIndex: 201
+      pane: 'overlayPane',
+      zIndex: 401
     }
     const headers = []
     if (layerModel.credentials && layerModel.credentials.type === 'basic') {

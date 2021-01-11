@@ -600,4 +600,21 @@ export default class ActionUtilities {
   static setMapRenderingOrder ({projectId, mapRenderingOrder}) {
     store.dispatch('Projects/setMapRenderingOrder', {projectId, mapRenderingOrder})
   }
+
+  /**
+   * Sets the preview layer when adding URL data source
+   * @param projectId
+   * @param previewLayer
+   */
+  static setPreviewLayer ({projectId, previewLayer}) {
+    store.dispatch('UIState/setPreviewLayer', {projectId, previewLayer})
+  }
+
+  /**
+   * Sets the preview layer when adding URL data source
+   * @param projectId
+   */
+  static clearPreviewLayer ({projectId}) {
+    store.dispatch('UIState/clearPreviewLayer', {projectId})
+  }
 }

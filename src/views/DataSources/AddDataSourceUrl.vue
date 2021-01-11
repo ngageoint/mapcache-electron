@@ -312,10 +312,11 @@
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
+        <v-switch v-model="previewing" class="pl-2" hide-details v-if="this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error && ((selectedServiceType === 0 && this.selectedDataSourceLayers.length > 0) || selectedServiceType === 2)" label="Preview"></v-switch>
         <v-spacer></v-spacer>
         <v-btn
           text
-          @click.stop.prevent="back">
+          @click.stop.prevent="close">
           Cancel
         </v-btn>
         <v-btn
@@ -339,6 +340,8 @@
   import URLUtilities from '../../lib/URLUtilities'
   import _ from 'lodash'
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
+  import SourceFactory from '../../lib/source/SourceFactory'
+  import ActionUtilities from '../../lib/ActionUtilities'
 
   export default {
     props: {
@@ -383,7 +386,7 @@
         dataSourceNameValid: true,
         dataSourceName: 'Data source',
         dataSourceNameRules: [v => !!v || 'Data source name is required'],
-        dataSourceUrl: 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png',
+        dataSourceUrl: null,
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
         supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}, {value: 3, name: 'ArcGIS FS'}],
@@ -414,7 +417,8 @@
           closeOnClick: true,
           closeOnContentClick: true
         },
-        urlIsValid: false
+        urlIsValid: false,
+        previewing: false
       }
     },
     components: {
@@ -434,6 +438,13 @@
         } else {
           this.confirmLayerImport()
         }
+      },
+      close () {
+        this.previewing = false
+        ActionUtilities.clearPreviewLayer(({projectId: this.project.id}))
+        Vue.nextTick(() => {
+          this.back()
+        })
       },
       async getServiceInfo (serviceType) {
         this.loading = true
@@ -638,7 +649,7 @@
           setTimeout(() => {
             this.addUrlToHistory(this.dataSourceUrl)
             this.resetURLValidation()
-            this.back()
+            this.close()
             setTimeout(() => {
               this.addSource(sourceToProcess)
             }, 100)
@@ -689,33 +700,11 @@
         setTimeout(() => {
           this.addUrlToHistory(url)
           this.resetURLValidation()
-          this.back()
+          this.close()
           setTimeout(() => {
             this.addSource(sourceToProcess)
           }, 100)
         }, 100)
-      },
-      validateWMSVersion (version) {
-        let error = null
-        if (!_.isNil(version)) {
-          if (version !== '1.1.1' && version !== '1.3.0') {
-            error = 'WMS version ' + version + ' not supported. Supported versions are [1.1.1, 1.3.0].'
-          }
-        } else {
-          error = 'WMS version not provided. Valid versions [1.1.1, 1.3.0] should be used.'
-        }
-        return error
-      },
-      validateWFSVersion (version) {
-        let error = null
-        if (!_.isNil(version)) {
-          if (version !== '2.0.0' && version !== '1.1.0' && version !== '1.0.0') {
-            error = 'WFS version ' + version + ' not supported. Supported versions are [2.0.0, 1.1.0, 1.0.0].'
-          }
-        } else {
-          error = 'WFS version not provided. Valid versions [2.0.0, 1.1.0, 1.0.0] should be used.'
-        }
-        return error
       },
       removeUrlFromHistory () {
         // Remove a URL from the Tile URL history state
@@ -744,10 +733,34 @@
       showDeleteUrlDialog (url) {
         this.urlToDelete = url
         this.deleteUrlDialog = true
+      },
+      async sendLayerPreview () {
+        let source
+        if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
+          if (this.selectedServiceType === 0) {
+            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), this.getCredentials(), 'Preview')
+          } else if (this.selectedServiceType === 2) {
+            source = await SourceFactory.constructXYZSource(this.dataSourceUrl, this.getCredentials(), 'Preview')
+          }
+        }
+        if (!_.isNil(source)) {
+          const layers = await source.retrieveLayers()
+          if (layers.length > 0) {
+            const layer = layers[0]
+            await layer.initialize()
+            ActionUtilities.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
+          } else {
+            this.previewing = false
+          }
+        } else {
+          this.previewing = false
+        }
       }
     },
     mounted () {
       this.resetURLValidation()
+      this.previewing = false
+      this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
       Vue.nextTick(() => {
         if (!_.isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
@@ -763,6 +776,7 @@
     watch: {
       dataSourceUrl: {
         handler (newValue) {
+          this.previewing = false
           if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
@@ -839,6 +853,24 @@
               }
             })
             this.sortedLayers = sortedRenderingLayersCopy
+          }
+        }
+      },
+      previewing: {
+        handler (previewing) {
+          Vue.nextTick(() => {
+            if (previewing) {
+              this.sendLayerPreview()
+            } else {
+              ActionUtilities.clearPreviewLayer(({projectId: this.project.id}))
+            }
+          })
+        }
+      },
+      sortedLayers: {
+        handler () {
+          if (this.selectedServiceType === 0 && this.previewing) {
+            this.sendLayerPreview()
           }
         }
       }

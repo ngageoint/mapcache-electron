@@ -14,8 +14,8 @@ export default class WMSLayer {
       bounds: bounds,
       transparent: true,
       format: 'image/png',
-      zIndex: 201,
-      pane: 'tilePane'
+      zIndex: 401,
+      pane: 'overlayPane'
     }
     Vendor.L.TileLayer.WMSHeader = Vendor.L.TileLayer.WMS.extend({
       initialize: function (url, options, headers) {

@@ -19,7 +19,8 @@ const mutations = {
       drawBounds: {},
       boundsBeingDrawn: {},
       activeCount: 0,
-      dark: false
+      dark: false,
+      previewLayer: null
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -52,6 +53,12 @@ const mutations = {
   },
   setMapZoom (state, {projectId, mapZoom}) {
     Vue.set(state[projectId], 'mapZoom', mapZoom)
+  },
+  setPreviewLayer (state, {projectId, previewLayer}) {
+    Vue.set(state[projectId], 'previewLayer', previewLayer)
+  },
+  clearPreviewLayer (state, {projectId}) {
+    Vue.delete(state[projectId], 'previewLayer')
   }
 }
 
@@ -82,6 +89,12 @@ const actions = {
   },
   setMapZoom ({ commit }, {projectId, mapZoom}) {
     return commit('setMapZoom', {projectId, mapZoom})
+  },
+  setPreviewLayer ({ commit }, {projectId, previewLayer}) {
+    commit('setPreviewLayer', {projectId, previewLayer})
+  },
+  clearPreviewLayer ({ commit }, {projectId}) {
+    commit('clearPreviewLayer', {projectId})
   }
 }
 

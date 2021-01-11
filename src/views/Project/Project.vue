@@ -54,8 +54,15 @@
           <settings v-if="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
         </v-col>
         <v-col>
+          <preview-map :visible="previewLayer !== null && previewLayer !== undefined && item === 1"
+                       :project-id="project.id"
+                       :preview-layer="previewLayer"
+                       :resizeListener="item"
+                       :get-map-center-and-zoom="getMapCenterAndZoom">
+          </preview-map>
           <leaflet-map
-            style="width: 100%; height: 100%;"
+            ref="map"
+            :visible="previewLayer === null || previewLayer === undefined || item !== 1"
             :geopackages="project.geopackages"
             :sources="project.sources"
             :project-id="project.id"
@@ -76,6 +83,7 @@
   import jetpack from 'fs-jetpack'
 
   import LeafletMap from '../Map/LeafletMap'
+  import PreviewMap from '../Map/PreviewMap'
   import Settings from '../Settings/Settings'
   import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
@@ -118,6 +126,15 @@
             }
           }
           return project
+        },
+        previewLayer (state) {
+          const projectId = new URL(location.href).searchParams.get('id')
+          let project = state.UIState[projectId]
+          let previewLayer
+          if (!_.isNil(project)) {
+            previewLayer = project.previewLayer
+          }
+          return previewLayer
         },
         darkTheme (state) {
           let isDark = false
@@ -162,14 +179,76 @@
       DataSources,
       LeafletMap,
       Settings,
-      GeoPackages
+      GeoPackages,
+      PreviewMap
     },
     methods: {
+      getMapCenterAndZoom () {
+        let bounds
+        try {
+          bounds = this.$refs['map'].getMapCenterAndZoom()
+          // eslint-disable-next-line no-empty
+        } catch (e) {}
+        return bounds
+      },
       saveProjectName (val) {
         ActionUtilities.setProjectName({project: this.project, name: val})
       },
       back () {
         this.item = undefined
+      },
+      setupDragAndDrop () {
+        const project = document.getElementById('project')
+        project.ondragover = () => {
+          return false
+        }
+
+        project.ondragleave = () => {
+          return false
+        }
+
+        project.ondragend = () => {
+          return false
+        }
+
+        project.ondrop = (e) => {
+          e.preventDefault()
+          let geopackagesToAdd = []
+          let dataSourcesToAdd = []
+          const supportedExtensions = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip']
+          for (let f of e.dataTransfer.files) {
+            const extension = path.extname(f.path)
+            // try to add a geopackage to the project
+            if (extension === '.gpkg') {
+              geopackagesToAdd.push(f.path)
+            } else if (supportedExtensions.findIndex(e => e === extension) !== -1) {
+              dataSourcesToAdd.push(f.path)
+            }
+          }
+
+          for (let i = 0; i < geopackagesToAdd.length; i++) {
+            const path = geopackagesToAdd[i]
+            const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
+            if (!existsInApp) {
+              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: path})
+            }
+          }
+
+          let fileInfos = []
+          for (let i = 0; i < dataSourcesToAdd.length; i++) {
+            const file = dataSourcesToAdd[i]
+            let fileInfo = jetpack.inspect(file, {
+              times: true,
+              absolutePath: true
+            })
+            fileInfo.lastModified = fileInfo.modifyTime.getTime()
+            fileInfo.lastModifiedDate = fileInfo.modifyTime
+            fileInfo.path = fileInfo.absolutePath
+            fileInfos.push(fileInfo)
+          }
+          this.$refs.dataSourceRef.processFiles(fileInfos)
+          return false
+        }
       }
     },
     watch: {
@@ -185,7 +264,9 @@
       },
       item: {
         handler (newValue) {
-          ActionUtilities.clearNotification({projectId: this.project.id, tabId: newValue})
+          if (!_.isNil(this.tabNotification[newValue]) && this.tabNotification[newValue]) {
+            ActionUtilities.clearNotification({projectId: this.project.id, tabId: newValue})
+          }
         }
       }
     },
@@ -196,57 +277,8 @@
       }
       ActionUtilities.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
       ActionUtilities.clearNotifications({projectId: this.project.id})
-      const project = document.getElementById('project')
-      project.ondragover = () => {
-        return false
-      }
-
-      project.ondragleave = () => {
-        return false
-      }
-
-      project.ondragend = () => {
-        return false
-      }
-
-      project.ondrop = (e) => {
-        e.preventDefault()
-        let geopackagesToAdd = []
-        let dataSourcesToAdd = []
-        const supportedExtensions = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip']
-        for (let f of e.dataTransfer.files) {
-          const extension = path.extname(f.path)
-          // try to add a geopackage to the project
-          if (extension === '.gpkg') {
-            geopackagesToAdd.push(f.path)
-          } else if (supportedExtensions.findIndex(e => e === extension) !== -1) {
-            dataSourcesToAdd.push(f.path)
-          }
-        }
-
-        for (let i = 0; i < geopackagesToAdd.length; i++) {
-          const path = geopackagesToAdd[i]
-          const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
-          if (!existsInApp) {
-            ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: path})
-          }
-        }
-
-        let fileInfos = []
-        for (let i = 0; i < dataSourcesToAdd.length; i++) {
-          const file = dataSourcesToAdd[i]
-          let fileInfo = jetpack.inspect(file, {
-            times: true,
-            absolutePath: true
-          })
-          fileInfo.lastModified = fileInfo.modifyTime.getTime()
-          fileInfo.lastModifiedDate = fileInfo.modifyTime
-          fileInfo.path = fileInfo.absolutePath
-          fileInfos.push(fileInfo)
-        }
-        this.$refs.dataSourceRef.processFiles(fileInfos)
-        return false
-      }
+      ActionUtilities.clearPreviewLayer({projectId: this.project.id})
+      this.setupDragAndDrop()
     }
   }
 </script>
