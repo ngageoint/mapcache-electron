@@ -324,6 +324,16 @@
       }
     },
     methods: {
+      sendSourceInitializationStatus (sourceId) {
+        const sourceLayer = sourceLayers[sourceId]
+        if (sourceLayer) {
+          if (sourceLayer.initializing) {
+            EventBus.$emit('source-initializing-' + sourceId)
+          } else if (!_.isNil(sourceLayer.initializedSource)) {
+            EventBus.$emit('source-initialized-' + sourceId)
+          }
+        }
+      },
       getMapCenterAndZoom () {
         return {center: this.map.getCenter(), zoom: this.map.getZoom()}
       },
@@ -495,6 +505,7 @@
           sourceLayers[sourceId].initializing = true
           let source = LayerFactory.constructLayer(sourceConfiguration)
           source._maxFeatures = this.project.maxFeatures
+          EventBus.$emit('source-initializing-' + sourceId)
           source.initialize().then(function () {
             // update style just in case during the initialization the layer was modified
             if (!_.isNil(sourceLayers[sourceId])) {
@@ -506,6 +517,7 @@
               sourceLayers[sourceId].initializedSource = source
               sourceLayers[sourceId].mapLayer = mapLayer
               sourceLayers[sourceId].initializing = false
+              EventBus.$emit('source-initialized-' + sourceId)
             }
           })
         }
@@ -1173,6 +1185,7 @@
                   sourceLayers[sourceId].initializing = true
                   let source = LayerFactory.constructLayer(sourceLayers[sourceId].configuration)
                   source._maxFeatures = this.project.maxFeatures
+                  EventBus.$emit('source-initializing-' + sourceId)
                   source.initialize().then(function () {
                     // update style just in case during the initialization the layer was modified
                     if (!_.isNil(sourceLayers[sourceId])) {
@@ -1188,6 +1201,7 @@
                         sourceLayers[sourceId].initializing = false
                       }
                     }
+                    EventBus.$emit('source-initialized-' + sourceId)
                   })
                 } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
                   if (sourceLayers[sourceId].initializedSource.layerType === 'GeoTIFF') {
@@ -1203,6 +1217,7 @@
                   let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                   self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
                   sourceLayers[sourceId].mapLayer = mapLayer
+                  EventBus.$emit('source-initialized-' + sourceId)
                 }
               } else {
                 // hide and remove the map layer
@@ -1449,6 +1464,8 @@
       ActionUtilities.clearEditFeatureGeometry({projectId: this.project.id})
       EventBus.$on('show-feature-table', payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
       EventBus.$on('reorder-map-layers', this.reorderMapLayers)
+      EventBus.$on('request-source-initialization-status', this.sendSourceInitializationStatus)
+
       this.maxFeatures = this.project.maxFeatures
       this.registerResizeObserver()
       this.initializeMap()

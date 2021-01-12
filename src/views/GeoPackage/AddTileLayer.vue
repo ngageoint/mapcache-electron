@@ -73,12 +73,7 @@
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
-                          <v-switch
-                            dense
-                            @click.stop="item.changeVisibility"
-                            :input-value="active"
-                            color="primary"
-                          ></v-switch>
+                          <source-visibility-switch :input-value="active" :project-id="project.id" :source-id="item.id"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>
@@ -342,6 +337,7 @@
   import NumberPicker from '../Common/NumberPicker'
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
+  import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 
   export default {
     props: {
@@ -350,6 +346,7 @@
       back: Function
     },
     components: {
+      SourceVisibilitySwitch,
       NumberPicker,
       draggable
     },
@@ -544,16 +541,11 @@
       getDataSourceLayers () {
         const projectId = this.project.id
         return Object.values(this.project.sources).map(source => {
-          const sourceId = source.id
-          const visible = !source.visible
           return {
             title: source.displayName ? source.displayName : source.name,
             id: source.id,
             visible: source.visible,
             type: source.pane === 'vector' ? 'feature' : 'tile',
-            changeVisibility: _.debounce(() => {
-              ActionUtilities.setDataSourceVisible({projectId, sourceId, visible})
-            }, 100),
             zoomTo: _.debounce((e) => {
               e.stopPropagation()
               ActionUtilities.zoomToExtent({projectId, extent: source.extent})

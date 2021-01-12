@@ -244,7 +244,7 @@
                   <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     Enable
                   </p>
-                  <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+                  <source-visibility-switch :input-value="source.visible" :project-id="project.id" :source-id="source.id" class="ml-2" :style="{marginTop: '-4px'}"></source-visibility-switch>
                 </v-row>
               </v-col>
             </v-row>
@@ -295,6 +295,7 @@
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
+  import SourceVisibilitySwitch from "./SourceVisibilitySwitch";
 
   export default {
     props: {
@@ -310,6 +311,7 @@
       back: Function
     },
     components: {
+      SourceVisibilitySwitch,
       TransparencyOptions,
       GeotiffOptions,
       StyleEditor
@@ -319,15 +321,7 @@
         initialDisplayName () {
           return _.isNil(this.source.displayName) ? this.source.name : this.source.displayName
         }
-      }),
-      visible: {
-        get () {
-          return this.source ? this.source.visible : false
-        },
-        set () {
-          ActionUtilities.setDataSourceVisible({projectId: this.project.id, sourceId: this.source.id, visible: !this.source.visible})
-        }
-      }
+      })
     },
     data () {
       return {

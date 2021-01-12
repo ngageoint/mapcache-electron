@@ -21,13 +21,7 @@
           <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
         </v-list-item-content>
         <v-list-item-action>
-          <v-switch
-            hide-details
-            color="primary"
-            @click="item.setVisible"
-            :input-value="item.visible"
-            dense>
-          </v-switch>
+          <source-visibility-switch :input-value="item.visible" :project-id="projectId" :source-id="item.id"></source-visibility-switch>
         </v-list-item-action>
       </v-list-item>
       <v-divider :key="item.id + 'divider'"></v-divider>
@@ -38,8 +32,12 @@
 <script>
   import _ from 'lodash'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 
   export default {
+    components: {
+      SourceVisibilitySwitch
+    },
     props: {
       sources: Object,
       projectId: String,
@@ -53,24 +51,19 @@
           const source = this.sources[key]
           const sourceId = key
           const projectId = _this.projectId
-          const setVisible = (e) => {
-            ActionUtilities.setDataSourceVisible({projectId, sourceId, visible: !source.visible})
-            e.stopPropagation()
-          }
           const zoomTo = (e) => {
             ActionUtilities.zoomToExtent({projectId, extent: source.extent})
             e.stopPropagation()
           }
           items.push({
             id: key,
+            visible: source.visible,
             name: _.isNil(source.displayName) ? source.name : source.displayName,
             path: source.filePath,
             isTile: source.pane === 'tile',
-            visible: source.visible,
             click: function () {
               _this.sourceSelected(sourceId)
             },
-            setVisible,
             zoomTo
           })
         })

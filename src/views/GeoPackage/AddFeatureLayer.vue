@@ -70,12 +70,7 @@
                           <v-list-item-title v-text="item.text"></v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
-                          <v-switch
-                            dense
-                            @click.stop="item.changeVisibility"
-                            :input-value="active"
-                            color="primary"
-                          ></v-switch>
+                          <source-visibility-switch :input-value="active" :project-id="project.id" :source-id="item.id"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>
@@ -250,8 +245,12 @@
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
   import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 
   export default {
+    components: {
+      SourceVisibilitySwitch
+    },
     props: {
       project: Object,
       geopackage: Object,
@@ -363,7 +362,7 @@
         let numberOfFeatures = 0
         const sourceItems = this.getDataSourceLayers().filter(item => item.visible)
         for (let i = 0; i < sourceItems.length; i++) {
-          const source = this.project.sources[sourceItems[i].sourceId]
+          const source = this.project.sources[sourceItems[i].id]
           if (!_.isNil(this.project.boundingBoxFilter)) {
             numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
           } else {
@@ -419,16 +418,11 @@
       getDataSourceLayers () {
         const projectId = this.project.id
         return Object.values(this.project.sources).filter(source => source.pane === 'vector').map(source => {
-          const sourceId = source.id
-          const visible = !source.visible
           return {
             text: source.displayName ? source.displayName : source.name,
             value: source.id,
-            sourceId: source.id,
+            id: source.id,
             visible: source.visible,
-            changeVisibility: _.debounce(() => {
-              ActionUtilities.setDataSourceVisible({projectId, sourceId, visible})
-            }, 100),
             zoomTo: _.debounce((e) => {
               e.stopPropagation()
               ActionUtilities.zoomToExtent({projectId, extent: source.extent})
