@@ -1,5 +1,5 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <div flat class="mx-auto" style="width: 100%;">
+  <v-sheet class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -49,152 +49,149 @@
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent>
       <edit-number-modal icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
-    <v-dialog v-model="helpDialog" max-width="500" persistent>
+    <v-dialog v-model="helpDialog" max-width="500">
       <help :close="() => {helpDialog = false}"></help>
     </v-dialog>
-    <v-list two-line subheader>
-      <v-row no-gutters justify="space-between" align="center">
-        <v-col>
-          <v-subheader>General</v-subheader>
-        </v-col>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs"
-              v-on="on"
-              class="ma-2"
-              @click.stop.prevent="helpDialog = true"
-              icon
-            >
-              <v-icon>mdi-help-circle-outline</v-icon>
-            </v-btn>
-          </template>
-          <span>Help</span>
-        </v-tooltip>
-      </v-row>
-      <v-list-item selectable @click.stop.prevent="toggleDarkTheme">
-        <v-list-item-content>
-          <v-list-item-title>Theme</v-list-item-title>
-          <v-list-item-subtitle>Dark</v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-switch
-            v-model="darkTheme"
-            color="primary"
-          ></v-switch>
-        </v-list-item-action>
-      </v-list-item>
-      <v-list-item selectable @click.stop.prevent="toggleShowToolTip">
-        <v-list-item-content>
-          <v-list-item-title>Tooltips</v-list-item-title>
-          <v-list-item-subtitle>Show tooltips in application</v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-switch
-            v-model="showToolTip"
-            color="primary"
-          ></v-switch>
-        </v-list-item-action>
-      </v-list-item>
-      <v-list-item selectable @click.stop.prevent="savedUrlDialog = true">
-        <v-list-item-content>
-          <v-list-item-title>Saved URLs</v-list-item-title>
-          <v-list-item-subtitle>Manage saved URLs</v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-
-    <v-divider></v-divider>
-
-    <v-list
-      subheader
-      two-line
-      flat
-      style="padding-bottom: 0;"
-    >
-      <v-subheader>Map</v-subheader>
-      <v-list-item-group
-        v-model="settings"
-        multiple
+    <v-sheet class="mapcache-sheet-content">
+      <v-list two-line subheader>
+        <v-row no-gutters justify="space-between" align="center">
+          <v-col>
+            <v-subheader>General</v-subheader>
+          </v-col>
+          <v-tooltip right :disabled="!project.showToolTips">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                v-on="on"
+                class="ma-2"
+                @click.stop.prevent="helpDialog = true"
+                icon
+              >
+                <v-icon>mdi-help-circle-outline</v-icon>
+              </v-btn>
+            </template>
+            <span>Help</span>
+          </v-tooltip>
+        </v-row>
+        <v-list-item selectable @click.stop.prevent="toggleDarkTheme">
+          <v-list-item-content>
+            <v-list-item-title>Theme</v-list-item-title>
+            <v-list-item-subtitle>Dark</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-switch
+              v-model="darkTheme"
+              color="primary"
+            ></v-switch>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="toggleShowToolTip">
+          <v-list-item-content>
+            <v-list-item-title>Tooltips</v-list-item-title>
+            <v-list-item-subtitle>Show tooltips in application</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-switch
+              v-model="showToolTip"
+              color="primary"
+            ></v-switch>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="savedUrlDialog = true">
+          <v-list-item-content>
+            <v-list-item-title>Saved URLs</v-list-item-title>
+            <v-list-item-subtitle>Manage saved URLs</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+      <v-divider></v-divider>
+      <v-list
+        subheader
+        two-line
+        flat
+        style="padding-bottom: 0;"
       >
-        <v-list-item>
-          <template v-slot:default="{ active }">
-            <v-list-item-content>
-              <v-list-item-title>Zoom control</v-list-item-title>
-              <v-list-item-subtitle>Show zoom in/out control</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-switch
-                :input-value="active"
-                color="primary"
-              ></v-switch>
-            </v-list-item-action>
-          </template>
+        <v-subheader>Map</v-subheader>
+        <v-list-item-group
+          v-model="settings"
+          multiple
+        >
+          <v-list-item>
+            <template v-slot:default="{ active }">
+              <v-list-item-content>
+                <v-list-item-title>Zoom control</v-list-item-title>
+                <v-list-item-subtitle>Show zoom in/out control</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch
+                  :input-value="active"
+                  color="primary"
+                ></v-switch>
+              </v-list-item-action>
+            </template>
+          </v-list-item>
+          <v-list-item>
+            <template v-slot:default="{ active }">
+              <v-list-item-content>
+                <v-list-item-title>Display current zoom</v-list-item-title>
+                <v-list-item-subtitle>Show current zoom level</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch
+                  :input-value="active"
+                  color="primary"
+                ></v-switch>
+              </v-list-item-action>
+            </template>
+          </v-list-item>
+          <v-list-item>
+            <template v-slot:default="{ active }">
+              <v-list-item-content>
+                <v-list-item-title>Address search</v-list-item-title>
+                <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch
+                  :input-value="active"
+                  color="primary"
+                ></v-switch>
+              </v-list-item-action>
+            </template>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+      <v-list
+        two-line
+        style="padding-top: 0;"
+      >
+        <v-list-item @click="toggleEditMaxFeaturesDialog">
+          <v-list-item-content style="padding-right: 12px;">
+            <v-list-item-title>Max features</v-list-item-title>
+            <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
+          </v-list-item-content>
         </v-list-item>
-        <v-list-item>
-          <template v-slot:default="{ active }">
-            <v-list-item-content>
-              <v-list-item-title>Display current zoom</v-list-item-title>
-              <v-list-item-subtitle>Show current zoom level</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-switch
-                :input-value="active"
-                color="primary"
-              ></v-switch>
-            </v-list-item-action>
-          </template>
+      </v-list>
+      <v-divider></v-divider>
+      <v-list subheader two-line style="padding-top: 0;">
+        <v-subheader>Project</v-subheader>
+        <v-list-item @click="toggleEditProjectNameDialog">
+          <v-list-item-content style="padding-right: 12px;">
+            <v-list-item-title>Rename project</v-list-item-title>
+            <v-list-item-subtitle>Rename <b>{{project.name}}</b> project</v-list-item-subtitle>
+          </v-list-item-content>
         </v-list-item>
-        <v-list-item>
-          <template v-slot:default="{ active }">
-            <v-list-item-content>
-              <v-list-item-title>Address search</v-list-item-title>
-              <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-switch
-                :input-value="active"
-                color="primary"
-              ></v-switch>
-            </v-list-item-action>
-          </template>
+        <v-list-item @click="showDeleteProjectDialog">
+          <v-list-item-content style="padding-right: 12px;">
+            <v-list-item-title class="warning--text">Delete project</v-list-item-title>
+            <v-list-item-subtitle class="warning--text">Permanently delete <b>{{project.name}}</b> project</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-avatar>
+            <v-btn icon color="warning"><v-icon>mdi-trash-can</v-icon></v-btn>
+          </v-list-item-avatar>
         </v-list-item>
-      </v-list-item-group>
-    </v-list>
-    <v-list
-      two-line
-      style="padding-top: 0;"
-    >
-      <v-list-item @click="toggleEditMaxFeaturesDialog">
-        <v-list-item-content style="padding-right: 12px;">
-          <v-list-item-title>Max features</v-list-item-title>
-          <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-
-    <v-divider></v-divider>
-
-    <v-list subheader two-line style="padding-top: 0;">
-      <v-subheader>Project</v-subheader>
-      <v-list-item @click="toggleEditProjectNameDialog">
-        <v-list-item-content style="padding-right: 12px;">
-          <v-list-item-title>Rename project</v-list-item-title>
-          <v-list-item-subtitle>Rename <b>{{project.name}}</b> project</v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-      <v-list-item @click="showDeleteProjectDialog">
-        <v-list-item-content style="padding-right: 12px;">
-          <v-list-item-title class="warning--text">Delete project</v-list-item-title>
-          <v-list-item-subtitle class="warning--text">Permanently delete <b>{{project.name}}</b> project</v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-avatar>
-          <v-btn icon color="warning"><v-icon>mdi-trash-can</v-icon></v-btn>
-        </v-list-item-avatar>
-      </v-list-item>
-    </v-list>
-
-  </div>
+      </v-list>
+    </v-sheet>
+  </v-sheet>
 </template>
 
 <script>

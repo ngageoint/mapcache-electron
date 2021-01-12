@@ -1,5 +1,5 @@
 <template>
-  <v-sheet style="margin-bottom: 80px;">
+  <v-sheet>
     <v-dialog v-model="showDialog" max-width="500" persistent>
       <v-card>
         <v-card-title>

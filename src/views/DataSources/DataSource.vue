@@ -1,29 +1,20 @@
 <template>
-  <v-sheet>
-    <v-sheet v-if="styleEditorVisible">
-      <v-sheet v-if="source.pane === 'vector'">
-        <style-editor
-          :tableName="source.sourceLayerName"
-          :projectId="project.id"
-          :id="source.id"
-          :project="project"
-          :path="source.geopackageFilePath"
-          :style-key="source.styleKey"
-          :back="hideStyleEditor"
-          :style-assignment="source.styleAssignment"
-          :table-style-assignment="source.tableStyleAssignment"
-          :icon-assignment="source.iconAssignment"
-          :table-icon-assignment="source.tableIconAssignment"
-          :is-geo-package="false"/>
-      </v-sheet>
-      <div v-else-if="source.layerType === 'GeoTIFF'">
-        <geotiff-options :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
-      </div>
-      <div v-else>
-        <transparency-options :source="source" :projectId="project.id" :back="hideStyleEditor"></transparency-options>
-      </div>
-    </v-sheet>
-    <v-sheet v-else>
+  <style-editor v-if="styleEditorVisible && source.pane === 'vector'"
+    :tableName="source.sourceLayerName"
+    :projectId="project.id"
+    :id="source.id"
+    :project="project"
+    :path="source.geopackageFilePath"
+    :style-key="source.styleKey"
+    :back="hideStyleEditor"
+    :style-assignment="source.styleAssignment"
+    :table-style-assignment="source.tableStyleAssignment"
+    :icon-assignment="source.iconAssignment"
+    :table-icon-assignment="source.tableIconAssignment"
+    :is-geo-package="false"/>
+  <geotiff-options v-else-if="styleEditorVisible && source.layerType === 'GeoTIFF'" :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
+  <transparency-options v-else-if="styleEditorVisible" :source="source" :projectId="project.id" :back="hideStyleEditor"></transparency-options>
+  <v-sheet v-else class="mapcache-sheet">
       <v-toolbar
         color="main"
         dark
@@ -145,14 +136,14 @@
           </v-card-text>
         </v-card>
       </v-dialog>
-      <v-container fluid class="text-left">
+      <v-sheet class="text-left mapcache-sheet-content detail-bg">
         <v-alert
           class="alert-position"
           v-model="showExportAlert"
           dismissible
           type="success"
         >Successfully exported.</v-alert>
-        <v-row no-gutters>
+        <v-row no-gutters class="pl-3 pt-3 pr-3 background">
           <v-col>
             <p class="text-subtitle-1">
               <v-btn icon @click="zoomToSource" color="whitesmoke">
@@ -165,7 +156,7 @@
             </p>
           </v-col>
         </v-row>
-        <v-row no-gutters class="pb-2" style="margin-left: -12px" justify="center" align-content="center">
+        <v-row no-gutters class="pl-3 pb-3 pr-3 background" style="margin-left: -12px" justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
@@ -228,7 +219,7 @@
             </template>
           </v-hover>
         </v-row>
-        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
+        <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
           <v-col>
             <v-row no-gutters justify="space-between">
               <v-col>
@@ -279,9 +270,8 @@
             </v-row>
           </v-col>
         </v-row>
-      </v-container>
+      </v-sheet>
     </v-sheet>
-  </v-sheet>
 </template>
 
 <script>

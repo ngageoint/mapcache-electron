@@ -1,5 +1,5 @@
 <template>
-  <v-container class="ma-0 pa-0">
+  <v-sheet class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -16,8 +16,8 @@
                            :color="error ? 'warning' : 'primary'"></v-progress-linear>
       </v-card-text>
     </v-card>
-    <v-sheet v-else>
-      <v-stepper v-model="step" non-linear vertical>
+    <v-sheet v-else class="mapcache-sheet-content">
+      <v-stepper v-model="step" non-linear vertical class="background" :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
         <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => layerNameValid]" color="primary">
           Name the layer
           <small class="pt-1">{{layerName}}</small>
@@ -235,7 +235,7 @@
         </v-btn>
       </v-card-actions>
     </div>
-  </v-container>
+  </v-sheet>
 </template>
 
 <script>

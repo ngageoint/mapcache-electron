@@ -1,17 +1,13 @@
 <template>
-  <v-sheet class="content-panel" v-if="selectedDataSource !== null && selectedDataSource !== undefined">
-    <data-source
-      :key="selectedDataSource.id"
-      class="sources"
-      :source="selectedDataSource"
-      :project="project"
-      :back="deselectDataSource">
-    </data-source>
-  </v-sheet>
-  <v-sheet class="content-panel" v-else-if="urlSourceDialog">
-    <add-data-source-url :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
-  </v-sheet>
-  <v-sheet v-else>
+  <data-source v-if="selectedDataSource !== null && selectedDataSource !== undefined"
+    :key="selectedDataSource.id"
+    class="sources"
+    :source="selectedDataSource"
+    :project="project"
+    :back="deselectDataSource">
+  </data-source>
+  <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
+  <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -21,7 +17,7 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>Data Sources</v-toolbar-title>
     </v-toolbar>
-    <div style="margin-bottom: 80px;">
+    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
       <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
       </data-source-list>
       <template v-for="source in processingSourceList">
@@ -32,7 +28,7 @@
           @clear-processing="clearProcessing">
         </processing-source>
       </template>
-    </div>
+    </v-sheet>
     <v-card class="card-position" v-if="Object.keys(project.sources).length === 0">
       <v-row no-gutters justify="space-between" align="end">
         <v-col>

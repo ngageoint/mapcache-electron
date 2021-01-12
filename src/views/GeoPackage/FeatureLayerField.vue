@@ -1,5 +1,5 @@
 <template>
-  <v-sheet>
+  <v-sheet class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -9,7 +9,7 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title :title="column.name">{{column.name}}</v-toolbar-title>
     </v-toolbar>
-    <v-container fluid>
+    <v-sheet class="mapcache-sheet-content detail-bg">
       <v-dialog
         v-model="renameDialog"
         max-width="400"
@@ -81,15 +81,15 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-row no-gutters justify="start" align="center">
+      <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="start" align="center">
         <v-col>
           <p class="text-subtitle-1">
-            <v-icon color="primary" class="mr-1">{{column.icon}}</v-icon>
+            <v-icon color="primary" class="mr-1" :style="{width: '36px', height: '36px'}">{{column.icon}}</v-icon>
             <span style="vertical-align: middle;">Feature Layer Field</span>
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters justify="center" align-content="center">
+      <v-row no-gutters class="pl-3 pb-3 pr-3 background" justify="center" align-content="center">
         <v-hover>
           <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
@@ -119,7 +119,7 @@
           </template>
         </v-hover>
       </v-row>
-      <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
+      <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
         <v-col>
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
@@ -153,7 +153,7 @@
           </v-row>
         </v-col>
       </v-row>
-    </v-container>
+    </v-sheet>
   </v-sheet>
 </template>
 

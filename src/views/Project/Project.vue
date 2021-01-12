@@ -51,7 +51,7 @@
         <v-col class="content-panel" v-show="item >= 0">
           <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
           <data-sources ref="dataSourceRef" v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
-          <settings v-if="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
+          <settings v-show="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
         </v-col>
         <v-col>
           <preview-map :visible="previewLayer !== null && previewLayer !== undefined && item === 1"

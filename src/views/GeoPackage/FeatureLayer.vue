@@ -1,442 +1,436 @@
 <template>
-  <v-sheet>
-    <v-sheet v-if="styleEditorVisible">
-      <style-editor
-        :tableName="tableName"
-        :projectId="projectId"
-        :project="project"
-        :id="geopackage.id"
-        :path="geopackage.path"
-        :style-key="styleKey"
-        :back="hideStyleEditor"
-        :style-assignment="geopackage.styleAssignment"
-        :table-style-assignment="geopackage.tableStyleAssignment"
-        :icon-assignment="geopackage.iconAssignment"
-        :table-icon-assignment="geopackage.tableIconAssignment"/>
-    </v-sheet>
-    <v-sheet v-else-if="showFeatureLayerField">
-      <feature-layer-field
-        :tableName="tableName"
-        :projectId="projectId"
-        :geopackage="geopackage"
-        :column="featureLayerField"
-        :columnNames="featureColumnNames"
-        :back="hideFeatureLayerField"
-        :renamed="featureLayerFieldRenamed"/>
-    </v-sheet>
-    <v-sheet v-else>
-      <v-toolbar
-        color="main"
-        dark
-        flat
-        class="sticky-toolbar"
-      >
-        <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-        <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
-      </v-toolbar>
-      <v-container>
-        <v-alert
-          class="alert-position"
-          v-model="showCopiedAlert"
-          dismissible
-          type="success"
-        >Layer copied.</v-alert>
-        <v-dialog
-          v-model="indexDialog"
-          max-width="400"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-icon color="primary" class="pr-2">mdi-speedometer</v-icon>
-              Indexing feature table
-            </v-card-title>
-            <v-card-text>
-              <v-row
-                no-gutters
-                class="pt-2 pb-2"
+  <style-editor v-if="styleEditorVisible"
+    :tableName="tableName"
+    :projectId="projectId"
+    :project="project"
+    :id="geopackage.id"
+    :path="geopackage.path"
+    :style-key="styleKey"
+    :back="hideStyleEditor"
+    :style-assignment="geopackage.styleAssignment"
+    :table-style-assignment="geopackage.tableStyleAssignment"
+    :icon-assignment="geopackage.iconAssignment"
+    :table-icon-assignment="geopackage.tableIconAssignment"/>
+  <feature-layer-field v-else-if="showFeatureLayerField"
+    :tableName="tableName"
+    :projectId="projectId"
+    :geopackage="geopackage"
+    :column="featureLayerField"
+    :columnNames="featureColumnNames"
+    :back="hideFeatureLayerField"
+    :renamed="featureLayerFieldRenamed"/>
+  <v-sheet v-else class="mapcache-sheet">
+    <v-toolbar
+      color="main"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
+    </v-toolbar>
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-alert
+        class="alert-position"
+        v-model="showCopiedAlert"
+        dismissible
+        type="success"
+      >Layer copied.</v-alert>
+      <v-dialog
+        v-model="indexDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-speedometer</v-icon>
+            Indexing feature table
+          </v-card-title>
+          <v-card-text>
+            <v-row
+              no-gutters
+              class="pt-2 pb-2"
+            >
+              {{indexMessage}}
+            </v-row>
+            <v-row no-gutters class="pb-4" v-if="!indexingDone">
+              <v-progress-linear
+                color="primary"
+                indeterminate
+                rounded
+                height="6"
+              ></v-progress-linear>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              v-if="indexingDone"
+              text
+              @click="indexDialog = false">
+              Close
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="renameDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            Rename feature layer
+          </v-card-title>
+          <v-card-text>
+            <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
+              <v-container class="ma-0 pa-0">
+                <v-row no-gutters>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="renamedTable"
+                      :rules="renamedTableRules"
+                      label="Name"
+                      required
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="renameDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              v-if="renameValid"
+              color="primary"
+              text
+              @click="rename">
+              Rename
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="copyDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+            Copy feature layer
+          </v-card-title>
+          <v-card-text>
+            <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
+              <v-container class="ma-0 pa-0">
+                <v-row no-gutters>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="copiedTable"
+                      :rules="copiedTableRules"
+                      label="Name"
+                      required
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="copyDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              v-if="copyValid"
+              color="primary"
+              text
+              @click="copy">
+              Copy
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="addFieldDialog"
+        max-width="575"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-row no-gutters justify="start" align="center">
+              New Field
+            </v-row>
+          </v-card-title>
+          <v-card-text>
+            <v-form v-on:submit.prevent ref="copyForm" v-model="addFieldValid">
+              <v-container class="ma-0 pa-0">
+                <v-row no-gutters>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="addFieldValue"
+                      :rules="addFieldRules"
+                      label="Name"
+                      required
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+                <v-row no-gutters class="mt-4">
+                  <v-col cols="12">
+                    <p class="pb-0 mb-0">Type</p>
+                    <v-btn-toggle
+                      v-model="addFieldType"
+                      color="primary"
+                      mandatory
+                      style="width: 100%"
+                    >
+                      <v-btn :value="TEXT">
+                        <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
+                          mdi-format-text
+                        </v-icon>
+                        <span class="hidden-sm-and-down">Text</span>
+                      </v-btn>
+                      <v-btn :value="FLOAT">
+                        <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
+                          mdi-pound
+                        </v-icon>
+                        <span class="hidden-sm-and-down">Number</span>
+                      </v-btn>
+                      <v-btn :value="BOOLEAN">
+                        <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
+                          mdi-toggle-switch
+                        </v-icon>
+                        <span class="hidden-sm-and-down">Checkbox</span>
+                      </v-btn>
+                      <v-btn :value="DATE">
+                        <v-icon left :color="addFieldType === DATE ? 'primary' : ''">
+                          mdi-calendar
+                        </v-icon>
+                        <span class="hidden-sm-and-down">Date</span>
+                      </v-btn>
+                      <v-btn :value="DATETIME">
+                        <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
+                          mdi-calendar-clock
+                        </v-icon>
+                        <span class="hidden-sm-and-down">Date & Time</span>
+                      </v-btn>
+                    </v-btn-toggle>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="cancelAddField">
+              Cancel
+            </v-btn>
+            <v-btn
+              v-if="addFieldValid"
+              color="primary"
+              text
+              @click="addField">
+              Save
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="deleteDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Delete feature layer
+          </v-card-title>
+          <v-card-text>
+            Are you sure you want to delete the <b>{{tableName}}</b> feature layer from the <b>{{geopackage.name}}</b> GeoPackage? This action can't be undone.
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="deleteDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="warning"
+              text
+              @click="deleteTable">
+              Delete
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="center">
+        <v-col>
+          <p class="text-subtitle-1">
+            <v-btn icon @click="zoomToLayer" color="whitesmoke">
+              <img v-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+            </v-btn>
+            <span style="vertical-align: middle;">Feature Layer</span>
+          </p>
+        </v-col>
+      </v-row>
+      <v-row no-gutters class="pl-3 pb-3 pr-3 background" justify="center" align-content="center">
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-pencil</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Rename
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-content-copy</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Copy
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-palette</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Style
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-trash-can</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Delete
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover v-if="!indexed">
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-speedometer</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Index
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+      </v-row>
+      <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
+        <v-col>
+          <v-row no-gutters justify="space-between">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                GeoPackage
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{geopackage.name}}
+              </p>
+            </v-col>
+            <v-col>
+              <v-row no-gutters justify="end">
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Enable
+                </p>
+                <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
+              </v-row>
+            </v-col>
+          </v-row>
+          <v-row no-gutters justify="space-between">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Features
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{featureCount}}
+              </p>
+            </v-col>
+            <v-col>
+              <v-row no-gutters justify="end">
+                <v-btn class="btn-background" @click.stop="showFeatureTable">
+                  <v-icon left>
+                    mdi-table-eye
+                  </v-icon>View features
+                </v-btn>
+              </v-row>
+            </v-col>
+          </v-row>
+          <v-row no-gutters>
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Description
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{description}}
+              </p>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+      <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
+        <v-container class="ma-0 pa-0">
+          <v-row no-gutters>
+            <p style="font-size: 16px; font-weight: 500;">Fields</p>
+          </v-row>
+          <v-row no-gutters>
+            <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
+          </v-row>
+          <v-row no-gutters class="mt-4 detail-bg">
+            <v-list style="width: 100%" class="detail-bg ma-0 pa-0">
+              <v-list-item
+                v-for="item in tableFields"
+                class="detail-bg"
+                :key="item.id"
+                @click="item.click"
               >
-                {{indexMessage}}
-              </v-row>
-              <v-row no-gutters class="pb-4" v-if="!indexingDone">
-                <v-progress-linear
-                  color="primary"
-                  indeterminate
-                  rounded
-                  height="6"
-                ></v-progress-linear>
-              </v-row>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                v-if="indexingDone"
-                text
-                @click="indexDialog = false">
-                Close
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog
-          v-model="renameDialog"
-          max-width="400"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-              Rename feature layer
-            </v-card-title>
-            <v-card-text>
-              <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
-                <v-container class="ma-0 pa-0">
-                  <v-row no-gutters>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="renamedTable"
-                        :rules="renamedTableRules"
-                        label="Name"
-                        required
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="renameDialog = false">
-                Cancel
-              </v-btn>
-              <v-btn
-                v-if="renameValid"
-                color="primary"
-                text
-                @click="rename">
-                Rename
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog
-          v-model="copyDialog"
-          max-width="400"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
-              Copy feature layer
-            </v-card-title>
-            <v-card-text>
-              <v-form v-on:submit.prevent ref="copyForm" v-model="copyValid">
-                <v-container class="ma-0 pa-0">
-                  <v-row no-gutters>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="copiedTable"
-                        :rules="copiedTableRules"
-                        label="Name"
-                        required
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="copyDialog = false">
-                Cancel
-              </v-btn>
-              <v-btn
-                v-if="copyValid"
-                color="primary"
-                text
-                @click="copy">
-                Copy
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog
-          v-model="addFieldDialog"
-          max-width="575"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-row no-gutters justify="start" align="center">
-                New Field
-              </v-row>
-            </v-card-title>
-            <v-card-text>
-              <v-form v-on:submit.prevent ref="copyForm" v-model="addFieldValid">
-                <v-container class="ma-0 pa-0">
-                  <v-row no-gutters>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="addFieldValue"
-                        :rules="addFieldRules"
-                        label="Name"
-                        required
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                  <v-row no-gutters class="mt-4">
-                    <v-col cols="12">
-                      <p class="pb-0 mb-0">Type</p>
-                      <v-btn-toggle
-                        v-model="addFieldType"
-                        color="primary"
-                        mandatory
-                        style="width: 100%"
-                      >
-                        <v-btn :value="TEXT">
-                          <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
-                            mdi-format-text
-                          </v-icon>
-                          <span class="hidden-sm-and-down">Text</span>
-                        </v-btn>
-                        <v-btn :value="FLOAT">
-                          <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
-                            mdi-pound
-                          </v-icon>
-                          <span class="hidden-sm-and-down">Number</span>
-                        </v-btn>
-                        <v-btn :value="BOOLEAN">
-                          <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
-                            mdi-toggle-switch
-                          </v-icon>
-                          <span class="hidden-sm-and-down">Checkbox</span>
-                        </v-btn>
-                        <v-btn :value="DATE">
-                          <v-icon left :color="addFieldType === DATE ? 'primary' : ''">
-                            mdi-calendar
-                          </v-icon>
-                          <span class="hidden-sm-and-down">Date</span>
-                        </v-btn>
-                        <v-btn :value="DATETIME">
-                          <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
-                            mdi-calendar-clock
-                          </v-icon>
-                          <span class="hidden-sm-and-down">Date & Time</span>
-                        </v-btn>
-                      </v-btn-toggle>
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="cancelAddField">
-                Cancel
-              </v-btn>
-              <v-btn
-                v-if="addFieldValid"
-                color="primary"
-                text
-                @click="addField">
-                Save
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog
-          v-model="deleteDialog"
-          max-width="400"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-              Delete feature layer
-            </v-card-title>
-            <v-card-text>
-              Are you sure you want to delete the <b>{{tableName}}</b> feature layer from the <b>{{geopackage.name}}</b> GeoPackage? This action can't be undone.
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="deleteDialog = false">
-                Cancel
-              </v-btn>
-              <v-btn
-                color="warning"
-                text
-                @click="deleteTable">
-                Delete
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-row no-gutters justify="center">
-          <v-col>
-            <p class="text-subtitle-1">
-              <v-btn icon @click="zoomToLayer" color="whitesmoke">
-                <img v-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              </v-btn>
-              <span style="vertical-align: middle;">Feature Layer</span>
-            </p>
-          </v-col>
-        </v-row>
-        <v-row no-gutters class="pb-2" justify="center" align-content="center">
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
-                <v-card-text class="pa-2">
-                  <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-pencil</v-icon>
-                  </v-row>
-                  <v-row no-gutters align-content="center" justify="center">
-                    Rename
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
-                <v-card-text class="pa-2">
-                  <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-content-copy</v-icon>
-                  </v-row>
-                  <v-row no-gutters align-content="center" justify="center">
-                    Copy
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
-                <v-card-text class="pa-2">
-                  <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-palette</v-icon>
-                  </v-row>
-                  <v-row no-gutters align-content="center" justify="center">
-                    Style
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover>
-            <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
-                <v-card-text class="pa-2">
-                  <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-trash-can</v-icon>
-                  </v-row>
-                  <v-row no-gutters align-content="center" justify="center">
-                    Delete
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-          <v-hover v-if="!indexed">
-            <template v-slot="{ hover }">
-              <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
-                <v-card-text class="pa-2">
-                  <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-speedometer</v-icon>
-                  </v-row>
-                  <v-row no-gutters align-content="center" justify="center">
-                    Index
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-hover>
-        </v-row>
-        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
-          <v-col>
-            <v-row no-gutters justify="space-between">
-              <v-col>
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  GeoPackage
-                </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  {{geopackage.name}}
-                </p>
-              </v-col>
-              <v-col>
-                <v-row no-gutters justify="end">
-                  <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    Enable
-                  </p>
-                  <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible" hide-details></v-switch>
-                </v-row>
-              </v-col>
-            </v-row>
-            <v-row no-gutters justify="space-between">
-              <v-col>
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Features
-                </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  {{featureCount}}
-                </p>
-              </v-col>
-              <v-col>
-                <v-row no-gutters justify="end">
-                  <v-btn class="btn-background" @click.stop="showFeatureTable">
-                    <v-icon left>
-                      mdi-table-eye
-                    </v-icon>View features
-                  </v-btn>
-                </v-row>
-              </v-col>
-            </v-row>
-            <v-row no-gutters>
-              <v-col>
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Description
-                </p>
-                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  {{description}}
-                </p>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-        <v-row no-gutters class="detail-bg detail-section-margins-and-padding">
-          <v-container class="ma-0 pa-0">
-            <v-row no-gutters>
-              <p style="font-size: 16px; font-weight: 500;">Fields</p>
-            </v-row>
-            <v-row no-gutters>
-              <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
-            </v-row>
-            <v-row no-gutters class="mt-4 detail-bg">
-              <v-list style="width: 100%" class="detail-bg ma-0 pa-0">
-                <v-list-item
-                  v-for="item in tableFields"
-                  class="detail-bg"
-                  :key="item.id"
-                  @click="item.click"
-                >
-                  <v-list-item-icon>
-                    <v-icon>{{item.icon}}</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-content>
-                    <v-list-item-title :title="item.name" v-html="item.name"></v-list-item-title>
-                    <v-list-item-subtitle :title="item.type" v-html="item.type"></v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
-            </v-row>
-          </v-container>
-        </v-row>
-      </v-container>
+                <v-list-item-icon>
+                  <v-icon>{{item.icon}}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title :title="item.name" v-html="item.name"></v-list-item-title>
+                  <v-list-item-subtitle :title="item.type" v-html="item.type"></v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-row>
+        </v-container>
+      </v-row>
     </v-sheet>
   </v-sheet>
 </template>

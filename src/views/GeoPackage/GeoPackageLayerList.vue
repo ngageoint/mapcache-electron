@@ -1,5 +1,5 @@
 <template>
-  <v-list class="pa-0" style="margin-bottom: 80px;">
+  <v-list class="pa-0">
     <template v-for="item in items">
       <v-list-item
         :key="item.id"

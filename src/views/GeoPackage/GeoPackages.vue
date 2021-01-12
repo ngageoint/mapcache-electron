@@ -1,119 +1,115 @@
 <template>
-  <v-sheet>
-    <v-sheet v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined">
-      <geo-package :project="project" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
-    </v-sheet>
-    <v-sheet v-else>
-      <v-toolbar
-        dark
-        color="main"
-        flat
-        class="sticky-toolbar"
-      >
-        <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
-        <v-toolbar-title>GeoPackages</v-toolbar-title>
-      </v-toolbar>
-      <v-sheet>
-        <geo-package-list :geopackages="geopackages" :projectId="project.id" :geopackage-selected="geopackageSelected"></geo-package-list>
-        <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
-          <v-row no-gutters justify="space-between" align="end">
-            <v-col>
-              <v-row class="pa-0" no-gutters>
-                <v-col class="pa-0 align-center">
-                  <h5 class="align-self-center">No GeoPackage files found</h5>
-                </v-col>
-              </v-row>
-              <v-row class="pa-0" no-gutters>
-                <v-col class="pa-0 align-center">
-                  <h5 class="align-self-center primary--text">Get Started</h5>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
+  <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
+  <v-sheet v-else class="mapcache-sheet">
+    <v-toolbar
+      dark
+      color="main"
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title>GeoPackages</v-toolbar-title>
+    </v-toolbar>
+    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
+      <geo-package-list :geopackages="geopackages" :projectId="project.id" :geopackage-selected="geopackageSelected"></geo-package-list>
+      <v-card class="card-position" v-if="Object.keys(geopackages).length === 0">
+        <v-row no-gutters justify="space-between" align="end">
+          <v-col>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center">No GeoPackage files found</h5>
+              </v-col>
+            </v-row>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center primary--text">Get Started</h5>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-card>
+      <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
+        GeoPackage already exists in project.
+      </v-alert>
+      <v-dialog
+        v-model="geopackageExistsDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
+            Create GeoPackage Warning
+          </v-card-title>
+          <v-card-text>
+            <v-card-subtitle>
+              The name of the geopackage you tried to create already exists. Would you like try another file name?
+            </v-card-subtitle>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="geopackageExistsDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              text
+              @click="createNewGeoPackage">
+              OK
+            </v-btn>
+          </v-card-actions>
         </v-card>
-        <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
-          GeoPackage already exists in project.
-        </v-alert>
-        <v-dialog
-          v-model="geopackageExistsDialog"
-          max-width="400"
-          persistent>
-          <v-card>
-            <v-card-title>
-              <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
-              Create GeoPackage Warning
-            </v-card-title>
-            <v-card-text>
-              <v-card-subtitle>
-                The name of the geopackage you tried to create already exists. Would you like try another file name?
-              </v-card-subtitle>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                @click="geopackageExistsDialog = false">
-                Cancel
-              </v-btn>
-              <v-btn
-                color="primary"
-                text
-                @click="createNewGeoPackage">
-                OK
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-sheet>
-      <v-speed-dial
-        class="fab-position"
-        v-model="fab"
-        transition="slide-y-reverse-transition"
-      >
-        <template v-slot:activator>
-          <v-tooltip right :disabled="!project.showToolTips">
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                fab
-                color="primary"
-                v-bind="attrs"
-                v-on="on">
-                <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
-              </v-btn>
-            </template>
-            <span>Add GeoPackage</span>
-          </v-tooltip>
-        </template>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              fab
-              small
-              color="accent"
-              @click.stop="importGeoPackage"
-              v-bind="attrs"
-              v-on="on">
-              <v-icon>mdi-file-document-outline</v-icon>
-            </v-btn>
-          </template>
-          <span>Import from file</span>
-        </v-tooltip>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              fab
-              small
-              color="accent"
-              @click.stop="createNewGeoPackage"
-              v-bind="attrs"
-              v-on="on">
-              <v-icon>mdi-plus</v-icon>
-            </v-btn>
-          </template>
-          <span>New GeoPackage</span>
-        </v-tooltip>
-      </v-speed-dial>
+      </v-dialog>
     </v-sheet>
+    <v-speed-dial
+      class="fab-position"
+      v-model="fab"
+      transition="slide-y-reverse-transition"
+    >
+      <template v-slot:activator>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              fab
+              color="primary"
+              v-bind="attrs"
+              v-on="on">
+              <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
+            </v-btn>
+          </template>
+          <span>Add GeoPackage</span>
+        </v-tooltip>
+      </template>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click.stop="importGeoPackage"
+            v-bind="attrs"
+            v-on="on">
+            <v-icon>mdi-file-document-outline</v-icon>
+          </v-btn>
+        </template>
+        <span>Import from file</span>
+      </v-tooltip>
+      <v-tooltip right :disabled="!project.showToolTips">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            small
+            color="accent"
+            @click.stop="createNewGeoPackage"
+            v-bind="attrs"
+            v-on="on">
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+        </template>
+        <span>New GeoPackage</span>
+      </v-tooltip>
+    </v-speed-dial>
   </v-sheet>
 </template>
 

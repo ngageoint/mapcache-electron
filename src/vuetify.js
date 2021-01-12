@@ -39,7 +39,7 @@ const opts = {
         detail: '#808285',
         detailbg: '#2b2b2b',
         hover: '#414042',
-        background: '#2b2b2b',
+        background: '#1e1e1e',
         scroll_thumb: '#f5f5f5',
         scroll_track: '#414042'
       }

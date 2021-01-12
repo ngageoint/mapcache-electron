@@ -19,10 +19,6 @@
 .card-button:hover {
 	background-color: var(--v-hover-base)
 }
-.detail-section-margins-and-padding {
-	padding: 16px 24px 24px !important;
-	margin: 12px -12px -12px -12px !important;
-}
 .content-panel {
 	-moz-box-shadow: 0 0 8px #000000;
 	-webkit-box-shadow: 0 0 8px #000000;
@@ -39,6 +35,7 @@
 	position: sticky !important;
 	top: 0 !important;
 	z-index: 3 !important;
+	max-height: 64px !important;
 }
 .sticky-card-action-footer {
 	position: -webkit-sticky !important; /* Safari */
@@ -67,6 +64,9 @@
 }
 .detail-bg {
 	background-color: var(--v-detailbg-base) !important;
+}
+.background {
+	background-color: var(--v-background-base) !important;
 }
 
 /* The emerging W3C standard
@@ -97,4 +97,25 @@
 	text-align: center;
 	top: 16px;
 	z-index: 20;
+}
+
+.mapcache-sheet {
+	width: 100% !important;
+	height: 100% !important;
+	overflow-y: hidden !important;
+	display: flex;
+	flex-direction: column;
+}
+
+.mapcache-sheet-content {
+	min-width: 100% !important;
+	max-width: 100% !important;
+	overflow-y: auto !important;
+	flex-grow: 1 !important;
+	flex-direction: column !important;
+	min-height: min-content !important;
+}
+
+.mapcache-fab-spacer {
+	padding-bottom: 80px !important;
 }

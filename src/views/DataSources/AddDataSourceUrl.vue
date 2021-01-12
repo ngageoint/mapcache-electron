@@ -1,5 +1,5 @@
 <template>
-  <v-sheet>
+  <v-sheet class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -8,36 +8,36 @@
     >
       <v-toolbar-title>Add Data Source from URL</v-toolbar-title>
     </v-toolbar>
-    <v-sheet>
-      <v-dialog
-        v-model="deleteUrlDialog"
-        max-width="400"
-        persistent>
-        <v-card>
-          <v-card-title>
-            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-            Delete URL
-          </v-card-title>
-          <v-card-text>
-            Are you sure you want to delete {{urlToDelete}} from your saved URLs?
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              text
-              @click="cancelDeleteUrl">
-              Cancel
-            </v-btn>
-            <v-btn
-              color="warning"
-              text
-              @click="removeUrlFromHistory">
-              Delete
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-      <v-stepper v-model="step" non-linear vertical>
+    <v-dialog
+      v-model="deleteUrlDialog"
+      max-width="400"
+      persistent>
+      <v-card>
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Delete URL
+        </v-card-title>
+        <v-card-text>
+          Are you sure you want to delete {{urlToDelete}} from your saved URLs?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="cancelDeleteUrl">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="warning"
+            text
+            @click="removeUrlFromHistory">
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-sheet class="mapcache-sheet-content">
+      <v-stepper v-model="step" class="background" non-linear vertical :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
         <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => dataSourceNameValid]" color="primary">
           Name the data source
           <small class="pt-1">{{dataSourceName}}</small>
@@ -879,6 +879,9 @@
 </script>
 
 <style scoped>
+  small {
+    word-break: break-all;
+  }
   .ghost {
     opacity: 0.5 !important;
     background-color: var(--v-primary-lighten2) !important;

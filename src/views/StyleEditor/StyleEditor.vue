@@ -1,5 +1,5 @@
 <template>
-  <v-sheet>
+  <v-sheet class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -11,88 +11,89 @@
       </v-btn>
       <v-toolbar-title :title="tableName + ' Style Editor'"><b>{{tableName}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
-    <v-dialog
-      v-model="removeDialog"
-      max-width="400"
-      persistent>
-      <v-card>
-        <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
-          Remove styling
-        </v-card-title>
-        <v-card-text>
-          When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or
-          icons will be deleted. Are you sure you want to remove styling for <b>{{tableName}}</b>?
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            text
-            @click="removeDialog = false">
-            Cancel
-          </v-btn>
-          <v-btn
-            color="warning"
-            text
-            @click="removeStyleExtensionAndTableStyles">
-            Remove
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-sheet v-if="!loading && hasStyleExtension">
-      <v-dialog v-model="assignStyleDialog" max-width="420" persistent scrollable>
-        <edit-table-style-assignment
-          v-if="styleAssignment"
-          :assignment="styleAssignment"
-          :table-name="tableName"
-          :project-id="projectId"
-          :styles="styleItems"
-          :icons="iconItems"
-          :id="id"
-          :is-geo-package="isGeoPackage"
-          :close="closeStyleAssignment"/>
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-dialog
+        v-model="removeDialog"
+        max-width="400"
+        persistent>
+        <v-card>
+          <v-card-title>
+            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            Remove styling
+          </v-card-title>
+          <v-card-text>
+            When removing a feature layer's styling. If no other feature layer has styling enabled, any existing styles or
+            icons will be deleted. Are you sure you want to remove styling for <b>{{tableName}}</b>?
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              @click="removeDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              color="warning"
+              text
+              @click="removeStyleExtensionAndTableStyles">
+              Remove
+            </v-btn>
+          </v-card-actions>
+        </v-card>
       </v-dialog>
-      <v-dialog v-model="editStyleDialog" max-width="400" persistent scrollable>
-        <create-edit-style
-          v-if="editStyle"
-          :key="'icon' + editStyle.id"
-          :style-row="editStyle"
-          :table-name="tableName"
-          :project-id="projectId"
-          :id="id"
-          :is-geo-package="isGeoPackage"
-          :close="closeStyleEditor"/>
-      </v-dialog>
-      <v-dialog v-model="editIconDialog" max-width="400" persistent>
-        <create-edit-icon
-          v-if="editIcon"
-          :key="'icon' + editIcon.id"
-          :icon-row="editIcon"
-          :table-name="tableName"
-          :project-id="projectId"
-          :id="id"
-          :is-geo-package="isGeoPackage"
-          :close="closeIconEditor"/>
-      </v-dialog>
-      <v-list class="pt-0">
-        <v-list-group
-          v-model="styleListItems.active"
-          :prepend-icon="styleListItems.action"
-          no-action
-        >
-          <template v-slot:activator>
-            <v-list-item-content>
-              <v-row no-gutters justify="start" align="center">
-                <span v-text="styleListItems.title"></span>
-              </v-row>
-            </v-list-item-content>
-          </template>
-          <v-list-item
-            v-for="style in styleListItems.items"
-            :key="style.id"
-            link
-            @click="() => showStyleEditor({
+      <v-sheet v-if="!loading && hasStyleExtension">
+        <v-dialog v-model="assignStyleDialog" max-width="420" persistent scrollable>
+          <edit-table-style-assignment
+            v-if="styleAssignment"
+            :assignment="styleAssignment"
+            :table-name="tableName"
+            :project-id="projectId"
+            :styles="styleItems"
+            :icons="iconItems"
+            :id="id"
+            :is-geo-package="isGeoPackage"
+            :close="closeStyleAssignment"/>
+        </v-dialog>
+        <v-dialog v-model="editStyleDialog" max-width="400" persistent scrollable>
+          <create-edit-style
+            v-if="editStyle"
+            :key="'icon' + editStyle.id"
+            :style-row="editStyle"
+            :table-name="tableName"
+            :project-id="projectId"
+            :id="id"
+            :is-geo-package="isGeoPackage"
+            :close="closeStyleEditor"/>
+        </v-dialog>
+        <v-dialog v-model="editIconDialog" max-width="400" persistent>
+          <create-edit-icon
+            v-if="editIcon"
+            :key="'icon' + editIcon.id"
+            :icon-row="editIcon"
+            :table-name="tableName"
+            :project-id="projectId"
+            :id="id"
+            :is-geo-package="isGeoPackage"
+            :close="closeIconEditor"/>
+        </v-dialog>
+        <v-list class="pt-0">
+          <v-list-group
+            v-model="styleListItems.active"
+            :prepend-icon="styleListItems.action"
+            no-action
+          >
+            <template v-slot:activator>
+              <v-list-item-content>
+                <v-row no-gutters justify="start" align="center">
+                  <span v-text="styleListItems.title"></span>
+                </v-row>
+              </v-list-item-content>
+            </template>
+            <v-list-item
+              v-for="style in styleListItems.items"
+              :key="style.id"
+              link
+              @click="() => showStyleEditor({
               id: style.styleRow.id,
               name: style.styleRow.getName(),
               description: style.styleRow.getDescription(),
@@ -102,158 +103,160 @@
               fillOpacity: style.styleRow.getFillOpacity(),
               width: style.styleRow.getWidth(),
             })"
+            >
+              <v-list-item-content>
+                <v-row no-gutters justify="space-between" align="center">
+                  <v-col cols="8">
+                    <v-list-item-title v-text="style.name"></v-list-item-title>
+                  </v-col>
+                  <v-col>
+                    <v-row no-gutters justify="end" align="center" class="mr-5">
+                      <svg height="25" width="25">
+                        <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color"
+                                :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
+                      </svg>
+                      <svg height="25" width="25">
+                        <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color"
+                                  :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
+                      </svg>
+                      <svg height="25" width="25">
+                        <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor"
+                                 :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
+                      </svg>
+                    </v-row>
+                  </v-col>
+                </v-row>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item key="add-style-item">
+              <v-row no-gutters justify="space-between" align="center">
+                <span>{{styleListItems.hint ? 'No styles found' : ''}}</span>
+                <v-btn
+                  @click.stop.prevent="addStyle"
+                  color="primary">
+                  <v-icon small class="mr-1">mdi-plus</v-icon> Add Style
+                </v-btn>
+              </v-row>
+            </v-list-item>
+          </v-list-group>
+          <v-list-group
+            v-model="iconListItems.active"
+            :prepend-icon="iconListItems.action"
+            no-action
           >
-            <v-list-item-content>
+            <template v-slot:activator>
+              <v-list-item-content>
+                <v-row no-gutters justify="space-between" align="center">
+                  <span v-text="iconListItems.title"></span>
+                </v-row>
+              </v-list-item-content>
+            </template>
+            <v-list-item
+              v-for="icon in iconListItems.items"
+              :key="icon.id"
+              link
+              @click="() => showIconEditor(icon.iconRow)"
+            >
+              <v-list-item-content>
+                <v-row no-gutters justify="space-between" align="center">
+                  <v-col cols="8">
+                    <v-list-item-title v-text="icon.name"></v-list-item-title>
+                  </v-col>
+                  <v-col>
+                    <v-row no-gutters justify="end" class="mr-5">
+                      <img class="icon-box" :src="icon.url"/>
+                    </v-row>
+                  </v-col>
+                </v-row>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item key="add-icon-item">
               <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="8">
-                  <v-list-item-title v-text="style.name"></v-list-item-title>
-                </v-col>
-                <v-col>
-                  <v-row no-gutters justify="end" align="center" class="mr-5">
-                    <svg height="25" width="25">
-                      <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color"
-                              :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
-                    </svg>
-                    <svg height="25" width="25">
-                      <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color"
-                                :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
-                    </svg>
-                    <svg height="25" width="25">
-                      <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor"
-                               :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
-                    </svg>
-                  </v-row>
-                </v-col>
+                <span>{{iconListItems.hint ? 'No icons found' : ''}}</span>
+                <v-btn
+                  @click.stop.prevent="addIcon"
+                  color="primary">
+                  <v-icon small class="mr-1">mdi-plus</v-icon> Add Icon
+                </v-btn>
               </v-row>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item key="add-style-item">
-            <v-row no-gutters justify="space-between" align="center">
-              <span>{{styleListItems.hint ? 'No styles found' : ''}}</span>
-              <v-btn
-                @click.stop.prevent="addStyle"
-                color="primary">
-                <v-icon small class="mr-1">mdi-plus</v-icon> Add Style
-              </v-btn>
-            </v-row>
-          </v-list-item>
-        </v-list-group>
-        <v-list-group
-          v-model="iconListItems.active"
-          :prepend-icon="iconListItems.action"
-          no-action
-        >
-          <template v-slot:activator>
-            <v-list-item-content>
-              <v-row no-gutters justify="space-between" align="center">
-                <span v-text="iconListItems.title"></span>
-              </v-row>
-            </v-list-item-content>
-          </template>
-          <v-list-item
-            v-for="icon in iconListItems.items"
-            :key="icon.id"
-            link
-            @click="() => showIconEditor(icon.iconRow)"
+            </v-list-item>
+          </v-list-group>
+          <v-list-group
+            v-model="assignmentListItems.active"
+            :prepend-icon="assignmentListItems.action"
+            no-action
           >
-            <v-list-item-content>
-              <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="8">
-                  <v-list-item-title v-text="icon.name"></v-list-item-title>
-                </v-col>
-                <v-col>
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <img class="icon-box" :src="icon.url"/>
-                  </v-row>
-                </v-col>
-              </v-row>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item key="add-icon-item">
-            <v-row no-gutters justify="space-between" align="center">
-              <span>{{iconListItems.hint ? 'No icons found' : ''}}</span>
-              <v-btn
-                @click.stop.prevent="addIcon"
-                color="primary">
-                <v-icon small class="mr-1">mdi-plus</v-icon> Add Icon
-              </v-btn>
-            </v-row>
-          </v-list-item>
-        </v-list-group>
-        <v-list-group
-          v-model="assignmentListItems.active"
-          :prepend-icon="assignmentListItems.action"
-          no-action
-        >
-          <template v-slot:activator>
-            <v-list-item-content>
-              <v-list-item-title v-text="assignmentListItems.title"></v-list-item-title>
-            </v-list-item-content>
-          </template>
-          <v-list-item
-            v-for="assignment in assignmentListItems.items"
-            :key="'assignment' + assignment.id"
-            link
-            @click="() => showStyleAssignment(assignment)">
-            <v-list-item-content>
-              <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="8">
-                  <v-row no-gutters>
-                    <v-list-item-title v-text="assignment.name"></v-list-item-title>
-                  </v-row>
-                  <v-row no-gutters>
-                    <v-list-item-subtitle v-if="assignment.icon" v-text="assignment.icon.name"></v-list-item-subtitle>
-                    <v-list-item-subtitle v-else-if="assignment.style">{{assignment.style.getName()}}</v-list-item-subtitle>
-                    <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>
-                  </v-row>
-                </v-col>
-                <v-col cols="4" v-if="assignment.icon">
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.iconUrl"/>
-                  </v-row>
-                </v-col>
-                <v-col cols="4" v-if="assignment.style">
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
-                      <circle cx="12.5" cy="12.5" r="5" :stroke="assignment.style.getHexColor()"
-                              :fill="assignment.style.getHexColor()"
-                              :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></circle>
-                    </svg>
-                    <svg height="25" width="25" v-if="assignment.geometryType === 2 ||assignment.geometryType === 5 ||  assignment.geometryType === 7">
-                      <polyline points="5,20 20,15, 5,10, 20,5" :stroke="assignment.style.getHexColor()"
-                                :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"
-                                fill="none"></polyline>
-                    </svg>
-                    <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
-                      <polygon points="5,10 20,5 20,20 5,20" :stroke="assignment.style.getHexColor()"
-                               :fill="assignment.style.getFillHexColor()"
-                               :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></polygon>
-                    </svg>
-                  </v-row>
-                </v-col>
-              </v-row>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item v-if="assignmentListItems.hint" key="style-hint">
-            <v-list-item-title>No styles or icons to assign</v-list-item-title>
-          </v-list-item>
-        </v-list-group>
-      </v-list>
+            <template v-slot:activator>
+              <v-list-item-content>
+                <v-list-item-title v-text="assignmentListItems.title"></v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <v-list-item
+              v-for="assignment in assignmentListItems.items"
+              :key="'assignment' + assignment.id"
+              link
+              @click="() => showStyleAssignment(assignment)">
+              <v-list-item-content>
+                <v-row no-gutters justify="space-between" align="center">
+                  <v-col cols="8">
+                    <v-row no-gutters>
+                      <v-list-item-title v-text="assignment.name"></v-list-item-title>
+                    </v-row>
+                    <v-row no-gutters>
+                      <v-list-item-subtitle v-if="assignment.icon" v-text="assignment.icon.name"></v-list-item-subtitle>
+                      <v-list-item-subtitle v-else-if="assignment.style">{{assignment.style.getName()}}</v-list-item-subtitle>
+                      <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>
+                    </v-row>
+                  </v-col>
+                  <v-col cols="4" v-if="assignment.icon">
+                    <v-row no-gutters justify="end" class="mr-5">
+                      <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.iconUrl"/>
+                    </v-row>
+                  </v-col>
+                  <v-col cols="4" v-if="assignment.style">
+                    <v-row no-gutters justify="end" class="mr-5">
+                      <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
+                        <circle cx="12.5" cy="12.5" r="5" :stroke="assignment.style.getHexColor()"
+                                :fill="assignment.style.getHexColor()"
+                                :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></circle>
+                      </svg>
+                      <svg height="25" width="25" v-if="assignment.geometryType === 2 ||assignment.geometryType === 5 ||  assignment.geometryType === 7">
+                        <polyline points="5,20 20,15, 5,10, 20,5" :stroke="assignment.style.getHexColor()"
+                                  :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"
+                                  fill="none"></polyline>
+                      </svg>
+                      <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
+                        <polygon points="5,10 20,5 20,20 5,20" :stroke="assignment.style.getHexColor()"
+                                 :fill="assignment.style.getFillHexColor()"
+                                 :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></polygon>
+                      </svg>
+                    </v-row>
+                  </v-col>
+                </v-row>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="assignmentListItems.hint" key="style-hint">
+              <v-list-item-title>No styles or icons to assign</v-list-item-title>
+            </v-list-item>
+          </v-list-group>
+        </v-list>
+      </v-sheet>
+      <v-card flat>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5"
+                 @click.stop="addStyleExtensionAndDefaultStyles()">
+            <v-icon>mdi-palette</v-icon>
+            Enable styling
+          </v-btn>
+          <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
+            <v-icon>mdi-trash-can</v-icon>
+            Remove styling
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-sheet>
-    <v-card>
-      <v-card-actions>
-        <v-spacer/>
-        <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5"
-               @click.stop="addStyleExtensionAndDefaultStyles()">
-          <v-icon>mdi-palette</v-icon>
-          Enable styling
-        </v-btn>
-        <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
-          <v-icon>mdi-trash-can</v-icon>
-          Remove styling
-        </v-btn>
-      </v-card-actions>
-    </v-card>
   </v-sheet>
 </template>
 

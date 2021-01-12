@@ -1,30 +1,24 @@
 <template>
-  <v-sheet v-if="selectedLayer !== null && selectedLayer !== undefined">
-    <feature-layer
-      v-if="geopackage.tables.features[selectedLayer]"
-      :key="geopackage.id + '_' + selectedLayer"
-      :table-name="selectedLayer"
-      :geopackage="geopackage"
-      :projectId="project.id"
-      :project="project"
-      :back="deselectLayer"
-      :renamed="selectedLayerRenamed"/>
-    <tile-layer
-      v-else
-      :key="geopackage.id + '_' + selectedLayer"
-      :table-name="selectedLayer"
-      :geopackage="geopackage"
-      :projectId="project.id"
-      :back="deselectLayer"
-      :renamed="selectedLayerRenamed"/>
-  </v-sheet>
-  <v-sheet v-else-if="addFeatureLayerDialog">
-    <add-feature-layer :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
-  </v-sheet>
-  <v-sheet v-else-if="addTileLayerDialog">
-    <add-tile-layer :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
-  </v-sheet>
-  <v-sheet v-else>
+  <feature-layer
+    v-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.features[selectedLayer]"
+    :key="geopackage.id + '_' + selectedLayer"
+    :table-name="selectedLayer"
+    :geopackage="geopackage"
+    :projectId="project.id"
+    :project="project"
+    :back="deselectLayer"
+    :renamed="selectedLayerRenamed"/>
+  <tile-layer
+    v-else-if="selectedLayer !== null && selectedLayer !== undefined"
+    :key="geopackage.id + '_' + selectedLayer"
+    :table-name="selectedLayer"
+    :geopackage="geopackage"
+    :projectId="project.id"
+    :back="deselectLayer"
+    :renamed="selectedLayerRenamed"/>
+  <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
+  <add-tile-layer v-else-if="addTileLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
+  <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -168,35 +162,35 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-container>
+    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
       <v-alert
         class="alert-position"
         v-model="showCopiedAlert"
         dismissible
         type="success"
       >GeoPackage copied.</v-alert>
-      <v-row no-gutters>
+      <v-row class="pl-3 pt-3 pr-3 background" no-gutters>
         <v-col>
           <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
             {{size}}
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters>
+      <v-row class="pl-3 pr-3 background" no-gutters>
         <v-col>
           <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
             {{"Feature layers: " + Object.keys(geopackage.tables.features).length}}
           </p>
         </v-col>
       </v-row>
-      <v-row no-gutters>
+      <v-row class="pl-3 pr-3 background" no-gutters>
         <v-col>
           <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500'}">
             {{"Tile layers: " + Object.keys(geopackage.tables.tiles).length}}
           </p>
         </v-col>
       </v-row>
-      <v-container class="ma-0 pa-0 pb-4">
+      <v-sheet class="background pb-4">
         <v-row no-gutters justify="center" align-content="center">
           <v-hover>
             <template v-slot="{ hover }">
@@ -269,18 +263,18 @@
             </template>
           </v-hover>
         </v-row>
-      </v-container>
-    </v-container>
-    <v-container class="ma-0 pa-0">
-      <v-row v-if="hasLayers" no-gutters align="center" justify="start" class="ma-2">
-        <v-col>
-          <p class="text-h6 ml-2 mb-0">
-            Layers
-          </p>
-        </v-col>
-      </v-row>
-      <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
-    </v-container>
+      </v-sheet>
+      <v-sheet class="background">
+        <v-row v-if="hasLayers" no-gutters align="center" justify="start" class="pa-2">
+          <v-col>
+            <p class="text-h6 ml-2 mb-0">
+              Layers
+            </p>
+          </v-col>
+        </v-row>
+        <geo-package-layer-list :project-id="project.id" :geopackage="geopackage" :layer-selected="layerSelected"></geo-package-layer-list>
+      </v-sheet>
+    </v-sheet>
     <v-speed-dial
       class="fab-position"
       v-model="fab"
