@@ -6,24 +6,26 @@ import Project from '../views/Project/Project.vue'
 
 Vue.use(VueRouter)
 
-export default new VueRouter({
+const router = new VueRouter({
   mode: 'hash',
   base: process.env.BASE_URL,
   routes: [
     {
-      path: '/',
-      name: 'LandingPage',
-      component: LandingPage
+      path: '/project/:id',
+      name: 'Project',
+      component: Project
     },
     {
-      path: '/worker',
+      path: '/worker/:id',
       name: 'Worker',
       component: Worker
     },
     {
-      path: '/project',
-      name: 'Project',
-      component: Project
+      path: '/',
+      name: 'LandingPage',
+      component: LandingPage,
     }
   ]
 })
+
+export default router

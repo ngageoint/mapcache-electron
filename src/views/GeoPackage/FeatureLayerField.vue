@@ -13,8 +13,9 @@
       <v-dialog
         v-model="renameDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="renameDialog = false">
+        <v-card v-if="renameDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
             Rename field
@@ -25,6 +26,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="renamedColumn"
                       :rules="renamedColumnRules"
                       label="Name"
@@ -55,8 +57,9 @@
       <v-dialog
         v-model="deleteDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="deleteDialog = false">
+        <v-card v-if="deleteDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
             Delete field
@@ -158,7 +161,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import ActionUtilities from '../../lib/ActionUtilities'
 
   export default {
@@ -197,7 +199,7 @@
       showRenameDialog () {
         this.renameValid = false
         this.renameDialog = true
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.$refs.renameForm.validate()
         })
       }

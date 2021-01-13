@@ -5,11 +5,11 @@
       {{title}}
     </v-card-title>
     <v-card-text>
-      <v-form v-on:submit.prevent v-model="valid">
+      <v-form v-on:submit.prevent v-model="valid" ref="form">
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <v-text-field :id="id" :label="label" v-model="editedValue" :dark="this.darkMode" :rules="rules" />
+              <v-text-field ref="textField" :label="label" v-model="editedValue" :rules="rules" :autofocus="autofocus" @keydown.space="handleSpaceKey"/>
             </v-col>
           </v-row>
         </v-container>
@@ -34,14 +34,8 @@
 </template>
 
 <script>
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
-
   export default {
     props: {
-      focusOnMount: {
-        type: Boolean,
-        default: false
-      },
       title: String,
       icon: String,
       label: String,
@@ -60,10 +54,6 @@
       },
       onSave: Function,
       onCancel: Function,
-      darkMode: {
-        type: Boolean,
-        default: false
-      },
       fontSize: {
         type: String,
         default: '16px'
@@ -83,21 +73,23 @@
       appendedText: {
         type: String,
         default: ''
+      },
+      autofocus: {
+        type: Boolean,
+        default: false
+      },
+      preventSpaces: {
+        type: Boolean,
+        default: false
       }
     },
     data () {
       return {
         editedValue: this.value,
-        id: UniqueIDUtilities.createUniqueID(),
-        valid: true
+        valid: false
       }
     },
     methods: {
-      editValue () {
-        setTimeout(() => {
-          document.getElementById(this.id).focus()
-        }, 0)
-      },
       save (e) {
         this.onSave(this.editedValue)
         e.stopPropagation()
@@ -106,6 +98,12 @@
         this.onCancel()
         this.editedValue = this.value
         e.stopPropagation()
+      },
+      handleSpaceKey (e) {
+        if (this.preventSpaces) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
       }
     },
     watch: {
@@ -113,10 +111,10 @@
         this.editedValue = this.value
       }
     },
-    mounted() {
-      if (this.focusOnMount) {
-        this.editValue()
-      }
+    mounted () {
+      this.$nextTick(() => {
+        this.$refs.form.resetValidation()
+      })
     }
   }
 </script>

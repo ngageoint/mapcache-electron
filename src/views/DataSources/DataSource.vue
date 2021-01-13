@@ -27,8 +27,9 @@
       <v-dialog
         v-model="renameDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="renameDialog = false">
+        <v-card v-if="renameDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
             Rename data source
@@ -39,6 +40,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="renamedSource"
                       :rules="renamedSourceRules"
                       label="Data source name"
@@ -69,8 +71,9 @@
       <v-dialog
         v-model="deleteDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="deleteDialog = false">
+        <v-card v-if="deleteDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
             Remove data source
@@ -97,8 +100,9 @@
       <v-dialog
         v-model="showOverwriteDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="cancelOverwrite">
+        <v-card v-if="showOverwriteDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-export-variant</v-icon>
             Overwrite {{overwriteFileName}}

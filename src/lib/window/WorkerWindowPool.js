@@ -133,8 +133,8 @@ class WorkerWindowPool {
     // create hidden worker window
     for (let id = 0; id < this.windowPoolSize; id++) {
       const workerURL = process.env.WEBPACK_DEV_SERVER_URL
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
-        : `app://./index.html?id=${id}#worker`
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/worker/${id}`
+        : `app://./index.html/#/worker/${id}`
 
       let worker = {
         id: id,
@@ -180,8 +180,8 @@ class WorkerWindowPool {
             }
           })
           const workerURL = process.env.WEBPACK_DEV_SERVER_URL
-            ? `${process.env.WEBPACK_DEV_SERVER_URL}?id=${id}#/worker`
-            : `app://./index.html?id=${id}#worker`
+            ? `${process.env.WEBPACK_DEV_SERVER_URL}#/worker/${id}`
+            : `app://./index.html/#/worker/${id}`
           this.loadContent(workerWindow.window, workerURL)
           workerWindow.window.on('ready-to-show', () => {
             workerWindow.available = true

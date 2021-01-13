@@ -109,7 +109,7 @@
     computed: {
       ...mapState({
         project (state) {
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.Projects[projectId]
           if (_.isNil(project)) {
             project = {
@@ -128,7 +128,7 @@
           return project
         },
         previewLayer (state) {
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           let previewLayer
           if (!_.isNil(project)) {
@@ -138,7 +138,7 @@
         },
         darkTheme (state) {
           let isDark = false
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           if (!_.isNil(project)) {
             isDark = project.dark
@@ -148,7 +148,7 @@
         },
         tabNotification (state) {
           let tabNotification = {}
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           if (!_.isNil(project)) {
             tabNotification = Object.assign({}, project.tabNotification || {0: false, 1: false, 2: false})
@@ -161,7 +161,7 @@
         },
         showToolTips (state) {
           let show = true
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           if (!_.isNil(project)) {
             show = project.showToolTips

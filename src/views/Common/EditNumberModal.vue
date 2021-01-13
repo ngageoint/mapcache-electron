@@ -9,7 +9,7 @@
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <number-picker :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
+              <number-picker :autofocus="autofocus" :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
             </v-col>
           </v-row>
         </v-container>
@@ -35,7 +35,6 @@
 </template>
 
 <script>
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
   import NumberPicker from './NumberPicker'
 
   export default {
@@ -84,23 +83,21 @@
       arrowsOnly: {
         type: Boolean,
         default: false
-      }
+      },
+      autofocus: {
+        type: Boolean,
+        default: false
+      },
     },
     components: {
       NumberPicker
     },
     data () {
       return {
-        editedValue: this.value,
-        id: UniqueIDUtilities.createUniqueID()
+        editedValue: this.value
       }
     },
     methods: {
-      editValue () {
-        setTimeout(() => {
-          document.getElementById(this.id).focus()
-        }, 0)
-      },
       save (e) {
         this.onSave(this.editedValue)
         e.stopPropagation()

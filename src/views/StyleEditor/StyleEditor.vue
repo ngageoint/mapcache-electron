@@ -15,8 +15,9 @@
       <v-dialog
         v-model="removeDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="removeDialog = false">
+        <v-card v-if="removeDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
             Remove styling
@@ -42,7 +43,7 @@
         </v-card>
       </v-dialog>
       <v-sheet v-if="!loading && hasStyleExtension">
-        <v-dialog v-model="assignStyleDialog" max-width="420" persistent scrollable>
+        <v-dialog v-model="assignStyleDialog" max-width="420" persistent scrollable @keydown.esc="closeStyleAssignment">
           <edit-table-style-assignment
             v-if="styleAssignment"
             :assignment="styleAssignment"
@@ -54,7 +55,7 @@
             :is-geo-package="isGeoPackage"
             :close="closeStyleAssignment"/>
         </v-dialog>
-        <v-dialog v-model="editStyleDialog" max-width="400" persistent scrollable>
+        <v-dialog v-model="editStyleDialog" max-width="400" persistent scrollable @keydown.esc="closeStyleEditor">
           <create-edit-style
             v-if="editStyle"
             :key="'icon' + editStyle.id"
@@ -65,7 +66,7 @@
             :is-geo-package="isGeoPackage"
             :close="closeStyleEditor"/>
         </v-dialog>
-        <v-dialog v-model="editIconDialog" max-width="400" persistent>
+        <v-dialog v-model="editIconDialog" max-width="400" persistent @keydown.esc="closeIconEditor">
           <create-edit-icon
             v-if="editIcon"
             :key="'icon' + editIcon.id"
@@ -195,6 +196,7 @@
               v-for="assignment in assignmentListItems.items"
               :key="'assignment' + assignment.id"
               link
+              :disabled="assignment.disabled"
               @click="() => showStyleAssignment(assignment)">
               <v-list-item-content>
                 <v-row no-gutters justify="space-between" align="center">
@@ -426,6 +428,7 @@
             })
             this.iconListItems.items = this.iconItems.slice()
             this.iconListItems.hint = this.iconListItems.items.length === 0
+            const hasStyles = this.styleItems.length > 0
             if (this.styleItems.length + this.iconItems.length > 0) {
               const pointAssignment = this.determineAssignment(gp, GeometryType.POINT)
               const lineAssignment = this.determineAssignment(gp, GeometryType.LINESTRING)
@@ -447,13 +450,15 @@
                   id: 'assignment_line',
                   name: 'Line',
                   geometryType: GeometryType.LINESTRING,
-                  style: lineAssignment.style
+                  style: lineAssignment.style,
+                  disabled: !hasStyles
                 },
                 {
                   id: 'assignment_polygon',
                   name: 'Polygon',
                   geometryType: GeometryType.POLYGON,
-                  style: polygonAssignment.style
+                  style: polygonAssignment.style,
+                  disabled: !hasStyles
                 },
                 {
                   id: 'assignment_multipoint',
@@ -461,25 +466,29 @@
                   geometryType: GeometryType.MULTIPOINT,
                   style: multipointAssignment.style,
                   icon: multipointAssignment.icon,
-                  iconUrl: multipointAssignment.iconUrl
+                  iconUrl: multipointAssignment.iconUrl,
+                  disabled: !hasStyles
                 },
                 {
                   id: 'assignment_multiline',
                   name: 'Multi Line',
                   geometryType: GeometryType.MULTILINESTRING,
-                  style: multilineAssignment.style
+                  style: multilineAssignment.style,
+                  disabled: !hasStyles
                 },
                 {
                   id: 'assignment_multipolygon',
                   name: 'Multi Polygon',
                   geometryType: GeometryType.MULTIPOLYGON,
-                  style: multipolygonAssignment.style
+                  style: multipolygonAssignment.style,
+                  disabled: !hasStyles
                 },
                 {
                   id: 'assignment_geometrycollection',
                   name: 'Geometry Collection',
                   geometryType: GeometryType.GEOMETRYCOLLECTION,
-                  style: geometryCollectionAssignment.style
+                  style: geometryCollectionAssignment.style,
+                  disabled: !hasStyles
                 }
               ]
               this.assignmentListItems.hint = false

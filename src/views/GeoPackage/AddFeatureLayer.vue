@@ -30,6 +30,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
                 <v-text-field
+                  autofocus
                   v-model="layerName"
                   :rules="layerNameRules"
                   label="Layer Name"
@@ -239,7 +240,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import _ from 'lodash'
   import { ipcRenderer } from 'electron'
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
@@ -479,7 +479,7 @@
       }
     },
     mounted () {
-      Vue.nextTick(() => {
+      this.$nextTick(() => {
         if (this.$refs.layerNameForm) {
           this.$refs.layerNameForm.validate()
         }

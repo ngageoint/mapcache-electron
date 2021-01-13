@@ -11,8 +11,9 @@
     <v-dialog
       v-model="deleteUrlDialog"
       max-width="400"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="cancelDeleteUrl">
+      <v-card v-if="deleteUrlDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Delete URL
@@ -24,7 +25,7 @@
           <v-spacer></v-spacer>
           <v-btn
             text
-            @click="cancelDeleteUrl">
+            @click.stop.prevent="cancelDeleteUrl">
             Cancel
           </v-btn>
           <v-btn
@@ -50,6 +51,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="dataSourceNameForm" v-model="dataSourceNameValid">
                 <v-text-field
+                  autofocus
                   v-model="dataSourceName"
                   :rules="dataSourceNameRules"
                   label="Data Source Name"
@@ -332,7 +334,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import draggable from 'vuedraggable'
   import axios from 'axios'
   import { mapActions, mapState } from 'vuex'
@@ -442,7 +443,7 @@
       close () {
         this.previewing = false
         ActionUtilities.clearPreviewLayer(({projectId: this.project.id}))
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.back()
         })
       },
@@ -710,7 +711,7 @@
         // Remove a URL from the Tile URL history state
         this.removeUrl(this.urlToDelete)
         this.deleteUrlDialog = false
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.urlToDelete = null
         })
       },
@@ -726,9 +727,7 @@
       },
       cancelDeleteUrl () {
         this.deleteUrlDialog = false
-        Vue.nextTick(() => {
-          this.urlToDelete = null
-        })
+        this.urlToDelete = null
       },
       showDeleteUrlDialog (url) {
         this.urlToDelete = url
@@ -761,7 +760,7 @@
       this.resetURLValidation()
       this.previewing = false
       this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
-      Vue.nextTick(() => {
+      this.$nextTick(() => {
         if (!_.isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
         }
@@ -821,7 +820,7 @@
         handler (newValue) {
           this.loading = true
           this.summaryStep = 4
-          Vue.nextTick(() => {
+          this.$nextTick(() => {
             this.debounceGetServiceInfo(newValue)
           })
         }
@@ -858,7 +857,7 @@
       },
       previewing: {
         handler (previewing) {
-          Vue.nextTick(() => {
+          this.$nextTick(() => {
             if (previewing) {
               this.sendLayerPreview()
             } else {

@@ -9,11 +9,8 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>Settings</v-toolbar-title>
     </v-toolbar>
-    <v-dialog
-      v-model="deleteProjectDialog"
-      max-width="400"
-      persistent>
-      <v-card>
+    <v-dialog v-model="deleteProjectDialog" max-width="400" persistent @keydown.esc="hideDeleteProjectDialog">
+      <v-card v-if="deleteProjectDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Delete project
@@ -37,17 +34,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog
-      v-model="savedUrlDialog"
-      max-width="450"
-      persistent>
+    <v-dialog v-model="savedUrlDialog" max-width="450" persistent @keydown.esc="savedUrlDialog = false">
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
-    <v-dialog v-model="editProjectNameDialog" max-width="400" persistent>
-      <edit-text-modal v-if="editProjectNameDialog" focusOnMount icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" :darkMode="false" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+    <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
+      <edit-text-modal autofocus ref="editProjectNameRef" icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
-    <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent>
-      <edit-number-modal icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+    <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
+      <edit-number-modal autofocus ref="editMaxFeaturesRef" icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-dialog v-model="helpDialog" max-width="500">
       <help :close="() => {helpDialog = false}"></help>

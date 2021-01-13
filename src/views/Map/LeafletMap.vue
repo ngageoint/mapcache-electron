@@ -5,7 +5,8 @@
       <v-dialog
         v-model="geopackageExistsDialog"
         max-width="400"
-        persistent>
+        persistent
+        @keydown.esc="cancelDrawing">
         <v-card>
           <v-card-title>
             <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
@@ -20,7 +21,7 @@
             <v-spacer></v-spacer>
             <v-btn
               text
-              @click="geopackageExistsDialog = false">
+              @click="cancelDrawing">
               Cancel
             </v-btn>
             <v-btn
@@ -35,8 +36,9 @@
       <v-dialog
         v-model="layerSelectionVisible"
         max-width="450"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="cancelDrawing">
+        <v-card v-if="layerSelectionVisible">
           <v-card-title>
             Add Drawing
           </v-card-title>
@@ -59,6 +61,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="featureTableName"
                       :rules="featureTableNameRules"
                       label="Feature Layer Name"
@@ -90,7 +93,8 @@
         v-model="showAddFeatureDialog"
         max-width="500"
         scrollable
-        persistent>
+        persistent
+        @keydown.esc="cancelAddFeature">
         <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
       </v-dialog>
     </div>
@@ -181,7 +185,6 @@
 
 <script>
   import { remote, clipboard } from 'electron'
-  import Vue from 'vue'
   import _ from 'lodash'
   import * as vendor from '../../lib/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
@@ -366,7 +369,7 @@
         }
       },
       displayFeatureTable () {
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.showFeatureTable = true
         })
       },
@@ -435,7 +438,7 @@
                 this.geopackageExistsDialog = true
               } else {
                 this.cancelDrawing()
-                Vue.nextTick(() => {
+                this.$nextTick(() => {
                   GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
                     GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
                       ActionUtilities.addGeoPackage({projectId: self.projectId, filePath: filePath})
@@ -461,9 +464,9 @@
                 this.featureToAddGeoPackage = geopackage
                 this.featureToAddTableName = featureTable
                 self.featureToAddColumns = columns
-                Vue.nextTick(() => {
+                this.$nextTick(() => {
                   this.showAddFeatureDialog = true
-                  Vue.nextTick(() => {
+                  this.$nextTick(() => {
                     this.cancelDrawing()
                   })
                 })
@@ -476,10 +479,14 @@
         }
       },
       cancelDrawing () {
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
+          this.geopackageExistsDialog = false
           this.layerSelectionVisible = false
           this.map.removeLayer(this.createdLayer)
           this.createdLayer = null
+          this.featureTableName = 'Feature layer'
+          this.geoPackageFeatureLayerSelection = 0
+          this.geoPackageSelection = 0
         })
       },
       zoomToFeature (path, table, featureId) {
@@ -524,7 +531,7 @@
       },
       closePopup() {
         this.map.removeLayer(this.coordinatePopup)
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.copiedToClipboard = false
         })
 
@@ -544,8 +551,9 @@
         return deg + "°" + min + "'" + sec + '"' + dir;
       },
       cancelAddFeature () {
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.showAddFeatureDialog = false
+          this.cancelDrawing()
         })
       },
       async displayFeaturesForTable (id, tableName, isGeoPackage) {
@@ -1024,7 +1032,7 @@
               this.coordinatePopup.setLatLng(e.latlng)
             } else {
               this.dialogCoordinate = e.latlng
-              Vue.nextTick(() => {
+              this.$nextTick(() => {
                 this.coordinatePopup = vendor.L.popup({minWidth: 300, closeButton: false})
                   .setLatLng(e.latlng)
                   .setContent(this.$refs['leafletCoordinatePopup'])
@@ -1035,9 +1043,6 @@
         })
         this.map.on('editable:drawing:end', function (e) {
           if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
-            self.featureTableName = 'Feature layer'
-            self.geoPackageFeatureLayerSelection = 0
-            self.geoPackageSelection = 0
             e.layer.toggleEdit()
             let layers = [NEW_GEOPACKAGE_OPTION]
             Object.values(self.geopackages).forEach((geopackage) => {
@@ -1054,7 +1059,7 @@
               }
             }
             self.layerSelectionVisible = true
-            Vue.nextTick(() => {
+            self.$nextTick(() => {
               if (!_.isNil(self.$refs.featureTableNameForm)) {
                 self.$refs.featureTableNameForm.validate()
               }
@@ -1078,7 +1083,7 @@
       visible: {
         handler() {
           const self = this
-          this.$nextTick(() => {
+          self.$nextTick(() => {
             if (self.map) {
               self.map.invalidateSize()
             }
@@ -1089,7 +1094,7 @@
         handler (newValue, oldValue) {
           if (newValue !== oldValue) {
             const self = this
-            this.$nextTick(() => {
+            self.$nextTick(() => {
               if (self.map) {
                 self.map.invalidateSize()
               }
@@ -1344,8 +1349,7 @@
       geoPackageFeatureLayerSelection: {
         handler () {
           // check if it has editable fields, instead of confirm, it will say continue and display the edit fields dialog
-
-          Vue.nextTick(() => {
+          this.$nextTick(() => {
             if (!_.isNil(this.$refs.featureTableNameForm)) {
               this.$refs.featureTableNameForm.validate()
             }
@@ -1369,7 +1373,7 @@
           }
           this.geoPackageFeatureLayerSelection = geoPackageFeatureLayerSelection
           this.geoPackageFeatureLayerChoices = layers
-          Vue.nextTick(() => {
+          this.$nextTick(() => {
             if (!_.isNil(this.$refs.featureTableNameForm)) {
               this.$refs.featureTableNameForm.validate()
             }
@@ -1496,7 +1500,7 @@
     },
     beforeUpdate: function () {
       const self = this
-      this.$nextTick(() => {
+      self.$nextTick(() => {
         if (self.map) {
           self.map.invalidateSize()
         }

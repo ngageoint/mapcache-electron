@@ -34,8 +34,9 @@
       <v-dialog
         v-model="geopackageExistsDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="geopackageExistsDialog = false">
+        <v-card v-if="geopackageExistsDialog">
           <v-card-title>
             <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
             Create GeoPackage Warning

@@ -1,23 +1,23 @@
 <template>
   <div class="project-container" id="projects">
     <v-dialog
-      v-if="removeProject"
-      v-model="removeDialog"
+      v-model="deleteProjectDialog"
       max-width="400"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="cancelRemove">
+      <v-card v-if="deleteProjectDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Delete project
         </v-card-title>
         <v-card-text>
-          Deleting this project will delete any downloaded data sources. Data sources and GeoPackages imported from the file system will not be deleted. Are you sure you want to delete <b>{{removeProject.name}}</b>? This action can't be undone.
+          Deleting this project will delete any downloaded data sources. Data sources and GeoPackages imported from the file system will not be deleted. Are you sure you want to delete <b>{{projectToDelete.name}}</b>? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
             text
-            @click="removeDialog = false">
+            @click="cancelRemove">
             Cancel
           </v-btn>
           <v-btn
@@ -50,8 +50,9 @@
       v-model="addProjectDialog"
       persistent
       class="padding-top"
-      width="400">
-      <edit-text-modal v-if="addProjectDialog" focusOnMount icon="mdi-plus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" :darkMode="false" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
+      width="400"
+      @keydown.esc="cancelNewProject">
+      <edit-text-modal v-if="addProjectDialog" autofocus icon="mdi-plus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
     </v-dialog>
     <v-row class="mt-4 mb-2" no-gutters justify="end">
       <v-btn dark text @click="onClickNewProject"><v-icon small>mdi-plus</v-icon> Create Project</v-btn>
@@ -71,7 +72,7 @@
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
-            <v-btn icon @click.stop.prevent="showRemoveProjectDialog(project)"><v-icon>mdi-trash-can-outline</v-icon></v-btn>
+            <v-btn icon @click.stop.prevent="showDeleteProjectDialog(project)"><v-icon>mdi-trash-can-outline</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -85,7 +86,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import { mapState } from 'vuex'
   import { ipcRenderer } from 'electron'
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
@@ -105,8 +105,8 @@
       return {
         dialog: false,
         dialogText: '',
-        removeDialog: false,
-        removeProject: null,
+        deleteProjectDialog: false,
+        projectToDelete: null,
         addProjectDialog: false,
         projectName: '',
         projectNameRules: [v => !!v || 'Project name is required.']
@@ -126,7 +126,7 @@
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           ipcRenderer.send('show-project', id)
         })
       },
@@ -134,14 +134,18 @@
         this.projectName = ''
         this.addProjectDialog = true
       },
-      showRemoveProjectDialog (project) {
-        this.removeProject = project
-        this.removeDialog = true
+      showDeleteProjectDialog (project) {
+        this.projectToDelete = project
+        this.deleteProjectDialog = true
+      },
+      cancelRemove () {
+        this.deleteProjectDialog = false
+        this.projectToDelete = null
       },
       remove () {
-        ActionUtilities.deleteProject(this.removeProject)
-        this.removeDialog = false
-        this.removeProject = null
+        ActionUtilities.deleteProject(this.projectToDelete)
+        this.deleteProjectDialog = false
+        this.projectToDelete = null
       },
       onClickOpenProject (project) {
         this.dialogText = 'Loading ' + project.name + '...'

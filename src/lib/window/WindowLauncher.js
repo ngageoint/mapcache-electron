@@ -293,8 +293,8 @@ class WindowLauncher {
   showProject (projectId) {
     try {
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}/?id=${projectId}#/project`
-        : `app://./index.html?id=${projectId}#project`
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
+        : `app://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
         this.projectWindow.show()
         this.mainWindow.send('show-project-completed')

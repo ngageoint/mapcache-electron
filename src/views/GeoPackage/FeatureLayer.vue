@@ -75,8 +75,9 @@
       <v-dialog
         v-model="renameDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="renameDialog = false">
+        <v-card v-if="renameDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
             Rename feature layer
@@ -87,6 +88,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="renamedTable"
                       :rules="renamedTableRules"
                       label="Name"
@@ -117,8 +119,9 @@
       <v-dialog
         v-model="copyDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="copyDialog = false">
+        <v-card v-if="copyDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
             Copy feature layer
@@ -129,6 +132,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="copiedTable"
                       :rules="copiedTableRules"
                       label="Name"
@@ -159,8 +163,9 @@
       <v-dialog
         v-model="addFieldDialog"
         max-width="575"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="cancelAddField">
+        <v-card v-if="addFieldDialog">
           <v-card-title>
             <v-row no-gutters justify="start" align="center">
               New Field
@@ -172,6 +177,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                      autofocus
                       v-model="addFieldValue"
                       :rules="addFieldRules"
                       label="Name"
@@ -244,8 +250,9 @@
       <v-dialog
         v-model="deleteDialog"
         max-width="400"
-        persistent>
-        <v-card>
+        persistent
+        @keydown.esc="deleteDialog = false">
+        <v-card v-if="deleteDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
             Delete feature layer
@@ -436,7 +443,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import _ from 'lodash'
   import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
   import StyleEditor from '../StyleEditor/StyleEditor'
@@ -597,14 +603,14 @@
       showRenameDialog () {
         this.renameValid = false
         this.renameDialog = true
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.$refs.renameForm.validate()
         })
       },
       showCopyDialog () {
         this.copyValid = false
         this.copyDialog = true
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.$refs.copyForm.validate()
         })
       },

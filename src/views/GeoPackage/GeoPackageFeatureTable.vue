@@ -3,8 +3,9 @@
     <v-dialog
       v-model="removeDialog"
       max-width="400"
-      persistent>
-      <v-card v-if="featureToRemove !== null">
+      persistent
+      @keydown.esc="removeDialog = false">
+      <v-card v-if="removeDialog && featureToRemove !== null">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Delete feature
@@ -28,7 +29,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable>
+    <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable @keydown.esc="closeStyleAssignment">
       <edit-feature-style-assignment
         v-if="styleAssignment"
         :assignment="styleAssignment"
@@ -128,7 +129,8 @@
       v-model="editDialog"
       max-width="500"
       scrollable
-      persistent>
+      persistent
+      @keydown.esc="closeEditor">
       <feature-editor v-if="editDialog" :projectId="projectId" :geopackage-path="geopackage.path" :id="geopackage.id" :tableName="table.tableName" :columns="editFeatureColumns" :feature="editFeature" :close="closeEditor" :is-editing="true"></feature-editor>
     </v-dialog>
   </v-sheet>

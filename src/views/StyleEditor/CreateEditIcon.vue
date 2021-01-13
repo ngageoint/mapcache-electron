@@ -3,8 +3,9 @@
     <v-dialog
       v-model="deleteDialog"
       max-width="350"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="deleteDialog = false">
+      <v-card v-if="deleteDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Delete icon
@@ -51,7 +52,7 @@
           <v-col offset="1" cols="7">
             <v-row no-gutters justify="start">
               <v-col>
-                <v-text-field label="Name" :rules="nameRules" v-model="name"></v-text-field>
+                <v-text-field autofocus label="Name" :rules="nameRules" v-model="name"></v-text-field>
               </v-col>
             </v-row>
             <v-row no-gutters>

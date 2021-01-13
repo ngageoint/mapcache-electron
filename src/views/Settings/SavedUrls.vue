@@ -1,9 +1,6 @@
 <template>
   <v-sheet>
-    <v-dialog
-      v-model="deleteUrlDialog"
-      max-width="400"
-      persistent>
+    <v-dialog v-model="deleteUrlDialog" max-width="400" persistent @keydown.esc="cancelDeleteUrl">
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
@@ -28,73 +25,11 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="addUrlDialog" max-width="400" persistent>
-      <v-card>
-        <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-          Add URL
-        </v-card-title>
-        <v-card-text>
-          <v-form v-on:submit.prevent v-model="urlValid">
-            <v-container class="ma-0 pa-0">
-              <v-row no-gutters>
-                <v-col cols="12">
-                  <v-text-field :rules="urlRules" label="URL" v-model="addUrlValue"/>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            text
-            @click="cancelAddNewUrl">
-            Cancel
-          </v-btn>
-          <v-btn
-            v-if="urlValid"
-            color="primary"
-            text
-            @click="addNewUrl">
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="addUrlDialog" max-width="400" persistent @keydown.esc="cancelAddNewUrl">
+      <edit-text-modal v-if="addUrlDialog" prevent-spaces autofocus icon="mdi-pencil" title="Add URL" :rules="urlRules" save-text="Add" :on-cancel="cancelAddNewUrl" :value="addUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="addNewUrl"/>
     </v-dialog>
-    <v-dialog v-model="editUrlDialog" max-width="400" persistent>
-      <v-card>
-        <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
-          Edit URL
-        </v-card-title>
-        <v-card-text>
-          <v-form v-on:submit.prevent v-model="editUrlValid">
-            <v-container class="ma-0 pa-0">
-              <v-row no-gutters>
-                <v-col cols="12">
-                  <v-text-field :rules="editUrlRules" label="URL" v-model="editUrlValue"/>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            text
-            @click="cancelEditUrl">
-            Cancel
-          </v-btn>
-          <v-btn
-            v-if="editUrlValid"
-            color="primary"
-            text
-            @click="editSavedUrl">
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="editUrlDialog" max-width="400" persistent @keydown.esc="cancelEditUrl">
+      <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus icon="mdi-pencil" title="Edit URL" :rules="editUrlRules" save-text="Save" :on-cancel="cancelEditUrl" :value="editUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="editSavedUrl"/>
     </v-dialog>
     <v-card>
       <v-card-title>
@@ -140,11 +75,14 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import { mapState, mapActions } from 'vuex'
   import URLUtilities from '../../lib/URLUtilities'
+  import EditTextModal from '../Common/EditTextModal'
 
   export default {
+    components: {
+      EditTextModal
+    },
     props: {
       close: Function
     },
@@ -191,17 +129,17 @@
       },
       showAddUrlDialog () {
         this.addUrlValue = 'https://'
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.addUrlDialog = true
         })
       },
-      addNewUrl () {
+      addNewUrl (url) {
         this.addUrlDialog = false
-        this.addUrl({url: this.addUrlValue})
+        this.addUrl({url})
       },
       cancelDeleteUrl () {
         this.deleteUrlDialog = false
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.urlToDelete = null
         })
       },
@@ -212,7 +150,7 @@
       removeUrlFromHistory () {
         this.removeUrl(this.urlToDelete)
         this.deleteUrlDialog = false
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.urlToDelete = null
         })
       },
@@ -223,15 +161,15 @@
       },
       cancelEditUrl () {
         this.editUrlDialog = false
-        Vue.nextTick(() => {
+        this.$nextTick(() => {
           this.editUrlInitialValue = null
           this.editUrlValue = null
         })
       },
-      editSavedUrl () {
+      editSavedUrl (url) {
         this.editUrlDialog = false
-        this.editUrl({oldUrl: this.editUrlInitialValue, newUrl: this.editUrlValue})
-        Vue.nextTick(() => {
+        this.editUrl({oldUrl: this.editUrlInitialValue, newUrl: url})
+        this.$nextTick(() => {
           this.editUrlInitialValue = null
           this.editUrlValue = null
         })

@@ -107,7 +107,6 @@
   import DataSourceList from './DataSourceList'
   import AddDataSourceUrl from './AddDataSourceUrl'
   import ActionUtilities from '../../lib/ActionUtilities'
-  import Vue from 'vue'
 
   let selectedDataSource = null
   let fab = false
@@ -219,7 +218,7 @@
             status: undefined,
             error: undefined
           }
-          Vue.nextTick(() => {
+          this.$nextTick(() => {
             this.addSource(sourceToProcess)
           })
         })

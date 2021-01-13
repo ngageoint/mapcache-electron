@@ -1,5 +1,5 @@
 <template>
-  <v-text-field v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event, arrowsOnly)"/>
+  <v-text-field :autofocus="autofocus" v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event, arrowsOnly)"/>
 </template>
 
 <script>
@@ -10,11 +10,15 @@
       step: Number,
       min: Number,
       max: Number,
-      arrowsOnly: Boolean
+      arrowsOnly: Boolean,
+      autofocus: {
+        type: Boolean,
+        default: false
+      },
     },
     data () {
       return {
-        numberValue: this.number.toString()
+        numberValue: this.number.toString(),
       }
     },
     methods: {

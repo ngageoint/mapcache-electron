@@ -139,7 +139,7 @@
         handler(newValue, oldValue) {
           if (newValue !== oldValue) {
             const self = this
-            this.$nextTick(() => {
+            self.$nextTick(() => {
               if (self.map) {
                 self.map.invalidateSize()
               }
@@ -169,7 +169,7 @@
     },
     beforeUpdate: function () {
       const self = this
-      this.$nextTick(() => {
+      self.$nextTick(() => {
         if (self.map) {
           self.map.invalidateSize()
         }

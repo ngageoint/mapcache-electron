@@ -4,17 +4,17 @@
       {{isEditing ? 'Edit Feature' : 'New Feature'}}
     </v-card-title>
     <v-card-text style="max-height: 500px;">
-      <v-card-subtitle class="pb-0 mb-0">
+      <v-card-subtitle class="pb-0 mb-0" v-if="editableColumns.length > 0">
         {{isEditing ? 'Edit the feature\'s fields' : 'Set the new feature\'s fields'}}
       </v-card-subtitle>
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
           <v-list-item
             :key="'editor-' + column.name"
-            v-for="column in editableColumns"
+            v-for="(column, index) in editableColumns"
           >
             <v-list-item-content class="pa-4" style="margin: -16px;">
-              <v-text-field :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
+              <v-text-field :autofocus="index === 0" :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
               <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
                 <v-col>
                   <v-list-item-subtitle>{{column.name.toLowerCase()}}</v-list-item-subtitle>
@@ -93,7 +93,7 @@
                   </v-menu>
                 </v-col>
               </v-row>
-              <v-text-field :label="column.name.toLowerCase()" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
+              <v-text-field :autofocus="index === 0" :label="column.name.toLowerCase()" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
             </v-list-item-content>
           </v-list-item>
         </v-list>
@@ -105,10 +105,10 @@
       <v-btn
         text
         @click="close">
-        Cancel
+        {{editableColumns.length > 0 ? 'Cancel' : 'Close'}}
       </v-btn>
       <v-btn
-        v-if="formValid"
+        v-if="formValid && editableColumns.length > 0"
         color="primary"
         text
         @click="save">

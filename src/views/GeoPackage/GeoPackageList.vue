@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
-    <v-dialog v-model="showDialog" max-width="500" persistent>
-      <v-card>
+    <v-dialog v-model="showDialog" max-width="500" persistent @keydown.esc="clearDialog">
+      <v-card v-if="showDialog">
         <v-card-title>
           {{dialogText}}
         </v-card-title>

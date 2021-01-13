@@ -32,8 +32,9 @@
       v-model="detailDialog"
       max-width="500"
       scrollable
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="detailDialog = false">
+      <v-card v-if="detailDialog">
         <v-card-title>{{geopackage.name}}</v-card-title>
         <v-divider/>
         <v-card-text style="max-width: 500px; overflow-x: hidden;">
@@ -53,8 +54,9 @@
     <v-dialog
       v-model="renameDialog"
       max-width="400"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="renameDialog = false">
+      <v-card v-if="renameDialog">
         <v-card-title>
           <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
           Rename GeoPackage
@@ -65,6 +67,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                    autofocus
                     v-model="renamedGeoPackage"
                     :rules="renamedGeoPackageRules"
                     label="Name"
@@ -95,8 +98,9 @@
     <v-dialog
       v-model="copyDialog"
       max-width="400"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="copyDialog = false">
+      <v-card v-if="copyDialog">
         <v-card-title>
           <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
           Copy GeoPackage
@@ -107,6 +111,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                    autofocus
                     v-model="copiedGeoPackage"
                     :rules="copiedGeoPackageRules"
                     label="Name"
@@ -137,8 +142,9 @@
     <v-dialog
       v-model="removeDialog"
       max-width="400"
-      persistent>
-      <v-card>
+      persistent
+      @keydown.esc="removeDialog = false">
+      <v-card v-if="removeDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
           Remove GeoPackage
@@ -331,7 +337,6 @@
 
 <script>
   import { shell } from 'electron'
-  import Vue from 'vue'
   import { mapState } from 'vuex'
   import _ from 'lodash'
   import path from 'path'
@@ -494,7 +499,7 @@
       geopackage: {
         handler (newGeoPackage) {
           if (!_.isNil(this.selectedLayer) && (_.isNil(newGeoPackage.tables.features[this.selectedLayer]) && _.isNil(newGeoPackage.tables.tiles[this.selectedLayer]))) {
-            Vue.nextTick(() => {
+            this.$nextTick(() => {
               this.deselectLayer()
             })
           }

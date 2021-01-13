@@ -31,6 +31,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
                 <v-text-field
+                  autofocus
                   v-model="layerName"
                   :rules="layerNameRules"
                   label="Layer Name"
@@ -327,7 +328,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import { mapState } from 'vuex'
   import _ from 'lodash'
   import { ipcRenderer } from 'electron'
@@ -581,7 +581,7 @@
       ...mapState({
         mapZoom (state) {
           let mapZoom = 3
-          const projectId = new URL(location.href).searchParams.get('id')
+          const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           if (!_.isNil(project)) {
             mapZoom = project.mapZoom
@@ -638,7 +638,7 @@
       }
     },
     mounted () {
-      Vue.nextTick(() => {
+      this.$nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
       ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
