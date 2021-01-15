@@ -289,7 +289,7 @@
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
-  import SourceVisibilitySwitch from "./SourceVisibilitySwitch";
+  import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 
   export default {
     props: {
@@ -359,7 +359,10 @@
       },
       downloadGeoPackage () {
         try {
-          remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
+          remote.dialog.showSaveDialog({
+            title: 'Export GeoPackage',
+            defaultPath: this.initialDisplayName.replace(' ', '_')
+          }).then(({canceled, filePath}) => {
             if (!canceled) {
               if (!_.isNil(filePath)) {
                 if (!filePath.endsWith('.gpkg')) {

@@ -80,7 +80,7 @@ export default class LeafletEdit extends vendor.L.Control {
       this.feature = null
     }
 
-    this._saveLink.onmousedown = function (e) {
+    this._saveLink.onclick = function (e) {
       if (!_.isNil(this.editingLayer)) {
         let layers = this.editingLayer.getLayers()
         switch (GeometryType.fromName(this.feature.geometry.type.toUpperCase())) {
@@ -99,7 +99,7 @@ export default class LeafletEdit extends vendor.L.Control {
       e.preventDefault()
     }.bind(this)
 
-    this._cancelLink.onmousedown = function (e) {
+    this._cancelLink.onclick = function (e) {
       this.cancelEdit()
       e.stopPropagation()
       e.preventDefault()

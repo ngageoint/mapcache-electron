@@ -3,11 +3,16 @@ import path from 'path'
 import _ from 'lodash'
 import { userDataDir } from './settings/Settings'
 import UniqueIDUtilities from './UniqueIDUtilities'
+import jetpack from 'fs-jetpack'
 
 export default class FileUtilities {
   static toHumanReadable (sizeInBytes) {
     const i = Math.floor(Math.log(sizeInBytes) / Math.log(1024))
     return (sizeInBytes / Math.pow(1024, i)).toFixed(2) + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
+  }
+
+  static getFileSizeInBytes (filePath) {
+    return jetpack.inspect(filePath, {times: true, absolutePath: true}).size
   }
 
   // removes a source directory by the source Id

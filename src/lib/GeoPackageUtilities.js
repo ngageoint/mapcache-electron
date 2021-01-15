@@ -11,27 +11,30 @@ import {
   GeoPackage,
   FeatureStyleExtension,
   RTreeIndex,
-  GeoPackageValidate
+  GeoPackageValidate,
+  GeometryData,
+  MediaTable,
+  IconTable
 } from '@ngageoint/geopackage'
 import _ from 'lodash'
 import moment from 'moment'
 import reproject from 'reproject'
 import path from 'path'
 import fs from 'fs'
-import VectorStyleUtilities from './VectorStyleUtilities'
-import XYZTileUtilities from './XYZTileUtilities'
-import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
-import UniqueIDUtilities from './UniqueIDUtilities'
 import jetpack from 'fs-jetpack'
-import FileUtilities from './FileUtilities'
 import wkx from 'wkx'
-import LayerFactory from './source/layer/LayerFactory'
-import CanvasUtilities from './CanvasUtilities'
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import proj4 from 'proj4'
 import { intersect, bbox } from '@turf/turf'
-import { GeometryData } from '@ngageoint/geopackage'
+import VectorStyleUtilities from './VectorStyleUtilities'
+import XYZTileUtilities from './XYZTileUtilities'
+import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
+import UniqueIDUtilities from './UniqueIDUtilities'
+import FileUtilities from './FileUtilities'
+import LayerFactory from './source/layer/LayerFactory'
+import CanvasUtilities from './CanvasUtilities'
+import MediaUtilities from './MediaUtilities'
 
 export default class GeoPackageUtilities {
   /**
@@ -351,7 +354,7 @@ export default class GeoPackageUtilities {
     const geopackage = {
       id: UniqueIDUtilities.createUniqueID(),
       modifiedDate: FileUtilities.getLastModifiedDate(filePath),
-      size: FileUtilities.toHumanReadable(jetpack.inspect(filePath, {times: true, absolutePath: true}).size),
+      size: FileUtilities.toHumanReadable(FileUtilities.getFileSizeInBytes(filePath)),
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
       tables: {
@@ -1086,51 +1089,43 @@ export default class GeoPackageUtilities {
    * Gets the assignment types for each feature
    * @param gp
    * @param tableName
-   * @param features
    */
-  static _getStyleAssignmentTypeForFeatures (gp, tableName, features) {
-    let styleAssignmentTypeMap = {}
+  static _getStyleAssignmentForFeatures (gp, tableName) {
+    let styleAssignmentMap = {}
     const hasStyleExtension = gp.featureStyleExtension.has(tableName)
     if (hasStyleExtension) {
-      let featureTableStyles = new FeatureTableStyles(gp, tableName)
-      const iconMappings = featureTableStyles.getIconMappingDao().queryForAll().map(record => {
-        return {
-          featureId: record.base_id,
-          id: record.related_id
+      const styles = GeoPackageUtilities._getStyleRows(gp, tableName)
+      const icons = GeoPackageUtilities._getIconRows(gp, tableName)
+      const mappings = GeoPackageUtilities._getFeatureStyleMapping(gp, tableName, true)
+      Object.keys(mappings).forEach(featureId => {
+        let style
+        let icon
+        const mapping = mappings[featureId]
+        if (!_.isNil(mapping.styleId)) {
+          style = styles[mapping.styleId.id]
+        }
+        if (!_.isNil(mapping.iconId)) {
+          icon = icons[mapping.iconId.id]
+          icon.url = 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+        }
+        styleAssignmentMap[featureId] = {
+          style,
+          icon
         }
       })
-      const styleMappings = featureTableStyles.getStyleMappingDao().queryForAll().map(record => {
-        return {
-          featureId: record.base_id,
-          id: record.related_id
-        }
-      })
-      for (let i = 0; i < features.length; i++) {
-        let assignmentType = 'None'
-        const feature = features[i]
-        const rowId = feature.id
-        const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
-        if (!_.isNil(iconMappings.find(mapping => mapping.featureId === rowId)) || !_.isNil(styleMappings.find(mapping => mapping.featureId === rowId))) {
-          assignmentType = 'Custom'
-        } else if (!_.isNil(featureTableStyles.getTableStyle(geometryType))) {
-          assignmentType = 'Default'
-        }
-        styleAssignmentTypeMap[rowId] = assignmentType
-      }
     }
-    return styleAssignmentTypeMap
+    return styleAssignmentMap
   }
 
   /**
    * Gets the assignment types for each feature
    * @param filePath
    * @param tableName
-   * @param features
    * @returns {Promise<any>}
    */
-  static async getStyleAssignmentTypeForFeatures (filePath, tableName, features) {
+  static async getStyleAssignmentForFeatures (filePath, tableName) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
-      return GeoPackageUtilities._getStyleAssignmentTypeForFeatures(gp, tableName, features)
+      return GeoPackageUtilities._getStyleAssignmentForFeatures(gp, tableName)
     })
   }
 
@@ -3122,6 +3117,230 @@ export default class GeoPackageUtilities {
   static async featureExists (filePath, tableName, featureId) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._featureExists(gp, tableName, featureId)
+    })
+  }
+
+  static _getMediaObjectUrl (gp, mediaTable, mediaId) {
+    const rte = gp.relatedTablesExtension
+    const mediaDao = rte.getMediaDao(mediaTable)
+    const media = mediaDao.queryForId(mediaId)
+    return MediaUtilities.getMediaObjectURL(media)
+  }
+
+  static async getMediaObjectUrl (filePath, mediaTable, mediaId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getMediaObjectUrl(gp, mediaTable, mediaId)
+    })
+  }
+
+  static _getMediaRow (gp, mediaTable, mediaId) {
+    const rte = gp.relatedTablesExtension
+    const mediaDao = rte.getMediaDao(mediaTable)
+    return mediaDao.queryForId(mediaId)
+  }
+
+  static async getMediaRow (filePath, mediaTable, mediaId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getMediaRow(gp, mediaTable, mediaId)
+    })
+  }
+
+  /**
+   * Gets the media attachments, not including feature icons
+   * @param gp
+   * @param tableName
+   * @param featureDao
+   * @param featureId
+   * @returns {Array}
+   * @private
+   */
+  static _getMediaRelationshipsForFeatureRow (gp, tableName, featureDao, featureId) {
+    // get media relations for this feature table
+    const mediaRelations = featureDao.mediaRelations
+    const rte = gp.relatedTablesExtension
+    const mediaRelationships = []
+    for (let i = 0; i < mediaRelations.length; i++) {
+      const mediaRelation = mediaRelations[i]
+      if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
+        const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
+        // query for all mappings for this feature id
+        const mappings = userMappingDao.queryByBaseId(featureId)
+        for (let m = 0; m < mappings.length; m++) {
+          mediaRelationships.push({
+            relatedId: mappings[m].related_id,
+            relatedTable: mediaRelation.related_table_name,
+            baseTable: tableName,
+            baseId: featureId,
+            mappingTable: mediaRelation.mapping_table_name
+          })
+        }
+      }
+    }
+    return mediaRelationships
+  }
+
+  /**
+   * Gets the media attachments for a feature row
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @returns {Array}
+   * @private
+   */
+  static _getMediaRelationships (gp, tableName, featureId) {
+    const mediaRelationships = []
+    try {
+      const featureDao = gp.getFeatureDao(tableName)
+      if (!_.isNil(featureDao)) {
+        const linkedMedia = GeoPackageUtilities._getMediaRelationshipsForFeatureRow(gp, tableName, featureDao, featureId)
+        mediaRelationships.push(...linkedMedia)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    return mediaRelationships
+  }
+
+  /**
+   * Gets the media attachments for a feature row
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @returns {Promise<any>}
+   */
+  static async getMediaRelationships (filePath, tableName, featureId) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getMediaRelationships(gp, tableName, featureId)
+    })
+  }
+
+  /**
+   * Adds a media attachment
+   * @param gp
+   * @param tableName
+   * @param featureId
+   * @param attachmentFile
+   * @returns {Promise<boolean>}
+   * @private
+   */
+  static async _addMediaAttachment (gp, tableName, featureId, attachmentFile) {
+    let success = false
+    try {
+      const featureDao = gp.getFeatureDao(tableName)
+      const featureRow = featureDao.queryForId(featureId)
+      if (!_.isNil(featureRow)) {
+        const buffer = await jetpack.readAsync(attachmentFile, 'buffer')
+        const mediaTableName = tableName + '_media'
+        const rte = gp.relatedTablesExtension
+        if (!gp.connection.isTableExists(mediaTableName)) {
+          const mediaTable = MediaTable.create(mediaTableName)
+          rte.createRelatedTable(mediaTable)
+        }
+        const mediaDao = rte.getMediaDao(mediaTableName)
+        let contentType = MediaUtilities.getMimeType(attachmentFile)
+        if (contentType === false) {
+          contentType = 'application/octet-stream'
+        }
+        const mediaRow = mediaDao.newRow()
+        mediaRow.data = buffer
+        mediaRow.contentType = contentType
+        mediaRow.id = mediaDao.create(mediaRow)
+        featureDao.linkMediaRow(featureRow, mediaRow)
+        success = true
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    return success
+  }
+
+  /**
+   * Adds a media attachment
+   * @param filePath
+   * @param tableName
+   * @param featureId
+   * @param attachmentFile
+   * @returns {Promise<any>}
+   */
+  static async addMediaAttachment (filePath, tableName, featureId, attachmentFile) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._addMediaAttachment(gp, tableName, featureId, attachmentFile)
+    }, true)
+  }
+
+  /**
+   * Gets the count of media attachments
+   * @param gp
+   * @param tableName
+   * @private
+   */
+  static _getMediaAttachmentsCounts (gp, tableName) {
+    let counts = {}
+    try {
+      const featureDao = gp.getFeatureDao(tableName)
+      if (!_.isNil(featureDao)) {
+        const mediaRelations = featureDao.mediaRelations;
+        const rte = gp.relatedTablesExtension;
+        for (let i = 0; i < mediaRelations.length; i++) {
+          const mediaRelation = mediaRelations[i];
+          if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
+            const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
+            const mappings = userMappingDao.queryForAll()
+            mappings.forEach(mapping => {
+              if (_.isNil(counts[mapping.base_id])) {
+                counts[mapping.base_id] = 0
+              }
+              counts[mapping.base_id] = counts[mapping.base_id] + 1
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    return counts
+  }
+
+  /**
+   * Gets the count of media attachments
+   * @param filePath
+   * @param tableName
+   * @returns {Promise<any>}
+   */
+  static async getMediaAttachmentsCounts (filePath, tableName) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._getMediaAttachmentsCounts(gp, tableName)
+    })
+  }
+
+  static _deleteMediaAttachment (gp, mediaRelationship) {
+    const {baseId, relatedTable, relatedId, mappingTable} = mediaRelationship
+    const rte = gp.relatedTablesExtension
+    // delete relationship
+    let mappingDao = rte.getMappingDao(mappingTable)
+    mappingDao.deleteWhere('base_id = ? and related_id = ?', [baseId, relatedId])
+
+    // see if our related media is mapped anywhere else
+    let hasOtherRelationships = false
+    const mediaRelatedTableRelations = rte.extendedRelationDao.getRelatedTableRelations(relatedTable)
+    for (let i = 0; i < mediaRelatedTableRelations.length; i++) {
+      const mediaRelation = mediaRelatedTableRelations[i]
+      mappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
+      if (mappingDao.queryByRelatedId(relatedId).length > 0) {
+        hasOtherRelationships = true
+        break
+      }
+    }
+    // delete media if no relationships remain
+    if (!hasOtherRelationships) {
+      const mediaDao = rte.getMediaDao(relatedTable)
+      mediaDao.deleteById(relatedId)
+    }
+  }
+
+  static deleteMediaAttachment(filePath, mediaRelationship) {
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageUtilities._deleteMediaAttachment(gp, mediaRelationship)
     })
   }
 }

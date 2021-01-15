@@ -37,15 +37,9 @@
         </v-col>
         <v-col align-self="center">
           <v-row no-gutters justify="end" align="center">
-            <svg height="25" width="25">
-              <circle cx="12.5" cy="12.5" r="5" :stroke="color" :fill="color" :stroke-width="(Math.min(width, 5) + 'px')"></circle>
-            </svg>
-            <svg height="25" width="25">
-              <polyline points="5,20 20,15, 5,10, 20,5" :stroke="color" :stroke-width="(Math.min(width, 5) + 'px')" fill="none"></polyline>
-            </svg>
-            <svg height="25" width="25">
-              <polygon points="5,10 20,5 20,20 5,20" :stroke="color" :fill="fillColor" :stroke-width="(Math.min(width, 5) + 'px')"></polygon>
-            </svg>
+            <geometry-style-svg :geometry-type="1" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
+            <geometry-style-svg :geometry-type="2" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
+            <geometry-style-svg :geometry-type="3" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
           </v-row>
         </v-col>
       </v-row>
@@ -105,6 +99,7 @@
   import ColorPicker from '../Common/ColorPicker'
   import NumberPicker from '../Common/NumberPicker'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
     props: {
@@ -133,6 +128,7 @@
       }
     },
     components: {
+      GeometryStyleSvg,
       'colorpicker': ColorPicker,
       'numberpicker': NumberPicker
     },

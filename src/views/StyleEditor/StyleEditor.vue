@@ -112,18 +112,9 @@
                   </v-col>
                   <v-col>
                     <v-row no-gutters justify="end" align="center" class="mr-5">
-                      <svg height="25" width="25">
-                        <circle cx="12.5" cy="12.5" r="5" :stroke="style.color" :fill="style.color"
-                                :stroke-width="(Math.min(style.width, 5) + 'px')"></circle>
-                      </svg>
-                      <svg height="25" width="25">
-                        <polyline points="5,20 20,15, 5,10, 20,5" :stroke="style.color"
-                                  :stroke-width="(Math.min(style.width, 5) + 'px')" fill="none"></polyline>
-                      </svg>
-                      <svg height="25" width="25">
-                        <polygon points="5,10 20,5 20,20 5,20" :stroke="style.color" :fill="style.fillColor"
-                                 :stroke-width="(Math.min(style.width, 5) + 'px')"></polygon>
-                      </svg>
+                      <geometry-style-svg :geometry-type="1" :color="style.color" :fill-color="style.fillColor" :fill-opacity="style.fillOpacity"/>
+                      <geometry-style-svg :geometry-type="2" :color="style.color" :fill-color="style.fillColor" :fill-opacity="style.fillOpacity"/>
+                      <geometry-style-svg :geometry-type="3" :color="style.color" :fill-color="style.fillColor" :fill-opacity="style.fillOpacity"/>
                     </v-row>
                   </v-col>
                 </v-row>
@@ -217,21 +208,7 @@
                   </v-col>
                   <v-col cols="4" v-if="assignment.style">
                     <v-row no-gutters justify="end" class="mr-5">
-                      <svg height="25" width="25" v-if="assignment.geometryType === 1 || assignment.geometryType === 4 || assignment.geometryType === 7">
-                        <circle cx="12.5" cy="12.5" r="5" :stroke="assignment.style.getHexColor()"
-                                :fill="assignment.style.getHexColor()"
-                                :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></circle>
-                      </svg>
-                      <svg height="25" width="25" v-if="assignment.geometryType === 2 ||assignment.geometryType === 5 ||  assignment.geometryType === 7">
-                        <polyline points="5,20 20,15, 5,10, 20,5" :stroke="assignment.style.getHexColor()"
-                                  :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"
-                                  fill="none"></polyline>
-                      </svg>
-                      <svg height="25" width="25" v-if="assignment.geometryType === 3 || assignment.geometryType === 6 || assignment.geometryType === 7">
-                        <polygon points="5,10 20,5 20,20 5,20" :stroke="assignment.style.getHexColor()"
-                                 :fill="assignment.style.getFillHexColor()"
-                                 :stroke-width="(Math.min(assignment.style.getWidth(), 5) + 'px')"></polygon>
-                      </svg>
+                      <geometry-style-svg :geometry-type="assignment.geometryType" :color="assignment.style.getHexColor()" :fill-color="assignment.style.getFillHexColor()" :fill-opacity="assignment.style.getFillOpacity()"/>
                     </v-row>
                   </v-col>
                 </v-row>
@@ -271,6 +248,7 @@
   import {GeoPackageAPI, GeometryType} from '@ngageoint/geopackage'
   import VectorStyleUtilities from '../../lib/VectorStyleUtilities'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
     props: {
@@ -323,6 +301,7 @@
       }
     },
     components: {
+      GeometryStyleSvg,
       CreateEditIcon,
       CreateEditStyle,
       EditTableStyleAssignment

@@ -39,6 +39,17 @@
         :is-geo-package="true"
         :close="closeStyleAssignment"/>
     </v-dialog>
+    <v-dialog v-model="showFeatureMediaAttachments" max-width="600" persistent @keydown.esc="closeFeatureMediaAttachments" :fullscreen="attachmentDialogFullScreen" style="overflow-y: hidden;">
+      <media-attachments
+       v-if="showFeatureMediaAttachments"
+       :tableName="table.tableName"
+       :project-id="projectId"
+       :geopackage="geopackage"
+       :feature-id="mediaFeatureId"
+       :back="closeFeatureMediaAttachments"
+       :toggle-full-screen="toggleAttachmentDialogFullScreen"
+       :is-full-screen="attachmentDialogFullScreen"/>
+    </v-dialog>
     <v-data-table
       v-model="selected"
       dense
@@ -67,21 +78,6 @@
             title="Edit feature"
           >
             mdi-pencil
-          </v-icon>
-        </v-btn>
-        <v-btn
-          icon
-          small
-          @click="(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              showStyleAssignment(item)
-            }">
-          <v-icon
-            small
-            title="Style assignment"
-          >
-            mdi-palette
           </v-icon>
         </v-btn>
         <v-btn
@@ -117,6 +113,38 @@
           </v-icon>
         </v-btn>
       </template>
+      <template v-slot:item.style="{ item }">
+        <v-btn icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }">
+          <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
+          <img v-else-if="item.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
+        </v-btn>
+        <v-row v-else justify="start" align="center" no-gutters>
+          <v-btn small icon @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }">
+            <v-icon small>mdi-palette</v-icon>
+          </v-btn>
+          None
+        </v-row>
+      </template>
+      <template v-slot:item.attachments="{ item }">
+        <v-row justify="start" align="center" no-gutters>
+          <v-btn small icon @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              editFeatureMediaAttachments(item)
+            }">
+            <v-icon small>mdi-paperclip</v-icon>
+          </v-btn>
+          {{item.attachmentCount}}
+        </v-row>
+      </template>
     </v-data-table>
     <div class="text-center pt-2">
       <v-pagination
@@ -139,11 +167,13 @@
 <script>
   import _ from 'lodash'
   import moment from 'moment'
-  import { GeoPackageDataType } from '@ngageoint/geopackage'
+  import { GeoPackageDataType, GeometryType } from '@ngageoint/geopackage'
   import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import FeatureEditor from '../Common/FeatureEditor'
   import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import MediaAttachments from './MediaAttachments'
+  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
     props: {
@@ -154,6 +184,8 @@
       close: Function
     },
     components: {
+      GeometryStyleSvg,
+      MediaAttachments,
       FeatureEditor,
       EditFeatureStyleAssignment
     },
@@ -168,7 +200,10 @@
         assignStyleDialog: false,
         styleAssignment: null,
         page: 1,
-        pageCount: 0
+        pageCount: 0,
+        showFeatureMediaAttachments: false,
+        mediaFeatureId: -1,
+        attachmentDialogFullScreen: false
       }
     },
     computed: {
@@ -180,8 +215,10 @@
             geopackageId: this.geopackage.id,
             layer: this.table.tableName,
             id: feature.id,
-            type: feature.geometry.type,
-            styleAssignmentType: this.table.featureStyleAssignmentTypes[feature.id] || 'None'
+            geometryType: feature.geometry.type,
+            geometryTypeCode: GeometryType.fromName(feature.geometry.type.toUpperCase()),
+            style: this.table.featureStyleAssignments[feature.id],
+            attachmentCount: this.table.featureAttachmentCounts[feature.id] || 0
           }
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
@@ -210,9 +247,10 @@
       },
       headers () {
         const headers = [
-          { text: 'Actions', value: 'actions', sortable: false, width: 150 },
-          { text: 'Style Assignment', value: 'styleAssignmentType', width: 150 },
-          { text: 'Geometry Type', value: 'type', width: 150 }
+          { text: 'Actions', value: 'actions', sortable: false, width: 140 },
+          { text: 'Attachments', value: 'attachments', width: 140 },
+          { text: 'Style', value: 'style', sortable: false, width: 140 },
+          { text: 'Geometry Type', value: 'geometryType', width: 140 }
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
@@ -233,6 +271,19 @@
       }
     },
     methods: {
+      toggleAttachmentDialogFullScreen () {
+        this.attachmentDialogFullScreen = !this.attachmentDialogFullScreen
+      },
+      closeFeatureMediaAttachments () {
+        this.showFeatureMediaAttachments = false
+        this.$nextTick(() => {
+          this.attachmentDialogFullScreen = false
+        })
+      },
+      editFeatureMediaAttachments (item) {
+        this.mediaFeatureId = item.id
+        this.showFeatureMediaAttachments = true
+      },
       editItem (item) {
         const self = this
         this.editFeature = this.table.features.find(feature => feature.id === item.id)
@@ -288,5 +339,11 @@
 </script>
 
 <style scoped>
-
+  .icon-box {
+    border: 1px solid #ffffff00;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
 </style>

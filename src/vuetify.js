@@ -24,6 +24,7 @@ const opts = {
         detailbg: '#f5f5f5',
         hover: '#f5f5f5',
         background: '#ffffff',
+        text: '#1e1e1e',
         scroll_thumb: '#808285',
         scroll_track: '#f5f5f5'
       },
@@ -40,6 +41,7 @@ const opts = {
         detailbg: '#2b2b2b',
         hover: '#414042',
         background: '#1e1e1e',
+        text: '#f5f5f5',
         scroll_thumb: '#f5f5f5',
         scroll_track: '#414042'
       }

@@ -73,21 +73,6 @@
           icon
           small
           @click="(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              showStyleAssignment(item)
-            }">
-          <v-icon
-            small
-            title="Style assignment"
-          >
-            mdi-palette
-          </v-icon>
-        </v-btn>
-        <v-btn
-          icon
-          small
-          @click="(e) => {
             e.stopPropagation()
             e.preventDefault()
             editDrawing(item)
@@ -99,7 +84,6 @@
             mdi-vector-square
           </v-icon>
         </v-btn>
-
         <v-btn
           icon
           color="warning"
@@ -117,6 +101,23 @@
             mdi-trash-can
           </v-icon>
         </v-btn>
+      </template>
+      <template v-slot:item.style="{ item }">
+        <v-row class="clickable" no-gutters @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }">
+          <v-row no-gutters justify="start" v-if="item.style && item.style.style">
+            <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
+          </v-row>
+          <v-row no-gutters justify="start" v-else-if="item.style && item.style.icon">
+            <img class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
+          </v-row>
+          <v-row no-gutters v-else>
+            None
+          </v-row>
+        </v-row>
       </template>
     </v-data-table>
     <div class="text-center pt-2">
@@ -140,11 +141,12 @@
 <script>
   import _ from 'lodash'
   import moment from 'moment/moment'
-  import { GeoPackageDataType } from '@ngageoint/geopackage'
+  import { GeoPackageDataType, GeometryType } from '@ngageoint/geopackage'
   import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import FeatureEditor from '../Common/FeatureEditor'
   import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
     props: {
@@ -155,6 +157,7 @@
       close: Function
     },
     components: {
+      GeometryStyleSvg,
       FeatureEditor,
       EditFeatureStyleAssignment
     },
@@ -184,8 +187,9 @@
             sourceId: this.source.id,
             layer: this.table.tableName,
             id: feature.id,
-            type: feature.geometry.type,
-            styleAssignmentType: this.table.featureStyleAssignmentTypes[feature.id] || 'None'
+            geometryType: feature.geometry.type,
+            geometryTypeCode: GeometryType.fromName(feature.geometry.type.toUpperCase()),
+            style: this.table.featureStyleAssignments[feature.id]
           }
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
@@ -215,8 +219,8 @@
       headers () {
         const headers = [
           { text: 'Actions', value: 'actions', sortable: false, width: 150 },
-          { text: 'Style Assignment', value: 'styleAssignmentType', width: 150 },
-          { text: 'Geometry Type', value: 'type', width: 150 }
+          { text: 'Style', value: 'style', sortable: false, width: 150 },
+          { text: 'Geometry Type', value: 'geometryType', width: 150 }
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {

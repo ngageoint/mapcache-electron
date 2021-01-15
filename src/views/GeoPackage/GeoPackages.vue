@@ -147,7 +147,9 @@
       createNewGeoPackage () {
         this.fab = false
         this.geopackageExistsDialog = false
-        remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
+        remote.dialog.showSaveDialog({
+          title: 'New GeoPackage'
+        }).then(({canceled, filePath}) => {
           if (!canceled && !_.isNil(filePath)) {
             if (!filePath.endsWith('.gpkg')) {
               filePath = filePath + '.gpkg'

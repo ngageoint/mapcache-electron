@@ -139,7 +139,7 @@
         ref="featureTableRef"
         v-show="showFeatureTable"
         class="mx-auto"
-        style="max-height: 375px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
+        style="max-height: 385px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
         <v-card-text class="pa-0 ma-0 mb-2">
           <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
         </v-card-text>
@@ -428,7 +428,9 @@
           features: [feature]
         }
         if (this.geoPackageSelection === 0) {
-          remote.dialog.showSaveDialog().then(({canceled, filePath}) => {
+          remote.dialog.showSaveDialog({
+            title: 'New GeoPackage'
+          }).then(({canceled, filePath}) => {
             if (!canceled) {
               if (!filePath.endsWith('.gpkg')) {
                 filePath = filePath + '.gpkg'
@@ -576,7 +578,8 @@
                   tableName: tableName,
                   columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
                   features: features,
-                  featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(geopackage.path, tableName, features)
+                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(geopackage.path, tableName),
+                  featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(geopackage.path, tableName)
                 }],
                 sourceTables: []
               }
@@ -591,8 +594,8 @@
                   sourceId: sourceLayerConfig.id,
                   tableName: sourceLayerConfig.sourceLayerName,
                   columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                  features: await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                  featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, features)
+                  features: features,
+                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
                 }]
               }
             }
@@ -843,7 +846,8 @@
                       tableName: tableName,
                       columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
                       features: features,
-                      featureStyleAssignmentTypes: GeoPackageUtilities._getStyleAssignmentTypeForFeatures(gp, tableName, features)
+                      featureStyleAssignments: GeoPackageUtilities._getStyleAssignmentForFeatures(gp, tableName),
+                      featureAttachmentCounts: GeoPackageUtilities._getMediaAttachmentsCounts(gp, tableName)
                     })
                   }
                 }
@@ -866,7 +870,7 @@
                     tableName: sourceLayerConfig.sourceLayerName,
                     columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
                     features: features,
-                    featureStyleAssignmentTypes: await GeoPackageUtilities.getStyleAssignmentTypeForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, features)
+                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
                   })
                 }
               }
