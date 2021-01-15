@@ -103,20 +103,25 @@
         </v-btn>
       </template>
       <template v-slot:item.style="{ item }">
-        <v-row class="clickable" no-gutters @click.stop.prevent="(e) => {
+        <v-btn icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
               e.stopPropagation()
               e.preventDefault()
               showStyleAssignment(item)
-            }">
-          <v-row no-gutters justify="start" v-if="item.style && item.style.style">
-            <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
-          </v-row>
-          <v-row no-gutters justify="start" v-else-if="item.style && item.style.icon">
-            <img class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
-          </v-row>
-          <v-row no-gutters v-else>
-            None
-          </v-row>
+            }"
+               title="Assign style">
+          <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
+          <img v-else-if="item.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
+        </v-btn>
+        <v-row v-else justify="start" align="center" no-gutters>
+          <v-btn small icon @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              showStyleAssignment(item)
+            }"
+                 title="Assign style">
+            <v-icon small>mdi-palette</v-icon>
+          </v-btn>
+          None
         </v-row>
       </template>
     </v-data-table>

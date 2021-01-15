@@ -118,7 +118,8 @@
               e.stopPropagation()
               e.preventDefault()
               showStyleAssignment(item)
-            }">
+            }"
+            title="Assign style">
           <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
           <img v-else-if="item.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
         </v-btn>
@@ -127,7 +128,8 @@
               e.stopPropagation()
               e.preventDefault()
               showStyleAssignment(item)
-            }">
+            }"
+            title="Assign style">
             <v-icon small>mdi-palette</v-icon>
           </v-btn>
           None
@@ -135,7 +137,7 @@
       </template>
       <template v-slot:item.attachments="{ item }">
         <v-row justify="start" align="center" no-gutters>
-          <v-btn small icon @click.stop.prevent="(e) => {
+          <v-btn title="Edit attachments" small icon @click.stop.prevent="(e) => {
               e.stopPropagation()
               e.preventDefault()
               editFeatureMediaAttachments(item)
