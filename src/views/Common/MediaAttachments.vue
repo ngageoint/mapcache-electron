@@ -128,7 +128,9 @@
   export default {
     props: {
       projectId: String,
-      geopackage: Object,
+      geopackagePath: String,
+      id: String,
+      isGeoPackage: Boolean,
       tableName: String,
       featureId: Number,
       back: Function,
@@ -139,7 +141,7 @@
       return {
         attaching: false,
         model: -1,
-        attachmentToDelete: -1,
+        attachments: [],
         deleteDialog: false,
         loadingContent: false,
         contentSrc: null,
@@ -149,17 +151,14 @@
         downloaded: false
       }
     },
-    asyncComputed: {
-      attachments: {
-        get () {
-          const attachments = GeoPackageUtilities.getMediaRelationships(this.geopackage.path, this.tableName, this.featureId)
-          this.loading = false
-          return attachments
-        },
-        default: []
-      }
-    },
     methods: {
+      async loadContent (mediaToLoad) {
+        this.loadingContent = true
+        this.contentSrc = await GeoPackageUtilities.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
+        this.$nextTick(() => {
+          this.loadingContent = false
+        })
+      },
       hideError () {
         this.attachError = false
         this.attachErrorMessage = ''
@@ -169,25 +168,24 @@
       },
       cancelDeleteAttachment () {
         this.deleteDialog = false
-        this.attachmentToDelete = -1
       },
       async deleteAttachment () {
         const self = this
-        const attachments = this.attachments.slice()
         let currentIndex = this.model
-        const attachmentToDelete = attachments.splice(currentIndex, 1)[0]
-        await GeoPackageUtilities.deleteMediaAttachment(this.geopackage.path, attachmentToDelete)
-        // check if current index is at edge
-        if (attachments.length - 1 < currentIndex) {
-          currentIndex = currentIndex - 1
+        const attachmentToDelete = this.attachments.splice(currentIndex, 1)[0]
+
+        if (currentIndex > this.attachments.length - 1) {
+          this.model = currentIndex - 1
+        } else {
+          this.loadContent(this.attachments[this.model])
         }
-        this.loadingContent = true
-        const mediaToLoad = attachments[currentIndex]
-        this.contentSrc = await GeoPackageUtilities.getMediaObjectUrl(this.geopackage.path, mediaToLoad.relatedTable, mediaToLoad.relatedId)
-        this.$nextTick(() => {
-          this.loadingContent = false
-        })
-        ActionUtilities.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.geopackage.id})
+
+        await GeoPackageUtilities.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
+        if (self.isGeoPackage) {
+          ActionUtilities.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+        } else {
+          ActionUtilities.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+        }
         this.cancelDeleteAttachment()
       },
       async downloadAttachment () {
@@ -196,7 +194,7 @@
           defaultPath: 'attachment'
         }).then(async ({canceled, filePath}) => {
           if (!canceled && !_.isNil(filePath)) {
-            const mediaRow = await GeoPackageUtilities.getMediaRow(this.geopackage.path, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
+            const mediaRow = await GeoPackageUtilities.getMediaRow(this.geopackagePath, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
             const extension = MediaUtilities.getExtension(mediaRow.contentType)
             let file = filePath
             if (extension !== false) {
@@ -217,11 +215,15 @@
             if (!MediaUtilities.exceedsFileSizeLimit(filePath)) {
               self.attaching = true
               self.$nextTick(() => {
-                GeoPackageUtilities.addMediaAttachment(self.geopackage.path, self.tableName, self.featureId, result.filePaths[0]).then((success) => {
+                GeoPackageUtilities.addMediaAttachment(self.geopackagePath, self.tableName, self.featureId, result.filePaths[0]).then((success) => {
                   self.attaching = false
-                  ActionUtilities.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.geopackage.id})
+                  if (self.isGeoPackage) {
+                    ActionUtilities.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+                  } else {
+                    ActionUtilities.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+                  }
                   if (success) {
-                    GeoPackageUtilities.getMediaRelationships(self.geopackage.path, self.tableName, self.featureId).then(relationships => {
+                    GeoPackageUtilities.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
                       self.attachments = relationships
                       self.model = relationships.length - 1
                     })
@@ -236,17 +238,20 @@
         })
       }
     },
+    mounted () {
+      GeoPackageUtilities.getMediaRelationships(this.geopackagePath, this.tableName, this.featureId).then(attachments => {
+        this.attachments = attachments
+        this.loading = false
+      })
+    },
     watch: {
       model: {
-        handler (newValue) {
-          this.$nextTick(async () => {
-            this.loadingContent = true
-            const mediaToLoad = this.attachments[newValue]
-            this.contentSrc = await GeoPackageUtilities.getMediaObjectUrl(this.geopackage.path, mediaToLoad.relatedTable, mediaToLoad.relatedId)
-            this.$nextTick(() => {
-              this.loadingContent = false
-            })
-          })
+        async handler (newValue) {
+          if (newValue >= 0 && this.attachments.length > 0) {
+            this.loadContent(this.attachments[newValue])
+          } else {
+            this.contentSrc = null
+          }
         }
       },
       loading: {

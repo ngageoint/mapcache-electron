@@ -39,6 +39,19 @@
         :is-geo-package="false"
         :close="closeStyleAssignment"/>
     </v-dialog>
+    <v-dialog v-model="showFeatureMediaAttachments" max-width="600" persistent @keydown.esc="closeFeatureMediaAttachments" :fullscreen="attachmentDialogFullScreen" style="overflow-y: hidden;">
+      <media-attachments
+        v-if="showFeatureMediaAttachments"
+        :tableName="table.tableName"
+        :project-id="projectId"
+        :geopackage-path="source.geopackageFilePath"
+        :id="source.id"
+        :feature-id="mediaFeatureId"
+        :is-geo-package="false"
+        :back="closeFeatureMediaAttachments"
+        :toggle-full-screen="toggleAttachmentDialogFullScreen"
+        :is-full-screen="attachmentDialogFullScreen"/>
+    </v-dialog>
     <v-data-table
       v-model="selected"
       dense
@@ -124,6 +137,18 @@
           None
         </v-row>
       </template>
+      <template v-slot:item.attachments="{ item }">
+        <v-row justify="start" align="center" no-gutters>
+          <v-btn title="Edit attachments" small icon @click.stop.prevent="(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              editFeatureMediaAttachments(item)
+            }">
+            <v-icon small>mdi-paperclip</v-icon>
+          </v-btn>
+          {{item.attachmentCount}}
+        </v-row>
+      </template>
     </v-data-table>
     <div class="text-center pt-2">
       <v-pagination
@@ -151,6 +176,7 @@
   import FeatureEditor from '../Common/FeatureEditor'
   import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import MediaAttachments from '../Common/MediaAttachments'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
@@ -163,6 +189,7 @@
     },
     components: {
       GeometryStyleSvg,
+      MediaAttachments,
       FeatureEditor,
       EditFeatureStyleAssignment
     },
@@ -177,7 +204,10 @@
         assignStyleDialog: false,
         styleAssignment: null,
         page: 1,
-        pageCount: 0
+        pageCount: 0,
+        showFeatureMediaAttachments: false,
+        mediaFeatureId: -1,
+        attachmentDialogFullScreen: false
       }
     },
     computed: {
@@ -194,7 +224,8 @@
             id: feature.id,
             geometryType: feature.geometry.type,
             geometryTypeCode: GeometryType.fromName(feature.geometry.type.toUpperCase()),
-            style: this.table.featureStyleAssignments[feature.id]
+            style: this.table.featureStyleAssignments[feature.id],
+            attachmentCount: this.table.featureAttachmentCounts[feature.id] || 0
           }
           _.keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
@@ -223,9 +254,10 @@
       },
       headers () {
         const headers = [
-          { text: 'Actions', value: 'actions', sortable: false, width: 150 },
-          { text: 'Style', value: 'style', sortable: false, width: 150 },
-          { text: 'Geometry Type', value: 'geometryType', width: 150 }
+          { text: 'Actions', value: 'actions', sortable: false, width: 140 },
+          { text: 'Attachments', value: 'attachments', width: 140 },
+          { text: 'Style', value: 'style', sortable: false, width: 140 },
+          { text: 'Geometry Type', value: 'geometryType', width: 140 }
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
@@ -246,6 +278,19 @@
       }
     },
     methods: {
+      toggleAttachmentDialogFullScreen () {
+        this.attachmentDialogFullScreen = !this.attachmentDialogFullScreen
+      },
+      closeFeatureMediaAttachments () {
+        this.showFeatureMediaAttachments = false
+        this.$nextTick(() => {
+          this.attachmentDialogFullScreen = false
+        })
+      },
+      editFeatureMediaAttachments (item) {
+        this.mediaFeatureId = item.id
+        this.showFeatureMediaAttachments = true
+      },
       editItem (item) {
         const self = this
         this.editFeature = this.table.features.find(feature => feature.id === item.id)

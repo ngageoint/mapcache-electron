@@ -595,7 +595,8 @@
                   tableName: sourceLayerConfig.sourceLayerName,
                   columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
                   features: features,
-                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
                 }]
               }
             }
@@ -870,7 +871,8 @@
                     tableName: sourceLayerConfig.sourceLayerName,
                     columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
                     features: features,
-                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                    featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
                   })
                 }
               }
@@ -1236,7 +1238,7 @@
                   delete sourceLayers[sourceId].mapLayer
                 }
               }
-            } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector') {
+            } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector' && !_.isNil(sourceLayers[sourceId].initializedSource)) {
               sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
               // only style has changed, let's just update style
               sourceLayers[sourceId].initializedSource.updateStyle(this.project.maxFeatures).then(function () {

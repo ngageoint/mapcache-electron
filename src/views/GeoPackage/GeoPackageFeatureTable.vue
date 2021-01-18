@@ -44,8 +44,10 @@
        v-if="showFeatureMediaAttachments"
        :tableName="table.tableName"
        :project-id="projectId"
-       :geopackage="geopackage"
+       :geopackage-path="geopackage.path"
+       :id="geopackage.id"
        :feature-id="mediaFeatureId"
+       :is-geo-package="true"
        :back="closeFeatureMediaAttachments"
        :toggle-full-screen="toggleAttachmentDialogFullScreen"
        :is-full-screen="attachmentDialogFullScreen"/>
@@ -174,7 +176,7 @@
   import FeatureEditor from '../Common/FeatureEditor'
   import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
   import ActionUtilities from '../../lib/ActionUtilities'
-  import MediaAttachments from './MediaAttachments'
+  import MediaAttachments from '../Common/MediaAttachments'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {

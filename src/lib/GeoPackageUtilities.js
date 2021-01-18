@@ -145,7 +145,6 @@ export default class GeoPackageUtilities {
    * @param tableName
    * @param featureGeoJson
    * @param updateBoundingBox
-   * @private
    */
   static _updateFeatureGeometry (gp, tableName, featureGeoJson, updateBoundingBox = true) {
     const featureDao = gp.getFeatureDao(tableName)
@@ -2981,7 +2980,7 @@ export default class GeoPackageUtilities {
    * @param gp
    * @param tableName
    * @param checkForTableStyles
-   * @private
+   *
    */
   static _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -3057,7 +3056,6 @@ export default class GeoPackageUtilities {
    * Gets table styles/icons as list of {id, geometryType}
    * @param gp
    * @param tableName
-   * @private
    */
   static _getTableStyleMappings(gp, tableName) {
     const featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -3093,7 +3091,6 @@ export default class GeoPackageUtilities {
    * @param tableName
    * @param featureId
    * @returns {boolean}
-   * @private
    */
   static _featureExists (gp, tableName, featureId) {
     let exists = false
@@ -3148,7 +3145,6 @@ export default class GeoPackageUtilities {
    * @param featureDao
    * @param featureId
    * @returns {Array}
-   * @private
    */
   static _getMediaRelationshipsForFeatureRow (gp, tableName, featureDao, featureId) {
     // get media relations for this feature table
@@ -3181,7 +3177,6 @@ export default class GeoPackageUtilities {
    * @param tableName
    * @param featureId
    * @returns {Array}
-   * @private
    */
   static _getMediaRelationships (gp, tableName, featureId) {
     const mediaRelationships = []
@@ -3217,7 +3212,6 @@ export default class GeoPackageUtilities {
    * @param featureId
    * @param attachmentFile
    * @returns {Promise<boolean>}
-   * @private
    */
   static async _addMediaAttachment (gp, tableName, featureId, attachmentFile) {
     let success = false
@@ -3279,7 +3273,6 @@ export default class GeoPackageUtilities {
    * Gets the count of media attachments
    * @param gp
    * @param tableName
-   * @private
    */
   static _getMediaAttachmentsCounts (gp, tableName) {
     let counts = {}
@@ -3323,7 +3316,6 @@ export default class GeoPackageUtilities {
   /**
    * Deletes a media relationship and if no relationships to the media remain, deletes the media   * @param gp
    * @param mediaRelationship
-   * @private
    */
   static _deleteMediaAttachment (gp, mediaRelationship) {
     const {baseId, relatedTable, relatedId, mappingTable} = mediaRelationship
