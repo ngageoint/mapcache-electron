@@ -135,6 +135,12 @@ const mutations = {
   },
   setMapRenderingOrder (state, {projectId, mapRenderingOrder}) {
     Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
+  },
+  migrateState (state, {migratedState}) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
+    Object.assign(state, migratedState)
   }
 }
 
@@ -243,6 +249,9 @@ const actions = {
   },
   setMapRenderingOrder ({ commit }, {projectId, mapRenderingOrder}) {
     commit('setMapRenderingOrder', {projectId, mapRenderingOrder})
+  },
+  migrateState ({commit}, {migratedState}) {
+    commit('migrateState', {migratedState})
   }
 }
 

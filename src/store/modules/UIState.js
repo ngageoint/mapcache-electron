@@ -59,6 +59,12 @@ const mutations = {
   },
   clearPreviewLayer (state, {projectId}) {
     Vue.delete(state[projectId], 'previewLayer')
+  },
+  migrateState (state, {migratedState}) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
+    Object.assign(state, migratedState)
   }
 }
 
@@ -95,6 +101,9 @@ const actions = {
   },
   clearPreviewLayer ({ commit }, {projectId}) {
     commit('clearPreviewLayer', {projectId})
+  },
+  migrateState ({commit}, {migratedState}) {
+    commit('migrateState', {migratedState})
   }
 }
 

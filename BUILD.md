@@ -99,6 +99,12 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `xcrun stapler staple “MapCache-{version}.dmg”`
 `xcrun stapler staple “MapCache-{version}.pkg”`
 
+# Vuex store migration
+Prior to release, any modifications that need to be made to the vuex store to support new features/bug fixes should perform the following steps.
+1. Add migration script to store > migration > migration.js
+2. Increment store version in package.json > mapacache > store > version
+3. Migration script can be tested by installing a previous version of the application, then install the version with your migration scrip and verify the app runs as expected.
+
 # Limitations and Notes
 It is worth noting that there are several libraries using native dependencies. The native depdencies are
 1. better-sqlite3
