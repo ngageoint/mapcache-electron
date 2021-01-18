@@ -31,6 +31,7 @@ const supportedContentTypes = [
   'text/html'
 ]
 const FILE_SIZE_LIMIT = 1024 * 1024 * 500
+const MEDIA_TABLE_NAME = 'gpkg_media'
 
 export default class MediaUtilities {
   static getMimeType (filePath) {
@@ -69,7 +70,11 @@ export default class MediaUtilities {
     return size > FILE_SIZE_LIMIT
   }
 
-  static getMaxFileSize() {
+  static getMaxFileSize () {
     return FILE_SIZE_LIMIT
+  }
+
+  static getMediaTableName () {
+    return MEDIA_TABLE_NAME
   }
 }

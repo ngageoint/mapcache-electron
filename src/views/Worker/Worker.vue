@@ -61,6 +61,11 @@
   export default {
     name: 'worker-page',
     created: function () {
+      ipcRenderer.removeAllListeners('worker_process_source')
+      ipcRenderer.removeAllListeners('worker_build_feature_layer')
+      ipcRenderer.removeAllListeners('worker_build_tile_layer')
+      ipcRenderer.removeAllListeners('worker_read_raster')
+
       ipcRenderer.on('worker_process_source', (e, data) => {
         processSource(data.project, data.source).then((result) => {
           ipcRenderer.send('worker_process_source_completed_' + data.taskId, result)

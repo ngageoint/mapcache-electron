@@ -3087,10 +3087,6 @@ export default class GeoPackageUtilities {
     }
   }
 
-  static _hasStyleExtension(gp, tableName) {
-    return gp.featureStyleExtension.has(tableName);
-  }
-
   /**
    * Check if a feature exists
    * @param gp
@@ -3230,10 +3226,10 @@ export default class GeoPackageUtilities {
       const featureRow = featureDao.queryForId(featureId)
       if (!_.isNil(featureRow)) {
         const buffer = await jetpack.readAsync(attachmentFile, 'buffer')
-        const mediaTableName = tableName + '_media'
+        const mediaTableName = MediaUtilities.getMediaTableName()
         const rte = gp.relatedTablesExtension
         if (!gp.connection.isTableExists(mediaTableName)) {
-          const mediaTable = MediaTable.create(mediaTableName)
+          const mediaTable = MediaTable.create(mediaTableName, )
           rte.createRelatedTable(mediaTable)
         }
         const mediaDao = rte.getMediaDao(mediaTableName)
@@ -3241,7 +3237,18 @@ export default class GeoPackageUtilities {
         if (contentType === false) {
           contentType = 'application/octet-stream'
         }
+
         const mediaRow = mediaDao.newRow()
+
+        // check if table has required columns, other than id, data and content_type
+        const requiredColumns = _.difference(mediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
+        // iterate over those columns and set them to the default value for that data type, as we do not support
+        // additional columns currently in mapcache media attachments
+        requiredColumns.forEach(columnName => {
+          const type = mediaRow.getRowColumnTypeWithColumnName(columnName)
+          mediaRow.setValueWithColumnName(columnName, GeoPackageUtilities.getDefaultValueForDataType(type))
+        })
+
         mediaRow.data = buffer
         mediaRow.contentType = contentType
         mediaRow.id = mediaDao.create(mediaRow)
@@ -3313,6 +3320,11 @@ export default class GeoPackageUtilities {
     })
   }
 
+  /**
+   * Deletes a media relationship and if no relationships to the media remain, deletes the media   * @param gp
+   * @param mediaRelationship
+   * @private
+   */
   static _deleteMediaAttachment (gp, mediaRelationship) {
     const {baseId, relatedTable, relatedId, mappingTable} = mediaRelationship
     const rte = gp.relatedTablesExtension
@@ -3338,6 +3350,12 @@ export default class GeoPackageUtilities {
     }
   }
 
+  /**
+   * Deletes a media relationship and if no relationships to the media remain, deletes the media
+   * @param filePath
+   * @param mediaRelationship
+   * @returns {Promise<any>}
+   */
   static deleteMediaAttachment(filePath, mediaRelationship) {
     return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageUtilities._deleteMediaAttachment(gp, mediaRelationship)
