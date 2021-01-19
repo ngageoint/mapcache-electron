@@ -29,6 +29,18 @@ class WindowLauncher {
   }
 
   registerEventHandlers () {
+    ipcMain.removeAllListeners('show-project')
+    ipcMain.removeAllListeners('close-project')
+    ipcMain.removeAllListeners('process_source')
+    ipcMain.removeAllListeners('cancel_process_source')
+    ipcMain.removeAllListeners('build_feature_layer')
+    ipcMain.removeAllListeners('cancel_build_feature_layer')
+    ipcMain.removeAllListeners('build_tile_layer')
+    ipcMain.removeAllListeners('cancel_build_tile_layer')
+    ipcMain.removeAllListeners('quick_download_geopackage')
+    ipcMain.removeAllListeners('read_raster')
+    ipcMain.removeAllListeners('attach_media')
+
     ipcMain.on('show-project', (event, payload) => {
       this.showProject(payload)
     })
@@ -142,6 +154,23 @@ class WindowLauncher {
         event.sender.send('read_raster_completed_' + taskId, {rasters: result})
       }, () => {
         ipcMain.removeAllListeners('worker_read_raster_completed_' + taskId)
+      })
+      WorkerPool.addTask(task)
+    })
+    ipcMain.on('attach_media', (event, payload) => {
+      const taskId = payload.id
+      const task = new Task(taskId, event, (workerWindow) => {
+        return new Promise(resolve => {
+          payload.taskId = taskId
+          workerWindow.window.webContents.send('worker_attach_media', payload)
+          ipcMain.once('worker_attach_media_completed_' + taskId, (event, result) => {
+            resolve(result)
+          })
+        })
+      }, (result) => {
+        event.sender.send('attach_media_completed_' + taskId, result)
+      }, () => {
+        ipcMain.removeAllListeners('worker_attach_media_completed_' + taskId)
       })
       WorkerPool.addTask(task)
     })

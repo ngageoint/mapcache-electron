@@ -3400,19 +3400,21 @@ export default class GeoPackageUtilities {
     try {
       const featureDao = gp.getFeatureDao(tableName)
       if (!_.isNil(featureDao)) {
-        const mediaRelations = featureDao.mediaRelations;
-        const rte = gp.relatedTablesExtension;
-        for (let i = 0; i < mediaRelations.length; i++) {
-          const mediaRelation = mediaRelations[i];
-          if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
-            const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
-            const mappings = userMappingDao.queryForAll()
-            mappings.forEach(mapping => {
-              if (_.isNil(counts[mapping.base_id])) {
-                counts[mapping.base_id] = 0
-              }
-              counts[mapping.base_id] = counts[mapping.base_id] + 1
-            })
+        const rte = gp.relatedTablesExtension
+        if (rte.has()) {
+          const mediaRelations = featureDao.mediaRelations
+          for (let i = 0; i < mediaRelations.length; i++) {
+            const mediaRelation = mediaRelations[i]
+            if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
+              const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
+              const mappings = userMappingDao.queryForAll()
+              mappings.forEach(mapping => {
+                if (_.isNil(counts[mapping.base_id])) {
+                  counts[mapping.base_id] = 0
+                }
+                counts[mapping.base_id] = counts[mapping.base_id] + 1
+              })
+            }
           }
         }
       }

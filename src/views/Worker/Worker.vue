@@ -8,6 +8,7 @@
   import GeoPackageUtilties from '../../lib/GeoPackageUtilities'
   import GeoTIFFUtilities from '../../lib/GeoTIFFUtilities'
   import _ from 'lodash'
+  import ActionUtilities from '../../lib/ActionUtilities'
 
   async function processSource (project, source) {
     let dataSources = []
@@ -65,6 +66,7 @@
       ipcRenderer.removeAllListeners('worker_build_feature_layer')
       ipcRenderer.removeAllListeners('worker_build_tile_layer')
       ipcRenderer.removeAllListeners('worker_read_raster')
+      ipcRenderer.removeAllListeners('worker_attach_media')
 
       ipcRenderer.on('worker_process_source', (e, data) => {
         processSource(data.project, data.source).then((result) => {
@@ -90,6 +92,16 @@
       ipcRenderer.on('worker_read_raster', (e, data) => {
         GeoTIFFUtilities.readRasters(data.filePath).then(rasters => {
           ipcRenderer.send('worker_read_raster_completed_' + data.taskId, rasters)
+        })
+      })
+      ipcRenderer.on('worker_attach_media', (e, data) => {
+        GeoPackageUtilties.addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath).then(result => {
+          if (data.isGeoPackage) {
+            ActionUtilities.synchronizeGeoPackage({projectId: data.projectId, geopackageId: data.id})
+          } else {
+            ActionUtilities.updateStyleKey(data.projectId, data.id, data.tableName, data.isGeoPackage)
+          }
+          ipcRenderer.send('worker_attach_media_completed_' + data.taskId, result)
         })
       })
     }
