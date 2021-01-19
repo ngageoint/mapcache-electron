@@ -2273,8 +2273,7 @@ export default class GeoPackageUtilities {
    * Builds a feature layer
    * currently this just merges features
    * TODO: support extensions
-   * TODO: support related tables
-   * TODO: bounding box does not cut, instead it just includes any intersecting features
+   * TODO: support non-media related tables
    * @param configuration
    * @param statusCallback
    * @returns {Promise<any>}
@@ -2299,6 +2298,8 @@ export default class GeoPackageUtilities {
       let sourceNameChanges = {}
       let sourceStyleMap = {}
       let parentStyleMapping = {}
+      let mediaRelations = {}
+      let insertedMediaMap = {}
 
       // retrieve layers
       status.message = 'Retrieving features from data sources and geopackage feature layers...'
@@ -2329,6 +2330,26 @@ export default class GeoPackageUtilities {
             tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, sourceLayer.sourceLayerName),
             parentId: sourceLayer.id
           }
+
+          // feature row id -> list of objects (media table name, row id)
+          mediaRelations[sourceIdx] = {}
+          geopackage.getFeatureDao(sourceLayer.sourceLayerName).mediaRelations.forEach(mediaRelation => {
+            if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + sourceLayer.sourceLayerName)) {
+              const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
+              const mappings = userMappingDao.queryForAll()
+              mappings.forEach(mapping => {
+                if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
+                  mediaRelations[sourceIdx][mapping.base_id] = []
+                }
+                mediaRelations[sourceIdx][mapping.base_id].push({
+                  filePath: sourceLayer.geopackageFilePath,
+                  mediaTable: mediaRelation.related_table_name,
+                  mediaRowId: mapping.related_id
+                })
+              })
+            }
+          })
+
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, sourceLayer.sourceLayerName))
           featureColumns = result.mergedColumns
           sourceNameChanges[sourceIdx] = result.nameChanges
@@ -2352,6 +2373,24 @@ export default class GeoPackageUtilities {
             tableStyleMappings: GeoPackageUtilities._getTableStyleMappings(geopackage, geopackageLayer.table),
             parentId: geopackageLayer.geopackage.id
           }
+          mediaRelations[sourceIdx] = {}
+          geopackage.getFeatureDao(geopackageLayer.table).mediaRelations.forEach(mediaRelation => {
+            if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + geopackageLayer.table)) {
+              const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
+              const mappings = userMappingDao.queryForAll()
+              mappings.forEach(mapping => {
+                if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
+                  mediaRelations[sourceIdx][mapping.base_id] = []
+                }
+                mediaRelations[sourceIdx][mapping.base_id].push({
+                  filePath: geopackageLayer.geopackage.path,
+                  mediaTable: mediaRelation.related_table_name,
+                  mediaRowId: mapping.related_id
+                })
+              })
+            }
+          })
+
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, geopackageLayer.table))
           featureColumns = result.mergedColumns
           sourceNameChanges[sourceIdx] = result.nameChanges
@@ -2421,6 +2460,29 @@ export default class GeoPackageUtilities {
         featureTableStyles.createStyleRelationship()
         featureTableStyles.createIconRelationship()
       }
+
+      // if any of the source layers have media relations, create the media table (this is where all of the media for the source layers will be copied into)
+      const mediaTableName = MediaUtilities.getMediaTableName()
+      const hasMediaRelations = _.keys(mediaRelations).filter(id => _.keys(mediaRelations[id]).length > 0).length > 0
+      let targetMediaDao
+      if (hasMediaRelations) {
+        const rte = gp.relatedTablesExtension
+        if (!gp.connection.isTableExists(mediaTableName)) {
+          const mediaTable = MediaTable.create(mediaTableName)
+          rte.createRelatedTable(mediaTable)
+        } else {
+          // media table already exists, there may be layers from this geopackage being added to the new feature layer, so add the existing
+          const mediaDao = gp.relatedTablesExtension.getMediaDao(mediaTableName)
+          const each = mediaDao.queryForEach()
+          for (let row of each) {
+            const sourceMediaKey = configuration.path + '_' + mediaTableName + '_' + row.id
+            insertedMediaMap[sourceMediaKey] = row.id
+
+          }
+        }
+        targetMediaDao = gp.relatedTablesExtension.getMediaDao(MediaUtilities.getMediaTableName())
+      }
+
       const columnTypes = {}
       for (let i = 0; i < featureDao.table.getColumnCount(); i++) {
         const column = featureDao.table.getColumnWithIndex(i)
@@ -2428,7 +2490,9 @@ export default class GeoPackageUtilities {
       }
 
       let id = 0
-      _.keys(sourceFeatureMap).forEach(sourceIdx => {
+      const sourceFeatureMapKeys = _.keys(sourceFeatureMap)
+      for (let sIdx = 0; sIdx < sourceFeatureMapKeys.length; sIdx++) {
+        const sourceIdx = sourceFeatureMapKeys[sIdx]
         const featureRows = sourceFeatureMap[sourceIdx]
         const columns = sourceColumnMap[sourceIdx]
         const nameChanges = sourceNameChanges[sourceIdx]
@@ -2437,6 +2501,7 @@ export default class GeoPackageUtilities {
         const icons = sourceStyleMap[sourceIdx].icons
         const featureStyleMapping = sourceStyleMap[sourceIdx].featureStyleMapping
         const parentId = sourceStyleMap[sourceIdx].parentId
+        const featureMediaListMap = mediaRelations[sourceIdx]
 
         // insert styles and icons
         if (!_.isNil(featureTableStyles) && _.isNil(parentStyleMapping[parentId])) {
@@ -2468,8 +2533,8 @@ export default class GeoPackageUtilities {
           }
         }
 
-        // insert features
-        featureRows.forEach(featureRow => {
+        for (let featureRowIndex = 0; featureRowIndex < featureRows.length; featureRowIndex++) {
+          const featureRow = featureRows[featureRowIndex]
           const values = {}
 
           // iterate over this row's columns and pull values out to be added to the new row
@@ -2510,10 +2575,47 @@ export default class GeoPackageUtilities {
             }
           }
 
+          // add related media rows for feature row
+          const mediaToAdd = featureMediaListMap[featureRow.id] || []
+
+          for (let i = 0; i < mediaToAdd.length; i++) {
+            const mediaRef = mediaToAdd[i]
+            const geopackageFilePath = mediaRef.filePath
+            const sourceMediaTable = mediaRef.mediaTable
+            const sourceMediaRowId = mediaRef.mediaRowId
+            const sourceMediaKey = geopackageFilePath + '_' + sourceMediaTable + '_' + sourceMediaRowId
+
+            // check if media has been previously added for a different feature row
+            if (_.isNil(insertedMediaMap[sourceMediaKey])) {
+              // get media
+              const sourceMediaRow = await GeoPackageUtilities.getMediaRow(geopackageFilePath, sourceMediaTable, sourceMediaRowId)
+
+              // create new media row
+              let mediaRow = targetMediaDao.newRow()
+              // check if table has required columns, other than id, data and content_type
+              const requiredColumns = _.difference(targetMediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
+              // iterate over those columns and set them to the default value for that data type, as we do not support
+              // additional columns currently in mapcache media attachments
+              requiredColumns.forEach(columnName => {
+                const type = mediaRow.getRowColumnTypeWithColumnName(columnName)
+                mediaRow.setValueWithColumnName(columnName, GeoPackageUtilities.getDefaultValueForDataType(type))
+              })
+
+              mediaRow.data = sourceMediaRow.data
+              mediaRow.contentType = sourceMediaRow.contentType
+              mediaRow.id = targetMediaDao.create(mediaRow)
+
+              // this relates a source's media row to it's new id in the gpkg_media table
+              insertedMediaMap[sourceMediaKey] = mediaRow.id
+              mediaRow = null
+            }
+            GeoPackageUtilities._linkFeatureRowToMediaRow(gp, tableName, featureId, mediaTableName, insertedMediaMap[sourceMediaKey])
+          }
+
           status.progress = 30 + (50 * id / featureCount)
           throttleStatusCallback(status)
-        })
-      })
+        }
+      }
 
       await GeoPackageUtilities.wait(500)
 
@@ -2528,6 +2630,23 @@ export default class GeoPackageUtilities {
       throttleStatusCallback(status)
       await GeoPackageUtilities.wait(500)
     }, true)
+  }
+
+  static _linkFeatureRowToMediaRow (gp, baseTableName, baseId, relatedTableName, relatedId) {
+    const rte = gp.relatedTablesExtension
+    const mappingTableName = baseTableName + '_' + relatedTableName
+    const relationship = rte
+      .getRelationshipBuilder()
+      .setBaseTableName(baseTableName)
+      .setRelatedTableName(relatedTableName)
+      .setRelationType(MediaTable.RELATION_TYPE)
+      .setMappingTableName(mappingTableName)
+    rte.addRelationship(relationship)
+    const userMappingDao = rte.getMappingDao(mappingTableName)
+    const userMappingRow = userMappingDao.newRow()
+    userMappingRow.baseId = baseId
+    userMappingRow.relatedId = relatedId
+    return userMappingDao.create(userMappingRow)
   }
 
   static prettyPrintMs(milliseconds) {
@@ -3148,23 +3267,25 @@ export default class GeoPackageUtilities {
    */
   static _getMediaRelationshipsForFeatureRow (gp, tableName, featureDao, featureId) {
     // get media relations for this feature table
-    const mediaRelations = featureDao.mediaRelations
-    const rte = gp.relatedTablesExtension
     const mediaRelationships = []
-    for (let i = 0; i < mediaRelations.length; i++) {
-      const mediaRelation = mediaRelations[i]
-      if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
-        const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
-        // query for all mappings for this feature id
-        const mappings = userMappingDao.queryByBaseId(featureId)
-        for (let m = 0; m < mappings.length; m++) {
-          mediaRelationships.push({
-            relatedId: mappings[m].related_id,
-            relatedTable: mediaRelation.related_table_name,
-            baseTable: tableName,
-            baseId: featureId,
-            mappingTable: mediaRelation.mapping_table_name
-          })
+    const rte = gp.relatedTablesExtension
+    if (rte.has()) {
+      const mediaRelations = featureDao.mediaRelations
+      for (let i = 0; i < mediaRelations.length; i++) {
+        const mediaRelation = mediaRelations[i]
+        if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
+          const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
+          // query for all mappings for this feature id
+          const mappings = userMappingDao.queryByBaseId(featureId)
+          for (let m = 0; m < mappings.length; m++) {
+            mediaRelationships.push({
+              relatedId: mappings[m].related_id,
+              relatedTable: mediaRelation.related_table_name,
+              baseTable: tableName,
+              baseId: featureId,
+              mappingTable: mediaRelation.mapping_table_name
+            })
+          }
         }
       }
     }
@@ -3223,7 +3344,7 @@ export default class GeoPackageUtilities {
         const mediaTableName = MediaUtilities.getMediaTableName()
         const rte = gp.relatedTablesExtension
         if (!gp.connection.isTableExists(mediaTableName)) {
-          const mediaTable = MediaTable.create(mediaTableName, )
+          const mediaTable = MediaTable.create(mediaTableName)
           rte.createRelatedTable(mediaTable)
         }
         const mediaDao = rte.getMediaDao(mediaTableName)
@@ -3314,7 +3435,8 @@ export default class GeoPackageUtilities {
   }
 
   /**
-   * Deletes a media relationship and if no relationships to the media remain, deletes the media   * @param gp
+   * Deletes a media relationship and if no relationships to the media remain, deletes the media
+   * @param gp
    * @param mediaRelationship
    */
   static _deleteMediaAttachment (gp, mediaRelationship) {
