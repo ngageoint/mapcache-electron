@@ -989,7 +989,7 @@
         }, function () {
           ActionUtilities.clearActiveLayers({projectId: self.projectId})
         }, function () {
-          this.showLayerOrderingDialog = !this.showLayerOrderingDialog
+          self.showLayerOrderingDialog = !self.showLayerOrderingDialog
         })
 
         vendor.L.control.scale().addTo(this.map)
