@@ -590,9 +590,12 @@
         return hasStyle
       },
       rename () {
-        this.renameDialog = false
-        ActionUtilities.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
         this.renamed(this.renamedTable)
+        this.copiedTable = this.renamedTable + '_copy'
+        ActionUtilities.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        this.$nextTick(() => {
+          this.renameDialog = false
+        })
       },
       copy () {
         this.copyDialog = false

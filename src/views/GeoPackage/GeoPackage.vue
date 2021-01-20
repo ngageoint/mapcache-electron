@@ -9,7 +9,7 @@
     :back="deselectLayer"
     :renamed="selectedLayerRenamed"/>
   <tile-layer
-    v-else-if="selectedLayer !== null && selectedLayer !== undefined"
+    v-else-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.tiles[selectedLayer]"
     :key="geopackage.id + '_' + selectedLayer"
     :table-name="selectedLayer"
     :geopackage="geopackage"
@@ -379,6 +379,7 @@
         addFeatureLayerDialog: false,
         addTileLayerDialog: false,
         selectedLayer: null,
+        selectedLayerNewName: null,
         detailDialog: false,
         renameDialog: false,
         renameValid: false,
@@ -494,7 +495,7 @@
         if (!_.isNil(this.geopackage.tables.features[this.selectedLayer])) {
           ActionUtilities.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
         }
-        this.selectedLayer = layer
+        this.selectedLayerNewName = layer
       },
       deselectLayer () {
         this.selectedLayer = null
@@ -523,7 +524,12 @@
         handler (newGeoPackage) {
           if (!_.isNil(this.selectedLayer) && (_.isNil(newGeoPackage.tables.features[this.selectedLayer]) && _.isNil(newGeoPackage.tables.tiles[this.selectedLayer]))) {
             this.$nextTick(() => {
-              this.deselectLayer()
+              if (!_.isNil(this.selectedLayerNewName) && (!_.isNil(newGeoPackage.tables.features[this.selectedLayerNewName]) || !_.isNil(newGeoPackage.tables.tiles[this.selectedLayerNewName]))) {
+                this.selectedLayer = this.selectedLayerNewName
+                this.selectedLayerNewName = null
+              } else {
+                this.deselectLayer()
+              }
             })
           }
         },

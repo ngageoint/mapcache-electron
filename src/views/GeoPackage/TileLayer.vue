@@ -301,10 +301,12 @@
     },
     methods: {
       rename () {
-        this.renameDialog = false
+        this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
         ActionUtilities.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
-        this.renamed(this.renamedTable)
+        this.$nextTick(() => {
+          this.renameDialog = false
+        })
       },
       copy () {
         this.copyDialog = false
