@@ -2338,22 +2338,24 @@ export default class GeoPackageUtilities {
 
           // feature row id -> list of objects (media table name, row id)
           mediaRelations[sourceIdx] = {}
-          geopackage.getFeatureDao(sourceLayer.sourceLayerName).mediaRelations.forEach(mediaRelation => {
-            if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + sourceLayer.sourceLayerName)) {
-              const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
-              const mappings = userMappingDao.queryForAll()
-              mappings.forEach(mapping => {
-                if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
-                  mediaRelations[sourceIdx][mapping.base_id] = []
-                }
-                mediaRelations[sourceIdx][mapping.base_id].push({
-                  filePath: sourceLayer.geopackageFilePath,
-                  mediaTable: mediaRelation.related_table_name,
-                  mediaRowId: mapping.related_id
+          if (geopackage.relatedTablesExtension.has()) {
+            geopackage.getFeatureDao(sourceLayer.sourceLayerName).mediaRelations.forEach(mediaRelation => {
+              if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + sourceLayer.sourceLayerName)) {
+                const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
+                const mappings = userMappingDao.queryForAll()
+                mappings.forEach(mapping => {
+                  if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
+                    mediaRelations[sourceIdx][mapping.base_id] = []
+                  }
+                  mediaRelations[sourceIdx][mapping.base_id].push({
+                    filePath: sourceLayer.geopackageFilePath,
+                    mediaTable: mediaRelation.related_table_name,
+                    mediaRowId: mapping.related_id
+                  })
                 })
-              })
-            }
-          })
+              }
+            })
+          }
 
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, sourceLayer.sourceLayerName))
           featureColumns = result.mergedColumns
@@ -2379,22 +2381,24 @@ export default class GeoPackageUtilities {
             parentId: geopackageLayer.geopackage.id
           }
           mediaRelations[sourceIdx] = {}
-          geopackage.getFeatureDao(geopackageLayer.table).mediaRelations.forEach(mediaRelation => {
-            if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + geopackageLayer.table)) {
-              const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
-              const mappings = userMappingDao.queryForAll()
-              mappings.forEach(mapping => {
-                if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
-                  mediaRelations[sourceIdx][mapping.base_id] = []
-                }
-                mediaRelations[sourceIdx][mapping.base_id].push({
-                  filePath: geopackageLayer.geopackage.path,
-                  mediaTable: mediaRelation.related_table_name,
-                  mediaRowId: mapping.related_id
+          if (geopackage.relatedTablesExtension.has()) {
+            geopackage.getFeatureDao(geopackageLayer.table).mediaRelations.forEach(mediaRelation => {
+              if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + geopackageLayer.table)) {
+                const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
+                const mappings = userMappingDao.queryForAll()
+                mappings.forEach(mapping => {
+                  if (_.isNil(mediaRelations[sourceIdx][mapping.base_id])) {
+                    mediaRelations[sourceIdx][mapping.base_id] = []
+                  }
+                  mediaRelations[sourceIdx][mapping.base_id].push({
+                    filePath: geopackageLayer.geopackage.path,
+                    mediaTable: mediaRelation.related_table_name,
+                    mediaRowId: mapping.related_id
+                  })
                 })
-              })
-            }
-          })
+              }
+            })
+          }
 
           const result = GeoPackageUtilities.mergeFeatureColumns(featureColumns, GeoPackageUtilities._getFeatureColumns(geopackage, geopackageLayer.table))
           featureColumns = result.mergedColumns
