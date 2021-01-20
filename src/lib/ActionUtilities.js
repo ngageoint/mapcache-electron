@@ -1,9 +1,10 @@
 import path from 'path'
-import fs from 'fs'
+import jetpack from 'fs-jetpack'
 import _ from 'lodash'
 import FileUtilities from './FileUtilities'
 import GeoPackageUtilities from './GeoPackageUtilities'
 import store from '../store'
+import Vue from 'vue'
 
 /**
  * ActionUtilities is a helper class for performing actions prior to updating the store
@@ -63,23 +64,77 @@ export default class ActionUtilities {
     store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
   }
 
+  static _hasVisibleTables (geopackage) {
+    let hasVisibleTables = false
+    _.keys(geopackage.tables.features).forEach(table => {
+      if (geopackage.tables.features[table].visible) {
+        hasVisibleTables = true
+      }
+    })
+    _.keys(geopackage.tables.tiles).forEach(table => {
+      if (geopackage.tables.tiles[table].visible) {
+        hasVisibleTables = true
+      }
+    })
+    return hasVisibleTables
+  }
+
+  static async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
   static renameGeoPackage ({projectId, geopackageId, name}) {
-    const geopackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    const oldPath = geopackage.path
-    const newPath = path.join(path.dirname(oldPath), name + '.gpkg')
-    fs.renameSync(oldPath, newPath)
-    geopackage.path = newPath
-    geopackage.name = name
-    geopackage.modifiedDate = FileUtilities.getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+    return new Promise((resolve, reject) => {
+      const geopackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+      if (ActionUtilities._hasVisibleTables(geopackage)) {
+        const disableLayersGeoPackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+        _.keys(disableLayersGeoPackage.tables.features).forEach(table => {
+          disableLayersGeoPackage.tables.features[table].visible = false
+        })
+        _.keys(disableLayersGeoPackage.tables.tiles).forEach(table => {
+          disableLayersGeoPackage.tables.tiles[table].visible = false
+        })
+        store.dispatch('Projects/setGeoPackage', {projectId, geopackage: disableLayersGeoPackage})
+      }
+      // on the next tick, try to rename
+      Vue.nextTick(async () => {
+        const oldPath = geopackage.path
+        const newName = name + '.gpkg'
+        const newPath = path.join(path.dirname(oldPath), newName)
+        let renamed = false
+        let retryAttempts = 0
+        let error
+        // try to rename until the max attempts are reached
+        while (!renamed && retryAttempts < 5) {
+          try {
+            await jetpack.renameAsync(oldPath, newName)
+            geopackage.path = newPath
+            geopackage.name = name
+            geopackage.modifiedDate = FileUtilities.getLastModifiedDate(geopackage.path)
+            renamed = true
+          } catch (e) {
+            error = e
+            await ActionUtilities.sleep(100)
+          }
+          retryAttempts++
+        }
+        Vue.nextTick(() => {
+          store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+          renamed ? resolve() : reject(error)
+        })
+      })
+    })
   }
 
   static copyGeoPackage ({projectId, geopackageId, name}) {
     const oldPath = store.state.Projects[projectId].geopackages[geopackageId].path
     const newPath = path.join(path.dirname(oldPath), name + '.gpkg')
-    fs.copyFileSync(oldPath, newPath)
-    GeoPackageUtilities.getOrCreateGeoPackageForApp(newPath).then(geopackage => {
-      store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+    jetpack.copyFileAsync(oldPath, newPath).then(() => {
+      GeoPackageUtilities.getOrCreateGeoPackageForApp(newPath).then(geopackage => {
+        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+      })
+    }).then(e => {
+      console.error(e)
     })
   }
 

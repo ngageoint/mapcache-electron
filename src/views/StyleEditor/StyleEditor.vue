@@ -248,6 +248,7 @@
   import {GeoPackageAPI, GeometryType} from '@ngageoint/geopackage'
   import VectorStyleUtilities from '../../lib/VectorStyleUtilities'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import GarbageCollector from '../../lib/GarbageCollector'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
@@ -481,6 +482,8 @@
         }
         try {
           gp.close()
+          gp = undefined
+          GarbageCollector.tryCollect()
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error(error)

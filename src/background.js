@@ -10,6 +10,7 @@ import runMigration from './store/migration/migration'
 
 app.allowRendererProcessReuse = false
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
+app.commandLine.appendSwitch('js-flags', '--expose_gc')
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([

@@ -35,10 +35,6 @@ const mutations = {
   setProjectMaxFeatures (state, {projectId, maxFeatures}) {
     Vue.set(state[projectId], 'maxFeatures', maxFeatures)
   },
-  renameGeoPackage (state, {projectId, geopackageId, newPath, newName}) {
-    Vue.set(state[projectId].geopackages[geopackageId], 'path', newPath)
-    Vue.set(state[projectId].geopackages[geopackageId], 'name', newName)
-  },
   setDataSourceVisible (state, {projectId, sourceId, visible}) {
     Vue.set(state[projectId].sources[sourceId], 'visible', visible)
   },

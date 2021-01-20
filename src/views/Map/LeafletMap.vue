@@ -208,6 +208,7 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import draggable from 'vuedraggable'
   import countries from './countries-land-10km.geo.json'
+  import GarbageCollector from '../../lib/GarbageCollector'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -444,6 +445,10 @@
                   GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
                     GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
                       ActionUtilities.addGeoPackage({projectId: self.projectId, filePath: filePath})
+                    }).catch(() => {
+                      gp.close()
+                      gp = undefined
+                      GarbageCollector.tryCollect()
                     })
                   })
                 })

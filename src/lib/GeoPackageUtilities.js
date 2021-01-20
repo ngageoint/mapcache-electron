@@ -20,7 +20,6 @@ import _ from 'lodash'
 import moment from 'moment'
 import reproject from 'reproject'
 import path from 'path'
-import fs from 'fs'
 import jetpack from 'fs-jetpack'
 import wkx from 'wkx'
 import imagemin from 'imagemin'
@@ -35,6 +34,7 @@ import FileUtilities from './FileUtilities'
 import LayerFactory from './source/layer/LayerFactory'
 import CanvasUtilities from './CanvasUtilities'
 import MediaUtilities from './MediaUtilities'
+import GarbageCollector from './GarbageCollector'
 
 export default class GeoPackageUtilities {
   /**
@@ -46,7 +46,7 @@ export default class GeoPackageUtilities {
    */
   static async performSafeGeoPackageOperation (filePath, func, isFuncAsync = false) {
     let result
-    const gp = await GeoPackageAPI.open(filePath)
+    let gp = await GeoPackageAPI.open(filePath)
     if (!_.isNil(gp)) {
       try {
         if (isFuncAsync) {
@@ -60,7 +60,9 @@ export default class GeoPackageUtilities {
         console.error(error)
       }
       try {
-        await gp.close()
+        gp.close()
+        gp = undefined
+        GarbageCollector.tryCollect()
       } catch (e) {
         result = {error: e}
         // eslint-disable-next-line no-console
@@ -131,7 +133,7 @@ export default class GeoPackageUtilities {
    */
   static async getOrCreateGeoPackage (filePath) {
     let gp
-    if (!fs.existsSync(filePath)) {
+    if (!jetpack.exists(filePath)) {
       gp = await GeoPackageAPI.create(filePath)
     } else {
       gp = await GeoPackageAPI.open(filePath)
@@ -333,8 +335,9 @@ export default class GeoPackageUtilities {
   }
 
   static async isGeoPackageValid (filePath) {
-    const gp = await GeoPackageAPI.open(filePath)
-    return GeoPackageValidate.hasMinimumTables(gp)
+    return GeoPackageUtilities.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageValidate.hasMinimumTables(gp)
+    })
   }
 
   /**
@@ -344,7 +347,7 @@ export default class GeoPackageUtilities {
    */
   static async getOrCreateGeoPackageForApp (filePath) {
     let gp
-    if (!fs.existsSync(filePath)) {
+    if (!jetpack.exists(filePath)) {
       gp = await GeoPackageAPI.create(filePath)
     } else {
       gp = await GeoPackageAPI.open(filePath)
@@ -381,6 +384,8 @@ export default class GeoPackageUtilities {
 
     try {
       gp.close()
+      gp = undefined
+      GarbageCollector.tryCollect()
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(error)

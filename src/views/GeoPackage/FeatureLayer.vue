@@ -450,6 +450,7 @@
   import FeatureLayerField from './FeatureLayerField'
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
+  import GarbageCollector from '../../lib/GarbageCollector'
 
   export default {
     props: {
@@ -580,6 +581,8 @@
         }
         try {
           gp.close()
+          gp = undefined
+          GarbageCollector.tryCollect()
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error(error)

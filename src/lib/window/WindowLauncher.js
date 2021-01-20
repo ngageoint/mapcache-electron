@@ -7,6 +7,7 @@ import WorkerPool from './WorkerWindowPool'
 import Task from './Task'
 
 const isMac = process.platform === 'darwin'
+const isWin = process.platform === 'win32'
 
 class WindowLauncher {
   mainWindow
@@ -199,6 +200,8 @@ class WindowLauncher {
     const menu = Menu.buildFromTemplate(this.getMenuTemplate())
     Menu.setApplicationMenu(menu)
 
+    const windowHeight = 620 + (isWin ? 20 : 0)
+
     let windowOptions = {
       title: 'MapCache',
       icon: path.join(__dirname, 'assets', '64x64.png'),
@@ -208,8 +211,8 @@ class WindowLauncher {
       },
       show: false,
       width: 790,
-      height: 620,
-      minHeight: 620,
+      height: windowHeight,
+      minHeight: windowHeight,
       minWidth: 790,
       fullscreenable: false,
       resizable: false,
@@ -260,6 +263,8 @@ class WindowLauncher {
   }
 
   launchProjectWindow () {
+    const windowHeight = 700 + (isWin ? 20 : 0)
+
     let windowOptions = {
       title: 'MapCache',
       icon: path.join(__dirname, 'assets', '64x64.png'),
@@ -271,8 +276,8 @@ class WindowLauncher {
       },
       show: false,
       width: 1200,
-      height: 700,
-      minHeight: 700,
+      height: windowHeight,
+      minHeight: windowHeight,
       minWidth: 1000,
       useContentSize: true
     }

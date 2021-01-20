@@ -55,7 +55,7 @@
       v-model="renameDialog"
       max-width="400"
       persistent
-      @keydown.esc="renameDialog = false">
+      @keydown.esc="() => {if (!this.renaming) { this.renameDialog = false }}">
       <v-card v-if="renameDialog">
         <v-card-title>
           <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
@@ -81,11 +81,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
+            :disabled="renaming"
             text
             @click="renameDialog = false">
             Cancel
           </v-btn>
           <v-btn
+            :loading="renaming"
             v-if="renameValid"
             color="primary"
             text
@@ -175,6 +177,12 @@
         dismissible
         type="success"
       >GeoPackage copied.</v-alert>
+      <v-alert
+          class="alert-position"
+          v-model="showErrorAlert"
+          dismissible
+          type="warning"
+      >Rename failed. Please ensure all layers are disabled and wait for resource to become available.</v-alert>
       <v-row class="pl-3 pt-3 pr-3 background" no-gutters>
         <v-col>
           <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
@@ -381,6 +389,7 @@
           v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
           v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ],
+        renaming: false,
         copyDialog: false,
         copyValid: false,
         copiedGeoPackage: this.geopackage.name + '_copy',
@@ -388,7 +397,8 @@
           v => !!v || 'Name is required',
           v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
           v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
-        ]
+        ],
+        showErrorAlert: false
       }
     },
     computed: {
@@ -439,9 +449,22 @@
         this.$emit('zoom-to', extent)
       },
       rename () {
-        this.renameDialog = false
+        this.renaming = true
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
-        ActionUtilities.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage})
+        ActionUtilities.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage}).then(() => {
+          this.$nextTick(() => {
+            this.renameDialog = false
+            this.renaming = false
+          })
+        }).catch(e => {
+          this.$nextTick(() => {
+            this.renameDialog = false
+            this.renaming = false
+            if (e.code === 'EBUSY') {
+              this.showErrorAlert = true
+            }
+          })
+        })
       },
       copy () {
         this.copyDialog = false
