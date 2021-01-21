@@ -244,6 +244,7 @@
             self.attaching = false
           }
         }).catch(e => {
+          // eslint-disable-next-line no-console
           console.error(e)
           self.attaching = false
           self.attachErrorMessage = 'Unable to attach file'

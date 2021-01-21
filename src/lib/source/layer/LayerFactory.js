@@ -1,6 +1,7 @@
 import GeoTiffLayer from './tile/GeoTiffLayer'
 import GeoPackageLayer from './tile/GeoPackageLayer'
 import XYZServerLayer from './tile/XYZServerLayer'
+import MBTilesLayer from './tile/MBTilesLayer'
 import WMSLayer from './tile/WMSLayer'
 import DrawingLayer from './vector/DrawingLayer'
 import VectorLayer from './vector/VectorLayer'
@@ -10,6 +11,8 @@ export default class LayerFactory {
     switch (configuration.layerType) {
       case 'GeoTIFF':
         return new GeoTiffLayer(configuration)
+      case 'MBTiles':
+        return new MBTilesLayer(configuration)
       case 'XYZServer':
         return new XYZServerLayer(configuration)
       case 'WMS':

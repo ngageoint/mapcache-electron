@@ -3317,6 +3317,7 @@ export default class GeoPackageUtilities {
         mediaRelationships.push(...linkedMedia)
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     return mediaRelationships
@@ -3380,6 +3381,7 @@ export default class GeoPackageUtilities {
         success = true
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     return success
@@ -3428,6 +3430,7 @@ export default class GeoPackageUtilities {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
     }
     return counts

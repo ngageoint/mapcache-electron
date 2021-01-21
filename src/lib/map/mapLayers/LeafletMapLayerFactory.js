@@ -1,4 +1,3 @@
-// import DrawingMapLayer from './DrawingMapLayer'
 import WMSMapLayer from './WMSMapLayer'
 import XYZServerMapLayer from './XYZServerMapLayer'
 import DefaultMapLayer from './DefaultMapLayer'

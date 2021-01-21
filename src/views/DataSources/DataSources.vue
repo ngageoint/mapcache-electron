@@ -145,7 +145,7 @@
           filters: [
             {
               name: 'All Files',
-              extensions: ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip']
+              extensions: ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
             }
           ],
           properties: ['openFile', 'multiSelections']

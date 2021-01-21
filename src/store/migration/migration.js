@@ -48,10 +48,12 @@ export default async function runMigration () {
           try {
             migrations[i](state)
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e)
             success = false
           }
         } else {
+          // eslint-disable-next-line no-console
           console.error('migration script not found. exiting.')
           success = false
         }

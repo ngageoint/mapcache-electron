@@ -134,6 +134,7 @@ export default class ActionUtilities {
         store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
       })
     }).then(e => {
+      // eslint-disable-next-line no-console
       console.error(e)
     })
   }

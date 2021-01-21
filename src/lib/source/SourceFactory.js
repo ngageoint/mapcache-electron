@@ -9,6 +9,7 @@ import ShapeFileSource from './ShapeFileSource'
 import ZipSource from './ZipSource'
 import GeoTIFFSource from './GeoTIFFSource'
 import GeoJSONSource from './GeoJSONSource'
+import MBTilesSource from './MBTilesSource'
 
 export default class SourceFactory {
   static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
@@ -46,6 +47,9 @@ export default class SourceFactory {
           break
         case 'shp':
           source = new ShapeFileSource(filePath)
+          break
+        case 'mbtiles':
+          source = new MBTilesSource(filePath)
           break
         case 'json':
         case 'geojson':
