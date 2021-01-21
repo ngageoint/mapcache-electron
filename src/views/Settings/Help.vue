@@ -115,7 +115,7 @@
           items: [
             {
               title: '',
-              content: 'Data sources consist of files in a variety of supported geospatial formats (KML/KMZ, GeoJSON, Shapefile, and GeoTIFF) or online services such as WMS, WFS, XYZ, and ArcGIS Feature Service. The contents of a data source can either be features or imagery.'
+              content: 'Data sources consist of files in a variety of supported geospatial formats (KML/KMZ, GeoJSON, Shapefile, MBTiles, XYZ tile zip, and GeoTIFF) or online services such as WMS, WFS, XYZ, and ArcGIS Feature Service. The contents of a data source can either be features or imagery.'
             },
             {
               title: 'Import Data Source from file',

@@ -5,6 +5,7 @@ import MBTilesLayer from './tile/MBTilesLayer'
 import WMSLayer from './tile/WMSLayer'
 import DrawingLayer from './vector/DrawingLayer'
 import VectorLayer from './vector/VectorLayer'
+import XYZFileLayer from './tile/XYZFileLayer'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
@@ -15,6 +16,8 @@ export default class LayerFactory {
         return new MBTilesLayer(configuration)
       case 'XYZServer':
         return new XYZServerLayer(configuration)
+      case 'XYZFile':
+        return new XYZFileLayer(configuration)
       case 'WMS':
         return new WMSLayer(configuration)
       case 'GeoPackage':

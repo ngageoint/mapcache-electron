@@ -1,10 +1,9 @@
 import Source from './Source'
 import path from 'path'
-import JSZip from 'jszip'
-import jetpack from 'fs-jetpack'
+import AdmZip from 'adm-zip'
 import ShapeFileSource from './ShapeFileSource'
+import XYZFileSource from './XYZFileSource'
 import _ from 'lodash'
-import mkdirp from 'mkdirp'
 
 export default class ZipSource extends Source {
   constructor (filePath) {
@@ -12,43 +11,20 @@ export default class ZipSource extends Source {
     this.shapeFileSource = null
     this.layers = []
     this.shapeFile = null
+    this.xyzFileSource = null
   }
 
   async initialize () {
     const destinationFolder = this.sourceCacheFolder
-    let data = jetpack.read(this.filePath, 'buffer')
-    const zip = await JSZip.loadAsync(data)
-    let keys = Object.keys(zip.files)
-    if (!_.isNil(keys.find(file => file.endsWith('.shp')))) {
-      for (let i = 0; i < keys.length; i++) {
-        let filename = keys[i]
-        await new Promise((resolve, reject) => {
-          try {
-            if (!_.isEmpty(path.extname(filename))) {
-              zip.file(filename).async('nodebuffer').then((content) => {
-                let destinationFileName = path.basename(filename)
-                let destinationFilePath = path.join(destinationFolder, destinationFileName)
-                if (destinationFileName.endsWith('.shp')) {
-                  this.shapeFile = destinationFileName
-                }
-                try {
-                  mkdirp.sync(path.dirname(destinationFilePath))
-                  jetpack.write(destinationFilePath, content)
-                  resolve()
-                } catch (e) {
-                  // eslint-disable-next-line no-console
-                  console.error(e)
-                  reject(e)
-                }
-              })
-            }
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error(e)
-            reject(e)
-          }
-        })
-      }
+    const zip = new AdmZip(this.filePath)
+    const zipEntries = zip.getEntries()
+    const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
+
+    const shapeFile = zipFileNames.find(file => file.endsWith('.shp'))
+    const xyzImageFile = zipFileNames.find(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null)
+    if (!_.isNil(shapeFile)) {
+      zip.extractAllTo(destinationFolder, true)
+      this.shapeFile = path.basename(shapeFile)
       try {
         this.filePath = path.join(destinationFolder, this.shapeFile)
         this.shapeFileSource = new ShapeFileSource(this.filePath)
@@ -57,11 +33,13 @@ export default class ZipSource extends Source {
         // eslint-disable-next-line no-console
         console.error(e)
       }
+    } else if (!_.isNil(xyzImageFile)) {
+      this.xyzFileSource = new XYZFileSource(this.filePath)
     }
   }
 
   retrieveLayers () {
-    return _.isNil(this.shapeFileSource) ? [] : this.shapeFileSource.retrieveLayers()
+    return _.isNil(this.shapeFileSource) ? (_.isNil(this.xyzFileSource) ? [] : this.xyzFileSource.retrieveLayers()) : this.shapeFileSource.retrieveLayers()
   }
 
 }

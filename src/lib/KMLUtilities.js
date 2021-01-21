@@ -78,8 +78,6 @@ export default class KMLUtilities {
             console.error(e)
             errored = true
           }
-        } else {
-          iconPath = path.basename(iconPath)
         }
 
         if (!errored) {
