@@ -9,7 +9,7 @@
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <number-picker :autofocus="autofocus" :number="value" :label="label" :step="step" @update-number="updateValue" :min="min" :max="max" :arrows-only="arrowsOnly" />
+              <number-picker :autofocus="autofocus" :number="value" :label="label" :step="step" @update-number="updateValue" @update-valid="setValid" :min="min" :max="max" />
             </v-col>
           </v-row>
         </v-container>
@@ -24,6 +24,7 @@
         {{cancelText}}
       </v-btn>
       <v-btn
+        v-if="valid"
         color="primary"
         text
         :dark="darkMode"
@@ -80,10 +81,6 @@
       step: Number,
       min: Number,
       max: Number,
-      arrowsOnly: {
-        type: Boolean,
-        default: false
-      },
       autofocus: {
         type: Boolean,
         default: false
@@ -94,7 +91,8 @@
     },
     data () {
       return {
-        editedValue: this.value
+        editedValue: this.value,
+        valid: true
       }
     },
     methods: {
@@ -109,6 +107,9 @@
       },
       updateValue (val) {
         this.editedValue = val
+      },
+      setValid (val) {
+        this.valid = val
       }
     },
     watch: {

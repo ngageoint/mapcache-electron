@@ -241,7 +241,7 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 6" step="6" color="primary">
+        <v-stepper-step editable :complete="step > 6" step="6" color="primary" :rules="[() => areZoomsValid()]">
           Zoom Levels and Tile Scaling
         </v-stepper-step>
         <v-stepper-content step="6">
@@ -252,10 +252,10 @@
             <v-card-text>
               <v-container>
                 <v-row no-gutters>
-                  <number-picker :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
                 </v-row>
                 <v-row no-gutters>
-                  <number-picker :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)" arrows-only/>
+                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
                 </v-row>
                 <v-row no-gutters justify="start" align="center">
                   <v-container class="ma-0 pa-0">
@@ -474,12 +474,19 @@
       stopEditingBoundingBox () {
         ActionUtilities.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
+      areZoomsValid () {
+        return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
+      },
       getEstimatedTileCount () {
         const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id])
         const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => {
           return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type}
         })
-        return GeoPackageUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
+        let tiles = 0
+        if (this.areZoomsValid()) {
+          tiles = GeoPackageUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
+        }
+        return tiles
       },
       async getGeoPackageLayerItems () {
         const projectId = this.project.id

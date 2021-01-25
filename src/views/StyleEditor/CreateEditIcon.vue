@@ -73,7 +73,7 @@
             <v-text-field v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules"  type="number" label="height" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
         </v-row>
-        <v-row no-gutters>
+        <v-row no-gutters class="pt-2">
           <v-col cols="5">
             <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
           </v-col>
@@ -142,12 +142,12 @@
         isNew: _.isNil(this.iconRow.id),
         aspectRatio: this.iconRow.width / this.iconRow.height,
         widthRules: [
-          v => !!v || 'Width is required',
+          v => (v !== null && v !== undefined && v.toString().length > 0) || 'Width is required',
           v => v >= 1 || 'Width must be at least 1 pixel',
           v => v <= 128 || 'Width must be at most 128 pixels'
         ],
         heightRules: [
-          v => !!v || 'Height is required',
+          v => (v !== null && v !== undefined && v.toString().length > 0) || 'Height is required',
           v => v >= 1 || 'Height must be at least 1 pixel',
           v => v <= 128 || 'Height must be at most 128 pixels'
         ],
@@ -188,7 +188,7 @@
     },
     methods: {
       handleKeyDown: (e) => {
-        if ((e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 9) || e.keyCode === 69) {
+        if (e.keyCode === 69) {
           e.stopPropagation()
           e.preventDefault()
           return false

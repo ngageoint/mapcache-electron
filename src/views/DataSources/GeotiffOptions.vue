@@ -32,10 +32,10 @@
                 </v-row>
                 <v-row no-gutters v-if="grayBand > 0">
                   <v-col class="ma-0 pr-1">
-                    <v-text-field type="number" label="Min" v-model="grayBandMin" dense></v-text-field>
+                    <v-text-field type="number" label="Min" v-model="grayBandMin" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                   <v-col class="ma-0 pl-1">
-                    <v-text-field type="number" label="Max" v-model="grayBandMax" dense></v-text-field>
+                    <v-text-field type="number" label="Max" v-model="grayBandMax" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                 </v-row>
                 <v-row no-gutters>
@@ -63,10 +63,10 @@
                 </v-row>
                 <v-row no-gutters v-if="redBand > 0">
                   <v-col class="ma-0 pr-1">
-                    <v-text-field type="number" label="Min" v-model="redBandMin" dense></v-text-field>
+                    <v-text-field type="number" label="Min" v-model="redBandMin" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                   <v-col class="ma-0 pl-1">
-                    <v-text-field type="number" label="Max" v-model="redBandMax" dense></v-text-field>
+                    <v-text-field type="number" label="Max" v-model="redBandMax" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                 </v-row>
               </v-list-item-content>
@@ -79,10 +79,10 @@
                 </v-row>
                 <v-row no-gutters v-if="greenBand > 0">
                   <v-col class="ma-0 pr-1">
-                    <v-text-field type="number" label="Min" v-model="greenBandMin" dense></v-text-field>
+                    <v-text-field type="number" label="Min" v-model="greenBandMin" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                   <v-col class="ma-0 pl-1">
-                    <v-text-field type="number" label="Max" v-model="greenBandMax" dense></v-text-field>
+                    <v-text-field type="number" label="Max" v-model="greenBandMax" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                 </v-row>
               </v-list-item-content>
@@ -95,10 +95,10 @@
                 </v-row>
                 <v-row no-gutters v-if="blueBand > 0">
                   <v-col class="ma-0 pr-1">
-                    <v-text-field type="number" label="Min" v-model="blueBandMin" dense></v-text-field>
+                    <v-text-field type="number" label="Min" v-model="blueBandMin" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                   <v-col class="ma-0 pl-1">
-                    <v-text-field type="number" label="Max" v-model="blueBandMax" dense></v-text-field>
+                    <v-text-field type="number" label="Max" v-model="blueBandMax" dense @keydown="handleKeyDown($event)"></v-text-field>
                   </v-col>
                 </v-row>
               </v-list-item-content>
@@ -141,7 +141,7 @@
             </v-list-item>
             <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
               <v-list-item-content style="padding-right: 12px;">
-                <v-text-field type="number" label="NO_DATA value" v-model="globalNoDataValue" dense hide-details></v-text-field>
+                <v-text-field type="number" label="NO_DATA value" v-model="globalNoDataValue" dense hide-details @keydown="handleKeyDown($event)"></v-text-field>
               </v-list-item-content>
             </v-list-item>
             <v-list-item class="pt-2">
@@ -428,6 +428,13 @@
       }
     },
     methods: {
+      handleKeyDown: (e) => {
+        if (e.keyCode === 69) {
+          e.stopPropagation()
+          e.preventDefault()
+          return false
+        }
+      },
       zoomToExtent (extent) {
         this.setProjectExtents({projectId: this.projectId, extents: extent})
         this.$emit('zoom-to', extent)

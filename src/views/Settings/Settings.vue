@@ -38,10 +38,10 @@
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
-      <edit-text-modal autofocus ref="editProjectNameRef" icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+      <edit-text-modal autofocus icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
-      <edit-number-modal autofocus ref="editMaxFeaturesRef" icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+      <edit-number-modal autofocus icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-dialog v-model="helpDialog" max-width="500">
       <help :close="() => {helpDialog = false}"></help>
