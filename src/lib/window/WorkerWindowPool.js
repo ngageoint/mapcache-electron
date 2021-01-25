@@ -21,6 +21,24 @@ class WorkerWindowPool {
   }
 
   /**
+   * Shows all workers dev tools
+   */
+  showAllDevTools() {
+    for (let i = 0; i < this.workerWindows.length; i++) {
+      this.workerWindows[i].window.webContents.openDevTools()
+    }
+  }
+
+  /**
+   * Hides all workers dev tools
+   */
+  hideAllDevTools() {
+    for (let i = 0; i < this.workerWindows.length; i++) {
+      this.workerWindows[i].window.webContents.closeDevTools()
+    }
+  }
+
+  /**
    * Worker pool has ongoing tasks
    * @returns {boolean}
    */

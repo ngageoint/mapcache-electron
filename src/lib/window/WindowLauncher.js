@@ -465,6 +465,24 @@ class WindowLauncher {
 
     return template
   }
+
+  showAllDevTools() {
+    if (this.projectWindow) {
+      this.projectWindow.webContents.openDevTools()
+    } else {
+      this.mainWindow.webContents.openDevTools()
+    }
+    WorkerPool.showAllDevTools()
+  }
+
+  hideAllDevTools() {
+    if (this.projectWindow) {
+      this.projectWindow.webContents.closeDevTools()
+    } else {
+      this.mainWindow.webContents.closeDevTools()
+    }
+    WorkerPool.hideAllDevTools()
+  }
 }
 
 export default new WindowLauncher()

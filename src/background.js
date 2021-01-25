@@ -1,5 +1,5 @@
 'use strict'
-import { app, protocol } from 'electron'
+import { app, protocol, globalShortcut } from 'electron'
 import log from 'electron-log'
 Object.assign(console, log.functions)
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
@@ -23,6 +23,14 @@ async function start() {
     app.quit()
     return
   }
+
+  globalShortcut.register('CommandOrControl+Shift+S', () => {
+    WindowLauncher.showAllDevTools()
+  })
+
+  globalShortcut.register('CommandOrControl+Shift+H', () => {
+    WindowLauncher.hideAllDevTools()
+  })
 
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     createProtocol('app')

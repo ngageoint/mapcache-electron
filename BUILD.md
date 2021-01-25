@@ -68,7 +68,10 @@ where `process type` can be one of `(renderer, main)`
 ## Debugging
 The application is broken up into a main process and renderer processes inside of electron. 
 
-The renderer processes can be debugged using the chrome developer tools.
+The renderer processes can be debugged using the chrome developer tools. 
+* Dev tools can be toggled via the file menu for a browser window.
+* All dev tools windows can be shown by using the keyboard shortcut CommandOrControl+Shift+S.
+* All dev tools windows can be hidden by using the keyboard shortcut CommandOrControl+Shift+H.
 
 # Building MapCache
 The following will help you create binaries for windows, linux, and macOS. Due to native libraries within the application, each build must occur on its specific platform.  
