@@ -2911,6 +2911,13 @@ export default class GeoPackageUtilities {
         throttleStatusCallback(status)
       })
 
+      for (let i = 0; i < sortedLayers.length; i++) {
+        let layer = sortedLayers[i]
+        if (layer.close) {
+          layer.close()
+        }
+      }
+
       status.progress = 100.0
 
       throttleStatusCallback(status)

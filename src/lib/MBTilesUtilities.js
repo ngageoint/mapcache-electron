@@ -1,17 +1,10 @@
 import Database from 'better-sqlite3'
-import GarbageCollector from './GarbageCollector'
+import Protobuf from 'pbf'
+import vt from 'vector-tile'
+import pako from 'pako'
+import _ from 'lodash'
 
 export default class MBTilesUtilities {
-  static isValid(filePath) {
-    let db = MBTilesUtilities.getDb(filePath)
-    const info = MBTilesUtilities.getInfo(db)
-    MBTilesUtilities.closeDb(db)
-    if (info.format === 'pbf') {
-      throw new Error('pbf formatted MBTiles are not supported.')
-    }
-    return true
-  }
-
   static getInfo(db) {
     const info = {}
     var stmt = db.prepare('SELECT name, value FROM metadata')
@@ -49,18 +42,29 @@ export default class MBTilesUtilities {
       // eslint-disable-next-line no-console
       console.error(err)
     }
+    if (!info.bounds) {
+      info.bounds = [-180, -90, 180, 90]
+    }
+    if (!info.format) {
+      info.format = MBTilesUtilities.determineFormatFromTile(db)
+    }
     return info
   }
 
-  static closeDb (db) {
-    try {
-      db.close()
-      db = null
-      GarbageCollector.tryCollect()
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
+  /**
+   * If format needs to be determined, it will either be jpg or png, just need to determine which one
+   * @param db
+   */
+  static determineFormatFromTile (db) {
+    let format = null
+    const stmt = db.prepare('SELECT tile_data FROM tiles')
+    const row = stmt.get()
+    if (row && row.tile_data) {
+      if (row.tile_data.length > 3) {
+        format = (row.tile_data[0] === 255 && row.tile_data[1] === 216 && row.tile_data[2] === 255) ? 'jpg' : 'png'
+      }
     }
+    return format
   }
 
   static getDb (filePath) {
@@ -83,5 +87,55 @@ export default class MBTilesUtilities {
       console.error(error)
     }
     return tileData
+  }
+
+  static getVectorTileFeatures(db, z, x, y) {
+    // Flip Y coordinate because MBTiles files are TMS.
+    y = (1 << z) - 1 - y
+
+    let vectorTileFeatures = []
+    try {
+      const stmt = db.prepare('SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?')
+      const row = stmt.get(z, x, y)
+      if (row && row.tile_data) {
+        const decompressedData = pako.inflate(row.tile_data)
+        const tile = new vt.VectorTile(new Protobuf(decompressedData))
+        let layers = _.keys(tile.layers)
+        if (!Array.isArray(layers)) {
+          layers = [layers]
+        }
+        layers.forEach((layerID) => {
+          const layer = tile.layers[layerID]
+          if (layer) {
+            for (let i = 0; i < layer.length; i++) {
+              vectorTileFeatures.push(layer.feature(i))
+            }
+          }
+        })
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+    }
+    return vectorTileFeatures
+  }
+
+  static getZoomRange(db) {
+    const zoomRange = {
+      min: 0,
+      max: 20
+    }
+    try {
+      let stmt = db.prepare('SELECT min(zoom_level) as \'zoom_level\' FROM tiles')
+      let row = stmt.get()
+      zoomRange.min = row.zoom_level
+      stmt = db.prepare('SELECT max(zoom_level) as \'zoom_level\' FROM tiles')
+      row = stmt.get()
+      zoomRange.max = row.zoom_level
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+    }
+    return zoomRange;
   }
 }

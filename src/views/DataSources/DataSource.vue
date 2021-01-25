@@ -13,6 +13,7 @@
     :table-icon-assignment="source.tableIconAssignment"
     :is-geo-package="false"/>
   <geotiff-options v-else-if="styleEditorVisible && source.layerType === 'GeoTIFF'" :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
+  <m-b-tiles-options v-else-if="styleEditorVisible && source.layerType === 'MBTiles'" :source="source" :projectId="project.id" :back="hideStyleEditor"></m-b-tiles-options>
   <transparency-options v-else-if="styleEditorVisible" :source="source" :projectId="project.id" :back="hideStyleEditor"></transparency-options>
   <v-sheet v-else class="mapcache-sheet">
       <v-toolbar
@@ -253,6 +254,16 @@
                 </p>
               </v-col>
             </v-row>
+            <v-row no-gutters v-if="source.minZoom !== undefined && source.maxZoom !== undefined">
+              <v-col>
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Zoom Levels
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  {{source.minZoom + ' - ' + source.maxZoom}}
+                </p>
+              </v-col>
+            </v-row>
             <v-row no-gutters justify="space-between" v-if="source.pane === 'vector'">
               <v-col>
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
@@ -290,6 +301,7 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
+  import MBTilesOptions from './MBTilesOptions'
 
   export default {
     props: {
@@ -305,6 +317,7 @@
       back: Function
     },
     components: {
+      MBTilesOptions,
       SourceVisibilitySwitch,
       TransparencyOptions,
       GeotiffOptions,

@@ -32,6 +32,16 @@ export default class VectorStyleUtilities {
     }
   }
 
+  static leafletStyle () {
+    return {
+      color: '#3388FF',
+      opacity: 1.0,
+      fillColor: '#3388FF',
+      fillOpacity: 0.2,
+      width: 3.0
+    }
+  }
+
   static hashCode (obj) {
     const str = JSON.stringify(obj)
     let hash = 0

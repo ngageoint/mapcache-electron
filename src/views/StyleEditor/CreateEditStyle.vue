@@ -29,26 +29,27 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-card-title>{{isNew ? 'Create Style' : 'Edit Style'}}</v-card-title>
+    <v-card-title>
+      {{isNew ? 'Create Style' : 'Edit Style'}}
+      <v-spacer/>
+      <v-row no-gutters justify="end" align="center">
+        <geometry-style-svg :geometry-type="1" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
+        <geometry-style-svg :geometry-type="2" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
+        <geometry-style-svg :geometry-type="3" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
+      </v-row>
+    </v-card-title>
     <v-card-text>
-      <v-row no-gutters>
-        <v-col cols="9">
+      <v-row no-gutters class="pl-4">
+        <v-col cols="11">
           <v-text-field autofocus label="Name" v-model="name"></v-text-field>
         </v-col>
-        <v-col align-self="center">
-          <v-row no-gutters justify="end" align="center">
-            <geometry-style-svg :geometry-type="1" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
-            <geometry-style-svg :geometry-type="2" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
-            <geometry-style-svg :geometry-type="3" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
-          </v-row>
-        </v-col>
       </v-row>
-      <v-row no-gutters>
-        <v-col cols="9">
+      <v-row no-gutters class="pl-4">
+        <v-col cols="11">
           <v-text-field label="Description" v-model="description"></v-text-field>
         </v-col>
       </v-row>
-      <v-row no-gutters>
+      <v-row no-gutters class="pl-4">
         <v-col cols="5">
           <colorpicker :color="color" v-model="color" label="Point / Line Color" />
         </v-col>
@@ -56,7 +57,7 @@
           <colorpicker :color="fillColor" v-model="fillColor" label="Fill Color" />
         </v-col>
       </v-row>
-      <v-row no-gutters>
+      <v-row no-gutters class="pl-4">
         <v-col cols="5" class="align-center">
           <numberpicker :number="opacity" label="Point / Line Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" />
         </v-col>
@@ -64,7 +65,7 @@
           <numberpicker :number="fillOpacity" label="Fill Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" />
         </v-col>
       </v-row>
-      <v-row no-gutters class="justify-space-between" align="center">
+      <v-row no-gutters class="justify-space-between pl-4" align="center">
         <v-col cols="5" class="align-center">
           <numberpicker :number="width" label="Width (px)" :step="Number(1)" :min="Number(1)" arrows-only @update-number="updateWidth" />
         </v-col>
