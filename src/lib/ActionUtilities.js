@@ -87,16 +87,6 @@ export default class ActionUtilities {
   static renameGeoPackage ({projectId, geopackageId, name}) {
     return new Promise((resolve, reject) => {
       const geopackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-      if (ActionUtilities._hasVisibleTables(geopackage)) {
-        const disableLayersGeoPackage = _.cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-        _.keys(disableLayersGeoPackage.tables.features).forEach(table => {
-          disableLayersGeoPackage.tables.features[table].visible = false
-        })
-        _.keys(disableLayersGeoPackage.tables.tiles).forEach(table => {
-          disableLayersGeoPackage.tables.tiles[table].visible = false
-        })
-        store.dispatch('Projects/setGeoPackage', {projectId, geopackage: disableLayersGeoPackage})
-      }
       GarbageCollector.tryCollect()
       // on the next tick, try to rename
       Vue.nextTick(async () => {
