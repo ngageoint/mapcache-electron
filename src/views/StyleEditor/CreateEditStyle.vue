@@ -59,15 +59,15 @@
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="opacity" label="Point / Line Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" />
+          <numberpicker :number="opacity" label="Point / Line Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
         </v-col>
         <v-col offset="1" cols="5" class="align-center">
-          <numberpicker :number="fillOpacity" label="Fill Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" />
+          <numberpicker :number="fillOpacity" label="Fill Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid" />
         </v-col>
       </v-row>
       <v-row no-gutters class="justify-space-between pl-4" align="center">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="width" label="Width (px)" :step="Number(1)" :min="Number(1)" arrows-only @update-number="updateWidth" />
+          <numberpicker :number="width" label="Width (px)" :step="Number(1)" :min="Number(1)" arrows-only @update-number="updateWidth" @update-valid="setWidthValid"/>
         </v-col>
       </v-row>
     </v-card-text>
@@ -86,6 +86,7 @@
         Close
       </v-btn>
       <v-btn
+        v-if="this.opacityValid && this.fillOpacityValid && this.widthValid"
         color="primary"
         text
         @click="save">
@@ -125,7 +126,10 @@
         fillOpacity: this.styleRow.fillOpacity,
         width: this.styleRow.width,
         deleteDialog: false,
-        isNew: _.isNil(this.styleRow.id)
+        isNew: _.isNil(this.styleRow.id),
+        opacityValid: true,
+        fillOpacityValid: true,
+        widthValid: true
       }
     },
     components: {
@@ -134,6 +138,15 @@
       'numberpicker': NumberPicker
     },
     methods: {
+      setOpacityValid (val) {
+        this.opacityValid = val
+      },
+      setFillOpacityValid (val) {
+        this.fillOpacityValid = val
+      },
+      setWidthValid (val) {
+        this.widthValid = val
+      },
       updateOpacity (val) {
         this.opacity = val
       },
