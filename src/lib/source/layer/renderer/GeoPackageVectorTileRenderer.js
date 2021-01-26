@@ -37,7 +37,6 @@ export default class GeoPackageVectorTileRenderer {
         console.error(error)
       }
       this.geopackage = undefined
-      GarbageCollector.tryCollect()
     }
   }
 

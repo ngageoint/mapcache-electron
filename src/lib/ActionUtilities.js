@@ -5,6 +5,7 @@ import FileUtilities from './FileUtilities'
 import GeoPackageUtilities from './GeoPackageUtilities'
 import store from '../store'
 import Vue from 'vue'
+import GarbageCollector from "./GarbageCollector";
 
 /**
  * ActionUtilities is a helper class for performing actions prior to updating the store
@@ -96,6 +97,7 @@ export default class ActionUtilities {
         })
         store.dispatch('Projects/setGeoPackage', {projectId, geopackage: disableLayersGeoPackage})
       }
+      GarbageCollector.tryCollect()
       // on the next tick, try to rename
       Vue.nextTick(async () => {
         const oldPath = geopackage.path

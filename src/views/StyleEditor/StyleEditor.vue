@@ -483,7 +483,6 @@
         try {
           gp.close()
           gp = undefined
-          GarbageCollector.tryCollect()
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error(error)

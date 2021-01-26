@@ -468,7 +468,6 @@
                     }).catch(() => {
                       gp.close()
                       gp = undefined
-                      GarbageCollector.tryCollect()
                     })
                   })
                 })

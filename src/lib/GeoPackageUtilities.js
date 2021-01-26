@@ -62,7 +62,6 @@ export default class GeoPackageUtilities {
       try {
         gp.close()
         gp = undefined
-        GarbageCollector.tryCollect()
       } catch (e) {
         result = {error: e}
         // eslint-disable-next-line no-console
@@ -385,7 +384,6 @@ export default class GeoPackageUtilities {
     try {
       gp.close()
       gp = undefined
-      GarbageCollector.tryCollect()
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(error)

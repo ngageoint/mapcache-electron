@@ -58,7 +58,6 @@ export default class GeoPackageLayer extends TileLayer {
       }
       this.geopackage = undefined
       this.dao = undefined
-      GarbageCollector.tryCollect()
     }
   }
 }

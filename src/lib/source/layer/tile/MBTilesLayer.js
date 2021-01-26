@@ -81,7 +81,6 @@ export default class MBTilesLayer extends TileLayer {
         console.error(error)
       }
       this.db = undefined
-      GarbageCollector.tryCollect()
     }
   }
 
