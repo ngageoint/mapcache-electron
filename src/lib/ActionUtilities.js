@@ -5,7 +5,7 @@ import FileUtilities from './FileUtilities'
 import GeoPackageUtilities from './GeoPackageUtilities'
 import store from '../store'
 import Vue from 'vue'
-import GarbageCollector from "./GarbageCollector";
+import GarbageCollector from './GarbageCollector'
 
 /**
  * ActionUtilities is a helper class for performing actions prior to updating the store

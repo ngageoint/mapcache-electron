@@ -224,7 +224,6 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import draggable from 'vuedraggable'
   import countries from './countries-land-10km.geo.json'
-  import GarbageCollector from '../../lib/GarbageCollector'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}

@@ -1,6 +1,5 @@
 import TileLayer from './TileLayer'
 import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
-import GarbageCollector from '../../../GarbageCollector'
 
 export default class GeoPackageLayer extends TileLayer {
   geopackage

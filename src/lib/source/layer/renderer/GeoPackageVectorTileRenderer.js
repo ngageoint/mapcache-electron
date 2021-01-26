@@ -1,5 +1,4 @@
 import { FeatureTiles, NumberFeaturesTile, GeoPackageAPI } from '@ngageoint/geopackage'
-import GarbageCollector from '../../../GarbageCollector'
 
 export default class GeoPackageVectorTileRenderer {
   filePath

@@ -34,7 +34,6 @@ import FileUtilities from './FileUtilities'
 import LayerFactory from './source/layer/LayerFactory'
 import CanvasUtilities from './CanvasUtilities'
 import MediaUtilities from './MediaUtilities'
-import GarbageCollector from './GarbageCollector'
 
 export default class GeoPackageUtilities {
   /**

@@ -1,6 +1,5 @@
 import TileLayer from './TileLayer'
 import MBTilesUtilities from '../../../MBTilesUtilities'
-import GarbageCollector from '../../../GarbageCollector'
 import * as vendor from '../../../vendor'
 import VectorStyleUtilities from '../../../VectorStyleUtilities'
 
