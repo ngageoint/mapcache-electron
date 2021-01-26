@@ -33,7 +33,7 @@
     "@ngageoint/geopackage": "4.0.0-beta.19",
     "@turf/turf": "5.1.6",
     "adm-zip": "0.5.1",
-    "axios": "0.21.0",
+    "axios": "0.21.1",
     "better-sqlite3": "7.1.1",
     "bindings": "git://github.com/pverscha/node-bindings.git#master",
     "core-js": "3.7.0",
