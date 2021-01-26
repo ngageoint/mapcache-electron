@@ -119,3 +119,59 @@
 .mapcache-fab-spacer {
 	padding-bottom: 80px !important;
 }
+.leaflet-control a {
+	color: var(--v-text-base) !important;
+	background: var(--v-background-base) !important;
+}
+.leaflet-control a:hover {
+	background: var(--v-hover-base) !important;
+}
+.leaflet-control-zoom-in {
+	margin: auto;
+	line-height: 26px !important;
+}
+.leaflet-control-zoom-out {
+	margin: auto;
+	line-height: 26px !important;
+}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 30px;
+	height: 30px;
+}
+.leaflet-control-zoom-indicator {
+	font-weight: bold;
+}
+.leaflet-control-disabled {
+	color: currentColor;
+	cursor: not-allowed !important;
+	opacity: 0.5;
+	text-decoration: none;
+}
+.leaflet-control-disabled:hover {
+	background-color: #fff !important;
+}
+.leaflet-bar a svg {
+	width: 24px;
+	height: 24px;
+	margin: 3px;
+}
+#tooltip {
+	display: none;
+	position: absolute;
+	left: 10px;
+	background: #666;
+	color: white;
+	opacity: 0.90;
+	padding: 8px;
+	font-family: Roboto, sans-serif;
+	font-size: 12px;
+	height: 34px;
+	line-height: 18px;
+	z-index: 2000;
+	border: black 1px;
+	border-radius: 4px;
+}
+.hidden {
+	display: none !important;
+	visibility: hidden;
+}

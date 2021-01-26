@@ -262,7 +262,4 @@
     text-align: left;
   }
 
-  .sources li.checked {
-    list-style: url('../../assets/check.png');
-  }
 </style>

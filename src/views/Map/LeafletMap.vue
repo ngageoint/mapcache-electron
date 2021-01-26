@@ -145,7 +145,7 @@
         </v-card-text>
       </v-card>
     </v-expand-transition>
-    <v-card v-if="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
+    <v-card outlined v-if="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
       <v-card-title>
         Layer Order
       </v-card-title>
@@ -180,6 +180,23 @@
         </draggable>
       </v-card-text>
     </v-card>
+    <v-card outlined v-if="showBasemapSelection" class="basemap-card" :style="{top: '10px'}">
+      <v-card-title>
+        Base Map
+      </v-card-title>
+      <v-card-text>
+        <v-card-subtitle class="pt-1 pb-1">
+          Select a base map.
+        </v-card-subtitle>
+        <v-list dense>
+          <v-list-item-group v-model="selectedBasemap" mandatory>
+            <v-list-item v-for="item of basemaps" :key="item.name + '-basemap'">
+              <v-list-item-title>{{item.name}}</v-list-item-title>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
@@ -192,7 +209,6 @@
   import jetpack from 'fs-jetpack'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
   import EventBus from '../../EventBus'
-
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
   import GridBounds from './GridBounds'
@@ -209,6 +225,7 @@
   import draggable from 'vuedraggable'
   import countries from './countries-land-10km.geo.json'
   import GarbageCollector from '../../lib/GarbageCollector'
+  import LeafletBaseMapTool from './LeafletBaseMapTool'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -284,6 +301,7 @@
     },
     data () {
       return {
+        selectedBasemap: 0,
         zoomToExtentKey: this.project && this.project.zoomToExtent ? this.project.zoomToExtent.key || 0 : 0,
         isDrawing: false,
         maxFeatures: undefined,
@@ -322,9 +340,11 @@
         copiedToClipboard: false,
         isEditing: false,
         showLayerOrderingDialog: false,
+        showBasemapSelection: false,
         drag: false,
         layerOrder: [],
-        mapBackground: '#ddd'
+        mapBackground: '#ddd',
+        basemaps: []
       }
     },
     methods: {
@@ -342,7 +362,7 @@
         return {center: this.map.getCenter(), zoom: this.map.getZoom()}
       },
       getReorderCardOffset () {
-        let yOffset = 248
+        let yOffset = 234
         if (!this.project.zoomControlEnabled) {
           yOffset -= 74
         }
@@ -915,55 +935,19 @@
       initializeMap () {
         const defaultCenter = [39.658748, -104.843165]
         const defaultZoom = 3
-        const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
-        const streetsBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
-        const satelliteBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/humanitarian/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20})
-        const offline = vendor.L.geoJSON(countries, {
-          pane: 'tilePane',
-          style: function() {
-            return {
-              color: '#BBBBBB',
-              weight: 0.5,
-              fill: true,
-              fillColor: '#F9F9F6',
-              fillOpacity: 1,
-            };
-          },
-        })
-        const baseMaps = {
-          'Default': defaultBaseMap,
-          'Bright': streetsBaseMap,
-          'Humanitarian': satelliteBaseMap,
-          'Offline': offline
-        }
         this.map = vendor.L.map('map', {
           editable: true,
           attributionControl: false,
           center: defaultCenter,
           zoom: defaultZoom,
-          minZoom: 2,
-          layers: [defaultBaseMap]
-        })
-        this.map.on('baselayerchange', (e) => {
-          let name = 'default'
-          if (e.name) {
-            name = e.name.toLowerCase()
-          }
-          switch (name) {
-            case 'offline':
-              this.mapBackground = '#c0d9e4'
-              break
-            default:
-              this.mapBackground = '#ddd'
-              break
-          }
+          minZoom: 2
         })
         ActionUtilities.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
         this.map.createPane('gridSelectionPane')
         this.map.getPane('gridSelectionPane').style.zIndex = 625
+        this.map.createPane('baseMapPane')
+        this.map.getPane('baseMapPane').style.zIndex = 200
         this.map.setView(defaultCenter, defaultZoom)
-        this.baseMapsControl = vendor.L.control.layers(baseMaps)
-        this.baseMapsControl.addTo(this.map)
         this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
         this.setupEventHandlers()
@@ -978,9 +962,34 @@
           provider,
           style: 'bar'
         })
-        this.map.addControl(
-          this.addressSearchBarControl
-        )
+        this.map.addControl(this.addressSearchBarControl)
+        this.basemapControl = new LeafletBaseMapTool({}, function () {
+          self.showBasemapSelection = !self.showBasemapSelection
+          if (self.showBasemapSelection) {
+            self.showLayerOrderingDialog = false
+          }
+        })
+        this.map.addControl(this.basemapControl)
+        const defaultBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/default/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20, pane: 'baseMapPane'})
+        const brightBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20, pane: 'baseMapPane'})
+        const humanitarianBaseMap = vendor.L.tileLayer('https://osm-{s}.gs.mil/tiles/humanitarian/{z}/{x}/{y}.png', {subdomains: ['1', '2', '3', '4'], maxZoom: 20, pane: 'baseMapPane'})
+        const offline = vendor.L.geoJSON(countries, {
+          pane: 'baseMapPane',
+          style: function() {
+            return {
+              color: '#BBBBBB',
+              weight: 0.5,
+              fill: true,
+              fillColor: '#F9F9F6',
+              fillOpacity: 1
+            }
+          }
+        })
+        this.map.addLayer(defaultBaseMap)
+        this.basemaps.push({name: 'Default', basemap: defaultBaseMap})
+        this.basemaps.push({name: 'Bright', basemap: brightBaseMap})
+        this.basemaps.push({name: 'Humanitarian', basemap: humanitarianBaseMap})
+        this.basemaps.push({name: 'Offline', basemap: offline})
         this.map.zoomControl.setPosition('topright')
         this.displayZoomControl = new LeafletZoomIndicator()
         this.map.addControl(this.displayZoomControl)
@@ -990,6 +999,9 @@
           ActionUtilities.clearActiveLayers({projectId: self.projectId})
         }, function () {
           self.showLayerOrderingDialog = !self.showLayerOrderingDialog
+          if (self.showLayerOrderingDialog) {
+            self.showBasemapSelection = false
+          }
         })
 
         vendor.L.control.scale().addTo(this.map)
@@ -1033,6 +1045,7 @@
         }.bind(this), 100)
         this.map.on('click', (e) => {
           this.showLayerOrderingDialog = false
+          this.showBasemapSelection = false
           this.queryForFeatures(e)
         })
         this.map.on('mousemove', checkFeatureCount)
@@ -1091,6 +1104,20 @@
       }
     },
     watch: {
+      selectedBasemap: {
+        handler (newBasemap, oldBasemap) {
+          const self = this
+          self.$nextTick(() => {
+            self.map.removeLayer(self.basemaps[oldBasemap].basemap)
+            self.map.addLayer(self.basemaps[newBasemap].basemap)
+            if (self.basemaps[newBasemap].name === 'Offline') {
+              this.mapBackground = '#c0d9e4'
+            } else {
+              this.mapBackground = '#ddd'
+            }
+          })
+        }
+      },
       visible: {
         handler() {
           const self = this
@@ -1522,86 +1549,6 @@
 
 <style>
   @import '~leaflet/dist/leaflet.css';
-  .leaflet-control-zoom-to-active {
-    background: url('../../assets/zoom-to-active.svg') no-repeat;
-  }
-  .leaflet-control-clear-active {
-    background: url('../../assets/clear-active-layers.svg') no-repeat;
-  }
-
-  .leaflet-control-zoom-indicator {
-    font-weight: bold;
-  }
-  .leaflet-control-draw-point {
-    background: url('../../assets/point.svg') no-repeat;
-  }
-  .leaflet-control-draw-polygon {
-    background: url('../../assets/polygon.svg') no-repeat;
-  }
-  .leaflet-control-draw-rectangle {
-    background: url('../../assets/rectangle.svg') no-repeat;
-  }
-  .leaflet-control-draw-linestring {
-    background: url('../../assets/linestring.svg') no-repeat;
-  }
-  .leaflet-control-layer-ordering {
-    background: url('../../assets/order-layers.svg') no-repeat;
-  }
-  .leaflet-control-draw-cancel {
-    background: url('../../assets/close.svg') no-repeat;
-  }
-  .leaflet-control-edit-save {
-    background: url('../../assets/save.svg') no-repeat;
-  }
-  .leaflet-control-disabled {
-    color: currentColor;
-    cursor: not-allowed !important;
-    opacity: 0.5;
-    text-decoration: none;
-  }
-  .leaflet-control-disabled:hover {
-    background-color: #fff !important;
-  }
-  .layer__request-btn {
-    position: relative;
-    width: 10vh;
-    height: 40px;
-    font-size: 14px;
-    font-weight: 400;
-    font-family: Roboto, sans-serif;
-    color: #FFFFFF;
-    outline: none;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 0;
-    -webkit-transition: letter-spacing 0.3s;
-    transition: letter-spacing 0.3s;
-  }
-  .layer__request-btn__confirm {
-    background: #FF5555;
-    margin-right: 1vh;
-  }
-  .layer__request-btn__text-1 {
-    -webkit-transition: opacity 0.48s;
-    transition: opacity 0.48s;
-  }
-  .layer.req-active1 .layer__request-btn__text-1 {
-    opacity: 0;
-  }
-  .layer.req-active2 .layer__request-btn__text-1 {
-    display: none;
-  }
-  .layer__request-btn:hover {
-    letter-spacing: 5px;
-  }
-  .layer-style-container {
-    display: flex;
-    flex-direction: row;
-  }
-  .layer-style-type {
-    flex: 1;
-  }
   .popup {
     display: flex;
     flex-direction: column;
@@ -1626,33 +1573,6 @@
     justify-content: flex-end;
     flex: 1 0 4vh;
   }
-  .leaflet-control a {
-    color: black !important;
-  }
-  .leaflet-touch .leaflet-control-layers-toggle {
-    width: 30px;
-    height: 30px;
-  }
-  #tooltip {
-    display: none;
-    position: absolute;
-    left: 10px;
-    background: #666;
-    color: white;
-    opacity: 0.90;
-    padding: 8px;
-    font-family: Roboto, sans-serif;
-    font-size: 12px;
-    height: 34px;
-    line-height: 18px;
-    z-index: 2000;
-    border: black 1px;
-    border-radius: 4px;
-  }
-  .hidden {
-    display: none !important;
-    visibility: hidden;
-  }
   .results {
     color: black;
   }
@@ -1670,13 +1590,22 @@
   .card-content {
     overflow-y: auto;
     max-width: 268px!important;
-    max-height: 300px;
+    max-height: 250px;
+  }
+  .basemap-card {
+    min-width: 300px;
+    max-width: 300px !important;
+    position: absolute !important;
+    right: 50px !important;
+    max-height: 300px !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
   }
   .reorder-card {
     max-width: 300px !important;
     position: absolute !important;
     right: 50px !important;
     max-height: 480px !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
     ul {
       list-style-type: none !important;
     }

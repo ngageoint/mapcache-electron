@@ -2,7 +2,7 @@
   <v-sheet v-if="tableFeatures">
     <v-toolbar
       flat
-      color="primary"
+      color="main"
       dark
       dense
     >
