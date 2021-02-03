@@ -67,7 +67,7 @@
       </v-row>
       <v-row no-gutters class="justify-space-between pl-4" align="center">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="width" label="Width (px)" :step="Number(1)" :min="Number(1)" arrows-only @update-number="updateWidth" @update-valid="setWidthValid"/>
+          <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only @update-number="updateWidth" @update-valid="setWidthValid"/>
         </v-col>
       </v-row>
     </v-card-text>
@@ -113,6 +113,10 @@
       isGeoPackage: {
         type: Boolean,
         default: true
+      },
+      isBaseMap: {
+        type: Boolean,
+        default: false
       },
       close: Function
     },
@@ -173,7 +177,8 @@
             id: this.id,
             tableName: this.tableName,
             styleRow: styleRow,
-            isGeoPackage: this.isGeoPackage
+            isGeoPackage: this.isGeoPackage,
+            isBaseMap: this.isBaseMap
           })
         } else {
           ActionUtilities.createStyleRow({
@@ -181,7 +186,8 @@
             id: this.id,
             tableName: this.tableName,
             style: styleRow,
-            isGeoPackage: this.isGeoPackage
+            isGeoPackage: this.isGeoPackage,
+            isBaseMap: this.isBaseMap
           })
         }
         this.close()
@@ -192,7 +198,8 @@
           id: this.id,
           tableName: this.tableName,
           styleId: this.styleRow.id,
-          isGeoPackage: this.isGeoPackage
+          isGeoPackage: this.isGeoPackage,
+          isBaseMap: this.isBaseMap
         })
         this.close()
       }

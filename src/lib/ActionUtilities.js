@@ -6,6 +6,7 @@ import GeoPackageUtilities from './GeoPackageUtilities'
 import store from '../store'
 import Vue from 'vue'
 import GarbageCollector from './GarbageCollector'
+import LayerFactory from './source/layer/LayerFactory'
 
 /**
  * ActionUtilities is a helper class for performing actions prior to updating the store
@@ -233,87 +234,100 @@ export default class ActionUtilities {
     store.dispatch('Projects/removeDataSource', {projectId, sourceId})
   }
 
-  static setFeatureStyle ({projectId, id, tableName, featureId, styleId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
+    let filePath
+    if (isGeoPackage) {
+      filePath = store.state.Projects[projectId].geopackages[id].path
+    } else if (isBaseMap) {
+      filePath = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id).layerConfiguration.geopackageFilePath
+    } else {
+      filePath = store.state.Projects[projectId].sources[id].geopackageFilePath
+    }
+    return filePath
+  }
+
+  static setFeatureStyle ({projectId, id, tableName, featureId, styleId, isGeoPackage, isBaseMap}) {
+
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static setFeatureIcon ({projectId, id, tableName, featureId, iconId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static setFeatureIcon ({projectId, id, tableName, featureId, iconId, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static setTableStyle ({projectId, id, tableName, geometryType, styleId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static setTableStyle ({projectId, id, tableName, geometryType, styleId, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static setTableIcon ({projectId, id, tableName, geometryType, iconId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static setTableIcon ({projectId, id, tableName, geometryType, iconId, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static createStyleRow ({projectId, id, tableName, isGeoPackage, style}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static createStyleRow ({projectId, id, tableName, isGeoPackage, style, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.createStyleRow(filePath, tableName, style).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static createIconRow ({projectId, id, tableName, isGeoPackage, icon}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static createIconRow ({projectId, id, tableName, isGeoPackage, icon, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.createIconRow(filePath, tableName, icon).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static updateStyleRow ({projectId, id, tableName, styleRow, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static updateStyleRow ({projectId, id, tableName, styleRow, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.updateStyleRow(filePath, tableName, styleRow).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static updateIconRow ({projectId, id, tableName, iconRow, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static updateIconRow ({projectId, id, tableName, iconRow, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.updateIconRow(filePath, tableName, iconRow).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static deleteStyleRow ({projectId, id, tableName, styleId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static deleteStyleRow ({projectId, id, tableName, styleId, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.deleteStyleRow(filePath, tableName, styleId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static deleteIconRow ({projectId, id, tableName, iconId, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static deleteIconRow ({projectId, id, tableName, iconId, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.deleteIconRow(filePath, tableName, iconId).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static addStyleExtensionForTable ({projectId, id, tableName, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static addStyleExtensionForTable ({projectId, id, tableName, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.addStyleExtensionForTable(filePath, tableName).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
-  static removeStyleExtensionForTable ({projectId, id, tableName, isGeoPackage}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static removeStyleExtensionForTable ({projectId, id, tableName, isGeoPackage, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.removeStyleExtensionForTable(filePath, tableName).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
@@ -330,10 +344,10 @@ export default class ActionUtilities {
     })
   }
 
-  static updateFeatureGeometry ({projectId, id, isGeoPackage, tableName, featureGeoJson}) {
-    const filePath = isGeoPackage ? store.state.Projects[projectId].geopackages[id].path : store.state.Projects[projectId].sources[id].geopackageFilePath
+  static updateFeatureGeometry ({projectId, id, isGeoPackage, tableName, featureGeoJson, isBaseMap}) {
+    const filePath = ActionUtilities.getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
     GeoPackageUtilities.updateFeatureGeometry(filePath, tableName, featureGeoJson).then(function () {
-      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage)
+      ActionUtilities.updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
     })
   }
 
@@ -578,7 +592,7 @@ export default class ActionUtilities {
     }
   }
 
-  static updateStyleKey (projectId, id, tableName, isGeoPackage) {
+  static updateStyleKey (projectId, id, tableName, isGeoPackage, isBaseMap = false) {
     if (isGeoPackage) {
       const geopackage = _.cloneDeep(store.state.Projects[projectId].geopackages[id])
       geopackage.modifiedDate = FileUtilities.getLastModifiedDate(geopackage.path)
@@ -588,6 +602,10 @@ export default class ActionUtilities {
         geopackage.tables.tiles[tableName].styleKey = geopackage.tables.tiles[tableName].styleKey + 1
       }
       store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+    } else if (isBaseMap) {
+      const baseMap = _.cloneDeep(store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id))
+      baseMap.layerConfiguration.styleKey = baseMap.layerConfiguration.styleKey + 1
+      store.dispatch('BaseMaps/editBaseMap', baseMap)
     } else {
       const source = _.cloneDeep(store.state.Projects[projectId].sources[id])
       source.styleKey = source.styleKey + 1
@@ -664,5 +682,76 @@ export default class ActionUtilities {
    */
   static clearPreviewLayer ({projectId}) {
     store.dispatch('UIState/clearPreviewLayer', {projectId})
+  }
+
+  /**
+   * Adds a base map to the application
+   * @param baseMapName
+   * @param configuration
+   * @param backgroundColor
+   */
+  static async addBaseMap (baseMapName, configuration, backgroundColor) {
+    let layerConfiguration = {}
+
+    // create new directory
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+    layerConfiguration.id = sourceId
+
+    // handle geopackage
+    let extent = [-180, -90, 180, 90]
+    if (!_.isNil(configuration.geopackage)) {
+      const oldPath = configuration.geopackage.path
+      const newPath = path.join(sourceDirectory, path.basename(oldPath))
+      await jetpack.copyAsync(oldPath, newPath)
+      if (configuration.type === 'tile') {
+        // create new geopackage and copy tile table
+        const layer = LayerFactory.constructLayer({id: sourceId, filePath: newPath, sourceLayerName: configuration.tableName, layerType: 'GeoPackage'})
+        await layer.initialize()
+        layerConfiguration = layer.configuration
+        extent = await GeoPackageUtilities.getGeoPackageExtent(newPath, configuration.tableName)
+      } else {
+        // create new geopackage and copy feature table
+        const layer = LayerFactory.constructLayer({id: sourceId, geopackageFilePath: newPath, sourceDirectory: newPath, sourceLayerName: configuration.tableName, sourceType: 'GeoPackage', layerType: 'Vector', maxFeatures: configuration.maxFeatures})
+        await layer.initialize()
+        layerConfiguration = layer.configuration
+        extent = await GeoPackageUtilities.getBoundingBoxForTable(newPath, configuration.tableName)
+      }
+    } else {
+      layerConfiguration = _.cloneDeep(configuration)
+      if (!_.isNil(configuration.geopackageFilePath)) {
+        const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.geopackageFilePath))
+        await jetpack.copyAsync(layerConfiguration.geopackageFilePath, newFilePath)
+        layerConfiguration.geopackageFilePath = newFilePath
+        extent = await GeoPackageUtilities.getBoundingBoxForTable(newFilePath, configuration.sourceLayerName)
+      } else if (FileUtilities.exists(layerConfiguration.filePath)) {
+        // if valid filePath, copy to new location
+        const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.filePath))
+        await jetpack.copyAsync(layerConfiguration.filePath, newFilePath)
+        layerConfiguration.filePath = newFilePath
+        extent = configuration.extent || [-180, -90, 180, 90]
+      }
+    }
+    store.dispatch('BaseMaps/addBaseMap', {
+      id: sourceId,
+      name: baseMapName,
+      background: backgroundColor,
+      readonly: false,
+      layerConfiguration: layerConfiguration,
+      extent: extent
+    })
+  }
+
+  static editBaseMap (baseMap) {
+    store.dispatch('BaseMaps/editBaseMap', baseMap)
+  }
+
+  static removeBaseMap (baseMap) {
+    try {
+      FileUtilities.rmSourceDirectory(baseMap.id)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+    }
+    store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
   }
 }

@@ -15,6 +15,8 @@ for (const name in defs) {
  * Layer to handle reading a GeoTIFF and how to interpret it
  */
 export default class GeoTiffLayer extends TileLayer {
+  static LAYER_TYPE = 'GeoTIFF'
+
   geotiff
   image
   fileDirectory
@@ -265,7 +267,7 @@ export default class GeoTiffLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: 'GeoTIFF',
+        layerType: GeoTiffLayer.LAYER_TYPE,
         photometricInterpretation: this.photometricInterpretation,
         samplesPerPixel: this.samplesPerPixel,
         bitsPerSample: this.bitsPerSample,

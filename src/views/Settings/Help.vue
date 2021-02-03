@@ -160,6 +160,10 @@
               content: 'URLs are used to import data sources from the internet are saved internally. If you would like to manage the saved URLs, navigate to \'Settings > General > Saved URLs\'.'
             },
             {
+              title: 'Base Maps',
+              content: 'A base map is the underlying layer on the map view that is always visible. To manage your base maps, navigate to \'Settings > General > Base Maps\'.'
+            },
+            {
               title: 'Zoom control',
               content: 'The zoom control allows the user to click to zoom in or zoom out on the map. If disabled, a user may still zoom in and out using a mouse or touch pad. If you would like to hide the zoom control, navigate to \'Settings > Map > Zoom Control\' and disable it.'
             },

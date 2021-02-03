@@ -26,7 +26,7 @@
       </v-row>
       <v-row no-gutters class="justify-space-between" align="center">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="width" label="Width (px)" :step="Number(1)" :min="Number(1)" arrows-only @update-number="updateWidth" />
+          <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only @update-number="updateWidth" />
         </v-col>
       </v-row>
     </v-card-text>
@@ -48,9 +48,9 @@
 </template>
 
 <script>
-  import ColorPicker from '../Common/ColorPicker'
-  import NumberPicker from '../Common/NumberPicker'
-  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+  import ColorPicker from '../ColorPicker'
+  import NumberPicker from '../NumberPicker'
+  import GeometryStyleSvg from '../GeometryStyleSvg'
 
   export default {
     props: {
@@ -92,7 +92,4 @@
 </script>
 
 <style scoped>
-  .fs12 {
-    font-size: 12px;
-  }
 </style>

@@ -3,8 +3,8 @@ import XYZServerLayer from './layer/tile/XYZServerLayer'
 
 export default class XYZSource extends Source {
   async retrieveLayers () {
-    this.layers = []
-    this.layers.push(new XYZServerLayer({filePath: this.filePath, sourceLayerName: this.sourceName, visible: false, credentials: this.credentials}))
-    return this.layers
+    const layers = []
+    layers.push(new XYZServerLayer({filePath: this.filePath, subdomains: this.layers, sourceLayerName: this.sourceName, visible: false, credentials: this.credentials}))
+    return layers
   }
 }

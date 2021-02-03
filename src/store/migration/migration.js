@@ -1,6 +1,7 @@
 import store from '../.'
 import _ from 'lodash'
 import { mapcache } from '../../../package.json'
+import BaseMapUtilities from '../../lib/BaseMapUtilities'
 
 const migrations = {
   2: function (state) {
@@ -26,6 +27,12 @@ const migrations = {
       })
       state.Projects[projectId].mapRenderingOrder = []
     })
+  },
+  3: function (state) {
+    // setup initial BaseMaps
+    state.BaseMaps = {
+      baseMaps: BaseMapUtilities.getDefaultBaseMaps()
+    }
   }
 }
 
@@ -63,6 +70,7 @@ export default async function runMigration () {
           store.dispatch('Counter/resetState'),
           store.dispatch('UIState/migrateState', {migratedState: state.UIState}),
           store.dispatch('URLs/migrateState', {migratedState: state.URLs}),
+          store.dispatch('BaseMaps/migrateState', {migratedState: state.BaseMaps}),
           store.dispatch('Projects/migrateState', {migratedState: state.Projects}),
           store.dispatch('Version/setVersion', installationVersion)])
       }
@@ -72,6 +80,7 @@ export default async function runMigration () {
         store.dispatch('Counter/resetState'),
         store.dispatch('UIState/resetState'),
         store.dispatch('URLs/resetState'),
+        store.dispatch('BaseMaps/resetState'),
         store.dispatch('Projects/resetState'),
         store.dispatch('Version/setVersion', installationVersion)])
     }

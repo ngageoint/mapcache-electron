@@ -5,7 +5,7 @@
   "author": "Dan Barela <daniel.barela@gmail.com>",
   "mapcache": {
     "store": {
-      "version": "2"
+      "version": "3"
     }
   },
   "scripts": {

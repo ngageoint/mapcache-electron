@@ -2,11 +2,12 @@ import * as Vendor from '../../vendor'
 import axios from 'axios'
 
 export default class XYZServerLayer {
-  static constructMapLayer (layerModel) {
+  static constructMapLayer (layerModel, mapPane = 'overlayPane') {
     let mapLayer = null
     let options = {
-      pane: 'overlayPane',
-      zIndex: 401
+      pane: mapPane,
+      zIndex: 401,
+      subdomains: layerModel.subdomains
     }
     const headers = []
     if (layerModel.credentials && layerModel.credentials.type === 'basic') {

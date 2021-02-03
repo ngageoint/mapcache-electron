@@ -1,0 +1,321 @@
+<template>
+  <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
+    <v-toolbar
+      color="main"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title><b class="ml-2">{{baseMap.name}}</b> Style Editor</v-toolbar-title>
+    </v-toolbar>
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-card flat tile>
+        <v-card-text class="pt-0">
+          <m-b-tiles-options v-if="configuration.layerType === 'MBTiles'" :configuration="configuration" :update-configuration="updateConfiguration"></m-b-tiles-options>
+          <geotiff-options v-if="configuration.layerType === 'GeoTIFF'" :configuration="configuration" :update-configuration="updateConfiguration"></geotiff-options>
+          <v-divider v-if="configuration.layerType === 'MBTiles' || configuration.layerType === 'GeoTIFF'"></v-divider>
+          <background-tile-color :background-value="baseMap.background" :on-background-updated="updateBackground"></background-tile-color>
+          <v-divider v-if="configuration.pane === 'tile' && configuration.layerType !== 'GeoTIFF'"></v-divider>
+          <transparency-options v-if="configuration.pane === 'tile' && configuration.layerType !== 'GeoTIFF'" :configuration="configuration" :update-configuration="updateConfiguration"></transparency-options>
+        </v-card-text>
+        <v-divider v-if="configuration.pane === 'vector'"></v-divider>
+        <style-editor v-if="configuration.pane === 'vector'"
+          :tableName="configuration.sourceLayerName"
+          :projectId="project.id"
+          :id="baseMap.id"
+          :project="project"
+          :path="configuration.geopackageFilePath"
+          :style-key="configuration.styleKey"
+          :back="hideStyleEditor"
+          :style-assignment="configuration.styleAssignment"
+          :table-style-assignment="configuration.tableStyleAssignment"
+          :icon-assignment="configuration.iconAssignment"
+          :table-icon-assignment="configuration.tableIconAssignment"
+          :is-geo-package="false"
+          :is-base-map="true"/>
+      </v-card>
+    </v-sheet>
+  </v-sheet>
+  <v-sheet v-else class="mapcache-sheet">
+    <v-toolbar
+      color="main"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title :title="baseMap.name">{{baseMap.name}}</v-toolbar-title>
+    </v-toolbar>
+    <v-dialog
+      v-model="renameDialog"
+      max-width="400"
+      persistent
+      @keydown.esc="renameDialog = false">
+      <v-card v-if="renameDialog">
+        <v-card-title>
+          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+          Rename base map
+        </v-card-title>
+        <v-card-text>
+          <v-form v-on:submit.prevent v-model="renameValid">
+            <v-container class="ma-0 pa-0">
+              <v-row no-gutters>
+                <v-col cols="12">
+                  <v-text-field
+                    autofocus
+                    v-model="renamedBaseMap"
+                    :rules="renamedBaseMapRules"
+                    label="Data source name"
+                    required
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="renameDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            v-if="renameValid"
+            color="primary"
+            text
+            @click="saveBaseMapName">
+            Rename
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="deleteDialog"
+      max-width="400"
+      persistent
+      @keydown.esc="deleteDialog = false">
+      <v-card v-if="deleteDialog">
+        <v-card-title>
+          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          Remove base map
+        </v-card-title>
+        <v-card-text>
+          Are you sure you want to remove the <b>{{baseMap.name}}</b> base map?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="deleteDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="warning"
+            text
+            @click="deleteBaseMap">
+            Remove
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-sheet class="text-left mapcache-sheet-content detail-bg">
+      <v-row no-gutters class="pl-3 pt-3 pr-3 background">
+        <v-col>
+          <p class="text-subtitle-1">
+            <v-btn icon @click="zoomTo" color="whitesmoke">
+              <v-icon style="width: 20px; height: 20px;">mdi-map-outline</v-icon>
+            </v-btn>
+            <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} Base Map</span>
+          </p>
+        </v-col>
+      </v-row>
+      <v-row v-if="!readonly" no-gutters class="pl-3 pb-3 pr-3 background" style="margin-left: -12px;" justify="center" align-content="center">
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-pencil</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Rename
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-palette</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Style
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+        <v-hover>
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-trash-can</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Remove
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
+      </v-row>
+      <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
+        <v-col>
+          <v-row no-gutters justify="space-between">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Type
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{configuration.pane === 'vector' ? configuration.sourceType : configuration.layerType}}
+              </p>
+            </v-col>
+          </v-row>
+          <v-row no-gutters justify="start" v-if="baseMap.url || configuration.pane === 'tile' && (configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer')">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                URL
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+                {{baseMap.url || configuration.filePath}}
+              </p>
+            </v-col>
+          </v-row>
+          <v-row no-gutters justify="start" v-if="configuration.subdomains !== null && configuration.subdomains !== undefined">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Subdomains
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+                {{configuration.subdomains.join(',')}}
+              </p>
+            </v-col>
+          </v-row>
+          <v-row no-gutters v-if="configuration.minZoom !== undefined && configuration.maxZoom !== undefined">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Zoom Levels
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{configuration.minZoom + ' - ' + configuration.maxZoom}}
+              </p>
+            </v-col>
+          </v-row>
+          <v-row no-gutters justify="space-between" v-if="configuration.pane === 'vector'">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Features
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{configuration.count}}
+              </p>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-sheet>
+  </v-sheet>
+</template>
+
+<script>
+  import _ from 'lodash'
+  import ActionUtilities from '../../../lib/ActionUtilities'
+  import TransparencyOptions from '../../Common/Style/TransparencyOptions'
+  import GeotiffOptions from '../../Common/Style/GeotiffOptions'
+  import BackgroundTileColor from '../../Common/Style/BackgroundTileColor'
+  import MBTilesOptions from '../../Common/Style/MBTilesOptions'
+  import StyleEditor from '../../StyleEditor/StyleEditor'
+
+  export default {
+    props: {
+      baseMap: {
+        type: Object,
+        default: () => {
+          return {
+            name: ''
+          }
+        }
+      },
+      baseMaps: Array,
+      project: Object,
+      back: Function
+    },
+    components: {
+      StyleEditor,
+      MBTilesOptions,
+      BackgroundTileColor,
+      TransparencyOptions,
+      GeotiffOptions
+    },
+    computed: {
+      configuration () {
+        return this.baseMap.layerConfiguration || {}
+      },
+      readonly () {
+        return this.baseMap.readonly
+      }
+    },
+    data () {
+      return {
+        styleEditorVisible: false,
+        renameDialog: false,
+        renameValid: false,
+        deleteDialog: false,
+        renamedBaseMap: this.baseMap.name,
+        renamedBaseMapRules: [
+          v => !!v || 'Base map name is required',
+          v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'
+        ],
+      }
+    },
+    methods: {
+      deleteBaseMap () {
+        ActionUtilities.removeBaseMap(this.baseMap)
+        this.deleteDialog = false
+        this.back()
+      },
+      zoomTo () {
+        const extent = this.baseMap.extent || [-180, -90, 180, 90]
+        ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+      },
+      hideStyleEditor () {
+        this.styleEditorVisible = false
+      },
+      saveBaseMapName () {
+        const baseMap = _.cloneDeep(this.baseMap)
+        baseMap.name = this.renamedBaseMap
+        ActionUtilities.editBaseMap(baseMap)
+        this.renameDialog = false
+      },
+      updateBackground (value) {
+        const baseMap = _.cloneDeep(this.baseMap)
+        baseMap.background = value
+        ActionUtilities.editBaseMap(baseMap)
+      },
+      updateConfiguration (newConfiguration) {
+        const baseMap = _.cloneDeep(this.baseMap)
+        baseMap.layerConfiguration = newConfiguration
+        ActionUtilities.editBaseMap(baseMap)
+      }
+    }
+  }
+</script>
+
+<style scoped>
+</style>

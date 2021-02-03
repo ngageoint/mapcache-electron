@@ -25,7 +25,7 @@
               </v-list-item-content>
             </template>
           </v-list-item>
-          <div v-if="assignment.geometryType === 1">
+          <div v-if="assignment.geometryType === 1 || assignment.geometryType === 4">
             <v-list-item
               v-for="icon in icons"
               :key="'icon' + icon.id"
@@ -84,6 +84,10 @@
         type: Boolean,
         default: true
       },
+      isBaseMap: {
+        type: Boolean,
+        default: false
+      },
       close: Function
     },
     data () {
@@ -97,15 +101,15 @@
           const items = this.styles.concat(this.icons)
           const selection = items[this.model]
           if (selection.styleRow) {
-            ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: selection.styleRow.id, isGeoPackage: this.isGeoPackage})
-            ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage})
+            ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: selection.styleRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           } else if (selection.iconRow) {
-            ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: selection.iconRow.id, isGeoPackage: this.isGeoPackage})
-            ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage})
+            ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: selection.iconRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           }
         } else {
-          ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage})
-          ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage})
+          ActionUtilities.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          ActionUtilities.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
         }
         this.close()
       }

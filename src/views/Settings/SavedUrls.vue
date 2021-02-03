@@ -1,5 +1,5 @@
 <template>
-  <v-sheet>
+  <v-card>
     <v-dialog v-model="deleteUrlDialog" max-width="400" persistent @keydown.esc="cancelDeleteUrl">
       <v-card>
         <v-card-title>
@@ -31,47 +31,45 @@
     <v-dialog v-model="editUrlDialog" max-width="400" persistent @keydown.esc="cancelEditUrl">
       <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus icon="mdi-pencil" title="Edit URL" :rules="editUrlRules" save-text="Save" :on-cancel="cancelEditUrl" :value="editUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="editSavedUrl"/>
     </v-dialog>
-    <v-card>
-      <v-card-title>
-        <v-icon color="primary" class="pr-2">mdi-cloud-outline</v-icon>
-        Saved URLs
-      </v-card-title>
-      <v-card-text>
-        <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
-        <v-list v-else>
-          <v-list-item dense :key="item" v-for="item in urls.map(url => url.url)">
-            <v-list-item-content>
-              <span class="text-break">{{item}}</span>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-row no-gutters justify="end">
-                <v-btn icon color="primary" @click.stop.prevent="showEditUrlDialog(item)">
-                  <v-icon>mdi-pencil-outline</v-icon>
-                </v-btn>
-                <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                  <v-icon>mdi-trash-can</v-icon>
-                </v-btn>
-              </v-row>
-            </v-list-item-action>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn
-          text
-          color="primary"
-          @click="showAddUrlDialog">
-          Add URL
-        </v-btn>
-        <v-spacer></v-spacer>
-        <v-btn
-          text
-          @click="close">
-          Close
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-sheet>
+    <v-card-title>
+      <v-icon color="primary" class="pr-2">mdi-cloud-outline</v-icon>
+      Saved URLs
+    </v-card-title>
+    <v-card-text class="pb-0">
+      <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
+      <v-list style="max-height: 400px;" v-else>
+        <v-list-item dense :key="item" v-for="item in urls.map(url => url.url)">
+          <v-list-item-content>
+            <span class="text-break">{{item}}</span>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-row no-gutters justify="end">
+              <v-btn icon color="primary" @click.stop.prevent="showEditUrlDialog(item)">
+                <v-icon>mdi-pencil-outline</v-icon>
+              </v-btn>
+              <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
+                <v-icon>mdi-trash-can</v-icon>
+              </v-btn>
+            </v-row>
+          </v-list-item-action>
+        </v-list-item>
+      </v-list>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn
+        text
+        color="primary"
+        @click="showAddUrlDialog">
+        Add URL
+      </v-btn>
+      <v-spacer></v-spacer>
+      <v-btn
+        text
+        @click="close">
+        Close
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <script>

@@ -1,20 +1,38 @@
 <template>
-  <style-editor v-if="styleEditorVisible && source.pane === 'vector'"
-    :tableName="source.sourceLayerName"
-    :projectId="project.id"
-    :id="source.id"
-    :project="project"
-    :path="source.geopackageFilePath"
-    :style-key="source.styleKey"
-    :back="hideStyleEditor"
-    :style-assignment="source.styleAssignment"
-    :table-style-assignment="source.tableStyleAssignment"
-    :icon-assignment="source.iconAssignment"
-    :table-icon-assignment="source.tableIconAssignment"
-    :is-geo-package="false"/>
-  <geotiff-options v-else-if="styleEditorVisible && source.layerType === 'GeoTIFF'" :source="source" :projectId="project.id" :back="hideStyleEditor"></geotiff-options>
-  <m-b-tiles-options v-else-if="styleEditorVisible && source.layerType === 'MBTiles'" :source="source" :projectId="project.id" :back="hideStyleEditor"></m-b-tiles-options>
-  <transparency-options v-else-if="styleEditorVisible" :source="source" :projectId="project.id" :back="hideStyleEditor"></transparency-options>
+  <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
+    <v-toolbar
+      color="main"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title><b class="ml-2">{{initialDisplayName}}</b> Style Editor</v-toolbar-title>
+    </v-toolbar>
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-card flat tile>
+        <style-editor v-if="source.pane === 'vector'"
+          :tableName="source.sourceLayerName"
+          :projectId="project.id"
+          :id="source.id"
+          :project="project"
+          :path="source.geopackageFilePath"
+          :style-key="source.styleKey"
+          :back="hideStyleEditor"
+          :style-assignment="source.styleAssignment"
+          :table-style-assignment="source.tableStyleAssignment"
+          :icon-assignment="source.iconAssignment"
+          :table-icon-assignment="source.tableIconAssignment"
+          :is-geo-package="false"/>
+        <v-card-text v-else>
+          <geotiff-options v-if="source.layerType === 'GeoTIFF'" :configuration="source" :update-configuration="updateSource"></geotiff-options>
+          <m-b-tiles-options v-if="source.format === 'pbf'" :configuration="source" :update-configuration="updateSource"></m-b-tiles-options>
+          <v-divider v-if="source.pane === 'tile' && source.format === 'pbf'"></v-divider>
+          <transparency-options v-if="source.pane === 'tile' && source.layerType !== 'GeoTIFF'" :configuration="source" :update-configuration="updateSource"></transparency-options>
+        </v-card-text>
+      </v-card>
+    </v-sheet>
+  </v-sheet>
   <v-sheet v-else class="mapcache-sheet">
       <v-toolbar
         color="main"
@@ -229,7 +247,7 @@
             <v-row no-gutters justify="space-between">
               <v-col>
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Data Source Type
+                  Type
                 </p>
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   {{source.pane === 'vector' ? source.sourceType : source.layerType}}
@@ -247,10 +265,20 @@
             <v-row no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
               <v-col>
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Data Source URL
+                  URL
                 </p>
                 <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
                   {{source.filePath}}
+                </p>
+              </v-col>
+            </v-row>
+            <v-row no-gutters justify="start" v-if="source.subdomains !== null && source.subdomains !== undefined">
+              <v-col>
+                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  Subdomains
+                </p>
+                <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+                  {{source.subdomains.join(',')}}
                 </p>
               </v-col>
             </v-row>
@@ -295,13 +323,13 @@
   import fs from 'fs'
   import path from 'path'
   import _ from 'lodash'
-  import GeotiffOptions from './GeotiffOptions'
-  import TransparencyOptions from './TransparencyOptions'
+  import GeotiffOptions from '../Common/Style/GeotiffOptions'
+  import TransparencyOptions from '../Common/Style/TransparencyOptions'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
-  import MBTilesOptions from './MBTilesOptions'
+  import MBTilesOptions from '../Common/Style/MBTilesOptions'
 
   export default {
     props: {
@@ -420,6 +448,12 @@
       },
       removeDataSource () {
         ActionUtilities.removeDataSource({projectId: this.project.id, sourceId: this.source.id})
+      },
+      updateSource (updatedSource) {
+        ActionUtilities.setDataSource({
+          projectId: this.project.id,
+          source: updatedSource
+        })
       }
     }
   }

@@ -12,8 +12,8 @@ import GeoJSONSource from './GeoJSONSource'
 import MBTilesSource from './MBTilesSource'
 
 export default class SourceFactory {
-  static async constructXYZSource (parameterizedUrl, credentials, sourceName) {
-    return new XYZServerSource(parameterizedUrl, [], credentials, sourceName)
+  static async constructXYZSource (parameterizedUrl, subdomains = [], credentials, sourceName) {
+    return new XYZServerSource(parameterizedUrl, subdomains, credentials, sourceName)
   }
 
   static async constructWMSSource (url, layers, credentials, sourceName) {

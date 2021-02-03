@@ -124,6 +124,10 @@
         type: Boolean,
         default: true
       },
+      isBaseMap: {
+        type: Boolean,
+        default: false
+      },
       close: Function
     },
     data () {
@@ -216,7 +220,8 @@
           id: this.id,
           tableName: this.tableName,
           iconId: this.iconRow.id,
-          isGeoPackage: this.isGeoPackage
+          isGeoPackage: this.isGeoPackage,
+          isBaseMap: this.isBaseMap
         })
         this.close()
       },
@@ -238,7 +243,8 @@
             id: this.id,
             tableName: this.tableName,
             iconRow: iconRow,
-            isGeoPackage: this.isGeoPackage
+            isGeoPackage: this.isGeoPackage,
+            isBaseMap: this.isBaseMap
           })
         } else {
           ActionUtilities.createIconRow({
@@ -246,7 +252,8 @@
             id: this.id,
             tableName: this.tableName,
             icon: iconRow,
-            isGeoPackage: this.isGeoPackage
+            isGeoPackage: this.isGeoPackage,
+            isBaseMap: this.isBaseMap
           })
         }
         this.close()

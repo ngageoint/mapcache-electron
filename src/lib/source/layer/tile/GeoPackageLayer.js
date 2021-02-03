@@ -2,12 +2,16 @@ import TileLayer from './TileLayer'
 import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
 
 export default class GeoPackageLayer extends TileLayer {
+  static LAYER_TYPE = 'GeoPackage'
+
   geopackage
   dao
 
   async initialize () {
     this.geopackage = await GeoPackageAPI.open(this.filePath)
     this.dao = this.geopackage.getTileDao(this.sourceLayerName)
+    this.minZoom = this.dao.minZoom
+    this.maxZoom = this.dao.maxZoom
     await super.initialize()
     return this
   }
@@ -17,7 +21,9 @@ export default class GeoPackageLayer extends TileLayer {
       ...super.configuration,
       ...{
         extent: this.extent,
-        layerType: 'GeoPackage'
+        layerType: GeoPackageLayer.LAYER_TYPE,
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom
       }
     }
   }

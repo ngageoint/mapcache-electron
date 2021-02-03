@@ -1,5 +1,6 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-sheet class="mapcache-sheet">
+  <base-maps v-if="baseMapsDialog" :project="project" :back="() => { baseMapsDialog = false }"/>
+  <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -34,7 +35,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="savedUrlDialog" max-width="450" persistent @keydown.esc="savedUrlDialog = false">
+    <v-dialog v-model="savedUrlDialog" max-width="450" persistent scrollable @keydown.esc="savedUrlDialog = false">
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
@@ -95,6 +96,12 @@
           <v-list-item-content>
             <v-list-item-title>Saved URLs</v-list-item-title>
             <v-list-item-subtitle>Manage saved URLs</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="baseMapsDialog = true">
+          <v-list-item-content>
+            <v-list-item-title>Base Maps</v-list-item-title>
+            <v-list-item-subtitle>Manage Base Maps</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -195,6 +202,7 @@
   import Help from './Help'
   import ActionUtilities from '../../lib/ActionUtilities'
   import SavedUrls from './SavedUrls'
+  import BaseMaps from './BaseMaps/BaseMaps'
 
   export default {
     props: {
@@ -206,6 +214,7 @@
       back: Function
     },
     components: {
+      BaseMaps,
       SavedUrls,
       EditTextModal,
       EditNumberModal,
@@ -269,6 +278,7 @@
         helpDialog: false,
         deleteProjectDialog: false,
         savedUrlDialog: false,
+        baseMapsDialog: false,
         projectNameRules: [v => !!v || 'Project name is required.']
       }
     },

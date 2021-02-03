@@ -3,6 +3,8 @@ import jetpack from 'fs-jetpack'
 import path from 'path'
 
 export default class XYZFileLayer extends TileLayer {
+  static LAYER_TYPE = 'XYZFile'
+
   async initialize () {
     await super.initialize()
     return this
@@ -12,7 +14,7 @@ export default class XYZFileLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: 'XYZFile'
+        layerType: XYZFileLayer.LAYER_TYPE
       }
     }
   }

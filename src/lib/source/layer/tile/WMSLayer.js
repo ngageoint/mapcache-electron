@@ -5,6 +5,8 @@ import TileLayer from './TileLayer'
 import TileBoundingBoxUtils from '../../../tile/tileBoundingBoxUtils'
 
 export default class WMSLayer extends TileLayer {
+  static LAYER_TYPE = 'WMS'
+
   constructor (configuration = {}) {
     super(configuration)
     this.layers = configuration.layers
@@ -20,7 +22,7 @@ export default class WMSLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: 'WMS',
+        layerType: WMSLayer.LAYER_TYPE,
         version: this.version,
         layers: this.layers
       }

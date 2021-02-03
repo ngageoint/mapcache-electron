@@ -2,6 +2,13 @@ import TileLayer from './TileLayer'
 import axios from 'axios'
 
 export default class XYZServerLayer extends TileLayer {
+  static LAYER_TYPE = 'XYZServer'
+
+  constructor (configuration = {}) {
+    super(configuration)
+    this.subdomains = configuration.subdomains
+  }
+
   async initialize () {
     await super.initialize()
     return this
@@ -11,7 +18,8 @@ export default class XYZServerLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: 'XYZServer'
+        layerType: XYZServerLayer.LAYER_TYPE,
+        subdomains: this.subdomains
       }
     }
   }
@@ -37,10 +45,17 @@ export default class XYZServerLayer extends TileLayer {
     if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
       headers['authorization'] = credentials.authorization
     }
+
+    let url = this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y)
+    if (this.subdomains.length > 0) {
+      const index = Math.abs(coords.x + coords.y) % this.subdomains.length
+      url = url.replace('{s}', this.subdomains[index])
+    }
+
     const response = await axios({
       method: 'get',
       responseType: 'arraybuffer',
-      url: this.filePath.replace('{z}', coords.z).replace('{x}', coords.x).replace('{y}', coords.y),
+      url: url,
       headers: headers
     })
     done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))

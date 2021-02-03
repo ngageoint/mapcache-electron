@@ -9,6 +9,8 @@ import GeoPackageUtilities from '../../../GeoPackageUtilities'
  * the feature collection of the data source as well as any user/source defined styling.
  */
 export default class VectorLayer extends Layer {
+  static LAYER_TYPE = 'Vector'
+
   _extent
   _vectorTileRenderer
   _geopackageFilePath
@@ -50,7 +52,7 @@ export default class VectorLayer extends Layer {
       ...super.configuration,
       ...{
         pane: 'vector',
-        layerType: 'Vector',
+        layerType: VectorLayer.LAYER_TYPE,
         extent: this._extent,
         count: this.count || 0,
         geopackageFilePath: this._geopackageFilePath,

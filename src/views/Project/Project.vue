@@ -55,7 +55,7 @@
         </v-col>
         <v-col>
           <preview-map :visible="previewLayer !== null && previewLayer !== undefined && item === 1"
-                       :project-id="project.id"
+                       :project="project"
                        :preview-layer="previewLayer"
                        :resizeListener="item"
                        :get-map-center-and-zoom="getMapCenterAndZoom">

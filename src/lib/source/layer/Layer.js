@@ -19,7 +19,6 @@ export default class Layer {
     this.pane = configuration.pane
     this.style = this._configuration.style
     this.visible = this._configuration.visible || false
-    this.images = this._configuration.images
     this.sourceType = this._configuration.sourceType
     this.displayName = this._configuration.displayName || this.name
     this.layerType = this._configuration.layerType
@@ -33,7 +32,7 @@ export default class Layer {
   }
 
   async initialize () {
-    throw new Error('Abstract method to be implemented in sublcass')
+    throw new Error('Abstract method to be implemented in subclass')
   }
 
   close () {
@@ -52,7 +51,6 @@ export default class Layer {
         displayName: this.displayName,
         visible: this.visible || false,
         style: this.style,
-        images: this.images,
         sourceType: this.sourceType,
         sourceDirectory: this.sourceDirectory,
         sourceId: this.sourceId,

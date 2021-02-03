@@ -4,12 +4,15 @@ import * as vendor from '../../../vendor'
 import VectorStyleUtilities from '../../../VectorStyleUtilities'
 
 export default class MBTilesLayer extends TileLayer {
+  static LAYER_TYPE = 'MBTiles'
+
   minZoom
   maxZoom
   db
   pointStyle
   lineStyle
   polygonStyle
+
   constructor (configuration = {}) {
     super(configuration)
   }
@@ -48,15 +51,17 @@ export default class MBTilesLayer extends TileLayer {
     return this
   }
 
-  updateStyle (style) {
-    this.style = style
+  updateStyle (configuration) {
+    this.pointStyle = configuration.pointStyle || VectorStyleUtilities.leafletStyle()
+    this.lineStyle = configuration.lineStyle || VectorStyleUtilities.leafletStyle()
+    this.polygonStyle = configuration.polygonStyle || VectorStyleUtilities.leafletStyle()
   }
 
   get configuration () {
     return {
       ...super.configuration,
       ...{
-        layerType: 'MBTiles',
+        layerType: MBTilesLayer.LAYER_TYPE,
         minZoom: this.minZoom,
         maxZoom: this.maxZoom,
         pointStyle: this.pointStyle,

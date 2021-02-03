@@ -1,16 +1,31 @@
 <template>
-  <style-editor v-if="styleEditorVisible"
-    :tableName="tableName"
-    :projectId="projectId"
-    :project="project"
-    :id="geopackage.id"
-    :path="geopackage.path"
-    :style-key="styleKey"
-    :back="hideStyleEditor"
-    :style-assignment="geopackage.styleAssignment"
-    :table-style-assignment="geopackage.tableStyleAssignment"
-    :icon-assignment="geopackage.iconAssignment"
-    :table-icon-assignment="geopackage.tableIconAssignment"/>
+  <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
+    <v-toolbar
+      color="main"
+      dark
+      flat
+      class="sticky-toolbar"
+    >
+      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-toolbar-title><b class="ml-2">{{tableName}}</b> Style Editor</v-toolbar-title>
+    </v-toolbar>
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-card flat tile>
+        <style-editor v-if="styleEditorVisible"
+          :tableName="tableName"
+          :projectId="projectId"
+          :project="project"
+          :id="geopackage.id"
+          :path="geopackage.path"
+          :style-key="styleKey"
+          :back="hideStyleEditor"
+          :style-assignment="geopackage.styleAssignment"
+          :table-style-assignment="geopackage.tableStyleAssignment"
+          :icon-assignment="geopackage.iconAssignment"
+          :table-icon-assignment="geopackage.tableIconAssignment"/>
+      </v-card>
+    </v-sheet>
+  </v-sheet>
   <feature-layer-field v-else-if="showFeatureLayerField"
     :tableName="tableName"
     :projectId="projectId"

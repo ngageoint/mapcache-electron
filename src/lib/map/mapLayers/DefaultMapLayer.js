@@ -1,10 +1,10 @@
 import MapcacheMapLayer from '../MapcacheMapLayer'
 
 export default class DefaultMapLayer {
-  static constructMapLayer (layerModel) {
+  static constructMapLayer (layerModel, mapPane = 'overlayPane') {
     let mapLayer = new MapcacheMapLayer({
       layer: layerModel,
-      pane: 'overlayPane',
+      pane: mapPane,
       zIndex: 401
     })
     mapLayer.id = layerModel.id

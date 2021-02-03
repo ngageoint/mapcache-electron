@@ -49,6 +49,9 @@ export default class URLUtilities {
   static isXYZ (url) {
     return url.toLowerCase().indexOf('{x}') > 0 && url.toLowerCase().indexOf('{y}') > 0 && url.toLowerCase().indexOf('{z}') > 0
   }
+  static requiresSubdomains (url) {
+    return url.toLowerCase().indexOf('{s}') > 0
+  }
   static isWMS (url) {
     return url.toLowerCase().indexOf('wms') > 0
   }

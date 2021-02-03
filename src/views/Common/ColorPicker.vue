@@ -8,7 +8,7 @@
       <div slot="append">
         <v-menu v-model="menu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false">
           <template v-slot:activator="{ on }">
-            <div :style="swatchStyle" v-on="on" />
+            <div class="themed-border" :style="swatchStyle" v-on="on"></div>
           </template>
           <v-card>
             <v-card-text class="pa-0">
@@ -62,4 +62,7 @@
 </script>
 
 <style scoped>
+  .themed-border {
+    border: 2px solid var(--v-scroll_track-base)
+  }
 </style>

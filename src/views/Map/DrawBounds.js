@@ -24,7 +24,7 @@ export default {
       } else {
         bounds = vendor.L.latLngBounds(boundingBox)
       }
-      this.r = vendor.L.rectangle(bounds)
+      this.r = vendor.L.rectangle(bounds, {pane: 'markerPane'})
       this.r.addTo(this.map)
       this.r.enableEdit()
 

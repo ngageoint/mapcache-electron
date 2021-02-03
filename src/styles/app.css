@@ -175,3 +175,9 @@
 	display: none !important;
 	visibility: hidden;
 }
+.leaflet-popup-content-wrapper {
+	background: var(--v-background-base) !important;
+}
+.leaflet-popup-tip {
+	background: var(--v-background-base) !important;
+}

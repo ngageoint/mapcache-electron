@@ -116,6 +116,21 @@
                     ></v-radio>
                   </v-radio-group>
                 </div>
+                <div v-if="requiresSubdomains">
+                  <v-card-subtitle class="pl-0">
+                    This XYZ url requires subdomains.
+                  </v-card-subtitle>
+                  <v-form v-on:submit.prevent ref="subdomainRef" v-model="subdomainsValid">
+                    <v-text-field
+                      autofocus
+                      v-model="subdomainText"
+                      :rules="subdomainRules"
+                      label="Subdomains"
+                      hint="e.g. 1,2,3,4"
+                      required
+                    ></v-text-field>
+                  </v-form>
+                </div>
               </v-form>
             </v-card-text>
           </v-card>
@@ -344,6 +359,9 @@
   import SourceFactory from '../../lib/source/SourceFactory'
   import ActionUtilities from '../../lib/ActionUtilities'
 
+  const whiteSpaceRegex = /\s/
+  const endsInComma = /,$/
+
   export default {
     props: {
       sources: Object,
@@ -419,7 +437,15 @@
           closeOnContentClick: true
         },
         urlIsValid: false,
-        previewing: false
+        previewing: false,
+        subdomainText: '1,2,3,4',
+        subdomainRules: [
+          v => !!v || 'Subdomains are required. (valid format: 1,2,3,4)',
+          v => !whiteSpaceRegex.test(v) || 'Subdomain list may not contain spaces. (valid format: 1,2,3,4)',
+          v => !endsInComma.test(v) || 'Subdomain list may not end in a comma. (valid format: 1,2,3,4)'
+        ],
+        requiresSubdomains: false,
+        subdomainsValid: true
       }
     },
     components: {
@@ -504,14 +530,43 @@
               }
             } else if (serviceType === 2) {
               try {
-                await axios({
-                  method: 'get',
-                  url: this.dataSourceUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0'),
-                  headers: headers
-                })
-                serviceInfo = {}
+                let urlToTest = this.dataSourceUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
+                // test all subdomains
+                if (this.requiresSubdomains) {
+                  if (this.subdomainsValid) {
+                    const invalidSubdomains = []
+                    const subdomains = this.subdomainText.split(',')
+                    for (let i = 0; i < subdomains.length; i++) {
+                      const subdomain = subdomains[i]
+                      try {
+                        await axios({
+                          method: 'get',
+                          url: urlToTest.replace('{s}', subdomain),
+                          headers: headers,
+                          timeout: 2000
+                        })
+                      } catch (e) {
+                        invalidSubdomains.push(subdomain)
+                      }
+                    }
+                    if (invalidSubdomains.length > 0) {
+                      this.error = 'The following XYZ service url subdomains were invalid: ' + invalidSubdomains.join(',')
+                    } else {
+                      serviceInfo = {}
+                    }
+                  } else {
+                    this.error = 'The XYZ service url requires at least one valid subdomain'
+                  }
+                } else {
+                  await axios({
+                    method: 'get',
+                    url: urlToTest,
+                    headers: headers
+                  })
+                  serviceInfo = {}
+                }
               } catch (e) {
-                if (e.response.status === 401 || e.response.status === 403) {
+                if (e.response && (e.response.status === 401 || e.response.status === 403)) {
                   accessDeniedOrForbidden = true
                   this.error = 'Access to XYZ service is denied. Check your credentials'
                 } else {
@@ -696,6 +751,7 @@
           serviceType: this.selectedServiceType,
           separateLayers: false,
           credentials: this.getCredentials(),
+          subdomains: this.subdomainText.split(','),
           name: this.dataSourceName
         }
         setTimeout(() => {
@@ -739,7 +795,7 @@
           if (this.selectedServiceType === 0) {
             source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), this.getCredentials(), 'Preview')
           } else if (this.selectedServiceType === 2) {
-            source = await SourceFactory.constructXYZSource(this.dataSourceUrl, this.getCredentials(), 'Preview')
+            source = await SourceFactory.constructXYZSource(this.dataSourceUrl, this.subdomainText.split(','), this.getCredentials(), 'Preview')
           }
         }
         if (!_.isNil(source)) {
@@ -779,8 +835,10 @@
           if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
+            let requiresSubdomains = false
             let valid = false
             if (URLUtilities.isXYZ(newValue)) {
+              requiresSubdomains = URLUtilities.requiresSubdomains(newValue)
               selectedServiceType = 2
               valid = true
             } else if (URLUtilities.isWFS(newValue)) {
@@ -802,9 +860,11 @@
               if (this.selectedServiceType !== selectedServiceType) {
                 this.selectedServiceType = selectedServiceType
                 this.serviceTypeAutoDetected = serviceTypeAutoDetected
+                this.requiresSubdomains = requiresSubdomains
               } else {
                 this.debounceGetServiceInfo(this.selectedServiceType)
                 this.serviceTypeAutoDetected = serviceTypeAutoDetected
+                this.requiresSubdomains = requiresSubdomains
               }
             }
           } else {
@@ -813,6 +873,8 @@
             this.sortedRenderingLayers = []
             this.selectedServiceType = -1
             this.serviceTypeAutoDetected = true
+            this.requiresSubdomains = false
+            this.subdomainText = '1,2,3,4'
           }
         }
       },
@@ -871,6 +933,15 @@
           if (this.selectedServiceType === 0 && this.previewing) {
             this.sendLayerPreview()
           }
+        }
+      },
+      subdomainText: {
+        handler () {
+          this.$nextTick(() => {
+            if (this.requiresSubdomains) {
+              this.debounceGetServiceInfo(this.selectedServiceType)
+            }
+          })
         }
       }
     }

@@ -3,7 +3,7 @@ import GeoServiceUtilities from '../../GeoServiceUtilities'
 import axios from 'axios'
 
 export default class WMSLayer {
-  static constructMapLayer (layerModel) {
+  static constructMapLayer (layerModel, mapPane = 'overlayPane') {
     // call get capabilities and get the layers
     let southWest = Vendor.L.latLng(layerModel.extent[1], layerModel.extent[0])
     let northEast = Vendor.L.latLng(layerModel.extent[3], layerModel.extent[2])
@@ -15,7 +15,7 @@ export default class WMSLayer {
       transparent: true,
       format: 'image/png',
       zIndex: 401,
-      pane: 'overlayPane'
+      pane: mapPane
     }
     Vendor.L.TileLayer.WMSHeader = Vendor.L.TileLayer.WMS.extend({
       initialize: function (url, options, headers) {

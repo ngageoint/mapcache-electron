@@ -21,7 +21,7 @@
         } else if (source.serviceType === 1) {
           createdSource = await SourceFactory.constructWFSSource(source.url, source.layers, source.credentials, source.name)
         } else if (source.serviceType === 2) {
-          createdSource = await SourceFactory.constructXYZSource(source.url, source.credentials, source.name)
+          createdSource = await SourceFactory.constructXYZSource(source.url, source.subdomains, source.credentials, source.name)
         } else if (source.serviceType === 3) {
           createdSource = await SourceFactory.constructArcGISFeatureServiceSource(source.url, source.layers, source.credentials, source.name)
         }
