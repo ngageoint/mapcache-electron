@@ -45,6 +45,7 @@ export default class LeafletEdit extends vendor.L.Control {
         this.tableName = editingFeature.tableName
         this.feature = _.cloneDeep(editingFeature.featureToEdit)
         this.feature.type = 'Feature'
+
         this.editingLayer = vendor.L.geoJSON(this.feature, {
           pane: 'markerPane',
           zIndex: '501',

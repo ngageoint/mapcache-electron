@@ -47,19 +47,22 @@ export default class URLUtilities {
     return newUrl
   }
   static isXYZ (url) {
-    return url.toLowerCase().indexOf('{x}') > 0 && url.toLowerCase().indexOf('{y}') > 0 && url.toLowerCase().indexOf('{z}') > 0
+    const xIndex = url.toLowerCase().indexOf('{x}')
+    const yIndex = url.toLowerCase().indexOf('{y}')
+    const zIndex = url.toLowerCase().indexOf('{z}')
+    return zIndex > -1 && zIndex < xIndex && xIndex < yIndex
   }
   static requiresSubdomains (url) {
-    return url.toLowerCase().indexOf('{s}') > 0
+    return url.toLowerCase().indexOf('{s}') > -1
   }
   static isWMS (url) {
-    return url.toLowerCase().indexOf('wms') > 0
+    return url.toLowerCase().indexOf('wms') > -1
   }
   static isWFS (url) {
-    return url.toLowerCase().indexOf('wfs') > 0
+    return url.toLowerCase().indexOf('wfs') > -1
   }
   static isArcGISFeatureService (url) {
-    return url.toLowerCase().indexOf('featureserver') > 0
+    return url.toLowerCase().indexOf('featureserver') > -1
   }
   static isUrlValid (string) {
     let url

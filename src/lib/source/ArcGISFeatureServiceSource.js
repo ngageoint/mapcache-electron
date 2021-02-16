@@ -42,7 +42,7 @@ export default class ArcGISFeatureServiceSource extends Source {
       sourceDirectory: sourceDirectory,
       sourceId: sourceId,
       sourceLayerName: this.sourceName,
-      sourceType: 'WFS',
+      sourceType: 'ArcGIS FS',
       extent: extent
     }))
     return geopackageLayers
@@ -66,12 +66,6 @@ export default class ArcGISFeatureServiceSource extends Source {
 
   getContent (layer) {
     return new Promise( (resolve) => {
-      let headers = {}
-      let credentials = this.credentials
-      if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
-        headers['authorization'] = credentials.authorization
-      }
-
       const { baseUrl, queryParams } = URLUtilities.getBaseUrlAndQueryParams(this.filePath)
       let url =
         baseUrl + '/' + layer.id + '/query/?f=json&' +
@@ -95,7 +89,7 @@ export default class ArcGISFeatureServiceSource extends Source {
       axios({
         method: 'get',
         url: url,
-        headers: headers
+        withCredentials: true
       }).then(response => {
         let esriLayer = response.data
         const featureCollection = {

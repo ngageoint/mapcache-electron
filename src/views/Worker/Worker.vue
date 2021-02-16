@@ -17,13 +17,13 @@
       let createdSource
       if (!_.isNil(source.url)) {
         if (source.serviceType === 0) {
-          createdSource = await SourceFactory.constructWMSSource(source.url, source.layers, source.credentials, source.name)
+          createdSource = await SourceFactory.constructWMSSource(source.url, source.layers, source.name)
         } else if (source.serviceType === 1) {
-          createdSource = await SourceFactory.constructWFSSource(source.url, source.layers, source.credentials, source.name)
+          createdSource = await SourceFactory.constructWFSSource(source.url, source.layers, source.name)
         } else if (source.serviceType === 2) {
-          createdSource = await SourceFactory.constructXYZSource(source.url, source.subdomains, source.credentials, source.name)
+          createdSource = await SourceFactory.constructXYZSource(source.url, source.subdomains, source.name)
         } else if (source.serviceType === 3) {
-          createdSource = await SourceFactory.constructArcGISFeatureServiceSource(source.url, source.layers, source.credentials, source.name)
+          createdSource = await SourceFactory.constructArcGISFeatureServiceSource(source.url, source.layers, source.name)
         }
       } else {
         createdSource = await SourceFactory.constructSource(source.file.path)

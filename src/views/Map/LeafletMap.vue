@@ -197,6 +197,7 @@
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
+              <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <v-progress-circular
                 v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializing"
                 indeterminate
@@ -238,6 +239,10 @@
   import offline from '../../assets/ne_50m_countries.geo'
   import GeoTiffLayer from '../../lib/source/layer/tile/GeoTiffLayer'
   import MBTilesLayer from '../../lib/source/layer/tile/MBTilesLayer'
+  import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
+  import XYZServerLayer from '../../lib/source/layer/tile/XYZServerLayer'
+  import WMSLayer from '../../lib/source/layer/tile/WMSLayer'
+  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -309,6 +314,7 @@
           return (state.BaseMaps.baseMaps || []).map(baseMapConfig => {
             return {
               id: baseMapConfig.id,
+              baseMap: baseMapConfig,
               name: baseMapConfig.name,
               zoomTo: _.debounce((e, map) => {
                 e.stopPropagation()
@@ -328,6 +334,7 @@
       })
     },
     components: {
+      BaseMapTroubleshooting,
       FeatureEditor,
       FeatureTable,
       draggable
@@ -377,7 +384,8 @@
         showBaseMapSelection: false,
         drag: false,
         layerOrder: [],
-        mapBackground: '#ddd'
+        mapBackground: '#ddd',
+        displayNetworkError: false
       }
     },
     methods: {
@@ -385,9 +393,9 @@
         const sourceLayer = sourceLayers[sourceId]
         if (sourceLayer) {
           if (sourceLayer.initializing) {
-            EventBus.$emit('source-initializing-' + sourceId)
+            EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
           } else if (!_.isNil(sourceLayer.initializedSource)) {
-            EventBus.$emit('source-initialized-' + sourceId)
+            EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
           }
         }
       },
@@ -571,7 +579,7 @@
           sourceLayers[sourceId].initializing = true
           let source = LayerFactory.constructLayer(sourceConfiguration)
           source._maxFeatures = this.project.maxFeatures
-          EventBus.$emit('source-initializing-' + sourceId)
+          EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
           source.initialize().then(function () {
             // update style just in case during the initialization the layer was modified
             if (!_.isNil(sourceLayers[sourceId])) {
@@ -583,7 +591,7 @@
               sourceLayers[sourceId].initializedSource = source
               sourceLayers[sourceId].mapLayer = mapLayer
               sourceLayers[sourceId].initializing = false
-              EventBus.$emit('source-initialized-' + sourceId)
+              EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
             }
           })
         }
@@ -992,6 +1000,9 @@
           }
         }
       },
+      displayNetworkErrorMessage () {
+        this.displayNetworkError = true
+      },
       reorderMapLayers (sortedLayers) {
         let newLayerOrder = []
         sortedLayers.forEach(layerId => {
@@ -1019,7 +1030,8 @@
           attributionControl: false,
           center: defaultCenter,
           zoom: defaultZoom,
-          minZoom: 2
+          minZoom: 2,
+          maxZoom: 20
         })
         ActionUtilities.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
         this.map.createPane('gridSelectionPane')
@@ -1177,6 +1189,9 @@
           newBaseMaps.forEach(baseMap => {
             if (self.baseMapLayers[baseMap.id]) {
               self.baseMapLayers[baseMap.id].layerConfiguration = baseMap.layerConfiguration
+              if (self.baseMapLayers[baseMap.id].initializedLayer) {
+                self.baseMapLayers[baseMap.id].initializedLayer.error = baseMap.error
+              }
             }
           })
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
@@ -1206,9 +1221,22 @@
                 await self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(this.project.maxFeatures)
                 self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
                 self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
+              } else {
+                try {
+                  if (self.baseMapLayers[selectedBaseMapId].mapLayer && self.baseMapLayers[selectedBaseMapId].mapLayer.hasError() && _.isNil(selectedBaseMap.error)) {
+                    self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
+                    self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
+                    self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
+                  }
+                  // eslint-disable-next-line no-empty
+                } catch (e) {}
               }
               try {
                 self.baseMapLayers[selectedBaseMapId].mapLayer.setOpacity(selectedBaseMap.layerConfiguration.opacity)
+                // eslint-disable-next-line no-empty
+              } catch (e) {}
+              try {
+                self.baseMapLayers[selectedBaseMapId].mapLayer.setError(selectedBaseMap.error)
                 // eslint-disable-next-line no-empty
               } catch (e) {}
               this.mapBackground = selectedBaseMap.background || '#ddd'
@@ -1219,29 +1247,51 @@
       selectedBaseMapId: {
         async handler (newBaseMapId, oldBaseMapId) {
           const self = this
+          const oldBaseMapIndex = oldBaseMapId
           self.$nextTick(async () => {
             this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
-            if (self.baseMapLayers[oldBaseMapId] && self.baseMapLayers[oldBaseMapId].mapLayer) {
-              self.map.removeLayer(self.baseMapLayers[oldBaseMapId].mapLayer)
+            let success = true
+            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && (newBaseMap.layerConfiguration.layerType === WMSLayer.LAYER_TYPE || newBaseMap.layerConfiguration.layerType === XYZServerLayer.LAYER_TYPE)) {
+              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap)
             }
 
-            // check to see if base map has already been initialized
-            if (_.isNil(self.baseMapLayers[newBaseMapId])) {
-              await self.addBaseMap(newBaseMap, self.map)
-            } else {
-              try {
-                self.baseMapLayers[newBaseMapId].mapLayer.setOpacity(newBaseMap.layerConfiguration.opacity)
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
-              if (newBaseMap.layerConfiguration.layerType === GeoTiffLayer.LAYER_TYPE || newBaseMap.layerConfiguration.layerType === MBTilesLayer.LAYER_TYPE && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
-                self.baseMapLayers[newBaseMapId].initializedLayer.updateStyle(newBaseMap.layerConfiguration)
-                self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
+            if (success) {
+              if (self.baseMapLayers[oldBaseMapId] && self.baseMapLayers[oldBaseMapId].mapLayer) {
+                self.map.removeLayer(self.baseMapLayers[oldBaseMapId].mapLayer)
               }
-              self.map.addLayer(self.baseMapLayers[newBaseMapId].mapLayer)
+
+              // check to see if base map has already been initialized
+              if (_.isNil(self.baseMapLayers[newBaseMapId])) {
+                await self.addBaseMap(newBaseMap, self.map)
+              } else {
+                try {
+                  self.baseMapLayers[newBaseMapId].mapLayer.setError(newBaseMap.error)
+                  // eslint-disable-next-line no-empty
+                } catch (e) {}
+                try {
+                  self.baseMapLayers[newBaseMapId].mapLayer.setOpacity(newBaseMap.layerConfiguration.opacity)
+                  // eslint-disable-next-line no-empty
+                } catch (e) {}
+                if (newBaseMap.layerConfiguration.layerType === GeoTiffLayer.LAYER_TYPE || newBaseMap.layerConfiguration.layerType === MBTilesLayer.LAYER_TYPE && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
+                  self.baseMapLayers[newBaseMapId].initializedLayer.updateStyle(newBaseMap.layerConfiguration)
+                  self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
+                }
+
+                try {
+                  if (self.baseMapLayers[newBaseMapId].mapLayer.hasError()) {
+                    self.baseMapLayers[newBaseMapId].initializedLayer.error = newBaseMap.error
+                    self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
+                  }
+                  // eslint-disable-next-line no-empty
+                } catch (e) {}
+                self.map.addLayer(self.baseMapLayers[newBaseMapId].mapLayer)
+              }
+              this.mapBackground = newBaseMap.background || '#ddd'
+            } else {
+              this.selectedBaseMapId = oldBaseMapIndex
             }
-            this.mapBackground = newBaseMap.background || '#ddd'
           })
         }
       },
@@ -1355,7 +1405,7 @@
                   sourceLayers[sourceId].initializing = true
                   let source = LayerFactory.constructLayer(sourceLayers[sourceId].configuration)
                   source._maxFeatures = this.project.maxFeatures
-                  EventBus.$emit('source-initializing-' + sourceId)
+                  EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
                   source.initialize().then(function () {
                     // update style just in case during the initialization the layer was modified
                     if (!_.isNil(sourceLayers[sourceId])) {
@@ -1371,7 +1421,7 @@
                         sourceLayers[sourceId].initializing = false
                       }
                     }
-                    EventBus.$emit('source-initialized-' + sourceId)
+                    EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
                   })
                 } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
                   if (sourceLayers[sourceId].initializedSource.layerType === GeoTiffLayer.LAYER_TYPE || sourceLayers[sourceId].initializedSource.layerType === MBTilesLayer.LAYER_TYPE) {
@@ -1387,7 +1437,7 @@
                   let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
                   self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
                   sourceLayers[sourceId].mapLayer = mapLayer
-                  EventBus.$emit('source-initialized-' + sourceId)
+                  EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
                 }
               } else {
                 // hide and remove the map layer
@@ -1643,9 +1693,9 @@
     },
     mounted: async function () {
       ActionUtilities.clearEditFeatureGeometry({projectId: this.project.id})
-      EventBus.$on('show-feature-table', payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
-      EventBus.$on('reorder-map-layers', this.reorderMapLayers)
-      EventBus.$on('request-source-initialization-status', this.sendSourceInitializationStatus)
+      EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
+      EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
+      EventBus.$on(EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, this.sendSourceInitializationStatus)
 
       this.maxFeatures = this.project.maxFeatures
       this.registerResizeObserver()
@@ -1654,7 +1704,7 @@
     },
     beforeDestroy: function () {
       const self = this
-      EventBus.$off(['show-feature-table', 'reorder-map-layers'])
+      EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS])
       _.keys(initializedGeoPackageTables).forEach(geopackageId => {
         _.keys(initializedGeoPackageTables[geopackageId].featureTables).forEach(table => {
           let layer = initializedGeoPackageTables[geopackageId].featureTables[table]

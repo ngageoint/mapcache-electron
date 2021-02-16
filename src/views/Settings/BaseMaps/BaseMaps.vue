@@ -27,6 +27,9 @@
             <v-list-item-content>
               <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-html="item.name" ></v-list-item-title>
             </v-list-item-content>
+            <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">
+              <base-map-troubleshooting :base-map="item.baseMap"></base-map-troubleshooting>
+            </v-list-item-icon>
           </v-list-item>
           <v-divider :key="item.id + 'divider'"></v-divider>
         </template>
@@ -55,9 +58,11 @@
   import AddBaseMap from './AddBaseMap'
   import ActionUtilities from '../../../lib/ActionUtilities'
   import BaseMap from './BaseMap'
+  import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 
   export default {
     components: {
+      BaseMapTroubleshooting,
       AddBaseMap,
       BaseMap
     },
@@ -74,6 +79,7 @@
           return (state.BaseMaps.baseMaps || []).map(baseMap => {
             return {
               id: baseMap.id,
+              baseMap: baseMap,
               name: baseMap.name,
               readonly: baseMap.readonly,
               background: baseMap.background || '#ddd',

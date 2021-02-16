@@ -62,7 +62,7 @@
                       :value="item.id"
                       @click.stop="item.changeVisibility">
                       <template v-slot:default="{ active }">
-                        <v-list-item-icon>
+                        <v-list-item-icon class="mr-4">
                           <v-btn icon @click.stop="item.zoomTo">
                             <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
                             <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
@@ -73,8 +73,9 @@
                         <v-list-item-content>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                         </v-list-item-content>
+                        <data-source-troubleshooting v-if="item.source.error" :source="item.source" :project-id="project.id"></data-source-troubleshooting>
                         <v-list-item-action>
-                          <source-visibility-switch :input-value="active" :project-id="project.id" :source-id="item.id"></source-visibility-switch>
+                          <source-visibility-switch :input-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>
@@ -338,6 +339,7 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
   import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+  import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 
   export default {
     props: {
@@ -346,6 +348,7 @@
       back: Function
     },
     components: {
+      DataSourceTroubleshooting,
       SourceVisibilitySwitch,
       NumberPicker,
       draggable
@@ -366,7 +369,6 @@
         processing: false,
         error: false,
         done: false,
-        dataSourceLayers: this.getDataSourceLayers(),
         tileScaling: false,
         minZoom: 0,
         maxZoom: 10,
@@ -545,11 +547,13 @@
         }
         return items
       },
-      getDataSourceLayers () {
+      async getDataSourceLayers () {
         const projectId = this.project.id
         return Object.values(this.project.sources).map(source => {
           return {
             title: source.displayName ? source.displayName : source.name,
+            source: source,
+            error: source.error,
             id: source.id,
             visible: source.visible,
             type: source.pane === 'vector' ? 'feature' : 'tile',
@@ -561,13 +565,19 @@
         })
       },
       fireReorderMapLayers: _.debounce((layers) => {
-        EventBus.$emit('reorder-map-layers', layers)
+        EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
       }, 100)
     },
     asyncComputed: {
       geopackageLayers: {
         async get () {
           return this.getGeoPackageLayerItems()
+        },
+        default: []
+      },
+      dataSourceLayers: {
+        async get () {
+          return this.getDataSourceLayers()
         },
         default: []
       },
@@ -578,8 +588,8 @@
         default: []
       },
       selectedDataSourceLayers: {
-        get () {
-          return this.getDataSourceLayers().filter(item => item.visible).map(item => item.id)
+        async get () {
+          return (await this.getDataSourceLayers()).filter(item => item.visible).map(item => item.id)
         },
         default: []
       }
@@ -634,7 +644,7 @@
     watch: {
       project: {
         async handler () {
-          this.dataSourceLayers = this.getDataSourceLayers()
+          this.dataSourceLayers = await this.getDataSourceLayers()
           this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
           this.geopackageLayers = await this.getGeoPackageLayerItems()
           this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
@@ -654,7 +664,6 @@
       this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
       const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
       this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !_.isNil(item))
-
     },
     beforeUnmount () {
       ActionUtilities.resetBoundingBox()

@@ -105,4 +105,32 @@ export default class XYZTileUtilities {
       }
     }
   }
+
+  /**
+   * Generates the XYZ tile request url for a given x, y, and z
+   * @param url
+   * @param subdomains
+   * @param x
+   * @param y
+   * @param z
+   */
+  static generateUrlForTile (url, subdomains, x, y, z) {
+    let urlCopy = url
+    if (subdomains.length > 0) {
+      const index = Math.abs(x + y) % subdomains.length
+      urlCopy = urlCopy.replace('{s}', subdomains[index])
+    }
+    return urlCopy.replace('{z}', z).replace('{x}', x).replace('{y}', y)
+  }
+
+  /**
+   * Ensures that the xyz url adheres to leaflets requirements
+   *  - no $ in front of designators
+   *  - designators must be lowercase
+   * @param filePath
+   * @returns {string}
+   */
+  static fixXYZTileServerUrlForLeaflet(filePath) {
+    return filePath.replaceAll('${', '{').replace('{X}', '{x}').replace('{Y}', '{y}').replace('{Z}', '{z}').replace('{S}', '{s}')
+  }
 }

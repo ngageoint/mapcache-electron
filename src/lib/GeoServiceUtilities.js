@@ -1,6 +1,7 @@
 /* eslint-disable no-empty */
 import URLUtilities from './URLUtilities'
 import _ from 'lodash'
+
 export default class GeoServiceUtilities {
   // get the GetCapabilities URL
   static getGetCapabilitiesURL (wmsUrl, version, service) {
@@ -23,16 +24,6 @@ export default class GeoServiceUtilities {
       delete queryParams['version']
     }
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
-  }
-
-  static getWMSVersionFromGetCapabilities (json) {
-    let version = null
-    if (!_.isNil(json['WMT_MS_Capabilities'])) {
-      version = json['WMT_MS_Capabilities']['$']['version']
-    } else if (!_.isNil(json['WMS_Capabilities'])) {
-      version = json['WMS_Capabilities']['$']['version']
-    }
-    return version
   }
 
   static getLayers (layer, titles = []) {
@@ -119,23 +110,6 @@ export default class GeoServiceUtilities {
     wmsInfo.layers = layers.filter(layer => layer.has3857)
     wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
     return wmsInfo
-  }
-
-  static getWMSLayersFromGetCapabilities (json) {
-    let layers = []
-    try {
-      if (!_.isNil(json['WMT_MS_Capabilities'])) {
-        const wmsCapability = json['WMT_MS_Capabilities']['Capability'][0]
-        layers.push(...this.getLayers(wmsCapability))
-      } else if (!_.isNil(json['WMS_Capabilities'])) {
-        const wmsCapability = json['WMS_Capabilities']['Capability'][0]
-        layers.push(...this.getLayers(wmsCapability))
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-    return layers
   }
 
   static getWFSVersionFromGetCapabilities (json) {

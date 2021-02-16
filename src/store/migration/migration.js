@@ -2,9 +2,10 @@ import store from '../.'
 import _ from 'lodash'
 import { mapcache } from '../../../package.json'
 import BaseMapUtilities from '../../lib/BaseMapUtilities'
+import CredentialsManagement from '../../lib/CredentialsManagement'
 
 const migrations = {
-  2: function (state) {
+  2: async function (state) {
     // setup initial state for tabNotification, mapZoom, and preview layer
     _.keys(state.UIState).forEach(projectId => {
       state.UIState[projectId].tabNotification = {0: false, 1: false, 2: false}
@@ -28,10 +29,22 @@ const migrations = {
       state.Projects[projectId].mapRenderingOrder = []
     })
   },
-  3: function (state) {
+  3: async function (state) {
     // setup initial BaseMaps
     state.BaseMaps = {
       baseMaps: BaseMapUtilities.getDefaultBaseMaps()
+    }
+  },
+  4: async function (state) {
+    // remove any existing credentials
+    const projectKeys = _.keys(state.Projects)
+    for (let i = 0; i < projectKeys.length; i++) {
+      const projectId = projectKeys[i]
+      const sourceKeys = _.keys(state.Projects[projectId].sources)
+      for (let j = 0; j < sourceKeys.length; j++) {
+        const sourceId = sourceKeys[j]
+        delete state.Projects[projectId].sources[sourceId].credentials
+      }
     }
   }
 }
@@ -53,7 +66,7 @@ export default async function runMigration () {
       for (let i = currentVersion + 1; i <= installationVersion; i++) {
         if (migrations[i]) {
           try {
-            migrations[i](state)
+            await migrations[i](state)
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)
@@ -85,5 +98,6 @@ export default async function runMigration () {
         store.dispatch('Version/setVersion', installationVersion)])
     }
   }
+
   return success
 }

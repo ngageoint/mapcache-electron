@@ -12,20 +12,20 @@ import GeoJSONSource from './GeoJSONSource'
 import MBTilesSource from './MBTilesSource'
 
 export default class SourceFactory {
-  static async constructXYZSource (parameterizedUrl, subdomains = [], credentials, sourceName) {
-    return new XYZServerSource(parameterizedUrl, subdomains, credentials, sourceName)
+  static async constructXYZSource (parameterizedUrl, subdomains = [], sourceName) {
+    return new XYZServerSource(parameterizedUrl, subdomains, sourceName)
   }
 
-  static async constructWMSSource (url, layers, credentials, sourceName) {
-    return new WMSSource(url, layers, credentials, sourceName)
+  static async constructWMSSource (url, layers, sourceName) {
+    return new WMSSource(url, layers, sourceName)
   }
 
-  static async constructWFSSource (url, layers, credentials, sourceName) {
-    return new WFSSource(url, layers, credentials, sourceName)
+  static async constructWFSSource (url, layers, sourceName) {
+    return new WFSSource(url, layers, sourceName)
   }
 
-  static async constructArcGISFeatureServiceSource (url, layers, credentials, sourceName) {
-    return new ArcGISFeatureServiceSource(url, layers, credentials, sourceName)
+  static async constructArcGISFeatureServiceSource (url, layers, sourceName) {
+    return new ArcGISFeatureServiceSource(url, layers, sourceName)
   }
 
   static async constructSource (filePath) {

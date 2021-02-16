@@ -5,7 +5,6 @@ export default class Layer {
   _configuration
   id
   filePath
-  credentials
   sourceLayerName
   name
   displayName
@@ -13,7 +12,6 @@ export default class Layer {
     this._configuration = configuration
     this.id = this._configuration.id || UniqueIDUtilities.createUniqueID()
     this.filePath = this._configuration.filePath
-    this.credentials = this._configuration.credentials
     this.sourceLayerName = this._configuration.sourceLayerName || defaultLayerName(this.filePath)
     this.name = this._configuration.name || this.sourceLayerName
     this.pane = configuration.pane
@@ -45,7 +43,6 @@ export default class Layer {
       ...{
         id: this.id,
         filePath: this.filePath,
-        credentials: this.credentials,
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         displayName: this.displayName,

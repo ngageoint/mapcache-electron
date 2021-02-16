@@ -19,6 +19,7 @@
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
+              <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <v-progress-circular
                 v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializing"
                 indeterminate
@@ -44,8 +45,10 @@
   import offline from '../../assets/ne_50m_countries.geo'
   import GeoTiffLayer from '../../lib/source/layer/tile/GeoTiffLayer'
   import MBTilesLayer from '../../lib/source/layer/tile/MBTilesLayer'
+  import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
 
   export default {
+    components: {BaseMapTroubleshooting},
     props: {
       project: Object,
       previewLayer: Object,
@@ -69,6 +72,7 @@
           return (state.BaseMaps.baseMaps || []).map(baseMapConfig => {
             return {
               id: baseMapConfig.id,
+              baseMap: baseMapConfig,
               name: baseMapConfig.name,
               zoomTo: _.debounce((e, map) => {
                 e.stopPropagation()

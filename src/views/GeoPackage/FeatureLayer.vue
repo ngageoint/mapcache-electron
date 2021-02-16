@@ -682,7 +682,7 @@
           tableName: this.tableName,
           isGeoPackage: true
         }
-        EventBus.$emit('show-feature-table', payload)
+        EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload)
       }
     },
     watch: {

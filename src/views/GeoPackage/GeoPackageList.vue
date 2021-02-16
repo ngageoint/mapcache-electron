@@ -36,13 +36,13 @@
             <v-list-item-subtitle v-html="item.tileLayersText"></v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.health.missing">
-            <v-btn outlined icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage"><v-icon>mdi-file-remove-outline</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto" v-else-if="item.health.invalid">
-            <v-btn outlined icon color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage"><v-icon>mdi-file-cancel-outline</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto" v-else-if="!item.health.synchronized">
-            <v-btn outlined icon color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage"><v-icon>mdi-file-clock-outline</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto">
             <v-icon>mdi-chevron-right</v-icon>
@@ -117,7 +117,7 @@
               },
               showMissingFileDialog: function () {
                 _this.dialogGeoPackageId = geopackage.id
-                _this.dialogText = geopackage.name + ' GeoPackage Missing'
+                _this.dialogText = geopackage.name + ' GeoPackage not found'
                 _this.dialogSubText = 'File not found at ' + geopackage.path + '. Would you like to remove this GeoPackage?'
                 _this.dialogActionText = 'Remove'
                 _this.showDialog = true

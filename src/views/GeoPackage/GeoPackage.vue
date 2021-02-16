@@ -357,6 +357,7 @@
   import AddFeatureLayer from './AddFeatureLayer'
   import AddTileLayer from './AddTileLayer'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import ServiceConnectionUtils from "../../lib/ServiceConnectionUtils";
 
   export default {
     props: {
@@ -505,7 +506,15 @@
         this.fab = false
         this.addFeatureLayerDialog = true
       },
-      addTileLayer () {
+      async addTileLayer () {
+        // test sources
+        const sources = Object.values(this.project.sources)
+        for (let i = 0; i < sources.length; i++) {
+          const source = sources[i]
+          if (source.visible && ServiceConnectionUtils.isRemoteSource(source)) {
+            await ServiceConnectionUtils.connectToSource(this.project.id, source, ActionUtilities.setDataSource, false)
+          }
+        }
         this.fab = false
         this.addTileLayerDialog = true
       },

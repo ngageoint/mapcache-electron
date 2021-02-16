@@ -1,53 +1,74 @@
 import * as Vendor from '../../vendor'
 import axios from 'axios'
+import ActionUtilities from '../../ActionUtilities'
+import EventBus from '../../../EventBus'
+import ServiceConnectionUtils from '../../ServiceConnectionUtils'
 
 export default class XYZServerLayer {
   static constructMapLayer (layerModel, mapPane = 'overlayPane') {
-    let mapLayer = null
     let options = {
       pane: mapPane,
       zIndex: 401,
       subdomains: layerModel.subdomains
     }
-    const headers = []
-    if (layerModel.credentials && layerModel.credentials.type === 'basic') {
-      headers.push({ header: 'Authorization', value: layerModel.credentials.authorization })
-    }
-    if (headers.length > 0) {
-      let TileLayerWithHeaders = Vendor.L.TileLayer.extend({
-        initialize: function (url, options, headers) {
-          Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
-          this.headers = headers
-        },
-        createTile (coords, done) {
-          const img = document.createElement('img')
-          let headers = {}
-          for (let i = 0; i < this.headers.length; i++) {
-            headers[this.headers[i].header.toLowerCase()] = this.headers[i].value
+    let TileLayerWithHeaders = Vendor.L.TileLayer.extend({
+      initialize: function (url, options) {
+        Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
+        this.error = null
+      },
+      hasError () {
+        return this.error !== null && this.error !== undefined
+      },
+      setError (error) {
+        if (error.response) {
+          // ignore 404 - Not Found
+          if (error.response.status !== 404) {
+            this.error = {
+              status: error.response.status,
+              statusText: error.response.statusText,
+              authType: ServiceConnectionUtils.getAuthenticationMethod(error.response)
+            }
+            ActionUtilities.setSourceError({id: this.id, error: this.error})
           }
+        } else if (error.request) {
+          if (navigator.onLine) {
+            this.error = {
+              status: -1,
+              statusText: 'Unable to reach server.'
+            }
+            ActionUtilities.setSourceError({id: this.id, error: this.error})
+          } else {
+            // notify there may be a network error
+            EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
+          }
+        }
+      },
+      createTile (coords, done) {
+        const img = document.createElement('img')
+        if (!this.error) {
           axios({
             method: 'get',
             url: this.getTileUrl(coords),
-            responseType: 'arraybuffer',
-            headers: headers
+            responseType: 'arraybuffer'
           }).then((response) => {
             img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
             done(null, img)
           })
-          .catch((err) => {
-            // eslint-disable-next-line no-console
-            console.error(err)
-          })
-          return img
+            .catch((err) => {
+              done (err, null)
+              this.setError((err))
+            })
+        } else {
+          done (this.error, img)
         }
-      })
-      let tileLayerWithHeaders = function (url, options, headers) {
-        return new TileLayerWithHeaders(url, options, headers)
+        return img
       }
-      mapLayer = tileLayerWithHeaders(layerModel.filePath, options, headers)
-    } else {
-      mapLayer = Vendor.L.tileLayer(layerModel.filePath, options)
+    })
+    let tileLayerWithHeaders = function (url, options) {
+      return new TileLayerWithHeaders(url, options)
     }
+    // Leaflet requires the XYZ url to not contain $ and to have lower case coordinate designators
+    const mapLayer = tileLayerWithHeaders(layerModel.filePath, options)
     mapLayer.id = layerModel.id
 
     let opacity = 1.0

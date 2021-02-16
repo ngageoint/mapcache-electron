@@ -66,17 +66,10 @@ export default class WMSLayer extends TileLayer {
     if (this.version === '1.3.0') {
       referenceSystemName = 'crs'
     }
-
-    let headers = {}
-    let credentials = this.credentials
-    if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
-      headers['authorization'] = credentials.authorization
-    }
     const response = await axios({
       method: 'get',
       responseType: 'arraybuffer',
-      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version),
-      headers: headers
+      url: GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version)
     })
     done(null, 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64'))
     return response.body

@@ -121,7 +121,7 @@
       </v-card>
     </v-dialog>
     <v-sheet class="text-left mapcache-sheet-content detail-bg">
-      <v-row no-gutters class="pl-3 pt-3 pr-3 background">
+      <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="space-between">
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomTo" color="whitesmoke">
@@ -129,6 +129,9 @@
             </v-btn>
             <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} Base Map</span>
           </p>
+        </v-col>
+        <v-col cols="1" v-if="baseMap.error">
+          <base-map-troubleshooting :base-map="baseMap"></base-map-troubleshooting>
         </v-col>
       </v-row>
       <v-row v-if="!readonly" no-gutters class="pl-3 pb-3 pr-3 background" style="margin-left: -12px;" justify="center" align-content="center">
@@ -241,6 +244,7 @@
   import BackgroundTileColor from '../../Common/Style/BackgroundTileColor'
   import MBTilesOptions from '../../Common/Style/MBTilesOptions'
   import StyleEditor from '../../StyleEditor/StyleEditor'
+  import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 
   export default {
     props: {
@@ -257,6 +261,7 @@
       back: Function
     },
     components: {
+      BaseMapTroubleshooting,
       StyleEditor,
       MBTilesOptions,
       BackgroundTileColor,

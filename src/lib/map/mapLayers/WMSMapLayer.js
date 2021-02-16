@@ -1,6 +1,9 @@
 import * as Vendor from '../../vendor'
 import GeoServiceUtilities from '../../GeoServiceUtilities'
 import axios from 'axios'
+import ActionUtilities from '../../ActionUtilities'
+import EventBus from '../../../EventBus'
+import ServiceConnectionUtils from '../../ServiceConnectionUtils'
 
 export default class WMSLayer {
   static constructMapLayer (layerModel, mapPane = 'overlayPane') {
@@ -18,42 +21,60 @@ export default class WMSLayer {
       pane: mapPane
     }
     Vendor.L.TileLayer.WMSHeader = Vendor.L.TileLayer.WMS.extend({
-      initialize: function (url, options, headers) {
+      initialize: function (url, options) {
         Vendor.L.TileLayer.WMS.prototype.initialize.call(this, url, options)
-        this.headers = headers
+        this.error = null
+      },
+      hasError () {
+        return this.error !== null && this.error !== undefined
+      },
+      setError (error) {
+        if (error.response) {
+          this.error = {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            authType: ServiceConnectionUtils.getAuthenticationMethod(error.response)
+
+          }
+          ActionUtilities.setSourceError({id: this.id, error: this.error})
+        } else if (error.request) {
+          if (navigator.onLine) {
+            this.error = {
+              status: -1,
+              statusText: 'Unable to reach server.'
+            }
+            ActionUtilities.setSourceError({id: this.id, error: this.error})
+          } else {
+            // notify there may be a network error
+            EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
+          }
+        }
       },
       createTile (coords, done) {
         const img = document.createElement('img')
-
-        let headers = {}
-        for (let i = 0; i < this.headers.length; i++) {
-          headers[this.headers[i].header.toLowerCase()] = this.headers[i].value
+        if (!this.error) {
+          axios({
+            method: 'get',
+            url: this.getTileUrl(coords),
+            responseType: 'arraybuffer'
+          }).then((response) => {
+            img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
+            done(null, img)
+          })
+            .catch((err) => {
+              done (err, null)
+              this.setError((err))
+            })
+        } else {
+          done (this.error, img)
         }
-        axios({
-          method: 'get',
-          url: this.getTileUrl(coords),
-          responseType: 'arraybuffer',
-          headers: headers
-        }).then((response) => {
-          img.src = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
-          done(null, img)
-        })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error(err)
-        })
         return img
       }
     })
     let wmsHeader = function (url, options, headers) {
       return new Vendor.L.TileLayer.WMSHeader(url, options, headers)
     }
-    const headers = []
-    if (layerModel.credentials && (layerModel.credentials.type === 'basic' || layerModel.credentials.type === 'bearer')) {
-      headers.push({ header: 'Authorization', value: layerModel.credentials.authorization })
-    }
-    // headers.push({ header: 'User-Agent', value: 'MapCache/1.0.0' })
-    let mapLayer = wmsHeader(GeoServiceUtilities.getBaseURL(layerModel.filePath), options, headers)
+    let mapLayer = wmsHeader(GeoServiceUtilities.getBaseURL(layerModel.filePath), options)
     mapLayer.id = layerModel.id
     let opacity = 1.0
     if (layerModel.opacity !== null && layerModel.opacity !== undefined) {

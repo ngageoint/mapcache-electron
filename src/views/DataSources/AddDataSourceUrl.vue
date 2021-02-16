@@ -75,33 +75,37 @@
             </v-card-subtitle>
             <v-card-text>
               <v-form v-on:submit.prevent ref="urlForm" v-model="dataSourceUrlValid">
-                <v-combobox
-                  v-model="dataSourceUrl"
-                  :search-input.sync="dataSourceUrl"
-                  :menu-props="menuProps"
-                  :rules="dataSourceUrlRules"
-                  clearable
-                  :items="urls.map(url => url.url)"
-                  label="URL"
-                >
-                  <template v-slot:no-data>
-                    <v-list-item>
-                      <span class="subheading">No matching urls</span>
-                    </v-list-item>
-                  </template>
-                  <template v-slot:item="{ item }">
-                    <v-list-item dense link @click="setUrlToLink(item)">
-                      <v-list-item-content>
-                        {{item}}
-                      </v-list-item-content>
-                      <v-list-item-action>
-                        <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                          <v-icon>mdi-trash-can</v-icon>
-                        </v-btn>
-                      </v-list-item-action>
-                    </v-list-item>
-                  </template>
-                </v-combobox>
+                <v-row no-gutters justify="space-between">
+                  <v-col>
+                    <v-combobox
+                      v-model="dataSourceUrl"
+                      :search-input.sync="dataSourceUrl"
+                      :menu-props="menuProps"
+                      :rules="dataSourceUrlRules"
+                      clearable
+                      :items="urls.map(url => url.url)"
+                      label="URL"
+                    >
+                      <template v-slot:no-data>
+                        <v-list-item>
+                          <span class="subheading">No matching urls</span>
+                        </v-list-item>
+                      </template>
+                      <template v-slot:item="{ item }">
+                        <v-list-item dense link @click="setUrlToLink(item)">
+                          <v-list-item-content>
+                            {{item}}
+                          </v-list-item-content>
+                          <v-list-item-action>
+                            <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
+                              <v-icon>mdi-trash-can</v-icon>
+                            </v-btn>
+                          </v-list-item-action>
+                        </v-list-item>
+                      </template>
+                    </v-combobox>
+                  </v-col>
+                </v-row>
                 <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
                 <div v-if="!serviceTypeAutoDetected">
                   <v-card-subtitle>
@@ -131,6 +135,15 @@
                     ></v-text-field>
                   </v-form>
                 </div>
+                <v-row no-gutters>
+                  <v-spacer/>
+                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid" @click.stop="connect" text>
+                    Connect
+                  </v-btn>
+                  <span v-else style="color: #00C851;">
+                    Connected
+                  </span>
+                </v-row>
               </v-form>
             </v-card-text>
           </v-card>
@@ -144,67 +157,11 @@
             color="primary"
           ></v-progress-circular>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 3" step="3" :rules="[() => authValid && !accessDeniedOrForbidden]" color="primary">
-          Credentials
-          <small v-if="dataSourceUrlValid && accessDeniedOrForbidden" class="pt-1 warning--text">access denied or forbidden</small>
-          <small v-else-if="dataSourceUrlValid && !loading && (serviceInfo !== null && serviceInfo !== undefined)" class="pt-1 success--text">access granted</small>
-        </v-stepper-step>
-        <v-stepper-content step="3">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Provide credentials if your data source requires user authentication.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-form v-on:submit.prevent ref="authForm" v-model="authValid">
-                <v-select
-                  v-model="authSelection"
-                  label="Authentication Type"
-                  :items="authItems">
-                </v-select>
-                <v-text-field
-                  v-if="authSelection === 'basic'"
-                  label="Username"
-                  clearable
-                  v-model="username"
-                  :rules="basicAuthUsernameRules"
-                  required/>
-                <v-text-field
-                  v-if="authSelection === 'basic'"
-                  label="Password"
-                  clearable
-                  v-model="password"
-                  type="password"
-                  :rules="basicAuthPasswordRules"
-                  required/>
-                <v-text-field
-                  v-if="authSelection === 'bearer'"
-                  label="Token"
-                  clearable
-                  v-model="token"
-                  :rules="tokenAuthRules"
-                  required/>
-              </v-form>
-              <v-card-actions>
-                <v-spacer/>
-                <v-btn v-if="authValid" :disabled="loading" @click="connect">Connect</v-btn>
-              </v-card-actions>
-            </v-card-text>
-          </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 4" v-if="authValid && (serviceInfo !== null && serviceInfo !== undefined)">
-            Continue
-          </v-btn>
-          <v-progress-circular
-            class="mb-2"
-            v-else-if="authValid && loading"
-            indeterminate
-            color="primary"
-          ></v-progress-circular>
-        </v-stepper-content>
-        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 4" step="4" color="primary">
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 3" step="3" color="primary">
           {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers'}}
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
-        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" step="4">
+        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" step="3">
           <v-card flat tile>
             <v-card-text v-if="serviceInfo">
               <h4 class="primary--text">{{serviceInfo.title}}</h4>
@@ -266,15 +223,15 @@
               </v-card-text>
             </v-card>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 5">
+          <v-btn class="mb-2" text color="primary" @click="step = 4">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 0" editable :complete="step > 5" step="5" color="primary">
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 0" editable :complete="step > 4" step="4" color="primary">
           Layer rendering order
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
         </v-stepper-step>
-        <v-stepper-content  v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0)" step="5">
+        <v-stepper-content  v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0)" step="4">
           <v-card flat tile>
             <v-card-subtitle>
               Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
@@ -299,7 +256,7 @@
               </draggable>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 6">
+          <v-btn class="mb-2" text color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -350,14 +307,14 @@
 
 <script>
   import draggable from 'vuedraggable'
-  import axios from 'axios'
   import { mapActions, mapState } from 'vuex'
-  import GeoServiceUtilities from '../../lib/GeoServiceUtilities'
   import URLUtilities from '../../lib/URLUtilities'
   import _ from 'lodash'
   import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
   import SourceFactory from '../../lib/source/SourceFactory'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
+  import XYZTileUtilities from '../../lib/XYZTileUtilities'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -384,7 +341,7 @@
         }
       },
       importReady () {
-        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === 3) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === 2)
+        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ)
       },
       dragOptions () {
         return {
@@ -395,9 +352,10 @@
     },
     data () {
       return {
+        connected: false,
         step: 1,
         drag: false,
-        summaryStep: 4,
+        summaryStep: 3,
         urlToDelete: null,
         deleteUrlDialog: false,
         accessDeniedOrForbidden: false,
@@ -408,8 +366,8 @@
         dataSourceUrl: null,
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
-        supportedServiceTypes: [{value: 0, name: 'WMS'}, {value: 1, name: 'WFS'}, {value: 2, name: 'XYZ'}, {value: 3, name: 'ArcGIS FS'}],
-        selectedServiceType: 2,
+        supportedServiceTypes: [{value: ServiceConnectionUtils.SERVICE_TYPE.WMS, name: 'WMS'}, {value: ServiceConnectionUtils.SERVICE_TYPE.WFS, name: 'WFS'}, {value: ServiceConnectionUtils.SERVICE_TYPE.XYZ, name: 'XYZ'}, {value: ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS, name: 'ArcGIS FS'}],
+        selectedServiceType: ServiceConnectionUtils.SERVICE_TYPE.XYZ,
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
         serviceLayers: [],
@@ -417,21 +375,9 @@
         selectedDataSourceLayers: [],
         error: null,
         authValid: true,
-        authSelection: 'none',
-        username: '',
-        password: '',
-        token: '',
-        authItems: [{text: 'None', value: 'none'}, {text: 'Basic', value: 'basic'}, {
-          text: 'Bearer Token',
-          value: 'bearer'
-        }],
-        basicAuthUsernameRules: [v => !!v || 'Username is required'],
-        basicAuthPasswordRules: [v => !!v || 'Password is required'],
-        tokenAuthRules: [v => !!v || 'Token is required'],
         valid: false,
         loading: false,
         serviceInfo: null,
-        debounceGetServiceInfo: _.debounce(this.getServiceInfo, 500),
         menuProps: {
           closeOnClick: true,
           closeOnContentClick: true
@@ -457,13 +403,13 @@
         removeUrl: 'URLs/removeUrl'
       }),
       connect () {
-        this.debounceGetServiceInfo(this.selectedServiceType)
+        this.getServiceInfo(this.selectedServiceType)
       },
-      addLayer () {
-        if (this.selectedServiceType === 2) {
-          this.processXYZUrl(this.dataSourceUrl)
+      async addLayer () {
+        if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ) {
+          await this.processXYZUrl(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl))
         } else {
-          this.confirmLayerImport()
+          await this.confirmLayerImport()
         }
       },
       close () {
@@ -474,6 +420,7 @@
         })
       },
       async getServiceInfo (serviceType) {
+        this.connected = false
         this.loading = true
         this.serviceInfo = null
         this.serviceLayers = []
@@ -481,250 +428,66 @@
         this.sortedRenderingLayers = []
         this.unsupportedServiceLayers = []
         this.error = null
-        let accessDeniedOrForbidden = false
-        let serviceInfo = null
-        try {
-          let headers = {}
-          let credentials = this.getCredentials()
-          if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
-            headers['Authorization'] = credentials.authorization
-          }
-          if (!_.isNil(this.dataSourceUrl) && !_.isEmpty(this.dataSourceUrl) && !_.isNil(serviceType) && serviceType !== -1) {
-            if (serviceType === 3) {
-              const { baseUrl, queryParams } = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
-
-              let url = baseUrl + '?f=pjson'
-              if (!_.isNil(queryParams['token'])) {
-                url = url + '&token=' + queryParams['token']
-              }
-              try {
-                const response = await axios({
-                  method: 'get',
-                  url: url,
-                  headers: headers
-                })
-                serviceInfo = {
-                  title: 'ArcGIS REST Feature Service',
-                  abstract: response.data.serviceDescription || '',
-                  version: response.data.currentVersion,
-                  copyright: response.data.copyrightText || ''
-                }
-                this.serviceLayers = response.data.layers.map(layer => {
-                  let title = !_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1 ? response.data.layers.find(l => l.id === layer.parentLayerId).name : layer.name
-                  let subtitles = []
-                  if (!_.isNil(layer.parentLayerId) && layer.parentLayerId !== -1) {
-                    subtitles.push(layer.name)
-                  }
-                  return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
-                })
-                this.unsupportedServiceLayers = []
-              } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error(e)
-                if (e.response && (e.response.status === 401 || e.response.status === 403)) {
-                  accessDeniedOrForbidden = true
-                  this.error = 'Access to ArcGIS feature service is denied. Check your credentials'
-                } else {
-                  this.error = 'ArcGIS feature service not found.'
-                }
-              }
-            } else if (serviceType === 2) {
-              try {
-                let urlToTest = this.dataSourceUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
-                // test all subdomains
-                if (this.requiresSubdomains) {
-                  if (this.subdomainsValid) {
-                    const invalidSubdomains = []
-                    const subdomains = this.subdomainText.split(',')
-                    for (let i = 0; i < subdomains.length; i++) {
-                      const subdomain = subdomains[i]
-                      try {
-                        await axios({
-                          method: 'get',
-                          url: urlToTest.replace('{s}', subdomain),
-                          headers: headers,
-                          timeout: 2000
-                        })
-                      } catch (e) {
-                        invalidSubdomains.push(subdomain)
-                      }
-                    }
-                    if (invalidSubdomains.length > 0) {
-                      this.error = 'The following XYZ service url subdomains were invalid: ' + invalidSubdomains.join(',')
-                    } else {
-                      serviceInfo = {}
-                    }
-                  } else {
-                    this.error = 'The XYZ service url requires at least one valid subdomain'
-                  }
-                } else {
-                  await axios({
-                    method: 'get',
-                    url: urlToTest,
-                    headers: headers
-                  })
-                  serviceInfo = {}
-                }
-              } catch (e) {
-                if (e.response && (e.response.status === 401 || e.response.status === 403)) {
-                  accessDeniedOrForbidden = true
-                  this.error = 'Access to XYZ service is denied. Check your credentials'
-                } else {
-                  this.error = 'XYZ service not found.'
-                }
-              }
-            } else if (serviceType === 0) {
-              const supportedWMSVersions = ['1.3.0', '1.1.1']
-              let result = null
-              let errStatusCodes = []
-              let version
-              for (let i = 0; i < supportedWMSVersions.length; i++) {
-                version = supportedWMSVersions[i]
-                try {
-                  const response = await axios({
-                    method: 'get',
-                    url: GeoServiceUtilities.getGetCapabilitiesURL(this.dataSourceUrl, version, 'WMS'),
-                    headers: headers
-                  })
-                  result = await URLUtilities.parseXMLString(response.data)
-                  break
-                } catch (e) {
-                  if (e.response) {
-                    errStatusCodes.push(e.response.status)
-                  }
-                }
-              }
-              if (!_.isNil(result)) {
-                try {
-                  let wmsInfo = GeoServiceUtilities.getWMSInfo(result)
-                  serviceInfo = {
-                    title: wmsInfo.title || 'WMS Service',
-                    abstract: wmsInfo.abstract,
-                    version: version,
-                    contactName: wmsInfo.contactName,
-                    contactOrg: wmsInfo.contactOrg
-                  }
-                  this.serviceLayers = wmsInfo.layers
-                  this.unsupportedServiceLayers = wmsInfo.unsupportedLayers
-                } catch (error) {
-                  this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
-                }
-              } else {
-                // they all failed due to an access restriction
-                if (errStatusCodes.length > 0 && errStatusCodes.findIndex(code => code !== 403 && code !== 401) === -1) {
-                  accessDeniedOrForbidden = true
-                  this.error = 'Access to WMS denied. Check your credentials.'
-                } else {
-                  this.error = 'WMS service not found.'
-                }
-              }
-            } else if (serviceType === 1) {
-              const supportedWFSVersions = ['2.0.0', '1.1.0', '1.0.0']
-              let version
-              let result = null
-              let errStatusCodes = []
-              for (let i = 0; i < supportedWFSVersions.length; i++) {
-                version = supportedWFSVersions[i]
-                try {
-                  const response = await axios({
-                    method: 'get',
-                    url: GeoServiceUtilities.getGetCapabilitiesURL(this.dataSourceUrl, version, 'WFS'),
-                    headers: headers
-                  })
-                  result = await URLUtilities.parseXMLString(response.data)
-                  break
-                } catch (e) {
-                  if (e.response) {
-                    errStatusCodes.push(e.response.status)
-                  }
-                }
-              }
-              if (!_.isNil(result)) {
-                try {
-                  let wfsInfo = GeoServiceUtilities.getWFSInfo(result)
-                  serviceInfo = {
-                    title: wfsInfo.title || 'WFS Service',
-                    abstract: wfsInfo.abstract,
-                    version: version,
-                    contactName: wfsInfo.contactName,
-                    contactOrg: wfsInfo.contactOrg
-                  }
-                  this.serviceLayers = wfsInfo.layers
-                  this.unsupportedServiceLayers = []
-                } catch (error) {
-                  this.error = 'Something went wrong. Please verify the URL and credentials are correct.'
-                }
-              } else {
-                // they all failed due to an access restriction
-                if (errStatusCodes.length > 0 && errStatusCodes.findIndex(code => code !== 403 && code !== 401) === -1) {
-                  accessDeniedOrForbidden = true
-                  this.error = 'Access to WFS denied. Check your credentials.'
-                } else {
-                  this.error = 'WFS service not found.'
-                }
-              }
-            } else {
-              this.error = 'URL not supported. Supported URLs include WMS, WFS and XYZ tile servers.'
-            }
-          }
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error(e)
+        const options = {}
+        if (this.requiresSubdomains && this.subdomainsValid) {
+          options.subdomains = this.subdomainText.split(',')
         }
-        setTimeout(() => {
-          this.accessDeniedOrForbidden = accessDeniedOrForbidden
-          if (!_.isNil(serviceInfo)) {
-            if (serviceType === 0) {
-              this.summaryStep = 6
-            } else if (serviceType === 1 || serviceType === 3) {
-              this.summaryStep = 5
-            } else {
-              this.summaryStep = 4
-            }
+        options.allowAuth = true
+
+        const {queryParams} = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
+        if (!_.isNil(queryParams.version)) {
+          options.version = queryParams.version
+        }
+
+        const {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(this.dataSourceUrl, serviceType, options)
+
+        if (!_.isNil(error)) {
+          this.authValid = false
+          if (ServiceConnectionUtils.isAuthenticationError(error)) {
+            this.error = 'Access to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
+          } else if (error.status === -1) {
+            this.error = 'Something went wrong trying to access the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service.'
           }
-          this.serviceInfo = serviceInfo
+        }
+
+        if (!_.isNil(serviceInfo)) {
+          setTimeout(() => {
+            this.authValid = true
+            this.accessDeniedOrForbidden = ServiceConnectionUtils.isAuthenticationError(error)
+            if (!_.isNil(serviceInfo)) {
+              if (serviceType === ServiceConnectionUtils.SERVICE_TYPE.WMS) {
+                this.summaryStep = 5
+              } else if (serviceType === ServiceConnectionUtils.SERVICE_TYPE.WFS || serviceType === ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS) {
+                this.summaryStep = 4
+              } else {
+                this.summaryStep = 3
+              }
+            }
+            this.connected = true
+            this.serviceLayers = serviceInfo.serviceLayers || []
+            this.unsupportedServiceLayers = serviceInfo.unsupportedServiceLayers || []
+            this.serviceInfo = serviceInfo
+            this.loading = false
+          }, 500)
+        } else {
           this.loading = false
-        }, 500)
+        }
       },
-      resetAuth () {
-        this.authSelection = 'none'
-        this.password = ''
-        this.username = ''
-        this.token = ''
-      },
-      confirmLayerImport () {
+      async confirmLayerImport () {
         if (this.selectedDataSourceLayers.length > 0) {
           let sourceToProcess = {
             id: UniqueIDUtilities.createUniqueID(),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
-            credentials: this.getCredentials(),
-            layers: this.selectedServiceType === 1 ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
+            layers: this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
             name: this.dataSourceName
           }
-          setTimeout(() => {
-            this.addUrlToHistory(this.dataSourceUrl)
-            this.resetURLValidation()
-            this.close()
-            setTimeout(() => {
-              this.addSource(sourceToProcess)
-            }, 100)
-          }, 0)
-        }
-      },
-      getCredentials () {
-        if (this.authSelection === 'basic') {
-          return {
-            type: 'basic',
-            authorization: 'Basic ' + btoa(this.username + ':' + this.password)
-          }
-        } else if (this.authSelection === 'bearer') {
-          return {
-            type: 'bearer',
-            authorization: 'Bearer ' + this.token
-          }
-        } else {
-          return undefined
+          this.addUrlToHistory(this.dataSourceUrl)
+          this.resetURLValidation()
+          this.close()
+          this.$nextTick(() => {
+            this.addSource(sourceToProcess)
+          })
         }
       },
       resetURLValidation () {
@@ -733,35 +496,28 @@
         this.selectedServiceType = 2
         this.selectedDataSourceLayers = []
         this.sortedLayers = []
-        this.resetAuth()
         if (!_.isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
         }
         if (!_.isNil(this.$refs.urlForm)) {
           this.$refs.urlForm.validate()
         }
-        if (!_.isNil(this.$refs.authForm)) {
-          this.$refs.authForm.validate()
-        }
       },
-      processXYZUrl (url) {
+      async processXYZUrl (url) {
         let sourceToProcess = {
           id: UniqueIDUtilities.createUniqueID(),
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,
-          credentials: this.getCredentials(),
           subdomains: this.subdomainText.split(','),
           name: this.dataSourceName
         }
-        setTimeout(() => {
-          this.addUrlToHistory(url)
-          this.resetURLValidation()
-          this.close()
-          setTimeout(() => {
-            this.addSource(sourceToProcess)
-          }, 100)
-        }, 100)
+        this.addUrlToHistory(url)
+        this.resetURLValidation()
+        this.close()
+        this.$nextTick(() => {
+          this.addSource(sourceToProcess)
+        })
       },
       removeUrlFromHistory () {
         // Remove a URL from the Tile URL history state
@@ -778,7 +534,6 @@
       setUrlToLink (url) {
         // Sets the url text box to the clicked-on url
         this.selectedDataSourceLayers = []
-        this.resetAuth()
         this.dataSourceUrl = url
       },
       cancelDeleteUrl () {
@@ -792,10 +547,10 @@
       async sendLayerPreview () {
         let source
         if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
-          if (this.selectedServiceType === 0) {
-            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), this.getCredentials(), 'Preview')
-          } else if (this.selectedServiceType === 2) {
-            source = await SourceFactory.constructXYZSource(this.dataSourceUrl, this.subdomainText.split(','), this.getCredentials(), 'Preview')
+          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS) {
+            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), 'Preview')
+          } else if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ) {
+            source = await SourceFactory.constructXYZSource(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), this.subdomainText.split(','), 'Preview')
           }
         }
         if (!_.isNil(source)) {
@@ -816,6 +571,7 @@
       this.resetURLValidation()
       this.previewing = false
       this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
+      this.urlIsValid = true
       this.$nextTick(() => {
         if (!_.isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
@@ -831,6 +587,7 @@
     watch: {
       dataSourceUrl: {
         handler (newValue) {
+          this.connected = false
           this.previewing = false
           if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
@@ -856,19 +613,16 @@
             }
             this.urlIsValid = valid
             if (valid) {
-              this.loading = true
               if (this.selectedServiceType !== selectedServiceType) {
                 this.selectedServiceType = selectedServiceType
                 this.serviceTypeAutoDetected = serviceTypeAutoDetected
                 this.requiresSubdomains = requiresSubdomains
               } else {
-                this.debounceGetServiceInfo(this.selectedServiceType)
                 this.serviceTypeAutoDetected = serviceTypeAutoDetected
                 this.requiresSubdomains = requiresSubdomains
               }
             }
           } else {
-            this.resetAuth()
             this.sortedLayers = []
             this.sortedRenderingLayers = []
             this.selectedServiceType = -1
@@ -878,20 +632,15 @@
           }
         }
       },
-      selectedServiceType: {
-        handler (newValue) {
-          this.loading = true
-          this.summaryStep = 4
-          this.$nextTick(() => {
-            this.debounceGetServiceInfo(newValue)
-          })
+      subdomains: {
+        handler () {
+          this.connected = false
         }
       },
-      authSelection: {
-        handler (newValue) {
-          if (newValue === 'none') {
-            this.resetAuth()
-          }
+      selectedServiceType: {
+        handler () {
+          this.connected = false
+          this.summaryStep = 3
         }
       },
       selectedDataSourceLayers: {
@@ -930,18 +679,9 @@
       },
       sortedLayers: {
         handler () {
-          if (this.selectedServiceType === 0 && this.previewing) {
+          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS && this.previewing) {
             this.sendLayerPreview()
           }
-        }
-      },
-      subdomainText: {
-        handler () {
-          this.$nextTick(() => {
-            if (this.requiresSubdomains) {
-              this.debounceGetServiceInfo(this.selectedServiceType)
-            }
-          })
         }
       }
     }

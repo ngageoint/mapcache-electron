@@ -36,7 +36,7 @@
       @keydown.esc="attachError = false">
       <v-card v-if="attachError">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-alert-circle-outline</v-icon>
+          <v-icon color="warning" class="pr-2">mdi-alert-circle</v-icon>
           Error attaching file
         </v-card-title>
         <v-card-text>

@@ -1,10 +1,11 @@
-import {app, BrowserWindow, Menu, shell, dialog, ipcMain} from 'electron'
+import {app, BrowserWindow, Menu, shell, dialog, ipcMain, session} from 'electron'
 import path from 'path'
 import _ from 'lodash'
 import { download } from 'electron-dl'
 import fileUrl from 'file-url'
 import WorkerPool from './WorkerWindowPool'
 import Task from './Task'
+import CredentialsManagement from '../CredentialsManagement'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -16,12 +17,77 @@ class WindowLauncher {
   isShuttingDown = false
   quitFromParent = false
   forceClose = false
+  requestAuthEnabledMap = {}
 
   isWindowVisible () {
     return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
   }
 
+  /**
+   * Sets up authentication via a certificate
+   * TODO: currently this only works once. There is no way to allow a user to select a different certificate.
+   *  If no cert is selected, they will not be able to select again
+   */
+  setupCertificateAuth () {
+    app.removeAllListeners('select-client-certificate')
+    app.on('select-client-certificate', (event, webContents, url, list, callback) => {
+      event.preventDefault()
+      ipcMain.removeAllListeners('client-certificate-selected')
+      ipcMain.once('client-certificate-selected', (event, item) => {
+        callback(item)
+      })
+
+      this.projectWindow.webContents.send('select-client-certificate', {
+        url: url,
+        certificates: list
+      })
+    })
+    app.removeAllListeners('certificate-error')
+    app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+      event.preventDefault()
+      callback(true)
+    })
+  }
+
+  static disableCertificateAuth () {
+    app.removeAllListeners('select-client-certificate')
+  }
+
+  setupWebRequestWorkflow () {
+    // before sending headers, if it is marked with the auth enabled header, store the id of the request
+    session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+      const headers = details.requestHeaders
+      if (!_.isNil(headers['x-mapcache-auth-enabled'])) {
+        this.requestAuthEnabledMap[details.id] = true
+        delete headers['x-mapcache-auth-enabled']
+      }
+      callback({
+        requestHeaders: headers
+      })
+    })
+
+    // if auth was enabled, be sure to add response header allow for auth to occur
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      let headers = details.responseHeaders
+      if (!_.isNil(this.requestAuthEnabledMap[details.id])) {
+        headers['x-mapcache-auth-enabled'] = ['enabled']
+      }
+      callback({
+        responseHeaders: headers
+      })
+    })
+
+    // once completed, we need to delete the map's id to prevent memory leak
+    session.defaultSession.webRequest.onCompleted(details => {
+      delete this.requestAuthEnabledMap[details.id]
+    })
+    session.defaultSession.webRequest.onErrorOccurred(details => {
+      delete this.requestAuthEnabledMap[details.id]
+    })
+  }
+
   start () {
+    this.setupWebRequestWorkflow()
     this.launchLoaderWindow()
     this.launchMainWindow()
     this.launchProjectWindow()
@@ -207,7 +273,9 @@ class WindowLauncher {
       icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-        enableRemoteModule: true
+        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
+        enableRemoteModule: true,
+        webSecurity: false
       },
       show: false,
       width: 790,
@@ -262,6 +330,10 @@ class WindowLauncher {
     }, 0)
   }
 
+  getProjectWindow () {
+    return this.projectWindow
+  }
+
   launchProjectWindow () {
     const windowHeight = 700 + (isWin ? 20 : 0)
 
@@ -297,6 +369,7 @@ class WindowLauncher {
           leave = (choice === 0)
         }
         if (leave) {
+          WindowLauncher.disableCertificateAuth()
           WorkerPool.cancelTasks()
           this.mainWindow.show()
           this.launchProjectWindow()
@@ -305,6 +378,27 @@ class WindowLauncher {
         }
       } else {
         this.projectWindow = null
+      }
+    })
+
+    this.projectWindow.webContents.removeAllListeners('login')
+    this.projectWindow.webContents.on('login', (event, details, authInfo, callback) => {
+      if (details.firstAuthAttempt && (!_.isNil(details.responseHeaders) && !_.isNil(details.responseHeaders['x-mapcache-auth-enabled']))) {
+        event.preventDefault()
+        if (CredentialsManagement.getAuthType(authInfo.scheme) === CredentialsManagement.CREDENTIAL_TYPE_BASIC) {
+          ipcMain.removeAllListeners('client-credentials-input')
+          ipcMain.once('client-credentials-input', async (event, credentials) => {
+            if (credentials === null || credentials === undefined) {
+              callback()
+            } else {
+              callback(credentials.username, await CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
+            }
+          })
+          this.projectWindow.webContents.send('request-client-credentials', {
+            authInfo: authInfo,
+            details: details
+          })
+        }
       }
     })
   }
@@ -334,6 +428,7 @@ class WindowLauncher {
         this.mainWindow.send('show-project-completed')
         setTimeout(() => {
           this.mainWindow.hide()
+          this.setupCertificateAuth()
         }, 250)
       })
     } catch (e) {

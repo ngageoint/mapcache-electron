@@ -9,7 +9,10 @@ import AsyncComputed from 'vue-async-computed'
 import vuetify from './vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
+import axios from 'axios'
+
 Object.assign(console, log.functions)
+axios.defaults.withCredentials = true
 
 /*
  * The gdal library, when packaged for production is unable to find the GDAL_DATA directory. To work around this

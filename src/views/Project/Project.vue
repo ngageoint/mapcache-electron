@@ -1,5 +1,55 @@
 <template>
   <v-layout id="project" class="project-holder ma-0 pa-0">
+    <v-dialog max-width="580" v-model="showCertificateSelectionDialog" persistent>
+      <v-card>
+        <v-card-title>
+          Select a certificate
+        </v-card-title>
+        <v-card-subtitle>
+          Select a certificate to authenticate yourself to {{certificateRequestUrl}}
+        </v-card-subtitle>
+        <v-card-text>
+          <v-data-table
+            v-model="certificateSelection"
+            single-select
+            height="150px"
+            dense
+            disable-filtering
+            disable-pagination
+            disable-sort
+            :headers="headers"
+            :hide-default-footer="true"
+            :items="certificateList"
+            class="elevation-1"
+          >
+            <template v-slot:item="{ item }">
+              <tr :class="certificateSelection[0] === item.id ? 'grey lighten-1' : ''" @click.stop.prevent="selectCertificateRow(item)">
+                <td class="text-truncate" style="max-width: 200px;">{{item.subjectName}}</td>
+                <td class="text-truncate" style="max-width: 150px;">{{item.issuerName}}</td>
+                <td class="text-truncate" style="max-width: 150px;">{{item.serialNumber}}</td>
+              </tr>
+            </template>
+          </v-data-table>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="cancelCertificateSelection">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            text
+            @click="selectCertificate">
+            Select
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="showSignIn" max-width="400" persistent>
+      <basic-auth v-if="showSignIn" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
+    </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
         color="main"
@@ -72,6 +122,23 @@
         </v-col>
       </v-row>
     </v-layout>
+    <v-snackbar
+      top
+      v-model="noInternet"
+      color="orange"
+      timeout="-1"
+    >
+      No internet connectivity. Check your connection.
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          text
+          v-bind="attrs"
+          @click="noInternet = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-layout>
 </template>
 
@@ -81,6 +148,7 @@
   import Vue from 'vue'
   import path from 'path'
   import jetpack from 'fs-jetpack'
+  import { ipcRenderer } from 'electron'
 
   import LeafletMap from '../Map/LeafletMap'
   import PreviewMap from '../Map/PreviewMap'
@@ -88,23 +156,37 @@
   import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
   import ActionUtilities from '../../lib/ActionUtilities'
-
-  let options = {
-    contentShown: -1,
-    titleColor: '#ffffff',
-    addGeoPackageDialog: false,
-    drawer: true,
-    item: 0,
-    items: [
-      { id: 0, text: 'GeoPackages', icon: 'mdi-package-variant', notify: false },
-      { id: 1, text: 'Data Sources', icon: 'mdi-layers-outline', notify: false },
-      { id: 2, text: 'Settings', icon: 'mdi-cog-outline', notify: false }
-    ]
-  }
+  import EventBus from '../../EventBus'
+  import BasicAuth from '../Common/BasicAuth'
 
   export default {
     data () {
-      return options
+      return {
+        loading: true,
+        contentShown: -1,
+        titleColor: '#ffffff',
+        addGeoPackageDialog: false,
+        drawer: true,
+        item: 0,
+        items: [
+          { id: 0, text: 'GeoPackages', icon: 'mdi-package-variant', notify: false },
+          { id: 1, text: 'Data Sources', icon: 'mdi-layers-outline', notify: false },
+          { id: 2, text: 'Settings', icon: 'mdi-cog-outline', notify: false }
+        ],
+        showCertificateSelectionDialog: false,
+        certificateList: [],
+        certificateSelection: [0],
+        certificateRequestUrl: '',
+        headers: [
+          { text: 'Subject ', value: 'subjectName', width: 200 },
+          { text: 'Issuer', value: 'issuerName', width: 150 },
+          { text: 'Serial', value: 'serialNumber', width: 150 }
+        ],
+        noInternet: !navigator.onLine,
+        showSignIn: false,
+        requestAuthInfo: {},
+        requestDetails: {}
+      }
     },
     computed: {
       ...mapState({
@@ -176,6 +258,7 @@
       })
     },
     components: {
+      BasicAuth,
       DataSources,
       LeafletMap,
       Settings,
@@ -249,6 +332,27 @@
           this.$refs.dataSourceRef.processFiles(fileInfos)
           return false
         }
+      },
+      cancelSignIn () {
+        ipcRenderer.send('client-credentials-input')
+        this.showCertificateSelectionDialog = false
+        this.showSignIn = false
+      },
+      signIn (credentials) {
+        ipcRenderer.send('client-credentials-input', credentials)
+        this.showCertificateSelectionDialog = false
+        this.showSignIn = false
+      },
+      cancelCertificateSelection () {
+        ipcRenderer.send('client-certificate-selected', null)
+        this.showCertificateSelectionDialog = false
+      },
+      selectCertificate () {
+        ipcRenderer.send('client-certificate-selected', this.certificateList[this.certificateSelection].certificate)
+        this.showCertificateSelectionDialog = false
+      },
+      selectCertificateRow (row) {
+        this.certificateSelection = [row.id]
       }
     },
     watch: {
@@ -279,6 +383,37 @@
       ActionUtilities.clearNotifications({projectId: this.project.id})
       ActionUtilities.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
+      ipcRenderer.removeAllListeners('select-client-certificate')
+      ipcRenderer.on('select-client-certificate', (event, args) => {
+        this.certificateList = args.certificates.map((certificate, i) => {
+          return {
+            id: i,
+            subjectName: certificate.subjectName,
+            issuerName: certificate.issuerName,
+            serialNumber: certificate.serialNumber,
+            isSelectable: true,
+            certificate: certificate
+          }
+        })
+        this.certificateRequestUrl = args.url
+        this.showCertificateSelectionDialog = true
+      })
+      ipcRenderer.removeAllListeners('request-client-credentials')
+      ipcRenderer.on('request-client-credentials', (event, args) => {
+        this.requestAuthInfo = args.authInfo
+        this.requestDetails = args.details
+        this.showSignIn = true
+      })
+      this.onLineListener = () => this.noInternet = false
+      this.offLineListener = () => this.noInternet = true
+      window.addEventListener('online', this.onLineListener)
+      window.addEventListener('offline', this.offLineListener)
+      EventBus.$on(EventBus.EventTypes.NETWORK_ERROR, this.offLineListener)
+    },
+    beforeDestroy() {
+      window.removeEventListener('online', this.onLineListener)
+      window.removeEventListener('offline', this.offLineListener)
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR])
     }
   }
 </script>

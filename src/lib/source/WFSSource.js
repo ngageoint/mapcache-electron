@@ -17,6 +17,7 @@ import {addProjection, get, addCoordinateTransforms, addEquivalentProjections, c
 import {get as getTransform} from 'ol/proj/transforms'
 import Projection from 'ol/proj/Projection'
 import {assign} from 'ol/obj'
+
 for (const name in defs) {
   if (defs[name]) {
     proj4.defs(name, defs[name])
@@ -80,12 +81,7 @@ export default class WFSSource extends Source {
    * @returns {Promise<any>}
    */
   getFeaturesInLayer (layer) {
-    return new Promise( (resolve, reject) => {
-      let headers = {}
-      let credentials = this.credentials
-      if (credentials && (credentials.type === 'basic' || credentials.type === 'bearer')) {
-        headers['authorization'] = credentials.authorization
-      }
+    return new Promise((resolve, reject) => {
 
       let outputFormat = GeoServiceUtilities.getLayerOutputFormat(layer)
 
@@ -118,11 +114,10 @@ export default class WFSSource extends Source {
         }
       }
 
-
       axios({
         method: 'get',
         url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer.name, outputFormat, srs, layer.version),
-        headers: headers
+        withCredentials: true
       }).then(response => {
 
         // setup options for parsing response

@@ -1,13 +1,12 @@
 import FileUtilities from '../FileUtilities'
 
 export default class Source {
-  constructor (filePath, layers = [], credentials = {}, sourceName) {
+  constructor (filePath, layers = [], sourceName) {
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
     this.sourceId = sourceId
     this.sourceDirectory = sourceDirectory
     this.filePath = filePath
     this.layers = layers
-    this.credentials = credentials
     this.sourceName = sourceName
   }
 

@@ -71,7 +71,7 @@
                           <v-list-item-title v-text="item.text"></v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
-                          <source-visibility-switch :input-value="active" :project-id="project.id" :source-id="item.id"></source-visibility-switch>
+                          <source-visibility-switch :input-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>

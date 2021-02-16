@@ -695,7 +695,6 @@ export default class ActionUtilities {
 
     // create new directory
     const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
-    layerConfiguration.id = sourceId
 
     // handle geopackage
     let extent = [-180, -90, 180, 90]
@@ -718,6 +717,7 @@ export default class ActionUtilities {
       }
     } else {
       layerConfiguration = _.cloneDeep(configuration)
+      extent = layerConfiguration.extent || [-180, -90, 180, 90]
       if (!_.isNil(configuration.geopackageFilePath)) {
         const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.geopackageFilePath))
         await jetpack.copyAsync(layerConfiguration.geopackageFilePath, newFilePath)
@@ -728,9 +728,9 @@ export default class ActionUtilities {
         const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.filePath))
         await jetpack.copyAsync(layerConfiguration.filePath, newFilePath)
         layerConfiguration.filePath = newFilePath
-        extent = configuration.extent || [-180, -90, 180, 90]
       }
     }
+    layerConfiguration.id = sourceId
     store.dispatch('BaseMaps/addBaseMap', {
       id: sourceId,
       name: baseMapName,
@@ -753,5 +753,34 @@ export default class ActionUtilities {
       console.error(error)
     }
     store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
+  }
+
+  /**
+   * this attempts to apply the error to the source
+   * @param id
+   * @param error
+   */
+  static setSourceError({id, error}) {
+    // search basemaps for matching id and assign error
+    const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
+    if (!_.isNil(baseMap)) {
+      const baseMapCopy = _.cloneDeep(baseMap)
+      baseMapCopy.error = error
+      store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+    }
+
+    // search sources for matching id and assign error
+    const projectKeys = _.keys(store.state.Projects)
+    for (let i = 0; i < projectKeys.length; i++) {
+      const projectId = projectKeys[i]
+      const sourceId = _.keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
+      if (!_.isNil(sourceId)) {
+        const source = _.cloneDeep(store.state.Projects[projectId].sources[sourceId])
+        source.error = error
+        source.visible = false
+        store.dispatch('Projects/setDataSource', {projectId, source})
+        break
+      }
+    }
   }
 }
