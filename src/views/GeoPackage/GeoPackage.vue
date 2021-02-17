@@ -357,7 +357,7 @@
   import AddFeatureLayer from './AddFeatureLayer'
   import AddTileLayer from './AddTileLayer'
   import ActionUtilities from '../../lib/ActionUtilities'
-  import ServiceConnectionUtils from "../../lib/ServiceConnectionUtils";
+  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
 
   export default {
     props: {

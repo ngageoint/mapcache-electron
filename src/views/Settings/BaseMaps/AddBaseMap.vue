@@ -37,11 +37,11 @@
                 Continue
               </v-btn>
             </v-stepper-content>
-            <v-stepper-step editable :complete="step > 2" step="2" color="primary">
+            <v-stepper-step editable :complete="step > 2" step="2" color="primary" :rules="[() => layers.length > 0]">
               Select layer
             </v-stepper-step>
             <v-stepper-content step="2">
-              <v-card flat tile>
+              <v-card flat tile v-if="layers.length > 0">
                 <v-card-subtitle>
                   Select a GeoPackage layer or data source for your base map.
                 </v-card-subtitle>
@@ -63,11 +63,19 @@
                             <v-list-item-title v-text="item.title"></v-list-item-title>
                             <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
                           </v-list-item-content>
+                          <v-list-item-action>
+                            <data-source-troubleshooting v-if="item.source && item.error" :source="item.source" :project-id="project.id"></data-source-troubleshooting>
+                          </v-list-item-action>
                         </v-list-item>
                       </template>
                     </v-list-item-group>
                   </v-list>
                 </v-card-text>
+              </v-card>
+              <v-card flat tile v-else>
+                <v-card-subtitle>
+                  No layers available for base map.
+                </v-card-subtitle>
               </v-card>
               <v-btn text color="primary" @click="step = '3'">
                 Continue
@@ -96,7 +104,7 @@
             Cancel
           </v-btn>
           <v-btn
-            v-if="baseMapNameValid && step === '3'"
+            v-if="baseMapNameValid && layers.length > 0 && step === '3'"
             text
             color="primary"
             @click="save">
@@ -113,9 +121,12 @@
   import _ from 'lodash'
   import ColorPicker from '../../Common/ColorPicker'
   import ActionUtilities from '../../../lib/ActionUtilities'
+  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import DataSourceTroubleshooting from '../../DataSources/DataSourceTroubleshooting'
 
   export default {
     components: {
+      DataSourceTroubleshooting,
       ColorPicker
     },
     props: {
@@ -123,49 +134,60 @@
       project: Object,
       close: Function
     },
-    computed: {
-      layers () {
-        let items = []
-        items.push(..._.keys(this.project.sources).map(sourceKey => {
-          const source = this.project.sources[sourceKey]
-          return {
-            id: source.id,
-            name: source.displayName ? source.displayName : source.name,
-            title: source.displayName ? source.displayName : source.name,
-            isGeoPackage: false,
-            type: source.pane === 'vector' ? 'feature' : 'tile'
+    asyncComputed: {
+      layers: {
+        async get () {
+          let items = []
+          const sources = _.values(this.project.sources)
+          for (let i = 0; i < sources.length; i++) {
+            let source = sources[i]
+            items.push({
+              id: source.id,
+              source: source,
+              error: source.error,
+              name: source.displayName ? source.displayName : source.name,
+              title: source.displayName ? source.displayName : source.name,
+              isGeoPackage: false,
+              type: source.pane === 'vector' ? 'feature' : 'tile'
+            })
           }
-        }))
-        items.push(..._.keys(this.project.geopackages).map(geopackageKey => {
-          const geopackage = this.project.geopackages[geopackageKey]
-          const geopackageItems = []
-          geopackageItems.push(..._.keys(geopackage.tables.tiles).map(table => {
-            return {
-              id: geopackage.id + '_' + table,
-              geopackageId: geopackage.id,
-              name: table,
-              tableName: table,
-              title: geopackage.name,
-              subtitle: table,
-              type: 'tile',
-              isGeoPackage: true
+          const geopackages = _.values(this.project.geopackages)
+          for (let i = 0; i < geopackages.length; i++) {
+            const geopackage = geopackages[i]
+            if (await GeoPackageUtilities.isHealthy(geopackage)) {
+              const tiles = _.keys(geopackage.tables.tiles)
+              for (let j = 0; j < tiles.length; j++) {
+                const table = tiles[j]
+                items.push({
+                  id: geopackage.id + '_' + table,
+                  geopackageId: geopackage.id,
+                  name: table,
+                  tableName: table,
+                  title: geopackage.name,
+                  subtitle: table,
+                  type: 'tile',
+                  isGeoPackage: true
+                })
+              }
+              const features = _.keys(geopackage.tables.features)
+              for (let j = 0; j < features.length; j++) {
+                const table = features[j]
+                items.push({
+                  id: geopackage.id + '_' + table,
+                  geopackageId: geopackage.id,
+                  name: table,
+                  tableName: table,
+                  title: geopackage.name,
+                  subtitle: table,
+                  type: 'feature',
+                  isGeoPackage: true
+                })
+              }
             }
-          }))
-          geopackageItems.push(..._.keys(geopackage.tables.features).map(table => {
-            return {
-              id: geopackage.id + '_' + table,
-              geopackageId: geopackage.id,
-              name: table,
-              tableName: table,
-              title: geopackage.name,
-              subtitle: table,
-              type: 'feature',
-              isGeoPackage: true
-            }
-          }))
-          return geopackageItems
-        }).flat(1))
-        return items
+          }
+          return items
+        },
+        default: []
       }
     },
     data () {

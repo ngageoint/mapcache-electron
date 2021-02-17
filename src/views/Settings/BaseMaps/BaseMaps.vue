@@ -37,17 +37,17 @@
     </v-sheet>
     <v-tooltip right :disabled="!project.showToolTips">
       <template v-slot:activator="{ on, attrs }">
-        <v-btn
-          fab
-          class="fab-position"
-          color="primary"
-          @click.stop="addBaseMapDialog = true"
-          v-bind="attrs"
-          v-on="on">
-          <img :style="{verticalAlign: 'middle'}" src="../../../assets/add-basemap.svg" width="24px" height="24px">
-        </v-btn>
+        <div class="fab-position" v-bind="attrs" v-on="on">
+          <v-btn
+            :disabled="projectLayerCount === 0"
+            fab
+            color="primary"
+            @click.stop="showAddBaseMapDialog">
+            <img :style="{verticalAlign: 'middle'}" src="../../../assets/add-basemap.svg" width="24px" height="24px">
+          </v-btn>
+        </div>
       </template>
-      <span>Add base map</span>
+      <span>{{projectLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add base map'}}</span>
     </v-tooltip>
   </v-sheet>
 </template>
@@ -59,6 +59,7 @@
   import ActionUtilities from '../../../lib/ActionUtilities'
   import BaseMap from './BaseMap'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+  import ServiceConnectionUtils from '../../../lib/ServiceConnectionUtils'
 
   export default {
     components: {
@@ -92,7 +93,10 @@
             }
           })
         }
-      })
+      }),
+      projectLayerCount () {
+        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.features).length + _.keys(this.project.geopackages[geopackage].tables.tiles).length, 0) + _.values(this.project.sources).length
+      }
     },
     data () {
       return {
@@ -101,6 +105,16 @@
       }
     },
     methods: {
+      async showAddBaseMapDialog () {
+        const sources = Object.values(this.project.sources)
+        for (let i = 0; i < sources.length; i++) {
+          const source = sources[i]
+          if (source.visible && ServiceConnectionUtils.isRemoteSource(source)) {
+            await ServiceConnectionUtils.connectToSource(this.project.id, source, ActionUtilities.setDataSource, false)
+          }
+        }
+        this.addBaseMapDialog = true
+      },
       showBaseMap (baseMapId) {
         this.selectedBaseMap = this.baseMaps.find(baseMap => baseMap.id === baseMapId)
       },
