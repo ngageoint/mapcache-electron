@@ -22,7 +22,15 @@ export default class XYZFileSource extends Source {
       filePath = path.join(destinationFolder, match[1])
     }
 
-    this.layers.push(new XYZFileLayer({filePath: filePath, sourceLayerName: name}))
+    let minZoom
+    let maxZoom
+    try {
+      const zoomLevels = zipFileNames.filter(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null).map(file => parseInt(file.match('.*(\\d)\\/\\d\\/\\d.png')[1])).sort((a, b) => a - b)
+      minZoom = zoomLevels[0]
+      maxZoom = zoomLevels[zoomLevels.length - 1]
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+    this.layers.push(new XYZFileLayer({filePath: filePath, sourceLayerName: name, minZoom, maxZoom}))
     return this.layers
   }
 }

@@ -5,6 +5,12 @@ import path from 'path'
 export default class XYZFileLayer extends TileLayer {
   static LAYER_TYPE = 'XYZFile'
 
+  constructor (configuration = {}) {
+    super (configuration)
+    this.minZoom = configuration.minZoom
+    this.maxZoom = configuration.maxZoom
+  }
+
   async initialize () {
     await super.initialize()
     return this
@@ -14,7 +20,9 @@ export default class XYZFileLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: XYZFileLayer.LAYER_TYPE
+        layerType: XYZFileLayer.LAYER_TYPE,
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom
       }
     }
   }
