@@ -11,7 +11,7 @@
       <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
       <v-toolbar-title>Base Maps</v-toolbar-title>
     </v-toolbar>
-    <v-sheet class="mapcache-sheet-content">
+    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
       <v-list class="pa-0">
         <template v-for="item in baseMapItems">
           <v-list-item :key="item.id + '-base-map'" @click="() => showBaseMap(item.id)">

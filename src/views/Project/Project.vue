@@ -158,6 +158,7 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import EventBus from '../../EventBus'
   import BasicAuth from '../Common/BasicAuth'
+  import FileUtilities from '../../lib/FileUtilities'
 
   export default {
     data () {
@@ -298,7 +299,7 @@
           e.preventDefault()
           let geopackagesToAdd = []
           let dataSourcesToAdd = []
-          const supportedExtensions = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip']
+          const supportedExtensions = FileUtilities.SUPPORTED_FILE_EXTENSIONS_WITH_DOT
           for (let f of e.dataTransfer.files) {
             const extension = path.extname(f.path)
             // try to add a geopackage to the project

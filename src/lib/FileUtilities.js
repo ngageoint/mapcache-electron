@@ -6,6 +6,9 @@ import UniqueIDUtilities from './UniqueIDUtilities'
 import jetpack from 'fs-jetpack'
 
 export default class FileUtilities {
+  static SUPPORTED_FILE_EXTENSIONS = ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
+  static SUPPORTED_FILE_EXTENSIONS_WITH_DOT = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip', '.mbtiles']
+
   static toHumanReadable (sizeInBytes) {
     const i = Math.floor(Math.log(sizeInBytes) / Math.log(1024))
     return (sizeInBytes / Math.pow(1024, i)).toFixed(2) + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]

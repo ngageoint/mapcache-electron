@@ -36,6 +36,17 @@ export default class XYZTileUtilities {
     }
   }
 
+  static trimExtentToWebMercatorMax(extent) {
+    if (extent) {
+      const copy = extent.slice()
+      copy[1] = Math.max(extent[1], -85.0511)
+      copy[3] = Math.min(extent[3], 85.0511)
+      return copy
+    } else {
+      return extent
+    }
+  }
+
   static tileBboxCalculator (x, y, z) {
     x = Number(x)
     y = Number(y)

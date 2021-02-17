@@ -4,6 +4,7 @@ import GeoTiffLayer from '../tile/GeoTiffLayer'
 import { bbox, bboxPolygon, intersect } from '@turf/turf'
 import _ from 'lodash'
 import defs from '../../../projection/proj4Defs'
+import XYZTileUtilities from '../../../XYZTileUtilities'
 for (const name in defs) {
   if (defs[name]) {
     proj4.defs(name, defs[name])
@@ -24,7 +25,7 @@ export default class GeoTiffRenderer {
     let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
     let tileUpperRightBuffered = proj4('EPSG:3857').inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
     let tileLowerLeftBuffered = proj4('EPSG:3857').inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])
-    const fullExtent = this.layer.extent
+    const fullExtent = XYZTileUtilities.trimExtentToWebMercatorMax(this.layer.extent)
 
     // create a 256x256 tile if not already provided
     if (!tile) {

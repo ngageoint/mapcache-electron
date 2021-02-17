@@ -107,6 +107,7 @@
   import DataSourceList from './DataSourceList'
   import AddDataSourceUrl from './AddDataSourceUrl'
   import ActionUtilities from '../../lib/ActionUtilities'
+  import FileUtilities from '../../lib/FileUtilities'
 
   let selectedDataSource = null
   let fab = false
@@ -145,7 +146,7 @@
           filters: [
             {
               name: 'All Files',
-              extensions: ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
+              extensions: FileUtilities.SUPPORTED_FILE_EXTENSIONS
             }
           ],
           properties: ['openFile', 'multiSelections']
