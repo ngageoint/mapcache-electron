@@ -286,7 +286,7 @@
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
-        <v-switch v-model="previewing" class="pl-2" hide-details v-if="this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error && ((selectedServiceType === 0 && this.selectedDataSourceLayers.length > 0) || selectedServiceType === 2)" label="Preview"></v-switch>
+        <v-switch v-model="previewing" class="pl-2" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && ((selectedServiceType === 0 && this.selectedDataSourceLayers.length > 0) || selectedServiceType === 2)" label="Preview"></v-switch>
         <v-spacer></v-spacer>
         <v-btn
           text
@@ -641,6 +641,9 @@
         handler () {
           this.connected = false
           this.summaryStep = 3
+          this.sortedLayers = []
+          this.sortedRenderingLayers = []
+          this.serviceTypeAutoDetected = false
         }
       },
       selectedDataSourceLayers: {
@@ -679,7 +682,7 @@
       },
       sortedLayers: {
         handler () {
-          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS && this.previewing) {
+          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS && this.connected && this.previewing) {
             this.sendLayerPreview()
           }
         }
