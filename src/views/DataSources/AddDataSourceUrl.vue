@@ -106,7 +106,6 @@
                     </v-combobox>
                   </v-col>
                 </v-row>
-                <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
                 <div v-if="!serviceTypeAutoDetected">
                   <v-card-subtitle>
                     The service type could not be determined, please select from the available options.
@@ -137,13 +136,14 @@
                 </div>
                 <v-row no-gutters>
                   <v-spacer/>
-                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid" @click.stop="connect" text>
-                    Connect
+                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid || loading" @click.stop="connect" text>
+                    {{loading ? 'Connecting...' : 'Connect'}}
                   </v-btn>
                   <span v-else style="color: #00C851;">
                     Connected
                   </span>
                 </v-row>
+                <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
               </v-form>
             </v-card-text>
           </v-card>
@@ -431,6 +431,7 @@
         const options = {}
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
+          options.timeout = 2000
         }
         options.allowAuth = true
 
@@ -447,6 +448,8 @@
             this.error = 'Access to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
           } else if (error.status === -1) {
             this.error = 'Something went wrong trying to access the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service.'
+          } else {
+            this.error = error
           }
         }
 
@@ -641,9 +644,6 @@
         handler () {
           this.connected = false
           this.summaryStep = 3
-          this.sortedLayers = []
-          this.sortedRenderingLayers = []
-          this.serviceTypeAutoDetected = false
         }
       },
       selectedDataSourceLayers: {
@@ -667,6 +667,11 @@
             })
             this.sortedLayers = sortedRenderingLayersCopy
           }
+        }
+      },
+      subdomainText: {
+        handler () {
+          this.connected = false
         }
       },
       previewing: {

@@ -201,6 +201,9 @@ export default class ServiceConnectionUtils {
                 url: url,
                 withCredentials: true
               }
+              if (options.timeout) {
+                request.timeout = options.timeout
+              }
               if (options.allowAuth) {
                 request.headers = {
                   'x-mapcache-auth-enabled': true
