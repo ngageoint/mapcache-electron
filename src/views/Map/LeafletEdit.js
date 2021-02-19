@@ -16,6 +16,100 @@ export default class LeafletEdit extends vendor.L.Control {
     super(mergedOptions)
   }
 
+  /**
+   * Explodes a flattened feature using it's container structure
+   * @param container
+   * @param features
+   * @returns {{coordinates: *, type: *}|{geometries: *, type: *}}
+   */
+  static explodeFlattenedFeature (container, features) {
+    let geometry
+    if (container.isLeaf) {
+      const indexedFeature = features.find(feature => feature.properties.index === container.index)
+      if (!_.isNil(indexedFeature)) {
+        geometry = indexedFeature.geometry
+      }
+    } else {
+      if (container.type === 'GeometryCollection') {
+        let geometries = container.items.map(item => this.explodeFlattenedFeature(item, features))
+        if (geometries.length > 0) {
+          geometry = {
+            type: container.type,
+            geometries: geometries
+          }
+        }
+      } else {
+        let coordinates = container.items.map(item => this.explodeFlattenedFeature(item, features)).map(geometry => geometry.coordinates)
+        if (coordinates.length > 0) {
+          geometry = {
+            type: container.type,
+            coordinates: coordinates
+          }
+        }
+      }
+    }
+    return geometry
+  }
+
+  /**
+   * This will take a feature and flatten it. If it contains any multi features or geometry collections within it, they will be flattened as well
+   * @param feature
+   * @param indexObject
+   */
+  static flattenFeature (feature, indexObject = {index: 0}) {
+    let features = []
+    // each container represents a geometry in the feature
+    let container = {
+      type: feature.geometry.type,
+      isLeaf: false,
+      items: []
+    }
+    switch (GeometryType.fromName(feature.geometry.type.toUpperCase())) {
+      case GeometryType.MULTIPOINT:
+      case GeometryType.MULTILINESTRING:
+      case GeometryType.MULTIPOLYGON:
+        feature.geometry.coordinates.forEach(coordinates => {
+          let result = LeafletEdit.flattenFeature({
+            type: 'Feature',
+            geometry: {
+              type: feature.geometry.type.substring(5),
+              coordinates
+            },
+            properties: {}
+          }, indexObject)
+          result.features.forEach(feature => {
+            features.push(feature)
+          })
+          container.items.push(result.container)
+        })
+        break
+      case GeometryType.GEOMETRYCOLLECTION:
+        feature.geometry.geometries.forEach(geometry => {
+          let result = LeafletEdit.flattenFeature({
+            type: 'Feature',
+            geometry: geometry,
+            properties: {}
+          }, indexObject)
+          result.features.forEach(feature => {
+            features.push(feature)
+          })
+          container.items.push(result.container)
+        })
+        break
+      default:
+        container.isLeaf = true
+        container.index = indexObject.index
+        feature.properties.index = indexObject.index
+        features.push(feature)
+        indexObject.index++
+        break
+    }
+    return {
+      features,
+      container
+    }
+  }
+
   onAdd (map) {
     let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control hidden')
     this._saveLink = vendor.L.DomUtil.create('a', '', container)
@@ -46,7 +140,14 @@ export default class LeafletEdit extends vendor.L.Control {
         this.feature = _.cloneDeep(editingFeature.featureToEdit)
         this.feature.type = 'Feature'
 
-        this.editingLayer = vendor.L.geoJSON(this.feature, {
+        let flattenResults = LeafletEdit.flattenFeature(this.feature)
+        this.featureContainer = flattenResults.container
+        let featureCollection = {
+          type: 'FeatureCollection',
+          features: flattenResults.features
+        }
+
+        this.editingLayer = vendor.L.geoJSON(featureCollection, {
           pane: 'markerPane',
           zIndex: '501',
           pointToLayer: function (geojson, latlng) {
@@ -80,20 +181,21 @@ export default class LeafletEdit extends vendor.L.Control {
       this.isGeoPackage = null
       this.tableName = null
       this.feature = null
+      this.featureContainer = null
     }
 
     this._saveLink.onclick = function (e) {
       if (!_.isNil(this.editingLayer)) {
         let layers = this.editingLayer.getLayers()
-        switch (GeometryType.fromName(this.feature.geometry.type.toUpperCase())) {
-          case GeometryType.POINT:
-            this.feature.geometry.coordinates = [layers[0]._latlng.lng, layers[0]._latlng.lat]
-            break
-          default:
-            this.feature.geometry = layers[0].toGeoJSON(10).geometry
-            break
-        }
-
+        this.feature.geometry = LeafletEdit.explodeFlattenedFeature(this.featureContainer, layers.map(layer => {
+          let feature = _.cloneDeep(layer.feature)
+          if (GeometryType.fromName(layer.feature.geometry.type.toUpperCase()) === GeometryType.POINT) {
+            feature.geometry.coordinates = [layer._latlng.lng, layer._latlng.lat]
+          } else {
+            feature.geometry = layer.toGeoJSON(10).geometry
+          }
+          return feature
+        }))
         ActionUtilities.updateFeatureGeometry({projectId: this.projectId, id: this.id, isGeoPackage: this.isGeoPackage, tableName: this.tableName, featureGeoJson: this.feature})
       }
       this.cancelEdit()
