@@ -313,7 +313,7 @@ export default class ServiceConnectionUtils {
             result = ServiceConnectionUtils.testXYZTileServiceConnection(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(serviceUrl), options)
             break
           case ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS:
-            result = ServiceConnectionUtils.testArcGISFeatureServiceConnection(serviceUrl)
+            result = ServiceConnectionUtils.testArcGISFeatureServiceConnection(serviceUrl, options)
             break
           default:
             result = {serviceInfo: undefined, error: {status: -1, statusText: 'Service not supported. Supported services include WMS, WFS, XYZ and ArcGIS FS'}}
