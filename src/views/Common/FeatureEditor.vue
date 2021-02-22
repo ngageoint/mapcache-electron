@@ -14,10 +14,10 @@
             v-for="(column, index) in editableColumns"
           >
             <v-list-item-content class="pa-4" style="margin: -16px;">
-              <v-text-field :autofocus="index === 0" :label="column.name.toLowerCase()" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
+              <v-text-field :autofocus="index === 0" :label="column.lowerCaseName" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
               <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
                 <v-col>
-                  <v-list-item-subtitle>{{column.name.toLowerCase()}}</v-list-item-subtitle>
+                  <v-list-item-subtitle>{{column.lowerCaseName}}</v-list-item-subtitle>
                 </v-col>
                 <v-switch color="primary" v-model="column.value" class="pt-0" hide-details></v-switch>
               </v-row>
@@ -93,7 +93,7 @@
                   </v-menu>
                 </v-col>
               </v-row>
-              <v-text-field :autofocus="index === 0" :label="column.name.toLowerCase()" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
+              <v-text-field :autofocus="index === 0" :label="column.lowerCaseName" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
             </v-list-item-content>
           </v-list-item>
         </v-list>
@@ -184,6 +184,7 @@
           const columnObjects = columns.map((column) => {
             const columnObject = {
               name: column.name,
+              lowerCaseName: column.name.toLowerCase(),
               dataType: column.dataType,
               index: column.index
             }
@@ -229,13 +230,13 @@
             if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
               columnObject.rules = []
               if (column.notNull) {
-                columnObject.rules.push(v => !!v || (column.name.toLowerCase() + ' is required'))
+                columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
               }
               if (column.max) {
-                columnObject.rules.push(v => v < column.max || (column.name.toLowerCase() + ' exceeds the max of ' + column.max))
+                columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
               }
               if (column.min) {
-                columnObject.rules.push(v => v < column.min || (column.name.toLowerCase() + ' is below the min of ' + column.min))
+                columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
               }
               if (column.unique) {
                 columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
@@ -244,7 +245,7 @@
             return columnObject
           })
 
-          return _.orderBy(columnObjects, ['name'], ['asc'])
+          return _.orderBy(columnObjects, ['lowerCaseName'], ['asc'])
         },
         default: []
       }
