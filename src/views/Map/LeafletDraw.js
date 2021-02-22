@@ -16,6 +16,9 @@ export default class LeafletDraw extends vendor.L.Control {
   }
 
   onAdd (map) {
+    map.createPane('drawingMapPane')
+    map.getPane('drawingMapPane').style.zIndex = 501
+
     let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control')
     this._pointLink = vendor.L.DomUtil.create('a', '', container)
     this._polyLink = vendor.L.DomUtil.create('a', '', container)
@@ -89,7 +92,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.cancelled = false
         this.drawingType = point
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startMarker()
+        this.drawing = map.editTools.startMarker(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
         vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -99,7 +102,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.cancelled = false
         this.drawingType = polygon
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startPolygon()
+        this.drawing = map.editTools.startPolygon(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
         vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -109,7 +112,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.cancelled = false
         this.drawingType = rectangle
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startRectangle()
+        this.drawing = map.editTools.startRectangle(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
         vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -119,7 +122,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.cancelled = false
         this.drawingType = linestring
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startPolyline()
+        this.drawing = map.editTools.startPolyline(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
         vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
