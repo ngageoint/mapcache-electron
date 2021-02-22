@@ -9,6 +9,7 @@
       </v-card-subtitle>
       <v-form v-on:submit.prevent ref="signInForm" v-model="signInValid">
         <v-text-field
+          autofocus
           tabindex="1"
           label="Username"
           clearable
