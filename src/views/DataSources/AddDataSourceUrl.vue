@@ -136,7 +136,7 @@
                 </div>
                 <v-row no-gutters>
                   <v-spacer/>
-                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid || loading" @click.stop="connect" text>
+                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)" @click.stop="connect" text>
                     {{loading ? 'Connecting...' : 'Connect'}}
                   </v-btn>
                   <span v-else style="color: #00C851;">
