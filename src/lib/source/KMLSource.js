@@ -99,8 +99,8 @@ export default class KMLSource extends Source {
       let featureStyle = null
       let featureIcon = null
       if (feature.properties.icon) {
-        let iconFile = path.join(originalFileDir, feature.properties.icon)
-        let cachedIconFile = path.join(cacheFolder, feature.properties.icon)
+        let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+        let cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
