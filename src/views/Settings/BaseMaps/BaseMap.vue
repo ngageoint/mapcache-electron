@@ -12,7 +12,7 @@
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-card flat tile>
         <v-card-text class="pt-0">
-          <m-b-tiles-options v-if="configuration.layerType === 'MBTiles'" :configuration="configuration" :update-configuration="updateConfiguration"></m-b-tiles-options>
+          <m-b-tiles-options v-if="configuration.layerType === 'MBTiles' && configuration.format === 'pbf'" :configuration="configuration" :update-configuration="updateConfiguration"></m-b-tiles-options>
           <geotiff-options v-if="configuration.layerType === 'GeoTIFF'" :configuration="configuration" :update-configuration="updateConfiguration"></geotiff-options>
           <v-divider v-if="configuration.layerType === 'MBTiles' || configuration.layerType === 'GeoTIFF'"></v-divider>
           <background-tile-color :background-value="baseMap.background" :on-background-updated="updateBackground"></background-tile-color>
