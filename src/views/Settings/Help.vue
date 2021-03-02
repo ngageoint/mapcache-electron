@@ -181,6 +181,24 @@
             }
           ],
           title: 'Settings'
+        },
+        {
+          action: 'mdi-chat-question-outline',
+          items: [
+            {
+              title: 'Why can\'t I select a different certificate?',
+              content: 'Similar to Google Chrome, once you have decided on your certificate, or chosen to not select a certificate, the session will remember your selection. If you would like to select a different certificate, you will need to restart the application.'
+            },
+            {
+              title: 'What happens when I remove a GeoPackage from MapCache?',
+              content: 'MapCache will remove the GeoPackage entry from the GeoPackage list. The underlying GeoPackage file will remain on the file system.'
+            },
+            {
+              title: '',
+              content: ''
+            }
+          ],
+          title: 'Frequently asked questions (FAQs)'
         }]
       }
     }

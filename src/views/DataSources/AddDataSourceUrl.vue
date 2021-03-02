@@ -315,6 +315,7 @@
   import ActionUtilities from '../../lib/ActionUtilities'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
   import XYZTileUtilities from '../../lib/XYZTileUtilities'
+  import NetworkConstants from '../../lib/NetworkConstants'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -429,10 +430,10 @@
         this.unsupportedServiceLayers = []
         this.error = null
         const options = {}
+        options.timeout = NetworkConstants.DEFAULT_TIMEOUT
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
         }
-        options.timeout = 2500
         options.allowAuth = true
 
         const {queryParams} = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
