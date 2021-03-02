@@ -47,7 +47,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="showSignIn" max-width="400" persistent>
+    <v-dialog v-model="showSignIn" max-width="400" persistent :retain-focus="false">
       <basic-auth v-if="showSignIn" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
     </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">

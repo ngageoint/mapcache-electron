@@ -6,6 +6,7 @@ import ServiceConnectionUtils from '../../../ServiceConnectionUtils'
 import CancellableTileRequest from '../../../CancellableTileRequest'
 import _ from 'lodash'
 import LayerTypes from '../LayerTypes'
+import ActionUtilities from '../../../ActionUtilities'
 
 export default class WMSLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -29,8 +30,8 @@ export default class WMSLayer extends NetworkTileLayer {
         error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
       }
     }
-    if (error) {
-      this.setError(error)
+    if (!_.isNil(error)) {
+      ActionUtilities.setSourceError({id: this.id, error: error})
     }
     await super.initialize()
     return this

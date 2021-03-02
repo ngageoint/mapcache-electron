@@ -4,6 +4,7 @@ import ServiceConnectionUtils from '../../../ServiceConnectionUtils'
 import CancellableTileRequest from '../../../CancellableTileRequest'
 import _ from 'lodash'
 import LayerTypes from '../LayerTypes'
+import ActionUtilities from '../../../ActionUtilities'
 
 export default class XYZServerLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -20,8 +21,8 @@ export default class XYZServerLayer extends NetworkTileLayer {
       allowAuth: true
     }
     let {error} = await ServiceConnectionUtils.testServiceConnection(this.filePath, ServiceConnectionUtils.SERVICE_TYPE.XYZ, options)
-    if (error) {
-      this.setError(error)
+    if (!_.isNil(error)) {
+      ActionUtilities.setSourceError({id: this.id, error: error})
     }
     return this
   }
