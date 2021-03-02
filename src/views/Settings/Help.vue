@@ -194,8 +194,12 @@
               content: 'MapCache will remove the GeoPackage entry from the GeoPackage list. The underlying GeoPackage file will remain on the file system.'
             },
             {
-              title: '',
-              content: ''
+              title: 'When I add a drawing to a GeoPackage feature table, why does it not appear?',
+              content: 'If the GeoPackage feature layer is not enabled, that layer\'s features will not be visible. This includes the newly added drawing. If you would like to see your drawing, enable the GeoPackage feature layer.'
+            },
+            {
+              title: 'Why are EPSG:3857 the only supported WMS layers?',
+              content: 'MapCache currently displays content using a Leaflet map. The default projection for Leaflet, Google Maps, and Open Street Maps (OSM) is EPSG:3857 (also known as Web Mercator).'
             }
           ],
           title: 'Frequently asked questions (FAQs)'
