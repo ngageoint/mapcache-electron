@@ -1,10 +1,9 @@
 import TileLayer from './TileLayer'
 import jetpack from 'fs-jetpack'
 import path from 'path'
+import LayerTypes from '../LayerTypes'
 
 export default class XYZFileLayer extends TileLayer {
-  static LAYER_TYPE = 'XYZFile'
-
   constructor (configuration = {}) {
     super (configuration)
     this.minZoom = configuration.minZoom
@@ -20,7 +19,7 @@ export default class XYZFileLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: XYZFileLayer.LAYER_TYPE,
+        layerType: LayerTypes.XYZ_FILE,
         minZoom: this.minZoom,
         maxZoom: this.maxZoom
       }

@@ -2,10 +2,9 @@ import TileLayer from './TileLayer'
 import MBTilesUtilities from '../../../MBTilesUtilities'
 import * as vendor from '../../../vendor'
 import VectorStyleUtilities from '../../../VectorStyleUtilities'
+import LayerTypes from '../LayerTypes'
 
 export default class MBTilesLayer extends TileLayer {
-  static LAYER_TYPE = 'MBTiles'
-
   minZoom
   maxZoom
   db
@@ -61,7 +60,7 @@ export default class MBTilesLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: MBTilesLayer.LAYER_TYPE,
+        layerType: LayerTypes.MBTILES,
         minZoom: this.minZoom,
         maxZoom: this.maxZoom,
         pointStyle: this.pointStyle,

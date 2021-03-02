@@ -25,7 +25,7 @@ import wkx from 'wkx'
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import proj4 from 'proj4'
-import { intersect, bbox } from '@turf/turf'
+import { bbox } from '@turf/turf'
 import VectorStyleUtilities from './VectorStyleUtilities'
 import XYZTileUtilities from './XYZTileUtilities'
 import TileBoundingBoxUtils from './tile/tileBoundingBoxUtils'
@@ -2676,6 +2676,25 @@ export default class GeoPackageUtilities {
   }
 
   /**
+   * Finds intersection between two web mercator bounding boxes
+   * @param bbox1
+   * @param bbox2
+   * @returns {*}
+   */
+  static intersection (bbox1, bbox2) {
+    let intersection
+    const minLon = Math.max(bbox1.minLongitude, bbox2.minLongitude)
+    const minLat = Math.max(bbox1.minLatitude, bbox2.minLatitude)
+    const maxLon = Math.min(bbox1.maxLongitude, bbox2.maxLongitude)
+    const maxLat = Math.min(bbox1.maxLatitude, bbox2.maxLatitude)
+    if (minLon < maxLon && minLat < maxLat) {
+      intersection = new BoundingBox(minLon, maxLon, minLat, maxLat)
+    }
+
+    return intersection
+  }
+
+  /**
    * Builds a tile layer
    * @param configuration
    * @param statusCallback
@@ -2710,6 +2729,11 @@ export default class GeoPackageUtilities {
       const contentsSrsId = 4326
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857
+
+      let contentsLowerLeft = proj4('EPSG:3857').forward([contentsBounds.minLongitude, contentsBounds.minLatitude])
+      let contentsUpperRight = proj4('EPSG:3857').forward([contentsBounds.maxLongitude, contentsBounds.maxLatitude])
+      const contentsWebMercator = new BoundingBox(contentsLowerLeft[0], contentsUpperRight[0], contentsLowerLeft[1], contentsUpperRight[1])
+
       try {
         await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
       } catch (error) {
@@ -2790,33 +2814,24 @@ export default class GeoPackageUtilities {
         let ctx = canvas.getContext('2d')
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-        let tileLowerLeft = proj4('EPSG:3857').inverse([tileBbox.minLon, tileBbox.minLat])
-        let tileUpperRight = proj4('EPSG:3857').inverse([tileBbox.maxLon, tileBbox.maxLat])
-
-        const tileBounds = new BoundingBox(tileLowerLeft[0], tileUpperRight[0], tileLowerLeft[1], tileUpperRight[1])
-        const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
-        const tileHeight = tileBounds.maxLatitude - tileBounds.minLatitude
-
-        const getX = lng => {
-          return Math.floor(256 / tileWidth * (lng - tileBounds.minLongitude))
-        }
-
-        const getY = lat => {
-          return Math.floor(256 / tileHeight * (tileBounds.maxLatitude - lat))
-        }
-
-        const difference = intersect(tileBounds.toGeoJSON().geometry, contentsBounds.toGeoJSON().geometry)
-        if (!_.isNil(difference)) {
-          const differenceBbox = bbox(difference)
-          const minLon = differenceBbox[0]
-          const minLat = differenceBbox[1]
-          const maxLon = differenceBbox[2]
-          const maxLat = differenceBbox[3]
-          const minX = Math.max(0, getX(minLon) - 1)
-          const maxX = Math.min(256, getX(maxLon) + 1)
-          const minY = Math.max(0, getY(maxLat) - 1)
-          const maxY = Math.min(256, getY(minLat) + 1)
+        let tileBounds = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        let tileBoundingBox = new BoundingBox(tileBounds.minLon, tileBounds.maxLon, tileBounds.minLat, tileBounds.maxLat)
+        // clips tile so that only the intersection of the tile and the user specified bounds are drawn
+        const intersection = GeoPackageUtilities.intersection(tileBoundingBox, contentsWebMercator)
+        if (!_.isNil(intersection)) {
+          const tileWidth = tileBoundingBox.maxLongitude - tileBoundingBox.minLongitude
+          const tileHeight = tileBoundingBox.maxLatitude - tileBoundingBox.minLatitude
+          const getX = (lng, mathFunc) => {
+            return mathFunc(256.0 / tileWidth * (lng - tileBoundingBox.minLongitude))
+          }
+          const getY = (lat, mathFunc) => {
+            return mathFunc(256.0 / tileHeight * (tileBoundingBox.maxLatitude - lat))
+          }
+          const minX = Math.max(0, getX(intersection.minLongitude, Math.floor) - 1)
+          const maxX = Math.min(256, getX(intersection.maxLongitude, Math.ceil) + 1)
+          const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
+          const maxY = Math.min(256, getY(intersection.minLatitude, Math.floor) + 1)
+          ctx.beginPath()
           ctx.rect(minX, minY, maxX - minX, maxY - minY)
           ctx.clip()
         }
@@ -2824,7 +2839,7 @@ export default class GeoPackageUtilities {
         for (let i = 0; i < sortedLayers.length; i++) {
           await new Promise((resolve, reject) => {
             let layer = sortedLayers[i]
-            const layerAlpha = layer.opacity !== null && layer.opacity !== undefined ? layer.opacity : 1.0
+            const layerAlpha = !_.isNil(layer.opacity) ? layer.opacity : 1.0
             layer.renderTile({x, y, z}, null, (err, result) => {
               if (err) {
                 // eslint-disable-next-line no-console

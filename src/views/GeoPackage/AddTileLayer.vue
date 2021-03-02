@@ -55,12 +55,12 @@
             </v-card-subtitle>
             <v-card-text>
               <v-list dense>
-                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
+                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers" v-on:change="filterErroredLayers">
                   <template v-for="(item, i) in dataSourceLayers">
                     <v-list-item
                       :key="`data-source-item-${i}`"
                       :value="item.id"
-                      @click.stop="item.changeVisibility">
+                      @click.stop.prevent="item.changeVisibility">
                       <template v-slot:default="{ active }">
                         <v-list-item-icon class="mr-4">
                           <v-btn icon @click.stop="item.zoomTo">
@@ -380,6 +380,9 @@
       }
     },
     methods: {
+      filterErroredLayers (layers) {
+        this.selectedDataSourceLayers = layers.filter(layerId => _.isNil(this.project.sources[layerId].error))
+      },
       async cancelAddTileLayer () {
         const self = this
         this.cancelling = true
@@ -557,6 +560,11 @@
             id: source.id,
             visible: source.visible,
             type: source.pane === 'vector' ? 'feature' : 'tile',
+            changeVisibility: _.debounce(() => {
+              if (_.isNil(source.error)) {
+                ActionUtilities.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
+              }
+            }, 100),
             zoomTo: _.debounce((e) => {
               e.stopPropagation()
               ActionUtilities.zoomToExtent({projectId, extent: source.extent})

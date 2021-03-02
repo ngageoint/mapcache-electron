@@ -5,6 +5,7 @@ import proj4 from 'proj4'
 import _ from 'lodash'
 import defs from '../../../projection/proj4Defs'
 import { ipcRenderer } from 'electron'
+import LayerTypes from '../LayerTypes'
 for (const name in defs) {
   if (defs[name]) {
     proj4.defs(name, defs[name])
@@ -15,8 +16,6 @@ for (const name in defs) {
  * Layer to handle reading a GeoTIFF and how to interpret it
  */
 export default class GeoTiffLayer extends TileLayer {
-  static LAYER_TYPE = 'GeoTIFF'
-
   geotiff
   image
   fileDirectory
@@ -267,7 +266,7 @@ export default class GeoTiffLayer extends TileLayer {
     return {
       ...super.configuration,
       ...{
-        layerType: GeoTiffLayer.LAYER_TYPE,
+        layerType: LayerTypes.GEOTIFF,
         photometricInterpretation: this.photometricInterpretation,
         samplesPerPixel: this.samplesPerPixel,
         bitsPerSample: this.bitsPerSample,

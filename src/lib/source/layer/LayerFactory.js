@@ -5,23 +5,24 @@ import MBTilesLayer from './tile/MBTilesLayer'
 import WMSLayer from './tile/WMSLayer'
 import VectorLayer from './vector/VectorLayer'
 import XYZFileLayer from './tile/XYZFileLayer'
+import LayerTypes from './LayerTypes'
 
 export default class LayerFactory {
   static constructLayer (configuration) {
     switch (configuration.layerType) {
-      case GeoTiffLayer.LAYER_TYPE:
+      case LayerTypes.GEOTIFF:
         return new GeoTiffLayer(configuration)
-      case MBTilesLayer.LAYER_TYPE:
+      case LayerTypes.MBTILES:
         return new MBTilesLayer(configuration)
-      case XYZServerLayer.LAYER_TYPE:
+      case LayerTypes.XYZ_SERVER:
         return new XYZServerLayer(configuration)
-      case XYZFileLayer.LAYER_TYPE:
+      case LayerTypes.XYZ_FILE:
         return new XYZFileLayer(configuration)
-      case WMSLayer.LAYER_TYPE:
+      case LayerTypes.WMS:
         return new WMSLayer(configuration)
-      case GeoPackageLayer.LAYER_TYPE:
+      case LayerTypes.GEOPACKAGE:
         return new GeoPackageLayer(configuration)
-      case VectorLayer.LAYER_TYPE:
+      case LayerTypes.VECTOR:
         return new VectorLayer(configuration)
     }
   }

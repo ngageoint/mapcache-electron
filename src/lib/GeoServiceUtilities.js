@@ -26,13 +26,40 @@ export default class GeoServiceUtilities {
     return URLUtilities.generateUrlWithQueryParams(baseUrl, queryParams)
   }
 
-  static getLayers (layer, titles = []) {
+  static getBoundingBoxFromWMSLayer (layer) {
+    let bbox
+    let extent
+    try {
+      if (!_.isNil(layer['LatLonBoundingBox'])) {
+        bbox = layer['LatLonBoundingBox'][0]['$']
+        extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
+      } else if (!_.isNil(layer['EX_GeographicBoundingBox'])){
+        bbox = layer['EX_GeographicBoundingBox'][0]
+        extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
+      }
+    } catch (e) {}
+    return extent
+  }
+
+  static getSRSForWMSLayer (layer, availableSrs) {
+    let srs = []
+    if (!_.isNil(layer['CRS'])) {
+      srs = layer['CRS']
+    } else if (!_.isNil(layer['SRS'])) {
+      srs = layer['SRS']
+    }
+    return srs.filter(s => _.isNil(availableSrs.find(aSrs => aSrs === s)))
+  }
+
+  static getLayers (layer, version, titles = [], availableSrs = [], parentExtent = [-180, -90, 180, 90]) {
     const layers = []
+    const layerSrs = availableSrs.slice()
     if (!_.isNil(layer['Layer'])) {
       for (const l of layer['Layer']) {
         const layerTitles = titles.slice()
         let title = null
         let name = null
+        let srs = GeoServiceUtilities.getSRSForWMSLayer(l, availableSrs)
         try { title = layer['Title'][0] } catch (e) {}
         try { name = layer['Name'][0] } catch (e) {}
         if (_.isNil(title) || _.isEmpty(title)) {
@@ -41,31 +68,20 @@ export default class GeoServiceUtilities {
         if (!_.isNil(title) && !_.isEmpty(title)) {
           layerTitles.push(title)
         }
-        layers.push(...this.getLayers(l, layerTitles))
+        let extent = GeoServiceUtilities.getBoundingBoxFromWMSLayer(l) || parentExtent.slice()
+        layers.push(...GeoServiceUtilities.getLayers(l, version, layerTitles, layerSrs.concat(srs), extent))
       }
     } else {
-      let bbox
       let extent
-      let version
       let title
       let name
       let has3857 = false
       const layerTitles = titles.slice()
-      if (!_.isNil(layer['LatLonBoundingBox'])) {
-        bbox = layer['LatLonBoundingBox'][0]['$']
-        extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-        version = '1.1.1'
-        try { title = layer['Title'][0] } catch (e) {}
-        try { name = layer['Name'][0] } catch (e) {}
-        try { has3857 = layer['CRS'].findIndex(crs => crs.toUpperCase() === '3857' || crs.toUpperCase() === 'EPSG:3857') !== -1 } catch (e) {}
-      } else {
-        bbox = layer['EX_GeographicBoundingBox'][0]
-        extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
-        version = '1.3.0'
-        try { title = layer['Title'][0] } catch (e) {}
-        try { name = layer['Name'][0] } catch (e) {}
-        try { has3857 = layer['CRS'].findIndex(crs => crs.toUpperCase() === '3857' || crs.toUpperCase() === 'EPSG:3857') !== -1 } catch (e) {}
-      }
+      const supportedProjections = availableSrs.concat(GeoServiceUtilities.getSRSForWMSLayer(layer, availableSrs))
+      extent = GeoServiceUtilities.getBoundingBoxFromWMSLayer(layer) || parentExtent.slice()
+      try { title = layer['Title'][0] } catch (e) {}
+      try { name = layer['Name'][0] } catch (e) {}
+      try { has3857 = supportedProjections.findIndex(crs => crs.toUpperCase() === '3857' || crs.toUpperCase() === 'EPSG:3857') !== -1 } catch (e) {}
       if (!_.isNil(title) && !_.isEmpty(title)) {
         layerTitles.push(title)
       } else if (!_.isNil(name) && !_.isEmpty(name)) {
@@ -76,32 +92,37 @@ export default class GeoServiceUtilities {
     return layers
   }
 
-  static getWMSInfo (json) {
+  /**
+   * Parses WMS info
+   * @param json
+   * @param version of this WMS GetCapabilities XML
+   */
+  static getWMSInfo (json, version) {
     let wmsInfo = {}
     let layers = []
     try {
+      let capabilities
       if (!_.isNil(json['WMT_MS_Capabilities'])) {
-        const service = json['WMT_MS_Capabilities']['Service'][0]
-        wmsInfo.title = service['Title'][0]
-        wmsInfo.abstract = service['Abstract'][0]
-        try {
-          const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
-          wmsInfo.contactName = contactInformation['ContactPerson'][0]
-          wmsInfo.contactOrg = contactInformation['ContactOrganization'][0]
-        } catch (error) {}
-        const wmsCapability = json['WMT_MS_Capabilities']['Capability'][0]
-        layers.push(...this.getLayers(wmsCapability))
+        capabilities = json['WMT_MS_Capabilities']
       } else if (!_.isNil(json['WMS_Capabilities'])) {
-        const service = json['WMS_Capabilities']['Service'][0]
-        wmsInfo.title = service['Title'][0]
-        wmsInfo.abstract = service['Abstract'][0]
-        try {
-          const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
-          wmsInfo.contactName = contactInformation['ContactPerson'][0]
-          wmsInfo.contactOrg = contactInformation['ContactOrganization'][0]
-        } catch (error) {}
-        const wmsCapability = json['WMS_Capabilities']['Capability'][0]
-        layers.push(...this.getLayers(wmsCapability))
+        capabilities = json['WMS_Capabilities']
+      }
+      if (!_.isNil(capabilities)) {
+        const service = capabilities['Service'][0]
+        if (!_.isNil(service)) {
+          wmsInfo.title = service['Title'] ? service['Title'][0] : ''
+          wmsInfo.abstract = service['Abstract'] ? service['Abstract'][0] : ''
+          try {
+            const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
+            wmsInfo.contactName = contactInformation['ContactPerson'][0]
+            wmsInfo.contactOrg = contactInformation['ContactOrganization'][0]
+          } catch (error) {}
+        }
+
+        const wmsCapability = capabilities['Capability']
+        if (!_.isNil(wmsCapability)) {
+          layers.push(...GeoServiceUtilities.getLayers(wmsCapability[0], version))
+        }
       }
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -110,16 +131,6 @@ export default class GeoServiceUtilities {
     wmsInfo.layers = layers.filter(layer => layer.has3857)
     wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
     return wmsInfo
-  }
-
-  static getWFSVersionFromGetCapabilities (json) {
-    let version = null
-    if (!_.isNil(json['WFS_Capabilities'])) {
-      version = json['WFS_Capabilities']['$']['version']
-    } else if (!_.isNil(json['wfs:WFS_Capabilities'])) {
-      version = json['wfs:WFS_Capabilities']['$']['version']
-    }
-    return version
   }
 
   static getLayerOutputFormat (layer) {
@@ -152,7 +163,12 @@ export default class GeoServiceUtilities {
     return outputFormat
   }
 
-  static getWFSInfo (json) {
+  /**
+   * Returns WFS info
+   * @param json
+   * @param version
+   */
+  static getWFSInfo (json, version) {
     let wfsInfo = {}
     let layers = []
     let outputFormats = ['application/json']
@@ -215,7 +231,7 @@ export default class GeoServiceUtilities {
           }
           let defaultSRS = !_.isNil(layer['SRS']) ? layer['SRS'][0] : ''
           const otherSRS = []
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       } else if (!_.isNil(json['wfs:WFS_Capabilities'])) {
         let outputFormats = ['application/json']
@@ -266,7 +282,7 @@ export default class GeoServiceUtilities {
           if (_.isNil(title) || _.isEmpty(title)) {
             title = name
           }
-          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: this.getWFSVersionFromGetCapabilities(json), outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
+          layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats, geoJSONSupported: !_.isNil(outputFormats.find(f => f === 'application/json'))})
         }
       }
     } catch (e) {

@@ -136,7 +136,7 @@
                 </div>
                 <v-row no-gutters>
                   <v-spacer/>
-                  <v-btn v-if="!connected" color="primary" :disabled="!urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)" @click.stop="connect" text>
+                  <v-btn v-if="!connected" color="primary" :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)" @click.stop="connect" text>
                     {{loading ? 'Connecting...' : 'Connect'}}
                   </v-btn>
                   <span v-else style="color: #00C851;">
@@ -172,7 +172,7 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
             <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
-              <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 layers available for import.'}}</v-card-subtitle>
+              <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 supported layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 supported layers available for import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
               <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
               <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
@@ -431,8 +431,8 @@
         const options = {}
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
-          options.timeout = 2000
         }
+        options.timeout = 2500
         options.allowAuth = true
 
         const {queryParams} = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
@@ -591,7 +591,11 @@
       dataSourceUrl: {
         handler (newValue) {
           this.connected = false
+          this.error = null
           this.previewing = false
+          this.sortedLayers = []
+          this.sortedRenderingLayers = []
+          this.serviceInfo = null
           if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
@@ -626,8 +630,6 @@
               }
             }
           } else {
-            this.sortedLayers = []
-            this.sortedRenderingLayers = []
             this.selectedServiceType = -1
             this.serviceTypeAutoDetected = true
             this.requiresSubdomains = false
@@ -643,6 +645,7 @@
       selectedServiceType: {
         handler () {
           this.connected = false
+          this.error = null
           this.summaryStep = 3
         }
       },

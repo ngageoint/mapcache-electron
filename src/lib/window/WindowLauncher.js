@@ -17,7 +17,17 @@ class WindowLauncher {
   isShuttingDown = false
   quitFromParent = false
   forceClose = false
+
+  // track request id's that have auth for mapcache enabled
   requestAuthEnabledMap = {}
+  // timeout functions for requests that have mapcache timeout specified
+  requestTimeoutFunctions = {}
+  // track redirects
+  redirectedRequests = {}
+  // certSelectionInProgress
+  certSelectionInProgress = false
+  // certSelectionMade
+  certSelectionMade = false
 
   isWindowVisible () {
     return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
@@ -32,16 +42,22 @@ class WindowLauncher {
     app.removeAllListeners('select-client-certificate')
     app.on('select-client-certificate', (event, webContents, url, list, callback) => {
       event.preventDefault()
-      ipcMain.removeAllListeners('client-certificate-selected')
-      ipcMain.once('client-certificate-selected', (event, item) => {
-        callback(item)
-      })
 
-      this.projectWindow.webContents.send('select-client-certificate', {
-        url: url,
-        certificates: list
-      })
+      if (!this.certSelectionMade && !this.certSelectionInProgress) {
+        this.certSelectionCallbacks = true
+        ipcMain.removeAllListeners('client-certificate-selected')
+        ipcMain.once('client-certificate-selected', (event, item) => {
+          callback(item)
+          this.certSelectionMade = true
+          this.certSelectionInProgress = false
+        })
+        this.projectWindow.webContents.send('select-client-certificate', {
+          url: url,
+          certificates: list
+        })
+      }
     })
+
     app.removeAllListeners('certificate-error')
     app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
       event.preventDefault()
@@ -53,14 +69,51 @@ class WindowLauncher {
     app.removeAllListeners('select-client-certificate')
   }
 
+  /**
+   * Sets up the timeout function
+   * @param id
+   * @param requestId
+   * @param timeout
+   */
+  prepareTimeout (id, requestId, timeout) {
+    this.requestTimeoutFunctions[id] = setTimeout(() => {
+      const requestCancelChannel = 'cancel-request-' + requestId
+      if (!_.isNil(this.projectWindow)) {
+        this.projectWindow.webContents.send(requestCancelChannel)
+      }
+    }, timeout)
+  }
+
+  /**
+   * Clears timeout function
+   * @param id
+   */
+  clearTimeoutFunction (id) {
+    const timeoutFunction = this.requestTimeoutFunctions[id]
+    if (!_.isNil(timeoutFunction)) {
+      clearTimeout(timeoutFunction)
+      delete this.requestTimeoutFunctions[id]
+    }
+  }
+
   setupWebRequestWorkflow () {
     // before sending headers, if it is marked with the auth enabled header, store the id of the request
     session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
       const headers = details.requestHeaders
       if (!_.isNil(headers['x-mapcache-auth-enabled'])) {
         this.requestAuthEnabledMap[details.id] = true
-        delete headers['x-mapcache-auth-enabled']
       }
+      // set timeout function if timeout is provided and this isn't a redirected request
+      if (_.isNil(this.redirectedRequests[details.id]) && !_.isNil(headers['x-mapcache-connection-id']) && !_.isNil(headers['x-mapcache-timeout'])) {
+        const requestId = headers['x-mapcache-connection-id']
+        const timeout = parseInt(headers['x-mapcache-timeout'])
+        if (timeout > 0) {
+          this.prepareTimeout(details.id, requestId, timeout)
+        }
+      }
+      delete headers['x-mapcache-auth-enabled']
+      delete headers['x-mapcache-timeout']
+      delete headers['x-mapcache-connection-id']
       callback({
         requestHeaders: headers
       })
@@ -68,6 +121,7 @@ class WindowLauncher {
 
     // if auth was enabled, be sure to add response header allow for auth to occur
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      this.clearTimeoutFunction(details.id)
       let headers = details.responseHeaders
       if (!_.isNil(this.requestAuthEnabledMap[details.id])) {
         headers['x-mapcache-auth-enabled'] = ['enabled']
@@ -77,12 +131,20 @@ class WindowLauncher {
       })
     })
 
+    session.defaultSession.webRequest.onBeforeRedirect((details) => {
+      this.redirectedRequests[details.id] = true
+    })
+
     // once completed, we need to delete the map's id to prevent memory leak
     session.defaultSession.webRequest.onCompleted(details => {
       delete this.requestAuthEnabledMap[details.id]
+      delete this.requestTimeoutFunctions[details.id]
+      delete this.redirectedRequests[details.id]
     })
     session.defaultSession.webRequest.onErrorOccurred(details => {
       delete this.requestAuthEnabledMap[details.id]
+      delete this.requestTimeoutFunctions[details.id]
+      delete this.redirectedRequests[details.id]
     })
   }
 

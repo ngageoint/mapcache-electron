@@ -760,7 +760,7 @@ export default class ActionUtilities {
    * @param id
    * @param error
    */
-  static setSourceError({id, error}) {
+  static setSourceError ({id, error}) {
     // search basemaps for matching id and assign error
     const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
     if (!_.isNil(baseMap)) {
@@ -781,6 +781,25 @@ export default class ActionUtilities {
         store.dispatch('Projects/setDataSource', {projectId, source})
         break
       }
+    }
+  }
+
+  static saveConnectionSettings (projectId, sourceId, timeoutMs, rateLimit, retryAttempts) {
+    const source = _.cloneDeep(store.state.Projects[projectId].sources[sourceId])
+    source.timeoutMs = timeoutMs
+    source.rateLimit = rateLimit
+    source.retryAttempts = retryAttempts
+    store.dispatch('Projects/setDataSource', {projectId, source})
+  }
+
+  static saveBaseMapConnectionSettings (id, timeoutMs, rateLimit, retryAttempts) {
+    const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
+    if (!_.isNil(baseMap)) {
+      const baseMapCopy = _.cloneDeep(baseMap)
+      baseMapCopy.layerConfiguration.timeoutMs = timeoutMs
+      baseMapCopy.layerConfiguration.rateLimit = rateLimit
+      baseMapCopy.layerConfiguration.retryAttempts = retryAttempts
+      store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
     }
   }
 }

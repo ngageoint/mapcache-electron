@@ -190,7 +190,7 @@
       </v-row>
       <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
         <v-col>
-          <v-row no-gutters justify="space-between">
+          <v-row class="pb-2" no-gutters justify="space-between">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 GeoPackage
@@ -208,7 +208,7 @@
               </v-row>
             </v-col>
           </v-row>
-          <v-row no-gutters>
+          <v-row class="pb-2" no-gutters>
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Tiles
@@ -218,7 +218,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters>
+          <v-row class="pb-2" no-gutters>
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Zoom Levels
@@ -228,7 +228,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters>
+          <v-row class="pb-2" no-gutters>
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Description

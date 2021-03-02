@@ -15,6 +15,12 @@ export default class TileLayer extends Layer {
     }
   }
 
+  // eslint-disable-next-line no-empty
+  updateStyle () {}
+
+  // eslint-disable-next-line no-empty
+  updateNetworkSettings () {}
+
   renderTile () {
     throw new Error('Abstract method to be implemented in subclass')
   }

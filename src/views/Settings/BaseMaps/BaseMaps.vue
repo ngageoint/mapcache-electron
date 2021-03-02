@@ -59,7 +59,6 @@
   import ActionUtilities from '../../../lib/ActionUtilities'
   import BaseMap from './BaseMap'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
-  import ServiceConnectionUtils from '../../../lib/ServiceConnectionUtils'
 
   export default {
     components: {
@@ -106,13 +105,6 @@
     },
     methods: {
       async showAddBaseMapDialog () {
-        const sources = Object.values(this.project.sources)
-        for (let i = 0; i < sources.length; i++) {
-          const source = sources[i]
-          if (source.visible && ServiceConnectionUtils.isRemoteSource(source)) {
-            await ServiceConnectionUtils.connectToSource(this.project.id, source, ActionUtilities.setDataSource, false)
-          }
-        }
         this.addBaseMapDialog = true
       },
       showBaseMap (baseMapId) {

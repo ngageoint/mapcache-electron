@@ -89,6 +89,52 @@
       </v-card>
     </v-dialog>
     <v-dialog
+      v-model="connectionSettingsDialog"
+      max-width="400"
+      persistent
+      @keydown.esc="connectionSettingsDialog = false">
+      <v-card v-if="connectionSettingsDialog">
+        <v-card-title>
+          <v-icon color="primary" class="pr-2">mdi-cloud-braces</v-icon>
+          Edit network settings
+        </v-card-title>
+        <v-card-text>
+          <v-container class="ma-0 pa-0">
+            <v-row no-gutters>
+              <v-col cols="12">
+                <number-picker :number="rateLimit" label="Max requests per second" :step="Number(1)" :min="Number(1)" :max="Number(1000)" @update-number="(val) => {this.rateLimit = val}" @update-valid="(val) => {this.rateLimitValid = val}"/>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col cols="12">
+                <number-picker :number="timeoutMs" label="Request timeout (ms)" :step="Number(500)" :min="Number(0)" :max="Number(10000)" @update-number="(val) => {this.timeoutMs = val}" @update-valid="(val) => {this.timeoutValid = val}"/>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col cols="12">
+                <number-picker :number="retryAttempts" label="Retry attempts" :step="Number(1)" :min="Number(0)" :max="Number(10)" @update-number="(val) => {this.retryAttempts = val}" @update-valid="(val) => {this.retryAttemptsValid = val}"/>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="closeConnectionSettingsDialog">
+            Cancel
+          </v-btn>
+          <v-btn
+            v-if="rateLimitValid && timeoutValid && retryAttemptsValid"
+            color="primary"
+            text
+            @click="saveConnectionSettings">
+            Save
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="deleteDialog"
       max-width="400"
       persistent
@@ -212,6 +258,20 @@
             </v-card>
           </template>
         </v-hover>
+        <v-hover v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer'">
+          <template v-slot="{ hover }">
+            <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showConnectingSettingsDialog">
+              <v-card-text class="pa-2">
+                <v-row no-gutters align-content="center" justify="center">
+                  <v-icon small>mdi-cloud-braces</v-icon>
+                </v-row>
+                <v-row no-gutters align-content="center" justify="center">
+                  Network
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-hover>
         <v-tooltip bottom :disabled="!project.showToolTips">
           <template v-slot:activator="{ on, attrs }">
             <v-hover v-if="source.pane === 'vector'">
@@ -248,7 +308,7 @@
       </v-row>
       <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
         <v-col>
-          <v-row no-gutters justify="space-between">
+          <v-row class="pb-2" no-gutters justify="space-between">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Type
@@ -266,7 +326,7 @@
               </v-row>
             </v-col>
           </v-row>
-          <v-row no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
+          <v-row class="pb-2" no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 URL
@@ -276,7 +336,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters justify="start" v-if="source.subdomains !== null && source.subdomains !== undefined">
+          <v-row class="pb-2" no-gutters justify="start" v-if="source.subdomains !== null && source.subdomains !== undefined">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Subdomains
@@ -286,7 +346,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters v-if="source.minZoom !== undefined && source.maxZoom !== undefined">
+          <v-row class="pb-2" no-gutters v-if="source.minZoom !== undefined && source.maxZoom !== undefined">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Zoom Levels
@@ -296,7 +356,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row no-gutters justify="space-between" v-if="source.pane === 'vector'">
+          <v-row class="pb-2" no-gutters justify="space-between" v-if="source.pane === 'vector'">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Features
@@ -313,6 +373,22 @@
                   </v-icon>View features
                 </v-btn>
               </v-row>
+            </v-col>
+          </v-row>
+          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer'">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Network settings
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{'Max requests per second: ' + (source.rateLimit || defaultRateLimit)}}
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{'Request timeout (ms): ' + (source.timeoutMs || defaultTimeout)}}
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{'Retry attempts: ' + (source.retryAttempts === undefined ? defaultRetryAttempts : source.retryAttempts)}}
+              </p>
             </v-col>
           </v-row>
         </v-col>
@@ -335,6 +411,8 @@
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
   import MBTilesOptions from '../Common/Style/MBTilesOptions'
   import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+  import NumberPicker from '../Common/NumberPicker'
+  import NetworkConstants from '../../lib/NetworkConstants'
 
   export default {
     props: {
@@ -350,6 +428,7 @@
       back: Function
     },
     components: {
+      NumberPicker,
       DataSourceTroubleshooting,
       MBTilesOptions,
       SourceVisibilitySwitch,
@@ -366,6 +445,9 @@
     },
     data () {
       return {
+        defaultTimeout: NetworkConstants.DEFAULT_TIMEOUT,
+        defaultRateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
+        defaultRetryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
         exportingProgressDialog: false,
         styleEditorVisible: false,
         showExportAlert: false,
@@ -379,10 +461,32 @@
         renamedSource: _.isNil(this.source.displayName) ? this.source.name : this.source.displayName,
         renamedSourceRules: [
           v => !!v || 'Name is required'
-        ]
+        ],
+        connectionSettingsDialog: false,
+        timeoutMs: NetworkConstants.DEFAULT_TIMEOUT,
+        rateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
+        retryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
+        rateLimitValid: true,
+        timeoutValid: true,
+        retryAttemptsValid: true
       }
     },
     methods: {
+      closeConnectionSettingsDialog () {
+        this.connectionSettingsDialog = false
+      },
+      saveConnectionSettings () {
+        ActionUtilities.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+        this.closeConnectionSettingsDialog()
+      },
+      showConnectingSettingsDialog () {
+        this.timeoutMs = this.source.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT
+        this.rateLimit = this.source.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT
+        this.retryAttempts = !_.isNil(this.source.retryAttempts) ? this.source.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
+        this.$nextTick(() => {
+          this.connectionSettingsDialog = true
+        })
+      },
       saveLayerName () {
         this.renameDialog = false
         ActionUtilities.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})

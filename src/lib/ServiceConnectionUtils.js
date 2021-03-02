@@ -4,8 +4,8 @@ import CredentialsManagement from './CredentialsManagement'
 import URLUtilities from './URLUtilities'
 import GeoServiceUtilities from './GeoServiceUtilities'
 import XYZTileUtilities from './XYZTileUtilities'
-import WMSLayer from './source/layer/tile/WMSLayer'
-import XYZServerLayer from './source/layer/tile/XYZServerLayer'
+import LayerTypes from './source/layer/LayerTypes'
+import CancellableServiceRequest from './CancellableServiceRequest'
 
 /**
  * This utility class handles connections to supported GIS services
@@ -17,6 +17,47 @@ export default class ServiceConnectionUtils {
     WFS: 1,
     XYZ: 2,
     ARCGIS_FS: 3
+  }
+
+  /**
+   * Sets up a rate limiter for a request
+   * @param axiosInstance
+   * @param intervalMs
+   */
+  static scheduleRequests (axiosInstance, intervalMs) {
+    let lastInvocationTime = undefined
+
+    const scheduler = (config) => {
+      const now = Date.now()
+      if (lastInvocationTime) {
+        lastInvocationTime += intervalMs
+        const waitPeriodForThisRequest = lastInvocationTime - now
+        if (waitPeriodForThisRequest > 0) {
+          return new Promise((resolve) => {
+            setTimeout(
+              () => resolve(config),
+              waitPeriodForThisRequest)
+          })
+        }
+      }
+
+      lastInvocationTime = now
+      return config
+    }
+
+    axiosInstance.interceptors.request.use(scheduler)
+  }
+
+  /**
+   * Get throttled axios instance
+   * @param rateLimit
+   * @returns {AxiosInstance}
+   */
+  static getThrottledAxiosInstance (rateLimit) {
+    let axiosInstance = axios.create()
+    const throttleMs = Math.floor(Math.max(1, 1000 / (rateLimit || 10)))
+    ServiceConnectionUtils.scheduleRequests(axiosInstance, throttleMs)
+    return axiosInstance
   }
 
   /**
@@ -32,7 +73,12 @@ export default class ServiceConnectionUtils {
     try {
       result = await connFunc()
     } catch (e) {
-      if (e.response) {
+      if (axios.isCancel(e)) {
+        result.error = {
+          status: -2,
+          statusText: 'Request timed out'
+        }
+      } else if (e.response) {
         result.error = {
           status: e.response.status,
           statusText: e.response.statusText,
@@ -76,24 +122,10 @@ export default class ServiceConnectionUtils {
         let serviceInfo
         let error = undefined
         const url = GeoServiceUtilities.getGetCapabilitiesURL(serviceUrl, version, 'WMS')
-        let request = {
-          method: 'get',
-          url: url,
-          withCredentials: true
-        }
-        if (options.allowAuth) {
-          request.headers = {
-            'x-mapcache-auth-enabled': true
-          }
-        }
-        let response = await axios(request)
-        // if (options.allowAuth) {
-        //   response = await ServiceConnectionUtils.performAuthRequest(request)
-        // } else {
-        //   response = await axios(request)
-        // }
+        let cancellableServiceRequest = new CancellableServiceRequest()
+        let response = await cancellableServiceRequest.request(url, options)
         let result = await URLUtilities.parseXMLString(response.data)
-        let wmsInfo = GeoServiceUtilities.getWMSInfo(result)
+        let wmsInfo = GeoServiceUtilities.getWMSInfo(result, version)
         serviceInfo = {
           title: wmsInfo.title || 'WMS Service',
           abstract: wmsInfo.abstract,
@@ -137,19 +169,10 @@ export default class ServiceConnectionUtils {
         let error = undefined
 
         const url = GeoServiceUtilities.getGetCapabilitiesURL(serviceUrl, version, 'WFS')
-        let request = {
-          method: 'get',
-          url: url,
-          withCredentials: true
-        }
-        if (options.allowAuth) {
-          request.headers = {
-            'x-mapcache-auth-enabled': true
-          }
-        }
-        let response = await axios(request)
+        let cancellableServiceRequest = new CancellableServiceRequest()
+        let response = await cancellableServiceRequest.request(url, options)
         let result = await URLUtilities.parseXMLString(response.data)
-        let wfsInfo = GeoServiceUtilities.getWFSInfo(result)
+        let wfsInfo = GeoServiceUtilities.getWFSInfo(result, version)
         serviceInfo = {
           title: wfsInfo.title || 'WFS Service',
           abstract: wfsInfo.abstract,
@@ -189,27 +212,15 @@ export default class ServiceConnectionUtils {
       const requiresSubdomains = serviceUrl.indexOf('{s}') !== -1
       // test all subdomains
       if (requiresSubdomains) {
-        if (options.subdomains) {
+        if (options.subdomains && options.subdomains.length > 0) {
           const invalidSubdomains = []
           const subdomains = options.subdomains
           for (let i = 0; i < subdomains.length; i++) {
             const subdomain = subdomains[i]
             try {
               const url = XYZTileUtilities.generateUrlForTile(serviceUrl, [subdomain], 0, 0, 0)
-              let request = {
-                method: 'get',
-                url: url,
-                withCredentials: true
-              }
-              if (options.timeout) {
-                request.timeout = options.timeout
-              }
-              if (options.allowAuth) {
-                request.headers = {
-                  'x-mapcache-auth-enabled': true
-                }
-              }
-              await axios(request)
+              let cancellableServiceRequest = new CancellableServiceRequest()
+              await cancellableServiceRequest.request(url, options)
             } catch (e) {
               // 401 unauthorized, no need to keep checking
               if (e.response && e.response.status === 401) {
@@ -228,17 +239,8 @@ export default class ServiceConnectionUtils {
         }
       } else {
         const url = XYZTileUtilities.generateUrlForTile(serviceUrl, [], 0, 0, 0)
-        let request = {
-          method: 'get',
-          url: url,
-          withCredentials: true
-        }
-        if (options.allowAuth) {
-          request.headers = {
-            'x-mapcache-auth-enabled': true
-          }
-        }
-        await axios(request)
+        let cancellableServiceRequest = new CancellableServiceRequest()
+        await cancellableServiceRequest.request(url, options)
         serviceInfo = {}
       }
       return {serviceInfo, error}
@@ -260,17 +262,8 @@ export default class ServiceConnectionUtils {
       if (!_.isNil(queryParams['token'])) {
         url = url + '&token=' + queryParams['token']
       }
-      let request = {
-        method: 'get',
-        url: url,
-        withCredentials: true
-      }
-      if (options.allowAuth) {
-        request.headers = {
-          'x-mapcache-auth-enabled': true
-        }
-      }
-      let response = await axios(request)
+      let cancellableServiceRequest = new CancellableServiceRequest()
+      let response = await cancellableServiceRequest.request(url, options)
       serviceInfo = {
         title: 'ArcGIS REST Feature Service',
         abstract: response.data.serviceDescription || '',
@@ -379,12 +372,30 @@ export default class ServiceConnectionUtils {
   }
 
   /**
+   * Checks if an error is an authentication error
+   * @param response
+   * @returns {boolean}
+   */
+  static isAuthenticationErrorResponse (response) {
+    return !_.isNil(response) && response.status === 401
+  }
+
+  /**
    * Checks if an error is a server error
    * @param error
    * @returns {boolean}
    */
   static isServerError (error) {
     return !_.isNil(error) && error.status >= 500
+  }
+
+  /**
+   * Checks if an error is due to a timeout
+   * @param error
+   * @returns {boolean}
+   */
+  static isTimeoutError (error) {
+    return !_.isNil(error) && error.status === -2
   }
 
   /**
@@ -406,9 +417,10 @@ export default class ServiceConnectionUtils {
    * @param source
    * @param updateDataSource
    * @param allowAuth
+   * @param timeout
    * @returns {Promise<boolean>}
    */
-  static async connectToSource (projectId, source, updateDataSource, allowAuth = true) {
+  static async connectToSource (projectId, source, updateDataSource, allowAuth = true, timeout = 5000) {
     let success = false
     if (!_.isNil(source)) {
       const serviceType = ServiceConnectionUtils.getServiceType(source.layerType)
@@ -418,6 +430,9 @@ export default class ServiceConnectionUtils {
       }
       if (source.version) {
         options.version = source.version
+      }
+      if (!_.isNil(timeout) && timeout > 0) {
+        options.timeout = timeout
       }
       options.allowAuth = allowAuth
       let {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(source.filePath, serviceType, options)
@@ -435,6 +450,7 @@ export default class ServiceConnectionUtils {
         if (valid) {
           let sourceClone = _.cloneDeep(source)
           sourceClone.error = undefined
+          sourceClone.visible = true
           updateDataSource({projectId: projectId, source: sourceClone})
           success = true
         }
@@ -442,6 +458,7 @@ export default class ServiceConnectionUtils {
       if (error) {
         let sourceClone = _.cloneDeep(source)
         sourceClone.error = error
+        sourceClone.visible = false
         updateDataSource({projectId: projectId, source: sourceClone})
       }
     }
@@ -452,10 +469,11 @@ export default class ServiceConnectionUtils {
    * Attempts to connect to a source
    * @param baseMap
    * @param editBaseMap
-   * @param allowAuth
+   * @param allowAuth (default true)
+   * @param timeout (default 5000)
    * @returns {Promise<boolean>}
    */
-  static async connectToBaseMap (baseMap, editBaseMap, allowAuth = true) {
+  static async connectToBaseMap (baseMap, editBaseMap, allowAuth = true, timeout = 5000) {
     let success = false
     if (!_.isNil(baseMap.layerConfiguration)) {
       const serviceType = ServiceConnectionUtils.getServiceType(baseMap.layerConfiguration.layerType)
@@ -465,6 +483,9 @@ export default class ServiceConnectionUtils {
       }
       if (baseMap.layerConfiguration.version) {
         options.version = baseMap.layerConfiguration.version
+      }
+      if (!_.isNil(timeout) && timeout > 0) {
+        options.timeout = timeout
       }
       options.allowAuth = allowAuth
       let {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
@@ -501,6 +522,6 @@ export default class ServiceConnectionUtils {
    * @returns {boolean}
    */
   static isRemoteSource(source) {
-    return source.layerType === WMSLayer.LAYER_TYPE || source.layerType === XYZServerLayer.LAYER_TYPE
+    return source.layerType === LayerTypes.WMS || source.layerType === LayerTypes.XYZ_SERVER
   }
 }

@@ -1,16 +1,15 @@
 import WMSMapLayer from './WMSMapLayer'
 import XYZServerMapLayer from './XYZServerMapLayer'
 import DefaultMapLayer from './DefaultMapLayer'
-import WMSLayer from '../../source/layer/tile/WMSLayer'
-import XYZServerLayer from '../../source/layer/tile/XYZServerLayer'
+import LayerTypes from '../../source/layer/LayerTypes'
 
 export default class LeafletMapLayerFactory {
-  static constructMapLayer (layerModel, mapPane = 'overlayPane') {
+  static constructMapLayer (layerModel, mapPane = 'overlayPane', isPreview = false) {
     switch (layerModel.layerType) {
-      case WMSLayer.LAYER_TYPE:
-        return WMSMapLayer.constructMapLayer(layerModel, mapPane)
-      case XYZServerLayer.LAYER_TYPE:
-        return XYZServerMapLayer.constructMapLayer(layerModel, mapPane)
+      case LayerTypes.WMS:
+        return WMSMapLayer.constructMapLayer(layerModel, mapPane, isPreview)
+      case LayerTypes.XYZ_SERVER:
+        return XYZServerMapLayer.constructMapLayer(layerModel, mapPane, isPreview)
       default:
         return DefaultMapLayer.constructMapLayer(layerModel, mapPane)
     }

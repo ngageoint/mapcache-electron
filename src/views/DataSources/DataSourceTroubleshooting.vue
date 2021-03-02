@@ -31,6 +31,7 @@
   import _ from 'lodash'
   import ActionUtilities from '../../lib/ActionUtilities'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
+  import NetworkConstants from '../../lib/NetworkConstants'
 
   export default {
     props: {
@@ -58,6 +59,8 @@
           message = 'The credentials for this data source are not valid.'
         } else if (ServiceConnectionUtils.isServerError(this.source.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
+        } else if (ServiceConnectionUtils.isTimeoutError(this.source.error)) {
+          message = 'The request to the server timed out.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
         }
@@ -84,7 +87,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource)) {
+        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource, true, this.source.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

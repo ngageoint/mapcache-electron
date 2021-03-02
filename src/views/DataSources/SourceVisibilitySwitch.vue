@@ -1,11 +1,11 @@
 <template>
-  <v-switch :disabled="disabled" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop.prevent="" @change="visibilityChanged"></v-switch>
+  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop.prevent="" @change="visibilityChanged"></v-switch>
 </template>
 
 <script>
+  import _ from 'lodash'
   import EventBus from '../../EventBus'
   import ActionUtilities from '../../lib/ActionUtilities'
-  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
 
   export default {
     props: {
@@ -17,6 +17,13 @@
         default: false
       }
     },
+    computed: {
+      errored: {
+        get () {
+          return !_.isNil(this.source) && !_.isNil(this.source.error)
+        }
+      }
+    },
     data () {
       return {
         loadingContent: false,
@@ -25,21 +32,8 @@
     },
     methods: {
       async visibilityChanged () {
-        let success = true
         let value = this.model
-        // making visible - ensure that a url data source is 'healthy'
-        if (value && ServiceConnectionUtils.isRemoteSource(this.source)) {
-          this.loadingContent = true
-          success = await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource)
-          this.loadingContent = false
-        }
-        if (success) {
-          ActionUtilities.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: value})
-        } else {
-          this.$nextTick(() => {
-            this.model = false
-          })
-        }
+        ActionUtilities.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: value})
       }
     },
     watch: {

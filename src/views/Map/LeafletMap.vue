@@ -237,12 +237,9 @@
   import draggable from 'vuedraggable'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
   import offline from '../../assets/ne_50m_countries.geo'
-  import GeoTiffLayer from '../../lib/source/layer/tile/GeoTiffLayer'
-  import MBTilesLayer from '../../lib/source/layer/tile/MBTilesLayer'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
-  import XYZServerLayer from '../../lib/source/layer/tile/XYZServerLayer'
-  import WMSLayer from '../../lib/source/layer/tile/WMSLayer'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
+  import LayerTypes from '../../lib/source/layer/LayerTypes'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -583,7 +580,7 @@
           source.initialize().then(function () {
             // update style just in case during the initialization the layer was modified
             if (!_.isNil(sourceLayers[sourceId])) {
-              if (source.layerType === GeoTiffLayer.LAYER_TYPE || source.layerType === MBTilesLayer.LAYER_TYPE) {
+              if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
                 source.updateStyle(sourceLayers[sourceId].configuration)
               }
               let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
@@ -627,7 +624,7 @@
           layer.initialize().then(function () {
             // update style just in case during the initialization the layer was modified
             if (!_.isNil(self.baseMapLayers[baseMapId])) {
-              if (layer.layerType === GeoTiffLayer.LAYER_TYPE || layer.layerType === MBTilesLayer.LAYER_TYPE) {
+              if (layer.layerType === LayerTypes.GEOTIFF || layer.layerType === LayerTypes.MBTILES) {
                 layer.updateStyle(self.baseMapLayers[baseMapId].layerConfiguration)
               }
               let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
@@ -1179,6 +1176,8 @@
       }
     },
     watch: {
+      // TODO: cleanup logic for updating a base map. we should be able to update the map layer with the necessary information,
+      //  rather than recreating it over and over again. Just need to make sure we tell it to repaint
       baseMaps: {
         async handler (newBaseMaps) {
           const self = this
@@ -1211,14 +1210,14 @@
             self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
           } else {
             if (!_.isNil(selectedBaseMap) && !_.isNil(selectedBaseMap.layerConfiguration) && !_.isNil(self.baseMapLayers[selectedBaseMapId]) && !_.isNil(self.baseMapLayers[selectedBaseMapId].initializedLayer)) {
-              if (selectedBaseMap.layerConfiguration.layerType === GeoTiffLayer.LAYER_TYPE || selectedBaseMap.layerConfiguration.layerType === MBTilesLayer.LAYER_TYPE) {
+              if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || selectedBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES) {
                 self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
                 self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(selectedBaseMap.layerConfiguration)
                 self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
                 self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
               } else if (!_.isEqual(selectedBaseMap.layerConfiguration.styleKey, oldBaseMapConfig.styleKey) && selectedBaseMap.layerConfiguration.pane === 'vector') {
                 self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                await self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(this.project.maxFeatures)
+                self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(this.project.maxFeatures)
                 self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
                 self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
               } else {
@@ -1239,6 +1238,13 @@
                 self.baseMapLayers[selectedBaseMapId].mapLayer.setError(selectedBaseMap.error)
                 // eslint-disable-next-line no-empty
               } catch (e) {}
+              try {
+                if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.WMS || selectedBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
+                  self.baseMapLayers[selectedBaseMapId].initializedLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
+                  self.baseMapLayers[selectedBaseMapId].mapLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
+                }
+                // eslint-disable-next-line no-empty
+              } catch (e) {}
               this.mapBackground = selectedBaseMap.background || '#ddd'
             }
           }
@@ -1253,7 +1259,7 @@
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && (newBaseMap.layerConfiguration.layerType === WMSLayer.LAYER_TYPE || newBaseMap.layerConfiguration.layerType === XYZServerLayer.LAYER_TYPE)) {
+            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER)) {
               success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap)
             }
 
@@ -1274,11 +1280,17 @@
                   self.baseMapLayers[newBaseMapId].mapLayer.setOpacity(newBaseMap.layerConfiguration.opacity)
                   // eslint-disable-next-line no-empty
                 } catch (e) {}
-                if (newBaseMap.layerConfiguration.layerType === GeoTiffLayer.LAYER_TYPE || newBaseMap.layerConfiguration.layerType === MBTilesLayer.LAYER_TYPE && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
+                try {
+                  if (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
+                    self.baseMapLayers[newBaseMapId].initializedLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
+                    self.baseMapLayers[newBaseMapId].mapLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
+                  }
+                  // eslint-disable-next-line no-empty
+                } catch (e) {}
+                if (newBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || newBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
                   self.baseMapLayers[newBaseMapId].initializedLayer.updateStyle(newBaseMap.layerConfiguration)
                   self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
                 }
-
                 try {
                   if (self.baseMapLayers[newBaseMapId].mapLayer.hasError()) {
                     self.baseMapLayers[newBaseMapId].initializedLayer.error = newBaseMap.error
@@ -1376,8 +1388,8 @@
             let updatedSource = updatedSources[sourceId]
             let oldLayerConfig = sourceLayers[sourceId].configuration
             // something other than sourceKey, maxFeatures, visible, or feature assignments changed
-            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible']), _.omit(oldLayerConfig, ['styleKey', 'visible']))) {
-              if (updatedSource.layerType === GeoTiffLayer.LAYER_TYPE || updatedSource.layerType === MBTilesLayer.LAYER_TYPE) {
+            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible', 'retryAttempts', 'rateLimit', 'timeoutMs']), _.omit(oldLayerConfig, ['styleKey', 'visible', 'retryAttempts', 'rateLimit', 'timeoutMs']))) {
+              if (updatedSource.layerType === LayerTypes.GEOTIFF || updatedSource.layerType === LayerTypes.MBTILES) {
                 sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
                 if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
                   sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
@@ -1410,7 +1422,7 @@
                     // update style just in case during the initialization the layer was modified
                     if (!_.isNil(sourceLayers[sourceId])) {
                       sourceLayers[sourceId].initializedSource = source
-                      if (source.layerType === GeoTiffLayer.LAYER_TYPE || source.layerType === MBTilesLayer.LAYER_TYPE) {
+                      if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
                         sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
                       }
                       // it is possible that the user could have disabled the source while waiting, or cleared sources...
@@ -1424,7 +1436,7 @@
                     EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
                   })
                 } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
-                  if (sourceLayers[sourceId].initializedSource.layerType === GeoTiffLayer.LAYER_TYPE || sourceLayers[sourceId].initializedSource.layerType === MBTilesLayer.LAYER_TYPE) {
+                  if (sourceLayers[sourceId].initializedSource.layerType === LayerTypes.GEOTIFF || sourceLayers[sourceId].initializedSource.layerType === LayerTypes.MBTILES) {
                     sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
                   }
                   if (!_.isNil(sourceLayers[sourceId].mapLayer)) {
@@ -1464,6 +1476,17 @@
                   sourceLayers[sourceId].mapLayer = updateMapLayer
                 }
               })
+            } else if (!_.isEqual(updatedSource.rateLimit, oldLayerConfig.rateLimit) || !_.isEqual(updatedSource.retryAttempts, oldLayerConfig.retryAttempts) || !_.isEqual(updatedSource.timeoutMs, oldLayerConfig.timeoutMs)) {
+              try {
+                sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
+                sourceLayers[sourceId].initializedSource.updateNetworkSettings(updatedSource)
+                let mapLayer = sourceLayers[sourceId].mapLayer
+                if (mapLayer) {
+                  mapLayer.updateNetworkSettings(updatedSource)
+                }
+                // eslint-disable-next-line no-empty
+              } catch (e) {}
+
             }
           })
 

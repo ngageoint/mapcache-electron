@@ -1,9 +1,8 @@
 import TileLayer from './TileLayer'
 import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
+import LayerTypes from '../LayerTypes'
 
 export default class GeoPackageLayer extends TileLayer {
-  static LAYER_TYPE = 'GeoPackage'
-
   geopackage
   dao
 
@@ -21,7 +20,7 @@ export default class GeoPackageLayer extends TileLayer {
       ...super.configuration,
       ...{
         extent: this.extent,
-        layerType: GeoPackageLayer.LAYER_TYPE,
+        layerType: LayerTypes.GEOPACKAGE,
         minZoom: this.minZoom,
         maxZoom: this.maxZoom
       }
