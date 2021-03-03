@@ -4,15 +4,15 @@ import UniqueIDUtilities from './UniqueIDUtilities'
 import { ipcRenderer } from 'electron'
 
 export default class CancellableServiceRequest {
-  cancelToken
+  source
 
   /**
    * If a request is currently active, call cancelToken function
    * and set state to cancelled to prevent additional retries
    */
   cancel () {
-    if (!_.isNil(this.cancelToken)) {
-      this.cancelToken()
+    if (!_.isNil(this.source)) {
+      this.source.cancel('Operation cancelled by user.')
     }
   }
 
@@ -36,14 +36,13 @@ export default class CancellableServiceRequest {
       this.cancel()
     }
     try {
-      let self = this
+      const CancelToken = axios.CancelToken
+      this.source = CancelToken.source()
       const request = {
         method: 'get',
         url: url,
-        cancelToken: new axios.CancelToken(function executor(c) {
-          self.cancelToken = c
-        }),
-        withCredentials: true
+        withCredentials: true,
+        cancelToken: this.source.token
       }
       request.headers = {}
       if (options.allowAuth) {

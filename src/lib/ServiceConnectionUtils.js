@@ -6,6 +6,7 @@ import GeoServiceUtilities from './GeoServiceUtilities'
 import XYZTileUtilities from './XYZTileUtilities'
 import LayerTypes from './source/layer/LayerTypes'
 import CancellableServiceRequest from './CancellableServiceRequest'
+import AxiosRequestScheduler from './AxiosRequestScheduler'
 
 /**
  * This utility class handles connections to supported GIS services
@@ -20,44 +21,12 @@ export default class ServiceConnectionUtils {
   }
 
   /**
-   * Sets up a rate limiter for a request
-   * @param axiosInstance
-   * @param intervalMs
-   */
-  static scheduleRequests (axiosInstance, intervalMs) {
-    let lastInvocationTime = undefined
-
-    const scheduler = (config) => {
-      const now = Date.now()
-      if (lastInvocationTime) {
-        lastInvocationTime += intervalMs
-        const waitPeriodForThisRequest = lastInvocationTime - now
-        if (waitPeriodForThisRequest > 0) {
-          return new Promise((resolve) => {
-            setTimeout(
-              () => resolve(config),
-              waitPeriodForThisRequest)
-          })
-        }
-      }
-
-      lastInvocationTime = now
-      return config
-    }
-
-    axiosInstance.interceptors.request.use(scheduler)
-  }
-
-  /**
-   * Get throttled axios instance
+   * Gets throttled axios instance
    * @param rateLimit
-   * @returns {AxiosInstance}
+   * @returns {AxiosRequestScheduler}
    */
-  static getThrottledAxiosInstance (rateLimit) {
-    let axiosInstance = axios.create()
-    const throttleMs = Math.floor(Math.max(1, 1000 / (rateLimit || 10)))
-    ServiceConnectionUtils.scheduleRequests(axiosInstance, throttleMs)
-    return axiosInstance
+  static getAxiosRequestScheduler (rateLimit) {
+    return new AxiosRequestScheduler(rateLimit)
   }
 
   /**

@@ -13,7 +13,7 @@ export default class XYZServerLayer extends NetworkTileLayer {
   }
 
   async initialize () {
-    this.axiosInstance = ServiceConnectionUtils.getThrottledAxiosInstance(this.rateLimit)
+    this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(this.rateLimit)
     await super.initialize()
     const options = {
       subdomains: this.subdomains || [],
@@ -51,7 +51,7 @@ export default class XYZServerLayer extends NetworkTileLayer {
     } else {
       const cancellableTileRequest = new CancellableTileRequest()
       const url = XYZTileUtilities.generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)
-      cancellableTileRequest.requestTile(this.axiosInstance, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!_.isNil(error)) {
           this.setError(error)
         }

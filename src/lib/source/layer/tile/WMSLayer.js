@@ -16,7 +16,7 @@ export default class WMSLayer extends NetworkTileLayer {
 
   async initialize () {
     this.version = this._configuration.version
-    this.axiosInstance = ServiceConnectionUtils.getThrottledAxiosInstance(this.rateLimit)
+    this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(this.rateLimit)
     const options = {
       timeout: this.timeoutMs,
       allowAuth: true
@@ -82,7 +82,7 @@ export default class WMSLayer extends NetworkTileLayer {
 
       const cancellableTileRequest = new CancellableTileRequest()
       const url = GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version)
-      cancellableTileRequest.requestTile(this.axiosInstance, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!_.isNil(error)) {
           this.setError(error)
         }

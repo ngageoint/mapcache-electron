@@ -6,7 +6,8 @@ import { ipcRenderer } from 'electron'
 
 export default class CancellableTileRequest {
   cancelled = false
-  cancelToken
+  source
+  axiosRequestScheduler
 
   /**
    * If a request is currently active, call cancelToken function
@@ -14,30 +15,39 @@ export default class CancellableTileRequest {
    */
   cancel () {
     this.cancelled = true
-    if (!_.isNil(this.cancelToken)) {
-      this.cancelToken()
+    if (!_.isNil(this.source)) {
+      const token = this.source.token
+      this.source.cancel('Operation cancelled by the user.')
+      if (!_.isNil(this.axiosRequestScheduler)) {
+        this.axiosRequestScheduler.cancel(token)
+      }
     }
   }
 
   timeout () {
-    if (!_.isNil(this.cancelToken)) {
-      this.cancelToken()
+    if (!_.isNil(this.source)) {
+      const token = this.source.token
+      this.source.cancel('Operation timed out.')
+      if (!_.isNil(this.axiosRequestScheduler)) {
+        this.axiosRequestScheduler.cancel(token)
+      }
     }
   }
 
   /**
    * Returns the data url of the response, or an error
-   * @param axiosInstance
+   * @param axiosRequestScheduler
    * @param url
    * @param retryAttempts
    * @param timeout
    * @returns {Promise<{dataURL: undefined, error: *}>}
    */
-  async requestTile (axiosInstance, url, retryAttempts, timeout) {
+  async requestTile (axiosRequestScheduler, url, retryAttempts, timeout) {
     let dataUrl = undefined
     let attempts = 0
     let error
 
+    this.axiosRequestScheduler = axiosRequestScheduler
     while (!this.cancelled && _.isNil(dataUrl) && attempts <= retryAttempts) {
       const requestId = UniqueIDUtilities.createUniqueID()
       const requestTimeoutChannel = 'cancel-request-' + requestId
@@ -50,16 +60,15 @@ export default class CancellableTileRequest {
       }
       headers['x-mapcache-connection-id'] = requestId
       try {
-        let self = this
         ipcRenderer.once(requestTimeoutChannel, timeoutListener)
-        let response = await axiosInstance({
+        const CancelToken = axios.CancelToken
+        this.source = CancelToken.source()
+        let response = await axiosRequestScheduler.getAxiosInstance()({
           method: 'get',
           url: url,
           responseType: 'arraybuffer',
           headers: headers,
-          cancelToken: new axios.CancelToken(function executor(c) {
-            self.cancelToken = c
-          })
+          cancelToken: this.source.token,
         })
         ipcRenderer.off(requestTimeoutChannel, timeoutListener)
         dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
@@ -68,7 +77,7 @@ export default class CancellableTileRequest {
         ipcRenderer.off(requestTimeoutChannel, timeoutListener)
         error = err
         // if it is an authentication error, stop retrying
-        if (ServiceConnectionUtils.isAuthenticationErrorResponse(err.response)) {
+        if (!_.isNil(err) && ServiceConnectionUtils.isAuthenticationErrorResponse(err.response)) {
           break
         }
         // the tile request was cancelled, therefore, ignore the error

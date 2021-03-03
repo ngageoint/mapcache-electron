@@ -19,12 +19,14 @@ export default class XYZServerLayer {
         this.retryAttempts = !_.isNil(layerModel.retryAttempts) ? layerModel.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
         this.timeout = layerModel.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT
         this.error = null
-        this.axiosInstance = ServiceConnectionUtils.getThrottledAxiosInstance(this.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT)
-
+        this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(layerModel.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT)
       },
       updateNetworkSettings (configuration) {
         if (!_.isNil(configuration.rateLimit)) {
-          this.axiosInstance = ServiceConnectionUtils.getThrottledAxiosInstance(configuration.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT)
+          if (!_.isNil(this.axiosRequestScheduler)) {
+            this.axiosRequestScheduler.destroy()
+          }
+          this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(configuration.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT)
         }
         if (!_.isNil(configuration.retryAttempts)) {
           this.retryAttempts = configuration.retryAttempts
@@ -71,7 +73,7 @@ export default class XYZServerLayer {
           }
           this.on('tileunload', unloadListener)
           const url = this.getTileUrl(coords)
-          cancellableTileRequest.requestTile(this.axiosInstance, url, this.retryAttempts, this.timeout).then(({dataUrl, error}) => {
+          cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeout).then(({dataUrl, error}) => {
             if (!_.isNil(error) && !isPreview) {
               this.setError(error)
             }
