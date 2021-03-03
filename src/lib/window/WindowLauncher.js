@@ -29,6 +29,9 @@ class WindowLauncher {
   // certSelectionMade
   certSelectionMade = false
 
+  // userCredentialRequestInProgress
+  userCredentialRequestInProgress = false
+
   isWindowVisible () {
     return this.mainWindow !== null || this.projectWindow !== null || this.loadingWindow !== null
   }
@@ -447,9 +450,11 @@ class WindowLauncher {
     this.projectWindow.webContents.on('login', (event, details, authInfo, callback) => {
       if (details.firstAuthAttempt && (!_.isNil(details.responseHeaders) && !_.isNil(details.responseHeaders['x-mapcache-auth-enabled']))) {
         event.preventDefault()
-        if (CredentialsManagement.getAuthType(authInfo.scheme) === CredentialsManagement.CREDENTIAL_TYPE_BASIC) {
+        if (!this.userCredentialRequestInProgress) {
+          this.userCredentialRequestInProgress = true
           ipcMain.removeAllListeners('client-credentials-input')
           ipcMain.once('client-credentials-input', async (event, credentials) => {
+            this.userCredentialRequestInProgress = false
             if (credentials === null || credentials === undefined) {
               callback()
             } else {
@@ -460,6 +465,8 @@ class WindowLauncher {
             authInfo: authInfo,
             details: details
           })
+        } else {
+          callback()
         }
       }
     })

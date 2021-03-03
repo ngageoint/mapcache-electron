@@ -2,7 +2,6 @@ import store from '../.'
 import _ from 'lodash'
 import { mapcache } from '../../../package.json'
 import BaseMapUtilities from '../../lib/BaseMapUtilities'
-import CredentialsManagement from '../../lib/CredentialsManagement'
 
 const migrations = {
   2: async function (state) {

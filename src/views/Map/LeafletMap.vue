@@ -583,11 +583,14 @@
               if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
                 source.updateStyle(sourceLayers[sourceId].configuration)
               }
-              let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
-              self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(source, map))
-              sourceLayers[sourceId].initializedSource = source
-              sourceLayers[sourceId].mapLayer = mapLayer
-              sourceLayers[sourceId].initializing = false
+              const sourceValid = !ServiceConnectionUtils.isRemoteSource(source) || !source.hasError()
+              if (sourceValid) {
+                let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
+                self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(source, map))
+                sourceLayers[sourceId].initializedSource = source
+                sourceLayers[sourceId].mapLayer = mapLayer
+                sourceLayers[sourceId].initializing = false
+              }
               EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
             }
           })
@@ -1425,8 +1428,9 @@
                       if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
                         sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
                       }
+                      const sourceValid = !ServiceConnectionUtils.isRemoteSource(source) || !source.hasError()
                       // it is possible that the user could have disabled the source while waiting, or cleared sources...
-                      if (sourceLayers[sourceId].configuration.visible) {
+                      if (sourceLayers[sourceId].configuration.visible && sourceValid) {
                         let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
                         self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(source, map))
                         sourceLayers[sourceId].mapLayer = mapLayer

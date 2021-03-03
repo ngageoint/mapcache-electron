@@ -150,6 +150,9 @@
       onClickOpenProject (project) {
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
+
+        ActionUtilities.disableRemoteSources(project.id)
+
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })

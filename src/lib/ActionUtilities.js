@@ -7,6 +7,7 @@ import store from '../store'
 import Vue from 'vue'
 import GarbageCollector from './GarbageCollector'
 import LayerFactory from './source/layer/LayerFactory'
+import ServiceConnectionUtils from './ServiceConnectionUtils'
 
 /**
  * ActionUtilities is a helper class for performing actions prior to updating the store
@@ -800,6 +801,20 @@ export default class ActionUtilities {
       baseMapCopy.layerConfiguration.rateLimit = rateLimit
       baseMapCopy.layerConfiguration.retryAttempts = retryAttempts
       store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+    }
+  }
+
+  /**
+   * Disables remote sources
+   * @param projectId
+   */
+  static disableRemoteSources(projectId) {
+    const sources = _.values(store.state.Projects[projectId].sources)
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i]
+      if (ServiceConnectionUtils.isRemoteSource(source)) {
+        ActionUtilities.setDataSourceVisible({projectId, sourceId: source.id, visible: false})
+      }
     }
   }
 }
