@@ -29,16 +29,16 @@ export default class CancellableTileRequest {
    * Returns the data url of the response, or an error
    * @param axiosInstance
    * @param url
-   * @param maxAttempts
+   * @param retryAttempts
    * @param timeout
    * @returns {Promise<{dataURL: undefined, error: *}>}
    */
-  async requestTile (axiosInstance, url, maxAttempts, timeout) {
+  async requestTile (axiosInstance, url, retryAttempts, timeout) {
     let dataUrl = undefined
     let attempts = 0
     let error
 
-    while (!this.cancelled && _.isNil(dataUrl) && attempts < maxAttempts) {
+    while (!this.cancelled && _.isNil(dataUrl) && attempts <= retryAttempts) {
       const requestId = UniqueIDUtilities.createUniqueID()
       const requestTimeoutChannel = 'cancel-request-' + requestId
       const timeoutListener = () => {
