@@ -102,7 +102,8 @@ export default class ServiceConnectionUtils {
           contactName: wmsInfo.contactName,
           contactOrg: wmsInfo.contactOrg,
           serviceLayers: wmsInfo.layers,
-          unsupportedServiceLayers: wmsInfo.unsupportedLayers
+          unsupportedServiceLayers: wmsInfo.unsupportedLayers,
+          format: wmsInfo.format
         }
         return {serviceInfo, error}
       })

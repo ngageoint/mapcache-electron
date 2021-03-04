@@ -157,9 +157,11 @@
             color="primary"
           ></v-progress-circular>
         </v-stepper-content>
-        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 3" step="3" color="primary">
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 3" step="3" color="primary" :rules="[() => (selectedServiceType !== 0 || (selectedServiceType === 0 && serviceInfo.format !== undefined)) && serviceLayers.length > 0]">
           {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers'}}
-          <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
+          <small v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="pt-1">No supported image formats</small>
+          <small v-else-if="serviceLayers.length === 0" class="pt-1">No supported layers available</small>
+          <small v-else class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" step="3">
           <v-card flat tile>
@@ -172,38 +174,41 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
             <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
-              <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 supported layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 supported layers available for import.'}}</v-card-subtitle>
-              <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
-              <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
-              <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
-                <v-list dense>
-                  <v-list-item-group
-                    v-model="selectedDataSourceLayers"
-                    multiple
-                    color="primary"
-                  >
-                    <v-list-item
-                      v-for="(item, i) in serviceLayers"
-                      :key="`service-layer-${i}`"
-                      :value="item"
-                      link
+              <v-card-subtitle v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="warning--text pb-0 mb-4">{{'WMS server does not utilize any of the following web supported image formats: ' + supportedImageFormats.join(', ')}}</v-card-subtitle>
+              <v-sheet v-else>
+                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 supported layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 supported layers available for import.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
+                <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
+                  <v-list dense>
+                    <v-list-item-group
+                      v-model="selectedDataSourceLayers"
+                      multiple
+                      color="primary"
                     >
-                      <template v-slot:default="{ active }">
-                        <v-list-item-content>
-                          <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                          <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + 'service-layer-title'" v-html="title"></div></div>
-                        </v-list-item-content>
-                        <v-list-item-action>
-                          <v-switch
-                            :input-value="active"
-                            color="primary"
-                          ></v-switch>
-                        </v-list-item-action>
-                      </template>
-                    </v-list-item>
-                  </v-list-item-group>
-                </v-list>
-              </v-card-text>
+                      <v-list-item
+                        v-for="(item, i) in serviceLayers"
+                        :key="`service-layer-${i}`"
+                        :value="item"
+                        link
+                      >
+                        <template v-slot:default="{ active }">
+                          <v-list-item-content>
+                            <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
+                            <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + 'service-layer-title'" v-html="title"></div></div>
+                          </v-list-item-content>
+                          <v-list-item-action>
+                            <v-switch
+                              :input-value="active"
+                              color="primary"
+                            ></v-switch>
+                          </v-list-item-action>
+                        </template>
+                      </v-list-item>
+                    </v-list-item-group>
+                  </v-list>
+                </v-card-text>
+              </v-sheet>
             </v-card>
             <v-card flat tile v-if="unsupportedServiceLayers.length > 0">
               <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WMS service.'}}</v-card-subtitle>
@@ -316,6 +321,7 @@
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
   import XYZTileUtilities from '../../lib/XYZTileUtilities'
   import NetworkConstants from '../../lib/NetworkConstants'
+  import GeoServiceUtilities from '../../lib/GeoServiceUtilities'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -353,6 +359,7 @@
     },
     data () {
       return {
+        supportedImageFormats: GeoServiceUtilities.supportedImageFormats,
         connected: false,
         step: 1,
         drag: false,
@@ -484,7 +491,8 @@
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
             layers: this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
-            name: this.dataSourceName
+            name: this.dataSourceName,
+            format: this.serviceInfo.format
           }
           this.addUrlToHistory(this.dataSourceUrl)
           this.resetURLValidation()
@@ -552,7 +560,7 @@
         let source
         if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
           if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS) {
-            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), 'Preview')
+            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), 'Preview', this.serviceInfo.format)
           } else if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ) {
             source = await SourceFactory.constructXYZSource(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), this.subdomainText.split(','), 'Preview')
           }

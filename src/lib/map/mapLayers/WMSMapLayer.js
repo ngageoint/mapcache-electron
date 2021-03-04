@@ -18,7 +18,7 @@ export default class WMSLayer {
       layers: layerModel.layers.join(),
       bounds: bounds,
       transparent: true,
-      format: 'image/png',
+      format: layerModel.format || 'image/png',
       zIndex: 401,
       pane: mapPane
     }

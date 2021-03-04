@@ -16,8 +16,8 @@ export default class SourceFactory {
     return new XYZServerSource(parameterizedUrl, subdomains, sourceName)
   }
 
-  static async constructWMSSource (url, layers, sourceName) {
-    return new WMSSource(url, layers, sourceName)
+  static async constructWMSSource (url, layers, sourceName, format) {
+    return new WMSSource(url, layers, sourceName, format)
   }
 
   static async constructWFSSource (url, layers, sourceName) {

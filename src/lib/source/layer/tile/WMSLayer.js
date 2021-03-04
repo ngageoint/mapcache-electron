@@ -12,6 +12,7 @@ export default class WMSLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
     super(configuration)
     this.layers = configuration.layers
+    this.format = configuration.format || 'image/png'
   }
 
   async initialize () {
@@ -43,7 +44,8 @@ export default class WMSLayer extends NetworkTileLayer {
       ...{
         layerType: LayerTypes.WMS,
         version: this.version,
-        layers: this.layers
+        layers: this.layers,
+        formats: this.formats
       }
     }
   }
@@ -81,7 +83,7 @@ export default class WMSLayer extends NetworkTileLayer {
       }
 
       const cancellableTileRequest = new CancellableTileRequest()
-      const url = GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version)
+      const url = GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version, this.format)
       cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!_.isNil(error)) {
           this.setError(error)

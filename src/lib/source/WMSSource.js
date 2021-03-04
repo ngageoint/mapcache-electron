@@ -23,7 +23,7 @@ export default class WMSSource extends Source {
         }
       })
       const version = this.layers[0].version
-      this.wmsLayers.push(new WMSLayer({id: UniqueIDUtilities.createUniqueID(), filePath: this.filePath, name: this.sourceName, sourceLayerName: this.sourceName, layers: layerNames, extent, version}))
+      this.wmsLayers.push(new WMSLayer({id: UniqueIDUtilities.createUniqueID(), filePath: this.filePath, name: this.sourceName, sourceLayerName: this.sourceName, layers: layerNames, extent, version, format: this.format}))
     }
     return this.wmsLayers
   }

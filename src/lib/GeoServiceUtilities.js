@@ -3,6 +3,8 @@ import URLUtilities from './URLUtilities'
 import _ from 'lodash'
 
 export default class GeoServiceUtilities {
+  static supportedImageFormats = ['image/png', 'image/svg+xml', 'image/jpg', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp']
+
   // get the GetCapabilities URL
   static getGetCapabilitiesURL (wmsUrl, version, service) {
     let {baseUrl, queryParams} = URLUtilities.getBaseUrlAndQueryParams(wmsUrl)
@@ -92,6 +94,23 @@ export default class GeoServiceUtilities {
     return layers
   }
 
+
+  /**
+   * Recommended format for GetMap is image/png, then image/[jpg|jpeg], then image/gif
+   * @param formats
+   */
+  static getRecommendedFormat (formats) {
+    let format
+    for (let i = 0; i < GeoServiceUtilities.supportedImageFormats.length; i++) {
+      const supportedFormat = GeoServiceUtilities.supportedImageFormats[i]
+      if (formats.indexOf(supportedFormat) !== -1) {
+        format = supportedFormat
+        break
+      }
+    }
+    return format
+  }
+
   /**
    * Parses WMS info
    * @param json
@@ -100,6 +119,7 @@ export default class GeoServiceUtilities {
   static getWMSInfo (json, version) {
     let wmsInfo = {}
     let layers = []
+    let format
     try {
       let capabilities
       if (!_.isNil(json['WMT_MS_Capabilities'])) {
@@ -118,9 +138,15 @@ export default class GeoServiceUtilities {
             wmsInfo.contactOrg = contactInformation['ContactOrganization'][0]
           } catch (error) {}
         }
-
         const wmsCapability = capabilities['Capability']
         if (!_.isNil(wmsCapability)) {
+          const request = wmsCapability[0]['Request']
+          if (!_.isNil(request)) {
+           const getMap = request[0]['GetMap']
+            if (!_.isNil(getMap) && !_.isNil(getMap[0]['Format'])) {
+              format = GeoServiceUtilities.getRecommendedFormat(getMap[0]['Format'])
+            }
+          }
           layers.push(...GeoServiceUtilities.getLayers(wmsCapability[0], version))
         }
       }
@@ -130,6 +156,7 @@ export default class GeoServiceUtilities {
     }
     wmsInfo.layers = layers.filter(layer => layer.has3857)
     wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
+    wmsInfo.format = format
     return wmsInfo
   }
 
@@ -293,7 +320,7 @@ export default class GeoServiceUtilities {
     return wfsInfo
   }
 
-  static getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName, version) {
+  static getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName, version, format) {
     let {baseUrl, queryParams} = URLUtilities.getBaseUrlAndQueryParams(wmsUrl)
     if (queryParams['service']) {
       delete queryParams['service']
@@ -303,7 +330,7 @@ export default class GeoServiceUtilities {
     queryParams['layers'] = layers.join()
     queryParams['width'] = width
     queryParams['height'] = height
-    queryParams['format'] = 'image/png'
+    queryParams['format'] = format
     queryParams['transparent'] = 'true'
     queryParams[referenceSystemName] = 'EPSG:3857'
     queryParams['bbox'] = bbox

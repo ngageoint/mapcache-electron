@@ -17,7 +17,7 @@
       let createdSource
       if (!_.isNil(source.url)) {
         if (source.serviceType === 0) {
-          createdSource = await SourceFactory.constructWMSSource(source.url, source.layers, source.name)
+          createdSource = await SourceFactory.constructWMSSource(source.url, source.layers, source.name, source.format)
         } else if (source.serviceType === 1) {
           createdSource = await SourceFactory.constructWFSSource(source.url, source.layers, source.name)
         } else if (source.serviceType === 2) {
