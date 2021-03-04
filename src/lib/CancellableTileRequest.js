@@ -70,11 +70,9 @@ export default class CancellableTileRequest {
           headers: headers,
           cancelToken: this.source.token,
         })
-        ipcRenderer.off(requestTimeoutChannel, timeoutListener)
         dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
         error = undefined
       } catch (err) {
-        ipcRenderer.off(requestTimeoutChannel, timeoutListener)
         error = err
         // if it is an authentication error, stop retrying
         if (!_.isNil(err) && ServiceConnectionUtils.isAuthenticationErrorResponse(err.response)) {
@@ -83,9 +81,9 @@ export default class CancellableTileRequest {
         // the tile request was cancelled, therefore, ignore the error
         if (axios.isCancel(err)) {
           error = undefined
-          break
         }
       } finally {
+        ipcRenderer.off(requestTimeoutChannel, timeoutListener)
         attempts++
       }
     }
