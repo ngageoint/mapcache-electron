@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import axios from 'axios'
+import NetworkConstants from './NetworkConstants'
 
 /**
  * Scheduler for axios requests that handles cancellations
@@ -15,9 +16,9 @@ export default class AxiosRequestScheduler {
    * Constructor
    * @param rateLimit - rate limit in requests per second
    */
-  constructor (rateLimit = 10) {
+  constructor (rateLimit = NetworkConstants.DEFAULT_RATE_LIMIT) {
     this.axiosInstance = axios.create()
-    this.intervalMilliseconds = Math.floor(Math.max(1, 1000 / rateLimit))
+    this.intervalMilliseconds = rateLimit === NetworkConstants.NO_LIMIT ? 0 : Math.floor(Math.max(1, 1000 / rateLimit))
     this.axiosInstance.interceptors.request.use((config) => {
       return new Promise((resolve, reject) => {
         this.schedule(config, resolve, reject)

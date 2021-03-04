@@ -2,6 +2,7 @@ import store from '../.'
 import _ from 'lodash'
 import { mapcache } from '../../../package.json'
 import BaseMapUtilities from '../../lib/BaseMapUtilities'
+import NetworkConstants from '../../lib/NetworkConstants'
 
 const migrations = {
   2: async function (state) {
@@ -45,6 +46,14 @@ const migrations = {
         delete state.Projects[projectId].sources[sourceId].credentials
       }
     }
+  },
+  5: async function (state) {
+    // add network settings to default base maps
+    state.BaseMaps.baseMaps.filter(baseMap => baseMap.readonly && baseMap.id < 3).forEach(baseMap => {
+      baseMap.layerConfiguration.timeoutMs = NetworkConstants.DEFAULT_TIMEOUT
+      baseMap.layerConfiguration.retryAttempts = NetworkConstants.DEFAULT_RETRY_ATTEMPTS
+      baseMap.layerConfiguration.rateLimit = NetworkConstants.NO_LIMIT
+    })
   }
 }
 
