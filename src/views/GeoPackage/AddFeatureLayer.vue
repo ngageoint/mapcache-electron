@@ -8,14 +8,35 @@
     >
       <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
     </v-toolbar>
-    <v-card tile flat class="ma-0 pa-0" style="padding-bottom: 56px !important;" v-if="processing">
-      <v-card-title>{{'Adding ' + layerName}}</v-card-title>
-      <v-card-text>
-        <v-card-subtitle>{{status.message}}</v-card-subtitle>
-        <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
-                           :color="error ? 'warning' : 'primary'"></v-progress-linear>
-      </v-card-text>
-    </v-card>
+    <v-sheet v-if="processing" class="mapcache-sheet-content detail-bg">
+      <v-card flat tile class="ma-0 pa-0">
+        <v-card-title>{{'Adding ' + layerName}}</v-card-title>
+        <v-card-text>
+          <v-card-subtitle>{{status.message}}</v-card-subtitle>
+          <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
+                             :color="error ? 'warning' : 'primary'"></v-progress-linear>
+        </v-card-text>
+        <v-card-actions class="mt-8">
+          <v-spacer></v-spacer>
+          <v-btn
+            v-if="!done"
+            text
+            :disabled="cancelling"
+            color="warning"
+            @click.stop="cancelAddTileLayer">
+            {{cancelling ? 'Cancelling' : 'Cancel'}}
+          </v-btn>
+          <v-btn
+            v-if="done"
+            color="primary"
+            text
+            @click.stop="cancel">
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+      <v-divider/>
+    </v-sheet>
     <v-sheet v-else class="mapcache-sheet-content">
       <v-stepper v-model="step" non-linear vertical class="background" :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
         <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => layerNameValid]" color="primary">
@@ -208,24 +229,16 @@
         </v-stepper-content>
       </v-stepper>
     </v-sheet>
-    <div class="sticky-card-action-footer">
+    <div v-if="!processing" class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          v-if="processing && !done"
-          text
-          :disabled="cancelling"
-          color="warning"
-          @click="cancelAddFeatureLayer">
-          {{cancelling ? 'Cancelling' : 'Cancel'}}
-        </v-btn>
-        <v-btn
-          v-if="done || !processing"
+          v-if="done"
           color="primary"
           text
           @click.stop="cancel">
-          {{done ? 'Close' : 'Cancel'}}
+          Cancel
         </v-btn>
         <v-btn
           v-if="Number(step) === 5 && !done && !processing && !project.boundingBoxFilterEditing && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
