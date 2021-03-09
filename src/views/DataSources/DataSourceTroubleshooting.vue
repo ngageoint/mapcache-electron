@@ -60,7 +60,7 @@
         } else if (ServiceConnectionUtils.isServerError(this.source.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
         } else if (ServiceConnectionUtils.isTimeoutError(this.source.error)) {
-          message = 'The request to the server timed out.'
+          message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
         }
@@ -87,7 +87,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource, true, this.source.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT)) {
+        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource, true, !_.isNil(this.source.timeoutMs) ? this.source.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

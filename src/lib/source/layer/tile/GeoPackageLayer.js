@@ -15,6 +15,10 @@ export default class GeoPackageLayer extends TileLayer {
     return this
   }
 
+  update (configuration) {
+    super.update(configuration)
+  }
+
   get configuration () {
     return {
       ...super.configuration,

@@ -110,7 +110,7 @@
             </v-row>
             <v-row no-gutters>
               <v-col cols="12">
-                <number-picker :number="timeoutMs" label="Request timeout (ms)" :step="Number(500)" :min="Number(0)" :max="Number(10000)" @update-number="(val) => {this.timeoutMs = val}" @update-valid="(val) => {this.timeoutValid = val}"/>
+                <number-picker :hint="timeoutMs === 0 ? 'A timeout of zero will not set a timeout' : (timeoutMs < 2000 ? 'A timeout below 2000ms is not recommended' : undefined)" :number="timeoutMs" label="Request timeout (ms)" :step="Number(500)" :min="Number(0)" :max="Number(10000)" @update-number="(val) => {this.timeoutMs = val}" @update-valid="(val) => {this.timeoutValid = val}"/>
               </v-col>
             </v-row>
             <v-row no-gutters>
@@ -299,7 +299,7 @@
                 {{'Max requests per second: ' + (configuration.rateLimit || defaultRateLimit)}}
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{'Request timeout (ms): ' + (configuration.timeoutMs || defaultTimeout)}}
+                {{'Request timeout (ms): ' + (configuration.timeoutMs === undefined ? defaultTimeout : configuration.timeoutMs)}}
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{'Retry attempts: ' + (configuration.retryAttempts === undefined ? defaultRetryAttempts : configuration.retryAttempts)}}
@@ -387,7 +387,7 @@
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = this.configuration.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT
+        this.timeoutMs = !_.isNil(this.configuration.timeoutMs) ? this.configuration.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT
         this.rateLimit = this.configuration.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT
         this.retryAttempts = !_.isNil(this.configuration.retryAttempts) ? this.configuration.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {

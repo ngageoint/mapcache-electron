@@ -1,7 +1,9 @@
 import path from 'path'
 import UniqueIDUtilities from '../../UniqueIDUtilities'
+import _ from 'lodash'
 
 export default class Layer {
+  initialized = false
   _configuration
   id
   filePath
@@ -9,33 +11,44 @@ export default class Layer {
   name
   displayName
   constructor (configuration = {}) {
-    this._configuration = configuration
+    this._configuration = _.cloneDeep(configuration)
     this.id = this._configuration.id || UniqueIDUtilities.createUniqueID()
     this.filePath = this._configuration.filePath
     this.sourceLayerName = this._configuration.sourceLayerName || defaultLayerName(this.filePath)
     this.name = this._configuration.name || this.sourceLayerName
-    this.pane = configuration.pane
+    this.pane = this._configuration.pane
     this.style = this._configuration.style
-    this.visible = this._configuration.visible || false
+    this.visible = !_.isNil(this._configuration.visible) ? this._configuration.visible : false
     this.sourceType = this._configuration.sourceType
     this.displayName = this._configuration.displayName || this.name
     this.layerType = this._configuration.layerType
     this.sourceDirectory = this._configuration.sourceDirectory
     this.sourceId = this._configuration.sourceId
     this.styleKey = this._configuration.styleKey || 0
-    this.opacity = this._configuration.opacity
-    if (this._configuration.opacity === null || this._configuration.opacity === undefined) {
-      this.opacity = 1.0
-    }
+    this.opacity = !_.isNil(this._configuration.opacity) ? this._configuration.opacity : 1.0
   }
 
   async initialize () {
-    throw new Error('Abstract method to be implemented in subclass')
+    this.initialized = true
+    return this
   }
 
-  close () {
-
+  isInitialized () {
+    return this.initialized
   }
+
+  update (configuration = {}) {
+    this._configuration = _.cloneDeep(configuration)
+    this.styleKey = configuration.styleKey || 0
+    this.opacity = !_.isNil(configuration.opacity) ? configuration.opacity : 1.0
+    this.visible = !_.isNil(configuration.visible) ?  configuration.visible : false
+  }
+
+  getRepaintFields () {
+    return ['styleKey']
+  }
+
+  close () {}
 
   get configuration () {
     return {
@@ -46,7 +59,7 @@ export default class Layer {
         sourceLayerName: this.sourceLayerName,
         name: this.name,
         displayName: this.displayName,
-        visible: this.visible || false,
+        visible: this.visible,
         style: this.style,
         sourceType: this.sourceType,
         sourceDirectory: this.sourceDirectory,

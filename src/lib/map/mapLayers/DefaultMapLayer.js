@@ -1,18 +1,16 @@
-import MapcacheMapLayer from '../MapcacheMapLayer'
+import * as Vendor from '../../vendor'
+import _ from 'lodash'
 
+/**
+ * Deafult Map Layer, which wraps MapCache Layers in a MapCacheMapLayer
+ */
 export default class DefaultMapLayer {
-  static constructMapLayer (layerModel, mapPane = 'overlayPane') {
-    let mapLayer = new MapcacheMapLayer({
-      layer: layerModel,
+  static constructMapLayer (layer, mapPane = 'overlayPane') {
+    return new Vendor.L.GridLayer.MapCacheMapLayer({
+      layer: layer,
       pane: mapPane,
-      zIndex: 401
+      zIndex: 401,
+      opacity: !_.isNil(layer.opacity) ? layer.opacity : 1.0
     })
-    mapLayer.id = layerModel.id
-    let opacity = 1.0
-    if (layerModel.opacity !== null && layerModel.opacity !== undefined) {
-      opacity = layerModel.opacity
-    }
-    mapLayer.setOpacity(opacity)
-    return mapLayer
   }
 }

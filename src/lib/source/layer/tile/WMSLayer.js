@@ -6,21 +6,25 @@ import ServiceConnectionUtils from '../../../ServiceConnectionUtils'
 import CancellableTileRequest from '../../../CancellableTileRequest'
 import _ from 'lodash'
 import LayerTypes from '../LayerTypes'
-import ActionUtilities from '../../../ActionUtilities'
 
 export default class WMSLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
     super(configuration)
     this.layers = configuration.layers
     this.format = configuration.format || 'image/png'
+    this.version = configuration.version
   }
 
   async initialize () {
-    this.version = this._configuration.version
     this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(this.rateLimit)
+    await super.initialize()
+    return this
+  }
+
+  async testConnection (allowAuth = false, ignoreTimeoutError = true) {
     const options = {
       timeout: this.timeoutMs,
-      allowAuth: true
+      allowAuth: allowAuth
     }
     let {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(this.filePath, ServiceConnectionUtils.SERVICE_TYPE.WMS, options)
     if (!_.isNil(serviceInfo)) {
@@ -31,11 +35,9 @@ export default class WMSLayer extends NetworkTileLayer {
         error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
       }
     }
-    if (!_.isNil(error)) {
-      ActionUtilities.setSourceError({id: this.id, error: error})
+    if (!_.isNil(error) && (!ServiceConnectionUtils.isTimeoutError(error) || !ignoreTimeoutError)) {
+      throw error
     }
-    await super.initialize()
-    return this
   }
 
   get configuration () {
@@ -50,12 +52,31 @@ export default class WMSLayer extends NetworkTileLayer {
     }
   }
 
+  update (configuration) {
+    super.update(configuration)
+  }
+
   get extent () {
     if (this._configuration.extent) {
       return this._configuration.extent
     }
     this._configuration.extent = [-180, -90, 180, 90]
     return this._configuration.extent
+  }
+
+  /**
+   * Function for getting the tile request url for this service
+   * @param coords
+   */
+  getTileUrl (coords) {
+    let {x, y, z} = coords
+    let tileBbox = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    let referenceSystemName = 'srs'
+    let bbox = tileBbox.minLon + ',' + tileBbox.minLat + ',' + tileBbox.maxLon + ',' + tileBbox.maxLat
+    if (this.version === '1.3.0') {
+      referenceSystemName = 'crs'
+    }
+    return GeoServiceUtilities.getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version, this.format)
   }
 
   async renderTile (coords, tile, done) {

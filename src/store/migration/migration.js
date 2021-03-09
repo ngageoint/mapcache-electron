@@ -54,6 +54,14 @@ const migrations = {
       baseMap.layerConfiguration.retryAttempts = NetworkConstants.DEFAULT_RETRY_ATTEMPTS
       baseMap.layerConfiguration.rateLimit = NetworkConstants.NO_LIMIT
     })
+  },
+  6: async function (state) {
+    // ensure all base map ids are strings
+    state.BaseMaps.baseMaps.map(baseMap => {
+      baseMap.id = baseMap.id + ''
+      baseMap.layerConfiguration.id = baseMap.id + ''
+      return baseMap
+    })
   }
 }
 

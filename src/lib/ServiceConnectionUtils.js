@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import axios from 'axios'
 import CredentialsManagement from './CredentialsManagement'
 import URLUtilities from './URLUtilities'
 import GeoServiceUtilities from './GeoServiceUtilities'
@@ -19,6 +18,10 @@ export default class ServiceConnectionUtils {
     XYZ: 2,
     ARCGIS_FS: 3
   }
+
+  static USER_CANCELLED_MESSAGE = 'Operation cancelled by user.'
+  static TIMEOUT_MESSAGE = 'Operation timed out.'
+  static TIMEOUT_STATUS = -2
 
   /**
    * Gets throttled axios instance
@@ -42,9 +45,9 @@ export default class ServiceConnectionUtils {
     try {
       result = await connFunc()
     } catch (e) {
-      if (axios.isCancel(e)) {
+      if (ServiceConnectionUtils.isMapCacheTimeoutError(e)) {
         result.error = {
-          status: -2,
+          status: ServiceConnectionUtils.TIMEOUT_STATUS,
           statusText: 'Request timed out'
         }
       } else if (e.response) {
@@ -111,7 +114,7 @@ export default class ServiceConnectionUtils {
       if (!_.isNil(serviceInfo)) {
         error = undefined
         break
-      } else if (_.isNil(error) || error.status === -1) {
+      } else if (_.isNil(error) || error.status < 0) {
         error = result.error
       }
       if (ServiceConnectionUtils.isAuthenticationError(error)) {
@@ -158,7 +161,7 @@ export default class ServiceConnectionUtils {
       if (!_.isNil(serviceInfo)) {
         error = undefined
         break
-      } else if (_.isNil(error) || error.status === -1) {
+      } else if (_.isNil(error) || error.status < 0) {
         error = result.error
       }
       if (ServiceConnectionUtils.isAuthenticationError(error)) {
@@ -365,7 +368,7 @@ export default class ServiceConnectionUtils {
    * @returns {boolean}
    */
   static isTimeoutError (error) {
-    return !_.isNil(error) && error.status === -2
+    return !_.isNil(error) && error.status === ServiceConnectionUtils.TIMEOUT_STATUS
   }
 
   /**
@@ -493,5 +496,14 @@ export default class ServiceConnectionUtils {
    */
   static isRemoteSource(source) {
     return source.layerType === LayerTypes.WMS || source.layerType === LayerTypes.XYZ_SERVER
+  }
+
+  /**
+   * Tests if error is a mapcache timeout (this timeout occurs when a response from the server has not been reached after waiting a user specified amount of time)
+   * @param error
+   * @returns {boolean}
+   */
+  static isMapCacheTimeoutError(error) {
+    return !_.isNil(error) && !_.isNil(error.message) && error.message === ServiceConnectionUtils.TIMEOUT_MESSAGE
   }
 }

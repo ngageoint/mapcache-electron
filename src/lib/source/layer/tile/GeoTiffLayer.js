@@ -106,12 +106,12 @@ export default class GeoTiffLayer extends TileLayer {
     return crs
   }
 
-  updateStyle (configuration) {
+  update (configuration) {
+    super.update(configuration)
     this.photometricInterpretation = configuration.photometricInterpretation
     this.samplesPerPixel = configuration.samplesPerPixel
     this.bitsPerSample = configuration.bitsPerSample
     this.colorMap = configuration.colorMap
-    this.visible = configuration.visible || false
     this.stretchToMinMax = configuration.stretchToMinMax
     this.renderingMethod = configuration.renderingMethod
     this.redBand = configuration.redBand
@@ -133,7 +133,17 @@ export default class GeoTiffLayer extends TileLayer {
     this.globalNoDataValue = configuration.globalNoDataValue
     this.enableGlobalNoDataValue = configuration.enableGlobalNoDataValue
     this.opacity = configuration.opacity
-    this.renderer = new GeoTiffRenderer(this)
+    if (!_.isNil(this.renderer)) {
+      this.renderer.layer = this
+    }
+  }
+
+  /**
+   * Fields that when changed will require the map to repaint
+   * @returns {string[]}
+   */
+  getRepaintFields() {
+    return ['renderingMethod', 'redBand', 'redBandMin', 'redBandMax', 'greenBand', 'greenBandMin', 'greenBandMax', 'blueBand', 'blueBandMin', 'blueBandMax', 'grayScaleColorGradient', 'grayBand', 'grayBandMin', 'grayBandMax', 'alphaBand', 'paletteBand', 'globalNoDataValue', 'enableGlobalNoDataValue'].concat(super.getRepaintFields())
   }
 
   async initialize (inWorker = false, buildRasters = true) {

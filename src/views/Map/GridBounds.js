@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import TileSelectionMapLayer from '../../lib/map/TileSelectionMapLayer'
+import * as Vendor from '../../lib/vendor'
 
 export default {
   methods: {
@@ -10,11 +10,11 @@ export default {
       }
     },
     enableGridSelection () {
-      this.gridLayer = new TileSelectionMapLayer({
+      this.gridLayer = new Vendor.L.GridLayer.TileSelectionMapLayer({
         pane: 'gridSelectionPane',
-        zIndex: 625
+        zIndex: 625,
+        projectId: this.project.id
       })
-      this.gridLayer.setProjectId(this.project.id)
       this.gridLayer.addTo(this.map)
     }
   },

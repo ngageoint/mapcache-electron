@@ -21,7 +21,7 @@
               <v-list-item-title>{{item.name}}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <v-progress-circular
-                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializing"
+                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializationState === 1"
                 indeterminate
                 color="primary"
               ></v-progress-circular>
@@ -46,8 +46,7 @@
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
   import ActionUtilities from '../../lib/ActionUtilities'
-  import LayerTypes from '../../lib/source/layer/LayerTypes'
-
+  import BaseMapUtilities from '../../lib/BaseMapUtilities'
 
   export default {
     components: {BaseMapTroubleshooting},
@@ -64,8 +63,10 @@
         observer: null,
         mapBackground: '#ddd',
         showBaseMapSelection: false,
-        selectedBaseMapId: 0,
-        baseMapLayers: {}
+        selectedBaseMapId: '0',
+        baseMapLayers: {},
+        offlineBaseMapId: BaseMapUtilities.getOfflineBaseMapId(),
+        offlineBaseMapFilter: baseMap => baseMap.id !== BaseMapUtilities.getOfflineBaseMapId(),
       }
     },
     computed: {
@@ -101,16 +102,20 @@
         }
         this.map.fitBounds([[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]], {maxZoom: 20})
       },
+      async initializeBaseMap (baseMapId, map) {
+        await this.baseMapLayers[baseMapId].initializeLayer()
+        // only add if the source layer was not deleted
+        if (!_.isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
+          map.addLayer(this.baseMapLayers[baseMapId])
+        }
+        // updating initializing to false is not always updating the UI
+        this.$forceUpdate()
+      },
       addBaseMap (baseMap, map) {
         let self = this
         const baseMapId = baseMap.id
-        self.baseMapLayers[baseMapId] = {
-          layerConfiguration: _.cloneDeep(baseMap.layerConfiguration),
-          initializing: true
-        }
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId].initializedLayer = baseMap.layerConfiguration
-          self.baseMapLayers[baseMapId].mapLayer = vendor.L.geoJson(offline, {
+          self.baseMapLayers[baseMapId] = vendor.L.geoJson(offline, {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -122,30 +127,18 @@
               }
             }
           })
-          self.baseMapLayers[baseMapId].initializing = false
-          map.addLayer(self.baseMapLayers[baseMapId].mapLayer)
+          if (this.selectedBaseMapId === baseMapId) {
+            self.addLayer(self.baseMapLayers[baseMapId])
+          }
           // updating initializing to false is not always updating the UI
           self.$forceUpdate()
         } else {
           let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          layer._maxFeatures = self.project.maxFeatures
-          layer.initialize().then(function () {
-            // update style just in case during the initialization the layer was modified
-            if (!_.isNil(self.baseMapLayers[baseMapId])) {
-              if (layer.layerType === LayerTypes.GEOTIFF || layer.layerType === LayerTypes.GEOPACKAGE) {
-                layer.updateStyle(self.baseMapLayers[baseMapId].layerConfiguration)
-              }
-              let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
-              self.baseMapLayers[baseMapId].initializedLayer = layer
-              self.baseMapLayers[baseMapId].mapLayer = mapLayer
-              self.baseMapLayers[baseMapId].initializing = false
-              if (self.selectedBaseMapId === baseMapId) {
-                map.addLayer(mapLayer)
-              }
-              // updating initializing to false is not always updating the UI
-              self.$forceUpdate()
-            }
-          })
+          layer._maxFeatures = this.project.maxFeatures
+          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer(layer)
+          if (this.selectedBaseMapId === baseMapId) {
+            self.initializeBaseMap(baseMapId, map)
+          }
         }
       },
       async initializeMap () {
@@ -172,7 +165,9 @@
         }
       },
       async setupBaseMaps () {
-        await this.addBaseMap(this.baseMaps[0], this.map)
+        for (let i = 0; i < this.baseMaps.length; i++) {
+          await this.addBaseMap(this.baseMaps[i], this.map)
+        }
       },
       async setupControls () {
         let self = this
@@ -192,8 +187,8 @@
       },
       async setupPreviewLayer () {
         const layer = LayerFactory.constructLayer(this.previewLayer)
-        await layer.initialize()
         this.previewMapLayer = LeafletMapLayerFactory.constructMapLayer(layer, 'markerPane', true)
+        await this.previewMapLayer.initializeLayer()
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
       },
@@ -210,68 +205,45 @@
           const self = this
           const selectedBaseMapId = this.selectedBaseMapId
 
-          const oldBaseMapConfig = self.baseMapLayers[selectedBaseMapId].layerConfiguration
+          let oldConfig
+          if (!_.isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+            oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
+          }
           // update the layer config stored for each base map
-          newBaseMaps.forEach(baseMap => {
+          newBaseMaps.filter(self.offlineBaseMapFilter).forEach(baseMap => {
             if (self.baseMapLayers[baseMap.id]) {
-              self.baseMapLayers[baseMap.id].layerConfiguration = baseMap.layerConfiguration
-              if (self.baseMapLayers[baseMap.id].initializedLayer) {
-                self.baseMapLayers[baseMap.id].initializedLayer.error = baseMap.error
-              }
+              self.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
+              self.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
             }
           })
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
-          // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
-          if (_.isNil(selectedBaseMap)) {
-            if (newBaseMaps.length - 1 < this.baseMapIndex) {
-              this.baseMapIndex = newBaseMaps.length - 1
-            }
-            if (self.baseMapLayers[selectedBaseMapId] && self.baseMapLayers[selectedBaseMapId].mapLayer) {
-              self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-            }
-            const initializedLayer = self.baseMapLayers[selectedBaseMapId].initializedLayer
-            if (initializedLayer && Object.prototype.hasOwnProperty.call(initializedLayer, 'close')) {
-              initializedLayer.close()
-            }
-            delete self.baseMapLayers[selectedBaseMapId]
-            self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
-          } else {
-            if (!_.isNil(selectedBaseMap) && !_.isNil(selectedBaseMap.layerConfiguration) && !_.isNil(self.baseMapLayers[selectedBaseMapId]) && !_.isNil(self.baseMapLayers[selectedBaseMapId].initializedLayer)) {
-              if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || selectedBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES) {
-                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(selectedBaseMap.layerConfiguration)
-                self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-              } else if (!_.isEqual(selectedBaseMap.layerConfiguration.styleKey, oldBaseMapConfig.styleKey) && selectedBaseMap.layerConfiguration.pane === 'vector') {
-                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(this.project.maxFeatures)
-                self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-              } else {
-                try {
-                  if (self.baseMapLayers[selectedBaseMapId].mapLayer && self.baseMapLayers[selectedBaseMapId].mapLayer.hasError() && _.isNil(selectedBaseMap.error)) {
-                    self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                    self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                    self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
+          if (selectedBaseMapId !== self.offlineBaseMapId) {
+            // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
+            if (_.isNil(selectedBaseMap)) {
+              if (newBaseMaps.length - 1 < this.baseMapIndex) {
+                this.baseMapIndex = newBaseMaps.length - 1
               }
-              try {
-                self.baseMapLayers[selectedBaseMapId].mapLayer.setOpacity(selectedBaseMap.layerConfiguration.opacity)
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
-              try {
-                self.baseMapLayers[selectedBaseMapId].mapLayer.setError(selectedBaseMap.error)
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
-              try {
-                if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.WMS || selectedBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
-                  self.baseMapLayers[selectedBaseMapId].initializedLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
-                  self.baseMapLayers[selectedBaseMapId].mapLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
+              const layer = self.baseMapLayers[selectedBaseMapId]
+              if (layer) {
+                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId])
+                if (layer && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+                  layer.close()
                 }
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
+              }
+              delete self.baseMapLayers[selectedBaseMapId]
+              self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
+            } else if (!_.isNil(oldConfig)) {
+              const newConfig = selectedBaseMap.layerConfiguration
+              const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
+              const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+              // styleChanged performs an asynchronous recycling of the geopackage connection
+              if (styleKeyChanged) {
+                await self.baseMapLayers[selectedBaseMapId].styleChanged()
+              }
+              if (repaintRequired) {
+                self.baseMapLayers[selectedBaseMapId].redraw()
+              }
               this.mapBackground = selectedBaseMap.background || '#ddd'
             }
           }
@@ -280,56 +252,40 @@
       selectedBaseMapId: {
         async handler (newBaseMapId, oldBaseMapId) {
           const self = this
-          const oldBaseMapIndex = oldBaseMapId
           self.$nextTick(async () => {
             this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER)) {
-              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap)
+            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && ServiceConnectionUtils.isRemoteSource(newBaseMap.layerConfiguration)) {
+              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            }
+
+            // remove old map layer
+            if (self.baseMapLayers[oldBaseMapId]) {
+              self.map.removeLayer(self.baseMapLayers[oldBaseMapId])
             }
 
             if (success) {
-              if (self.baseMapLayers[oldBaseMapId] && self.baseMapLayers[oldBaseMapId].mapLayer) {
-                self.map.removeLayer(self.baseMapLayers[oldBaseMapId].mapLayer)
-              }
-
-              // check to see if base map has already been initialized
+              // check to see if base map has already been added
               if (_.isNil(self.baseMapLayers[newBaseMapId])) {
                 await self.addBaseMap(newBaseMap, self.map)
               } else {
-                try {
-                  self.baseMapLayers[newBaseMapId].mapLayer.setError(newBaseMap.error)
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                try {
-                  self.baseMapLayers[newBaseMapId].mapLayer.setOpacity(newBaseMap.layerConfiguration.opacity)
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                try {
-                  if (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
-                    self.baseMapLayers[newBaseMapId].initializedLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
-                    self.baseMapLayers[newBaseMapId].mapLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                if (newBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || newBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
-                  self.baseMapLayers[newBaseMapId].initializedLayer.updateStyle(newBaseMap.layerConfiguration)
-                  self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
+                // do not update offline base map id
+                if (newBaseMapId !== self.offlineBaseMapId) {
+                  self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
-                try {
-                  if (self.baseMapLayers[newBaseMapId].mapLayer.hasError()) {
-                    self.baseMapLayers[newBaseMapId].initializedLayer.error = newBaseMap.error
-                    self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                self.map.addLayer(self.baseMapLayers[newBaseMapId].mapLayer)
+                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                  self.map.addLayer(self.baseMapLayers[newBaseMapId])
+                }
+                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
+                  self.initializeBaseMap(newBaseMapId, self.map)
+                }
               }
-              this.mapBackground = newBaseMap.background || '#ddd'
+              self.mapBackground = newBaseMap.background || '#ddd'
             } else {
-              this.selectedBaseMapId = oldBaseMapIndex
+              self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
+              self.selectedBaseMapId = self.offlineBaseMapId
             }
           })
         }
@@ -378,14 +334,13 @@
           let self = this
           if (updatedProject.maxFeatures !== this.maxFeatures) {
             for (const baseMapId of _.keys(self.baseMapLayers)) {
-              if (!_.isNil(self.baseMapLayers[baseMapId].initializedLayer) && self.baseMapLayers[baseMapId].initializedLayer.pane === 'vector') {
-                if (self.selectedBaseMapId === baseMapId) {
-                  self.map.removeLayer(self.baseMapLayers[self.selectedBaseMapId].mapLayer)
-                }
-                await self.baseMapLayers[self.selectedBaseMapId].initializedLayer.updateStyle(updatedProject.maxFeatures)
-                self.baseMapLayers[self.selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[self.selectedBaseMapId].initializedLayer)
-                if (self.selectedBaseMapId === baseMapId) {
-                  self.map.addLayer(self.baseMapLayers[self.selectedBaseMapId].mapLayer)
+              // if this is a vector layer, update it
+              if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
+                // update max features
+                await self.baseMapLayers[baseMapId].updateMaxFeatures(updatedProject.maxFeatures)
+                // if visible, we need to toggle the layer
+                if (baseMapId === self.selectedBaseMapId) {
+                  self.baseMapLayers[baseMapId].redraw()
                 }
               }
             }
@@ -404,7 +359,7 @@
         this.previewMapLayer = null
       }
       _.keys(self.baseMapLayers).forEach(key => {
-        let layer = self.baseMapLayers[key].initializedLayer
+        let layer = self.baseMapLayers[key]
         if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }

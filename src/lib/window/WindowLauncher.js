@@ -80,7 +80,7 @@ class WindowLauncher {
    */
   prepareTimeout (id, requestId, timeout) {
     this.requestTimeoutFunctions[id] = setTimeout(() => {
-      const requestCancelChannel = 'cancel-request-' + requestId
+      const requestCancelChannel = 'request-timeout-' + requestId
       if (!_.isNil(this.projectWindow)) {
         this.projectWindow.webContents.send(requestCancelChannel)
       }

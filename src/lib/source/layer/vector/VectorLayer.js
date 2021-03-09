@@ -32,6 +32,7 @@ export default class VectorLayer extends Layer {
     this._features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(this._geopackageFilePath, this.sourceLayerName)
     this._extent = await GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
     await this.vectorTileRenderer.init()
+    await super.initialize()
     return this
   }
 
@@ -41,9 +42,20 @@ export default class VectorLayer extends Layer {
     }
   }
 
-  async updateStyle (maxFeatures) {
-    this._maxFeatures = maxFeatures
-    return this.vectorTileRenderer.styleChanged(maxFeatures)
+  updateMaxFeatures (maxFeatures) {
+    if (this._vectorTileRenderer) {
+      this.vectorTileRenderer.updateMaxFeatures(maxFeatures)
+    }
+  }
+
+  async styleChanged () {
+    if (this._vectorTileRenderer) {
+      await this.vectorTileRenderer.styleChanged()
+    }
+  }
+
+  update (configuration) {
+    super.update(configuration)
   }
 
   get configuration () {

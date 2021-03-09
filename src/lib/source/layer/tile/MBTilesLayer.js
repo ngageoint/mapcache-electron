@@ -50,7 +50,12 @@ export default class MBTilesLayer extends TileLayer {
     return this
   }
 
-  updateStyle (configuration) {
+  getRepaintFields() {
+    return ['pointStyle', 'lineStyle', 'polygonStyle'].concat(super.getRepaintFields())
+  }
+
+  update (configuration) {
+    super.update(configuration)
     this.pointStyle = configuration.pointStyle || VectorStyleUtilities.leafletStyle()
     this.lineStyle = configuration.lineStyle || VectorStyleUtilities.leafletStyle()
     this.polygonStyle = configuration.polygonStyle || VectorStyleUtilities.leafletStyle()
@@ -72,7 +77,25 @@ export default class MBTilesLayer extends TileLayer {
   }
 
   get extent () {
-    return MBTilesUtilities.getInfo(this.db).bounds
+    let db
+    let extent = [-180, -90, 90, 180]
+    try {
+      db = MBTilesUtilities.getDb(this.filePath)
+      extent = MBTilesUtilities.getInfo(db).bounds
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    } finally {
+      if (db) {
+        try {
+          db.close()
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(error)
+        }
+      }
+    }
+    return extent
   }
 
   close () {
@@ -103,11 +126,22 @@ export default class MBTilesLayer extends TileLayer {
     }
   }
 
+  static getColor (color, opacity) {
+    let opacityText = '00'
+    if (opacity > 0) {
+      opacityText = Math.round(255 * opacity).toString(16).toUpperCase()
+      if (opacityText.length === 1) {
+        opacityText = '0' + opacityText
+      }
+    }
+    return color + opacityText
+  }
+
   _drawPoint = function(ctx, coordsArray, style, divisor) {
     const radius = style.radius
     let p = MBTilesLayer._tilePoint(coordsArray[0][0], divisor)
     ctx.beginPath()
-    ctx.fillStyle = style.color + (255 * style.opacity).toString(16).toUpperCase()
+    ctx.fillStyle = MBTilesLayer.getColor(style.color, style.opacity)
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
     ctx.closePath()
     ctx.fill()
@@ -115,7 +149,7 @@ export default class MBTilesLayer extends TileLayer {
   }
 
   _drawLineString = function(ctx, coordsArray, style, divisor) {
-    ctx.strokeStyle = style.color + (255 * style.opacity).toString(16).toUpperCase()
+    ctx.strokeStyle = MBTilesLayer.getColor(style.color, style.opacity)
     ctx.lineWidth = style.width
     ctx.beginPath()
     for (let gidx in coordsArray) {
@@ -131,8 +165,8 @@ export default class MBTilesLayer extends TileLayer {
   }
 
   _drawPolygon = function(ctx, coordsArray, style, divisor) {
-    ctx.fillStyle = style.fillColor + (255 * style.fillOpacity).toString(16).toUpperCase()
-    ctx.strokeStyle = style.color + (255 * style.opacity).toString(16).toUpperCase()
+    ctx.fillStyle = MBTilesLayer.getColor(style.fillColor, style.fillOpacity)
+    ctx.strokeStyle = MBTilesLayer.getColor(style.color, style.opacity)
     ctx.lineWidth = style.width
     ctx.beginPath()
     for (let gidx = 0, len = coordsArray.length; gidx < len; gidx++) {

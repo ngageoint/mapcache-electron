@@ -34,6 +34,8 @@ import FileUtilities from './FileUtilities'
 import LayerFactory from './source/layer/LayerFactory'
 import CanvasUtilities from './CanvasUtilities'
 import MediaUtilities from './MediaUtilities'
+import ActionUtilities from './ActionUtilities'
+import ServiceConnectionUtils from './ServiceConnectionUtils'
 
 export default class GeoPackageUtilities {
   /**
@@ -2758,7 +2760,20 @@ export default class GeoPackageUtilities {
         const sourceLayer = configuration.sourceLayers[i]
         const layer = LayerFactory.constructLayer(sourceLayer)
         layer._maxFeatures = undefined
-        layers.push(await layer.initialize(true))
+        try {
+          if (ServiceConnectionUtils.isRemoteSource(layer)) {
+            await layer.testConnection(false)
+          }
+          layers.push(await layer.initialize(true))
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(error)
+          status.message = 'Failed to initialize data source: ' + _.isNil(layer.displayName) ? layer.name : layer.displayName
+          throttleStatusCallback(status)
+          // if an error occurs trying to initialize a source, we should exit
+          ActionUtilities.setSourceError({id: layer.id, error: error})
+          return
+        }
         layersPrepared++
         status.progress = 20.0 * layersPrepared / numberOfLayers
         throttleStatusCallback(status)

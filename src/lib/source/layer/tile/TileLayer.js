@@ -3,6 +3,8 @@ import Layer from '../Layer'
 export default class TileLayer extends Layer {
   async initialize () {
     this.style = this._configuration.style || {}
+    await super.initialize()
+    return this
   }
 
   get configuration () {
@@ -15,11 +17,9 @@ export default class TileLayer extends Layer {
     }
   }
 
-  // eslint-disable-next-line no-empty
-  updateStyle () {}
-
-  // eslint-disable-next-line no-empty
-  updateNetworkSettings () {}
+  update (configuration) {
+    super.update(configuration)
+  }
 
   renderTile () {
     throw new Error('Abstract method to be implemented in subclass')

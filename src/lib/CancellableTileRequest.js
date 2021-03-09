@@ -17,7 +17,7 @@ export default class CancellableTileRequest {
     this.cancelled = true
     if (!_.isNil(this.source)) {
       const token = this.source.token
-      this.source.cancel('Operation cancelled by the user.')
+      this.source.cancel(ServiceConnectionUtils.USER_CANCELLED_MESSAGE)
       if (!_.isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.cancel(token)
       }
@@ -27,7 +27,7 @@ export default class CancellableTileRequest {
   timeout () {
     if (!_.isNil(this.source)) {
       const token = this.source.token
-      this.source.cancel('Operation timed out.')
+      this.source.cancel(ServiceConnectionUtils.TIMEOUT_MESSAGE)
       if (!_.isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.cancel(token)
       }
@@ -50,7 +50,7 @@ export default class CancellableTileRequest {
     this.axiosRequestScheduler = axiosRequestScheduler
     while (!this.cancelled && _.isNil(dataUrl) && attempts <= retryAttempts) {
       const requestId = UniqueIDUtilities.createUniqueID()
-      const requestTimeoutChannel = 'cancel-request-' + requestId
+      const requestTimeoutChannel = 'request-timeout-' + requestId
       const timeoutListener = () => {
         this.timeout()
       }
@@ -78,7 +78,7 @@ export default class CancellableTileRequest {
         if (!_.isNil(err) && ServiceConnectionUtils.isAuthenticationErrorResponse(err.response)) {
           break
         }
-        // the tile request was cancelled, therefore, ignore the error
+        // if it is a timeout or the user cancelled the request, remove the error
         if (axios.isCancel(err)) {
           error = undefined
         }

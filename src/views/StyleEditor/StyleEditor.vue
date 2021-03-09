@@ -365,6 +365,9 @@
       async getStyle() {
         let gp = await GeoPackageAPI.open(this.path)
         try {
+          this.styleListItems.items = []
+          this.iconListItems.items = []
+          this.assignmentListItems.items = []
           let featureTableName = this.tableName
           this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
           if (this.hasStyleExtension) {
@@ -471,13 +474,14 @@
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error(error)
-        }
-        try {
-          gp.close()
-          gp = undefined
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(error)
+        } finally {
+          try {
+            gp.close()
+            gp = undefined
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error(error)
+          }
         }
       },
       addStyleExtensionAndDefaultStyles() {

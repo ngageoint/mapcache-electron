@@ -19,6 +19,10 @@ export default class GeoTiffRenderer {
     this.layer = geoTiffLayer
   }
 
+  set layer (layer) {
+    this.layer = layer
+  }
+
   async renderTile (coords, tile, done) {
     let {x, y, z} = coords
 

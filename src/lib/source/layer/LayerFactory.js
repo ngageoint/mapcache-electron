@@ -7,6 +7,9 @@ import VectorLayer from './vector/VectorLayer'
 import XYZFileLayer from './tile/XYZFileLayer'
 import LayerTypes from './LayerTypes'
 
+/**
+ * Simple factory for constructing a layer based on it's type
+ */
 export default class LayerFactory {
   static constructLayer (configuration) {
     switch (configuration.layerType) {

@@ -1,6 +1,6 @@
 <template>
   <v-form v-on:submit.prevent v-model="valid" style="width: 100%">
-    <v-text-field :rules="rules" :autofocus="autofocus" v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
+    <v-text-field :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
   </v-form>
 </template>
 
@@ -16,6 +16,7 @@
         type: Boolean,
         default: false
       },
+      hint: String
     },
     data () {
       return {

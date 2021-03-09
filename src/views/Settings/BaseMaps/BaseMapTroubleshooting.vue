@@ -46,11 +46,13 @@
       troubleShootingMessage () {
         let message = ''
         if (ServiceConnectionUtils.isAuthenticationError(this.baseMap.error)) {
-          message = 'The credentials for this base map are not valid.'
+          message = 'The credentials for this data source are not valid.'
         } else if (ServiceConnectionUtils.isServerError(this.baseMap.error)) {
-          message = 'There is something wrong with this base map\'s server. Please contact the server\'s administrator for assistance.'
+          message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
+        } else if (ServiceConnectionUtils.isTimeoutError(this.baseMap.error)) {
+          message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
-          message = 'There was an error requesting data from the base map\'s server.'
+          message = 'There was an error requesting data from the data source\'s server.'
         }
         return message
       }

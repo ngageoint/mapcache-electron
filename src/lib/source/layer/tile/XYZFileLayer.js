@@ -26,6 +26,10 @@ export default class XYZFileLayer extends TileLayer {
     }
   }
 
+  update (configuration) {
+    super.update(configuration)
+  }
+
   get extent () {
     if (this._configuration.extent) {
       return this._configuration.extent

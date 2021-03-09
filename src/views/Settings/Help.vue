@@ -200,6 +200,10 @@
             {
               title: 'Why are EPSG:3857 the only supported WMS layers?',
               content: 'MapCache currently displays content using a Leaflet map. The default projection for Leaflet, Google Maps, and Open Street Maps (OSM) is EPSG:3857 (also known as Web Mercator).'
+            },
+            {
+              title: 'Why are some map tiles blank for my WMS/XYZ data source and/or base map?',
+              content: 'If you find that one or more tiles for your WMS/XYZ source are missing, it is likely that your request timeout (ms) and/or max retry attempts are too low. You can adjust these network settings in the data source or base map.'
             }
           ],
           title: 'Frequently asked questions (FAQs)'

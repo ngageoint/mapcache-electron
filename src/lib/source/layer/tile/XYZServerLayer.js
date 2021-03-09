@@ -4,7 +4,6 @@ import ServiceConnectionUtils from '../../../ServiceConnectionUtils'
 import CancellableTileRequest from '../../../CancellableTileRequest'
 import _ from 'lodash'
 import LayerTypes from '../LayerTypes'
-import ActionUtilities from '../../../ActionUtilities'
 
 export default class XYZServerLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -15,16 +14,19 @@ export default class XYZServerLayer extends NetworkTileLayer {
   async initialize () {
     this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(this.rateLimit)
     await super.initialize()
+    return this
+  }
+
+  async testConnection (allowAuth = false) {
     const options = {
       subdomains: this.subdomains || [],
       timeout: this.timeoutMs,
-      allowAuth: true
+      allowAuth: allowAuth
     }
     let {error} = await ServiceConnectionUtils.testServiceConnection(this.filePath, ServiceConnectionUtils.SERVICE_TYPE.XYZ, options)
-    if (!_.isNil(error)) {
-      ActionUtilities.setSourceError({id: this.id, error: error})
+    if (!_.isNil(error) && !ServiceConnectionUtils.isTimeoutError(error)) {
+      throw error
     }
-    return this
   }
 
   get configuration () {
@@ -37,6 +39,10 @@ export default class XYZServerLayer extends NetworkTileLayer {
     }
   }
 
+  update (configuration) {
+    super.update(configuration)
+  }
+
   get extent () {
     if (this._configuration.extent) {
       return this._configuration.extent
@@ -45,13 +51,20 @@ export default class XYZServerLayer extends NetworkTileLayer {
     return this._configuration.extent
   }
 
+  /**
+   * Gets the tile url for this service
+   * @param coords
+   */
+  getTileUrl (coords) {
+    return XYZTileUtilities.generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)
+  }
+
   async renderTile (coords, tileCanvas, done) {
     if (this.hasError()) {
       done(this.error, null)
     } else {
       const cancellableTileRequest = new CancellableTileRequest()
-      const url = XYZTileUtilities.generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.getTileUrl(coords), this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!_.isNil(error)) {
           this.setError(error)
         }

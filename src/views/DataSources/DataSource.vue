@@ -107,7 +107,7 @@
             </v-row>
             <v-row no-gutters>
               <v-col cols="12">
-                <number-picker :number="timeoutMs" label="Request timeout (ms)" :step="Number(500)" :min="Number(0)" :max="Number(10000)" @update-number="(val) => {this.timeoutMs = val}" @update-valid="(val) => {this.timeoutValid = val}"/>
+                <number-picker :hint="timeoutMs === 0 ? 'A timeout of zero will not set a timeout' : (timeoutMs < 2000 ? 'A timeout below 2000ms is not recommended' : undefined)" :number="timeoutMs" label="Request timeout (ms)" :step="Number(500)" :min="Number(0)" :max="Number(10000)" @update-number="(val) => {this.timeoutMs = val}" @update-valid="(val) => {this.timeoutValid = val}"/>
               </v-col>
             </v-row>
             <v-row no-gutters>
@@ -384,7 +384,7 @@
                 {{'Max requests per second: ' + (source.rateLimit || defaultRateLimit)}}
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{'Request timeout (ms): ' + (source.timeoutMs || defaultTimeout)}}
+                {{'Request timeout (ms): ' + (source.timeoutMs === undefined ? defaultTimeout : source.timeoutMs)}}
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{'Retry attempts: ' + (source.retryAttempts === undefined ? defaultRetryAttempts : source.retryAttempts)}}
@@ -480,7 +480,7 @@
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = this.source.timeoutMs || NetworkConstants.DEFAULT_TIMEOUT
+        this.timeoutMs = !_.isNil(this.source.timeoutMs) ? this.source.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT
         this.rateLimit = this.source.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT
         this.retryAttempts = !_.isNil(this.source.retryAttempts) ? this.source.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {

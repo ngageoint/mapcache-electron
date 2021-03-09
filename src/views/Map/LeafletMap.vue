@@ -190,7 +190,7 @@
         </v-card-subtitle>
         <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
           <v-list-item-group v-model="selectedBaseMapId" mandatory>
-            <v-list-item v-for="item of baseMapItems" :key="item.id + '-basemap'" :value="item.id">
+            <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
                 <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e, map)">
                   <v-icon small>mdi-map-outline</v-icon>
@@ -199,7 +199,7 @@
               <v-list-item-title>{{item.name}}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <v-progress-circular
-                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializing"
+                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializationState === 1"
                 indeterminate
                 color="primary"
               ></v-progress-circular>
@@ -239,15 +239,13 @@
   import offline from '../../assets/ne_50m_countries.geo'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
-  import LayerTypes from '../../lib/source/layer/LayerTypes'
+  import BaseMapUtilities from '../../lib/BaseMapUtilities'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
+
   // objects for storing state
-  const sourceLayers = {}
   const geopackageLayers = {}
-  let initializedGeoPackageTables = {}
-  let visibleGeoPackageTables = {}
 
   function generateLayerOrderItemForSource (source, map) {
     return {
@@ -311,6 +309,7 @@
           return (state.BaseMaps.baseMaps || []).map(baseMapConfig => {
             return {
               id: baseMapConfig.id,
+              updateKey: 0,
               baseMap: baseMapConfig,
               name: baseMapConfig.name,
               zoomTo: _.debounce((e, map) => {
@@ -338,8 +337,13 @@
     },
     data () {
       return {
+        geoPackageMapLayers: {},
         baseMapLayers: {},
-        selectedBaseMapId: 0,
+        offlineBaseMapId: BaseMapUtilities.getOfflineBaseMapId(),
+        dataSourceMapLayers: {},
+        offlineBaseMapFilter: baseMap => baseMap.id !== BaseMapUtilities.getOfflineBaseMapId(),
+        geopackageMapLayers: {},
+        selectedBaseMapId: '0',
         zoomToExtentKey: this.project && this.project.zoomToExtent ? this.project.zoomToExtent.key || 0 : 0,
         isDrawing: false,
         maxFeatures: undefined,
@@ -387,12 +391,12 @@
     },
     methods: {
       sendSourceInitializationStatus (sourceId) {
-        const sourceLayer = sourceLayers[sourceId]
+        const sourceLayer = this.dataSourceMapLayers[sourceId]
         if (sourceLayer) {
-          if (sourceLayer.initializing) {
-            EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
-          } else if (!_.isNil(sourceLayer.initializedSource)) {
+          if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
             EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
+          } else if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
+            EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
           }
         }
       },
@@ -411,7 +415,9 @@
       },
       addLayerToMap (map, layer, item) {
         layer.addTo(map)
-        this.layerOrder.push(item)
+        if (this.layerOrder.findIndex(i => i.id === item.id) === -1) {
+          this.layerOrder.push(item)
+        }
       },
       removeLayerFromMap (layer, id) {
         layer.remove()
@@ -565,47 +571,47 @@
           }
         })
       },
-      addDataSource (sourceConfiguration, map) {
-        let self = this
+      async initializeDataSource (sourceId, map) {
+        EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
+        await this.dataSourceMapLayers[sourceId].initializeLayer()
+        // only add if the source layer was not deleted
+        if (!_.isNil(this.dataSourceMapLayers[sourceId]) && this.dataSourceMapLayers[sourceId].getLayer().visible) {
+          this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
+        }
+        EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
+      },
+      async addDataSource (sourceConfiguration, map) {
+        const self = this
         const sourceId = sourceConfiguration.id
-        sourceLayers[sourceId] = {
-          configuration: _.cloneDeep(sourceConfiguration),
-          visible: sourceConfiguration.visible
+        let source = LayerFactory.constructLayer(sourceConfiguration)
+        source._maxFeatures = this.project.maxFeatures
+        self.dataSourceMapLayers[sourceId] = LeafletMapLayerFactory.constructMapLayer(source)
+        // if it is visible, try to initialize it
+        if (source.visible) {
+          self.initializeDataSource(sourceId, map)
         }
-        if (sourceLayers[sourceId].configuration.visible) {
-          sourceLayers[sourceId].initializing = true
-          let source = LayerFactory.constructLayer(sourceConfiguration)
-          source._maxFeatures = this.project.maxFeatures
-          EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
-          source.initialize().then(function () {
-            // update style just in case during the initialization the layer was modified
-            if (!_.isNil(sourceLayers[sourceId])) {
-              if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
-                source.updateStyle(sourceLayers[sourceId].configuration)
-              }
-              const sourceValid = !ServiceConnectionUtils.isRemoteSource(source) || !source.hasError()
-              if (sourceValid) {
-                let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
-                self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(source, map))
-                sourceLayers[sourceId].initializedSource = source
-                sourceLayers[sourceId].mapLayer = mapLayer
-                sourceLayers[sourceId].initializing = false
-              }
-              EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
-            }
-          })
+      },
+      removeDataSource (sourceId) {
+        if (!_.isNil(this.dataSourceMapLayers[sourceId])) {
+          this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
+          this.dataSourceMapLayers[sourceId].close()
+          delete this.dataSourceMapLayers[sourceId]
         }
+      },
+      async initializeBaseMap (baseMapId, map) {
+        await this.baseMapLayers[baseMapId].initializeLayer()
+        // only add if the source layer was not deleted
+        if (!_.isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
+          map.addLayer(this.baseMapLayers[baseMapId])
+        }
+        // updating initializing to false is not always updating the UI
+        this.$forceUpdate()
       },
       addBaseMap (baseMap, map) {
         let self = this
         const baseMapId = baseMap.id
-        self.baseMapLayers[baseMapId] = {
-          layerConfiguration: _.cloneDeep(baseMap.layerConfiguration),
-          initializing: true
-        }
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId].initializedLayer = baseMap.layerConfiguration
-          self.baseMapLayers[baseMapId].mapLayer = vendor.L.geoJson(offline, {
+          self.baseMapLayers[baseMapId] = vendor.L.geoJson(offline, {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -617,30 +623,18 @@
               }
             }
           })
-          self.baseMapLayers[baseMapId].initializing = false
-          map.addLayer(self.baseMapLayers[baseMapId].mapLayer)
+          if (this.selectedBaseMapId === baseMapId) {
+            self.addLayer(self.baseMapLayers[baseMapId])
+          }
           // updating initializing to false is not always updating the UI
           self.$forceUpdate()
         } else {
           let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          layer._maxFeatures = self.project.maxFeatures
-          layer.initialize().then(function () {
-            // update style just in case during the initialization the layer was modified
-            if (!_.isNil(self.baseMapLayers[baseMapId])) {
-              if (layer.layerType === LayerTypes.GEOTIFF || layer.layerType === LayerTypes.MBTILES) {
-                layer.updateStyle(self.baseMapLayers[baseMapId].layerConfiguration)
-              }
-              let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
-              self.baseMapLayers[baseMapId].initializedLayer = layer
-              self.baseMapLayers[baseMapId].mapLayer = mapLayer
-              self.baseMapLayers[baseMapId].initializing = false
-              if (self.selectedBaseMapId === baseMapId) {
-                map.addLayer(mapLayer)
-              }
-              // updating initializing to false is not always updating the UI
-              self.$forceUpdate()
-            }
-          })
+          layer._maxFeatures = this.project.maxFeatures
+          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer(layer)
+          if (this.selectedBaseMapId === baseMapId) {
+            self.initializeBaseMap(baseMapId, map)
+          }
         }
       },
       closePopup() {
@@ -722,20 +716,9 @@
           this.hideFeatureTable()
         }
       },
-      removeDataSource (sourceId) {
-        const sourceLayer = sourceLayers[sourceId]
-        if (!_.isNil(sourceLayer)) {
-          if (sourceLayer.mapLayer) {
-            this.removeLayerFromMap(sourceLayer.mapLayer, sourceId)
-          }
-          if (!_.isNil(sourceLayer.initializedSource) && Object.prototype.hasOwnProperty.call(sourceLayer.initializedSource, 'close')) {
-            sourceLayer.initializedSource.close()
-          }
-          delete sourceLayers[sourceId]
-        }
-      },
       addGeoPackageToMap (geopackage, map) {
         this.removeGeoPackage(geopackage.id)
+        this.geopackageMapLayers[geopackage.id] = {}
         geopackageLayers[geopackage.id] = _.cloneDeep(geopackage)
         _.keys(geopackage.tables.tiles).filter(tableName => geopackage.tables.tiles[tableName].visible).forEach(tableName => {
           this.addGeoPackageTileTable(geopackage, map, tableName)
@@ -744,62 +727,37 @@
           this.addGeoPackageFeatureTable(geopackage, map, tableName)
         })
       },
-      removeGeoPackage (geopackageId) {
-        const geopackage = geopackageLayers[geopackageId]
-        if (!_.isNil(geopackage)) {
-          _.keys(geopackage.tables.tiles).forEach(tileTable => {
-            this.removeGeoPackageTileTable(geopackage, tileTable)
-          })
-          _.keys(geopackage.tables.features).forEach(tableName => {
-            this.removeGeoPackageFeatureTable(geopackage, tableName)
-          })
-          delete geopackageLayers[geopackageId]
-        }
-      },
-      addGeoPackageTileTable (geopackage, map, tableName) {
-        let self = this
-        let layer = LayerFactory.constructLayer({id: geopackage.id + '_tile_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
-        layer.initialize().then(function () {
-          if (geopackage.tables.tiles[tableName].visible) {
-            let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
-            self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true, map))
-            if (!visibleGeoPackageTables[geopackage.id]) {
-              visibleGeoPackageTables[geopackage.id] = {
-                tileTables: {},
-                featureTables: {}
-              }
-            }
-            visibleGeoPackageTables[geopackage.id].tileTables[tableName] = mapLayer
-          }
-          if (!initializedGeoPackageTables[geopackage.id]) {
-            initializedGeoPackageTables[geopackage.id] = {
-              tileTables: {},
-              featureTables: {}
-            }
-          }
-          initializedGeoPackageTables[geopackage.id].tileTables[tableName] = layer
-        })
-      },
-      removeGeoPackageTileTable (geopackage, tableName) {
-        if (!_.isNil(visibleGeoPackageTables[geopackage.id])) {
-          let mapLayer = visibleGeoPackageTables[geopackage.id].tileTables[tableName]
-          if (mapLayer) {
-            this.removeLayerFromMap(mapLayer, geopackage.id + '_' + tableName)
-          }
-          delete visibleGeoPackageTables[geopackage.id].tileTables[tableName]
-        }
-        if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
-          const layer = initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+      removeGeoPackageTable (geopackageId, tableName) {
+        if (!_.isNil(this.geopackageMapLayers[geopackageId]) && !_.isNil(this.geopackageMapLayers[geopackageId][tableName])) {
+          const layer = this.geopackageMapLayers[geopackageId][tableName]
+          this.removeLayerFromMap(layer, geopackageId + '_' + tableName)
           if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
             layer.close()
           }
-          delete initializedGeoPackageTables[geopackage.id].tileTables[tableName]
+          delete this.geopackageMapLayers[geopackageId][tableName]
+        }
+      },
+      removeGeoPackage (geopackageId) {
+        for (let tableName of _.keys(this.geopackageMapLayers[geopackageId])) {
+          this.removeGeoPackageTable(geopackageId, tableName)
+        }
+        delete this.geopackageMapLayers[geopackageId]
+      },
+      addGeoPackageTileTable (geopackage, map, tableName) {
+        let self = this
+        let layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+        let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+        if (geopackage.tables.tiles[tableName].visible) {
+          mapLayer.initializeLayer().then(() => {
+            self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
+            self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true, map))
+          })
         }
       },
       addGeoPackageFeatureTable (geopackage, map, tableName) {
         let self = this
         let layer = LayerFactory.constructLayer({
-          id: geopackage.id + '_feature_' + tableName,
+          id: geopackage.id + '_' + tableName,
           geopackageFilePath: geopackage.path,
           sourceDirectory: geopackage.path,
           sourceLayerName: tableName,
@@ -807,41 +765,12 @@
           layerType: 'Vector',
           maxFeatures: this.project.maxFeatures
         })
-        layer.initialize().then(function () {
-          if (geopackage.tables.features[tableName].visible) {
-            let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+        let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+        if (geopackage.tables.features[tableName].visible) {
+          mapLayer.initializeLayer().then(() => {
+            self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
             self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false, map))
-            if (!visibleGeoPackageTables[geopackage.id]) {
-              visibleGeoPackageTables[geopackage.id] = {
-                tileTables: {},
-                featureTables: {}
-              }
-            }
-            visibleGeoPackageTables[geopackage.id].featureTables[tableName] = mapLayer
-          }
-          if (!initializedGeoPackageTables[geopackage.id]) {
-            initializedGeoPackageTables[geopackage.id] = {
-              tileTables: {},
-              featureTables: {}
-            }
-          }
-          initializedGeoPackageTables[geopackage.id].featureTables[tableName] = layer
-        })
-      },
-      removeGeoPackageFeatureTable (geopackage, tableName) {
-        if (!_.isNil(visibleGeoPackageTables[geopackage.id])) {
-          let mapLayer = visibleGeoPackageTables[geopackage.id].featureTables[tableName]
-          if (mapLayer) {
-            this.removeLayerFromMap(mapLayer, geopackage.id + '_' + tableName)
-          }
-          delete visibleGeoPackageTables[geopackage.id].featureTables[tableName]
-        }
-        if (!_.isNil(initializedGeoPackageTables[geopackage.id])) {
-          const layer = initializedGeoPackageTables[geopackage.id].featureTables[tableName]
-          if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
-            layer.close()
-          }
-          delete initializedGeoPackageTables[geopackage.id].featureTables[tableName]
+          })
         }
       },
       async zoomToContent () {
@@ -858,7 +787,7 @@
       },
       async getExtentForVisibleGeoPackagesAndLayers () {
         let overallExtent = null
-        let keys = Object.keys(visibleGeoPackageTables)
+        let keys = Object.keys(geopackageLayers)
         for (let i = 0; i < keys.length; i++) {
           const geopackageId = keys[i]
           const geopackage = geopackageLayers[geopackageId]
@@ -907,9 +836,9 @@
             }
           }
         }
-        keys = Object.keys(sourceLayers).filter(key => sourceLayers[key].configuration.visible)
+        keys = Object.keys(this.dataSourceMapLayers).filter(key => this.dataSourceMapLayers[key].getLayer().visible)
         for (let i = 0; i < keys.length; i++) {
-          const layerExtent = sourceLayers[keys[i]].configuration.extent
+          const layerExtent = this.dataSourceMapLayers[keys[i]].getLayer().extent
           if (!_.isNil(layerExtent)) {
             if (_.isNil(overallExtent)) {
               overallExtent = layerExtent
@@ -969,22 +898,22 @@
               tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
             }
           }
-          for (let sourceId in sourceLayers) {
-            const sourceLayerConfig = sourceLayers[sourceId].configuration
-            if (sourceLayerConfig.visible) {
-              if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-                const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, e.latlng, this.map.getZoom())
+          for (let sourceId in this.dataSourceMapLayers) {
+            const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()._configuration
+            if (sourceLayer.visible) {
+              if (!_.isNil(sourceLayer.geopackageFilePath)) {
+                const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName, e.latlng, this.map.getZoom())
                 if (!_.isEmpty(features)) {
                   featuresFound = true
                   tableFeatures.sourceTables.push({
-                    id: sourceLayerConfig.id,
-                    tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
-                    sourceId: sourceLayerConfig.id,
-                    tableName: sourceLayerConfig.sourceLayerName,
-                    columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                    id: sourceLayer.id,
+                    tabName: sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name,
+                    sourceId: sourceLayer.id,
+                    tableName: sourceLayer.sourceLayerName,
+                    columns: await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
                     features: features,
-                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                    featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
+                    featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName)
                   })
                 }
               }
@@ -999,9 +928,6 @@
             this.hideFeatureTable()
           }
         }
-      },
-      displayNetworkErrorMessage () {
-        this.displayNetworkError = true
       },
       reorderMapLayers (sortedLayers) {
         let newLayerOrder = []
@@ -1044,7 +970,9 @@
         this.setupEventHandlers()
       },
       async setupBaseMaps () {
-        await this.addBaseMap(this.baseMaps[0], this.map)
+        for (let i = 0; i < this.baseMaps.length; i++) {
+          await this.addBaseMap(this.baseMaps[i], this.map)
+        }
       },
       async setupControls () {
         const self = this
@@ -1103,11 +1031,11 @@
                 count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, tables, e.latlng, this.map.getZoom())
               }
             }
-            for (let sourceId in sourceLayers) {
-              const sourceLayerConfig = sourceLayers[sourceId].configuration
-              if (sourceLayerConfig.visible) {
-                if (!_.isNil(sourceLayerConfig.geopackageFilePath)) {
-                  count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayerConfig.geopackageFilePath, [sourceLayerConfig.sourceLayerName], e.latlng, this.map.getZoom())
+            for (let sourceId in this.dataSourceMapLayers) {
+              const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()
+              if (sourceLayer.visible) {
+                if (!_.isNil(sourceLayer.geopackageFilePath)) {
+                  count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom())
                 }
               }
             }
@@ -1176,78 +1104,66 @@
         for (const geopackageId in this.geopackages) {
           this.addGeoPackageToMap(this.geopackages[geopackageId], this.map)
         }
+      },
+      refreshFeatureTable () {
+        // geopackages changed, so let's ensure the content in the table is updated
+        if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+          this.queryForFeatures({latlng: this.tableFeaturesLatLng})
+          // the feature table is showing because a user clicked the view features button in the feature layer view
+          // this requires the active geopackage to be set with a valid geopackageId and tableName
+        } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
+          this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
+        } else {
+          // clear out any feature tables
+          this.hideFeatureTable()
+        }
       }
     },
     watch: {
-      // TODO: cleanup logic for updating a base map. we should be able to update the map layer with the necessary information,
-      //  rather than recreating it over and over again. Just need to make sure we tell it to repaint
       baseMaps: {
         async handler (newBaseMaps) {
           const self = this
           const selectedBaseMapId = this.selectedBaseMapId
 
-          const oldBaseMapConfig = self.baseMapLayers[selectedBaseMapId].layerConfiguration
+          let oldConfig
+          if (!_.isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+            oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
+          }
           // update the layer config stored for each base map
-          newBaseMaps.forEach(baseMap => {
+          newBaseMaps.filter(self.offlineBaseMapFilter).forEach(baseMap => {
             if (self.baseMapLayers[baseMap.id]) {
-              self.baseMapLayers[baseMap.id].layerConfiguration = baseMap.layerConfiguration
-              if (self.baseMapLayers[baseMap.id].initializedLayer) {
-                self.baseMapLayers[baseMap.id].initializedLayer.error = baseMap.error
-              }
+              self.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
+              self.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
             }
           })
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
-          // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
-          if (_.isNil(selectedBaseMap)) {
-            if (newBaseMaps.length - 1 < this.baseMapIndex) {
-              this.baseMapIndex = newBaseMaps.length - 1
-            }
-            if (self.baseMapLayers[selectedBaseMapId] && self.baseMapLayers[selectedBaseMapId].mapLayer) {
-              self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-            }
-            const initializedLayer = self.baseMapLayers[selectedBaseMapId].initializedLayer
-            if (initializedLayer && Object.prototype.hasOwnProperty.call(initializedLayer, 'close')) {
-              initializedLayer.close()
-            }
-            delete self.baseMapLayers[selectedBaseMapId]
-            self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
-          } else {
-            if (!_.isNil(selectedBaseMap) && !_.isNil(selectedBaseMap.layerConfiguration) && !_.isNil(self.baseMapLayers[selectedBaseMapId]) && !_.isNil(self.baseMapLayers[selectedBaseMapId].initializedLayer)) {
-              if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || selectedBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES) {
-                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(selectedBaseMap.layerConfiguration)
-                self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-              } else if (!_.isEqual(selectedBaseMap.layerConfiguration.styleKey, oldBaseMapConfig.styleKey) && selectedBaseMap.layerConfiguration.pane === 'vector') {
-                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                self.baseMapLayers[selectedBaseMapId].initializedLayer.updateStyle(this.project.maxFeatures)
-                self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-              } else {
-                try {
-                  if (self.baseMapLayers[selectedBaseMapId].mapLayer && self.baseMapLayers[selectedBaseMapId].mapLayer.hasError() && _.isNil(selectedBaseMap.error)) {
-                    self.map.removeLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                    self.baseMapLayers[selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[selectedBaseMapId].initializedLayer)
-                    self.map.addLayer(self.baseMapLayers[selectedBaseMapId].mapLayer)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
+          if (selectedBaseMapId !== self.offlineBaseMapId) {
+            // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
+            if (_.isNil(selectedBaseMap)) {
+              if (newBaseMaps.length - 1 < this.baseMapIndex) {
+                this.baseMapIndex = newBaseMaps.length - 1
               }
-              try {
-                self.baseMapLayers[selectedBaseMapId].mapLayer.setOpacity(selectedBaseMap.layerConfiguration.opacity)
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
-              try {
-                self.baseMapLayers[selectedBaseMapId].mapLayer.setError(selectedBaseMap.error)
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
-              try {
-                if (selectedBaseMap.layerConfiguration.layerType === LayerTypes.WMS || selectedBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
-                  self.baseMapLayers[selectedBaseMapId].initializedLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
-                  self.baseMapLayers[selectedBaseMapId].mapLayer.updateNetworkSettings(selectedBaseMap.layerConfiguration)
+              const layer = self.baseMapLayers[selectedBaseMapId]
+              if (layer) {
+                self.map.removeLayer(self.baseMapLayers[selectedBaseMapId])
+                if (layer && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+                  layer.close()
                 }
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
+              }
+              delete self.baseMapLayers[selectedBaseMapId]
+              self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
+            } else if (!_.isNil(oldConfig)) {
+              const newConfig = selectedBaseMap.layerConfiguration
+              const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
+              const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+              // styleChanged performs an asynchronous recycling of the geopackage connection
+              if (styleKeyChanged) {
+                await self.baseMapLayers[selectedBaseMapId].styleChanged()
+              }
+              if (repaintRequired) {
+                self.baseMapLayers[selectedBaseMapId].redraw()
+              }
               this.mapBackground = selectedBaseMap.background || '#ddd'
             }
           }
@@ -1256,56 +1172,40 @@
       selectedBaseMapId: {
         async handler (newBaseMapId, oldBaseMapId) {
           const self = this
-          const oldBaseMapIndex = oldBaseMapId
           self.$nextTick(async () => {
             this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER)) {
-              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap)
+            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && ServiceConnectionUtils.isRemoteSource(newBaseMap.layerConfiguration)) {
+              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            }
+
+            // remove old map layer
+            if (self.baseMapLayers[oldBaseMapId]) {
+              self.map.removeLayer(self.baseMapLayers[oldBaseMapId])
             }
 
             if (success) {
-              if (self.baseMapLayers[oldBaseMapId] && self.baseMapLayers[oldBaseMapId].mapLayer) {
-                self.map.removeLayer(self.baseMapLayers[oldBaseMapId].mapLayer)
-              }
-
-              // check to see if base map has already been initialized
+              // check to see if base map has already been added
               if (_.isNil(self.baseMapLayers[newBaseMapId])) {
                 await self.addBaseMap(newBaseMap, self.map)
               } else {
-                try {
-                  self.baseMapLayers[newBaseMapId].mapLayer.setError(newBaseMap.error)
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                try {
-                  self.baseMapLayers[newBaseMapId].mapLayer.setOpacity(newBaseMap.layerConfiguration.opacity)
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                try {
-                  if (newBaseMap.layerConfiguration.layerType === LayerTypes.WMS || newBaseMap.layerConfiguration.layerType === LayerTypes.XYZ_SERVER) {
-                    self.baseMapLayers[newBaseMapId].initializedLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
-                    self.baseMapLayers[newBaseMapId].mapLayer.updateNetworkSettings(newBaseMap.layerConfiguration)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                if (newBaseMap.layerConfiguration.layerType === LayerTypes.GEOTIFF || newBaseMap.layerConfiguration.layerType === LayerTypes.MBTILES && !_.isNil(self.baseMapLayers[newBaseMapId].initializedLayer)) {
-                  self.baseMapLayers[newBaseMapId].initializedLayer.updateStyle(newBaseMap.layerConfiguration)
-                  self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
+                // do not update offline base map id
+                if (newBaseMapId !== self.offlineBaseMapId) {
+                  self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
-                try {
-                  if (self.baseMapLayers[newBaseMapId].mapLayer.hasError()) {
-                    self.baseMapLayers[newBaseMapId].initializedLayer.error = newBaseMap.error
-                    self.baseMapLayers[newBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[newBaseMapId].initializedLayer)
-                  }
-                  // eslint-disable-next-line no-empty
-                } catch (e) {}
-                self.map.addLayer(self.baseMapLayers[newBaseMapId].mapLayer)
+                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                  self.map.addLayer(self.baseMapLayers[newBaseMapId])
+                }
+                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
+                  self.initializeBaseMap(newBaseMapId, self.map)
+                }
               }
-              this.mapBackground = newBaseMap.background || '#ddd'
+              self.mapBackground = newBaseMap.background || '#ddd'
             } else {
-              this.selectedBaseMapId = oldBaseMapIndex
+              self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
+              self.selectedBaseMapId = self.offlineBaseMapId
             }
           })
         }
@@ -1347,12 +1247,10 @@
         handler (layers) {
           layers.forEach(layer => {
             let mapLayer
-            if (!_.isNil(layer.geopackageId) && visibleGeoPackageTables[layer.geopackageId] && visibleGeoPackageTables[layer.geopackageId].featureTables) {
-              if (visibleGeoPackageTables[layer.geopackageId] && visibleGeoPackageTables[layer.geopackageId].featureTables) {
-                mapLayer = visibleGeoPackageTables[layer.geopackageId].featureTables[layer.tableName]
-              }
-            } else if (_.isNil(layer.geopackageId) && !_.isNil(sourceLayers[layer.id])) {
-              mapLayer = sourceLayers[layer.id].mapLayer
+            if (!_.isNil(layer.geopackageId) && this.geopackageMapLayers[layer.geopackageId] && this.geopackageMapLayers[layer.geopackageId][layer.tableName]) {
+              mapLayer = this.geopackageMapLayers[layer.geopackageId][layer.tableName]
+            } else if (_.isNil(layer.geopackageId) && !_.isNil(this.dataSourceMapLayers[layer.id])) {
+              mapLayer = this.dataSourceMapLayers[layer.id]
             }
             if (!_.isNil(mapLayer)) {
               mapLayer.bringToFront()
@@ -1372,139 +1270,69 @@
           let self = this
           let map = this.map
           let updatedSourceIds = Object.keys(updatedSources)
-          let existingSourceIds = Object.keys(sourceLayers)
+          let existingSourceIds = Object.keys(this.dataSourceMapLayers)
 
-          // layer configs that have been removed completely
+          // handle deletion of a data source
           existingSourceIds.filter((i) => updatedSourceIds.indexOf(i) < 0).forEach(sourceId => {
             self.removeDataSource(sourceId)
           })
 
-          // new layer configs
+          // handle a new data source being added
           updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) < 0).forEach(sourceId => {
             let sourceConfig = updatedSources[sourceId]
             self.removeDataSource(sourceId)
             self.addDataSource(sourceConfig, map)
           })
 
-          // see if any of the layers have changed
-          updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) >= 0).forEach(sourceId => {
-            let updatedSource = updatedSources[sourceId]
-            let oldLayerConfig = sourceLayers[sourceId].configuration
-            // something other than sourceKey, maxFeatures, visible, or feature assignments changed
-            if (!_.isEqual(_.omit(updatedSource, ['styleKey', 'visible', 'retryAttempts', 'rateLimit', 'timeoutMs']), _.omit(oldLayerConfig, ['styleKey', 'visible', 'retryAttempts', 'rateLimit', 'timeoutMs']))) {
-              if (updatedSource.layerType === LayerTypes.GEOTIFF || updatedSource.layerType === LayerTypes.MBTILES) {
-                sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-                if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
-                  sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
-                  if (sourceLayers[sourceId].configuration.visible) {
-                    let mapLayer = sourceLayers[sourceId].mapLayer
-                    if (mapLayer) {
-                      self.removeLayerFromMap(mapLayer, sourceId)
-                      delete sourceLayers[sourceId].mapLayer
-                    }
-                    mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                    self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
-                    sourceLayers[sourceId].mapLayer = mapLayer
-                  }
-                }
-              } else {
-                self.removeDataSource(sourceId)
-                self.addDataSource(updatedSource, map)
-              }
-            } else if (!_.isEqual(updatedSource.visible, oldLayerConfig.visible)) {
-              // copy configuration for source
-              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              // if visible, ensure it is initialized
-              if (updatedSource.visible) {
-                if (_.isNil(sourceLayers[sourceId].initializedSource) && !sourceLayers[sourceId].initializing) {
-                  sourceLayers[sourceId].initializing = true
-                  let source = LayerFactory.constructLayer(sourceLayers[sourceId].configuration)
-                  source._maxFeatures = this.project.maxFeatures
-                  EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
-                  source.initialize().then(function () {
-                    // update style just in case during the initialization the layer was modified
-                    if (!_.isNil(sourceLayers[sourceId])) {
-                      sourceLayers[sourceId].initializedSource = source
-                      if (source.layerType === LayerTypes.GEOTIFF || source.layerType === LayerTypes.MBTILES) {
-                        sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
-                      }
-                      const sourceValid = !ServiceConnectionUtils.isRemoteSource(source) || !source.hasError()
-                      // it is possible that the user could have disabled the source while waiting, or cleared sources...
-                      if (sourceLayers[sourceId].configuration.visible && sourceValid) {
-                        let mapLayer = LeafletMapLayerFactory.constructMapLayer(source)
-                        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(source, map))
-                        sourceLayers[sourceId].mapLayer = mapLayer
-                        sourceLayers[sourceId].initializing = false
-                      }
-                    }
-                    EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
-                  })
-                } else if (!_.isNil(sourceLayers[sourceId].initializedSource)) {
-                  if (sourceLayers[sourceId].initializedSource.layerType === LayerTypes.GEOTIFF || sourceLayers[sourceId].initializedSource.layerType === LayerTypes.MBTILES) {
-                    sourceLayers[sourceId].initializedSource.updateStyle(sourceLayers[sourceId].configuration)
-                  }
-                  if (!_.isNil(sourceLayers[sourceId].mapLayer)) {
-                    let mapLayer = sourceLayers[sourceId].mapLayer
-                    if (mapLayer) {
-                      self.removeLayerFromMap(mapLayer, sourceId)
-                      delete sourceLayers[sourceId].mapLayer
-                    }
-                  }
-                  let mapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                  self.addLayerToMap(map, mapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
-                  sourceLayers[sourceId].mapLayer = mapLayer
-                  EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
-                }
-              } else {
-                // hide and remove the map layer
-                let mapLayer = sourceLayers[sourceId].mapLayer
-                if (mapLayer) {
-                  self.removeLayerFromMap(mapLayer, sourceId)
-                  delete sourceLayers[sourceId].mapLayer
-                }
-              }
-            } else if (!_.isEqual(updatedSource.styleKey, oldLayerConfig.styleKey) && updatedSource.pane === 'vector' && !_.isNil(sourceLayers[sourceId].initializedSource)) {
-              sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-              // only style has changed, let's just update style
-              sourceLayers[sourceId].initializedSource.updateStyle(this.project.maxFeatures).then(function () {
-                // remove layer from map if it is currently being visible
-                let mapLayer = sourceLayers[sourceId].mapLayer
-                if (mapLayer) {
-                  self.removeLayerFromMap(mapLayer, sourceId)
-                }
-                delete sourceLayers[sourceId].mapLayer
-                // if layer is set to be visible, display it on the map
-                if (updatedSource.visible) {
-                  let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                  self.addLayerToMap(map, updateMapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
-                  sourceLayers[sourceId].mapLayer = updateMapLayer
-                }
-              })
-            } else if (!_.isEqual(updatedSource.rateLimit, oldLayerConfig.rateLimit) || !_.isEqual(updatedSource.retryAttempts, oldLayerConfig.retryAttempts) || !_.isEqual(updatedSource.timeoutMs, oldLayerConfig.timeoutMs)) {
-              try {
-                sourceLayers[sourceId].configuration = _.cloneDeep(updatedSource)
-                sourceLayers[sourceId].initializedSource.updateNetworkSettings(updatedSource)
-                let mapLayer = sourceLayers[sourceId].mapLayer
-                if (mapLayer) {
-                  mapLayer.updateNetworkSettings(updatedSource)
-                }
-                // eslint-disable-next-line no-empty
-              } catch (e) {}
+          // update existing data sources, some may have not been initialized yet
+          const changedSourceIds = updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) >= 0)
+          for (let i = 0; i < changedSourceIds.length; i++) {
+            const sourceId = changedSourceIds[i]
+            const newConfig = updatedSources[sourceId]
+            const oldConfig = this.dataSourceMapLayers[sourceId].getLayer()._configuration
 
+            const enablingLayer = !oldConfig.visible && newConfig.visible
+            const disablingLayer = oldConfig.visible && !newConfig.visible
+            const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
+            const repaintFields = this.dataSourceMapLayers[sourceId].getLayer().getRepaintFields()
+            const repaintRequired = this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && oldConfig.visible && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+
+            // update layer
+            this.dataSourceMapLayers[sourceId].update(updatedSources[sourceId])
+
+            // styleChanged performs an asynchronous recycling of the geopackage connection
+            if (styleKeyChanged) {
+              await this.dataSourceMapLayers[sourceId].styleChanged()
             }
-          })
 
-          // geopackages changed, so let's ensure the content in the table is updated
-          if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
-            this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-            // the feature table is showing because a user clicked the view features button in the feature layer view
-            // this requires the active geopackage to be set with a valid geopackageId and tableName
-          } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
-            this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
-          } else {
-            // clear out any feature tables
-            this.hideFeatureTable()
+            // disabling layer, so remove it from the map
+            if (disablingLayer) {
+              this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
+            } else if (enablingLayer) {
+              // test if remote source is healthy
+              let valid = true
+              if (ServiceConnectionUtils.isRemoteSource(newConfig)) {
+                try {
+                  await this.dataSourceMapLayers[sourceId].getLayer().testConnection(true)
+                } catch (e) {
+                  ActionUtilities.setSourceError({id: sourceId, error: e})
+                  valid = false
+                }
+              }
+              if (valid) {
+                // enabling map layer, if this has been initialized, we are good to go
+                if (this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
+                  this.initializeDataSource(sourceId, map)
+                } else if (this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                  this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
+                }
+              }
+            } else if (repaintRequired) {
+              this.dataSourceMapLayers[sourceId].redraw()
+            }
           }
+
+          this.refreshFeatureTable()
         },
         deep: true
       },
@@ -1549,11 +1377,8 @@
               const tileTablesTurnedOff = _.difference(oldVisibleTileTables, newVisibleTileTables)
 
               // remove feature and tile tables that were turned off or deleted
-              tileTablesRemoved.concat(tileTablesTurnedOff).forEach(tableName => {
-                this.removeGeoPackageTileTable(updatedGeoPackage, tableName)
-              })
-              featureTablesRemoved.concat(featureTablesTurnedOff).forEach(tableName => {
-                this.removeGeoPackageFeatureTable(updatedGeoPackage, tableName)
+              tileTablesRemoved.concat(tileTablesTurnedOff).concat(featureTablesRemoved).concat(featureTablesTurnedOff).forEach(tableName => {
+                this.removeGeoPackageTable(geoPackageId, tableName)
               })
 
               geopackageLayers[updatedGeoPackage.id] = _.cloneDeep(updatedGeoPackage)
@@ -1568,23 +1393,13 @@
               // tables with updated style key
               const featureTablesStyleUpdated = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible && oldGeoPackage.tables.features[table] && featureTablesTurnedOn.indexOf(table) === -1 && updatedGeoPackage.tables.features[table].styleKey !== oldGeoPackage.tables.features[table].styleKey)
               featureTablesStyleUpdated.forEach(tableName => {
-                this.removeGeoPackageFeatureTable(updatedGeoPackage, tableName)
+                this.removeGeoPackageTable(geoPackageId, tableName)
                 this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
               })
             }
           })
 
-          // geopackages changed, so let's ensure the content in the table is updated
-          if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
-            this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-            // the feature table is showing because a user clicked the view features button in the feature layer view
-            // this requires the active geopackage to be set with a valid geopackageId and tableName
-          } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
-            this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
-          } else {
-            // clear out any feature tables
-            this.hideFeatureTable()
-          }
+          this.refreshFeatureTable()
         },
         deep: true
       },
@@ -1625,55 +1440,43 @@
       project: {
         async handler (updatedProject) {
           let self = this
-          let map = this.map
           updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
           updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
           updatedProject.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
+          // max features setting changed
           if (updatedProject.maxFeatures !== this.maxFeatures) {
             for (const gp of Object.values(updatedProject.geopackages)) {
               for (const tableName of Object.keys(gp.tables.features)) {
-                if (initializedGeoPackageTables[gp.id] && initializedGeoPackageTables[gp.id].featureTables) {
-                  const layer = initializedGeoPackageTables[gp.id].featureTables[tableName]
+                if (self.geopackageMapLayers[gp.id] && self.geopackageMapLayers[gp.id][tableName] && self.geopackageMapLayers[gp.id][tableName]) {
+                  const layer = self.geopackageMapLayers[gp.id][tableName]
                   if (!_.isNil(layer)) {
-                    await layer.updateStyle(updatedProject.maxFeatures)
-                    if (visibleGeoPackageTables[gp.id] && visibleGeoPackageTables[gp.id].featureTables) {
-                      const mapLayer = visibleGeoPackageTables[gp.id].featureTables[tableName]
-                      if (mapLayer) {
-                        self.removeLayerFromMap(mapLayer, gp.id + '_' + tableName)
-                        delete visibleGeoPackageTables[gp.id].featureTables[tableName]
-                        let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
-                        self.addLayerToMap(map, updateMapLayer, generateLayerOrderItemForGeoPackageTable(gp, tableName, false, map))
-                        visibleGeoPackageTables[gp.id].featureTables[tableName] = updateMapLayer
-                      }
+                    await layer.updateMaxFeatures(updatedProject.maxFeatures)
+                    if (gp.tables.features[tableName].visible) {
+                      layer.redraw()
                     }
                   }
                 }
               }
             }
-            for (const sourceId of _.keys(sourceLayers)) {
-              // only style has changed, let's just update style
-              if (!_.isNil(sourceLayers[sourceId].initializedSource) && sourceLayers[sourceId].initializedSource.pane === 'vector') {
-                await sourceLayers[sourceId].initializedSource.updateStyle(updatedProject.maxFeatures)
-                // remove layer from map if it is currently being visible
-                let mapLayer = sourceLayers[sourceId].mapLayer
-                if (mapLayer) {
-                  self.removeLayerFromMap(mapLayer, sourceId)
-                  delete sourceLayers[sourceId].mapLayer
-                  let updateMapLayer = LeafletMapLayerFactory.constructMapLayer(sourceLayers[sourceId].initializedSource)
-                  self.addLayerToMap(map, updateMapLayer, generateLayerOrderItemForSource(sourceLayers[sourceId].configuration, map))
-                  sourceLayers[sourceId].mapLayer = updateMapLayer
+            for (const sourceId of _.keys(self.dataSourceMapLayers)) {
+              // if this is a vector layer, update it
+              if (self.dataSourceMapLayers[sourceId].getLayer().pane === 'vector') {
+                // update max features
+                await self.dataSourceMapLayers[sourceId].updateMaxFeatures(updatedProject.maxFeatures)
+                // if visible, we need to toggle the layer
+                if (self.dataSourceMapLayers[sourceId].getLayer().visible) {
+                  self.dataSourceMapLayers[sourceId].redraw()
                 }
               }
             }
             for (const baseMapId of _.keys(self.baseMapLayers)) {
-              if (!_.isNil(self.baseMapLayers[baseMapId].initializedLayer) && self.baseMapLayers[baseMapId].initializedLayer.pane === 'vector') {
-                if (self.selectedBaseMapId === baseMapId) {
-                  self.map.removeLayer(self.baseMapLayers[self.selectedBaseMapId].mapLayer)
-                }
-                await self.baseMapLayers[self.selectedBaseMapId].initializedLayer.updateStyle(updatedProject.maxFeatures)
-                self.baseMapLayers[self.selectedBaseMapId].mapLayer = LeafletMapLayerFactory.constructMapLayer(self.baseMapLayers[self.selectedBaseMapId].initializedLayer)
-                if (self.selectedBaseMapId === baseMapId) {
-                  self.map.addLayer(self.baseMapLayers[self.selectedBaseMapId].mapLayer)
+              // if this is a vector layer, update it
+              if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
+                // update max features
+                await self.baseMapLayers[baseMapId].updateMaxFeatures(updatedProject.maxFeatures)
+                // if visible, we need to toggle the layer
+                if (baseMapId === self.selectedBaseMapId) {
+                  self.baseMapLayers[baseMapId].redraw()
                 }
               }
             }
@@ -1723,7 +1526,6 @@
       EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
       EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
       EventBus.$on(EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, this.sendSourceInitializationStatus)
-
       this.maxFeatures = this.project.maxFeatures
       this.registerResizeObserver()
       await this.initializeMap()
@@ -1732,28 +1534,22 @@
     beforeDestroy: function () {
       const self = this
       EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS])
-      _.keys(initializedGeoPackageTables).forEach(geopackageId => {
-        _.keys(initializedGeoPackageTables[geopackageId].featureTables).forEach(table => {
-          let layer = initializedGeoPackageTables[geopackageId].featureTables[table]
-          if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
-            layer.close()
-          }
-        })
-        _.keys(initializedGeoPackageTables[geopackageId].tileTables).forEach(table => {
-          let layer = initializedGeoPackageTables[geopackageId].tileTables[table]
+      _.keys(self.geopackageMapLayers).forEach(geopackageId => {
+        _.keys(self.geopackageMapLayers[geopackageId]).forEach(table => {
+          let layer = self.geopackageMapLayers[geopackageId][table]
           if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
             layer.close()
           }
         })
       })
-      _.keys(sourceLayers).forEach(key => {
-        let layer = sourceLayers[key].initializedSource
+      _.keys(self.dataSourceMapLayers).forEach(key => {
+        let layer = self.dataSourceMapLayers[key]
         if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }
       })
       _.keys(self.baseMapLayers).forEach(key => {
-        let layer = self.baseMapLayers[key].initializedLayer
+        let layer = self.baseMapLayers[key]
         if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }
