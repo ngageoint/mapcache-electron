@@ -52,7 +52,7 @@ export default class KMLSource extends Source {
     }
   }
 
-  getStyleFromFeature (feature) {
+  static getStyleFromFeature (feature) {
     let style = null
     // check if feature contains style properties
     if (_.keys(feature.properties).map(key => key.toLowerCase()).findIndex(key => key === 'stroke' || key === 'stroke-width' || key === 'stroke-opacity' || key === 'fill' || key === 'fill-opacity') !== -1) {
@@ -99,11 +99,14 @@ export default class KMLSource extends Source {
       let featureStyle = null
       let featureIcon = null
       if (feature.properties.icon) {
-        let iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
-        let cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
+        // if the files are on the file system, they may be relative paths
+        let iconFile = path.join(originalFileDir, feature.properties.icon)
+        let cachedIconFile = path.join(cacheFolder, feature.properties.icon)
         if (_.isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
+            iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
+            cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
             const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
               return axios({
@@ -161,7 +164,7 @@ export default class KMLSource extends Source {
         }
         featureIcon = iconHash
       } else {
-        let style = this.getStyleFromFeature(feature)
+        let style = KMLSource.getStyleFromFeature(feature)
         if (!_.isNil(style)) {
           let styleHash = VectorStyleUtilities.hashCode(style)
           if (_.isNil(layerStyle.styleRowMap[styleHash])) {
