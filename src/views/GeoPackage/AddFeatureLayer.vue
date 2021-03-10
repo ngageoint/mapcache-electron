@@ -234,7 +234,6 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          v-if="done"
           color="primary"
           text
           @click.stop="cancel">
