@@ -757,11 +757,12 @@
     font-size: .8125rem;
     font-weight: 500;
     line-height: 1rem;
+    color: var(--v-text-base)
   }
   .list-item-subtitle {
     font-size: .8125rem;
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1rem;
-    color: rgba(0,0,0,.6);
+    color: var(--v-detail-base)
   }
 </style>
