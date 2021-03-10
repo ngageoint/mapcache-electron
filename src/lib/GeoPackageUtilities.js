@@ -2722,35 +2722,7 @@ export default class GeoPackageUtilities {
 
       status.message = 'Preparing layers...'
 
-      let { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
-
-      boundingBox = XYZTileUtilities.trimToWebMercatorMax(boundingBox)
-
       throttleStatusCallback(status)
-      const contentsBounds = new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
-      const contentsSrsId = 4326
-      const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
-      const tileMatrixSetSrsId = 3857
-
-      let contentsLowerLeft = proj4('EPSG:3857').forward([contentsBounds.minLongitude, contentsBounds.minLatitude])
-      let contentsUpperRight = proj4('EPSG:3857').forward([contentsBounds.maxLongitude, contentsBounds.maxLatitude])
-      const contentsWebMercator = new BoundingBox(contentsLowerLeft[0], contentsUpperRight[0], contentsLowerLeft[1], contentsUpperRight[1])
-
-      try {
-        await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error)
-        status.message = 'Failed: Table already exists...'
-        throttleStatusCallback(status)
-        return
-      }
-
-      if (!_.isNil(tileScaling)) {
-        const tileScalingExtension = gp.getTileScalingExtension(tableName)
-        await tileScalingExtension.getOrCreateExtension()
-        tileScalingExtension.createOrUpdate(tileScaling)
-      }
 
       let layersPrepared = 0
       const numberOfLayers = configuration.sourceLayers.length + configuration.geopackageLayers.length
@@ -2812,6 +2784,35 @@ export default class GeoPackageUtilities {
         if (layerIdx > -1) {
           sortedLayers.push(layers[layerIdx])
         }
+      }
+
+      // create geopackage table
+      let { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = GeoPackageUtilities.estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
+      boundingBox = XYZTileUtilities.trimToWebMercatorMax(boundingBox)
+
+      const contentsBounds = new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
+      const contentsSrsId = 4326
+      const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
+      const tileMatrixSetSrsId = 3857
+
+      let contentsLowerLeft = proj4('EPSG:3857').forward([contentsBounds.minLongitude, contentsBounds.minLatitude])
+      let contentsUpperRight = proj4('EPSG:3857').forward([contentsBounds.maxLongitude, contentsBounds.maxLatitude])
+      const contentsWebMercator = new BoundingBox(contentsLowerLeft[0], contentsUpperRight[0], contentsLowerLeft[1], contentsUpperRight[1])
+
+      try {
+        await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+        status.message = 'Failed: Table already exists...'
+        throttleStatusCallback(status)
+        return
+      }
+
+      if (!_.isNil(tileScaling)) {
+        const tileScalingExtension = gp.getTileScalingExtension(tableName)
+        await tileScalingExtension.getOrCreateExtension()
+        tileScalingExtension.createOrUpdate(tileScaling)
       }
 
       await GeoPackageUtilities.wait(500)

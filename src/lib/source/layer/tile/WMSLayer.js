@@ -24,7 +24,8 @@ export default class WMSLayer extends NetworkTileLayer {
   async testConnection (allowAuth = false, ignoreTimeoutError = true) {
     const options = {
       timeout: this.timeoutMs,
-      allowAuth: allowAuth
+      allowAuth: allowAuth,
+      version: this.version
     }
     let {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(this.filePath, ServiceConnectionUtils.SERVICE_TYPE.WMS, options)
     if (!_.isNil(serviceInfo)) {
