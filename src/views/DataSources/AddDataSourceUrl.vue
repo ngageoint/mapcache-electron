@@ -521,7 +521,7 @@
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,
-          subdomains: this.subdomainText.split(','),
+          subdomains: this.requiresSubdomains ? this.subdomainText.split(',') : undefined,
           name: this.dataSourceName
         }
         this.addUrlToHistory(url)

@@ -336,7 +336,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters justify="start" v-if="source.subdomains !== null && source.subdomains !== undefined">
+          <v-row class="pb-2" no-gutters justify="start" v-if="hasSubdomains()">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Subdomains
@@ -413,6 +413,7 @@
   import DataSourceTroubleshooting from './DataSourceTroubleshooting'
   import NumberPicker from '../Common/NumberPicker'
   import NetworkConstants from '../../lib/NetworkConstants'
+  import URLUtilities from '../../lib/URLUtilities'
 
   export default {
     props: {
@@ -472,6 +473,9 @@
       }
     },
     methods: {
+      hasSubdomains () {
+        return !_.isEmpty(this.source.subdomains) && URLUtilities.requiresSubdomains(this.source.filePath)
+      },
       closeConnectionSettingsDialog () {
         this.connectionSettingsDialog = false
       },

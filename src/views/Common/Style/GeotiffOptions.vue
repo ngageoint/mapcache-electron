@@ -184,7 +184,6 @@
         set (value) {
           let updatedConfiguration = Object.assign({}, this.configuration)
           updatedConfiguration.renderingMethod = value
-          console.log('setting to ' + value)
           this.updateConfiguration(updatedConfiguration)
         }
       },
