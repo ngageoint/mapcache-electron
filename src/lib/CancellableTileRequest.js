@@ -2,7 +2,7 @@ import axios from 'axios'
 import _ from 'lodash'
 import ServiceConnectionUtils from './ServiceConnectionUtils'
 import UniqueIDUtilities from './UniqueIDUtilities'
-import { ipcRenderer } from 'electron'
+import { ipcRenderer, remote } from 'electron'
 
 export default class CancellableTileRequest {
   cancelled = false
@@ -59,6 +59,7 @@ export default class CancellableTileRequest {
         headers['x-mapcache-timeout'] = timeout
       }
       headers['x-mapcache-connection-id'] = requestId
+      headers['x-mapcache-request-origin'] = remote.getCurrentWindow().id
       try {
         ipcRenderer.once(requestTimeoutChannel, timeoutListener)
         const CancelToken = axios.CancelToken

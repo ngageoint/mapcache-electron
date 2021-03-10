@@ -77,12 +77,15 @@ class WindowLauncher {
    * @param id
    * @param requestId
    * @param timeout
+   * @param requestOrigin either id of worker, or -1 for project window
    */
-  prepareTimeout (id, requestId, timeout) {
+  prepareTimeout (id, requestId, timeout, requestOrigin) {
     this.requestTimeoutFunctions[id] = setTimeout(() => {
       const requestCancelChannel = 'request-timeout-' + requestId
-      if (!_.isNil(this.projectWindow)) {
-        this.projectWindow.webContents.send(requestCancelChannel)
+
+      const browserWindow = BrowserWindow.fromId(requestOrigin)
+      if (!_.isNil(browserWindow)) {
+        browserWindow.webContents.send(requestCancelChannel)
       }
     }, timeout)
   }
@@ -109,13 +112,15 @@ class WindowLauncher {
       // set timeout function if timeout is provided and this isn't a redirected request
       if (_.isNil(this.redirectedRequests[details.id]) && !_.isNil(headers['x-mapcache-connection-id']) && !_.isNil(headers['x-mapcache-timeout'])) {
         const requestId = headers['x-mapcache-connection-id']
+        const requestOrigin = parseInt(headers['x-mapcache-request-origin'])
         const timeout = parseInt(headers['x-mapcache-timeout'])
         if (timeout > 0) {
-          this.prepareTimeout(details.id, requestId, timeout)
+          this.prepareTimeout(details.id, requestId, timeout, requestOrigin)
         }
       }
       delete headers['x-mapcache-auth-enabled']
       delete headers['x-mapcache-timeout']
+      delete headers['x-mapcache-request-origin']
       delete headers['x-mapcache-connection-id']
       callback({
         requestHeaders: headers

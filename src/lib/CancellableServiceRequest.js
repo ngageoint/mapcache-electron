@@ -1,8 +1,8 @@
 import axios from 'axios'
 import _ from 'lodash'
 import UniqueIDUtilities from './UniqueIDUtilities'
-import { ipcRenderer } from 'electron'
-import ServiceConnectionUtils from "./ServiceConnectionUtils";
+import { ipcRenderer, remote } from 'electron'
+import ServiceConnectionUtils from './ServiceConnectionUtils'
 
 export default class CancellableServiceRequest {
   source
@@ -62,6 +62,7 @@ export default class CancellableServiceRequest {
       if (options.timeout) {
         request.headers['x-mapcache-timeout'] = options.timeout
       }
+      request.headers['x-mapcache-request-origin'] = remote.getCurrentWindow().id
       request.headers['x-mapcache-connection-id'] = requestId
       ipcRenderer.once(requestTimeoutChannel, timeoutListener)
       response = await axios(request)
