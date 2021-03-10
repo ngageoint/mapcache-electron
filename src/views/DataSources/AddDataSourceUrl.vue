@@ -454,8 +454,10 @@
           this.authValid = false
           if (ServiceConnectionUtils.isAuthenticationError(error)) {
             this.error = 'Access to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
-          } else if (error.status === -1) {
+          } else if (ServiceConnectionUtils.isServerError(error)) {
             this.error = 'Something went wrong trying to access the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service.'
+          } else if (ServiceConnectionUtils.isTimeoutError(error)) {
+            this.error = 'The request to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service timed out.'
           } else {
             this.error = error
           }
