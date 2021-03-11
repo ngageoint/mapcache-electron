@@ -17,7 +17,8 @@ export default class NetworkMapLayer {
       zIndex: 401,
       pane: mapPane,
       isPreview: isPreview,
-      opacity: !_.isNil(layer.opacity) ? layer.opacity : 1.0
+      opacity: !_.isNil(layer.opacity) ? layer.opacity : 1.0,
+      maxZoom: 20
     }
     if (!_.isNil(layer.layers)) {
       options.layers = layer.layers.join()
