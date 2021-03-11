@@ -53,11 +53,13 @@
                           two-line
                           :key="`layer-${i}`"
                           :value="i">
-                          <v-list-item-icon style="margin-top: 20px;">
-                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else src="../../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                          <v-list-item-icon style="margin-top: 12px;">
+                            <v-btn icon @click.stop="item.zoomTo">
+                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else src="../../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            </v-btn>
                           </v-list-item-icon>
                           <v-list-item-content>
                             <v-list-item-title v-text="item.title"></v-list-item-title>
@@ -148,7 +150,11 @@
               name: source.displayName ? source.displayName : source.name,
               title: source.displayName ? source.displayName : source.name,
               isGeoPackage: false,
-              type: source.pane === 'vector' ? 'feature' : 'tile'
+              type: source.pane === 'vector' ? 'feature' : 'tile',
+              zoomTo: _.debounce((e) => {
+                e.stopPropagation()
+                ActionUtilities.zoomToExtent({projectId: this.project.id, extent: source.extent})
+              }, 100)
             })
           }
           const geopackages = _.values(this.project.geopackages)
@@ -166,7 +172,13 @@
                   title: geopackage.name,
                   subtitle: table,
                   type: 'tile',
-                  isGeoPackage: true
+                  isGeoPackage: true,
+                  zoomTo: _.debounce((e) => {
+                    e.stopPropagation()
+                    GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, table).then(extent => {
+                      ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+                    })
+                  }, 100)
                 })
               }
               const features = _.keys(geopackage.tables.features)
@@ -180,7 +192,13 @@
                   title: geopackage.name,
                   subtitle: table,
                   type: 'feature',
-                  isGeoPackage: true
+                  isGeoPackage: true,
+                  zoomTo: _.debounce((e) => {
+                    e.stopPropagation()
+                    GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, table).then(extent => {
+                      ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+                    })
+                  }, 100)
                 })
               }
             }
