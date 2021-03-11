@@ -23,7 +23,7 @@
             text
             :disabled="cancelling"
             color="warning"
-            @click.stop="cancelAddTileLayer">
+            @click.stop="cancelAddFeatureLayer">
             {{cancelling ? 'Cancelling' : 'Cancel'}}
           </v-btn>
           <v-btn
