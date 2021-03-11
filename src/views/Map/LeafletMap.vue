@@ -212,7 +212,7 @@
 </template>
 
 <script>
-  import { remote, clipboard } from 'electron'
+  import { remote, clipboard, ipcRenderer } from 'electron'
   import { mapState } from 'vuex'
   import _ from 'lodash'
   import * as vendor from '../../lib/vendor'
@@ -240,6 +240,7 @@
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
   import BaseMapUtilities from '../../lib/BaseMapUtilities'
+  import LayerTypes from '../../lib/source/layer/LayerTypes'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -392,7 +393,7 @@
     methods: {
       sendSourceInitializationStatus (sourceId) {
         const sourceLayer = this.dataSourceMapLayers[sourceId]
-        if (sourceLayer) {
+        if (!_.isNil(sourceLayer)) {
           if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
             EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
           } else if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
@@ -593,6 +594,9 @@
       },
       removeDataSource (sourceId) {
         if (!_.isNil(this.dataSourceMapLayers[sourceId])) {
+          if (this.dataSourceMapLayers[sourceId].getLayer()._configuration.layerType === LayerTypes.GEOTIFF && this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
+            ipcRenderer.send('cancel_read_raster', {id: sourceId})
+          }
           this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
           this.dataSourceMapLayers[sourceId].close()
           delete this.dataSourceMapLayers[sourceId]

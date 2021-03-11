@@ -10,7 +10,6 @@ const Events = {
   SOURCE_INITIALIZED: (sourceId) => 'source-initialized-' + sourceId,
   REQUEST_SOURCE_INIT_STATUS: 'request-source-initialization-status',
   NETWORK_ERROR: 'network-error'
-
 }
 
 EventBus.EventTypes = Events

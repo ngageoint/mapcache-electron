@@ -176,6 +176,7 @@ class WindowLauncher {
     ipcMain.removeAllListeners('cancel_build_tile_layer')
     ipcMain.removeAllListeners('quick_download_geopackage')
     ipcMain.removeAllListeners('read_raster')
+    ipcMain.removeAllListeners('cancel_read_raster')
     ipcMain.removeAllListeners('attach_media')
 
     ipcMain.on('show-project', (event, payload) => {
@@ -293,6 +294,10 @@ class WindowLauncher {
         ipcMain.removeAllListeners('worker_read_raster_completed_' + taskId)
       })
       WorkerPool.addTask(task)
+    })
+    ipcMain.on('cancel_read_raster', async (event, payload) => {
+      const taskId = payload.id
+      await WorkerPool.cancelTask(taskId)
     })
     ipcMain.on('attach_media', (event, payload) => {
       const taskId = payload.id

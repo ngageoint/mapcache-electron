@@ -34,6 +34,12 @@
       async visibilityChanged () {
         let value = this.model
         ActionUtilities.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: value})
+      },
+      initializing () {
+        this.loadingContent = true
+      },
+      initialized () {
+        this.loadingContent = false
       }
     },
     watch: {
@@ -44,18 +50,13 @@
       }
     },
     mounted () {
-      EventBus.$on(EventBus.EventTypes.SOURCE_INITIALIZED(this.source.id), () => {
-        this.loadingContent = false
-      })
-      EventBus.$on(EventBus.EventTypes.SOURCE_INITIALIZING(this.source.id), () => {
-        this.loadingContent = true
-      })
-      if (this.inputValue) {
-        EventBus.$emit(EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, this.source.id)
-      }
+      EventBus.$on(EventBus.EventTypes.SOURCE_INITIALIZED(this.source.id), this.initialized)
+      EventBus.$on(EventBus.EventTypes.SOURCE_INITIALIZING(this.source.id), this.initializing)
+      EventBus.$emit(EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, this.source.id)
     },
     beforeDestroy: function () {
-      EventBus.$off([EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, EventBus.EventTypes.SOURCE_INITIALIZED(this.source.id), EventBus.EventTypes.SOURCE_INITIALIZING(this.source.id)])
+      EventBus.$off(EventBus.EventTypes.SOURCE_INITIALIZED(this.source.id), this.initialized)
+      EventBus.$off(EventBus.EventTypes.SOURCE_INITIALIZING(this.source.id), this.initializing)
     }
   }
 </script>
