@@ -39,13 +39,10 @@ window.mapcache = {
       })
     })
     ipcRenderer.on('worker_build_tile_layer', (e, data) => {
-      console.log('build starting...')
       const statusCallback = (status) => {
-        console.log('sending status')
         ipcRenderer.send('worker_build_tile_layer_status_' + data.taskId, status)
       }
       require('../lib/geopackage/GeoPackageTileTableBuilder').default.buildTileLayer(data.configuration, statusCallback).then(() => {
-        console.log('build finished')
         ipcRenderer.send('worker_build_tile_layer_completed_' + data.taskId)
       })
     })

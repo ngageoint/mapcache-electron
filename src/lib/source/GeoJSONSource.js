@@ -21,12 +21,9 @@ export default class GeoJSONSource extends Source {
     }
 
     const { layerId, layerDirectory } = this.createLayerDirectory()
-    console.log(layerId)
-    console.log(layerDirectory)
     const name = path.basename(this.filePath, path.extname(this.filePath))
     let fileName = name + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    console.log('geopackage file path: ' + filePath)
     await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, name, featureCollection)
     const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, name)
     return [

@@ -1,3 +1,4 @@
+// eslint-disable vue/valid-v-slot
 <template>
   <v-sheet>
     <v-dialog
@@ -66,7 +67,7 @@
       @page-count="pageCount = $event"
       @click:row="handleClick"
     >
-      <template v-slot:item.actions="{ item }">
+      <template v-slot:[`item.actions`]="{ item }">
         <v-btn
           icon
           small
@@ -115,7 +116,7 @@
           </v-icon>
         </v-btn>
       </template>
-      <template v-slot:item.style="{ item }">
+      <template v-slot:[`item.style`]="{ item }">
         <v-btn icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
               e.stopPropagation()
               e.preventDefault()
@@ -137,7 +138,7 @@
           None
         </v-row>
       </template>
-      <template v-slot:item.attachments="{ item }">
+      <template v-slot:[`item.attachments`]="{ item }">
         <v-row justify="start" align="center" no-gutters>
           <v-btn title="Edit attachments" small icon @click.stop.prevent="(e) => {
               e.stopPropagation()
@@ -319,6 +320,7 @@
       remove () {
         if (!isNil(this.featureToRemove)) {
           ProjectActions.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.source.id, featureId: this.featureToRemove.id})
+          // eslint-disable-next-line vue/no-mutating-props
           this.table.features = this.table.features.filter(f => f.id !== this.featureToRemove.id)
           if (this.table.features.length === 0) {
             this.close()

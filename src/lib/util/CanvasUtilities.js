@@ -1,5 +1,10 @@
 export default class CanvasUtilities {
-  static createCanvasFunction = () => null
+  static createCanvasFunction = (width, height) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    return canvas
+  }
 
   static setCreateCanvasFunction (f) {
     CanvasUtilities.createCanvasFunction = f

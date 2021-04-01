@@ -30,7 +30,6 @@ export default class SourceFactory {
       }
     } else {
       let type = path.extname(sourceConfiguration.file.path).slice(1)
-      console.log(sourceConfiguration.directory)
       try {
         switch (type) {
           case 'kml':

@@ -88,25 +88,21 @@ function closeListeners () {
 
 function setupListeners () {
   process.on('SIGINT', () => {
-    console.log('sigint received in geotiff worker')
     closeListeners()
     process.exit(0)
   })
 
   process.on('SIGTERM', () => {
-    console.log('sigterm received in geotiff worker')
     closeListeners()
     process.exit(0)
   })
 
   process.on('SIGABRT', () => {
-    console.log('sigabrt received in geotiff worker')
     closeListeners()
     process.exit(0)
   })
 
   process.on('SIGSEGV', () => {
-    console.log('sigsegv received in mapcache worker')
     closeListeners()
     process.exit(0)
   })

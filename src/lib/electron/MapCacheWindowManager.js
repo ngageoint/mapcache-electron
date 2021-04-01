@@ -443,7 +443,6 @@ class MapCacheWindowManager {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
         nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
         contextIsolation: false,
-        enableRemoteModule: true,
         webSecurity: false,
         preload: path.join(__dirname, 'workerPreload.js')
       },
@@ -473,7 +472,6 @@ class MapCacheWindowManager {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
         nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
         contextIsolation: false,
-        enableRemoteModule: true,
         webSecurity: false,
         preload: path.join(__dirname, 'mainPreload.js')
       },
@@ -546,7 +544,6 @@ class MapCacheWindowManager {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
         nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
         contextIsolation: false,
-        enableRemoteModule: true,
         webSecurity: false,
         preload: path.join(__dirname, 'projectPreload.js')
       },

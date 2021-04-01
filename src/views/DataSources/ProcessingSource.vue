@@ -12,7 +12,8 @@
         <div v-else>
           <v-row no-gutters v-if="source.isUrl" class="align-start left-margin"><p class="text-wrap full-width">Url: {{displayName}}</p></v-row>
           <v-row no-gutters v-else class="align-start left-margin"><p class="text-wrap full-width">File name: {{displayName}}</p></v-row>
-          <v-row no-gutters class="align-start left-margin" v-if="source.status"><p class="text-wrap full-width">Status: {{source.status}}</p></v-row>
+          <v-row v-if="!cancelling && source.status" no-gutters class="align-start left-margin"><p class="text-wrap full-width">Status: {{source.status}}</p></v-row>
+          <v-row v-else-if="cancelling" no-gutters class="align-start left-margin"><p class="text-wrap full-width">Status: Cancelling...</p></v-row>
         </div>
       </v-card-text>
       <v-card-actions>
@@ -61,7 +62,6 @@
         ipcRenderer.once('cancel_process_source_completed_' + self.source.id, () => {
           self.$emit('clear-processing', self.source)
         })
-        self.source.status = 'Cancelling...'
         self.cancelling = true
         ipcRenderer.send('cancel_process_source', self.source)
       }

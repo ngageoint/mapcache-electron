@@ -22,7 +22,6 @@ function setupEventHandlers () {
   if (process.platform === 'win32') {
     process.on('message', (data) => {
       if (data === 'graceful-exit') {
-        console.log('graceful-exit')
         app.quit()
       }
     })
@@ -73,16 +72,12 @@ app.once('window-all-closed', () => {
 
 
 app.on('before-quit', ((event) => {
-  console.log('before-quit event')
   if (!readyToQuit) {
     event.preventDefault()
-    console.log('not yet ready to quit')
     MapCacheWindowManager.quit().then(() => {
       readyToQuit = true
       app.quit()
     })
-  } else {
-    console.log('ready to quit now...')
   }
 }))
 
