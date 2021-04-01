@@ -344,11 +344,13 @@ export default class GeoTiffRenderingUtilities {
               resolve(base64Image)
             })
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error(error)
             reject(error)
           }
         })
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error(e)
         reject(e)
       }
