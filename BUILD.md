@@ -82,8 +82,6 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `npm run electron:build-linux`
 3. Build Mac
 `yarn electron:build-mac`
-4. Build All
-`yarn electron:build`
 4. The newly created installers are located in the build folder:  
 `cd dist_electron`
 
