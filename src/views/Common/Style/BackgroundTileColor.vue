@@ -12,7 +12,8 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import debounce from 'lodash/debounce'
   import ColorPicker from '../ColorPicker'
 
   export default {
@@ -20,8 +21,8 @@
       ColorPicker
     },
     created () {
-      this.debounceBackgroundValue = _.debounce((value) => {
-        if (!_.isNil(value)) {
+      this.debounceBackgroundValue = debounce((value) => {
+        if (!isNil(value)) {
           this.onBackgroundUpdated(value)
         }
       }, 250)

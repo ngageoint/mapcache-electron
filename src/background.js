@@ -1,14 +1,15 @@
 'use strict'
 import { app, protocol, globalShortcut } from 'electron'
 import log from 'electron-log'
-Object.assign(console, log.functions)
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import WindowLauncher from './lib/window/WindowLauncher'
-const isDevelopment = process.env.NODE_ENV !== 'production'
 import runMigration from './store/migration/migration'
+import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
 
-app.allowRendererProcessReuse = false
+const isDevelopment = process.env.NODE_ENV !== 'production'
+Object.assign(console, log.functions)
+
+let readyToQuit = false
+
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 app.commandLine.appendSwitch('js-flags', '--expose_gc')
 
@@ -16,6 +17,30 @@ app.commandLine.appendSwitch('js-flags', '--expose_gc')
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+function setupEventHandlers () {
+  if (process.platform === 'win32') {
+    process.on('message', (data) => {
+      if (data === 'graceful-exit') {
+        console.log('graceful-exit')
+        app.quit()
+      }
+    })
+  } else {
+    process.on('SIGTERM', () => {
+      app.quit()
+    })
+    process.on('SIGINT', () => {
+      app.quit()
+    })
+    process.on('SIGABRT', () => {
+      app.quit()
+    })
+    process.on('SIGSEGV', () => {
+      app.quit()
+    })
+  }
+}
 
 async function start() {
   // check if store is out of date, if so, delete content
@@ -25,46 +50,54 @@ async function start() {
   }
 
   globalShortcut.register('CommandOrControl+Shift+S', () => {
-    WindowLauncher.showAllDevTools()
+    MapCacheWindowManager.showAllDevTools()
   })
 
   globalShortcut.register('CommandOrControl+Shift+H', () => {
-    WindowLauncher.hideAllDevTools()
+    MapCacheWindowManager.hideAllDevTools()
   })
+
+  setupEventHandlers ()
 
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     createProtocol('app')
   }
-  WindowLauncher.start()
-  app.on('before-quit', () => {
-    WindowLauncher.quit()
-  })
+
+  MapCacheWindowManager.start()
 }
 
 // Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+app.once('window-all-closed', () => {
+  app.quit()
 })
+
+
+app.on('before-quit', ((event) => {
+  console.log('before-quit event')
+  if (!readyToQuit) {
+    event.preventDefault()
+    console.log('not yet ready to quit')
+    MapCacheWindowManager.quit().then(() => {
+      readyToQuit = true
+      app.quit()
+    })
+  } else {
+    console.log('ready to quit now...')
+  }
+}))
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (!WindowLauncher.isWindowVisible()) {
+  if (!MapCacheWindowManager.isAppRunning()) {
     start()
   }
 })
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
+app.once('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
     try {
+      const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer')
       await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -73,18 +106,3 @@ app.on('ready', async () => {
   }
   start()
 })
-
-// Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', (data) => {
-      if (data === 'graceful-exit') {
-        app.quit()
-      }
-    })
-  } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
-  }
-}

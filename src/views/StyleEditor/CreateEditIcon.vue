@@ -7,7 +7,7 @@
       @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete icon
         </v-card-title>
         <v-card-text>
@@ -67,7 +67,7 @@
             <v-text-field v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number" label="width" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
           <v-col cols="2">
-            <v-btn icon @click="toggleAspectRatioLock" :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'"><v-icon>{{aspectRatioLock ? 'mdi-link' : 'mdi-link-off'}}</v-icon></v-btn>
+            <v-btn icon @click="toggleAspectRatioLock" :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'"><v-icon>{{aspectRatioLock ? mdiLink : mdiLinkOff}}</v-icon></v-btn>
           </v-col>
           <v-col cols="5">
             <v-text-field v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules"  type="number" label="height" :step="Number(1)" @keydown="handleKeyDown($event)"/>
@@ -106,12 +106,14 @@
 </template>
 
 <script>
-  import { remote } from 'electron'
   import jetpack from 'fs-jetpack'
   import fs from 'fs'
   import path from 'path'
-  import _ from 'lodash'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import isNil from 'lodash/isNil'
+  import isEmpty from 'lodash/isEmpty'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import { mdiTrashCan, mdiLink, mdiLinkOff } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -132,6 +134,9 @@
     },
     data () {
       return {
+        mdiTrashCan: mdiTrashCan,
+        mdiLink: mdiLink,
+        mdiLinkOff: mdiLinkOff,
         formValid: true,
         name: this.iconRow.name,
         data: this.iconRow.data,
@@ -143,7 +148,7 @@
         description: this.iconRow.description,
         deleteDialog: false,
         aspectRatioLock: true,
-        isNew: _.isNil(this.iconRow.id),
+        isNew: isNil(this.iconRow.id),
         aspectRatio: this.iconRow.width / this.iconRow.height,
         widthRules: [
           v => (v !== null && v !== undefined && v.toString().length > 0) || 'Width is required',
@@ -215,7 +220,7 @@
         this.aspectRatio = this.width / this.height
       },
       deleteIcon () {
-        ActionUtilities.deleteIconRow({
+        ProjectActions.deleteIconRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,
@@ -238,7 +243,7 @@
         }
         if (this.iconRow.id) {
           iconRow.id = this.iconRow.id
-          ActionUtilities.updateIconRow({
+          ProjectActions.updateIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -247,7 +252,7 @@
             isBaseMap: this.isBaseMap
           })
         } else {
-          ActionUtilities.createIconRow({
+          ProjectActions.createIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -320,7 +325,7 @@
         return anchorLoc
       },
       getIconClick () {
-        remote.dialog.showOpenDialog({
+        ElectronUtilities.showOpenDialog({
           filters: [
             {
               name: 'All Files',
@@ -329,7 +334,7 @@
           ],
           properties: ['openFile']
         }).then(async (result) => {
-          if (result.filePaths && !_.isEmpty(result.filePaths)) {
+          if (result.filePaths && !isEmpty(result.filePaths)) {
             for (const file of result.filePaths) {
               const fileInfo = jetpack.inspect(file, {times: true, absolutePath: true})
               let extension = path.extname(fileInfo.absolutePath).slice(1)

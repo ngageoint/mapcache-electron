@@ -1,69 +1,48 @@
-import { FeatureTiles, NumberFeaturesTile, GeoPackageAPI } from '@ngageoint/geopackage'
-import _ from 'lodash'
+import { FeatureTiles, NumberFeaturesTile } from '@ngageoint/geopackage'
+import isNil from 'lodash/isNil'
+import CanvasUtilities from '../../../util/CanvasUtilities'
 
 export default class GeoPackageVectorTileRenderer {
-  filePath
   geopackage
   featureTableName
   featureDao
   featureTile
   maxFeatures
 
-  constructor (filePath, featureTableName, maxFeatures) {
-    this.filePath = filePath
-    this.featureTableName = featureTableName
-    this.maxFeatures = maxFeatures
+  constructor (layer) {
+    this.featureTableName = layer.name
+    this.maxFeatures = layer.maxFeatures
   }
 
-  async init () {
-    this.geopackage = await GeoPackageAPI.open(this.filePath)
+  close () {
+    this.featureTile = null
+    this.featureDao = null
+    this.geopackage = null
+  }
+
+  setGeoPackage (geopackage) {
+    this.geopackage = geopackage
     this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
     this.updateMaxFeatures(this.maxFeatures)
-    this.featureTile.iconCacheSize = 1000
   }
 
   updateMaxFeatures (maxFeatures) {
     this.maxFeatures = maxFeatures
-    if (!_.isNil(this.maxFeatures) && this.maxFeatures > 0) {
+    if (!isNil(this.maxFeatures) && this.maxFeatures > 0) {
       this.featureTile.maxFeaturesTileDraw = new NumberFeaturesTile()
       this.featureTile.maxFeaturesPerTile = this.maxFeatures
     }
   }
 
-  close () {
-    if (this.geopackage) {
-      this.featureDao = undefined
-      this.featureTile = undefined
-      try {
-        this.geopackage.close()
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error)
-      }
-      this.geopackage = undefined
-    }
-  }
-
-  async styleChanged () {
-    this.close()
-    await this.init()
-  }
-
-  async renderVectorTile (coords, tileCanvas, done) {
+  async renderTile (coords, callback) {
     let {x, y, z} = coords
-    if (tileCanvas) {
-      this.featureTile.drawTile(x, y, z, tileCanvas).then(() => {
-        if (done) {
-          done(null, tileCanvas)
-        }
-      })
+    if (this.geopackage) {
+      const canvas = CanvasUtilities.createCanvas(256, 256)
+      await this.featureTile.drawTile(x, y, z, canvas)
+      callback(null, canvas.toDataURL('image/png'))
     } else {
-      let image = await this.featureTile.drawTile(x, y, z)
-      if (done) {
-        done(null, image)
-      }
-      return image
+      callback('GeoPackage connection not found.', null)
     }
   }
 }

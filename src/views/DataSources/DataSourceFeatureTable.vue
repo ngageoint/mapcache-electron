@@ -7,7 +7,7 @@
       @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog && featureToRemove !== null">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete feature
         </v-card-title>
         <v-card-text>
@@ -79,7 +79,7 @@
             small
             title="Edit feature"
           >
-            mdi-pencil
+            {{mdiPencil}}
           </v-icon>
         </v-btn>
         <v-btn
@@ -94,7 +94,7 @@
             small
             title="Edit feature geometry"
           >
-            mdi-vector-square
+            {{mdiVectorSquare}}
           </v-icon>
         </v-btn>
         <v-btn
@@ -111,7 +111,7 @@
             color="warning"
             title="Delete feature"
           >
-            mdi-trash-can
+            {{mdiTrashCan}}
           </v-icon>
         </v-btn>
       </template>
@@ -132,7 +132,7 @@
               showStyleAssignment(item)
             }"
                  title="Assign style">
-            <v-icon small>mdi-palette</v-icon>
+            <v-icon small>{{mdiPalette}}</v-icon>
           </v-btn>
           None
         </v-row>
@@ -144,7 +144,7 @@
               e.preventDefault()
               editFeatureMediaAttachments(item)
             }">
-            <v-icon small>mdi-paperclip</v-icon>
+            <v-icon small>{{mdiPaperclip}}</v-icon>
           </v-btn>
           {{item.attachmentCount}}
         </v-row>
@@ -169,15 +169,19 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import keys from 'lodash/keys'
+  import orderBy from 'lodash/orderBy'
+  import isNil from 'lodash/isNil'
   import moment from 'moment/moment'
   import { GeoPackageDataType, GeometryType } from '@ngageoint/geopackage'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import FeatureEditor from '../Common/FeatureEditor'
   import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import MediaAttachments from '../Common/MediaAttachments'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+  import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
+  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+  import { mdiPencil, mdiVectorSquare, mdiTrashCan, mdiPalette, mdiPaperclip } from '@mdi/js'
 
   export default {
     props: {
@@ -195,6 +199,11 @@
     },
     data () {
       return {
+        mdiPencil: mdiPencil,
+        mdiVectorSquare: mdiVectorSquare,
+        mdiTrashCan: mdiTrashCan,
+        mdiPalette: mdiPalette,
+        mdiPaperclip: mdiPaperclip,
         editDialog: false,
         removeDialog: false,
         featureToRemove: null,
@@ -227,7 +236,7 @@
             style: this.table.featureStyleAssignments[feature.id],
             attachmentCount: this.table.featureAttachmentCounts[feature.id] || 0
           }
-          _.keys(feature.properties).forEach(key => {
+          keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
             try {
               const column = this.table.columns.getColumn(key)
@@ -269,7 +278,7 @@
             })
           }
         })
-        return headers.concat(_.orderBy(tableHeaders, ['text'], ['asc']))
+        return headers.concat(orderBy(tableHeaders, ['text'], ['asc']))
       }
     },
     watch: {
@@ -294,7 +303,7 @@
       editItem (item) {
         const self = this
         this.editFeature = this.table.features.find(feature => feature.id === item.id)
-        GeoPackageUtilities.getFeatureColumns(this.source.geopackageFilePath, this.table.tableName).then(columns => {
+        GeoPackageFeatureTableUtilities.getFeatureColumns(this.source.geopackageFilePath, this.table.tableName).then(columns => {
           self.editFeatureColumns = columns
           self.editDialog = true
         })
@@ -308,8 +317,8 @@
         this.featureToRemove = null
       },
       remove () {
-        if (!_.isNil(this.featureToRemove)) {
-          ActionUtilities.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.source.id, featureId: this.featureToRemove.id})
+        if (!isNil(this.featureToRemove)) {
+          ProjectActions.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.source.id, featureId: this.featureToRemove.id})
           this.table.features = this.table.features.filter(f => f.id !== this.featureToRemove.id)
           if (this.table.features.length === 0) {
             this.close()
@@ -319,11 +328,11 @@
         }
       },
       async showStyleAssignment (item) {
-        this.styleAssignment = await GeoPackageUtilities.getStyleItemsForFeature(this.source.geopackageFilePath, this.table.tableName, item.id)
+        this.styleAssignment = await GeoPackageStyleUtilities.getStyleItemsForFeature(this.source.geopackageFilePath, this.table.tableName, item.id)
         this.assignStyleDialog = true
       },
       async editDrawing (item) {
-        ActionUtilities.editFeatureGeometry({projectId: this.projectId, id: this.source.id, isGeoPackage: false, tableName: this.table.tableName, featureToEdit: this.table.features.find(feature => feature.id === item.id)})
+        ProjectActions.editFeatureGeometry({projectId: this.projectId, id: this.source.id, isGeoPackage: false, tableName: this.table.tableName, featureToEdit: this.table.features.find(feature => feature.id === item.id)})
       },
       closeStyleAssignment () {
         this.assignStyleDialog = false

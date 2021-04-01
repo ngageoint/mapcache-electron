@@ -7,7 +7,7 @@
       @keydown.esc="cancelRemove">
       <v-card v-if="deleteProjectDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete project
         </v-card-title>
         <v-card-text>
@@ -52,10 +52,10 @@
       class="padding-top"
       width="400"
       @keydown.esc="cancelNewProject">
-      <edit-text-modal v-if="addProjectDialog" autofocus icon="mdi-plus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
+      <edit-text-modal v-if="addProjectDialog" autofocus :icon="mdiPlus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
     </v-dialog>
     <v-row class="mt-4 mb-2" no-gutters justify="end">
-      <v-btn dark text @click="onClickNewProject"><v-icon small>mdi-plus</v-icon> Create Project</v-btn>
+      <v-btn dark text @click="onClickNewProject"><v-icon small>{{mdiPlus}}</v-icon> Create Project</v-btn>
     </v-row>
     <v-row no-gutters justify="center" class="flex-grow-1">
       <v-list dark class="semi-transparent project-list" v-if="Object.keys(projects).length > 0">
@@ -72,13 +72,13 @@
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
-            <v-btn icon @click.stop.prevent="showDeleteProjectDialog(project)"><v-icon>mdi-trash-can-outline</v-icon></v-btn>
+            <v-btn icon @click.stop.prevent="showDeleteProjectDialog(project)"><v-icon>{{mdiTrashCanOutline}}</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>
       <v-card dark flat v-else class="semi-transparent project-list">
         <v-card-text>
-          No projects. Click the <b><v-icon small>mdi-plus</v-icon>Create Project</b> button to get started.
+          No projects. Click the <b><v-icon small>{{mdiPlus}}</v-icon>Create Project</b> button to get started.
         </v-card-text>
       </v-card>
     </v-row>
@@ -88,9 +88,12 @@
 <script>
   import { mapState } from 'vuex'
   import { ipcRenderer } from 'electron'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
+  import LandingActions from '../../lib/vuex/LandingActions'
   import EditTextModal from '../Common/EditTextModal'
+  import CommonActions from '../../lib/vuex/CommonActions'
+  import { mdiTrashCan, mdiTrashCanOutline, mdiPlus } from '@mdi/js'
+
 
   export default {
     components: {EditTextModal},
@@ -103,6 +106,9 @@
     },
     data () {
       return {
+        mdiTrashCan: mdiTrashCan,
+        mdiTrashCanOutline: mdiTrashCanOutline,
+        mdiPlus: mdiPlus,
         dialog: false,
         dialogText: '',
         deleteProjectDialog: false,
@@ -122,7 +128,7 @@
         this.dialog = true
         this.projectName = ''
         const id = UniqueIDUtilities.createUniqueID()
-        ActionUtilities.newProject({id: id, name: projectName})
+        LandingActions.newProject({id: id, name: projectName})
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })
@@ -143,7 +149,7 @@
         this.projectToDelete = null
       },
       remove () {
-        ActionUtilities.deleteProject(this.projectToDelete)
+        CommonActions.deleteProject(this.projectToDelete)
         this.deleteProjectDialog = false
         this.projectToDelete = null
       },
@@ -151,7 +157,7 @@
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
 
-        ActionUtilities.disableRemoteSources(project.id)
+        LandingActions.disableRemoteSources(project.id)
 
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
@@ -163,7 +169,6 @@
 </script>
 
 <style scoped>
-
   .project-container {
     overflow-y: auto;
     height: 100%;

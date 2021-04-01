@@ -21,9 +21,9 @@ const mutations = {
   setDataSourceDisplayName (state, {projectId, sourceId, displayName}) {
     Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
   },
-  addDataSources (state, {dataSources}) {
+  addDataSources (state, {projectId, dataSources}) {
     dataSources.forEach(source => {
-      Vue.set(state[source.project.id].sources, source.sourceId, source.config)
+      Vue.set(state[projectId].sources, source.id, source.config)
     })
   },
   setGeoPackage (state, {projectId, geopackage}) {
@@ -174,8 +174,8 @@ const actions = {
   setDataSourceDisplayName ({ commit }, {projectId, sourceId, displayName}) {
     commit('setDataSourceDisplayName', {projectId, sourceId, displayName})
   },
-  addDataSources ({ commit }, {dataSources}) {
-    commit('addDataSources', {dataSources})
+  addDataSources ({ commit }, {projectId, dataSources}) {
+    commit('addDataSources', {projectId, dataSources})
   },
   removeGeoPackage ({ commit }, {projectId, geopackageId}) {
     commit('removeGeoPackage', {projectId, geopackageId})

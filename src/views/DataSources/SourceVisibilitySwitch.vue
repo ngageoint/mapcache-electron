@@ -3,9 +3,9 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
   import EventBus from '../../EventBus'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import CommonActions from '../../lib/vuex/CommonActions'
 
   export default {
     props: {
@@ -20,7 +20,7 @@
     computed: {
       errored: {
         get () {
-          return !_.isNil(this.source) && !_.isNil(this.source.error)
+          return !isNil(this.source) && !isNil(this.source.error)
         }
       }
     },
@@ -33,7 +33,7 @@
     methods: {
       async visibilityChanged () {
         let value = this.model
-        ActionUtilities.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: value})
+        CommonActions.setDataSourceVisible({projectId: this.projectId, sourceId: this.source.id, visible: value})
       },
       initializing () {
         this.loadingContent = true

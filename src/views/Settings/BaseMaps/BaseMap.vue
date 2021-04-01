@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title><b class="ml-2">{{baseMap.name}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -44,7 +44,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title :title="baseMap.name">{{baseMap.name}}</v-toolbar-title>
     </v-toolbar>
     <v-dialog
@@ -54,7 +54,7 @@
       @keydown.esc="renameDialog = false">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
           Rename base map
         </v-card-title>
         <v-card-text>
@@ -98,7 +98,7 @@
       @keydown.esc="connectionSettingsDialog = false">
       <v-card v-if="connectionSettingsDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-cloud-braces</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiCloudBraces}}</v-icon>
           Edit network settings
         </v-card-title>
         <v-card-text>
@@ -144,7 +144,7 @@
       @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Remove base map
         </v-card-title>
         <v-card-text>
@@ -171,7 +171,7 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomTo" color="whitesmoke">
-              <v-icon style="width: 20px; height: 20px;">mdi-map-outline</v-icon>
+              <v-icon style="width: 20px; height: 20px;">{{mdiMapOutline}}</v-icon>
             </v-btn>
             <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} Base Map</span>
           </p>
@@ -186,7 +186,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil</v-icon>
+                  <v-icon small>{{mdiPencil}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -200,7 +200,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-palette</v-icon>
+                  <v-icon small>{{mdiPalette}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -214,7 +214,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-cloud-braces</v-icon>
+                  <v-icon small>{{mdiCloudBraces}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Network
@@ -228,7 +228,7 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can</v-icon>
+                  <v-icon small>{{mdiTrashCan}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Remove
@@ -313,8 +313,9 @@
 </template>
 
 <script>
-  import _ from 'lodash'
-  import ActionUtilities from '../../../lib/ActionUtilities'
+  import isNil from 'lodash/isNil'
+  import cloneDeep from 'lodash/cloneDeep'
+  import ProjectActions from '../../../lib/vuex/ProjectActions'
   import TransparencyOptions from '../../Common/Style/TransparencyOptions'
   import GeotiffOptions from '../../Common/Style/GeotiffOptions'
   import BackgroundTileColor from '../../Common/Style/BackgroundTileColor'
@@ -322,7 +323,8 @@
   import StyleEditor from '../../StyleEditor/StyleEditor'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
   import NumberPicker from '../../Common/NumberPicker'
-  import NetworkConstants from '../../../lib/NetworkConstants'
+  import HttpUtilities from '../../../lib/network/HttpUtilities'
+  import {mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiMapOutline, mdiPalette} from '@mdi/js'
 
   export default {
     props: {
@@ -357,9 +359,14 @@
     },
     data () {
       return {
-        defaultTimeout: NetworkConstants.DEFAULT_TIMEOUT,
-        defaultRateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
-        defaultRetryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiCloudBraces: mdiCloudBraces,
+        mdiMapOutline: mdiMapOutline,
+        mdiPalette: mdiPalette,
+        defaultTimeout: HttpUtilities.DEFAULT_TIMEOUT,
+        defaultRateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
+        defaultRetryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
         styleEditorVisible: false,
         renameDialog: false,
         renameValid: false,
@@ -370,9 +377,9 @@
           v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'
         ],
         connectionSettingsDialog: false,
-        timeoutMs: NetworkConstants.DEFAULT_TIMEOUT,
-        rateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
-        retryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
+        timeoutMs: HttpUtilities.DEFAULT_TIMEOUT,
+        rateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
+        retryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
         rateLimitValid: true,
         timeoutValid: true,
         retryAttemptsValid: true
@@ -383,44 +390,44 @@
         this.connectionSettingsDialog = false
       },
       saveConnectionSettings () {
-        ActionUtilities.saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+        ProjectActions.saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = !_.isNil(this.configuration.timeoutMs) ? this.configuration.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT
-        this.rateLimit = this.configuration.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT
-        this.retryAttempts = !_.isNil(this.configuration.retryAttempts) ? this.configuration.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
+        this.timeoutMs = !isNil(this.configuration.timeoutMs) ? this.configuration.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT
+        this.rateLimit = this.configuration.rateLimit || HttpUtilities.DEFAULT_RATE_LIMIT
+        this.retryAttempts = !isNil(this.configuration.retryAttempts) ? this.configuration.retryAttempts : HttpUtilities.DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {
           this.connectionSettingsDialog = true
         })
       },
       deleteBaseMap () {
-        ActionUtilities.removeBaseMap(this.baseMap)
+        ProjectActions.removeBaseMap(this.baseMap)
         this.deleteDialog = false
         this.back()
       },
       zoomTo () {
         const extent = this.baseMap.extent || [-180, -90, 180, 90]
-        ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+        ProjectActions.zoomToExtent({projectId: this.project.id, extent})
       },
       hideStyleEditor () {
         this.styleEditorVisible = false
       },
       saveBaseMapName () {
-        const baseMap = _.cloneDeep(this.baseMap)
+        const baseMap = cloneDeep(this.baseMap)
         baseMap.name = this.renamedBaseMap
-        ActionUtilities.editBaseMap(baseMap)
+        ProjectActions.editBaseMap(baseMap)
         this.renameDialog = false
       },
       updateBackground (value) {
-        const baseMap = _.cloneDeep(this.baseMap)
+        const baseMap = cloneDeep(this.baseMap)
         baseMap.background = value
-        ActionUtilities.editBaseMap(baseMap)
+        ProjectActions.editBaseMap(baseMap)
       },
       updateConfiguration (newConfiguration) {
-        const baseMap = _.cloneDeep(this.baseMap)
+        const baseMap = cloneDeep(this.baseMap)
         baseMap.layerConfiguration = newConfiguration
-        ActionUtilities.editBaseMap(baseMap)
+        ProjectActions.editBaseMap(baseMap)
       }
     }
   }

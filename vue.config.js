@@ -1,9 +1,44 @@
+const webpack = require('webpack')
 module.exports = {
+  configureWebpack: {
+    plugins: [
+      new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+    ]
+  },
+  css: {
+    extract: { ignoreOrder: true },
+  },
+  transpileDependencies: ["vuetify"],
   pluginOptions: {
     electronBuilder: {
       externals: ['better-sqlite3', 'canvas', 'bindings'],
+      preload: {
+        mainPreload: 'src/preload/mainPreload.js',
+        projectPreload: 'src/preload/projectPreload.js',
+        workerPreload: 'src/preload/workerPreload.js',
+        mapcacheThread: 'src/threads/mapcacheThread.js',
+        geotiffThread: 'src/threads/geotiffThread.js'
+      },
       nodeIntegration: true,
+      nodeIntegrationInWorker: true,
       chainWebpackMainProcess: config => {
+        // config
+        //   .entry('geotiff')
+        //   .add('./src/threads/geotiff.thread.js')
+        //   .end()
+        //   .entry('mapcache')
+        //   .add('./src/threads/mapcache.thread.js')
+        //   .end()
+        //   .output
+        //   .filename((pathData) => {
+        //     if (pathData.chunk.name === 'geotiff') {
+        //       return '[name].thread.js'
+        //     } else if (pathData.chunk.name === 'mapcache') {
+        //       return '[name].thread.js'
+        //     } else {
+        //       return '[name].js'
+        //     }
+        //   })
         config.module
           .rule("node")
           .test(/\.node$/)
@@ -39,7 +74,9 @@ module.exports = {
         asarUnpack: [
           "**/node_modules/imagemin-pngquant/**/*",
           "**/node_modules/pngquant-bin/**/*",
-          "**/node_modules/bin-wrapper/**/*"
+          "**/node_modules/bin-wrapper/**/*",
+          "**/geotiffThread.js",
+          "**/mapcacheThread.js"
         ],
         directories: {
           buildResources: "buildResources"

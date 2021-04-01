@@ -1,7 +1,7 @@
 <template>
   <v-sheet>
     <v-card flat tile>
-      <v-card-title><v-icon class="mr-2">mdi-help-circle-outline</v-icon>Help</v-card-title>
+      <v-card-title><v-icon class="mr-2">{{mdiHelpCircleOutline}}</v-icon>Help</v-card-title>
       <v-card-text>
         <v-list>
           <v-list-group
@@ -40,14 +40,17 @@
 </template>
 
 <script>
+  import { mdiHelpCircleOutline, mdiFolderOutline, mdiPackageVariant, mdiLayersOutline, mdiCogOutline, mdiChatQuestionOutline } from '@mdi/js'
+
   export default {
     props: {
       close: Function
     },
     data () {
       return {
+        mdiHelpCircleOutline: mdiHelpCircleOutline,
         helpItems: [{
-          action: 'mdi-folder-outline',
+          action: mdiFolderOutline,
           items: [
             {
               content: 'A project is a workspace for creating and editing content for a GeoPackage. A user can import data sources and populate a GeoPackage with that content.'
@@ -65,7 +68,7 @@
           active: true
         },
         {
-          action: 'mdi-package-variant',
+          action: mdiPackageVariant,
           items: [
             {
               title: '',
@@ -111,7 +114,7 @@
           title: 'GeoPackage'
         },
         {
-          action: 'mdi-layers-outline',
+          action: mdiLayersOutline,
           items: [
             {
               title: '',
@@ -141,7 +144,7 @@
           title: 'Data Source'
         },
         {
-          action: 'mdi-cog-outline',
+          action: mdiCogOutline,
           items: [
             {
               title: '',
@@ -183,7 +186,7 @@
           title: 'Settings'
         },
         {
-          action: 'mdi-chat-question-outline',
+          action: mdiChatQuestionOutline,
           items: [
             {
               title: 'Why can\'t I select a different certificate?',

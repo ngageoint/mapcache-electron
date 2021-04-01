@@ -15,12 +15,13 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import debounce from 'lodash/debounce'
 
   export default {
     created () {
-      this.debounceOpacityUpdated = _.debounce((value) => {
-        if (!_.isNil(value)) {
+      this.debounceOpacityUpdated = debounce((value) => {
+        if (!isNil(value)) {
           let updatedConfiguration = Object.assign({}, this.configuration)
           updatedConfiguration.opacity = value
           this.updateConfiguration(updatedConfiguration)

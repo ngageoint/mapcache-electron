@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -23,7 +23,7 @@
         @keydown.esc="renameDialog = false">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
             Rename tile layer
           </v-card-title>
           <v-card-text>
@@ -67,7 +67,7 @@
         @keydown.esc="copyDialog = false">
         <v-card v-if="copyDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiContentCopy}}</v-icon>
             Copy tile layer
           </v-card-title>
           <v-card-text>
@@ -111,7 +111,7 @@
         @keydown.esc="deleteDialog = false">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
             Delete tile layer
           </v-card-title>
           <v-card-text>
@@ -150,7 +150,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil</v-icon>
+                  <v-icon small>{{mdiPencil}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -164,7 +164,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-content-copy</v-icon>
+                  <v-icon small>{{mdiContentCopy}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Copy
@@ -178,7 +178,7 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can</v-icon>
+                  <v-icon small>{{mdiTrashCan}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -245,9 +245,10 @@
 </template>
 
 <script>
-  import _ from 'lodash'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import isNil from 'lodash/isNil'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import { mdiChevronLeft, mdiPencil, mdiContentCopy, mdiTrashCan, mdiPalette } from '@mdi/js'
 
   export default {
     props: {
@@ -259,6 +260,11 @@
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiContentCopy: mdiContentCopy,
+        mdiTrashCan: mdiTrashCan,
+        mdiPalette: mdiPalette,
         deleteDialog: false,
         showCopiedAlert: false,
         renameValid: false,
@@ -280,42 +286,42 @@
     computed: {
       visible: {
         get () {
-          return !_.isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].visible : false
+          return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].visible : false
         },
         set (value) {
-          ActionUtilities.setGeoPackageTileTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
+          ProjectActions.setGeoPackageTileTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
       tileCount () {
-        return !_.isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].tileCount : 0
+        return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].tileCount : 0
       },
       minZoom () {
-        return !_.isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].minZoom : 0
+        return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].minZoom : 0
       },
       maxZoom () {
-        return !_.isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].maxZoom : 0
+        return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].maxZoom : 0
       },
       description () {
-        return !_.isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].description : ''
+        return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].description : ''
       }
     },
     methods: {
       rename () {
         this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
-        ActionUtilities.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        ProjectActions.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
         this.$nextTick(() => {
           this.renameDialog = false
         })
       },
       copy () {
         this.copyDialog = false
-        ActionUtilities.copyGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
+        ProjectActions.copyGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
         this.showCopiedAlert = true
       },
       deleteTable () {
         this.deleteDialog = false
-        ActionUtilities.deleteGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+        ProjectActions.deleteGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
       },
       showRenameDialog () {
         this.renameValid = false
@@ -332,8 +338,8 @@
         })
       },
       async zoomToLayer () {
-        const extent = await GeoPackageUtilities.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        ActionUtilities.zoomToExtent({projectId: this.projectId, extent})
+        const extent = await GeoPackageCommon.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        ProjectActions.zoomToExtent({projectId: this.projectId, extent})
       }
     }
   }

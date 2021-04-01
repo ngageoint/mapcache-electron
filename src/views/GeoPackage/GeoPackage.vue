@@ -25,7 +25,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>{{geopackage.name}}</v-toolbar-title>
     </v-toolbar>
     <v-dialog
@@ -58,7 +58,7 @@
       @keydown.esc="() => {if (!this.renaming) { this.renameDialog = false }}">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
           Rename GeoPackage
         </v-card-title>
         <v-card-text>
@@ -104,7 +104,7 @@
       @keydown.esc="copyDialog = false">
       <v-card v-if="copyDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiContentCopy}}</v-icon>
           Copy GeoPackage
         </v-card-title>
         <v-card-text>
@@ -148,7 +148,7 @@
       @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Remove GeoPackage
         </v-card-title>
         <v-card-text>
@@ -211,7 +211,7 @@
               <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="detailDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-information-outline</v-icon>
+                    <v-icon small>{{mdiInformationOutline}}</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Details
@@ -225,7 +225,7 @@
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="openFolder">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-folder</v-icon>
+                    <v-icon small>{{mdiFolder}}</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Show
@@ -239,7 +239,7 @@
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-pencil</v-icon>
+                    <v-icon small>{{mdiPencil}}</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Rename
@@ -253,7 +253,7 @@
               <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="copyDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-content-copy</v-icon>
+                    <v-icon small>{{mdiContentCopy}}</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Copy
@@ -267,7 +267,7 @@
               <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="removeDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>mdi-trash-can</v-icon>
+                    <v-icon small>{{mdiTrashCan}}</v-icon>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Remove
@@ -302,7 +302,7 @@
                 fab
                 :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
                 color="primary">
-                <v-icon>mdi-layers-plus</v-icon>
+                <v-icon>{{mdiLayersPlus}}</v-icon>
               </v-btn>
             </span>
           </template>
@@ -346,17 +346,20 @@
 <script>
   import { shell } from 'electron'
   import { mapState } from 'vuex'
-  import _ from 'lodash'
+  import values from 'lodash/values'
+  import keys from 'lodash/keys'
+  import isNil from 'lodash/isNil'
   import path from 'path'
   import fs from 'fs'
   import TileLayer from './TileLayer'
   import FeatureLayer from './FeatureLayer'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import GeoPackageDetails from './GeoPackageDetails'
   import GeoPackageLayerList from './GeoPackageLayerList'
   import AddFeatureLayer from './AddFeatureLayer'
   import AddTileLayer from './AddTileLayer'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import { mdiChevronLeft, mdiPencil, mdiContentCopy, mdiTrashCan, mdiInformationOutline, mdiFolder, mdiLayersPlus } from '@mdi/js'
 
   export default {
     props: {
@@ -374,6 +377,13 @@
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiContentCopy: mdiContentCopy,
+        mdiTrashCan: mdiTrashCan,
+        mdiInformationOutline: mdiInformationOutline,
+        mdiFolder: mdiFolder,
+        mdiLayersPlus: mdiLayersPlus,
         fab: false,
         showCopiedAlert: false,
         addFeatureLayerDialog: false,
@@ -410,33 +420,33 @@
       }),
       layersVisible: {
         get () {
-          const allTableKeys = _.values(this.geopackage.tables.features).concat(_.values(this.geopackage.tables.tiles))
+          const allTableKeys = values(this.geopackage.tables.features).concat(values(this.geopackage.tables.tiles))
           return (allTableKeys.filter(table => !table.visible).length === 0 && allTableKeys.length > 0) || false
         },
         set (value) {
-          ActionUtilities.setGeoPackageLayersVisible({projectId: this.project.id, geopackageId: this.geopackage.id, visible: value})
+          ProjectActions.setGeoPackageLayersVisible({projectId: this.project.id, geopackageId: this.geopackage.id, visible: value})
         }
       },
       size () {
-        return GeoPackageUtilities.getGeoPackageFileSize(this.geopackage.path)
+        return GeoPackageCommon.getGeoPackageFileSize(this.geopackage.path)
       },
       hasLayers () {
-        return _.keys(this.geopackage.tables.features).concat(_.keys(this.geopackage.tables.tiles)).length > 0
+        return keys(this.geopackage.tables.features).concat(keys(this.geopackage.tables.tiles)).length > 0
       },
       projectFeatureLayerCount () {
-        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.features).length, 0) +
-          _.values(this.project.sources).filter(source => source.pane === 'vector').length
+        return keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + keys(this.project.geopackages[geopackage].tables.features).length, 0) +
+          values(this.project.sources).filter(source => source.pane === 'vector').length
       },
       projectTileLayerCount () {
-        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.tiles).length, 0) +
-          _.values(this.project.sources).filter(source => source.pane === 'tile').length
+        return keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + keys(this.project.geopackages[geopackage].tables.tiles).length, 0) +
+          values(this.project.sources).filter(source => source.pane === 'tile').length
       }
     },
     asyncComputed: {
       tables: {
         get () {
-          return GeoPackageUtilities.getTables(this.geopackage.path).then(result => {
-            if (_.isNil(result)) {
+          return GeoPackageCommon.getTables(this.geopackage.path).then(result => {
+            if (isNil(result)) {
               return []
             }
             return result
@@ -452,7 +462,7 @@
       rename () {
         this.renaming = true
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
-        ActionUtilities.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage}).then(() => {
+        ProjectActions.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage}).then(() => {
           this.$nextTick(() => {
             this.renameDialog = false
             this.renaming = false
@@ -473,7 +483,7 @@
         const newPath = path.join(path.dirname(oldPath), this.copiedGeoPackage + '.gpkg')
         try {
           fs.copyFileSync(oldPath, newPath)
-          ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: newPath})
+          ProjectActions.addGeoPackage({projectId: this.project.id, filePath: newPath})
         } catch (e) {
           // eslint-disable-next-line no-console
           console.error(e)
@@ -482,24 +492,24 @@
       },
       remove () {
         this.removeDialog = false
-        ActionUtilities.removeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+        ProjectActions.removeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         this.back()
       },
       layerSelected (layer) {
         this.selectedLayer = layer
-        if (!_.isNil(this.geopackage.tables.features[layer])) {
-          ActionUtilities.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+        if (!isNil(this.geopackage.tables.features[layer])) {
+          ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
         }
       },
       selectedLayerRenamed (layer) {
-        if (!_.isNil(this.geopackage.tables.features[this.selectedLayer])) {
-          ActionUtilities.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+        if (!isNil(this.geopackage.tables.features[this.selectedLayer])) {
+          ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
         }
         this.selectedLayerNewName = layer
       },
       deselectLayer () {
         this.selectedLayer = null
-        ActionUtilities.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: null})
+        ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: null})
       },
       addFeatureLayer () {
         this.fab = false
@@ -522,9 +532,9 @@
     watch: {
       geopackage: {
         handler (newGeoPackage) {
-          if (!_.isNil(this.selectedLayer) && (_.isNil(newGeoPackage.tables.features[this.selectedLayer]) && _.isNil(newGeoPackage.tables.tiles[this.selectedLayer]))) {
+          if (!isNil(this.selectedLayer) && (isNil(newGeoPackage.tables.features[this.selectedLayer]) && isNil(newGeoPackage.tables.tiles[this.selectedLayer]))) {
             this.$nextTick(() => {
-              if (!_.isNil(this.selectedLayerNewName) && (!_.isNil(newGeoPackage.tables.features[this.selectedLayerNewName]) || !_.isNil(newGeoPackage.tables.tiles[this.selectedLayerNewName]))) {
+              if (!isNil(this.selectedLayerNewName) && (!isNil(newGeoPackage.tables.features[this.selectedLayerNewName]) || !isNil(newGeoPackage.tables.tiles[this.selectedLayerNewName]))) {
                 this.selectedLayer = this.selectedLayerNewName
                 this.selectedLayerNewName = null
               } else {

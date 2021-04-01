@@ -1,9 +1,10 @@
-import FileUtilities from '../FileUtilities'
+import FileUtilities from '../util/FileUtilities'
 
 export default class Source {
-  constructor (filePath, layers = [], sourceName, format = 'image/png') {
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+  constructor (filePath, directory, layers = [], sourceName, format = 'image/png') {
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(directory)
     this.sourceId = sourceId
+    this.directory = directory
     this.sourceDirectory = sourceDirectory
     this.filePath = filePath
     this.layers = layers
@@ -12,14 +13,26 @@ export default class Source {
   }
 
   removeSourceDir () {
-    FileUtilities.rmSourceDirectory(this.sourceId)
+    FileUtilities.rmDir(this.sourceDirectory)
   }
 
   get sourceCacheFolder () {
     return this.sourceDirectory
   }
 
-  async initialize () {
-    throw new Error('Abstract method must be implemented in subclass')
+  /**
+   * Returns a directory and id for a source layer
+   * @returns {{layerDirectory: string, layerId: *}}
+   */
+  createLayerDirectory () {
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory)
+    return { layerId: sourceId, layerDirectory: sourceDirectory}
+  }
+
+  /**
+   * Standard cleanup is to remove the source directory created
+   */
+  cleanUp () {
+    this.removeSourceDir()
   }
 }

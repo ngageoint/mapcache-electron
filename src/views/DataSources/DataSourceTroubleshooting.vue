@@ -3,7 +3,7 @@
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-alert-circle</v-icon>{{initialDisplayName + ' Troubleshooting'}}
+          <v-icon color="warning" class="pr-2">{{mdiAlertCircle}}</v-icon>{{initialDisplayName + ' Troubleshooting'}}
         </v-card-title>
         <v-card-text>
           {{troubleShootingMessage}}
@@ -21,17 +21,18 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-icon>mdi-alert-circle</v-icon>
+    <v-icon>{{mdiAlertCircle}}</v-icon>
   </v-btn>
   <div v-else></div>
 </template>
 
 <script>
   import { mapState } from 'vuex'
-  import _ from 'lodash'
-  import ActionUtilities from '../../lib/ActionUtilities'
-  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
-  import NetworkConstants from '../../lib/NetworkConstants'
+  import isNil from 'lodash/isNil'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
+  import HttpUtilities from '../../lib/network/HttpUtilities'
+  import { mdiAlertCircle } from '@mdi/js'
 
   export default {
     props: {
@@ -45,21 +46,19 @@
       },
       projectId: String
     },
-    components: {
-    },
     computed: {
       ...mapState({
         initialDisplayName () {
-          return _.isNil(this.source.displayName) ? this.source.name : this.source.displayName
+          return isNil(this.source.displayName) ? this.source.name : this.source.displayName
         }
       }),
       troubleShootingMessage () {
         let message = ''
-        if (ServiceConnectionUtils.isAuthenticationError(this.source.error)) {
+        if (HttpUtilities.isAuthenticationError(this.source.error)) {
           message = 'The credentials for this data source are not valid.'
-        } else if (ServiceConnectionUtils.isServerError(this.source.error)) {
+        } else if (HttpUtilities.isServerError(this.source.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
-        } else if (ServiceConnectionUtils.isTimeoutError(this.source.error)) {
+        } else if (HttpUtilities.isTimeoutError(this.source.error)) {
           message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
@@ -69,6 +68,7 @@
     },
     data () {
       return {
+        mdiAlertCircle: mdiAlertCircle,
         showTroubleshootingDialog: false,
         reconnecting: false,
         connectionAttempts: 0
@@ -87,7 +87,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ActionUtilities.setDataSource, true, !_.isNil(this.source.timeoutMs) ? this.source.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT)) {
+        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ProjectActions.setDataSource, true, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

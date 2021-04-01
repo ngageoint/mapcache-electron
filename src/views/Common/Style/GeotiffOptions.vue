@@ -147,7 +147,9 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import debounce from 'lodash/debounce'
+  import cloneDeep from 'lodash/cloneDeep'
+  import isNil from 'lodash/isNil'
 
   export default {
     data () {
@@ -156,8 +158,8 @@
       }
     },
     created () {
-      this.debounceLayerField = _.debounce((value, key) => {
-        if (!_.isNil(value)) {
+      this.debounceLayerField = debounce((value, key) => {
+        if (!isNil(value)) {
           let updatedConfiguration = Object.assign({}, this.configuration)
           updatedConfiguration[key] = value
           this.updateConfiguration(updatedConfiguration)
@@ -256,7 +258,7 @@
           return this.configuration.blueBand
         },
         set (value) {
-          let updatedConfiguration = _.cloneDeep(this.configuration)
+          let updatedConfiguration = cloneDeep(this.configuration)
           updatedConfiguration.blueBand = Number(value)
           updatedConfiguration.blueBandMin = this.configuration.bandOptions[updatedConfiguration.blueBand].min
           updatedConfiguration.blueBandMax = this.configuration.bandOptions[updatedConfiguration.blueBand].max

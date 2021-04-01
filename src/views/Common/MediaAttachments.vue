@@ -7,7 +7,7 @@
       @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete media attachment
         </v-card-title>
         <v-card-text>
@@ -36,7 +36,7 @@
       @keydown.esc="attachError = false">
       <v-card v-if="attachError">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-alert-circle</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiAlertCircle}}</v-icon>
           Error attaching file
         </v-card-title>
         <v-card-text>
@@ -53,11 +53,11 @@
       </v-card>
     </v-dialog>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">mdi-paperclip</v-icon>
+      <v-icon color="primary" class="pr-2">{{mdiPaperclip}}</v-icon>
       Feature Media Attachments
       <v-spacer/>
-      <v-btn :loading="attaching" text color="primary" @click.stop="attach"><v-icon small >mdi-plus</v-icon> Attachment</v-btn>
-      <v-btn icon @click="toggleFullScreen"><v-icon>{{isFullScreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'}}</v-icon></v-btn>
+      <v-btn :loading="attaching" text color="primary" @click.stop="attach"><v-icon small >{{mdiPlus}}</v-icon> Attachment</v-btn>
+      <v-btn icon @click="toggleFullScreen"><v-icon>{{isFullScreen ? mdiFullscreenExit : mdiFullscreen}}</v-icon></v-btn>
     </v-card-title>
     <v-card-text class="pb-0" style="height: calc(100% - 114px)">
       <v-carousel v-model="model" v-if="attachments.length > 0"
@@ -69,14 +69,14 @@
             icon
             v-bind="attrs"
             v-on="on"
-          ><v-icon>mdi-chevron-left</v-icon></v-btn>
+          ><v-icon>{{mdiChevronLeft}}</v-icon></v-btn>
         </template>
         <template v-slot:next="{ on, attrs }">
           <v-btn
             icon
             v-bind="attrs"
             v-on="on"
-          ><v-icon>mdi-chevron-right</v-icon></v-btn>
+          ><v-icon>{{mdiChevronRight}}</v-icon></v-btn>
         </template>
         <v-carousel-item
           v-for="(attachment, i) in attachments"
@@ -118,13 +118,16 @@
 </template>
 
 <script>
-  import { remote, ipcRenderer } from 'electron'
-  import _ from 'lodash'
+  import { ipcRenderer } from 'electron'
+  import isNil from 'lodash/isNil'
+  import isEmpty from 'lodash/isEmpty'
   import jetpack from 'fs-jetpack'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
-  import MediaUtilities from '../../lib/MediaUtilities'
-  import FileUtilities from '../../lib/FileUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import MediaUtilities from '../../lib/util/MediaUtilities'
+  import FileUtilities from '../../lib/util/FileUtilities'
+  import GeoPackageMediaUtilities from '../../lib/geopackage/GeoPackageMediaUtilities'
+  import { mdiTrashCan, mdiAlertCircle, mdiPaperclip, mdiPlus, mdiFullscreen, mdiFullscreenExit, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -140,6 +143,14 @@
     },
     data () {
       return {
+        mdiTrashCan: mdiTrashCan,
+        mdiAlertCircle: mdiAlertCircle,
+        mdiPaperclip: mdiPaperclip,
+        mdiPlus: mdiPlus,
+        mdiFullscreen: mdiFullscreen,
+        mdiFullscreenExit: mdiFullscreenExit,
+        mdiChevronLeft: mdiChevronLeft,
+        mdiChevronRight: mdiChevronRight,
         attaching: false,
         model: -1,
         attachments: [],
@@ -155,7 +166,7 @@
     methods: {
       async loadContent (mediaToLoad) {
         this.loadingContent = true
-        this.contentSrc = await GeoPackageUtilities.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
+        this.contentSrc = await GeoPackageMediaUtilities.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
         this.$nextTick(() => {
           this.loadingContent = false
         })
@@ -181,21 +192,21 @@
           this.loadContent(this.attachments[this.model])
         }
 
-        await GeoPackageUtilities.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
+        await GeoPackageMediaUtilities.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
         if (self.isGeoPackage) {
-          ActionUtilities.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+          ProjectActions.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
         } else {
-          ActionUtilities.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+          ProjectActions.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
         }
         this.cancelDeleteAttachment()
       },
       async downloadAttachment () {
-        remote.dialog.showSaveDialog({
+        ElectronUtilities.showSaveDialog({
           title: 'Save Attachment',
           defaultPath: 'attachment'
         }).then(async ({canceled, filePath}) => {
-          if (!canceled && !_.isNil(filePath)) {
-            const mediaRow = await GeoPackageUtilities.getMediaRow(this.geopackagePath, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
+          if (!canceled && !isNil(filePath)) {
+            const mediaRow = await GeoPackageMediaUtilities.getMediaRow(this.geopackagePath, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
             const extension = MediaUtilities.getExtension(mediaRow.contentType)
             let file = filePath
             if (extension !== false) {
@@ -209,25 +220,32 @@
       attach () {
         const self = this
         self.attaching = true
-        remote.dialog.showOpenDialog({
+        ElectronUtilities.showOpenDialog({
           properties: ['openFile']
         }).then((result) => {
-          if (result.filePaths && !_.isEmpty(result.filePaths)) {
+          if (result.filePaths && !isEmpty(result.filePaths)) {
             const filePath = result.filePaths[0]
             self.$nextTick(() => {
               if (!MediaUtilities.exceedsFileSizeLimit(filePath)) {
                 ipcRenderer.once('attach_media_completed_' + this.id, (event, success) => {
                   if (success) {
-                    GeoPackageUtilities.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
-                      self.attachments = relationships
-                      self.model = relationships.length - 1
+                    if (self.isGeoPackage) {
+                      ProjectActions.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+                    } else {
+                      ProjectActions.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+                    }
+                    self.$nextTick(() => {
+                      GeoPackageMediaUtilities.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
+                        self.attachments = relationships
+                        self.model = relationships.length - 1
+                      })
                     })
                   }
                   self.attaching = false
                 })
                 ipcRenderer.send('attach_media', {
                   projectId: self.projectId,
-                  id: this.id,
+                  id: self.id,
                   isGeoPackage: self.isGeoPackage,
                   geopackagePath: self.geopackagePath,
                   tableName: self.tableName,
@@ -253,7 +271,7 @@
       }
     },
     mounted () {
-      GeoPackageUtilities.getMediaRelationships(this.geopackagePath, this.tableName, this.featureId).then(attachments => {
+      GeoPackageMediaUtilities.getMediaRelationships(this.geopackagePath, this.tableName, this.featureId).then(attachments => {
         this.attachments = attachments
         this.loading = false
       })

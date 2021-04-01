@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title><b class="ml-2">{{tableName}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -41,7 +41,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -57,7 +57,7 @@
         persistent>
         <v-card>
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-speedometer</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiSpeedometer}}</v-icon>
             Indexing feature table
           </v-card-title>
           <v-card-text>
@@ -94,7 +94,7 @@
         @keydown.esc="renameDialog = false">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
             Rename feature layer
           </v-card-title>
           <v-card-text>
@@ -138,7 +138,7 @@
         @keydown.esc="copyDialog = false">
         <v-card v-if="copyDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-content-copy</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiContentCopy}}</v-icon>
             Copy feature layer
           </v-card-title>
           <v-card-text>
@@ -211,31 +211,31 @@
                     >
                       <v-btn :value="TEXT">
                         <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
-                          mdi-format-text
+                          {{mdiFormatText}}
                         </v-icon>
                         <span class="hidden-sm-and-down">Text</span>
                       </v-btn>
                       <v-btn :value="FLOAT">
                         <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
-                          mdi-pound
+                          {{mdiPound}}
                         </v-icon>
                         <span class="hidden-sm-and-down">Number</span>
                       </v-btn>
                       <v-btn :value="BOOLEAN">
                         <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
-                          mdi-toggle-switch
+                          {{mdiToggleSwitch}}
                         </v-icon>
                         <span class="hidden-sm-and-down">Checkbox</span>
                       </v-btn>
                       <v-btn :value="DATE">
                         <v-icon left :color="addFieldType === DATE ? 'primary' : ''">
-                          mdi-calendar
+                          {{mdiCalendar}}
                         </v-icon>
                         <span class="hidden-sm-and-down">Date</span>
                       </v-btn>
                       <v-btn :value="DATETIME">
                         <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
-                          mdi-calendar-clock
+                          {{mdiCalendarClock}}
                         </v-icon>
                         <span class="hidden-sm-and-down">Date & Time</span>
                       </v-btn>
@@ -269,7 +269,7 @@
         @keydown.esc="deleteDialog = false">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
             Delete feature layer
           </v-card-title>
           <v-card-text>
@@ -308,7 +308,7 @@
             <v-card class="ma-0 pa-0 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil</v-icon>
+                  <v-icon small>{{mdiPencil}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -322,7 +322,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showCopyDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-content-copy</v-icon>
+                  <v-icon small>{{mdiContentCopy}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Copy
@@ -336,7 +336,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-palette</v-icon>
+                  <v-icon small>{{mdiPalette}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -350,7 +350,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can</v-icon>
+                  <v-icon small>{{mdiTrashCan}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -364,7 +364,7 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-speedometer</v-icon>
+                  <v-icon small>{{mdiSpeedometer}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Index
@@ -407,7 +407,7 @@
               <v-row no-gutters justify="end">
                 <v-btn class="btn-background" @click.stop="showFeatureTable">
                   <v-icon left>
-                    mdi-table-eye
+                    {{mdiTableEye}}
                   </v-icon>View features
                 </v-btn>
               </v-row>
@@ -458,13 +458,15 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import orderBy from 'lodash/orderBy'
   import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
   import StyleEditor from '../StyleEditor/StyleEditor'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
   import FeatureLayerField from './FeatureLayerField'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import EventBus from '../../EventBus'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+  import { mdiChevronLeft, mdiSpeedometer, mdiPencil, mdiContentCopy, mdiFormatText, mdiPound, mdiToggleSwitch, mdiCalendar, mdiCalendarClock, mdiTableEye, mdiTrashCan, mdiPalette } from '@mdi/js'
 
   export default {
     props: {
@@ -489,6 +491,18 @@
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiSpeedometer: mdiSpeedometer,
+        mdiPencil: mdiPencil,
+        mdiContentCopy: mdiContentCopy,
+        mdiFormatText: mdiFormatText,
+        mdiPound: mdiPound,
+        mdiToggleSwitch: mdiToggleSwitch,
+        mdiCalendar: mdiCalendar,
+        mdiCalendarClock: mdiCalendarClock,
+        mdiTableEye: mdiTableEye,
+        mdiTrashCan: mdiTrashCan,
+        mdiPalette: mdiPalette,
         columnNames: [],
         showCopiedAlert: false,
         styleEditorVisible: false,
@@ -536,7 +550,7 @@
           return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
         },
         set (value) {
-          ActionUtilities.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
+          ProjectActions.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
       indexed () {
@@ -555,7 +569,7 @@
     asyncComputed: {
       tableFields: {
         get () {
-          return GeoPackageUtilities.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
+          return GeoPackageFeatureTableUtilities.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
             const tableFields = []
             this.columnNames = columns._columns.map(c => c.name)
             columns._columns.forEach((column, index) => {
@@ -563,13 +577,13 @@
                 tableFields.push({
                   id: column.name + '_' + index,
                   name: column.name.toLowerCase(),
-                  type: GeoPackageUtilities.getSimplifiedType(column.dataType),
-                  icon: GeoPackageUtilities.getSimplifiedTypeIcon(column.dataType),
+                  type: this.getSimplifiedType(column.dataType),
+                  icon: this.getSimplifiedTypeIcon(column.dataType),
                   click: () => {
                     this.featureLayerField = {
                       name: column.name,
-                      icon: GeoPackageUtilities.getSimplifiedTypeIcon(column.dataType),
-                      type: GeoPackageUtilities.getSimplifiedType(column.dataType)
+                      icon: this.getSimplifiedTypeIcon(column.dataType),
+                      type: this.getSimplifiedType(column.dataType)
                     }
                     this.featureColumnNames = this.columnNames
                     this.showFeatureLayerField = true
@@ -577,7 +591,7 @@
                 })
               }
             })
-            return _.orderBy(tableFields, ['name'], ['asc'])
+            return orderBy(tableFields, ['name'], ['asc'])
           })
         },
         default: []
@@ -602,22 +616,62 @@
         }
         return hasStyle
       },
+      getSimplifiedType (dataType) {
+        let simplifiedType = 'Number'
+        switch (dataType) {
+          case GeoPackageDataType.BOOLEAN:
+            simplifiedType = 'Boolean'
+            break
+          case GeoPackageDataType.TEXT:
+            simplifiedType = 'Text'
+            break
+          case GeoPackageDataType.DATE:
+            simplifiedType = 'Date'
+            break
+          case GeoPackageDataType.DATETIME:
+            simplifiedType = 'Date & Time'
+            break
+          default:
+            break
+        }
+        return simplifiedType
+      },
+      getSimplifiedTypeIcon (dataType) {
+        let simplifiedTypeIcon = mdiPound
+        switch (dataType) {
+          case GeoPackageDataType.BOOLEAN:
+            simplifiedTypeIcon = mdiToggleSwitch
+            break
+          case GeoPackageDataType.TEXT:
+            simplifiedTypeIcon = mdiFormatText
+            break
+          case GeoPackageDataType.DATE:
+            simplifiedTypeIcon = mdiCalendar
+            break
+          case GeoPackageDataType.DATETIME:
+            simplifiedTypeIcon = mdiCalendarClock
+            break
+          default:
+            break
+        }
+        return simplifiedTypeIcon
+      },
       rename () {
         this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
-        ActionUtilities.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        ProjectActions.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
         this.$nextTick(() => {
           this.renameDialog = false
         })
       },
       copy () {
         this.copyDialog = false
-        ActionUtilities.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
+        ProjectActions.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
         this.showCopiedAlert = true
       },
       deleteTable () {
         this.deleteDialog = false
-        ActionUtilities.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+        ProjectActions.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
       },
       showRenameDialog () {
         this.renameValid = false
@@ -640,11 +694,11 @@
         this.indexDialog = true
         setTimeout(function () {
           _this.indexMessage = 'Indexing...'
-          GeoPackageUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
+          GeoPackageFeatureTableUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
             setTimeout(function () {
               _this.indexingDone = true
               _this.indexMessage = 'Indexing Completed'
-              ActionUtilities.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
+              ProjectActions.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
             }, 2000)
           })
         }, 1000)
@@ -662,12 +716,12 @@
         this.featureLayerField.name = name
       },
       async zoomToLayer () {
-        const extent = await GeoPackageUtilities.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        ActionUtilities.zoomToExtent({projectId: this.projectId, extent})
+        const extent = await GeoPackageCommon.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        ProjectActions.zoomToExtent({projectId: this.projectId, extent})
       },
       addField () {
         this.addFieldDialog = false
-        ActionUtilities.addGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.addFieldValue, columnType: this.addFieldType})
+        ProjectActions.addGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.addFieldValue, columnType: this.addFieldType})
         this.addFieldValue = ''
         this.addFieldType = GeoPackageDataType.TEXT
       },

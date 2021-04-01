@@ -1,5 +1,5 @@
-import * as Vendor from '../../vendor'
-import _ from 'lodash'
+import * as Vendor from '../../leaflet/vendor'
+import isNil from 'lodash/isNil'
 
 /**
  * Deafult Map Layer, which wraps MapCache Layers in a MapCacheMapLayer
@@ -10,7 +10,7 @@ export default class DefaultMapLayer {
       layer: layer,
       pane: mapPane,
       zIndex: 401,
-      opacity: !_.isNil(layer.opacity) ? layer.opacity : 1.0
+      opacity: !isNil(layer.opacity) ? layer.opacity : 1.0
     })
   }
 }

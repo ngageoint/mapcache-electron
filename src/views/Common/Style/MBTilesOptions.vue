@@ -56,7 +56,8 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import debounce from 'lodash/debounce'
+  import isNil from 'lodash/isNil'
   import MBStyleEditor from './MBStyleEditor'
   import GeometryStyleSvg from '../GeometryStyleSvg'
 
@@ -66,8 +67,8 @@
       MBStyleEditor
     },
     created () {
-      this.debounceLayerField = _.debounce((value, key) => {
-        if (!_.isNil(value)) {
+      this.debounceLayerField = debounce((value, key) => {
+        if (!isNil(value)) {
           let updatedConfiguration = Object.assign({}, this.configuration)
           updatedConfiguration[key] = value
           this.updateConfiguration(updatedConfiguration)

@@ -1,43 +1,46 @@
-import Source from './Source'
 import path from 'path'
-import GeoPackageUtilities from '../GeoPackageUtilities'
-import VectorLayer from './layer/vector/VectorLayer'
-import FileUtilities from '../FileUtilities'
 import jetpack from 'fs-jetpack'
-import _ from 'lodash'
+import isNil from 'lodash/isNil'
+import Source from './Source'
+import VectorLayer from './layer/vector/VectorLayer'
+import GeoPackageCommon from '../geopackage/GeoPackageCommon'
+import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 
 export default class GeoJSONSource extends Source {
   async retrieveLayers () {
-    const geopackageLayers = []
     let featureCollection = {
       type: 'FeatureCollection',
       features: []
     }
 
     const data = jetpack.read(this.filePath, 'json')
-    if (!_.isNil(data) && data.type === 'FeatureCollection') {
+    if (!isNil(data) && data.type === 'FeatureCollection') {
       featureCollection = data
-    } else if (!_.isNil(data) && data.type === 'Feature') {
+    } else if (!isNil(data) && data.type === 'Feature') {
       featureCollection.features.push(data)
     }
 
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+    const { layerId, layerDirectory } = this.createLayerDirectory()
+    console.log(layerId)
+    console.log(layerDirectory)
     const name = path.basename(this.filePath, path.extname(this.filePath))
     let fileName = name + '.gpkg'
-    let filePath = path.join(sourceDirectory, fileName)
-    await GeoPackageUtilities.buildGeoPackage(filePath, name, featureCollection)
-    const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, name)
-    geopackageLayers.push(new VectorLayer({
-      id: sourceId,
-      name: name,
-      geopackageFilePath: filePath,
-      sourceFilePath: this.filePath,
-      sourceDirectory: sourceDirectory,
-      sourceId: sourceId,
-      sourceLayerName: name,
-      sourceType: 'GeoJSON',
-      extent: extent
-    }))
-    return geopackageLayers
+    let filePath = path.join(layerDirectory, fileName)
+    console.log('geopackage file path: ' + filePath)
+    await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, name, featureCollection)
+    const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, name)
+    return [
+      new VectorLayer({
+        id: layerId,
+        name: name,
+        geopackageFilePath: filePath,
+        sourceFilePath: this.filePath,
+        sourceDirectory: layerDirectory,
+        sourceLayerName: name,
+        sourceType: 'GeoJSON',
+        count: featureCollection.features.length,
+        extent: extent
+      })
+    ]
   }
 }

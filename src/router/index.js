@@ -1,8 +1,9 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import LandingPage from '../views/LandingPage/LandingPage.vue'
-import Worker from '../views/Worker/Worker.vue'
-import Project from '../views/Project/Project.vue'
+
+const LandingPageLoader = () => import('../views/LandingPage/LandingPage.vue')
+const ProjectLoader = () => import('../views/Project/Project.vue')
+const WorkerLoader = () => import('../views/Worker/Worker.vue')
 
 Vue.use(VueRouter)
 
@@ -13,17 +14,17 @@ const router = new VueRouter({
     {
       path: '/project/:id',
       name: 'Project',
-      component: Project
+      component: ProjectLoader
     },
     {
-      path: '/worker/:id',
+      path: '/worker',
       name: 'Worker',
-      component: Worker
+      component: WorkerLoader
     },
     {
       path: '/',
       name: 'LandingPage',
-      component: LandingPage,
+      component: LandingPageLoader,
     }
   ]
 })

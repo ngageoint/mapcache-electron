@@ -5,11 +5,9 @@ import XYZFileLayer from './layer/tile/XYZFileLayer'
 
 export default class XYZFileSource extends Source {
   async retrieveLayers () {
-    this.layers = []
+    const layers = []
     const destinationFolder = this.sourceCacheFolder
-
     const name = path.basename(this.filePath, path.extname(this.filePath))
-
     const zip = new AdmZip(this.filePath)
     const zipEntries = zip.getEntries()
     const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
@@ -30,7 +28,8 @@ export default class XYZFileSource extends Source {
       maxZoom = zoomLevels[zoomLevels.length - 1]
       // eslint-disable-next-line no-empty
     } catch (e) {}
-    this.layers.push(new XYZFileLayer({filePath: filePath, sourceLayerName: name, minZoom, maxZoom}))
-    return this.layers
+
+    layers.push(new XYZFileLayer({filePath: filePath, sourceLayerName: name, minZoom, maxZoom}))
+    return layers
   }
 }

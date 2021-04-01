@@ -15,7 +15,7 @@
       @keydown.esc="cancelDeleteUrl">
       <v-card v-if="deleteUrlDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete URL
         </v-card-title>
         <v-card-text>
@@ -98,7 +98,7 @@
                           </v-list-item-content>
                           <v-list-item-action>
                             <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                              <v-icon>mdi-trash-can</v-icon>
+                              <v-icon>{{mdiTrashCan}}</v-icon>
                             </v-btn>
                           </v-list-item-action>
                         </v-list-item>
@@ -313,15 +313,19 @@
 <script>
   import draggable from 'vuedraggable'
   import { mapActions, mapState } from 'vuex'
-  import URLUtilities from '../../lib/URLUtilities'
-  import _ from 'lodash'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
+  import URLUtilities from '../../lib/util/URLUtilities'
+  import isNil from 'lodash/isNil'
+  import difference from 'lodash/difference'
+  import isEmpty from 'lodash/isEmpty'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import SourceFactory from '../../lib/source/SourceFactory'
-  import ActionUtilities from '../../lib/ActionUtilities'
-  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
-  import XYZTileUtilities from '../../lib/XYZTileUtilities'
-  import NetworkConstants from '../../lib/NetworkConstants'
-  import GeoServiceUtilities from '../../lib/GeoServiceUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
+  import XYZTileUtilities from '../../lib/util/XYZTileUtilities'
+  import GeoServiceUtilities from '../../lib/util/GeoServiceUtilities'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
+  import HttpUtilities from '../../lib/network/HttpUtilities'
+  import { mdiTrashCan } from '@mdi/js'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -348,7 +352,7 @@
         }
       },
       importReady () {
-        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ)
+        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === HttpUtilities.SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ)
       },
       dragOptions () {
         return {
@@ -359,6 +363,7 @@
     },
     data () {
       return {
+        mdiTrashCan: mdiTrashCan,
         supportedImageFormats: GeoServiceUtilities.supportedImageFormats,
         connected: false,
         step: 1,
@@ -374,8 +379,8 @@
         dataSourceUrl: null,
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
-        supportedServiceTypes: [{value: ServiceConnectionUtils.SERVICE_TYPE.WMS, name: 'WMS'}, {value: ServiceConnectionUtils.SERVICE_TYPE.WFS, name: 'WFS'}, {value: ServiceConnectionUtils.SERVICE_TYPE.XYZ, name: 'XYZ'}, {value: ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS, name: 'ArcGIS FS'}],
-        selectedServiceType: ServiceConnectionUtils.SERVICE_TYPE.XYZ,
+        supportedServiceTypes: [{value: HttpUtilities.SERVICE_TYPE.WMS, name: 'WMS'}, {value: HttpUtilities.SERVICE_TYPE.WFS, name: 'WFS'}, {value: HttpUtilities.SERVICE_TYPE.XYZ, name: 'XYZ'}, {value: HttpUtilities.SERVICE_TYPE.ARCGIS_FS, name: 'ArcGIS FS'}],
+        selectedServiceType: HttpUtilities.SERVICE_TYPE.XYZ,
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
         serviceLayers: [],
@@ -414,7 +419,7 @@
         this.getServiceInfo(this.selectedServiceType)
       },
       async addLayer () {
-        if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ) {
+        if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ) {
           await this.processXYZUrl(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl))
         } else {
           await this.confirmLayerImport()
@@ -422,7 +427,7 @@
       },
       close () {
         this.previewing = false
-        ActionUtilities.clearPreviewLayer(({projectId: this.project.id}))
+        ProjectActions.clearPreviewLayer(({projectId: this.project.id}))
         this.$nextTick(() => {
           this.back()
         })
@@ -437,40 +442,40 @@
         this.unsupportedServiceLayers = []
         this.error = null
         const options = {}
-        options.timeout = NetworkConstants.DEFAULT_TIMEOUT
+        options.timeout = HttpUtilities.DEFAULT_TIMEOUT
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
         }
         options.allowAuth = true
 
         const {queryParams} = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
-        if (!_.isNil(queryParams.version)) {
+        if (!isNil(queryParams.version)) {
           options.version = queryParams.version
         }
 
         const {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(this.dataSourceUrl, serviceType, options)
 
-        if (!_.isNil(error)) {
+        if (!isNil(error)) {
           this.authValid = false
-          if (ServiceConnectionUtils.isAuthenticationError(error)) {
-            this.error = 'Access to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
-          } else if (ServiceConnectionUtils.isServerError(error)) {
-            this.error = 'Something went wrong trying to access the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service.'
-          } else if (ServiceConnectionUtils.isTimeoutError(error)) {
-            this.error = 'The request to the ' + ServiceConnectionUtils.getServiceName(serviceType) + ' service timed out.'
+          if (HttpUtilities.isAuthenticationError(error)) {
+            this.error = 'Access to the ' + HttpUtilities.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
+          } else if (HttpUtilities.isServerError(error)) {
+            this.error = 'Something went wrong trying to access the ' + HttpUtilities.getServiceName(serviceType) + ' service.'
+          } else if (HttpUtilities.isTimeoutError(error)) {
+            this.error = 'The request to the ' + HttpUtilities.getServiceName(serviceType) + ' service timed out.'
           } else {
             this.error = error
           }
         }
 
-        if (!_.isNil(serviceInfo)) {
+        if (!isNil(serviceInfo)) {
           setTimeout(() => {
             this.authValid = true
-            this.accessDeniedOrForbidden = ServiceConnectionUtils.isAuthenticationError(error)
-            if (!_.isNil(serviceInfo)) {
-              if (serviceType === ServiceConnectionUtils.SERVICE_TYPE.WMS) {
+            this.accessDeniedOrForbidden = HttpUtilities.isAuthenticationError(error)
+            if (!isNil(serviceInfo)) {
+              if (serviceType === HttpUtilities.SERVICE_TYPE.WMS) {
                 this.summaryStep = 5
-              } else if (serviceType === ServiceConnectionUtils.SERVICE_TYPE.WFS || serviceType === ServiceConnectionUtils.SERVICE_TYPE.ARCGIS_FS) {
+              } else if (serviceType === HttpUtilities.SERVICE_TYPE.WFS || serviceType === HttpUtilities.SERVICE_TYPE.ARCGIS_FS) {
                 this.summaryStep = 4
               } else {
                 this.summaryStep = 3
@@ -490,9 +495,10 @@
         if (this.selectedDataSourceLayers.length > 0) {
           let sourceToProcess = {
             id: UniqueIDUtilities.createUniqueID(),
+            directory: ElectronUtilities.appDataDirectory(),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
-            layers: this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
+            layers: this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
             name: this.dataSourceName,
             format: this.serviceInfo.format
           }
@@ -510,27 +516,28 @@
         this.selectedServiceType = 2
         this.selectedDataSourceLayers = []
         this.sortedLayers = []
-        if (!_.isNil(this.$refs.dataSourceNameForm)) {
+        if (!isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
         }
-        if (!_.isNil(this.$refs.urlForm)) {
+        if (!isNil(this.$refs.urlForm)) {
           this.$refs.urlForm.validate()
         }
       },
       async processXYZUrl (url) {
         let sourceToProcess = {
           id: UniqueIDUtilities.createUniqueID(),
+          directory: ElectronUtilities.appDataDirectory(),
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,
           subdomains: this.requiresSubdomains ? this.subdomainText.split(',') : undefined,
           name: this.dataSourceName
         }
-        this.addUrlToHistory(url)
         this.resetURLValidation()
         this.close()
         this.$nextTick(() => {
           this.addSource(sourceToProcess)
+          this.addUrlToHistory(url)
         })
       },
       removeUrlFromHistory () {
@@ -561,18 +568,32 @@
       async sendLayerPreview () {
         let source
         if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
-          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS) {
-            source = await SourceFactory.constructWMSSource(this.dataSourceUrl, this.sortedLayers.slice(), 'Preview', this.serviceInfo.format)
-          } else if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.XYZ) {
-            source = await SourceFactory.constructXYZSource(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), this.subdomainText.split(','), 'Preview')
+          if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WMS) {
+            source = await SourceFactory.constructSource({
+              url: this.dataSourceUrl,
+              serviceType: this.selectedServiceType,
+              directory: ElectronUtilities.appDataDirectory(),
+              layers: this.sortedLayers.slice(),
+              name: 'Preview',
+              format: this.serviceInfo.format
+            })
+          } else if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ) {
+            source = await SourceFactory.constructSource({
+              url: XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl),
+              serviceType: this.selectedServiceType,
+              directory: ElectronUtilities.appDataDirectory(),
+              subdomains: this.subdomainText.split(','),
+              name: 'Preview'
+            })
           }
         }
-        if (!_.isNil(source)) {
+        if (!isNil(source)) {
           const layers = await source.retrieveLayers()
+          source.cleanUp()
           if (layers.length > 0) {
             const layer = layers[0]
             await layer.initialize()
-            ActionUtilities.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
+            ProjectActions.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
           } else {
             this.previewing = false
           }
@@ -587,13 +608,13 @@
       this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
       this.urlIsValid = true
       this.$nextTick(() => {
-        if (!_.isNil(this.$refs.dataSourceNameForm)) {
+        if (!isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
         }
-        if (!_.isNil(this.$refs.urlForm)) {
+        if (!isNil(this.$refs.urlForm)) {
           this.$refs.urlForm.validate()
         }
-        if (!_.isNil(this.$refs.authForm)) {
+        if (!isNil(this.$refs.authForm)) {
           this.$refs.authForm.validate()
         }
       })
@@ -607,7 +628,7 @@
           this.sortedLayers = []
           this.sortedRenderingLayers = []
           this.serviceInfo = null
-          if (!_.isNil(newValue) && !_.isEmpty(newValue)) {
+          if (!isNil(newValue) && !isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
             let requiresSubdomains = false
@@ -662,11 +683,11 @@
       },
       selectedDataSourceLayers: {
         handler (newValue) {
-          if (!_.isNil(this.sortedRenderingLayers)) {
+          if (!isNil(this.sortedRenderingLayers)) {
             const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
             const newRenderingLayers = newValue.slice()
-            const namesRemoved = _.difference(sortedRenderingLayersCopy.map(item => item.name), newRenderingLayers.map(item => item.name))
-            const namesAdded = _.difference(newRenderingLayers.map(item => item.name), sortedRenderingLayersCopy.map(item => item.name))
+            const namesRemoved = difference(sortedRenderingLayersCopy.map(item => item.name), newRenderingLayers.map(item => item.name))
+            const namesAdded = difference(newRenderingLayers.map(item => item.name), sortedRenderingLayersCopy.map(item => item.name))
             namesRemoved.forEach(name => {
               const index = sortedRenderingLayersCopy.findIndex(item => item.name === name)
               if (index !== -1) {
@@ -694,14 +715,14 @@
             if (previewing) {
               this.sendLayerPreview()
             } else {
-              ActionUtilities.clearPreviewLayer(({projectId: this.project.id}))
+              ProjectActions.clearPreviewLayer(({projectId: this.project.id}))
             }
           })
         }
       },
       sortedLayers: {
         handler () {
-          if (this.selectedServiceType === ServiceConnectionUtils.SERVICE_TYPE.WMS && this.connected && this.previewing) {
+          if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WMS && this.connected && this.previewing) {
             this.sendLayerPreview()
           }
         }

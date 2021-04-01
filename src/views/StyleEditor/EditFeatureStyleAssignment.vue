@@ -82,7 +82,7 @@
 </template>
 
 <script>
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
   export default {
@@ -113,15 +113,15 @@
           const items = this.assignment.styles.concat(this.assignment.icons)
           const selection = items[this.model]
           if (selection.styleRow) {
-            ActionUtilities.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: selection.styleRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            ActionUtilities.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ProjectActions.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: selection.styleRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ProjectActions.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           } else if (selection.iconRow) {
-            ActionUtilities.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: selection.iconRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            ActionUtilities.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ProjectActions.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: selection.iconRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            ProjectActions.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           }
         } else {
-          ActionUtilities.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-          ActionUtilities.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          ProjectActions.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          ProjectActions.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
         }
         this.close()
       }

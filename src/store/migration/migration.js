@@ -1,28 +1,29 @@
 import store from '../.'
-import _ from 'lodash'
+import cloneDeep from 'lodash/cloneDeep'
+import keys from 'lodash/keys'
 import { mapcache } from '../../../package.json'
-import BaseMapUtilities from '../../lib/BaseMapUtilities'
-import NetworkConstants from '../../lib/NetworkConstants'
+import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
+import HttpUtilities from '../../lib/network/HttpUtilities'
 
 const migrations = {
   2: async function (state) {
     // setup initial state for tabNotification, mapZoom, and preview layer
-    _.keys(state.UIState).forEach(projectId => {
+    keys(state.UIState).forEach(projectId => {
       state.UIState[projectId].tabNotification = {0: false, 1: false, 2: false}
       state.UIState[projectId].mapZoom = 3
       state.UIState[projectId].previewLayer = null
     })
 
     // setup initial mapRenderingOrder, also set all layers to not be visible
-    _.keys(state.Projects).forEach(projectId => {
-      _.keys(state.Projects[projectId].sources).forEach(sourceId => {
+    keys(state.Projects).forEach(projectId => {
+      keys(state.Projects[projectId].sources).forEach(sourceId => {
         state.Projects[projectId].sources[sourceId].visible = false
       })
-      _.keys(state.Projects[projectId].geopackages).forEach(geopackageId => {
-        _.keys(state.Projects[projectId].geopackages[geopackageId].tables.tiles).forEach(table => {
+      keys(state.Projects[projectId].geopackages).forEach(geopackageId => {
+        keys(state.Projects[projectId].geopackages[geopackageId].tables.tiles).forEach(table => {
           state.Projects[projectId].geopackages[geopackageId].tables.tiles[table].visible = false
         })
-        _.keys(state.Projects[projectId].geopackages[geopackageId].tables.features).forEach(table => {
+        keys(state.Projects[projectId].geopackages[geopackageId].tables.features).forEach(table => {
           state.Projects[projectId].geopackages[geopackageId].tables.features[table].visible = false
         })
       })
@@ -37,10 +38,10 @@ const migrations = {
   },
   4: async function (state) {
     // remove any existing credentials
-    const projectKeys = _.keys(state.Projects)
+    const projectKeys = keys(state.Projects)
     for (let i = 0; i < projectKeys.length; i++) {
       const projectId = projectKeys[i]
-      const sourceKeys = _.keys(state.Projects[projectId].sources)
+      const sourceKeys = keys(state.Projects[projectId].sources)
       for (let j = 0; j < sourceKeys.length; j++) {
         const sourceId = sourceKeys[j]
         delete state.Projects[projectId].sources[sourceId].credentials
@@ -50,9 +51,9 @@ const migrations = {
   5: async function (state) {
     // add network settings to default base maps
     state.BaseMaps.baseMaps.filter(baseMap => baseMap.readonly && baseMap.id < 3).forEach(baseMap => {
-      baseMap.layerConfiguration.timeoutMs = NetworkConstants.DEFAULT_TIMEOUT
-      baseMap.layerConfiguration.retryAttempts = NetworkConstants.DEFAULT_RETRY_ATTEMPTS
-      baseMap.layerConfiguration.rateLimit = NetworkConstants.NO_LIMIT
+      baseMap.layerConfiguration.timeoutMs = HttpUtilities.DEFAULT_TIMEOUT
+      baseMap.layerConfiguration.retryAttempts = HttpUtilities.DEFAULT_RETRY_ATTEMPTS
+      baseMap.layerConfiguration.rateLimit = HttpUtilities.NO_LIMIT
     })
   },
   6: async function (state) {
@@ -78,7 +79,7 @@ export default async function runMigration () {
     // if the current version isn't set or this is a downgrade, reset state to this version's defaults, otherwise run the migration
     const requiresReset = currentVersion < 1 || installationVersion < currentVersion
     if (!requiresReset) {
-      let state = _.cloneDeep(store.state)
+      let state = cloneDeep(store.state)
       for (let i = currentVersion + 1; i <= installationVersion; i++) {
         if (migrations[i]) {
           try {

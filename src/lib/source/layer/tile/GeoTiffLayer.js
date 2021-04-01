@@ -1,16 +1,11 @@
-import GeoTiffRenderer from '../renderer/GeoTiffRenderer'
 import TileLayer from './TileLayer'
 import * as GeoTIFF from 'geotiff'
-import proj4 from 'proj4'
-import _ from 'lodash'
-import defs from '../../../projection/proj4Defs'
-import { ipcRenderer } from 'electron'
+import ProjectionUtilities from '../../../projection/ProjectionUtilities'
+import isNil from 'lodash/isNil'
+import GeoTiffUtilities from '../../../util/GeoTiffUtilities'
 import LayerTypes from '../LayerTypes'
-for (const name in defs) {
-  if (defs[name]) {
-    proj4.defs(name, defs[name])
-  }
-}
+import fs from 'fs'
+import path from 'path'
 
 /**
  * Layer to handle reading a GeoTIFF and how to interpret it
@@ -19,7 +14,7 @@ export default class GeoTiffLayer extends TileLayer {
   geotiff
   image
   fileDirectory
-  rasters
+  rasterFile
   photometricInterpretation
   colorMap
   stretchToMinMax
@@ -42,69 +37,8 @@ export default class GeoTiffLayer extends TileLayer {
   enableGlobalNoDataValue
   globalNoDataValue
   bandOptions
-
-  static getMaxForDataType (bitsPerSample) {
-    let max = 255
-    if (bitsPerSample === 16) {
-      max = 65535
-    }
-    return max
-  }
-
-  static getModelTypeName (modelTypeCode) {
-    let modelTypeName
-    switch(modelTypeCode) {
-      case 0:
-        modelTypeName = 'undefined'
-        break;
-      case 1:
-        modelTypeName = 'ModelTypeProjected'
-        break;
-      case 2:
-        modelTypeName = 'ModelTypeGeographic'
-        break;
-      case 3:
-        modelTypeName = 'ModelTypeGeocentric'
-        break;
-      case 32767:
-        modelTypeName = 'user-defined'
-        break;
-      default:
-        if (modelTypeCode < 32767) {
-          modelTypeName= 'GeoTIFF Reserved Codes'
-        } else if (modelTypeCode>32767) {
-          modelTypeName= 'Private User Implementations'
-        }
-        break
-    }
-    return modelTypeName
-  }
-
-  /**
-   * Determine EPSG code of geotiff
-   * @param image
-   */
-  static getCRSForGeoTiff (image) {
-    let crs = 0
-    if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTModelTypeGeoKey') === false) {
-      crs = 0
-    } else if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey ) === 'ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
-      crs = image.getGeoKeys()['GeographicTypeGeoKey'];
-    } else {
-      if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'ModelTypeProjected' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'ProjectedCSTypeGeoKey')) {
-        crs = image.getGeoKeys()['ProjectedCSTypeGeoKey']
-      } else if (GeoTiffLayer.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'user-defined') {
-        if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'ProjectedCSTypeGeoKey')) {
-          crs = image.getGeoKeys()['ProjectedCSTypeGeoKey']
-        } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
-          crs = image.getGeoKeys()['GeographicTypeGeoKey']
-        } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTCitationGeoKey') && image.getGeoKeys()['GTCitationGeoKey'].search("WGS_1984_Web_Mercator_Auxiliary_Sphere") !== -1) {
-          crs = 3857
-        }
-      }
-    }
-    return crs
-  }
+  littleEndian
+  sampleFormat
 
   update (configuration) {
     super.update(configuration)
@@ -133,7 +67,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.globalNoDataValue = configuration.globalNoDataValue
     this.enableGlobalNoDataValue = configuration.enableGlobalNoDataValue
     this.opacity = configuration.opacity
-    if (!_.isNil(this.renderer)) {
+    if (!isNil(this.renderer)) {
       this.renderer.layer = this
     }
   }
@@ -146,28 +80,25 @@ export default class GeoTiffLayer extends TileLayer {
     return ['renderingMethod', 'redBand', 'redBandMin', 'redBandMax', 'greenBand', 'greenBandMin', 'greenBandMax', 'blueBand', 'blueBandMin', 'blueBandMax', 'grayScaleColorGradient', 'grayBand', 'grayBandMin', 'grayBandMax', 'alphaBand', 'paletteBand', 'globalNoDataValue', 'enableGlobalNoDataValue'].concat(super.getRepaintFields())
   }
 
-  async initialize (inWorker = false, buildRasters = true) {
+  async initialize () {
     this.geotiff = await GeoTIFF.fromFile(this.filePath)
     this.image = await this.geotiff.getImage()
-    this.srs = GeoTiffLayer.getCRSForGeoTiff(this.image)
+    this.srs = GeoTiffUtilities.getCRSForGeoTiff(this.image)
     this.fileDirectory = this.image.fileDirectory
     // settings from fileDirectory
     this.colorMap = this.fileDirectory.ColorMap
     this.photometricInterpretation = this.fileDirectory.PhotometricInterpretation
     this.samplesPerPixel = this.fileDirectory.SamplesPerPixel
-    this.bitsPerSample = this.fileDirectory.BitsPerSample
+    this.bitsPerSample = this.fileDirectory.BitsPerSample.slice()
+    this.sampleFormat = this.fileDirectory.SampleFormat
+    this.rasterFile = this._configuration.rasterFile
+    this.littleEndian = this.image.littleEndian
 
-    if (_.isNil(this.rasters) && buildRasters) {
-      if (!inWorker) {
-        this.rasters = await new Promise(resolve => {
-          ipcRenderer.once('read_raster_completed_' + this.id, (event, result) => {
-            resolve(result.rasters)
-          })
-          ipcRenderer.send('read_raster', {id: this.id, filePath: this.filePath})
-        })
-      } else {
-        this.rasters = await this.image.readRasters()
-      }
+    // THIS PROCESS TAKES A BIT OF TIME, SHOULD ONLY HAPPEN ON FIRST INIT
+    if (isNil(this.rasterFile)) {
+      const rasters = await this.image.readRasters({interleave: true})
+      this.rasterFile = path.join(path.dirname(this.filePath), 'data.bin')
+      fs.writeFileSync(this.rasterFile, rasters)
     }
 
     if (this._configuration.bandOptions) {
@@ -218,7 +149,7 @@ export default class GeoTiffLayer extends TileLayer {
       for (let i = 1; i <= this.bitsPerSample.length; i++) {
         let name = 'Band ' + i
         let min = 0
-        let max = GeoTiffLayer.getMaxForDataType(this.bitsPerSample[i])
+        let max = GeoTiffUtilities.getMaxForDataType(this.bitsPerSample[i])
         this.bandOptions.push({
           value: i,
           name: name,
@@ -267,7 +198,6 @@ export default class GeoTiffLayer extends TileLayer {
       }
       this.stretchToMinMax = false
     }
-    this.renderer = new GeoTiffRenderer(this)
     await super.initialize()
     return this
   }
@@ -280,6 +210,7 @@ export default class GeoTiffLayer extends TileLayer {
         photometricInterpretation: this.photometricInterpretation,
         samplesPerPixel: this.samplesPerPixel,
         bitsPerSample: this.bitsPerSample,
+        sampleFormat: this.sampleFormat,
         colorMap: this.colorMap,
         visible: this.visible || false,
         stretchToMinMax: this.stretchToMinMax,
@@ -301,7 +232,9 @@ export default class GeoTiffLayer extends TileLayer {
         paletteBand: this.paletteBand,
         bandOptions: this.bandOptions,
         globalNoDataValue: this.globalNoDataValue,
-        enableGlobalNoDataValue: this.enableGlobalNoDataValue
+        enableGlobalNoDataValue: this.enableGlobalNoDataValue,
+        rasterFile: this.rasterFile,
+        littleEndian: this.littleEndian,
       }
     }
   }
@@ -313,7 +246,7 @@ export default class GeoTiffLayer extends TileLayer {
     // [minx, miny, maxx, maxy]
     const bbox = this.image.getBoundingBox()
     const epsgString = 'EPSG:' + this.srs
-    const transform = proj4(epsgString)
+    const transform = ProjectionUtilities.getConverter('EPSG:4326', epsgString)
 
     const minCoord = transform.inverse([bbox[0], bbox[1]])
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
@@ -322,7 +255,7 @@ export default class GeoTiffLayer extends TileLayer {
     return this._configuration.extent
   }
 
-  async renderTile (coords, tileCanvas, done) {
-    return this.renderer.renderTile(coords, tileCanvas, done)
+  cancel (coords) {
+    this.renderer.cancel(coords)
   }
 }

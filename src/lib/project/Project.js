@@ -1,4 +1,4 @@
-import UniqueIDUtilities from '../UniqueIDUtilities'
+import UniqueIDUtilities from '../util/UniqueIDUtilities'
 
 export default class Project {
   name

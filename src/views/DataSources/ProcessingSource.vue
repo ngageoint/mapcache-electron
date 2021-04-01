@@ -32,7 +32,7 @@
 <script>
   import path from 'path'
   import { ipcRenderer } from 'electron'
-  import URLUtilities from '../../lib/URLUtilities'
+  import URLUtilities from '../../lib/util/URLUtilities'
   export default {
     props: {
       source: Object

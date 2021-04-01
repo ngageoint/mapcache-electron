@@ -36,16 +36,16 @@
             <v-list-item-subtitle v-html="item.tileLayersText"></v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.health.missing">
-            <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage"><v-icon>{{mdiAlertCircle}}</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto" v-else-if="item.health.invalid">
-            <v-btn icon color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage"><v-icon>{{mdiAlertCircle}}</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto" v-else-if="!item.health.synchronized">
-            <v-btn icon color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage"><v-icon>mdi-alert-circle</v-icon></v-btn>
+            <v-btn icon color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage"><v-icon>{{mdiAlertCircle}}</v-icon></v-btn>
           </v-list-item-icon>
           <v-list-item-icon class="mt-auto mb-auto">
-            <v-icon>mdi-chevron-right</v-icon>
+            <v-icon>{{mdiChevronRight}}</v-icon>
           </v-list-item-icon>
         </v-list-item>
         <v-divider
@@ -63,8 +63,9 @@
 </template>
 
 <script>
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import { mdiAlertCircle, mdiChevronRight } from '@mdi/js'
 
   export default {
     props: {
@@ -97,9 +98,9 @@
               name: geopackage.name,
               featureLayersText: 'Feature Layers: ' + Object.keys(geopackage.tables.features).length,
               tileLayersText: 'Tile Layers: ' + Object.keys(geopackage.tables.tiles).length,
-              health: await GeoPackageUtilities.checkGeoPackageHealth(geopackage),
+              health: await GeoPackageCommon.checkGeoPackageHealth(geopackage),
               click: async function (item) {
-                item.health = await GeoPackageUtilities.checkGeoPackageHealth(geopackage)
+                item.health = await GeoPackageCommon.checkGeoPackageHealth(geopackage)
                 if (!item.health.missing && !item.health.invalid && item.health.synchronized) {
                   _this.geopackageSelected(geopackage.id)
                 } else {
@@ -121,7 +122,7 @@
                 _this.dialogSubText = 'File not found at ' + geopackage.path + '. Would you like to remove this GeoPackage?'
                 _this.dialogActionText = 'Remove'
                 _this.showDialog = true
-                _this.dialogAction = () => ActionUtilities.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => ProjectActions.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
               },
               showInvalidFileDialog: function () {
                 _this.dialogGeoPackageId = geopackage.id
@@ -129,14 +130,14 @@
                 _this.dialogSubText = 'Would you like to remove this GeoPackage?'
                 _this.dialogActionText = 'Remove'
                 _this.showDialog = true
-                _this.dialogAction = () => ActionUtilities.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => ProjectActions.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
               },
               showSynchronizedFileDialog: function () {
                 _this.dialogGeoPackageId = geopackage.id
                 _this.dialogText = geopackage.name + ' GeoPackage not synchronized'
                 _this.dialogSubText = geopackage.name + ' GeoPackage has been modified outside of the application. Would you like to synchronize this GeoPackage?'
                 _this.dialogActionText = 'Synchronize'
-                _this.dialogAction = () => ActionUtilities.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => ProjectActions.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
                 _this.showDialog = true
               }
             })
@@ -150,6 +151,8 @@
     },
     data () {
       return {
+        mdiAlertCircle: mdiAlertCircle,
+        mdiChevronRight: mdiChevronRight,
         alert: false,
         alertText: '',
         showDialog: false,

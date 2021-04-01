@@ -7,7 +7,7 @@
       @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Remove styling
         </v-card-title>
         <v-card-text>
@@ -117,7 +117,7 @@
               <v-btn
                 @click.stop.prevent="addStyle"
                 color="primary">
-                <v-icon small class="mr-1">mdi-plus</v-icon> Add Style
+                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add Style
               </v-btn>
             </v-row>
           </v-list-item>
@@ -159,7 +159,7 @@
               <v-btn
                 @click.stop.prevent="addIcon"
                 color="primary">
-                <v-icon small class="mr-1">mdi-plus</v-icon> Add Icon
+                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add Icon
               </v-btn>
             </v-row>
           </v-list-item>
@@ -217,11 +217,11 @@
         <v-spacer/>
         <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5"
                @click.stop="addStyleExtensionAndDefaultStyles()">
-          <v-icon>mdi-palette</v-icon>
+          <v-icon>{{mdiPalette}}</v-icon>
           Enable styling
         </v-btn>
         <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
-          <v-icon>mdi-trash-can</v-icon>
+          <v-icon>{{mdiTrashCan}}</v-icon>
           Remove styling
         </v-btn>
       </v-card-actions>
@@ -233,12 +233,14 @@
   import CreateEditStyle from './CreateEditStyle'
   import CreateEditIcon from './CreateEditIcon'
   import EditTableStyleAssignment from './EditTableStyleAssignment'
-  import _ from 'lodash'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
+  import isNil from 'lodash/isNil'
+  import values from 'lodash/values'
   import {GeoPackageAPI, GeometryType} from '@ngageoint/geopackage'
-  import VectorStyleUtilities from '../../lib/VectorStyleUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import VectorStyleUtilities from '../../lib/util/VectorStyleUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+  import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
+  import { mdiTrashCan, mdiPlus, mdiPencil, mdiPalette, mdiMapMarker, mdiLinkVariant } from '@mdi/js'
 
   export default {
     props: {
@@ -260,25 +262,31 @@
     },
     data() {
       return {
+        mdiTrashCan: mdiTrashCan,
+        mdiPlus: mdiPlus,
+        mdiPencil: mdiPencil,
+        mdiPalette: mdiPalette,
+        mdiMapMarker: mdiMapMarker,
+        mdiLinkVariant: mdiLinkVariant,
         loading: false,
         hasStyleExtension: false,
         updatingStyle: true,
         features: [],
         iconFeatures: [],
         styleListItems: {
-          action: 'mdi-palette',
+          action: mdiPalette,
           items: [],
           title: 'Styles',
           active: false
         },
         iconListItems: {
-          action: 'mdi-map-marker',
+          action: mdiMapMarker,
           items: [],
           title: 'Icons',
           active: false
         },
         assignmentListItems: {
-          action: 'mdi-link-variant',
+          action: mdiLinkVariant,
           items: [],
           title: 'Default Assignment',
           active: false
@@ -327,12 +335,12 @@
           iconUrl: undefined,
           style: undefined
         }
-        let style = GeoPackageUtilities._getTableStyle(gp, this.tableName, geometryType)
-        let icon = GeoPackageUtilities._getTableIcon(gp, this.tableName, geometryType)
-        if (!_.isNil(style)) {
+        let style = GeoPackageStyleUtilities._getTableStyle(gp, this.tableName, geometryType)
+        let icon = GeoPackageStyleUtilities._getTableIcon(gp, this.tableName, geometryType)
+        if (!isNil(style)) {
           assignment.style = style
         }
-        if (!_.isNil(icon)) {
+        if (!isNil(icon)) {
           assignment.icon = icon
           assignment.iconUrl = 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
         }
@@ -371,9 +379,9 @@
           let featureTableName = this.tableName
           this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
           if (this.hasStyleExtension) {
-            const styleRows = GeoPackageUtilities._getStyleRows(gp, featureTableName)
-            const iconRows = GeoPackageUtilities._getIconRows(gp, featureTableName)
-            this.styleItems = _.values(styleRows).map(style => {
+            const styleRows = GeoPackageStyleUtilities._getStyleRows(gp, featureTableName)
+            const iconRows = GeoPackageStyleUtilities._getIconRows(gp, featureTableName)
+            this.styleItems = values(styleRows).map(style => {
               return {
                 id: style.id,
                 name: style.getName(),
@@ -388,7 +396,7 @@
             })
             this.styleListItems.items = this.styleItems.slice()
             this.styleListItems.hint = this.styleListItems.items.length === 0
-            this.iconItems = _.values(iconRows).map(icon => {
+            this.iconItems = values(iconRows).map(icon => {
               return {
                 id: icon.id,
                 name: icon.name,
@@ -485,7 +493,7 @@
         }
       },
       addStyleExtensionAndDefaultStyles() {
-        ActionUtilities.addStyleExtensionForTable({
+        ProjectActions.addStyleExtensionForTable({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,
@@ -495,7 +503,7 @@
       },
       removeStyleExtensionAndTableStyles() {
         this.removeDialog = false
-        ActionUtilities.removeStyleExtensionForTable({
+        ProjectActions.removeStyleExtensionForTable({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,

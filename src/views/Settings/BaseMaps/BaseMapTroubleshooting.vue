@@ -3,7 +3,7 @@
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-alert-circle</v-icon>{{initialDisplayName + ' Troubleshooting'}}
+          <v-icon color="warning" class="pr-2">{{mdiAlertCircle}}</v-icon>{{initialDisplayName + ' Troubleshooting'}}
         </v-card-title>
         <v-card-text>
           {{troubleShootingMessage}}
@@ -21,21 +21,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-icon>mdi-alert-circle</v-icon>
+    <v-icon>{{mdiAlertCircle}}</v-icon>
   </v-btn>
   <div v-else></div>
 </template>
 
 <script>
   import { mapState } from 'vuex'
-  import ActionUtilities from '../../../lib/ActionUtilities'
-  import ServiceConnectionUtils from '../../../lib/ServiceConnectionUtils'
+  import ProjectActions from '../../../lib/vuex/ProjectActions'
+  import ServiceConnectionUtils from '../../../lib/network/ServiceConnectionUtils'
+  import HttpUtilities from '../../../lib/network/HttpUtilities'
+  import { mdiAlertCircle } from '@mdi/js'
 
   export default {
     props: {
       baseMap: Object
-    },
-    components: {
     },
     computed: {
       ...mapState({
@@ -45,11 +45,11 @@
       }),
       troubleShootingMessage () {
         let message = ''
-        if (ServiceConnectionUtils.isAuthenticationError(this.baseMap.error)) {
+        if (HttpUtilities.isAuthenticationError(this.baseMap.error)) {
           message = 'The credentials for this data source are not valid.'
-        } else if (ServiceConnectionUtils.isServerError(this.baseMap.error)) {
+        } else if (HttpUtilities.isServerError(this.baseMap.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
-        } else if (ServiceConnectionUtils.isTimeoutError(this.baseMap.error)) {
+        } else if (HttpUtilities.isTimeoutError(this.baseMap.error)) {
           message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
@@ -59,6 +59,7 @@
     },
     data () {
       return {
+        mdiAlertCircle: mdiAlertCircle,
         showTroubleshootingDialog: false,
         reconnecting: false,
         connectionAttempts: 0
@@ -77,7 +78,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToBaseMap(this.baseMap, ActionUtilities.editBaseMap)) {
+        if (await ServiceConnectionUtils.connectToBaseMap(this.baseMap, ProjectActions.editBaseMap)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

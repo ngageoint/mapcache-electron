@@ -1,7 +1,9 @@
 /* eslint-disable no-empty */
-import * as vendor from '../../lib/vendor'
-import _ from 'lodash'
-import ActionUtilities from '../../lib/ActionUtilities'
+import * as vendor from '../../lib/leaflet/vendor'
+import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import cloneDeep from 'lodash/cloneDeep'
+import ProjectActions from '../../lib/vuex/ProjectActions'
 import { GeometryType } from '@ngageoint/geopackage'
 
 export default class LeafletEdit extends vendor.L.Control {
@@ -26,7 +28,7 @@ export default class LeafletEdit extends vendor.L.Control {
     let geometry
     if (container.isLeaf) {
       const indexedFeature = features.find(feature => feature.properties.index === container.index)
-      if (!_.isNil(indexedFeature)) {
+      if (!isNil(indexedFeature)) {
         geometry = indexedFeature.geometry
       }
     } else {
@@ -130,14 +132,14 @@ export default class LeafletEdit extends vendor.L.Control {
     }
 
     this.editFeature = function (map, projectId, editingFeature) {
-      if (!_.isNil(this.feature) && (this.feature.id !== editingFeature.featureToEdit.id || this.tableName !== editingFeature.tableName || this.id !== editingFeature.id)) {
+      if (!isNil(this.feature) && (this.feature.id !== editingFeature.featureToEdit.id || this.tableName !== editingFeature.tableName || this.id !== editingFeature.id)) {
         this.cancelEdit()
-      } else if (_.isNil(this.editingLayer)) {
+      } else if (isNil(this.editingLayer)) {
         this.projectId = projectId
         this.id = editingFeature.id
         this.isGeoPackage = editingFeature.isGeoPackage
         this.tableName = editingFeature.tableName
-        this.feature = _.cloneDeep(editingFeature.featureToEdit)
+        this.feature = cloneDeep(editingFeature.featureToEdit)
         this.feature.type = 'Feature'
 
         let flattenResults = LeafletEdit.flattenFeature(this.feature)
@@ -156,7 +158,7 @@ export default class LeafletEdit extends vendor.L.Control {
           onEachFeature: function (featureData, layer) {
             try {
               if (layer._layers) {
-                const layerKeys = _.keys(layer._layers)
+                const layerKeys = keys(layer._layers)
                 for (let i = 0; i < layerKeys.length; i++) {
                   try {
                     layer._layers[layerKeys[i]].editing.enable()
@@ -171,10 +173,10 @@ export default class LeafletEdit extends vendor.L.Control {
     }
 
     this.cancelEdit = function () {
-      if (!_.isNil(this.editingLayer)) {
+      if (!isNil(this.editingLayer)) {
         map.removeLayer(this.editingLayer)
       }
-      ActionUtilities.clearEditFeatureGeometry({projectId: this.projectId})
+      ProjectActions.clearEditFeatureGeometry({projectId: this.projectId})
       this.editingLayer = null
       this.projectId = null
       this.id = null
@@ -185,10 +187,10 @@ export default class LeafletEdit extends vendor.L.Control {
     }
 
     this._saveLink.onclick = function (e) {
-      if (!_.isNil(this.editingLayer)) {
+      if (!isNil(this.editingLayer)) {
         let layers = this.editingLayer.getLayers()
         this.feature.geometry = LeafletEdit.explodeFlattenedFeature(this.featureContainer, layers.map(layer => {
-          let feature = _.cloneDeep(layer.feature)
+          let feature = cloneDeep(layer.feature)
           if (GeometryType.fromName(layer.feature.geometry.type.toUpperCase()) === GeometryType.POINT) {
             feature.geometry.coordinates = [layer._latlng.lng, layer._latlng.lat]
           } else {
@@ -196,7 +198,7 @@ export default class LeafletEdit extends vendor.L.Control {
           }
           return feature
         }))
-        ActionUtilities.updateFeatureGeometry({projectId: this.projectId, id: this.id, isGeoPackage: this.isGeoPackage, tableName: this.tableName, featureGeoJson: this.feature})
+        ProjectActions.updateFeatureGeometry({projectId: this.projectId, id: this.id, isGeoPackage: this.isGeoPackage, tableName: this.tableName, featureGeoJson: this.feature})
       }
       this.cancelEdit()
       e.stopPropagation()

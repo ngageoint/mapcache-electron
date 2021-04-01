@@ -1,17 +1,16 @@
 import Source from './Source'
 import axios from 'axios'
-import _ from 'lodash'
+import isNil from 'lodash/isNil'
 import path from 'path'
-import GeoPackageUtilities from '../GeoPackageUtilities'
 import { GeoPackageDataType } from '@ngageoint/geopackage'
 import VectorLayer from './layer/vector/VectorLayer'
 import { arcgisToGeoJSON } from '@esri/arcgis-to-geojson-utils'
-import FileUtilities from '../FileUtilities'
-import URLUtilities from '../URLUtilities'
+import URLUtilities from '../util/URLUtilities'
+import GeoPackageCommon from '../geopackage/GeoPackageCommon'
+import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 
 export default class ArcGISFeatureServiceSource extends Source {
   async retrieveLayers () {
-    const geopackageLayers = []
     let featureCollection = {
       type: 'FeatureCollection',
       features: []
@@ -29,23 +28,24 @@ export default class ArcGISFeatureServiceSource extends Source {
         fields = fields.concat(content.fields.filter(f => fields.findIndex(field => field.name.toLowerCase() === f.name.toLowerCase()) === -1))
       }
     }
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+    const { layerId, layerDirectory } = this.createLayerDirectory()
     let fileName = this.sourceName + '.gpkg'
-    let filePath = path.join(sourceDirectory, fileName)
-    await GeoPackageUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection, null, fields)
-    const extent = GeoPackageUtilities.getGeoPackageExtent(filePath, this.sourceName)
-    geopackageLayers.push(new VectorLayer({
-      id: sourceId,
-      name: this.sourceName,
-      geopackageFilePath: filePath,
-      sourceFilePath: this.filePath,
-      sourceDirectory: sourceDirectory,
-      sourceId: sourceId,
-      sourceLayerName: this.sourceName,
-      sourceType: 'ArcGIS FS',
-      extent: extent
-    }))
-    return geopackageLayers
+    let filePath = path.join(layerDirectory, fileName)
+    await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection, null, fields)
+    const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, this.sourceName)
+    return [
+      new VectorLayer({
+        id: layerId,
+        sourceDirectory: layerDirectory,
+        name: this.sourceName,
+        geopackageFilePath: filePath,
+        sourceFilePath: this.filePath,
+        sourceLayerName: this.sourceName,
+        sourceType: 'ArcGIS FS',
+        count: featureCollection.features.length,
+        extent: extent
+      })
+    ]
   }
 
   esriToGeoPackageDataTypeMap = {
@@ -83,7 +83,7 @@ export default class ArcGISFeatureServiceSource extends Source {
         ) +
         '&geometryType=esriGeometryEnvelope&inSR=4326&outFields=*' +
         '&outSR=4326'
-      if (!_.isNil(queryParams['token'])) {
+      if (!isNil(queryParams['token'])) {
         url = url + '&token=' + queryParams['token']
       }
       axios({

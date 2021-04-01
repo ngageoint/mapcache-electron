@@ -34,7 +34,7 @@
                       <v-text-field
                         v-model="column.dateValue"
                         :label="column.name"
-                        prepend-icon="mdi-calendar"
+                        :prepend-icon="mdiCalendar"
                         readonly
                         clearable
                         v-bind="attrs"
@@ -69,7 +69,7 @@
                       <v-text-field
                         v-model="column.timeValue"
                         label="time"
-                        prepend-icon="mdi-clock"
+                        :prepend-icon="mdiClock"
                         readonly
                         clearable
                         v-bind="attrs"
@@ -134,11 +134,15 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import cloneDeep from 'lodash/cloneDeep'
+  import orderBy from 'lodash/orderBy'
+  import isEmpty from 'lodash/isEmpty'
   import moment from 'moment'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+  import { mdiCalendar, mdiClock } from '@mdi/js'
 
   export default {
     props: {
@@ -160,6 +164,8 @@
     },
     data () {
       return {
+        mdiCalendar: mdiCalendar,
+        mdiClock: mdiClock,
         TEXT: GeoPackageDataType.TEXT,
         FLOAT: GeoPackageDataType.FLOAT,
         BOOLEAN: GeoPackageDataType.BOOLEAN,
@@ -175,11 +181,11 @@
     asyncComputed: {
       editableColumns: {
         async get () {
-          if (_.isNil(this.columns) || _.isNil(this.columns._columns)) {
+          if (isNil(this.columns) || isNil(this.columns._columns)) {
             return []
           }
-          const features = await GeoPackageUtilities.getAllFeatureRows(this.geopackagePath, this.tableName)
-          const properties = _.isNil(this.feature) ? {} : _.cloneDeep(this.feature.properties)
+          const features = await GeoPackageFeatureTableUtilities.getAllFeatureRows(this.geopackagePath, this.tableName)
+          const properties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
           const columns = this.columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id')
           const columnObjects = columns.map((column) => {
             const columnObject = {
@@ -192,7 +198,7 @@
             if (value === undefined || value === null) {
               value = column.defaultValue
             }
-            if (_.isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
+            if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
               value = false
             } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
               value = properties[column.name] === 1 || properties[column.name] === true
@@ -202,7 +208,7 @@
               columnObject.showDate = true
               columnObject.timeMenu = false
               columnObject.showTime = true
-              if (!_.isNil(value)) {
+              if (!isNil(value)) {
                 try {
                   const dateVal = moment.utc(value)
                   value = new Date(value)
@@ -216,7 +222,7 @@
             if (column.dataType === GeoPackageDataType.DATE) {
               columnObject.dateMenu = false
               columnObject.showDate = true
-              if (!_.isNil(value)) {
+              if (!isNil(value)) {
                 try {
                   const dateVal = moment.utc(value)
                   value = new Date(value)
@@ -245,7 +251,7 @@
             return columnObject
           })
 
-          return _.orderBy(columnObjects, ['lowerCaseName'], ['asc'])
+          return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
         },
         default: []
       }
@@ -254,7 +260,7 @@
       async save () {
         if (this.isEditing) {
           const filePath = this.geopackagePath
-          const featureRow = await GeoPackageUtilities.getFeatureRow(filePath, this.tableName, this.feature.id)
+          const featureRow = await GeoPackageFeatureTableUtilities.getFeatureRow(filePath, this.tableName, this.feature.id)
           this.editableColumns.forEach(column => {
             let value = column.value
             if (column.dataType === GeoPackageDataType.BOOLEAN) {
@@ -262,7 +268,7 @@
             }
             if (column.dataType === GeoPackageDataType.DATE) {
               try {
-                if (!_.isEmpty(column.dateValue)) {
+                if (!isEmpty(column.dateValue)) {
                   value = new Date(column.dateValue).toISOString().substring(0, 10)
                 } else {
                   value = null
@@ -273,8 +279,8 @@
             }
             if (column.dataType === GeoPackageDataType.DATETIME) {
               try {
-                const dateString = column.dateValue + ' ' + (_.isNil(column.timeValue) ? '00:00:00' : column.timeValue)
-                if (!_.isEmpty(dateString)) {
+                const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
+                if (!isEmpty(dateString)) {
                   value = moment.utc(dateString).toISOString()
                 } else {
                   value = null
@@ -285,12 +291,12 @@
             }
             featureRow.setValueNoValidationWithIndex(column.index, value)
           })
-          const result = await GeoPackageUtilities.updateFeatureRow(filePath, this.tableName, featureRow)
+          const result = await GeoPackageFeatureTableUtilities.updateFeatureRow(filePath, this.tableName, featureRow)
           if (result.changes > 0) {
             if (this.isGeoPackage) {
-              ActionUtilities.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
+              ProjectActions.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
             } else {
-              ActionUtilities.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})
+              ProjectActions.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})
             }
             this.close()
           } else if (result.error) {
@@ -298,7 +304,7 @@
             this.failedToSaveSnackBar = true
           }
         } else {
-          const feature = _.cloneDeep(this.feature)
+          const feature = cloneDeep(this.feature)
           this.editableColumns.forEach(column => {
             let value = column.value
             if (column.dataType === GeoPackageDataType.BOOLEAN) {
@@ -306,7 +312,7 @@
             }
             if (column.dataType === GeoPackageDataType.DATE) {
               try {
-                if (!_.isNil(column.dateValue)) {
+                if (!isNil(column.dateValue)) {
                   value = moment.utc(column.dateValue).toISOString().substring(0, 10)
                 } else {
                   value = null
@@ -317,8 +323,8 @@
             }
             if (column.dataType === GeoPackageDataType.DATETIME) {
               try {
-                if (!_.isNil(column.dateValue)) {
-                  const dateString = column.dateValue + ' ' + (_.isNil(column.timeValue) ? '00:00:00' : column.timeValue)
+                if (!isNil(column.dateValue)) {
+                  const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
                   value = moment.utc(dateString).toISOString()
                 } else {
                   value = null
@@ -327,12 +333,12 @@
                 value = null
               }
             }
-            if (!_.isNil(value)) {
+            if (!isNil(value)) {
               feature.properties[column.name] = value
             }
           })
           if (this.isGeoPackage) {
-            ActionUtilities.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
+            ProjectActions.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
           } else {
             // not supported - adding feature to data source
           }

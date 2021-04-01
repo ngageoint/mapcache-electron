@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title :title="column.name">{{column.name}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -17,7 +17,7 @@
         @keydown.esc="renameDialog = false">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+            <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
             Rename field
           </v-card-title>
           <v-card-text>
@@ -61,7 +61,7 @@
         @keydown.esc="deleteDialog = false">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+            <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
             Delete field
           </v-card-title>
           <v-card-text>
@@ -98,7 +98,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil</v-icon>
+                  <v-icon small>{{mdiPencil}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -112,7 +112,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can</v-icon>
+                  <v-icon small>{{mdiTrashCan}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -161,7 +161,8 @@
 </template>
 
 <script>
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import { mdiChevronLeft, mdiPencil, mdiTrashCan } from '@mdi/js'
 
   export default {
     props: {
@@ -175,6 +176,9 @@
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiTrashCan: mdiTrashCan,
         deleteDialog: false,
         renameValid: false,
         renameDialog: false,
@@ -188,12 +192,12 @@
     methods: {
       rename () {
         this.renameDialog = false
-        ActionUtilities.renameGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, oldColumnName: this.column.name, newColumnName: this.renamedColumn})
+        ProjectActions.renameGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, oldColumnName: this.column.name, newColumnName: this.renamedColumn})
         this.renamed(this.renamedColumn)
       },
       deleteField () {
         this.deleteDialog = false
-        ActionUtilities.deleteGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.column.name})
+        ProjectActions.deleteGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.column.name})
         this.back()
       },
       showRenameDialog () {

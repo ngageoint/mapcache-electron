@@ -8,7 +8,7 @@
     >
       <v-toolbar-title>{{geopackageTables.length + sourceTables.length > 1 ? 'Feature Tables' : 'Feature Table' }}</v-toolbar-title>
       <v-row class="mb-1" no-gutters justify="end">
-        <v-btn small @click.stop.prevent="close" icon><v-icon>mdi-close</v-icon></v-btn>
+        <v-btn small @click.stop.prevent="close" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
       </v-row>
     </v-toolbar>
     <v-tabs
@@ -50,6 +50,7 @@
 <script>
   import GeoPackageFeatureTable from '../GeoPackage/GeoPackageFeatureTable'
   import DataSourceFeatureTable from '../DataSources/DataSourceFeatureTable'
+  import { mdiClose } from '@mdi/js'
 
   export default {
     components: {
@@ -66,6 +67,7 @@
     },
     data () {
       return {
+        mdiClose: mdiClose,
         tab: null
       }
     },

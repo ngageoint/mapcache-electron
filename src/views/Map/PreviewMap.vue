@@ -15,7 +15,7 @@
             <v-list-item v-for="item of baseMapItems" :key="item.id + '-basemap'" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
                 <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e, map)">
-                  <v-icon small>mdi-map-outline</v-icon>
+                  <v-icon small>{{mdiMapOutline}}</v-icon>
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
@@ -34,9 +34,13 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import keys from 'lodash/keys'
+  import pick from 'lodash/pick'
+  import isEqual from 'lodash/isEqual'
+  import debounce from 'lodash/debounce'
   import { mapState } from 'vuex'
-  import * as vendor from '../../lib/vendor'
+  import * as vendor from '../../lib/leaflet/vendor'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
@@ -44,9 +48,11 @@
   import LeafletBaseMapTool from './LeafletBaseMapTool'
   import offline from '../../assets/ne_50m_countries.geo'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
-  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
-  import ActionUtilities from '../../lib/ActionUtilities'
-  import BaseMapUtilities from '../../lib/BaseMapUtilities'
+  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
+  import LayerTypes from '../../lib/source/layer/LayerTypes'
+  import { mdiMapOutline } from '@mdi/js'
 
   export default {
     components: {BaseMapTroubleshooting},
@@ -59,6 +65,7 @@
     },
     data () {
       return {
+        mdiMapOutline: mdiMapOutline,
         previewMapLayer: null,
         observer: null,
         mapBackground: '#ddd',
@@ -77,7 +84,7 @@
               id: baseMapConfig.id,
               baseMap: baseMapConfig,
               name: baseMapConfig.name,
-              zoomTo: _.debounce((e, map) => {
+              zoomTo: debounce((e, map) => {
                 e.stopPropagation()
                 const extent = baseMapConfig.extent || [-180, -90, 180, 90]
                 let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
@@ -105,7 +112,7 @@
       async initializeBaseMap (baseMapId, map) {
         await this.baseMapLayers[baseMapId].initializeLayer()
         // only add if the source layer was not deleted
-        if (!_.isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
+        if (!isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
           map.addLayer(this.baseMapLayers[baseMapId])
         }
         // updating initializing to false is not always updating the UI
@@ -160,7 +167,7 @@
         this.map.getPane('baseMapPane').style.zIndex = 200
         await this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
-        if (!_.isNil(this.previewLayer)) {
+        if (!isNil(this.previewLayer)) {
           this.setupPreviewLayer()
         }
       },
@@ -193,7 +200,7 @@
         this.activeLayersControl.enable()
       },
       removePreviewLayer () {
-        if (!_.isNil(this.previewMapLayer)) {
+        if (!isNil(this.previewMapLayer)) {
           this.previewMapLayer.remove()
           this.previewMapLayer = null
         }
@@ -206,7 +213,7 @@
           const selectedBaseMapId = this.selectedBaseMapId
 
           let oldConfig
-          if (!_.isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+          if (!isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
             oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
           }
           // update the layer config stored for each base map
@@ -219,7 +226,7 @@
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
           if (selectedBaseMapId !== self.offlineBaseMapId) {
             // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
-            if (_.isNil(selectedBaseMap)) {
+            if (isNil(selectedBaseMap)) {
               if (newBaseMaps.length - 1 < this.baseMapIndex) {
                 this.baseMapIndex = newBaseMaps.length - 1
               }
@@ -232,11 +239,11 @@
               }
               delete self.baseMapLayers[selectedBaseMapId]
               self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
-            } else if (!_.isNil(oldConfig)) {
+            } else if (!isNil(oldConfig)) {
               const newConfig = selectedBaseMap.layerConfiguration
               const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
               const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
-              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
               // styleChanged performs an asynchronous recycling of the geopackage connection
               if (styleKeyChanged) {
                 await self.baseMapLayers[selectedBaseMapId].styleChanged()
@@ -257,8 +264,8 @@
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && ServiceConnectionUtils.isRemoteSource(newBaseMap.layerConfiguration)) {
-              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && LayerTypes.isRemote(newBaseMap.layerConfiguration)) {
+              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ProjectActions.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
             }
 
             // remove old map layer
@@ -268,7 +275,7 @@
 
             if (success) {
               // check to see if base map has already been added
-              if (_.isNil(self.baseMapLayers[newBaseMapId])) {
+              if (isNil(self.baseMapLayers[newBaseMapId])) {
                 await self.addBaseMap(newBaseMap, self.map)
               } else {
                 // do not update offline base map id
@@ -296,7 +303,7 @@
           // just became visible, let's try to update the zoom to the normal map's zoom
           if (this.visible) {
             const centerAndZoom = this.getMapCenterAndZoom()
-            if (!_.isNil(centerAndZoom)) {
+            if (!isNil(centerAndZoom)) {
               this.map.setView(centerAndZoom.center, centerAndZoom.zoom)
             }
           }
@@ -321,7 +328,7 @@
       },
       previewLayer: {
         async handler(previewLayer) {
-          if (!_.isNil(previewLayer)) {
+          if (!isNil(previewLayer)) {
             this.removePreviewLayer()
             this.setupPreviewLayer()
           } else {
@@ -333,7 +340,7 @@
         async handler (updatedProject) {
           let self = this
           if (updatedProject.maxFeatures !== this.maxFeatures) {
-            for (const baseMapId of _.keys(self.baseMapLayers)) {
+            for (const baseMapId of keys(self.baseMapLayers)) {
               // if this is a vector layer, update it
               if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
                 // update max features
@@ -354,13 +361,13 @@
       await this.initializeMap()
     },
     beforeDestroy: function () {
-      if (!_.isNil(this.previewMapLayer)) {
+      if (!isNil(this.previewMapLayer)) {
         this.previewMapLayer.remove()
         this.previewMapLayer = null
       }
-      _.keys(self.baseMapLayers).forEach(key => {
+      keys(self.baseMapLayers).forEach(key => {
         let layer = self.baseMapLayers[key]
-        if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+        if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }
       })

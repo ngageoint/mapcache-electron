@@ -1,5 +1,22 @@
 <template>
   <v-layout id="project" class="project-holder ma-0 pa-0">
+    <v-dialog
+      v-model="closingDialog"
+      persistent
+      width="400">
+      <v-card
+        color="#426e91" dark class="pt-2">
+        <v-card-text
+          class="padding-top">
+          {{closingMessage}}
+          <v-progress-linear
+            indeterminate
+            color="white"
+            class="mb-0">
+          </v-progress-linear>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog max-width="580" v-model="showCertificateSelectionDialog" persistent>
       <v-card>
         <v-card-title>
@@ -144,25 +161,30 @@
 
 <script>
   import { mapGetters, mapState } from 'vuex'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
   import Vue from 'vue'
   import path from 'path'
   import jetpack from 'fs-jetpack'
   import { ipcRenderer } from 'electron'
-
   import LeafletMap from '../Map/LeafletMap'
   import PreviewMap from '../Map/PreviewMap'
   import Settings from '../Settings/Settings'
   import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import EventBus from '../../EventBus'
   import BasicAuth from '../Common/BasicAuth'
-  import FileUtilities from '../../lib/FileUtilities'
+  import FileUtilities from '../../lib/util/FileUtilities'
+  import { mdiPackageVariant, mdiLayersOutline, mdiCogOutline } from '@mdi/js'
 
   export default {
     data () {
       return {
+        mdiPackageVariant: mdiPackageVariant,
+        mdiLayersOutline: mdiLayersOutline,
+        mdiCogOutline: mdiCogOutline,
+        closingMessage: '',
+        closingDialog: false,
         loading: true,
         contentShown: -1,
         titleColor: '#ffffff',
@@ -170,9 +192,9 @@
         drawer: true,
         item: 0,
         items: [
-          { id: 0, text: 'GeoPackages', icon: 'mdi-package-variant', notify: false },
-          { id: 1, text: 'Data Sources', icon: 'mdi-layers-outline', notify: false },
-          { id: 2, text: 'Settings', icon: 'mdi-cog-outline', notify: false }
+          { id: 0, text: 'GeoPackages', icon: mdiPackageVariant, notify: false },
+          { id: 1, text: 'Data Sources', icon: mdiLayersOutline, notify: false },
+          { id: 2, text: 'Settings', icon: mdiCogOutline, notify: false }
         ],
         showCertificateSelectionDialog: false,
         certificateList: [],
@@ -194,7 +216,7 @@
         project (state) {
           const projectId = this.$route.params.id
           let project = state.Projects[projectId]
-          if (_.isNil(project)) {
+          if (isNil(project)) {
             project = {
               id: '-1',
               name: '',
@@ -214,7 +236,7 @@
           const projectId = this.$route.params.id
           let project = state.UIState[projectId]
           let previewLayer
-          if (!_.isNil(project)) {
+          if (!isNil(project)) {
             previewLayer = project.previewLayer
           }
           return previewLayer
@@ -223,7 +245,7 @@
           let isDark = false
           const projectId = this.$route.params.id
           let project = state.UIState[projectId]
-          if (!_.isNil(project)) {
+          if (!isNil(project)) {
             isDark = project.dark
           }
           this.$vuetify.theme.dark = isDark
@@ -233,12 +255,12 @@
           let tabNotification = {}
           const projectId = this.$route.params.id
           let project = state.UIState[projectId]
-          if (!_.isNil(project)) {
+          if (!isNil(project)) {
             tabNotification = Object.assign({}, project.tabNotification || {0: false, 1: false, 2: false})
           }
-          if (!_.isNil(this.item) && this.item >= 0 && tabNotification[this.item]) {
+          if (!isNil(this.item) && this.item >= 0 && tabNotification[this.item]) {
             tabNotification[this.item] = false
-            ActionUtilities.clearNotification({projectId: this.project.id, tabId: this.item})
+            ProjectActions.clearNotification({projectId: this.project.id, tabId: this.item})
           }
           return tabNotification
         },
@@ -246,7 +268,7 @@
           let show = true
           const projectId = this.$route.params.id
           let project = state.UIState[projectId]
-          if (!_.isNil(project)) {
+          if (!isNil(project)) {
             show = project.showToolTips
           }
           Vue.prototype.$showToolTips = show
@@ -276,7 +298,7 @@
         return bounds
       },
       saveProjectName (val) {
-        ActionUtilities.setProjectName({project: this.project, name: val})
+        ProjectActions.setProjectName({project: this.project, name: val})
       },
       back () {
         this.item = undefined
@@ -314,7 +336,7 @@
             const path = geopackagesToAdd[i]
             const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
             if (!existsInApp) {
-              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: path})
+              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: path})
             }
           }
 
@@ -369,8 +391,8 @@
       },
       item: {
         handler (newValue) {
-          if (!_.isNil(this.tabNotification[newValue]) && this.tabNotification[newValue]) {
-            ActionUtilities.clearNotification({projectId: this.project.id, tabId: newValue})
+          if (!isNil(this.tabNotification[newValue]) && this.tabNotification[newValue]) {
+            ProjectActions.clearNotification({projectId: this.project.id, tabId: newValue})
           }
         }
       }
@@ -378,12 +400,21 @@
     mounted: function () {
       let uistate = this.getUIStateByProjectId(this.project.id)
       if (!uistate) {
-        ActionUtilities.addProjectState({projectId: this.project.id})
+        ProjectActions.addProjectState({projectId: this.project.id})
       }
-      ActionUtilities.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
-      ActionUtilities.clearNotifications({projectId: this.project.id})
-      ActionUtilities.clearPreviewLayer({projectId: this.project.id})
+      ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+      ProjectActions.clearNotifications({projectId: this.project.id})
+      ProjectActions.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
+      ipcRenderer.removeAllListeners('closing-project-window')
+      ipcRenderer.on('closing-project-window', (event, args) => {
+        if (args.isDeleting) {
+          this.closingMessage = 'Deleting project...'
+        } else {
+          this.closingMessage = 'Closing ' + this.project.name + '...'
+        }
+        this.closingDialog = true
+      })
       ipcRenderer.removeAllListeners('select-client-certificate')
       ipcRenderer.on('select-client-certificate', (event, args) => {
         this.certificateList = args.certificates.map((certificate, i) => {

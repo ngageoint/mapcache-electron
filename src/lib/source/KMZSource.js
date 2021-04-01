@@ -1,4 +1,3 @@
-/* eslint-disable */
 import jetpack from 'fs-jetpack'
 import path from 'path'
 import AdmZip from 'adm-zip'
@@ -6,7 +5,7 @@ import KMLSource from './KMLSource'
 import Source from './Source'
 
 export default class KMZSource extends Source {
-  async initialize () {
+  async retrieveLayers () {
     const destinationFolder = this.sourceCacheFolder
     const zip = new AdmZip(this.filePath)
     const zipEntries = zip.getEntries()
@@ -18,12 +17,9 @@ export default class KMZSource extends Source {
     this.kmlFileName = this.name + '.kml'
     this.filePath = path.join(destinationFolder, this.kmlFileName)
     await jetpack.copyAsync(kmlFilePath, this.filePath)
-    this.kmlSource = new KMLSource(this.filePath)
-    await this.kmlSource.initialize()
-    this.kmlSource.removeSourceDir()
-  }
-
-  async retrieveLayers () {
-    return this.kmlSource.retrieveLayers()
+    const kmlSource = new KMLSource(this.filePath, this.directory)
+    const layers = await kmlSource.retrieveLayers()
+    kmlSource.cleanUp()
+    return layers
   }
 }

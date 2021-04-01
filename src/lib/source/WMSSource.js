@@ -1,6 +1,5 @@
 import Source from './Source'
 import WMSLayer from './layer/tile/WMSLayer'
-import UniqueIDUtilities from '../UniqueIDUtilities'
 
 export default class WMSSource extends Source {
   async retrieveLayers () {
@@ -23,7 +22,8 @@ export default class WMSSource extends Source {
         }
       })
       const version = this.layers[0].version
-      this.wmsLayers.push(new WMSLayer({id: UniqueIDUtilities.createUniqueID(), filePath: this.filePath, name: this.sourceName, sourceLayerName: this.sourceName, layers: layerNames, extent, version, format: this.format}))
+      const { layerId, layerDirectory } = this.createLayerDirectory()
+      this.wmsLayers.push(new WMSLayer({id: layerId, sourceDirectory: layerDirectory, filePath: this.filePath, name: this.sourceName, sourceLayerName: this.sourceName, layers: layerNames, extent, version, format: this.format}))
     }
     return this.wmsLayers
   }

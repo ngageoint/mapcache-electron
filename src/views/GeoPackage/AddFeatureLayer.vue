@@ -252,12 +252,15 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import keys from 'lodash/keys'
+  import debounce from 'lodash/debounce'
   import { ipcRenderer } from 'electron'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
 
   export default {
     components: {
@@ -278,7 +281,7 @@
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ],
         status: {
-          message: 'Starting',
+          message: 'Starting...',
           progress: 0.0
         },
         processing: false,
@@ -298,19 +301,19 @@
         this.status.message = 'Cancelling...'
         self.status.progress = -1
         ipcRenderer.once('cancel_build_feature_layer_completed_' + this.configuration.id, () => {
-          GeoPackageUtilities.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+          GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
           }).catch(() => {
             // table may not have been created yet
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
           })
         })
         ipcRenderer.send('cancel_build_feature_layer', {configuration: this.configuration})
@@ -329,18 +332,11 @@
           })
         }
 
-        ipcRenderer.once('build_feature_layer_completed_' + this.configuration.id, (event, result) => {
+        ipcRenderer.once('build_feature_layer_completed_' + this.configuration.id, () => {
           this.done = true
-          if (result && result.error) {
-            this.status.message = result.error
-            this.error = true
-          } else {
-            this.status.message = 'Completed'
-            this.status.progress = 100
-          }
           ipcRenderer.removeAllListeners('build_feature_layer_status_' + this.configuration.id)
-          ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          ActionUtilities.notifyTab({projectId: this.project.id, tabId: 0})
+          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
         })
         ipcRenderer.on('build_feature_layer_status_' + this.configuration.id, (event, status) => {
           if (!this.done) {
@@ -350,33 +346,33 @@
         ipcRenderer.send('build_feature_layer', {configuration: this.configuration})
       },
       cancel () {
-        if (!_.isNil(this.project.boundingBoxFilterEditing)) {
-          ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+        if (!isNil(this.project.boundingBoxFilterEditing)) {
+          ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
         }
         this.back()
       },
       setBoundingBoxFilterToExtent () {
-        ActionUtilities.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
           // eslint-disable-next-line no-console
           console.error(e)
         })
       },
       resetBoundingBox () {
-        ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+        ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
       },
       editBoundingBox (mode) {
-        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+        ProjectActions.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
       },
       stopEditingBoundingBox () {
-        ActionUtilities.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+        ProjectActions.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       async getFilteredFeatures () {
         let numberOfFeatures = 0
         const sourceItems = this.getDataSourceLayers().filter(item => item.visible)
         for (let i = 0; i < sourceItems.length; i++) {
           const source = this.project.sources[sourceItems[i].id]
-          if (!_.isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
+          if (!isNil(this.project.boundingBoxFilter)) {
+            numberOfFeatures += await GeoPackageFeatureTableUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
           } else {
             numberOfFeatures += source.count
           }
@@ -386,8 +382,8 @@
           const item = geopackageItems[i]
           const tableName = item.tableName
           const geopackage = this.project.geopackages[item.geopackageId]
-          if (!_.isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageUtilities.getFeatureCountInBoundingBox(geopackage.path, tableName, this.project.boundingBoxFilter)
+          if (!isNil(this.project.boundingBoxFilter)) {
+            numberOfFeatures += await GeoPackageFeatureTableUtilities.getFeatureCountInBoundingBox(geopackage.path, tableName, this.project.boundingBoxFilter)
           } else {
             numberOfFeatures += geopackage.tables.features[tableName].featureCount
           }
@@ -397,11 +393,11 @@
       async getGeoPackageFeatureLayerItems () {
         const projectId = this.project.id
         const items = []
-        const keys = _.keys(this.project.geopackages)
-        for (let i = 0; i < keys.length; i++) {
-          const geopackage = this.project.geopackages[keys[i]]
-          if (await GeoPackageUtilities.isHealthy(geopackage)) {
-            _.keys(geopackage.tables.features).forEach(table => {
+        const geopackageKeys = keys(this.project.geopackages)
+        for (let i = 0; i < geopackageKeys.length; i++) {
+          const geopackage = this.project.geopackages[geopackageKeys[i]]
+          if (await GeoPackageCommon.isHealthy(geopackage)) {
+            Object.keys(geopackage.tables.features).forEach(table => {
               const tableName = table
               const visible = geopackage.tables.features[table].visible
               const geopackageId = geopackage.id
@@ -412,13 +408,13 @@
                 title: geopackage.name,
                 subtitle: table,
                 visible,
-                changeVisibility: _.debounce(() => {
-                  ActionUtilities.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                changeVisibility: debounce(() => {
+                  ProjectActions.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
-                zoomTo: _.debounce((e) => {
+                zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ActionUtilities.zoomToExtent({projectId, extent})
+                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    ProjectActions.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
@@ -435,9 +431,9 @@
             value: source.id,
             id: source.id,
             visible: source.visible,
-            zoomTo: _.debounce((e) => {
+            zoomTo: debounce((e) => {
               e.stopPropagation()
-              ActionUtilities.zoomToExtent({projectId, extent: source.extent})
+              ProjectActions.zoomToExtent({projectId, extent: source.extent})
             }, 100)
           }
         })
@@ -472,7 +468,7 @@
     computed: {
       boundingBoxText () {
         let boundingBoxText = 'Not specified'
-        if (!_.isNil(this.project.boundingBoxFilter)) {
+        if (!isNil(this.project.boundingBoxFilter)) {
           const bbox = this.project.boundingBoxFilter
           boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
         }
@@ -496,10 +492,10 @@
           this.$refs.layerNameForm.validate()
         }
       })
-      ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+      ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
     },
     beforeUnmount () {
-      ActionUtilities.resetBoundingBox()
+      ProjectActions.resetBoundingBox()
     }
   }
 </script>

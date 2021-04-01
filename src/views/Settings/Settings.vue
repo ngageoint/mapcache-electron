@@ -7,13 +7,13 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>Settings</v-toolbar-title>
     </v-toolbar>
     <v-dialog v-model="deleteProjectDialog" max-width="400" persistent @keydown.esc="hideDeleteProjectDialog">
       <v-card v-if="deleteProjectDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete project
         </v-card-title>
         <v-card-text>
@@ -39,10 +39,10 @@
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
-      <edit-text-modal autofocus icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+      <edit-text-modal autofocus :icon="mdiPencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
-      <edit-number-modal autofocus icon="mdi-pencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+      <edit-number-modal autofocus :icon="mdiPencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-dialog v-model="helpDialog" max-width="500">
       <help :close="() => {helpDialog = false}"></help>
@@ -62,7 +62,7 @@
                 @click.stop.prevent="helpDialog = true"
                 icon
               >
-                <v-icon>mdi-help-circle-outline</v-icon>
+                <v-icon>{{mdiHelpCircleOutline}}</v-icon>
               </v-btn>
             </template>
             <span>Help</span>
@@ -187,7 +187,7 @@
             <v-list-item-subtitle class="warning--text">Permanently delete <b>{{project.name}}</b> project</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-avatar>
-            <v-btn icon color="warning"><v-icon>mdi-trash-can</v-icon></v-btn>
+            <v-btn icon color="warning"><v-icon>{{mdiTrashCan}}</v-icon></v-btn>
           </v-list-item-avatar>
         </v-list-item>
       </v-list>
@@ -200,9 +200,11 @@
   import EditTextModal from '../Common/EditTextModal'
   import EditNumberModal from '../Common/EditNumberModal'
   import Help from './Help'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import SavedUrls from './SavedUrls'
   import BaseMaps from './BaseMaps/BaseMaps'
+  import CommonActions from '../../lib/vuex/CommonActions'
+  import { mdiChevronLeft, mdiPencil, mdiTrashCan, mdiCloudOutline, mdiHelpCircleOutline } from '@mdi/js'
 
   export default {
     props: {
@@ -226,7 +228,7 @@
           return this.dark
         },
         set (val) {
-          ActionUtilities.setDarkTheme({projectId: this.project.id, enabled: val})
+          ProjectActions.setDarkTheme({projectId: this.project.id, enabled: val})
         }
       },
       showToolTip: {
@@ -234,7 +236,7 @@
           return this.project.showToolTips
         },
         set (val) {
-          ActionUtilities.showToolTips({projectId: this.project.id, show: val})
+          ProjectActions.showToolTips({projectId: this.project.id, show: val})
         }
       },
       settings: {
@@ -260,19 +262,24 @@
           const displayAddressSearchBarFound = settings.findIndex(setting => setting === 2) >= 0
 
           if (zoomControlEnabled !== zoomControlSettingFound) {
-            ActionUtilities.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
+            ProjectActions.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
           }
           if (displayZoomEnabled !== displayZoomSettingFound) {
-            ActionUtilities.setDisplayZoomEnabled({projectId: this.project.id, enabled: displayZoomSettingFound})
+            ProjectActions.setDisplayZoomEnabled({projectId: this.project.id, enabled: displayZoomSettingFound})
           }
           if (displayAddressSearchBar !== displayAddressSearchBarFound) {
-            ActionUtilities.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
+            ProjectActions.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
           }
         }
       }
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiTrashCan: mdiTrashCan,
+        mdiCloudOutline: mdiCloudOutline,
+        mdiHelpCircleOutline: mdiHelpCircleOutline,
         editProjectNameDialog: false,
         editMaxFeaturesDialog: false,
         helpDialog: false,
@@ -284,18 +291,18 @@
     },
     methods: {
       saveProjectName (val) {
-        ActionUtilities.setProjectName({project: this.project, name: val})
+        ProjectActions.setProjectName({project: this.project, name: val})
         this.toggleEditProjectNameDialog()
       },
       saveMaxFeatures (val) {
-        ActionUtilities.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
+        ProjectActions.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
         this.toggleEditMaxFeaturesDialog()
       },
       toggleShowToolTip () {
-        ActionUtilities.showToolTips({projectId: this.project.id, show: !this.project.showToolTips})
+        ProjectActions.showToolTips({projectId: this.project.id, show: !this.project.showToolTips})
       },
       toggleDarkTheme () {
-        ActionUtilities.setDarkTheme({projectId: this.project.id, enabled: !this.dark})
+        ProjectActions.setDarkTheme({projectId: this.project.id, enabled: !this.dark})
       },
       toggleEditProjectNameDialog () {
         this.editProjectNameDialog = !this.editProjectNameDialog
@@ -310,7 +317,7 @@
         this.editMaxFeaturesDialog = !this.editMaxFeaturesDialog
       },
       deleteProjectAndClose () {
-        ActionUtilities.deleteProject(this.project)
+        CommonActions.deleteProject(this.project)
         ipcRenderer.send('close-project')
       }
     }

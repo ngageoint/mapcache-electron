@@ -9,7 +9,7 @@
         @keydown.esc="cancelDrawing">
         <v-card>
           <v-card-title>
-            <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
+            <v-icon color="orange" class="pr-2">{{mdiAlert}}</v-icon>
             Create GeoPackage Warning
           </v-card-title>
           <v-card-text>
@@ -104,7 +104,7 @@
           <v-card-title class="pa-0 ma-0">
             Coordinate
           </v-card-title>
-          <v-btn class="mr-1" small @click.stop.prevent="closePopup" icon><v-icon>mdi-close</v-icon></v-btn>
+          <v-btn class="mr-1" small @click.stop.prevent="closePopup" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
         </v-row>
         <v-card-text class="pa-0 ma-0">
           <v-card-text class="pt-1 pb-1 pr-0">
@@ -112,13 +112,13 @@
               <v-col>
                 {{dialogCoordinate ? (dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6)) : ''}}
               </v-col>
-              <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+              <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>{{mdiContentCopy}}</v-icon></v-btn>
             </v-row>
             <v-row no-gutters  justify="space-between" align="center">
               <v-col>
                 {{dialogCoordinate ? (convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true)) : ''}}
               </v-col>
-              <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>mdi-content-copy</v-icon></v-btn>
+              <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>{{mdiContentCopy}}</v-icon></v-btn>
             </v-row>
           </v-card-text>
         </v-card-text>
@@ -193,7 +193,7 @@
             <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
                 <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e, map)">
-                  <v-icon small>mdi-map-outline</v-icon>
+                  <v-icon small>{{mdiMapOutline}}</v-icon>
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
@@ -212,10 +212,18 @@
 </template>
 
 <script>
-  import { remote, clipboard, ipcRenderer } from 'electron'
+  import { ipcRenderer } from 'electron'
   import { mapState } from 'vuex'
-  import _ from 'lodash'
-  import * as vendor from '../../lib/vendor'
+  import isNil from 'lodash/isNil'
+  import debounce from 'lodash/debounce'
+  import cloneDeep from 'lodash/cloneDeep'
+  import keys from 'lodash/keys'
+  import isEmpty from 'lodash/isEmpty'
+  import isEqual from 'lodash/isEqual'
+  import difference from 'lodash/difference'
+  import pick from 'lodash/pick'
+  import throttle from 'lodash/throttle'
+  import * as vendor from '../../lib/leaflet/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
   import jetpack from 'fs-jetpack'
@@ -230,17 +238,22 @@
   import LeafletDraw from './LeafletDraw'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import FeatureEditor from '../Common/FeatureEditor'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import draggable from 'vuedraggable'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
   import offline from '../../assets/ne_50m_countries.geo'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
-  import ServiceConnectionUtils from '../../lib/ServiceConnectionUtils'
-  import BaseMapUtilities from '../../lib/BaseMapUtilities'
+  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
+  import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
   import LayerTypes from '../../lib/source/layer/LayerTypes'
+  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+  import GeoPackageMediaUtilities from '../../lib/geopackage/GeoPackageMediaUtilities'
+  import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
@@ -253,7 +266,7 @@
       title: source.displayName ? source.displayName : source.name,
       id: source.id,
       type: source.pane === 'vector' ? 'feature' : 'tile',
-      zoomTo: _.debounce((e) => {
+      zoomTo: debounce((e) => {
         e.stopPropagation()
         let boundingBox = [[source.extent[1], source.extent[0]], [source.extent[3], source.extent[2]]]
         let bounds = vendor.L.latLngBounds(boundingBox)
@@ -272,9 +285,9 @@
       title: geopackage.name,
       subtitle: tableName,
       type: isTile ? 'tile' : 'vector',
-      zoomTo: _.debounce((e) => {
+      zoomTo: debounce((e) => {
         e.stopPropagation()
-        GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+        GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
           let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
           let bounds = vendor.L.latLngBounds(boundingBox)
           bounds = bounds.pad(0.05)
@@ -313,7 +326,7 @@
               updateKey: 0,
               baseMap: baseMapConfig,
               name: baseMapConfig.name,
-              zoomTo: _.debounce((e, map) => {
+              zoomTo: debounce((e, map) => {
                 e.stopPropagation()
                 const extent = baseMapConfig.extent || [-180, -90, 180, 90]
                 let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
@@ -338,6 +351,10 @@
     },
     data () {
       return {
+        mdiAlert: mdiAlert,
+        mdiClose: mdiClose,
+        mdiContentCopy: mdiContentCopy,
+        mdiMapOutline: mdiMapOutline,
         geoPackageMapLayers: {},
         baseMapLayers: {},
         offlineBaseMapId: BaseMapUtilities.getOfflineBaseMapId(),
@@ -370,7 +387,7 @@
         featureTableNameRules: [
           v => !!v || 'Layer name is required',
           v => /^[\w,\s-]+$/.test(v) || 'Layer name is not valid',
-          v => (this.geoPackageSelection === 0 || _.keys(this.geopackages[this.geoPackageSelection].tables.features).map(table => table.toLowerCase()).findIndex(table => table === v.toLowerCase()) === -1) || 'Layer name already exists'
+          v => (this.geoPackageSelection === 0 || keys(this.geopackages[this.geoPackageSelection].tables.features).map(table => table.toLowerCase()).findIndex(table => table === v.toLowerCase()) === -1) || 'Layer name already exists'
         ],
         showAddFeatureDialog: false,
         featureToAdd: null,
@@ -393,7 +410,7 @@
     methods: {
       sendSourceInitializationStatus (sourceId) {
         const sourceLayer = this.dataSourceMapLayers[sourceId]
-        if (!_.isNil(sourceLayer)) {
+        if (!isNil(sourceLayer)) {
           if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
             EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
           } else if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
@@ -440,7 +457,7 @@
         })
       },
       copyText (text) {
-        clipboard.writeText(text)
+        window.mapcache.copyToClipboard(text)
         setTimeout(() => {
           this.copiedToClipboard = true
         }, 250)
@@ -454,17 +471,17 @@
         let self = this
         let feature = this.createdLayer.toGeoJSON()
         feature.id = UniqueIDUtilities.createUniqueID()
-        if (!_.isNil(this.createdLayer._mRadius)) {
+        if (!isNil(this.createdLayer._mRadius)) {
           feature.properties.radius = this.createdLayer._mRadius
         }
         switch (feature.geometry.type.toLowerCase()) {
           case 'point': {
-            feature.geometry.coordinates[0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[0])
+            feature.geometry.coordinates[0] = GeoPackageCommon.normalizeLongitude(feature.geometry.coordinates[0])
             break
           }
           case 'linestring': {
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-              feature.geometry.coordinates[i][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][0])
+              feature.geometry.coordinates[i][0] = GeoPackageCommon.normalizeLongitude(feature.geometry.coordinates[i][0])
             }
             break
           }
@@ -472,7 +489,7 @@
           case 'multilinestring': {
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
               for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
-                feature.geometry.coordinates[i][j][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][j][0])
+                feature.geometry.coordinates[i][j][0] = GeoPackageCommon.normalizeLongitude(feature.geometry.coordinates[i][j][0])
               }
             }
             break
@@ -481,7 +498,7 @@
             for (let i = 0; i < feature.geometry.coordinates.length; i++) {
               for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
                 for (let k = 0; k < feature.geometry.coordinates[i][j].length; k++) {
-                  feature.geometry.coordinates[i][j][k][0] = GeoPackageUtilities.normalizeLongitude(feature.geometry.coordinates[i][j][k][0])
+                  feature.geometry.coordinates[i][j][k][0] = GeoPackageCommon.normalizeLongitude(feature.geometry.coordinates[i][j][k][0])
                 }
               }
             }
@@ -494,7 +511,7 @@
           features: [feature]
         }
         if (this.geoPackageSelection === 0) {
-          remote.dialog.showSaveDialog({
+          ElectronUtilities.showSaveDialog({
             title: 'New GeoPackage'
           }).then(({canceled, filePath}) => {
             if (!canceled) {
@@ -507,9 +524,9 @@
               } else {
                 this.cancelDrawing()
                 this.$nextTick(() => {
-                  GeoPackageUtilities.getOrCreateGeoPackage(filePath).then(gp => {
-                    GeoPackageUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
-                      ActionUtilities.addGeoPackage({projectId: self.projectId, filePath: filePath})
+                  GeoPackageCommon.getOrCreateGeoPackage(filePath).then(gp => {
+                    GeoPackageFeatureTableUtilities._createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+                      ProjectActions.addGeoPackage({projectId: self.projectId, filePath: filePath})
                     }).catch(() => {
                       gp.close()
                       gp = undefined
@@ -524,13 +541,13 @@
         } else {
           const geopackage = this.geopackages[this.geoPackageSelection]
           if (this.geoPackageFeatureLayerSelection === 0) {
-            ActionUtilities.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection})
+            ProjectActions.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection})
             this.cancelDrawing()
           } else {
             const self = this
             const featureTable = this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text
-            GeoPackageUtilities.getFeatureColumns(geopackage.path, featureTable).then(columns => {
-              if (!_.isNil(columns) && !_.isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
+            GeoPackageFeatureTableUtilities.getFeatureColumns(geopackage.path, featureTable).then(columns => {
+              if (!isNil(columns) && !isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
                 this.featureToAdd = feature
                 this.featureToAddGeoPackage = geopackage
                 this.featureToAddTableName = featureTable
@@ -542,7 +559,7 @@
                   })
                 })
               } else {
-                ActionUtilities.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTable, feature: feature})
+                ProjectActions.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTable, feature: feature})
                 this.cancelDrawing()
               }
             })
@@ -562,7 +579,7 @@
       },
       zoomToFeature (path, table, featureId) {
         const map = this.map
-        GeoPackageUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
+        GeoPackageFeatureTableUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
           if (extent) {
             let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
             let bounds = vendor.L.latLngBounds(boundingBox)
@@ -576,7 +593,7 @@
         EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
         await this.dataSourceMapLayers[sourceId].initializeLayer()
         // only add if the source layer was not deleted
-        if (!_.isNil(this.dataSourceMapLayers[sourceId]) && this.dataSourceMapLayers[sourceId].getLayer().visible) {
+        if (!isNil(this.dataSourceMapLayers[sourceId]) && this.dataSourceMapLayers[sourceId].getLayer().visible) {
           this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
         }
         EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
@@ -585,7 +602,7 @@
         const self = this
         const sourceId = sourceConfiguration.id
         let source = LayerFactory.constructLayer(sourceConfiguration)
-        source._maxFeatures = this.project.maxFeatures
+        source.maxFeatures = this.project.maxFeatures
         self.dataSourceMapLayers[sourceId] = LeafletMapLayerFactory.constructMapLayer(source)
         // if it is visible, try to initialize it
         if (source.visible) {
@@ -593,7 +610,7 @@
         }
       },
       removeDataSource (sourceId) {
-        if (!_.isNil(this.dataSourceMapLayers[sourceId])) {
+        if (!isNil(this.dataSourceMapLayers[sourceId])) {
           if (this.dataSourceMapLayers[sourceId].getLayer()._configuration.layerType === LayerTypes.GEOTIFF && this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
             ipcRenderer.send('cancel_read_raster', {id: sourceId})
           }
@@ -605,7 +622,7 @@
       async initializeBaseMap (baseMapId, map) {
         await this.baseMapLayers[baseMapId].initializeLayer()
         // only add if the source layer was not deleted
-        if (!_.isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
+        if (!isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
           map.addLayer(this.baseMapLayers[baseMapId])
         }
         // updating initializing to false is not always updating the UI
@@ -634,7 +651,7 @@
           self.$forceUpdate()
         } else {
           let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          layer._maxFeatures = this.project.maxFeatures
+          layer.maxFeatures = this.project.maxFeatures
           self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer(layer)
           if (this.selectedBaseMapId === baseMapId) {
             self.initializeBaseMap(baseMapId, map)
@@ -669,7 +686,7 @@
         })
       },
       async displayFeaturesForTable (id, tableName, isGeoPackage) {
-        if (!_.isNil(id) && !_.isNil(tableName) && ((isGeoPackage && !_.isNil(this.geopackages[id]) && !_.isNil(this.geopackages[id].tables.features[tableName])) || (!isGeoPackage && !_.isNil(this.sources[id])))) {
+        if (!isNil(id) && !isNil(tableName) && ((isGeoPackage && !isNil(this.geopackages[id]) && !isNil(this.geopackages[id].tables.features[tableName])) || (!isGeoPackage && !isNil(this.sources[id])))) {
           try {
             this.lastShowFeatureTableEvent = {
               id,
@@ -679,23 +696,23 @@
             this.tableFeaturesLatLng = null
             if (isGeoPackage) {
               const geopackage = this.geopackages[id]
-              const features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
+              const features = await GeoPackageFeatureTableUtilities.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
               this.tableFeatures = {
                 geopackageTables: [{
                   id: geopackage.id + '_' + tableName,
                   tabName: geopackage.name + ': ' + tableName,
                   geopackageId: geopackage.id,
                   tableName: tableName,
-                  columns: await GeoPackageUtilities.getFeatureColumns(geopackage.path, tableName),
+                  columns: await GeoPackageFeatureTableUtilities.getFeatureColumns(geopackage.path, tableName),
                   features: features,
-                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(geopackage.path, tableName),
-                  featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(geopackage.path, tableName)
+                  featureStyleAssignments: await GeoPackageStyleUtilities.getStyleAssignmentForFeatures(geopackage.path, tableName),
+                  featureAttachmentCounts: await GeoPackageMediaUtilities.getMediaAttachmentsCounts(geopackage.path, tableName)
                 }],
                 sourceTables: []
               }
             } else {
               const sourceLayerConfig = this.sources[id]
-              const features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+              const features = await GeoPackageFeatureTableUtilities.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
               this.tableFeatures = {
                 geopackageTables: [],
                 sourceTables: [{
@@ -703,10 +720,10 @@
                   tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
                   sourceId: sourceLayerConfig.id,
                   tableName: sourceLayerConfig.sourceLayerName,
-                  columns: await GeoPackageUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  columns: await GeoPackageFeatureTableUtilities.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
                   features: features,
-                  featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                  featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                  featureStyleAssignments: await GeoPackageStyleUtilities.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+                  featureAttachmentCounts: await GeoPackageMediaUtilities.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
                 }]
               }
             }
@@ -723,26 +740,26 @@
       addGeoPackageToMap (geopackage, map) {
         this.removeGeoPackage(geopackage.id)
         this.geopackageMapLayers[geopackage.id] = {}
-        geopackageLayers[geopackage.id] = _.cloneDeep(geopackage)
-        _.keys(geopackage.tables.tiles).filter(tableName => geopackage.tables.tiles[tableName].visible).forEach(tableName => {
+        geopackageLayers[geopackage.id] = cloneDeep(geopackage)
+        keys(geopackage.tables.tiles).filter(tableName => geopackage.tables.tiles[tableName].visible).forEach(tableName => {
           this.addGeoPackageTileTable(geopackage, map, tableName)
         })
-        _.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible).forEach(tableName => {
+        keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible).forEach(tableName => {
           this.addGeoPackageFeatureTable(geopackage, map, tableName)
         })
       },
       removeGeoPackageTable (geopackageId, tableName) {
-        if (!_.isNil(this.geopackageMapLayers[geopackageId]) && !_.isNil(this.geopackageMapLayers[geopackageId][tableName])) {
+        if (!isNil(this.geopackageMapLayers[geopackageId]) && !isNil(this.geopackageMapLayers[geopackageId][tableName])) {
           const layer = this.geopackageMapLayers[geopackageId][tableName]
           this.removeLayerFromMap(layer, geopackageId + '_' + tableName)
-          if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+          if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
             layer.close()
           }
           delete this.geopackageMapLayers[geopackageId][tableName]
         }
       },
       removeGeoPackage (geopackageId) {
-        for (let tableName of _.keys(this.geopackageMapLayers[geopackageId])) {
+        for (let tableName of keys(this.geopackageMapLayers[geopackageId])) {
           this.removeGeoPackageTable(geopackageId, tableName)
         }
         delete this.geopackageMapLayers[geopackageId]
@@ -767,7 +784,9 @@
           sourceLayerName: tableName,
           sourceType: 'GeoPackage',
           layerType: 'Vector',
-          maxFeatures: this.project.maxFeatures
+          maxFeatures: this.project.maxFeatures,
+          count: geopackage.tables.features[tableName].featureCount,
+          extent: geopackage.tables.features[tableName].extent,
         })
         let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
         if (geopackage.tables.features[tableName].visible) {
@@ -780,7 +799,7 @@
       async zoomToContent () {
         let self = this
         self.getExtentForVisibleGeoPackagesAndLayers().then((extent) => {
-          if (!_.isNil(extent)) {
+          if (!isNil(extent)) {
             let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
             let bounds = vendor.L.latLngBounds(boundingBox)
             bounds = bounds.pad(0.05)
@@ -791,17 +810,17 @@
       },
       async getExtentForVisibleGeoPackagesAndLayers () {
         let overallExtent = null
-        let keys = Object.keys(geopackageLayers)
-        for (let i = 0; i < keys.length; i++) {
-          const geopackageId = keys[i]
+        let geopackageKeys = keys(geopackageLayers)
+        for (let i = 0; i < geopackageKeys.length; i++) {
+          const geopackageId = geopackageKeys[i]
           const geopackage = geopackageLayers[geopackageId]
-          const tablesToZoomTo = _.keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(_.keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
-          const extentForGeoPackage = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, function (gp) {
+          const tablesToZoomTo = keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
+          const extentForGeoPackage = await GeoPackageCommon.performSafeGeoPackageOperation(geopackage.path, function (gp) {
             let extent = null
             tablesToZoomTo.forEach(table => {
-              const ext = GeoPackageUtilities._getBoundingBoxForTable(gp, table)
-              if (!_.isNil(ext)) {
-                if (_.isNil(extent)) {
+              const ext = GeoPackageCommon._getBoundingBoxForTable(gp, table)
+              if (!isNil(ext)) {
+                if (isNil(extent)) {
                   extent = ext
                 } else {
                   if (ext[0] < extent[0]) {
@@ -821,8 +840,8 @@
             })
             return extent
           })
-          if (!_.isNil(extentForGeoPackage)) {
-            if (_.isNil(overallExtent)) {
+          if (!isNil(extentForGeoPackage)) {
+            if (isNil(overallExtent)) {
               overallExtent = extentForGeoPackage
             } else {
               if (extentForGeoPackage[0] < overallExtent[0]) {
@@ -840,11 +859,11 @@
             }
           }
         }
-        keys = Object.keys(this.dataSourceMapLayers).filter(key => this.dataSourceMapLayers[key].getLayer().visible)
-        for (let i = 0; i < keys.length; i++) {
-          const layerExtent = this.dataSourceMapLayers[keys[i]].getLayer().extent
-          if (!_.isNil(layerExtent)) {
-            if (_.isNil(overallExtent)) {
+        const visibleSourceKeys = keys(this.dataSourceMapLayers).filter(key => this.dataSourceMapLayers[key].getLayer().visible)
+        for (let i = 0; i < visibleSourceKeys.length; i++) {
+          const layerExtent = this.dataSourceMapLayers[visibleSourceKeys[i]].getLayer().extent
+          if (!isNil(layerExtent)) {
+            if (isNil(overallExtent)) {
               overallExtent = layerExtent
             } else {
               if (layerExtent[0] < overallExtent[0]) {
@@ -865,7 +884,7 @@
         return overallExtent
       },
       async queryForFeatures (e) {
-        if (_.isNil(this.project.boundingBoxFilterEditing) && !this.drawingControl.isDrawing) {
+        if (isNil(this.project.boundingBoxFilterEditing) && !this.drawingControl.isDrawing) {
           let tableFeatures = {
             geopackageTables: [],
             sourceTables: []
@@ -877,12 +896,12 @@
             const geopackage = geopackageValues[i]
             const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
             if (tables.length > 0) {
-              const geopackageTables = await GeoPackageUtilities.performSafeGeoPackageOperation(geopackage.path, (gp) => {
+              const geopackageTables = await GeoPackageCommon.performSafeGeoPackageOperation(geopackage.path, (gp) => {
                 const geopackageTables = []
                 for (let i = 0; i < tables.length; i++) {
                   const tableName = tables[i]
-                  const features = GeoPackageUtilities._queryForFeaturesAt(gp, tableName, e.latlng, this.map.getZoom())
-                  if (!_.isEmpty(features)) {
+                  const features = GeoPackageFeatureTableUtilities._queryForFeaturesAt(gp, tableName, e.latlng, this.map.getZoom())
+                  if (!isEmpty(features)) {
                     featuresFound = true
                     const tableId = geopackage.id + '_' + tableName
                     geopackageTables.push({
@@ -890,10 +909,10 @@
                       tabName: geopackage.name + ': ' + tableName,
                       geopackageId: geopackage.id,
                       tableName: tableName,
-                      columns: GeoPackageUtilities._getFeatureColumns(gp, tableName),
+                      columns: GeoPackageFeatureTableUtilities._getFeatureColumns(gp, tableName),
                       features: features,
-                      featureStyleAssignments: GeoPackageUtilities._getStyleAssignmentForFeatures(gp, tableName),
-                      featureAttachmentCounts: GeoPackageUtilities._getMediaAttachmentsCounts(gp, tableName)
+                      featureStyleAssignments: GeoPackageStyleUtilities._getStyleAssignmentForFeatures(gp, tableName),
+                      featureAttachmentCounts: GeoPackageMediaUtilities._getMediaAttachmentsCounts(gp, tableName)
                     })
                   }
                 }
@@ -905,19 +924,19 @@
           for (let sourceId in this.dataSourceMapLayers) {
             const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()._configuration
             if (sourceLayer.visible) {
-              if (!_.isNil(sourceLayer.geopackageFilePath)) {
-                const features = await GeoPackageUtilities.queryForFeaturesAt(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName, e.latlng, this.map.getZoom())
-                if (!_.isEmpty(features)) {
+              if (!isNil(sourceLayer.geopackageFilePath)) {
+                const features = await GeoPackageFeatureTableUtilities.queryForFeaturesAt(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName, e.latlng, this.map.getZoom())
+                if (!isEmpty(features)) {
                   featuresFound = true
                   tableFeatures.sourceTables.push({
                     id: sourceLayer.id,
                     tabName: sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name,
                     sourceId: sourceLayer.id,
                     tableName: sourceLayer.sourceLayerName,
-                    columns: await GeoPackageUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
+                    columns: await GeoPackageFeatureTableUtilities.getFeatureColumns(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
                     features: features,
-                    featureStyleAssignments: await GeoPackageUtilities.getStyleAssignmentForFeatures(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
-                    featureAttachmentCounts: await GeoPackageUtilities.getMediaAttachmentsCounts(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName)
+                    featureStyleAssignments: await GeoPackageStyleUtilities.getStyleAssignmentForFeatures(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName),
+                    featureAttachmentCounts: await GeoPackageMediaUtilities.getMediaAttachmentsCounts(sourceLayer.geopackageFilePath, sourceLayer.sourceLayerName)
                   })
                 }
               }
@@ -963,7 +982,7 @@
           minZoom: 2,
           maxZoom: 20
         })
-        ActionUtilities.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
+        ProjectActions.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
         this.map.createPane('gridSelectionPane')
         this.map.getPane('gridSelectionPane').style.zIndex = 625
         this.map.createPane('baseMapPane')
@@ -1003,7 +1022,7 @@
         this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
           self.zoomToContent()
         }, function () {
-          ActionUtilities.clearActiveLayers({projectId: self.projectId})
+          ProjectActions.clearActiveLayers({projectId: self.projectId})
         }, function () {
           self.showLayerOrderingDialog = !self.showLayerOrderingDialog
           if (self.showLayerOrderingDialog) {
@@ -1023,8 +1042,8 @@
       },
       setupEventHandlers () {
         const self = this
-        const checkFeatureCount = _.throttle(async function (e) {
-          if (!self.drawingControl.isDrawing && _.isNil(self.project.boundingBoxFilterEditing)) {
+        const checkFeatureCount = throttle(async function (e) {
+          if (!self.drawingControl.isDrawing && isNil(self.project.boundingBoxFilterEditing)) {
             let count = 0
             // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
             const geopackageValues = Object.values(this.geopackages)
@@ -1032,14 +1051,14 @@
               const geopackage = geopackageValues[i]
               const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
               if (tables.length > 0) {
-                count += await GeoPackageUtilities.countOfFeaturesAt(geopackage.path, tables, e.latlng, this.map.getZoom())
+                count += await GeoPackageFeatureTableUtilities.countOfFeaturesAt(geopackage.path, tables, e.latlng, this.map.getZoom())
               }
             }
             for (let sourceId in this.dataSourceMapLayers) {
               const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()
               if (sourceLayer.visible) {
-                if (!_.isNil(sourceLayer.geopackageFilePath)) {
-                  count += await GeoPackageUtilities.countOfFeaturesAt(sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom())
+                if (!isNil(sourceLayer.geopackageFilePath)) {
+                  count += await GeoPackageFeatureTableUtilities.countOfFeaturesAt(sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom())
                 }
               }
             }
@@ -1081,8 +1100,8 @@
             })
             self.createdLayer = e.layer
             self.geoPackageChoices = layers
-            if (!_.isNil(self.project.activeGeoPackage)) {
-              if (!_.isNil(self.project.activeGeoPackage.geopackageId)) {
+            if (!isNil(self.project.activeGeoPackage)) {
+              if (!isNil(self.project.activeGeoPackage.geopackageId)) {
                 const index = self.geoPackageChoices.findIndex(choice => choice.value === self.project.activeGeoPackage.geopackageId)
                 if (index > 0) {
                   self.geoPackageSelection = self.geoPackageChoices[index].value
@@ -1091,14 +1110,14 @@
             }
             self.layerSelectionVisible = true
             self.$nextTick(() => {
-              if (!_.isNil(self.$refs.featureTableNameForm)) {
+              if (!isNil(self.$refs.featureTableNameForm)) {
                 self.$refs.featureTableNameForm.validate()
               }
             })
           }
         })
         this.map.on('zoomend', () => {
-          ActionUtilities.setMapZoom({projectId: self.project.id, mapZoom: self.map.getZoom()})
+          ProjectActions.setMapZoom({projectId: self.project.id, mapZoom: self.map.getZoom()})
         })
       },
       addLayersToMap () {
@@ -1111,11 +1130,11 @@
       },
       refreshFeatureTable () {
         // geopackages changed, so let's ensure the content in the table is updated
-        if (this.showFeatureTable && !_.isNil(this.tableFeaturesLatLng)) {
+        if (this.showFeatureTable && !isNil(this.tableFeaturesLatLng)) {
           this.queryForFeatures({latlng: this.tableFeaturesLatLng})
           // the feature table is showing because a user clicked the view features button in the feature layer view
           // this requires the active geopackage to be set with a valid geopackageId and tableName
-        } else if (this.showFeatureTable && !_.isNil(this.lastShowFeatureTableEvent)) {
+        } else if (this.showFeatureTable && !isNil(this.lastShowFeatureTableEvent)) {
           this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
         } else {
           // clear out any feature tables
@@ -1130,7 +1149,7 @@
           const selectedBaseMapId = this.selectedBaseMapId
 
           let oldConfig
-          if (!_.isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+          if (!isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
             oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
           }
           // update the layer config stored for each base map
@@ -1143,7 +1162,7 @@
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
           if (selectedBaseMapId !== self.offlineBaseMapId) {
             // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
-            if (_.isNil(selectedBaseMap)) {
+            if (isNil(selectedBaseMap)) {
               if (newBaseMaps.length - 1 < this.baseMapIndex) {
                 this.baseMapIndex = newBaseMaps.length - 1
               }
@@ -1156,11 +1175,11 @@
               }
               delete self.baseMapLayers[selectedBaseMapId]
               self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
-            } else if (!_.isNil(oldConfig)) {
+            } else if (!isNil(oldConfig)) {
               const newConfig = selectedBaseMap.layerConfiguration
               const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
               const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
-              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
               // styleChanged performs an asynchronous recycling of the geopackage connection
               if (styleKeyChanged) {
                 await self.baseMapLayers[selectedBaseMapId].styleChanged()
@@ -1181,8 +1200,8 @@
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !_.isNil(newBaseMap.layerConfiguration) && ServiceConnectionUtils.isRemoteSource(newBaseMap.layerConfiguration)) {
-              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ActionUtilities.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && LayerTypes.isRemote(newBaseMap.layerConfiguration)) {
+              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ProjectActions.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
             }
 
             // remove old map layer
@@ -1192,7 +1211,7 @@
 
             if (success) {
               // check to see if base map has already been added
-              if (_.isNil(self.baseMapLayers[newBaseMapId])) {
+              if (isNil(self.baseMapLayers[newBaseMapId])) {
                 await self.addBaseMap(newBaseMap, self.map)
               } else {
                 // do not update offline base map id
@@ -1251,16 +1270,16 @@
         handler (layers) {
           layers.forEach(layer => {
             let mapLayer
-            if (!_.isNil(layer.geopackageId) && this.geopackageMapLayers[layer.geopackageId] && this.geopackageMapLayers[layer.geopackageId][layer.tableName]) {
+            if (!isNil(layer.geopackageId) && this.geopackageMapLayers[layer.geopackageId] && this.geopackageMapLayers[layer.geopackageId][layer.tableName]) {
               mapLayer = this.geopackageMapLayers[layer.geopackageId][layer.tableName]
-            } else if (_.isNil(layer.geopackageId) && !_.isNil(this.dataSourceMapLayers[layer.id])) {
+            } else if (isNil(layer.geopackageId) && !isNil(this.dataSourceMapLayers[layer.id])) {
               mapLayer = this.dataSourceMapLayers[layer.id]
             }
-            if (!_.isNil(mapLayer)) {
+            if (!isNil(mapLayer)) {
               mapLayer.bringToFront()
             }
           })
-          ActionUtilities.setMapRenderingOrder({projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id)})
+          ProjectActions.setMapRenderingOrder({projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id)})
           if (layers.length > 0) {
             this.activeLayersControl.enable()
           } else {
@@ -1299,7 +1318,7 @@
             const disablingLayer = oldConfig.visible && !newConfig.visible
             const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
             const repaintFields = this.dataSourceMapLayers[sourceId].getLayer().getRepaintFields()
-            const repaintRequired = this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && oldConfig.visible && !_.isEqual(_.pick(newConfig, repaintFields), _.pick(oldConfig, repaintFields))
+            const repaintRequired = this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && oldConfig.visible && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
 
             // update layer
             this.dataSourceMapLayers[sourceId].update(updatedSources[sourceId])
@@ -1315,11 +1334,11 @@
             } else if (enablingLayer) {
               // test if remote source is healthy
               let valid = true
-              if (ServiceConnectionUtils.isRemoteSource(newConfig)) {
+              if (LayerTypes.isRemote(newConfig)) {
                 try {
-                  await this.dataSourceMapLayers[sourceId].getLayer().testConnection(true)
+                  await this.dataSourceMapLayers[sourceId].testConnection(true)
                 } catch (e) {
-                  ActionUtilities.setSourceError({id: sourceId, error: e})
+                  ProjectActions.setSourceError({id: sourceId, error: e})
                   valid = false
                 }
               }
@@ -1362,30 +1381,30 @@
             let updatedGeoPackage = updatedGeoPackages[geoPackageId]
             let oldGeoPackage = geopackageLayers[geoPackageId]
             // check if the tables have changed
-            if (!_.isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
-              const oldVisibleFeatureTables = _.keys(oldGeoPackage.tables.features).filter(table => oldGeoPackage.tables.features[table].visible)
-              const oldVisibleTileTables = _.keys(oldGeoPackage.tables.tiles).filter(table => oldGeoPackage.tables.tiles[table].visible)
-              const newVisibleFeatureTables = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible)
-              const newVisibleTileTables = _.keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].visible)
+            if (!isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
+              const oldVisibleFeatureTables = keys(oldGeoPackage.tables.features).filter(table => oldGeoPackage.tables.features[table].visible)
+              const oldVisibleTileTables = keys(oldGeoPackage.tables.tiles).filter(table => oldGeoPackage.tables.tiles[table].visible)
+              const newVisibleFeatureTables = keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible)
+              const newVisibleTileTables = keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].visible)
 
               // tables removed
-              const featureTablesRemoved = _.difference(_.keys(oldGeoPackage.tables.features), _.keys(updatedGeoPackage.tables.features))
-              const tileTablesRemoved = _.difference(_.keys(oldGeoPackage.tables.tiles), _.keys(updatedGeoPackage.tables.tiles))
+              const featureTablesRemoved = difference(keys(oldGeoPackage.tables.features), keys(updatedGeoPackage.tables.features))
+              const tileTablesRemoved = difference(keys(oldGeoPackage.tables.tiles), keys(updatedGeoPackage.tables.tiles))
 
               // tables turned on
-              const featureTablesTurnedOn = _.difference(newVisibleFeatureTables, oldVisibleFeatureTables)
-              const tileTablesTurnedOn = _.difference(newVisibleTileTables, oldVisibleTileTables)
+              const featureTablesTurnedOn = difference(newVisibleFeatureTables, oldVisibleFeatureTables)
+              const tileTablesTurnedOn = difference(newVisibleTileTables, oldVisibleTileTables)
 
               // tables turned off
-              const featureTablesTurnedOff = _.difference(oldVisibleFeatureTables, newVisibleFeatureTables)
-              const tileTablesTurnedOff = _.difference(oldVisibleTileTables, newVisibleTileTables)
+              const featureTablesTurnedOff = difference(oldVisibleFeatureTables, newVisibleFeatureTables)
+              const tileTablesTurnedOff = difference(oldVisibleTileTables, newVisibleTileTables)
 
               // remove feature and tile tables that were turned off or deleted
               tileTablesRemoved.concat(tileTablesTurnedOff).concat(featureTablesRemoved).concat(featureTablesTurnedOff).forEach(tableName => {
                 this.removeGeoPackageTable(geoPackageId, tableName)
               })
 
-              geopackageLayers[updatedGeoPackage.id] = _.cloneDeep(updatedGeoPackage)
+              geopackageLayers[updatedGeoPackage.id] = cloneDeep(updatedGeoPackage)
               // add feature and tile tables that were turned on
               tileTablesTurnedOn.forEach(tableName => {
                 this.addGeoPackageTileTable(updatedGeoPackage, map, tableName)
@@ -1395,7 +1414,7 @@
               })
 
               // tables with updated style key
-              const featureTablesStyleUpdated = _.keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible && oldGeoPackage.tables.features[table] && featureTablesTurnedOn.indexOf(table) === -1 && updatedGeoPackage.tables.features[table].styleKey !== oldGeoPackage.tables.features[table].styleKey)
+              const featureTablesStyleUpdated = keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible && oldGeoPackage.tables.features[table] && featureTablesTurnedOn.indexOf(table) === -1 && updatedGeoPackage.tables.features[table].styleKey !== oldGeoPackage.tables.features[table].styleKey)
               featureTablesStyleUpdated.forEach(tableName => {
                 this.removeGeoPackageTable(geoPackageId, tableName)
                 this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
@@ -1411,7 +1430,7 @@
         handler () {
           // check if it has editable fields, instead of confirm, it will say continue and display the edit fields dialog
           this.$nextTick(() => {
-            if (!_.isNil(this.$refs.featureTableNameForm)) {
+            if (!isNil(this.$refs.featureTableNameForm)) {
               this.$refs.featureTableNameForm.validate()
             }
           })
@@ -1426,7 +1445,7 @@
             })
           }
           let geoPackageFeatureLayerSelection = 0
-          if (!_.isNil(this.project.activeGeoPackage) && !_.isNil(this.project.activeGeoPackage.geopackageId) && this.project.activeGeoPackage.geopackageId === updatedGeoPackageSelection && !_.isNil(this.project.activeGeoPackage.tableName)) {
+          if (!isNil(this.project.activeGeoPackage) && !isNil(this.project.activeGeoPackage.geopackageId) && this.project.activeGeoPackage.geopackageId === updatedGeoPackageSelection && !isNil(this.project.activeGeoPackage.tableName)) {
             const tableNameIndex = layers.findIndex(choice => choice.text === this.project.activeGeoPackage.tableName)
             if (tableNameIndex > 0) {
               geoPackageFeatureLayerSelection = layers[tableNameIndex].value
@@ -1435,7 +1454,7 @@
           this.geoPackageFeatureLayerSelection = geoPackageFeatureLayerSelection
           this.geoPackageFeatureLayerChoices = layers
           this.$nextTick(() => {
-            if (!_.isNil(this.$refs.featureTableNameForm)) {
+            if (!isNil(this.$refs.featureTableNameForm)) {
               this.$refs.featureTableNameForm.validate()
             }
           })
@@ -1453,7 +1472,7 @@
               for (const tableName of Object.keys(gp.tables.features)) {
                 if (self.geopackageMapLayers[gp.id] && self.geopackageMapLayers[gp.id][tableName] && self.geopackageMapLayers[gp.id][tableName]) {
                   const layer = self.geopackageMapLayers[gp.id][tableName]
-                  if (!_.isNil(layer)) {
+                  if (!isNil(layer)) {
                     await layer.updateMaxFeatures(updatedProject.maxFeatures)
                     if (gp.tables.features[tableName].visible) {
                       layer.redraw()
@@ -1462,7 +1481,7 @@
                 }
               }
             }
-            for (const sourceId of _.keys(self.dataSourceMapLayers)) {
+            for (const sourceId of keys(self.dataSourceMapLayers)) {
               // if this is a vector layer, update it
               if (self.dataSourceMapLayers[sourceId].getLayer().pane === 'vector') {
                 // update max features
@@ -1473,7 +1492,7 @@
                 }
               }
             }
-            for (const baseMapId of _.keys(self.baseMapLayers)) {
+            for (const baseMapId of keys(self.baseMapLayers)) {
               // if this is a vector layer, update it
               if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
                 // update max features
@@ -1486,7 +1505,7 @@
             }
           }
           this.maxFeatures = updatedProject.maxFeatures
-          if (!_.isNil(updatedProject.zoomToExtent) && !_.isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
+          if (!isNil(updatedProject.zoomToExtent) && !isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
             this.zoomToExtentKey = updatedProject.zoomToExtent.key
             let boundingBox = [[updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]], [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]]
             let bounds = vendor.L.latLngBounds(boundingBox)
@@ -1494,22 +1513,22 @@
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox, {maxZoom: 20})
           }
-          if (_.isNil(updatedProject.boundingBoxFilterEditing)) {
+          if (isNil(updatedProject.boundingBoxFilterEditing)) {
             this.drawingControl.enableDrawingLinks()
           } else {
             this.drawingControl.disableDrawingLinks()
           }
 
           let clearEditing = true
-          if (!_.isNil(updatedProject.editingFeature)) {
+          if (!isNil(updatedProject.editingFeature)) {
             let id = updatedProject.editingFeature.id
             let isGeoPackage = updatedProject.editingFeature.isGeoPackage
             let tableName = updatedProject.editingFeature.tableName
             let featureId = updatedProject.editingFeature.featureToEdit.id
             let geoPackageObject = isGeoPackage ? updatedProject.geopackages[id] : updatedProject.sources[id]
             // did geopackage or data source get deleted
-            if (!_.isNil(geoPackageObject)) {
-              let exists = await GeoPackageUtilities.featureExists(isGeoPackage ? geoPackageObject.path : geoPackageObject.geopackageFilePath, tableName, featureId)
+            if (!isNil(geoPackageObject)) {
+              let exists = await GeoPackageFeatureTableUtilities.featureExists(isGeoPackage ? geoPackageObject.path : geoPackageObject.geopackageFilePath, tableName, featureId)
               if (exists) {
                 clearEditing = false
                 this.editingControl.editFeature(this.map, updatedProject.id, updatedProject.editingFeature)
@@ -1526,7 +1545,7 @@
       }
     },
     mounted: async function () {
-      ActionUtilities.clearEditFeatureGeometry({projectId: this.project.id})
+      ProjectActions.clearEditFeatureGeometry({projectId: this.project.id})
       EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
       EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
       EventBus.$on(EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS, this.sendSourceInitializationStatus)
@@ -1538,23 +1557,23 @@
     beforeDestroy: function () {
       const self = this
       EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.REQUEST_SOURCE_INIT_STATUS])
-      _.keys(self.geopackageMapLayers).forEach(geopackageId => {
-        _.keys(self.geopackageMapLayers[geopackageId]).forEach(table => {
+      keys(self.geopackageMapLayers).forEach(geopackageId => {
+        keys(self.geopackageMapLayers[geopackageId]).forEach(table => {
           let layer = self.geopackageMapLayers[geopackageId][table]
-          if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+          if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
             layer.close()
           }
         })
       })
-      _.keys(self.dataSourceMapLayers).forEach(key => {
+      keys(self.dataSourceMapLayers).forEach(key => {
         let layer = self.dataSourceMapLayers[key]
-        if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+        if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }
       })
-      _.keys(self.baseMapLayers).forEach(key => {
+      keys(self.baseMapLayers).forEach(key => {
         let layer = self.baseMapLayers[key]
-        if (!_.isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
+        if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
           layer.close()
         }
       })

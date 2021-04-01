@@ -1,6 +1,6 @@
-import * as vendor from '../../lib/vendor'
-import _ from 'lodash'
-import ActionUtilities from '../../lib/ActionUtilities'
+import * as vendor from '../../lib/leaflet/vendor'
+import isNil from 'lodash/isNil'
+import ProjectActions from '../../lib/vuex/ProjectActions'
 
 export default {
   methods: {
@@ -14,7 +14,7 @@ export default {
     enableBoundingBoxDrawing (boundingBoxFilter) {
       let boundingBox = boundingBoxFilter
       let bounds
-      if (_.isNil(boundingBox)) {
+      if (isNil(boundingBox)) {
         let sw = this.map.getBounds().getSouthWest()
         let ne = this.map.getBounds().getNorthEast()
         boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
@@ -34,20 +34,20 @@ export default {
         let sw = this.r.getBounds().getSouthWest()
         let ne = this.r.getBounds().getNorthEast()
         let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-        ActionUtilities.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
+        ProjectActions.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
       })
-      if (_.isNil(this.project.boundingBoxFilter)) {
-        ActionUtilities.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
+      if (isNil(this.project.boundingBoxFilter)) {
+        ProjectActions.setBoundingBoxFilter({projectId: this.project.id, boundingBoxFilter: [boundingBox[0][1], boundingBox[0][0], boundingBox[1][1], boundingBox[1][0]]})
       }
     }
   },
   watch: {
     project: {
       handler (project) {
-        if (!_.isNil(project.boundingBoxFilterEditing) && project.boundingBoxFilterEditing === 'manual') {
-          if (_.isNil(this.r)) {
+        if (!isNil(project.boundingBoxFilterEditing) && project.boundingBoxFilterEditing === 'manual') {
+          if (isNil(this.r)) {
             let boundingBox = project.boundingBoxFilter
-            if (!_.isNil(boundingBox)) {
+            if (!isNil(boundingBox)) {
               boundingBox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
             }
             this.enableBoundingBoxDrawing(boundingBox)

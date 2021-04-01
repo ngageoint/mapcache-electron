@@ -1,5 +1,5 @@
 import GeoTiffLayer from './tile/GeoTiffLayer'
-import GeoPackageLayer from './tile/GeoPackageLayer'
+import GeoPackageTileLayer from './tile/GeoPackageTileLayer'
 import XYZServerLayer from './tile/XYZServerLayer'
 import MBTilesLayer from './tile/MBTilesLayer'
 import WMSLayer from './tile/WMSLayer'
@@ -24,7 +24,7 @@ export default class LayerFactory {
       case LayerTypes.WMS:
         return new WMSLayer(configuration)
       case LayerTypes.GEOPACKAGE:
-        return new GeoPackageLayer(configuration)
+        return new GeoPackageTileLayer(configuration)
       case LayerTypes.VECTOR:
         return new VectorLayer(configuration)
     }

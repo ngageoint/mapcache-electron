@@ -7,7 +7,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>GeoPackages</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -38,7 +38,7 @@
         @keydown.esc="geopackageExistsDialog = false">
         <v-card v-if="geopackageExistsDialog">
           <v-card-title>
-            <v-icon color="orange" class="pr-2">mdi-alert</v-icon>
+            <v-icon color="orange" class="pr-2">{{mdiAlert}}</v-icon>
             Create GeoPackage Warning
           </v-card-title>
           <v-card-text>
@@ -91,7 +91,7 @@
             @click.stop="importGeoPackage"
             v-bind="attrs"
             v-on="on">
-            <v-icon>mdi-file-document-outline</v-icon>
+            <v-icon>{{mdiFileDocumentOutline}}</v-icon>
           </v-btn>
         </template>
         <span>Import from file</span>
@@ -105,7 +105,7 @@
             @click.stop="createNewGeoPackage"
             v-bind="attrs"
             v-on="on">
-            <v-icon>mdi-plus</v-icon>
+            <v-icon>{{mdiPlus}}</v-icon>
           </v-btn>
         </template>
         <span>New GeoPackage</span>
@@ -116,19 +116,14 @@
 
 <script>
   import jetpack from 'fs-jetpack'
-  import { remote } from 'electron'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import isEmpty from 'lodash/isEmpty'
 
   import GeoPackage from './GeoPackage'
   import GeoPackageList from './GeoPackageList'
-  import ActionUtilities from '../../lib/ActionUtilities'
-
-  let options = {
-    fab: false,
-    addGeoPackageError: false,
-    geopackageExistsDialog: false,
-    selectedGeoPackage: null
-  }
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import { mdiAlert, mdiFileDocumentOutline, mdiPlus, mdiChevronLeft } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -137,7 +132,16 @@
       back: Function
     },
     data () {
-      return options
+      return {
+        mdiAlert: mdiAlert,
+        mdiFileDocumentOutline: mdiFileDocumentOutline,
+        mdiPlus: mdiPlus,
+        mdiChevronLeft: mdiChevronLeft,
+        fab: false,
+        addGeoPackageError: false,
+        geopackageExistsDialog: false,
+        selectedGeoPackage: null
+      }
     },
     components: {
       GeoPackageList,
@@ -147,10 +151,10 @@
       createNewGeoPackage () {
         this.fab = false
         this.geopackageExistsDialog = false
-        remote.dialog.showSaveDialog({
+        ElectronUtilities.showSaveDialog({
           title: 'New GeoPackage'
         }).then(({canceled, filePath}) => {
-          if (!canceled && !_.isNil(filePath)) {
+          if (!canceled && !isNil(filePath)) {
             if (!filePath.endsWith('.gpkg')) {
               filePath = filePath + '.gpkg'
             }
@@ -158,7 +162,7 @@
             if (existsOnFileSystem) {
               this.geopackageExistsDialog = true
             } else {
-              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: filePath})
+              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: filePath})
             }
           }
         })
@@ -166,7 +170,7 @@
       importGeoPackage () {
         this.fab = false
         const geopackages = this.geopackages
-        remote.dialog.showOpenDialog({
+        ElectronUtilities.showOpenDialog({
           filters: [
             {
               name: 'GeoPackages',
@@ -175,14 +179,14 @@
           ],
           properties: ['openFile']
         }).then((result) => {
-          if (result.filePaths && !_.isEmpty(result.filePaths)) {
+          if (result.filePaths && !isEmpty(result.filePaths)) {
             let fileInfo = jetpack.inspect(result.filePaths[0], {
               times: true,
               absolutePath: true
             })
             const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
             if (!existsInApp) {
-              ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
+              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
             } else {
               // exists in app, show error
               this.addGeoPackageError = true
@@ -192,17 +196,17 @@
       },
       geopackageSelected (geopackageId) {
         this.selectedGeoPackage = this.geopackages[geopackageId]
-        ActionUtilities.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
+        ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
       },
       deselectGeoPackage () {
         this.selectedGeoPackage = null
-        ActionUtilities.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+        ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
       }
     },
     watch: {
       geopackages: {
         handler (newGeoPackages) {
-          if (!_.isNil(this.selectedGeoPackage)) {
+          if (!isNil(this.selectedGeoPackage)) {
             this.selectedGeoPackage = newGeoPackages[this.selectedGeoPackage.id]
           }
         },

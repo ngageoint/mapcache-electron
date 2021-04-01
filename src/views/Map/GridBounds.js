@@ -1,5 +1,5 @@
-import _ from 'lodash'
-import * as Vendor from '../../lib/vendor'
+import isNil from 'lodash/isNil'
+import * as Vendor from '../../lib/leaflet/vendor'
 
 export default {
   methods: {
@@ -21,8 +21,8 @@ export default {
   watch: {
     project: {
       handler (project) {
-        if (!_.isNil(project.boundingBoxFilterEditing) && project.boundingBoxFilterEditing === 'grid') {
-          if (_.isNil(this.gridLayer)) {
+        if (!isNil(project.boundingBoxFilterEditing) && project.boundingBoxFilterEditing === 'grid') {
+          if (isNil(this.gridLayer)) {
             this.enableGridSelection()
           }
         } else {

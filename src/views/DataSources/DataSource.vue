@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title><b class="ml-2">{{initialDisplayName}}</b> Style Editor</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -40,7 +40,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title :title="initialDisplayName">{{initialDisplayName}}</v-toolbar-title>
       <v-spacer></v-spacer>
     </v-toolbar>
@@ -51,7 +51,7 @@
       @keydown.esc="renameDialog = false">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-pencil</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
           Rename data source
         </v-card-title>
         <v-card-text>
@@ -95,7 +95,7 @@
       @keydown.esc="connectionSettingsDialog = false">
       <v-card v-if="connectionSettingsDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-cloud-braces</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiCloudBraces}}</v-icon>
           Edit network settings
         </v-card-title>
         <v-card-text>
@@ -141,7 +141,7 @@
       @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Remove data source
         </v-card-title>
         <v-card-text>
@@ -170,7 +170,7 @@
       @keydown.esc="cancelOverwrite">
       <v-card v-if="showOverwriteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-export-variant</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiExportVariant}}</v-icon>
           Overwrite {{overwriteFileName}}
         </v-card-title>
         <v-card-text>
@@ -198,7 +198,7 @@
       persistent>
       <v-card>
         <v-card-title>
-          <v-icon color="primary" class="pr-2">mdi-export-variant</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiExportVariant}}</v-icon>
           Exporting {{initialDisplayName}}
         </v-card-title>
         <v-card-text>
@@ -235,7 +235,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="renameDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-pencil</v-icon>
+                  <v-icon small>{{mdiPencil}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -249,7 +249,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-palette</v-icon>
+                  <v-icon small>{{mdiPalette}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -263,7 +263,7 @@
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-cloud-braces</v-icon>
+                  <v-icon small>{{mdiCloudBraces}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Network
@@ -279,7 +279,7 @@
                 <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="downloadGeoPackage" v-bind="attrs" v-on="on">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>mdi-export-variant</v-icon>
+                      <v-icon small>{{mdiExportVariant}}</v-icon>
                     </v-row>
                     <v-row no-gutters align-content="center" justify="center">
                       Export
@@ -296,7 +296,7 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>mdi-trash-can</v-icon>
+                  <v-icon small>{{mdiTrashCan}}</v-icon>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Remove
@@ -369,7 +369,7 @@
               <v-row no-gutters justify="end">
                 <v-btn class="btn-background" @click.stop="showFeatureTable">
                   <v-icon left>
-                    mdi-table-eye
+                    {{mdiTableEye}}
                   </v-icon>View features
                 </v-btn>
               </v-row>
@@ -399,21 +399,24 @@
 
 <script>
   import { mapState } from 'vuex'
-  import { remote } from 'electron'
   import fs from 'fs'
   import path from 'path'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import isEmpty from 'lodash/isEmpty'
+  import keys from 'lodash/keys'
   import GeotiffOptions from '../Common/Style/GeotiffOptions'
   import TransparencyOptions from '../Common/Style/TransparencyOptions'
   import StyleEditor from '../StyleEditor/StyleEditor'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import EventBus from '../../EventBus'
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
   import MBTilesOptions from '../Common/Style/MBTilesOptions'
   import DataSourceTroubleshooting from './DataSourceTroubleshooting'
   import NumberPicker from '../Common/NumberPicker'
-  import NetworkConstants from '../../lib/NetworkConstants'
-  import URLUtilities from '../../lib/URLUtilities'
+  import HttpUtilities from '../../lib/network/HttpUtilities'
+  import URLUtilities from '../../lib/util/URLUtilities'
+  import { mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiTrashCan, mdiExportVariant, mdiPalette, mdiTableEye } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -440,15 +443,22 @@
     computed: {
       ...mapState({
         initialDisplayName () {
-          return _.isNil(this.source.displayName) ? this.source.name : this.source.displayName
+          return isNil(this.source.displayName) ? this.source.name : this.source.displayName
         }
       })
     },
     data () {
       return {
-        defaultTimeout: NetworkConstants.DEFAULT_TIMEOUT,
-        defaultRateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
-        defaultRetryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
+        mdiChevronLeft: mdiChevronLeft,
+        mdiPencil: mdiPencil,
+        mdiCloudBraces: mdiCloudBraces,
+        mdiTrashCan: mdiTrashCan,
+        mdiExportVariant: mdiExportVariant,
+        mdiPalette: mdiPalette,
+        mdiTableEye: mdiTableEye,
+        defaultTimeout: HttpUtilities.DEFAULT_TIMEOUT,
+        defaultRateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
+        defaultRetryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
         exportingProgressDialog: false,
         styleEditorVisible: false,
         showExportAlert: false,
@@ -459,14 +469,14 @@
         renameDialog: false,
         renameValid: false,
         deleteDialog: false,
-        renamedSource: _.isNil(this.source.displayName) ? this.source.name : this.source.displayName,
+        renamedSource: isNil(this.source.displayName) ? this.source.name : this.source.displayName,
         renamedSourceRules: [
           v => !!v || 'Name is required'
         ],
         connectionSettingsDialog: false,
-        timeoutMs: NetworkConstants.DEFAULT_TIMEOUT,
-        rateLimit: NetworkConstants.DEFAULT_RATE_LIMIT,
-        retryAttempts: NetworkConstants.DEFAULT_RETRY_ATTEMPTS,
+        timeoutMs: HttpUtilities.DEFAULT_TIMEOUT,
+        rateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
+        retryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
         rateLimitValid: true,
         timeoutValid: true,
         retryAttemptsValid: true
@@ -474,35 +484,35 @@
     },
     methods: {
       hasSubdomains () {
-        return !_.isEmpty(this.source.subdomains) && URLUtilities.requiresSubdomains(this.source.filePath)
+        return !isEmpty(this.source.subdomains) && URLUtilities.requiresSubdomains(this.source.filePath)
       },
       closeConnectionSettingsDialog () {
         this.connectionSettingsDialog = false
       },
       saveConnectionSettings () {
-        ActionUtilities.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+        ProjectActions.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = !_.isNil(this.source.timeoutMs) ? this.source.timeoutMs : NetworkConstants.DEFAULT_TIMEOUT
-        this.rateLimit = this.source.rateLimit || NetworkConstants.DEFAULT_RATE_LIMIT
-        this.retryAttempts = !_.isNil(this.source.retryAttempts) ? this.source.retryAttempts : NetworkConstants.DEFAULT_RETRY_ATTEMPTS
+        this.timeoutMs = !isNil(this.source.timeoutMs) ? this.source.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT
+        this.rateLimit = this.source.rateLimit || HttpUtilities.DEFAULT_RATE_LIMIT
+        this.retryAttempts = !isNil(this.source.retryAttempts) ? this.source.retryAttempts : HttpUtilities.DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {
           this.connectionSettingsDialog = true
         })
       },
       saveLayerName () {
         this.renameDialog = false
-        ActionUtilities.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})
+        ProjectActions.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})
       },
       copyAndAddGeoPackage (filePath) {
         this.exportingProgressDialog = true
         fs.copyFile(this.source.geopackageFilePath, filePath, () => {
-          const geopackageKey = _.keys(this.project.geopackages).find(key => this.project.geopackages[key].path === filePath)
-          if (_.isNil(geopackageKey)) {
-            ActionUtilities.addGeoPackage({projectId: this.project.id, filePath: filePath})
+          const geopackageKey = keys(this.project.geopackages).find(key => this.project.geopackages[key].path === filePath)
+          if (isNil(geopackageKey)) {
+            ProjectActions.addGeoPackage({projectId: this.project.id, filePath: filePath})
           } else {
-            ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: geopackageKey})
+            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: geopackageKey})
           }
           this.overwriteFile = ''
           setTimeout(() => {
@@ -514,12 +524,12 @@
       },
       downloadGeoPackage () {
         try {
-          remote.dialog.showSaveDialog({
+          ElectronUtilities.showSaveDialog({
             title: 'Export GeoPackage',
             defaultPath: this.initialDisplayName.replace(' ', '_')
           }).then(({canceled, filePath}) => {
             if (!canceled) {
-              if (!_.isNil(filePath)) {
+              if (!isNil(filePath)) {
                 if (!filePath.endsWith('.gpkg')) {
                   filePath = filePath + '.gpkg'
                 }
@@ -550,7 +560,7 @@
         this.styleEditorVisible = false
       },
       zoomToSource () {
-        ActionUtilities.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
+        ProjectActions.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
       },
       showFeatureTable () {
         const payload = {
@@ -561,10 +571,10 @@
         EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload)
       },
       removeDataSource () {
-        ActionUtilities.removeDataSource({projectId: this.project.id, sourceId: this.source.id})
+        ProjectActions.removeDataSource({projectId: this.project.id, sourceId: this.source.id})
       },
       updateSource (updatedSource) {
-        ActionUtilities.setDataSource({
+        ProjectActions.setDataSource({
           projectId: this.project.id,
           source: updatedSource
         })

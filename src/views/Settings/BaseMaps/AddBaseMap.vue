@@ -120,11 +120,19 @@
 
 <script>
   import { mapActions } from 'vuex'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import values from 'lodash/values'
+  import cloneDeep from 'lodash/cloneDeep'
+  import keys from 'lodash/keys'
+  import debounce from 'lodash/debounce'
+  import path from 'path'
+  import jetpack from 'fs-jetpack'
   import ColorPicker from '../../Common/ColorPicker'
-  import ActionUtilities from '../../../lib/ActionUtilities'
-  import GeoPackageUtilities from '../../../lib/GeoPackageUtilities'
+  import ProjectActions from '../../../lib/vuex/ProjectActions'
   import DataSourceTroubleshooting from '../../DataSources/DataSourceTroubleshooting'
+  import GeoPackageCommon from '../../../lib/geopackage/GeoPackageCommon'
+  import LayerFactory from '../../../lib/source/layer/LayerFactory'
+  import FileUtilities from '../../../lib/util/FileUtilities'
 
   export default {
     components: {
@@ -140,7 +148,7 @@
       layers: {
         async get () {
           let items = []
-          const sources = _.values(this.project.sources)
+          const sources = values(this.project.sources)
           for (let i = 0; i < sources.length; i++) {
             let source = sources[i]
             items.push({
@@ -151,17 +159,17 @@
               title: source.displayName ? source.displayName : source.name,
               isGeoPackage: false,
               type: source.pane === 'vector' ? 'feature' : 'tile',
-              zoomTo: _.debounce((e) => {
+              zoomTo: debounce((e) => {
                 e.stopPropagation()
-                ActionUtilities.zoomToExtent({projectId: this.project.id, extent: source.extent})
+                ProjectActions.zoomToExtent({projectId: this.project.id, extent: source.extent})
               }, 100)
             })
           }
-          const geopackages = _.values(this.project.geopackages)
+          const geopackages = values(this.project.geopackages)
           for (let i = 0; i < geopackages.length; i++) {
             const geopackage = geopackages[i]
-            if (await GeoPackageUtilities.isHealthy(geopackage)) {
-              const tiles = _.keys(geopackage.tables.tiles)
+            if (await GeoPackageCommon.isHealthy(geopackage)) {
+              const tiles = keys(geopackage.tables.tiles)
               for (let j = 0; j < tiles.length; j++) {
                 const table = tiles[j]
                 items.push({
@@ -173,15 +181,15 @@
                   subtitle: table,
                   type: 'tile',
                   isGeoPackage: true,
-                  zoomTo: _.debounce((e) => {
+                  zoomTo: debounce((e) => {
                     e.stopPropagation()
-                    GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, table).then(extent => {
-                      ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+                    GeoPackageCommon.getBoundingBoxForTable(geopackage.path, table).then(extent => {
+                      ProjectActions.zoomToExtent({projectId: this.project.id, extent})
                     })
                   }, 100)
                 })
               }
-              const features = _.keys(geopackage.tables.features)
+              const features = keys(geopackage.tables.features)
               for (let j = 0; j < features.length; j++) {
                 const table = features[j]
                 items.push({
@@ -193,10 +201,10 @@
                   subtitle: table,
                   type: 'feature',
                   isGeoPackage: true,
-                  zoomTo: _.debounce((e) => {
+                  zoomTo: debounce((e) => {
                     e.stopPropagation()
-                    GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, table).then(extent => {
-                      ActionUtilities.zoomToExtent({projectId: this.project.id, extent})
+                    GeoPackageCommon.getBoundingBoxForTable(geopackage.path, table).then(extent => {
+                      ProjectActions.zoomToExtent({projectId: this.project.id, extent})
                     })
                   }, 100)
                 })
@@ -228,6 +236,57 @@
       ...mapActions({
         editBaseMap: 'BaseMaps/editBaseMap',
       }),
+      async addBaseMap (baseMapName, configuration, backgroundColor) {
+        let layerConfiguration = {}
+
+        // create new directory
+        const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+
+        // handle geopackage
+        let extent = [-180, -90, 180, 90]
+        if (!isNil(configuration.geopackage)) {
+          const oldPath = configuration.geopackage.path
+          const newPath = path.join(sourceDirectory, path.basename(oldPath))
+          await jetpack.copyAsync(oldPath, newPath)
+          if (configuration.type === 'tile') {
+            // create new geopackage and copy tile table
+            const layer = LayerFactory.constructLayer({id: sourceId, filePath: newPath, sourceLayerName: configuration.tableName, layerType: 'GeoPackage'})
+            await layer.initialize()
+            layerConfiguration = layer.configuration
+            extent = await GeoPackageCommon.getGeoPackageExtent(newPath, configuration.tableName)
+          } else {
+            // create new geopackage and copy feature table
+            const layer = LayerFactory.constructLayer({id: sourceId, geopackageFilePath: newPath, sourceDirectory: newPath, sourceLayerName: configuration.tableName, sourceType: 'GeoPackage', layerType: 'Vector', maxFeatures: configuration.maxFeatures})
+            await layer.initialize()
+            layerConfiguration = layer.configuration
+            extent = await GeoPackageCommon.getBoundingBoxForTable(newPath, configuration.tableName)
+          }
+        } else {
+          layerConfiguration = cloneDeep(configuration)
+          extent = layerConfiguration.extent || [-180, -90, 180, 90]
+          if (!isNil(configuration.geopackageFilePath)) {
+            const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.geopackageFilePath))
+            await jetpack.copyAsync(layerConfiguration.geopackageFilePath, newFilePath)
+            layerConfiguration.geopackageFilePath = newFilePath
+            extent = await GeoPackageCommon.getBoundingBoxForTable(newFilePath, configuration.sourceLayerName)
+          } else if (FileUtilities.exists(layerConfiguration.filePath)) {
+            // if valid filePath, copy to new location
+            const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.filePath))
+            await jetpack.copyAsync(layerConfiguration.filePath, newFilePath)
+            layerConfiguration.filePath = newFilePath
+          }
+        }
+        layerConfiguration.id = sourceId
+
+        ProjectActions.addBaseMap({
+          id: sourceId,
+          name: baseMapName,
+          background: backgroundColor,
+          readonly: false,
+          layerConfiguration: layerConfiguration,
+          extent: extent
+        })
+      },
       save () {
         let configuration = {}
         let layer = this.layers[this.selectedLayer]
@@ -239,7 +298,7 @@
         } else {
           configuration = this.project.sources[layer.id]
         }
-        ActionUtilities.addBaseMap(this.baseMapName, configuration, this.backgroundColor).then(() => {
+        this.addBaseMap(this.baseMapName, configuration, this.backgroundColor).then(() => {
           this.close()
         })
       }

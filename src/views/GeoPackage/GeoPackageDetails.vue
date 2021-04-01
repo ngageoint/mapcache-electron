@@ -63,7 +63,7 @@
 </template>
 
 <script>
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
 
   export default {
     props: {
@@ -77,7 +77,7 @@
     asyncComputed: {
       details: {
         get () {
-          return GeoPackageUtilities.getDetails(this.geopackage.path).then(result => {
+          return GeoPackageCommon.getDetails(this.geopackage.path).then(result => {
             return result
           })
         },

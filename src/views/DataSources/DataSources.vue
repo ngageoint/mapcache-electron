@@ -14,7 +14,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>Data Sources</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -58,7 +58,7 @@
               color="primary"
               v-bind="attrs"
               v-on="on">
-              <v-icon>mdi-layers-plus</v-icon>
+              <v-icon>{{mdiLayersPlus}}</v-icon>
             </v-btn>
           </template>
           <span>Add data source</span>
@@ -73,7 +73,7 @@
             @click.stop="addFileClick"
             v-bind="attrs"
             v-on="on">
-            <v-icon>mdi-file-document-outline</v-icon>
+            <v-icon>{{mdiFileDocumentOutline}}</v-icon>
           </v-btn>
         </template>
         <span>Import from file</span>
@@ -87,7 +87,7 @@
             @click.stop.prevent="showUrlDialog"
             v-bind="attrs"
             v-on="on">
-            <v-icon>mdi-cloud-download-outline</v-icon>
+            <v-icon>{{mdiCloudDownloadOutline}}</v-icon>
           </v-btn>
         </template>
         <span>Download from URL</span>
@@ -97,17 +97,21 @@
 </template>
 
 <script>
-  import { remote, ipcRenderer } from 'electron'
+  import { ipcRenderer } from 'electron'
   import jetpack from 'fs-jetpack'
   import { mapState } from 'vuex'
   import ProcessingSource from './ProcessingSource'
-  import _ from 'lodash'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
+  import isNil from 'lodash/isNil'
+  import isEmpty from 'lodash/isEmpty'
+  import cloneDeep from 'lodash/cloneDeep'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import DataSource from './DataSource'
   import DataSourceList from './DataSourceList'
   import AddDataSourceUrl from './AddDataSourceUrl'
-  import ActionUtilities from '../../lib/ActionUtilities'
-  import FileUtilities from '../../lib/FileUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import FileUtilities from '../../lib/util/FileUtilities'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
+  import { mdiChevronLeft, mdiLayersPlus, mdiFileDocumentOutline, mdiCloudDownloadOutline } from '@mdi/js'
 
   let selectedDataSource = null
   let fab = false
@@ -127,6 +131,10 @@
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiLayersPlus: mdiLayersPlus,
+        mdiFileDocumentOutline: mdiFileDocumentOutline,
+        mdiCloudDownloadOutline: mdiCloudDownloadOutline,
         selectedDataSource,
         fab,
         urlSourceDialog: false,
@@ -142,7 +150,7 @@
     methods: {
       addFileClick () {
         this.fab = false
-        remote.dialog.showOpenDialog({
+        ElectronUtilities.showOpenDialog({
           filters: [
             {
               name: 'All Files',
@@ -151,7 +159,7 @@
           ],
           properties: ['openFile', 'multiSelections']
         }).then((result) => {
-          if (result.filePaths && !_.isEmpty(result.filePaths)) {
+          if (result.filePaths && !isEmpty(result.filePaths)) {
             let fileInfos = []
             for (const file of result.filePaths) {
               let fileInfo = jetpack.inspect(file, {
@@ -171,16 +179,16 @@
         this.processingSourceList.push(source)
         let self = this
         ipcRenderer.once('process_source_completed_' + source.id, (event, result) => {
-          if (_.isNil(result.error)) {
+          if (isNil(result.error)) {
             setTimeout(() => {
               self.clearProcessing(result.source)
-              ActionUtilities.addDataSources({dataSources: result.dataSources})
+              ProjectActions.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
             }, 1000)
           } else {
             for (let i = 0; i < this.processingSourceList.length; i++) {
               let s = this.processingSourceList[i]
               if (s.id && source.id) {
-                const sCopy = _.cloneDeep(s)
+                const sCopy = cloneDeep(s)
                 sCopy.error = result.error
                 this.processingSourceList.splice(i, 1, sCopy)
                 break
@@ -195,11 +203,11 @@
           let source = this.processingSourceList[i]
           if (source.url && source.url === processingSource.url) {
             this.processingSourceList.splice(i, 1)
-            ActionUtilities.notifyTab({projectId: this.project.id, tabId: 1})
+            ProjectActions.notifyTab({projectId: this.project.id, tabId: 1})
             break
           } else if (source.file && source.file.path === processingSource.file.path) {
             this.processingSourceList.splice(i, 1)
-            ActionUtilities.notifyTab({projectId: this.project.id, tabId: 1})
+            ProjectActions.notifyTab({projectId: this.project.id, tabId: 1})
             break
           }
         }
@@ -216,6 +224,7 @@
               type: file.type,
               path: file.path
             },
+            directory: ElectronUtilities.appDataDirectory(),
             status: undefined,
             error: undefined
           }
@@ -238,7 +247,7 @@
     watch: {
       sources: {
         handler (newSources) {
-          if (!_.isNil(this.selectedDataSource)) {
+          if (!isNil(this.selectedDataSource)) {
             this.selectedDataSource = newSources[this.selectedDataSource.id]
           }
         },

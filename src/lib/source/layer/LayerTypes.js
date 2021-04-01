@@ -7,4 +7,7 @@ export default class LayerTypes {
   static XYZ_SERVER = 'XYZServer'
   static MBTILES = 'MBTiles'
 
+  static isRemote (source) {
+    return source.layerType === LayerTypes.WMS || source.layerType === LayerTypes.XYZ_SERVER
+  }
 }

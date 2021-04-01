@@ -7,7 +7,7 @@
       @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">mdi-trash-can</v-icon>
+          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete style
         </v-card-title>
         <v-card-text>
@@ -97,11 +97,12 @@
 </template>
 
 <script>
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
   import ColorPicker from '../Common/ColorPicker'
   import NumberPicker from '../Common/NumberPicker'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+  import { mdiTrashCan } from '@mdi/js'
 
   export default {
     props: {
@@ -122,6 +123,7 @@
     },
     data () {
       return {
+        mdiTrashCan: mdiTrashCan,
         name: this.styleRow.name,
         description: this.styleRow.description || '',
         color: this.styleRow.color,
@@ -130,7 +132,7 @@
         fillOpacity: this.styleRow.fillOpacity,
         width: this.styleRow.width,
         deleteDialog: false,
-        isNew: _.isNil(this.styleRow.id),
+        isNew: isNil(this.styleRow.id),
         opacityValid: true,
         fillOpacityValid: true,
         widthValid: true
@@ -172,7 +174,7 @@
         }
         if (this.styleRow.id) {
           styleRow.id = this.styleRow.id
-          ActionUtilities.updateStyleRow({
+          ProjectActions.updateStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -181,7 +183,7 @@
             isBaseMap: this.isBaseMap
           })
         } else {
-          ActionUtilities.createStyleRow({
+          ProjectActions.createStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -193,7 +195,7 @@
         this.close()
       },
       deleteStyle () {
-        ActionUtilities.deleteStyleRow({
+        ProjectActions.deleteStyleRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,

@@ -35,8 +35,8 @@
 </template>
 
 <script>
-  import _ from 'lodash'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import isNil from 'lodash/isNil'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
   import DataSourceTroubleshooting from './DataSourceTroubleshooting'
 
@@ -59,14 +59,14 @@
           const sourceId = key
           const projectId = _this.projectId
           const zoomTo = (e) => {
-            ActionUtilities.zoomToExtent({projectId, extent: source.extent})
+            ProjectActions.zoomToExtent({projectId, extent: source.extent})
             e.stopPropagation()
           }
           items.push({
             id: key,
             error: source.error,
             visible: source.visible,
-            name: _.isNil(source.displayName) ? source.name : source.displayName,
+            name: isNil(source.displayName) ? source.name : source.displayName,
             path: source.filePath,
             isTile: source.pane === 'tile',
             click: function () {

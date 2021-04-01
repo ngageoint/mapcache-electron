@@ -8,7 +8,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>mdi-chevron-left</v-icon></v-btn>
+      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>Base Maps</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -21,7 +21,7 @@
                 color="whitesmoke"
                 @click="(e) => item.zoomTo(e, project.id)"
               >
-                <v-icon>mdi-map-outline</v-icon>
+                <v-icon>{{mdiMapOutline}}</v-icon>
               </v-btn>
             </v-list-item-icon>
             <v-list-item-content>
@@ -54,11 +54,14 @@
 
 <script>
   import { mapState } from 'vuex'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import values from 'lodash/values'
+  import keys from 'lodash/keys'
   import AddBaseMap from './AddBaseMap'
-  import ActionUtilities from '../../../lib/ActionUtilities'
+  import ProjectActions from '../../../lib/vuex/ProjectActions'
   import BaseMap from './BaseMap'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+  import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 
   export default {
     components: {
@@ -87,18 +90,20 @@
                 e.stopPropagation()
                 e.preventDefault()
                 const extent = baseMap.extent || [-180, -90, 180, 90]
-                ActionUtilities.zoomToExtent({projectId, extent})
+                ProjectActions.zoomToExtent({projectId, extent})
               }
             }
           })
         }
       }),
       projectLayerCount () {
-        return _.keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + _.keys(this.project.geopackages[geopackage].tables.features).length + _.keys(this.project.geopackages[geopackage].tables.tiles).length, 0) + _.values(this.project.sources).length
+        return keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + keys(this.project.geopackages[geopackage].tables.features).length + keys(this.project.geopackages[geopackage].tables.tiles).length, 0) + values(this.project.sources).length
       }
     },
     data () {
       return {
+        mdiChevronLeft: mdiChevronLeft,
+        mdiMapOutline: mdiMapOutline,
         addBaseMapDialog: false,
         selectedBaseMap: null
       }
@@ -117,7 +122,7 @@
     watch: {
       baseMaps: {
         handler (newBaseMaps) {
-          if (!_.isNil(this.selectedBaseMap)) {
+          if (!isNil(this.selectedBaseMap)) {
             this.selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === this.selectedBaseMap.id)
           }
         }

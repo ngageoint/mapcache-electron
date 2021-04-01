@@ -45,7 +45,7 @@
 </template>
 
 <script>
-  import CredentialsManagement from '../../lib/CredentialsManagement'
+  import CredentialsManagement from '../../lib/network/CredentialsManagement'
 
   export default {
     props: {

@@ -1,10 +1,9 @@
 import Layer from '../Layer'
 
 export default class TileLayer extends Layer {
-  async initialize () {
-    this.style = this._configuration.style || {}
-    await super.initialize()
-    return this
+  constructor (configuration = {}) {
+    super(configuration)
+    this.style = configuration.style || {}
   }
 
   get configuration () {
@@ -19,9 +18,5 @@ export default class TileLayer extends Layer {
 
   update (configuration) {
     super.update(configuration)
-  }
-
-  renderTile () {
-    throw new Error('Abstract method to be implemented in subclass')
   }
 }

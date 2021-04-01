@@ -38,8 +38,8 @@
 </template>
 
 <script>
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
 
   export default {
     props: {
@@ -62,12 +62,12 @@
               _this.layerSelected(key)
             },
             setVisible: function (e) {
-              ActionUtilities.setGeoPackageTileTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !tileLayer.visible})
+              ProjectActions.setGeoPackageTileTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !tileLayer.visible})
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                ActionUtilities.zoomToExtent({projectId: _this.projectId, extent})
+              GeoPackageCommon.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                ProjectActions.zoomToExtent({projectId: _this.projectId, extent})
               })
               e.stopPropagation()
             },
@@ -85,12 +85,12 @@
               _this.layerSelected(key)
             },
             setVisible: function (e) {
-              ActionUtilities.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
+              ProjectActions.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              GeoPackageUtilities.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                ActionUtilities.zoomToExtent({projectId: _this.projectId, extent})
+              GeoPackageCommon.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                ProjectActions.zoomToExtent({projectId: _this.projectId, extent})
               })
               e.stopPropagation()
             },

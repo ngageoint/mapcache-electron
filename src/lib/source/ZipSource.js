@@ -3,43 +3,37 @@ import path from 'path'
 import AdmZip from 'adm-zip'
 import ShapeFileSource from './ShapeFileSource'
 import XYZFileSource from './XYZFileSource'
-import _ from 'lodash'
+import isNil from 'lodash/isNil'
 
 export default class ZipSource extends Source {
-  constructor (filePath) {
-    super (filePath)
-    this.shapeFileSource = null
-    this.layers = []
-    this.shapeFile = null
-    this.xyzFileSource = null
-  }
-
-  async initialize () {
+  async retrieveLayers () {
+    let shapeFileSource
+    let xyzFileSource
+    let layers = []
     const destinationFolder = this.sourceCacheFolder
     const zip = new AdmZip(this.filePath)
     const zipEntries = zip.getEntries()
     const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
-
     const shapeFile = zipFileNames.find(file => file.endsWith('.shp'))
     const xyzImageFile = zipFileNames.find(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null)
-    if (!_.isNil(shapeFile)) {
+
+    if (!isNil(shapeFile)) {
       zip.extractAllTo(destinationFolder, true)
-      this.shapeFile = path.basename(shapeFile)
+      const shapeFile = path.basename(shapeFile)
       try {
-        this.filePath = path.join(destinationFolder, this.shapeFile)
-        this.shapeFileSource = new ShapeFileSource(this.filePath)
-        this.shapeFileSource.removeSourceDir()
+        this.filePath = path.join(destinationFolder, shapeFile)
+        shapeFileSource = new ShapeFileSource(this.filePath, this.directory)
+        layers = await shapeFileSource.retrieveLayers()
+        shapeFileSource.cleanUp()
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(e)
       }
-    } else if (!_.isNil(xyzImageFile)) {
-      this.xyzFileSource = new XYZFileSource(this.filePath)
+    } else if (!isNil(xyzImageFile)) {
+      xyzFileSource = new XYZFileSource(this.filePath, this.directory)
+      layers = await xyzFileSource.retrieveLayers()
+      xyzFileSource.cleanUp()
     }
+    return layers
   }
-
-  retrieveLayers () {
-    return _.isNil(this.shapeFileSource) ? (_.isNil(this.xyzFileSource) ? [] : this.xyzFileSource.retrieveLayers()) : this.shapeFileSource.retrieveLayers()
-  }
-
 }

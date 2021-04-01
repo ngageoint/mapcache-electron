@@ -1,4 +1,4 @@
-import * as vendor from '../../lib/vendor'
+import * as vendor from '../../lib/leaflet/vendor'
 
 export default class LeafletZoomIndicator extends vendor.L.Control {
   constructor (options) {

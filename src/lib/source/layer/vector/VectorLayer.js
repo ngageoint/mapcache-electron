@@ -1,6 +1,5 @@
+import { GeoPackageAPI } from '@ngageoint/geopackage'
 import Layer from '../Layer'
-import GeoPackageVectorTileRenderer from '../renderer/GeoPackageVectorTileRenderer'
-import GeoPackageUtilities from '../../../GeoPackageUtilities'
 import LayerTypes from '../LayerTypes'
 
 /**
@@ -10,47 +9,62 @@ import LayerTypes from '../LayerTypes'
  * the feature collection of the data source as well as any user/source defined styling.
  */
 export default class VectorLayer extends Layer {
-  _extent
-  _vectorTileRenderer
-  _geopackageFilePath
-  _features
-  _layerKey
-  _maxFeatures
+  geopackage
+  extent
+  geopackageFilePath
+  features
+  layerKey
+  count
 
   constructor (configuration = {}) {
     super(configuration)
-    this._geopackageFilePath = configuration.geopackageFilePath
-    this._layerKey = configuration.layerKey || 0
-    this._maxFeatures = configuration.maxFeatures || 250
-    this._styleAssignment = {table: null, featureId: -1}
-    this._iconAssignment = {table: null, featureId: -1}
-    this._tableStyleAssignment = {table: null, geometryType: -1}
-    this._tableIconAssignment = {table: null, geometryType: -1}
+    this.geopackageFilePath = configuration.geopackageFilePath
+    this.count = configuration.count
+    this.extent = configuration.extent
+    this.layerKey = configuration.layerKey || 0
+    this.styleAssignment = {table: null, featureId: -1}
+    this.iconAssignment = {table: null, featureId: -1}
+    this.tableStyleAssignment = {table: null, geometryType: -1}
+    this.tableIconAssignment = {table: null, geometryType: -1}
   }
 
   async initialize () {
-    this._features = await GeoPackageUtilities.getAllFeaturesAsGeoJSON(this._geopackageFilePath, this.sourceLayerName)
-    this._extent = await GeoPackageUtilities.getBoundingBoxForTable(this._geopackageFilePath, this.sourceLayerName)
-    await this.vectorTileRenderer.init()
+    this.geopackage = await GeoPackageAPI.open(this.geopackageFilePath)
     await super.initialize()
     return this
   }
 
+  setRenderer (renderer) {
+    this.renderer = renderer
+    this.renderer.setGeoPackage(this.geopackage)
+  }
+
   close () {
-    if (this._vectorTileRenderer) {
-      this._vectorTileRenderer.close()
+    if (this.renderer) {
+      this.renderer.close()
+    }
+    if (this.geopackage) {
+      try {
+        this.geopackage.close()
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+      this.geopackage = undefined
     }
   }
 
   updateMaxFeatures (maxFeatures) {
-    if (this._vectorTileRenderer) {
-      this.vectorTileRenderer.updateMaxFeatures(maxFeatures)
+    if (this.renderer) {
+      this.renderer.updateMaxFeatures(maxFeatures)
     }
   }
 
   async styleChanged () {
-    if (this._vectorTileRenderer) {
-      await this.vectorTileRenderer.styleChanged()
+    this.close()
+    this.geopackage = await GeoPackageAPI.open(this.filePath)
+    if (this.renderer) {
+      this.renderer.setGeoPackage(this.geopackage)
     }
   }
 
@@ -64,15 +78,14 @@ export default class VectorLayer extends Layer {
       ...{
         pane: 'vector',
         layerType: LayerTypes.VECTOR,
-        extent: this._extent,
+        extent: this.extent,
         count: this.count || 0,
-        geopackageFilePath: this._geopackageFilePath,
-        layerKey: this._layerKey,
-        maxFeatures: this._maxFeatures,
-        styleAssignment: this._styleAssignment,
-        iconAssignment: this._iconAssignment,
-        tableStyleAssignment: this._tableStyleAssignment,
-        tableIconAssignment: this._tableIconAssignment
+        geopackageFilePath: this.geopackageFilePath,
+        layerKey: this.layerKey,
+        styleAssignment: this.styleAssignment,
+        iconAssignment: this.iconAssignment,
+        tableStyleAssignment: this.tableStyleAssignment,
+        tableIconAssignment: this.tableIconAssignment
       }
     }
   }
@@ -81,22 +94,7 @@ export default class VectorLayer extends Layer {
     return ['count'].concat(super.getRepaintFields())
   }
 
-  get count () {
-    return this._features.length
-  }
-
-  get extent () {
-    return this._extent
-  }
-
-  get vectorTileRenderer () {
-    if (!this._vectorTileRenderer) {
-      this._vectorTileRenderer = new GeoPackageVectorTileRenderer(this._geopackageFilePath, this.name, this._maxFeatures)
-    }
-    return this._vectorTileRenderer
-  }
-
-  async renderTile (coords, tileCanvas, done) {
-    return this.vectorTileRenderer.renderVectorTile(coords, tileCanvas, done)
+  async renderTile (coords, callback) {
+    return this.renderer.renderTile(coords, callback)
   }
 }

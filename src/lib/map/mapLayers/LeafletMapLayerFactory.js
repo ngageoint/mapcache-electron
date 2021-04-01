@@ -3,13 +3,19 @@ import DefaultMapLayer from './DefaultMapLayer'
 import LayerTypes from '../../source/layer/LayerTypes'
 
 export default class LeafletMapLayerFactory {
-  static constructMapLayer (layerModel, mapPane = 'overlayPane', isPreview = false) {
-    switch (layerModel.layerType) {
+  /**
+   * Constructs a map layer from an initialized layer
+   * @param layer - initialized layer
+   * @param mapPane - the map pane to add the layer to
+   * @param isPreview - flag if this is preview mode
+   */
+  static constructMapLayer (layer, mapPane = 'overlayPane', isPreview = false) {
+    switch (layer.layerType) {
       case LayerTypes.WMS:
       case LayerTypes.XYZ_SERVER:
-        return NetworkMapLayer.constructMapLayer(layerModel, mapPane, isPreview)
+        return NetworkMapLayer.constructMapLayer(layer, mapPane, isPreview)
       default:
-        return DefaultMapLayer.constructMapLayer(layerModel, mapPane)
+        return DefaultMapLayer.constructMapLayer(layer, mapPane)
     }
   }
 }

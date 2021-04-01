@@ -342,16 +342,20 @@
 
 <script>
   import { mapState } from 'vuex'
-  import _ from 'lodash'
+  import isNil from 'lodash/isNil'
+  import keys from 'lodash/keys'
+  import debounce from 'lodash/debounce'
   import { ipcRenderer } from 'electron'
   import draggable from 'vuedraggable'
-  import UniqueIDUtilities from '../../lib/UniqueIDUtilities'
-  import GeoPackageUtilities from '../../lib/GeoPackageUtilities'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import NumberPicker from '../Common/NumberPicker'
-  import ActionUtilities from '../../lib/ActionUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import EventBus from '../../EventBus'
   import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
   import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import GeoPackageTileTableUtilities from '../../lib/geopackage/GeoPackageTileTableUtilities'
+  import CommonActions from '../../lib/vuex/CommonActions'
 
   export default {
     props: {
@@ -375,7 +379,7 @@
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ],
         status: {
-          message: 'Starting',
+          message: 'Starting...',
           progress: 0.0
         },
         processing: false,
@@ -393,7 +397,7 @@
     },
     methods: {
       filterErroredLayers (layers) {
-        this.selectedDataSourceLayers = layers.filter(layerId => _.isNil(this.project.sources[layerId].error))
+        this.selectedDataSourceLayers = layers.filter(layerId => isNil(this.project.sources[layerId].error))
       },
       async cancelAddTileLayer () {
         const self = this
@@ -403,19 +407,19 @@
         this.status.message = 'Cancelling...'
         self.status.progress = -1
         ipcRenderer.once('cancel_build_tile_layer_completed_' + this.configuration.id, () => {
-          GeoPackageUtilities.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+          GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
           }).catch(() => {
             // table may not have been created yet
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
           })
         })
         ipcRenderer.send('cancel_build_tile_layer', {configuration: this.configuration})
@@ -438,18 +442,11 @@
           renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
         }
 
-        ipcRenderer.once('build_tile_layer_completed_' + this.configuration.id, (event, result) => {
+        ipcRenderer.once('build_tile_layer_completed_' + this.configuration.id, () => {
           this.done = true
-          if (result && result.error) {
-            this.status.message = result.error
-            this.error = true
-          } else {
-            this.status.message = 'Completed'
-            this.status.progress = 100
-          }
           ipcRenderer.removeAllListeners('build_tile_layer_status_' + this.configuration.id)
-          ActionUtilities.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          ActionUtilities.notifyTab({projectId: this.project.id, tabId: 0})
+          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
         })
         ipcRenderer.on('build_tile_layer_status_' + this.configuration.id, (event, status) => {
           if (!this.done) {
@@ -459,8 +456,8 @@
         ipcRenderer.send('build_tile_layer', {configuration: this.configuration})
       },
       cancel () {
-        if (!_.isNil(this.project.boundingBoxFilterEditing)) {
-          ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+        if (!isNil(this.project.boundingBoxFilterEditing)) {
+          ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
         }
         this.back()
       },
@@ -477,19 +474,19 @@
         this.maxZoom = val
       },
       setBoundingBoxFilterToExtent () {
-        ActionUtilities.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
           // eslint-disable-next-line no-console
           console.error(e)
         })
       },
       resetBoundingBox () {
-        ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
+        ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
       },
       editBoundingBox (mode) {
-        ActionUtilities.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+        ProjectActions.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
       },
       stopEditingBoundingBox () {
-        ActionUtilities.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+        ProjectActions.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       areZoomsValid () {
         return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
@@ -501,18 +498,18 @@
         })
         let tiles = 0
         if (this.areZoomsValid()) {
-          tiles = GeoPackageUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
+          tiles = GeoPackageTileTableUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
         }
         return tiles
       },
       async getGeoPackageLayerItems () {
         const projectId = this.project.id
         const items = []
-        const keys = _.keys(this.project.geopackages)
-        for (let i = 0; i < keys.length; i++) {
-          const geopackage = this.project.geopackages[keys[i]]
-          if (await GeoPackageUtilities.isHealthy(geopackage)) {
-            _.keys(geopackage.tables.tiles).forEach(table => {
+        const geopackageKeys = keys(this.project.geopackages)
+        for (let i = 0; i < geopackageKeys.length; i++) {
+          const geopackage = this.project.geopackages[geopackageKeys[i]]
+          if (await GeoPackageCommon.isHealthy(geopackage)) {
+            Object.keys(geopackage.tables.tiles).forEach(table => {
               const tableName = table
               const visible = geopackage.tables.tiles[table].visible
               const geopackageId = geopackage.id
@@ -524,18 +521,18 @@
                 subtitle: table,
                 visible,
                 type: 'tile',
-                changeVisibility: _.debounce(() => {
-                  ActionUtilities.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                changeVisibility: debounce(() => {
+                  ProjectActions.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
-                zoomTo: _.debounce((e) => {
+                zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ActionUtilities.zoomToExtent({projectId, extent})
+                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    ProjectActions.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
             })
-            _.keys(geopackage.tables.features).forEach(table => {
+            Object.keys(geopackage.tables.features).forEach(table => {
               const tableName = table
               const visible = geopackage.tables.features[table].visible
               const geopackageId = geopackage.id
@@ -547,13 +544,13 @@
                 subtitle: table,
                 visible,
                 type: 'feature',
-                changeVisibility: _.debounce(() => {
-                  ActionUtilities.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                changeVisibility: debounce(() => {
+                  ProjectActions.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
-                zoomTo: _.debounce((e) => {
+                zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageUtilities.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ActionUtilities.zoomToExtent({projectId, extent})
+                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    ProjectActions.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
@@ -572,19 +569,19 @@
             id: source.id,
             visible: source.visible,
             type: source.pane === 'vector' ? 'feature' : 'tile',
-            changeVisibility: _.debounce(() => {
-              if (_.isNil(source.error)) {
-                ActionUtilities.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
+            changeVisibility: debounce(() => {
+              if (isNil(source.error)) {
+                CommonActions.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
               }
             }, 100),
-            zoomTo: _.debounce((e) => {
+            zoomTo: debounce((e) => {
               e.stopPropagation()
-              ActionUtilities.zoomToExtent({projectId, extent: source.extent})
+              ProjectActions.zoomToExtent({projectId, extent: source.extent})
             }, 100)
           }
         })
       },
-      fireReorderMapLayers: _.debounce((layers) => {
+      fireReorderMapLayers: debounce((layers) => {
         EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
       }, 100)
     },
@@ -620,7 +617,7 @@
           let mapZoom = 3
           const projectId = this.$route.params.id
           let project = state.UIState[projectId]
-          if (!_.isNil(project)) {
+          if (!isNil(project)) {
             mapZoom = project.mapZoom
           }
           return mapZoom
@@ -634,7 +631,7 @@
       },
       boundingBoxText () {
         let boundingBoxText = 'Not specified'
-        if (!_.isNil(this.project.boundingBoxFilter)) {
+        if (!isNil(this.project.boundingBoxFilter)) {
           const bbox = this.project.boundingBoxFilter
           boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
         }
@@ -669,7 +666,7 @@
           this.geopackageLayers = await this.getGeoPackageLayerItems()
           this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
           const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-          this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !_.isNil(item))
+          this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
         },
         deep: true
       }
@@ -678,15 +675,15 @@
       this.$nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
-      ActionUtilities.clearBoundingBoxFilter({projectId: this.project.id})
-      const mapZoom = _.isNil(this.mapZoom) ? 3 : this.mapZoom
+      ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+      const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
       this.minZoom = Math.min(20, Math.max(0, mapZoom))
       this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
       const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-      this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !_.isNil(item))
+      this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
     },
     beforeUnmount () {
-      ActionUtilities.resetBoundingBox()
+      ProjectActions.resetBoundingBox()
     }
   }
 </script>
