@@ -17,7 +17,11 @@ export default class FileUtilities {
   static slice (fd, start, end) {
     const chunkSize = end - start
     const dataView = new DataView(new ArrayBuffer(chunkSize))
-    fs.readSync(fd, dataView, 0, chunkSize, start)
+    try {
+      fs.readSync(fd, dataView, 0, chunkSize, start)
+    } catch (e) {
+      console.error(e)
+    }
     return dataView
   }
 

@@ -59,6 +59,7 @@ export default class GeoTiffRenderingUtilities {
       const {x, y, z} = coords
 
       const fd = fs.openSync(rasterFile, 'r')
+      const size = fs.statSync(rasterFile).size
 
       // create an image to store
       try {
@@ -116,29 +117,32 @@ export default class GeoTiffRenderingUtilities {
                         const px = Math.round((coordinate[0] - x0) / dx)
                         const py = Math.round((coordinate[1] - y0) / dy)
                         const sourcePosition = imageWidth * py + px
-                        const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-                        let value = g(sample)
-                        if (stretchToMinMax) {
-                          value = GeoTiffUtilities.stretchValue(value, grayBandMin, grayBandMax)
-                        } else {
-                          value = value / grayBandDataTypeMax * maxByteValue
-                        }
-                        if (grayScaleColorGradient === 0) {
-                          value = maxByteValue - value
-                        }
-                        const position = 4 * (width * (height - yPos) + xPos)
-                        targetData[position] = value
-                        targetData[position + 1] = value
-                        targetData[position + 2] = value
-                        if (a) {
-                          targetData[position + 3] = a(sample)
-                        } else {
-                          targetData[position + 3] = 255
-                        }
-                        if (targetData[position + 3] !== 0) {
-                          // alpha was good, check if it is a no data though...
-                          if (enableGlobalNoDataValue && targetData[position] === globalNoDataValue) {
-                            targetData[position + 3] = 0
+                        const offset = bytesPerSample * sourcePosition
+                        if (offset >= 0 && offset < size) {
+                          const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
+                          let value = g(sample)
+                          if (stretchToMinMax) {
+                            value = GeoTiffUtilities.stretchValue(value, grayBandMin, grayBandMax)
+                          } else {
+                            value = value / grayBandDataTypeMax * maxByteValue
+                          }
+                          if (grayScaleColorGradient === 0) {
+                            value = maxByteValue - value
+                          }
+                          const position = 4 * (width * (height - yPos) + xPos)
+                          targetData[position] = value
+                          targetData[position + 1] = value
+                          targetData[position + 2] = value
+                          if (a) {
+                            targetData[position + 3] = a(sample)
+                          } else {
+                            targetData[position + 3] = 255
+                          }
+                          if (targetData[position + 3] !== 0) {
+                            // alpha was good, check if it is a no data though...
+                            if (enableGlobalNoDataValue && targetData[position] === globalNoDataValue) {
+                              targetData[position + 3] = 0
+                            }
                           }
                         }
                       }
@@ -176,33 +180,35 @@ export default class GeoTiffRenderingUtilities {
                       const py = Math.round((coordinate[1] - y0) / dy)
                       const position = 4 * (width * (height - yPos) + xPos)
                       const sourcePosition = imageWidth * py + px
+                      const offset = bytesPerSample * sourcePosition
+                      if (offset >= 0 && offset < size) {
+                        const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
 
-                      const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-
-                      // set value on target here
-                      if (!isNil(r)) {
-                        targetData[position] = stretchToMinMax ? GeoTiffUtilities.stretchValue(r(sample), redBandMin, redBandMax) : r(sample) / redBandDataTypeMax * maxByteValue
-                      } else {
-                        targetData[position] = 0
-                      }
-                      if (!isNil(g)) {
-                        targetData[position + 1] = stretchToMinMax ? GeoTiffUtilities.stretchValue(g(sample), greenBandMin, greenBandMax) : g(sample) / greenBandDataTypeMax * maxByteValue
-                      } else {
-                        targetData[position + 1] = 0
-                      }
-                      if (!isNil(b)) {
-                        targetData[position + 2] = stretchToMinMax ? GeoTiffUtilities.stretchValue(b(sample), blueBandMin, blueBandMax) : b(sample) / blueBandDataTypeMax * maxByteValue
-                      } else {
-                        targetData[position + 2] = 0
-                      }
-                      if (!isNil(a)) {
-                        targetData[position + 3] = a(sample)
-                      } else {
-                        targetData[position + 3] = 255
-                      }
-                      if (targetData[position + 3] !== 0) {
-                        if (enableGlobalNoDataValue && targetData[position] === globalNoDataValue && targetData[(position) + 1] === globalNoDataValue && targetData[(position) + 2] === globalNoDataValue) {
-                          targetData[position + 3] = 0
+                        // set value on target here
+                        if (!isNil(r)) {
+                          targetData[position] = stretchToMinMax ? GeoTiffUtilities.stretchValue(r(sample), redBandMin, redBandMax) : r(sample) / redBandDataTypeMax * maxByteValue
+                        } else {
+                          targetData[position] = 0
+                        }
+                        if (!isNil(g)) {
+                          targetData[position + 1] = stretchToMinMax ? GeoTiffUtilities.stretchValue(g(sample), greenBandMin, greenBandMax) : g(sample) / greenBandDataTypeMax * maxByteValue
+                        } else {
+                          targetData[position + 1] = 0
+                        }
+                        if (!isNil(b)) {
+                          targetData[position + 2] = stretchToMinMax ? GeoTiffUtilities.stretchValue(b(sample), blueBandMin, blueBandMax) : b(sample) / blueBandDataTypeMax * maxByteValue
+                        } else {
+                          targetData[position + 2] = 0
+                        }
+                        if (!isNil(a)) {
+                          targetData[position + 3] = a(sample)
+                        } else {
+                          targetData[position + 3] = 255
+                        }
+                        if (targetData[position + 3] !== 0) {
+                          if (enableGlobalNoDataValue && targetData[position] === globalNoDataValue && targetData[(position) + 1] === globalNoDataValue && targetData[(position) + 2] === globalNoDataValue) {
+                            targetData[position + 3] = 0
+                          }
                         }
                       }
                     }
@@ -224,15 +230,18 @@ export default class GeoTiffRenderingUtilities {
                         const py = Math.round((coordinate[1] - y0) / dy)
                         const position = 4 * (width * (height - y) + x)
                         const sourcePosition = imageWidth * py + px
-                        const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-                        const mapIndex = p(sample)
-                        targetData[position] = colorMap[mapIndex] / 65535 * maxByteValue
-                        targetData[position + 1] = colorMap[mapIndex + colorMap.length / 3] / 65535 * maxByteValue
-                        targetData[position + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
-                        if (a) {
-                          targetData[position + 3] = a(sample)
-                        } else {
-                          targetData[position + 3] = 255
+                        const offset = bytesPerSample * sourcePosition
+                        if (offset >= 0 && offset < size) {
+                          const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
+                          const mapIndex = p(sample)
+                          targetData[position] = colorMap[mapIndex] / 65535 * maxByteValue
+                          targetData[position + 1] = colorMap[mapIndex + colorMap.length / 3] / 65535 * maxByteValue
+                          targetData[position + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
+                          if (a) {
+                            targetData[position + 3] = a(sample)
+                          } else {
+                            targetData[position + 3] = 255
+                          }
                         }
                       }
                     }
@@ -248,14 +257,17 @@ export default class GeoTiffRenderingUtilities {
                       const py = Math.round((coordinate[1] - y0) / dy)
                       const position = 4 * (width * (height - yPos) + xPos)
                       const sourcePosition = imageWidth * py + px
-                      const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-                      const y = sample[0]
-                      const cb = sample[1]
-                      const cr = sample[2]
-                      targetData[position] = (y + (1.40200 * (cr - 0x80)))
-                      targetData[position + 1] = (y - (0.34414 * (cb - 0x80)) - (0.71414 * (cr - 0x80)))
-                      targetData[position + 2] = (y + (1.77200 * (cb - 0x80)))
-                      targetData[position + 3] = 255
+                      const offset = bytesPerSample * sourcePosition
+                      if (offset >= 0 && offset < size) {
+                        const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
+                        const y = sample[0]
+                        const cb = sample[1]
+                        const cr = sample[2]
+                        targetData[position] = (y + (1.40200 * (cr - 0x80)))
+                        targetData[position + 1] = (y - (0.34414 * (cb - 0x80)) - (0.71414 * (cr - 0x80)))
+                        targetData[position + 2] = (y + (1.77200 * (cb - 0x80)))
+                        targetData[position + 3] = 255
+                      }
                     }
                   }
                 } else if (renderingMethod === 4) {
@@ -269,15 +281,18 @@ export default class GeoTiffRenderingUtilities {
                       const py = Math.round((coordinate[1] - y0) / dy)
                       const position = 4 * (width * (height - yPos) + xPos)
                       const sourcePosition = imageWidth * py + px
-                      const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-                      const c = sample[0]
-                      const m = sample[1]
-                      const y = sample[2]
-                      const k = sample[3]
-                      targetData[position] = 255 * ((255 - c) / 256) * ((255 - k) / 256)
-                      targetData[position + 1] = 255 * ((255 - m) / 256) * ((255 - k) / 256)
-                      targetData[position + 2] = 255 * ((255 - y) / 256) * ((255 - k) / 256)
-                      targetData[position + 3] = 255
+                      const offset = bytesPerSample * sourcePosition
+                      if (offset >= 0 && offset < size) {
+                        const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
+                        const c = sample[0]
+                        const m = sample[1]
+                        const y = sample[2]
+                        const k = sample[3]
+                        targetData[position] = 255 * ((255 - c) / 256) * ((255 - k) / 256)
+                        targetData[position + 1] = 255 * ((255 - m) / 256) * ((255 - k) / 256)
+                        targetData[position + 2] = 255 * ((255 - y) / 256) * ((255 - k) / 256)
+                        targetData[position + 3] = 255
+                      }
                     }
                   }
                 } else if (renderingMethod === 5) {
@@ -294,29 +309,32 @@ export default class GeoTiffRenderingUtilities {
                       const py = Math.round((coordinate[1] - y0) / dy)
                       const position = 4 * (width * (height - yPos) + xPos)
                       const sourcePosition = imageWidth * py + px
-                      const sample = GeoTiffUtilities.getSample(fd, bytesPerSample * sourcePosition, bytesPerSample, bitsPerSample, reader, littleEndian)
-                      const L = sample[0]
-                      const a_ = sample[1] << 24 >> 24 // conversion from uint8 to int8
-                      const b_ = sample[2] << 24 >> 24 // same
-                      let y = (L + 16) / 116
-                      let x = (a_ / 500) + y
-                      let z = y - (b_ / 200)
-                      let r
-                      let g
-                      let b
-                      x = Xn * ((x * x * x > 0.008856) ? x * x * x : (x - (16 / 116)) / 7.787)
-                      y = Yn * ((y * y * y > 0.008856) ? y * y * y : (y - (16 / 116)) / 7.787)
-                      z = Zn * ((z * z * z > 0.008856) ? z * z * z : (z - (16 / 116)) / 7.787)
-                      r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986)
-                      g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415)
-                      b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570)
-                      r = (r > 0.0031308) ? ((1.055 * (r ** (1 / 2.4))) - 0.055) : 12.92 * r
-                      g = (g > 0.0031308) ? ((1.055 * (g ** (1 / 2.4))) - 0.055) : 12.92 * g
-                      b = (b > 0.0031308) ? ((1.055 * (b ** (1 / 2.4))) - 0.055) : 12.92 * b
-                      targetData[position] = Math.max(0, Math.min(1, r)) * 255
-                      targetData[position + 1] = Math.max(0, Math.min(1, g)) * 255
-                      targetData[position + 2] = Math.max(0, Math.min(1, b)) * 255
-                      targetData[position + 3] = 255
+                      const offset = bytesPerSample * sourcePosition
+                      if (offset >= 0 && offset < size) {
+                        const sample = GeoTiffUtilities.getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
+                        const L = sample[0]
+                        const a_ = sample[1] << 24 >> 24 // conversion from uint8 to int8
+                        const b_ = sample[2] << 24 >> 24 // same
+                        let y = (L + 16) / 116
+                        let x = (a_ / 500) + y
+                        let z = y - (b_ / 200)
+                        let r
+                        let g
+                        let b
+                        x = Xn * ((x * x * x > 0.008856) ? x * x * x : (x - (16 / 116)) / 7.787)
+                        y = Yn * ((y * y * y > 0.008856) ? y * y * y : (y - (16 / 116)) / 7.787)
+                        z = Zn * ((z * z * z > 0.008856) ? z * z * z : (z - (16 / 116)) / 7.787)
+                        r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986)
+                        g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415)
+                        b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570)
+                        r = (r > 0.0031308) ? ((1.055 * (r ** (1 / 2.4))) - 0.055) : 12.92 * r
+                        g = (g > 0.0031308) ? ((1.055 * (g ** (1 / 2.4))) - 0.055) : 12.92 * g
+                        b = (b > 0.0031308) ? ((1.055 * (b ** (1 / 2.4))) - 0.055) : 12.92 * b
+                        targetData[position] = Math.max(0, Math.min(1, r)) * 255
+                        targetData[position + 1] = Math.max(0, Math.min(1, g)) * 255
+                        targetData[position + 2] = Math.max(0, Math.min(1, b)) * 255
+                        targetData[position + 3] = 255
+                      }
                     }
                   }
                 }
