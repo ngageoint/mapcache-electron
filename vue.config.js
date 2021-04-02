@@ -16,29 +16,29 @@ module.exports = {
         mainPreload: 'src/preload/mainPreload.js',
         projectPreload: 'src/preload/projectPreload.js',
         workerPreload: 'src/preload/workerPreload.js',
-        mapcacheThread: 'src/threads/mapcacheThread.js',
-        geotiffThread: 'src/threads/geotiffThread.js'
+        // mapcacheThread: 'src/threads/mapcacheThread.js',
+        // geotiffThread: 'src/threads/geotiffThread.js'
       },
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
       chainWebpackMainProcess: config => {
-        // config
-        //   .entry('geotiff')
-        //   .add('./src/threads/geotiff.thread.js')
-        //   .end()
-        //   .entry('mapcache')
-        //   .add('./src/threads/mapcache.thread.js')
-        //   .end()
-        //   .output
-        //   .filename((pathData) => {
-        //     if (pathData.chunk.name === 'geotiff') {
-        //       return '[name].thread.js'
-        //     } else if (pathData.chunk.name === 'mapcache') {
-        //       return '[name].thread.js'
-        //     } else {
-        //       return '[name].js'
-        //     }
-        //   })
+        config
+          .entry('geotiff')
+          .add('./src/threads/geotiffThread.js')
+          .end()
+          .entry('mapcache')
+          .add('./src/threads/mapcacheThread.js')
+          .end()
+          .output
+          .filename((pathData) => {
+            if (pathData.chunk.name === 'geotiff') {
+              return '[name]Thread.js'
+            } else if (pathData.chunk.name === 'mapcache') {
+              return '[name]Thread.js'
+            } else {
+              return '[name].js'
+            }
+          })
         config.module
           .rule("node")
           .test(/\.node$/)

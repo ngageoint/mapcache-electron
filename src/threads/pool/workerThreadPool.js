@@ -4,7 +4,6 @@ const path = require('path')
 const { Worker } = require('worker_threads')
 const kTaskInfo = Symbol('kTaskInfo')
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
-const kClosed = Symbol('kClosed')
 
 class WorkerPoolTaskInfo extends AsyncResource {
   constructor (task, callback) {
@@ -12,8 +11,6 @@ class WorkerPoolTaskInfo extends AsyncResource {
     this.task = task
     this.callback = callback
     this.cancelled = false
-    this.workersClosed = 0
-    this.closing = false
   }
 
   getTaskId () {
@@ -64,26 +61,10 @@ class WorkerThreadPool extends EventEmitter {
       this.emit(kWorkerFreedEvent)
     })
     worker.once('error', (err) => {
+      console.error(err)
       if (worker[kTaskInfo]) {
         worker[kTaskInfo].done(err, null)
       }
-      this.workers.splice(this.workers.indexOf(worker), 1)
-      this.addNewWorker()
-    })
-    worker.once('exit', () => {
-      // if (this.closing) {
-      //   this.workersClosed++
-      //   this.workers.splice(this.workers.indexOf(worker), 1)
-      //   worker.unref()
-      //   if (this.workers.length === 0) {
-      //     this.emit(kClosed)
-      //   }
-      // } else {
-      //   this.workers.splice(this.workers.indexOf(worker), 1)
-      //   this.addNewWorker()
-      // }
-      this.workers.splice(this.workers.indexOf(worker), 1)
-      this.addNewWorker()
     })
     this.workers.push(worker)
     this.freeWorkers.push(worker)
@@ -119,8 +100,9 @@ class WorkerThreadPool extends EventEmitter {
         worker[kTaskInfo].setCancelled()
         worker[kTaskInfo].done(null, null)
         worker[kTaskInfo] = null
-        // worker.postMessage({shutdown: true})
         worker.terminate()
+        this.workers.splice(this.workers.indexOf(worker), 1)
+        this.addNewWorker()
         cancelled = true
       }
     }
@@ -141,16 +123,7 @@ class WorkerThreadPool extends EventEmitter {
   }
 
   async close () {
-    // this.closing = true
-    // return new Promise (resolve => {
-    //   this.queue = []
-    //   this.on(kClosed, resolve)
-    //   for (const worker of this.workers) {
-    //     worker.postMessage({shutdown: true})
-    //   }
-    // })
     this.queue = []
-    // this.on(kClosed, resolve)
     for (const worker of this.workers) {
       await worker.terminate()
     }
