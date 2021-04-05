@@ -1,4 +1,4 @@
-import mime from 'mime-types'
+import mime from 'mime/lite'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import FileUtilities from './FileUtilities'
@@ -35,15 +35,15 @@ const MEDIA_TABLE_NAME = 'gpkg_media'
 
 export default class MediaUtilities {
   static getMimeType (filePath) {
-    return mime.contentType(path.extname(filePath))
+    return mime.getType(path.extname(filePath))
   }
 
   static getExtension (mimeType) {
-    return mime.extension(mimeType)
+    return mime.getExtension(mimeType)
   }
 
-  static isChromeMimeSupported (mime) {
-    return supportedContentTypes.indexOf(mime.split(';')[0]) !== -1
+  static isChromeMimeSupported (m) {
+    return supportedContentTypes.indexOf(m.split(';')[0]) !== -1
   }
 
   /**

@@ -3,8 +3,6 @@ import GeoPackageMediaUtilities from '../lib/geopackage/GeoPackageMediaUtilities
 import SourceFactory from '../lib/source/SourceFactory'
 import isNil from 'lodash/isNil'
 
-let setup = false
-
 /**
  * Attaches media to a geopackage
  * @param data
@@ -61,7 +59,6 @@ async function processDataSource (data) {
 
 parentPort.on('message', (message) => {
   if (message.shutdown) {
-    closeListeners()
     process.exit()
   } else if (message.type === 'attach_media') {
     attachMedia(message.data).then((result) => {
@@ -77,39 +74,3 @@ parentPort.on('message', (message) => {
     })
   }
 })
-
-function closeListeners () {
-  process.off('SIGINT')
-  process.off('SIGTERM')
-  process.off('SIGABRT')
-  process.off('SIGSEGV')
-  parentPort.off('message')
-}
-
-function setupListeners () {
-  process.on('SIGINT', () => {
-    closeListeners()
-    process.exit(0)
-  })
-
-  process.on('SIGTERM', () => {
-    closeListeners()
-    process.exit(0)
-  })
-
-  process.on('SIGABRT', () => {
-    closeListeners()
-    process.exit(0)
-  })
-
-  process.on('SIGSEGV', () => {
-    closeListeners()
-    process.exit(0)
-  })
-
-  setup = true
-}
-
-if (!setup) {
-  setupListeners()
-}

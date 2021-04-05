@@ -15,9 +15,7 @@ module.exports = {
       preload: {
         mainPreload: 'src/preload/mainPreload.js',
         projectPreload: 'src/preload/projectPreload.js',
-        workerPreload: 'src/preload/workerPreload.js',
-        // mapcacheThread: 'src/threads/mapcacheThread.js',
-        // geotiffThread: 'src/threads/geotiffThread.js'
+        workerPreload: 'src/preload/workerPreload.js'
       },
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
@@ -72,9 +70,14 @@ module.exports = {
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
         asarUnpack: [
+          "**/node_modules/bin-wrapper/**/*",
           "**/node_modules/imagemin-pngquant/**/*",
           "**/node_modules/pngquant-bin/**/*",
-          "**/node_modules/bin-wrapper/**/*",
+          "**/node_modules/better-sqlite3/**/*",
+          "**/node_modules/canvas/**/*",
+          "**/node_modules/mime/**/*",
+          "**/node_modules/bindings/**/*",
+          "**/node_modules/file-uri-to-path/**/*",
           "**/geotiffThread.js",
           "**/mapcacheThread.js"
         ],
