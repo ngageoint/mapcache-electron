@@ -1,6 +1,6 @@
 import ProjectActions from '../../../vuex/ProjectActions'
 import HttpUtilities from '../../../network/HttpUtilities'
-import EventBus from '../../../../EventBus'
+import EventBus from '../../../vue/EventBus'
 import isNil from 'lodash/isNil'
 
 /**

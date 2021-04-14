@@ -132,7 +132,8 @@
   import DataSourceTroubleshooting from '../../DataSources/DataSourceTroubleshooting'
   import GeoPackageCommon from '../../../lib/geopackage/GeoPackageCommon'
   import LayerFactory from '../../../lib/source/layer/LayerFactory'
-  import FileUtilities from '../../../lib/util/FileUtilities'
+  import ElectronUtilities from '../../../lib/electron/ElectronUtilities'
+  import UniqueIDUtilities from '../../../lib/util/UniqueIDUtilities'
 
   export default {
     components: {
@@ -239,47 +240,53 @@
       async addBaseMap (baseMapName, configuration, backgroundColor) {
         let layerConfiguration = {}
 
-        // create new directory
-        const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory()
+        // create a base map directory, the data source will be copied to this directory
+        const baseMapId = UniqueIDUtilities.createUniqueID()
+        const baseMapDirectory = ElectronUtilities.createBaseMapDirectory(baseMapId)
 
         // handle geopackage
         let extent = [-180, -90, 180, 90]
         if (!isNil(configuration.geopackage)) {
           const oldPath = configuration.geopackage.path
-          const newPath = path.join(sourceDirectory, path.basename(oldPath))
-          await jetpack.copyAsync(oldPath, newPath)
+          const newPath = path.join(baseMapDirectory, path.basename(oldPath))
+          await jetpack.copyAsync(oldPath, newPath, {overwrite: true})
+
           if (configuration.type === 'tile') {
             // create new geopackage and copy tile table
-            const layer = LayerFactory.constructLayer({id: sourceId, filePath: newPath, sourceLayerName: configuration.tableName, layerType: 'GeoPackage'})
+            const layer = LayerFactory.constructLayer({id: baseMapId, directory: baseMapDirectory, sourceDirectory: baseMapDirectory, filePath: newPath, sourceLayerName: configuration.tableName, layerType: 'GeoPackage'})
             await layer.initialize()
             layerConfiguration = layer.configuration
             extent = await GeoPackageCommon.getGeoPackageExtent(newPath, configuration.tableName)
           } else {
             // create new geopackage and copy feature table
-            const layer = LayerFactory.constructLayer({id: sourceId, geopackageFilePath: newPath, sourceDirectory: newPath, sourceLayerName: configuration.tableName, sourceType: 'GeoPackage', layerType: 'Vector', maxFeatures: configuration.maxFeatures})
+            const layer = LayerFactory.constructLayer({id: baseMapId, directory: baseMapDirectory, sourceDirectory: baseMapDirectory, geopackageFilePath: newPath, sourceLayerName: configuration.tableName, sourceType: 'GeoPackage', layerType: 'Vector', maxFeatures: configuration.maxFeatures})
             await layer.initialize()
             layerConfiguration = layer.configuration
             extent = await GeoPackageCommon.getBoundingBoxForTable(newPath, configuration.tableName)
           }
         } else {
+          // handle data source
           layerConfiguration = cloneDeep(configuration)
+          layerConfiguration.id = baseMapId
           extent = layerConfiguration.extent || [-180, -90, 180, 90]
+          await jetpack.copyAsync(layerConfiguration.directory, baseMapDirectory, {overwrite: true})
+          layerConfiguration.directory = baseMapDirectory
+          if (!isNil(layerConfiguration.filePath)) {
+            layerConfiguration.filePath = configuration.filePath.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+          }
+          if (!isNil(layerConfiguration.rasterFile)) {
+            layerConfiguration.rasterFile = configuration.rasterFile.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+          }
           if (!isNil(configuration.geopackageFilePath)) {
-            const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.geopackageFilePath))
-            await jetpack.copyAsync(layerConfiguration.geopackageFilePath, newFilePath)
-            layerConfiguration.geopackageFilePath = newFilePath
-            extent = await GeoPackageCommon.getBoundingBoxForTable(newFilePath, configuration.sourceLayerName)
-          } else if (FileUtilities.exists(layerConfiguration.filePath)) {
-            // if valid filePath, copy to new location
-            const newFilePath = path.join(sourceDirectory, path.basename(layerConfiguration.filePath))
-            await jetpack.copyAsync(layerConfiguration.filePath, newFilePath)
-            layerConfiguration.filePath = newFilePath
+            layerConfiguration.geopackageFilePath = configuration.geopackageFilePath.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+            extent = await GeoPackageCommon.getBoundingBoxForTable(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName)
           }
         }
-        layerConfiguration.id = sourceId
+        layerConfiguration.id = baseMapId
 
         ProjectActions.addBaseMap({
-          id: sourceId,
+          id: baseMapId,
+          directory: baseMapDirectory,
           name: baseMapName,
           background: backgroundColor,
           readonly: false,

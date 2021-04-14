@@ -484,9 +484,10 @@
         try {
           fs.copyFileSync(oldPath, newPath)
           ProjectActions.addGeoPackage({projectId: this.project.id, filePath: newPath})
+          // eslint-disable-next-line no-unused-vars
         } catch (e) {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to copy GeoPackage')
         }
         this.showCopiedAlert = true
       },

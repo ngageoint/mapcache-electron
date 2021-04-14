@@ -10,6 +10,13 @@ import GeoPackageCommon from '../geopackage/GeoPackageCommon'
 import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 
 export default class ArcGISFeatureServiceSource extends Source {
+  constructor (id, directory, filePath, layers = [], sourceName) {
+    super (id, directory, filePath)
+    this.layers = layers
+    this.sourceName = sourceName
+    this.format = format
+  }
+
   async retrieveLayers () {
     let featureCollection = {
       type: 'FeatureCollection',
@@ -19,8 +26,6 @@ export default class ArcGISFeatureServiceSource extends Source {
     for (const layer of this.layers) {
       let content = await this.getContent(layer)
       if (content.error) {
-        // eslint-disable-next-line no-console
-        console.error(content.error)
         throw content.error
       } else {
         featureCollection.features = featureCollection.features.concat(content.features)
@@ -36,7 +41,8 @@ export default class ArcGISFeatureServiceSource extends Source {
     return [
       new VectorLayer({
         id: layerId,
-        sourceDirectory: layerDirectory,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
         name: this.sourceName,
         geopackageFilePath: filePath,
         sourceFilePath: this.filePath,

@@ -2,10 +2,24 @@ import Source from './Source'
 import XYZServerLayer from './layer/tile/XYZServerLayer'
 
 export default class XYZSource extends Source {
+  constructor (id, directory, filePath, subdomains = [], sourceName) {
+    super (id, directory, filePath)
+    this.subdomains = layers
+    this.sourceName = sourceName
+  }
+
   async retrieveLayers () {
-    const layers = []
     const { layerId, layerDirectory } = this.createLayerDirectory()
-    layers.push(new XYZServerLayer({id: layerId, sourceDirectory: layerDirectory, filePath: this.filePath, subdomains: this.layers, sourceLayerName: this.sourceName, visible: false}))
-    return layers
+    return [
+      new XYZServerLayer({
+        id: layerId,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
+        filePath: this.filePath,
+        subdomains: this.subdomains,
+        sourceLayerName: this.sourceName,
+        visible: false
+      })
+    ]
   }
 }

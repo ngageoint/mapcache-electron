@@ -15,7 +15,7 @@ function attachMedia (data) {
 /**
  * This function takes a source configuration and returns any data source layers necessary
  * @param data
- * @returns {Promise<{source: *, error: null, dataSources: Array}>}
+ * @returns {Promise<{dataSources: Array}>}
  */
 async function processDataSource (data) {
   let source = data.source
@@ -27,40 +27,42 @@ async function processDataSource (data) {
       let layers = await createdSource.retrieveLayers().catch(err => {
         throw err
       })
-      for (let i = 0; i < layers.length; i++) {
-        try {
-          let layer = layers[i]
-          await layer.initialize()
-          dataSources.push({id: layer.id, config: layer.configuration})
-          layer.close()
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('unable to initialize data source: ' + layers[i].sourceLayerName)
-          // eslint-disable-next-line no-console
-          console.error(error)
+      if (layers.length > 0) {
+        for (let i = 0; i < layers.length; i++) {
+          try {
+            let layer = layers[i]
+            await layer.initialize()
+            dataSources.push({id: layer.id, config: layer.configuration})
+            layer.close()
+            // eslint-disable-next-line no-unused-vars
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to initialize data source: ' + layers[i].sourceLayerName)
+            error = err
+          }
         }
+      } else {
+        error = new Error('No data source layers retrieved.')
       }
-      createdSource.cleanUp()
     } else {
-      error = 'Unable to create data source.'
+      error = new Error('Failed to create data source.')
     }
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error(e)
+    console.error('Failed to process data source.')
     error = e
   }
+  if (!isNil(error)) {
+    throw error
+  }
   return {
-    dataSources: dataSources,
-    source: source,
-    error: error
+    dataSources: dataSources
   }
 }
 
-
 parentPort.on('message', (message) => {
-  if (message.shutdown) {
-    process.exit()
-  } else if (message.type === 'attach_media') {
+  if (message.type === 'attach_media') {
     attachMedia(message.data).then((result) => {
       parentPort.postMessage(result)
     }).catch(error => {
@@ -70,7 +72,7 @@ parentPort.on('message', (message) => {
     processDataSource(message.data).then((result) => {
       parentPort.postMessage(result)
     }).catch(error => {
-      parentPort.postMessage({error: error, source: message.data.source, dataSources: []})
+      throw error
     })
   }
 })

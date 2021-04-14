@@ -5,9 +5,6 @@ import MBTilesLayer from './layer/tile/MBTilesLayer'
 import VectorStyleUtilities from '../util/VectorStyleUtilities'
 import MBTilesUtilities from '../util/MBTilesUtilities'
 
-/**
- * MBTiles Source
- */
 export default class MBTilesSource extends Source {
   async retrieveLayers () {
     let name = path.basename(this.filePath, path.extname(this.filePath))
@@ -23,6 +20,16 @@ export default class MBTilesSource extends Source {
       throw new Error('Unable to determine data format.')
     }
 
-    return [new MBTilesLayer({id: layerId, filePath: filePath, name: name, sourceLayerName: name, sourceDirectory: layerDirectory, style: {1: VectorStyleUtilities.leafletStyle(), 2: VectorStyleUtilities.leafletStyle(), 3: VectorStyleUtilities.leafletStyle()}})]
+    return [
+      new MBTilesLayer({
+        id: layerId,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
+        filePath: filePath,
+        name: name,
+        sourceLayerName: name,
+        style: {1: VectorStyleUtilities.leafletStyle(), 2: VectorStyleUtilities.leafletStyle(), 3: VectorStyleUtilities.leafletStyle()}
+      })
+    ]
   }
 }

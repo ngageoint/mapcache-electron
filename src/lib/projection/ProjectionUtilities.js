@@ -1,12 +1,39 @@
 import proj4 from 'proj4'
-import proj4Defs from './proj4Defs'
+import path from 'path'
 import isNil from 'lodash/isNil'
+import Database from 'better-sqlite3'
+import FileUtilities from '../util/FileUtilities'
 
 export default class ProjectionUtilities {
+
+  static getCode (name) {
+    let code = -1
+    if (name.startsWith('EPSG:')) {
+      code = Number.parseInt(name.substring(5))
+    }
+    return code
+  }
+
+  static getDef (code) {
+    let def
+    const db = new Database(path.join(FileUtilities.getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
+    const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
+    const row = stmt.get(code)
+    if (row && row.def) {
+      def = row.def
+    }
+    db.close()
+    return def
+  }
+
   static defineProjection (name) {
-    if (proj4Defs[name]) {
-      proj4.defs(name, proj4Defs[name])
-      proj4.defs('urn:ogc:def:crs:EPSG::' + name.substring(5), proj4Defs[name])
+    const code = ProjectionUtilities.getCode(name)
+    if (code !== -1) {
+      const def = ProjectionUtilities.getDef(code)
+      if (def) {
+        proj4.defs(name, def)
+        proj4.defs('urn:ogc:def:crs:EPSG::' + code, def)
+      }
     }
   }
 

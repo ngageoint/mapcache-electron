@@ -1,5 +1,4 @@
 import store from '../../store'
-import keys from 'lodash/keys'
 import FileUtilities from '../util/FileUtilities'
 
 /**
@@ -11,9 +10,7 @@ export default class CommonActions {
   }
 
   static deleteProject (project) {
-    keys(store.state.Projects[project.id].sources).forEach(sourceId => {
-      FileUtilities.rmDir(store.state.Projects[project.id].sources[sourceId].sourceDirectory)
-    })
+    FileUtilities.rmDir(store.state.Projects[project.id].directory)
     store.dispatch('UIState/deleteProject', { projectId: project.id.slice() })
     store.dispatch('Projects/deleteProject', { projectId: project.id.slice() })
   }

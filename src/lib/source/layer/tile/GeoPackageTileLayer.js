@@ -47,9 +47,10 @@ export default class GeoPackageTileLayer extends TileLayer {
     if (this.geopackage) {
       try {
         this.geopackage.close()
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to close GeoPackage')
       }
       this.geopackage = undefined
       if (this.renderer) {

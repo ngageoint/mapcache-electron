@@ -4,13 +4,13 @@ import AdmZip from 'adm-zip'
 import ShapeFileSource from './ShapeFileSource'
 import XYZFileSource from './XYZFileSource'
 import isNil from 'lodash/isNil'
+import FileUtilities from "../util/FileUtilities";
 
 export default class ZipSource extends Source {
   async retrieveLayers () {
     let shapeFileSource
     let xyzFileSource
     let layers = []
-    const destinationFolder = this.sourceCacheFolder
     const zip = new AdmZip(this.filePath)
     const zipEntries = zip.getEntries()
     const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
@@ -18,22 +18,22 @@ export default class ZipSource extends Source {
     const xyzImageFile = zipFileNames.find(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null)
 
     if (!isNil(shapeFile)) {
-      zip.extractAllTo(destinationFolder, true)
-      const shapeFile = path.basename(shapeFile)
+      const unzippedDirectory = path.join(this.directory, 'unzipped')
+      zip.extractAllTo(unzippedDirectory, true, undefined)
       try {
-        this.filePath = path.join(destinationFolder, shapeFile)
-        shapeFileSource = new ShapeFileSource(this.filePath, this.directory)
+        shapeFileSource = new ShapeFileSource(this.id, this.directory, path.join(unzippedDirectory,  path.basename(shapeFile)))
         layers = await shapeFileSource.retrieveLayers()
-        shapeFileSource.cleanUp()
+        // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to retrieve shape file layer.')
       }
+      FileUtilities.rmDir(unzippedDirectory)
     } else if (!isNil(xyzImageFile)) {
-      xyzFileSource = new XYZFileSource(this.filePath, this.directory)
+      xyzFileSource = new XYZFileSource(this.id, this.directory, this.filePath)
       layers = await xyzFileSource.retrieveLayers()
-      xyzFileSource.cleanUp()
     }
+
     return layers
   }
 }

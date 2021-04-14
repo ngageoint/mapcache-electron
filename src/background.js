@@ -4,6 +4,7 @@ import log from 'electron-log'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import runMigration from './store/migration/migration'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
+import FileUtilities from './lib/util/FileUtilities'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 Object.assign(console, log.functions)
@@ -47,6 +48,8 @@ async function start() {
     app.quit()
     return
   }
+
+  FileUtilities.setupInitialDirectories(app.getPath('userData'))
 
   globalShortcut.register('CommandOrControl+Shift+S', () => {
     MapCacheWindowManager.showAllDevTools()
@@ -94,9 +97,10 @@ app.once('ready', async () => {
     try {
       const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer')
       await installExtension(VUEJS_DEVTOOLS)
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('Vue Devtools failed to install:', e.toString())
+      console.error('Vue Devtools failed to install')
     }
   }
   start()

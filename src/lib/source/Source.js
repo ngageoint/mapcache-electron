@@ -1,38 +1,35 @@
+import UniqueIDUtilities from '../util/UniqueIDUtilities'
 import FileUtilities from '../util/FileUtilities'
 
+/**
+ * A Source is a representation of a file or url (denoted in the filePath variable)
+ */
 export default class Source {
-  constructor (filePath, directory, layers = [], sourceName, format = 'image/png') {
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(directory)
-    this.sourceId = sourceId
+  /**
+   * Constructor
+   * @param id - source id (uuid v4 string)
+   * @param directory - source directory (should be in the project's sources directory and be named using the source's id value)
+   * @param filePath - path to the file, directory, or url where the data can be found
+   */
+  constructor (id, directory, filePath) {
+    this.sourceId = id
     this.directory = directory
-    this.sourceDirectory = sourceDirectory
     this.filePath = filePath
-    this.layers = layers
-    this.sourceName = sourceName
-    this.format = format
-  }
-
-  removeSourceDir () {
-    FileUtilities.rmDir(this.sourceDirectory)
-  }
-
-  get sourceCacheFolder () {
-    return this.sourceDirectory
   }
 
   /**
    * Returns a directory and id for a source layer
    * @returns {{layerDirectory: string, layerId: *}}
    */
-  createLayerDirectory () {
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory)
+  createLayerDirectory (id = UniqueIDUtilities.createUniqueID()) {
+    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory, id)
     return { layerId: sourceId, layerDirectory: sourceDirectory}
   }
 
   /**
-   * Standard cleanup is to remove the source directory created
+   * Retrieves a list of Layer objects
    */
-  cleanUp () {
-    this.removeSourceDir()
+  retrieveLayers () {
+    throw new Error('Subclass must define the retrieveLayers function')
   }
 }

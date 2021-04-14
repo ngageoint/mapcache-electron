@@ -7,8 +7,8 @@ import LayerTypes from '../source/layer/LayerTypes'
  * ProjectActions is a helper class for performing actions prior to updating the store
  */
 export default class LandingActions {
-  static newProject ({id, name}) {
-    store.dispatch('Projects/newProject', {id, name})
+  static newProject ({id, name, directory}) {
+    store.dispatch('Projects/newProject', {id, name, directory})
   }
 
   /**

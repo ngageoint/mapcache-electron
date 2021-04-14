@@ -93,6 +93,7 @@
   import EditTextModal from '../Common/EditTextModal'
   import CommonActions from '../../lib/vuex/CommonActions'
   import { mdiTrashCan, mdiTrashCanOutline, mdiPlus } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
 
   export default {
@@ -128,7 +129,8 @@
         this.dialog = true
         this.projectName = ''
         const id = UniqueIDUtilities.createUniqueID()
-        LandingActions.newProject({id: id, name: projectName})
+        const directory = ElectronUtilities.createProjectDirectory(id)
+        LandingActions.newProject({id: id, name: projectName, directory: directory})
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false
         })

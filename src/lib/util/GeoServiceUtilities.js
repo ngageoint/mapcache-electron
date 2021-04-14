@@ -152,9 +152,10 @@ export default class GeoServiceUtilities {
           layers.push(...GeoServiceUtilities.getLayers(wmsCapability[0], version))
         }
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to process WMS GetCapabilities.')
     }
     wmsInfo.layers = layers.filter(layer => layer.has3857)
     wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
@@ -314,9 +315,10 @@ export default class GeoServiceUtilities {
           layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats, geoJSONSupported: !isNil(outputFormats.find(f => f === 'application/json'))})
         }
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to process WFS GetCapabilities.')
     }
     wfsInfo.layers = layers
     return wfsInfo

@@ -1,29 +1,10 @@
 import { ipcRenderer } from 'electron'
-
-// contextBridge.exposeInMainWorld ('mapcache', {
-//   getAppVersion: () => app.getVersion(),
-//   getUserDataDirectory: () => app.getPath('userData'),
-//   showOpenDialog: (options) => {
-//     return new Promise (resolve => {
-//       ipcRenderer.once('show-open-dialog-completed', (result) => {
-//         resolve(result)
-//       })
-//       ipcRenderer.send('show-open-dialog', options)
-//     })
-//   },
-//   showSaveDialog: (options) => {
-//     return new Promise (resolve => {
-//       ipcRenderer.once('show-save-dialog-completed', (result) => {
-//         resolve(result)
-//       })
-//       ipcRenderer.send('show-save-dialog', options)
-//     })
-//   }
-// })
-
 window.mapcache = {
   getUserDataDirectory: () => {
     return ipcRenderer.sendSync('get-user-data-directory')
+  },
+  getAppDataDirectory: () => {
+    return ipcRenderer.sendSync('get-app-data-directory')
   },
   removeListeners: () => {
     ipcRenderer.removeAllListeners('worker_build_feature_layer')

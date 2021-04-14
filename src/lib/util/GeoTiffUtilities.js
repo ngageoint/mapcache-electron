@@ -1,4 +1,5 @@
 import { fromFile } from 'geotiff'
+import isNil from 'lodash/isNil'
 import FileUtilities from './FileUtilities'
 
 const maxByteValue = 255
@@ -53,6 +54,9 @@ export default class GeoTiffUtilities {
    */
   static getCRSForGeoTiff (image) {
     let crs = 0
+    if (isNil(image.getGeoKeys())) {
+      throw new Error('Unable to determine CRS for GeoTIFF. Missing GeoKeys.')
+    }
     if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTModelTypeGeoKey') === false) {
       crs = 0
     } else if (GeoTiffUtilities.getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey ) === 'ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {

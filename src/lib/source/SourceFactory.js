@@ -20,47 +20,48 @@ export default class SourceFactory {
     let source = null
     if (sourceConfiguration.serviceType !== null && sourceConfiguration.serviceType !== undefined) {
       if (sourceConfiguration.serviceType === 0) {
-        source = new WMSSource(sourceConfiguration.url, sourceConfiguration.directory, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format)
+        source = new WMSSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format)
       } else if (sourceConfiguration.serviceType === 1) {
-        source = new WFSSource(sourceConfiguration.url, sourceConfiguration.directory, sourceConfiguration.layers, sourceConfiguration.name)
+        source = new WFSSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 2) {
-        source = new XYZServerSource(sourceConfiguration.url, sourceConfiguration.directory, sourceConfiguration.subdomains, sourceConfiguration.name)
+        source = new XYZServerSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 3) {
-        source = new ArcGISFeatureServiceSource(sourceConfiguration.url, sourceConfiguration.directory, sourceConfiguration.layers, sourceConfiguration.name)
+        source = new ArcGISFeatureServiceSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       }
     } else {
-      let type = path.extname(sourceConfiguration.file.path).slice(1)
+      const filePath = sourceConfiguration.file.path
+      let type = path.extname(filePath).slice(1)
       try {
         switch (type) {
           case 'kml':
-            source = new KMLSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new KMLSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'kmz':
-            source = new KMZSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new KMZSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'zip':
-            source = new ZipSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new ZipSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'shp':
-            source = new ShapeFileSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new ShapeFileSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'mbtiles':
-            source = new MBTilesSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new MBTilesSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'json':
           case 'geojson':
-            source = new GeoJSONSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new GeoJSONSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'geotiff':
           case 'tif':
           case 'tiff':
-            source = new GeoTIFFSource(sourceConfiguration.file.path, sourceConfiguration.directory)
+            source = new GeoTIFFSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           default:
             break
         }
       } catch (e) {
-        throw new Error('Failed to open file ' + sourceConfiguration.file.path + ' ' + e.message)
+        throw new Error('Failed to open file ' + filePath + ' ' + e.message)
       }
     }
     return source

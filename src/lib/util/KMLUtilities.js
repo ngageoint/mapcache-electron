@@ -35,15 +35,16 @@ export default class KMLUtilities {
           fs.writeFile(geotiffFilePath, Buffer.from(arrayBuffer), function (err) {
             if (err) {
               // eslint-disable-next-line no-console
-              console.error(err)
+              console.error('Failed to write GeoTIFF for KML Ground Overlay.')
               resolve(false)
             } else {
               resolve(true)
             }
           })
+          // eslint-disable-next-line no-unused-vars
         }).catch(e => {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to convert Ground Overlay into 4326 GeoTIFF image.')
           resolve(false)
         })
       })
@@ -65,40 +66,44 @@ export default class KMLUtilities {
   }
 
   /**
-   *
    * @param kmlDom
-   * @param iconBaseDir
-   * @param sourceCacheDir
+   * @param kmlDirectory
+   * @param tmpDir - used to store downloaded images
    * @param createLayerDirectory {Function}
    * @returns {Promise<{geotiffs: Array, documents: Array}>}
    */
-  static parseKML = async (kmlDom, iconBaseDir, sourceCacheDir, createLayerDirectory) => {
+  static parseKML = async (kmlDom, kmlDirectory, tmpDir, createLayerDirectory) => {
     let parsedKML = {
       geotiffs: [],
       documents: []
     }
 
+    // parse ground overlays
     let groundOverlayDOMs = kmlDom.getElementsByTagNameNS('*', 'GroundOverlay')
     for (let i = 0; i < groundOverlayDOMs.length; i++) {
       let groundOverlayDOM = groundOverlayDOMs[i]
       let name = 'Ground Overlay #' + i
       try {
         name = groundOverlayDOM.getElementsByTagNameNS('*', 'name')[0].childNodes[0].nodeValue
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to get name of Ground Overlay.')
       }
+
+      let fullFile
+
       try {
-        let iconPath = groundOverlayDOM.getElementsByTagNameNS('*', 'href')[0].childNodes[0].nodeValue
+        let groundOverlayPath = groundOverlayDOM.getElementsByTagNameNS('*', 'href')[0].childNodes[0].nodeValue
         let errored = false
-        if (iconPath.startsWith('http')) {
+        if (groundOverlayPath.startsWith('http')) {
           try {
-            let fullFile = path.join(sourceCacheDir, path.basename(iconPath))
+            fullFile = path.join(tmpDir, path.basename(groundOverlayPath))
             const writer = fs.createWriteStream(fullFile)
             await new Promise((resolve) => {
               return axios({
                 method: 'get',
-                url: iconPath,
+                url: groundOverlayPath,
                 responseType: 'arraybuffer'
               })
                 .then(response => {
@@ -108,25 +113,29 @@ export default class KMLUtilities {
                     resolve()
                   })
                 })
+                // eslint-disable-next-line no-unused-vars
                 .catch(err => {
                   fs.unlinkSync(fullFile)
                   // eslint-disable-next-line no-console
-                  console.error(err)
+                  console.error('Failed to retrieve remote Ground Overlay image.')
                   resolve()
                 })
             })
-
-            iconPath = path.basename(iconPath)
-            iconBaseDir = sourceCacheDir
+            // eslint-disable-next-line no-unused-vars
           } catch (e) {
             // eslint-disable-next-line no-console
-            console.error(e)
+            console.error('Failed to save Ground Overlay image.')
             errored = true
           }
+        } else {
+          // need to copy image to tmp directory
+          const imageFile = path.join(kmlDirectory, groundOverlayPath)
+          const tmpFile = path.join(tmpDir, path.basename(imageFile))
+          fs.copyFileSync(imageFile, tmpFile)
+          fullFile = tmpFile
         }
 
         if (!errored) {
-          let fullFile = path.join(iconBaseDir, iconPath)
           let image = await jimp.read(fullFile)
           let east = groundOverlayDOM.getElementsByTagNameNS('*', 'east')[0].childNodes[0].nodeValue
           let north = groundOverlayDOM.getElementsByTagNameNS('*', 'north')[0].childNodes[0].nodeValue
@@ -161,6 +170,7 @@ export default class KMLUtilities {
           )
 
 
+          // if image needs to be rotated, it will need to be converted to png, if not already and then rotation buffer will be written to that file
           if (!isNil(rotation)) {
             if (fullFile.endsWith('.jpg') || fullFile.endsWith('.jpeg')) {
               fullFile = fullFile.substr(0, fullFile.lastIndexOf('.')) + '.png';
@@ -177,16 +187,17 @@ export default class KMLUtilities {
 
           const extent = [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
           // ensure there is a unique directory for each geotiff
-          const { layerId, layerDirectory } = createLayerDirectory()
+          const { layerId, layerDirectory, sourceDirectory } = createLayerDirectory()
           const fileName = path.basename(fullFile, path.extname(fullFile)) + '.tif'
           const geotiffFilePath = path.join(layerDirectory, fileName)
           if (await KMLUtilities.convert4326ImageToGeoTIFF(fullFile, geotiffFilePath, extent)) {
-            parsedKML.geotiffs.push(new GeoTiffLayer({id: layerId, sourceDirectory: layerDirectory, filePath: geotiffFilePath, sourceLayerName: name}))
+            parsedKML.geotiffs.push(new GeoTiffLayer({id: layerId, directory: layerDirectory, sourceDirectory: sourceDirectory, filePath: geotiffFilePath, sourceLayerName: name}))
           }
         }
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to parse Ground Overlays.')
       }
     }
 
@@ -201,9 +212,10 @@ export default class KMLUtilities {
         }
         parsedKML.documents.push({name, xmlDoc})
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('error looking for all documents, will just look for all geojson in file instead')
+      console.error('Error looking for all documents, will just look for all geojson in file instead')
     }
     return parsedKML
   }

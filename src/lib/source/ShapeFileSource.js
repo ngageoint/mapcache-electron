@@ -31,7 +31,8 @@ export default class ShapeFileSource extends Source {
     return [
       new VectorLayer({
         id: layerId,
-        sourceDirectory: layerDirectory,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
         name: name,
         geopackageFilePath: filePath,
         sourceFilePath: this.filePath,

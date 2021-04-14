@@ -3,17 +3,23 @@ import UniqueIDUtilities from '../../util/UniqueIDUtilities'
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 
+/**
+ * Layer is a class holding information regarding data source layers
+ */
 export default class Layer {
-  initialized = false
   _configuration
   id
+  directory
+  sourceDirectory
   filePath
   sourceLayerName
   name
   displayName
+  initialized = false
   constructor (configuration = {}) {
     this._configuration = cloneDeep(configuration)
     this.id = this._configuration.id || UniqueIDUtilities.createUniqueID()
+    this.directory = this._configuration.directory
     this.sourceDirectory = this._configuration.sourceDirectory
     this.filePath = this._configuration.filePath
     this.sourceLayerName = this._configuration.sourceLayerName || defaultLayerName(this.filePath)
@@ -73,6 +79,7 @@ export default class Layer {
       ...this._configuration,
       ...{
         id: this.id,
+        directory: this.directory,
         sourceDirectory: this.sourceDirectory,
         filePath: this.filePath,
         sourceLayerName: this.sourceLayerName,

@@ -318,7 +318,6 @@
   import difference from 'lodash/difference'
   import isEmpty from 'lodash/isEmpty'
   import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import SourceFactory from '../../lib/source/SourceFactory'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
   import XYZTileUtilities from '../../lib/util/XYZTileUtilities'
@@ -326,6 +325,8 @@
   import ElectronUtilities from '../../lib/electron/ElectronUtilities'
   import HttpUtilities from '../../lib/network/HttpUtilities'
   import { mdiTrashCan } from '@mdi/js'
+  import XYZServerLayer from '../../lib/source/layer/tile/XYZServerLayer'
+  import WMSLayer from '../../lib/source/layer/tile/WMSLayer'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -493,9 +494,10 @@
       },
       async confirmLayerImport () {
         if (this.selectedDataSourceLayers.length > 0) {
+          const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
-            id: UniqueIDUtilities.createUniqueID(),
-            directory: ElectronUtilities.appDataDirectory(),
+            id: id,
+            directory: ElectronUtilities.createSourceDirectory(this.project.id, id),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
             layers: this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
@@ -524,9 +526,10 @@
         }
       },
       async processXYZUrl (url) {
+        const id = UniqueIDUtilities.createUniqueID()
         let sourceToProcess = {
-          id: UniqueIDUtilities.createUniqueID(),
-          directory: ElectronUtilities.appDataDirectory(),
+          id: id,
+          directory: ElectronUtilities.createSourceDirectory(this.projectId, id),
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,
@@ -566,37 +569,34 @@
         this.deleteUrlDialog = true
       },
       async sendLayerPreview () {
-        let source
+        let layer
         if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
           if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WMS) {
-            source = await SourceFactory.constructSource({
-              url: this.dataSourceUrl,
-              serviceType: this.selectedServiceType,
-              directory: ElectronUtilities.appDataDirectory(),
-              layers: this.sortedLayers.slice(),
-              name: 'Preview',
-              format: this.serviceInfo.format
+            const layerNames = this.sortedLayers.map(layer => layer.name)
+            let extent = this.sortedLayers[0].extent
+            this.sortedLayers.forEach(layer => {
+              if (layer.extent[0] < extent[0]) {
+                extent[0] = layer.extent[0]
+              }
+              if (layer.extent[1] < extent[1]) {
+                extent[1] = layer.extent[1]
+              }
+              if (layer.extent[2] > extent[2]) {
+                extent[2] = layer.extent[2]
+              }
+              if (layer.extent[3] > extent[3]) {
+                extent[3] = layer.extent[3]
+              }
             })
+            const version = this.sortedLayers[0].version
+            layer = new WMSLayer({id: UniqueIDUtilities.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format})
           } else if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ) {
-            source = await SourceFactory.constructSource({
-              url: XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl),
-              serviceType: this.selectedServiceType,
-              directory: ElectronUtilities.appDataDirectory(),
-              subdomains: this.subdomainText.split(','),
-              name: 'Preview'
-            })
+            layer = new XYZServerLayer({id: UniqueIDUtilities.createUniqueID(), filePath: XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false})
           }
         }
-        if (!isNil(source)) {
-          const layers = await source.retrieveLayers()
-          source.cleanUp()
-          if (layers.length > 0) {
-            const layer = layers[0]
-            await layer.initialize()
-            ProjectActions.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
-          } else {
-            this.previewing = false
-          }
+        if (!isNil(layer)) {
+          await layer.initialize()
+          ProjectActions.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
         } else {
           this.previewing = false
         }

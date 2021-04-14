@@ -141,9 +141,10 @@
                 _this.showDialog = true
               }
             })
+            // eslint-disable-next-line no-unused-vars
           } catch (e) {
             // eslint-disable-next-line no-console
-            console.error(e)
+            console.error('Failed to generate GeoPackage list items.')
           }
         }
         return items

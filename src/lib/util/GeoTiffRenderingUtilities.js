@@ -20,6 +20,7 @@ export default class GeoTiffRenderingUtilities {
    */
   static requestTile (tileRequest) {
     return new Promise ((resolve, reject) => {
+
       const {
         rasterFile,
         redBand,
@@ -343,15 +344,17 @@ export default class GeoTiffRenderingUtilities {
             image.getBase64Async(jimp.MIME_PNG).then(base64Image => {
               resolve(base64Image)
             })
+            // eslint-disable-next-line no-unused-vars
           } catch (error) {
             // eslint-disable-next-line no-console
-            console.error(error)
+            console.error('Failed to render tile.')
             reject(error)
           }
         })
+        // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to render tile.')
         reject(e)
       }
     })

@@ -16,9 +16,15 @@ import KMLUtilities from '../util/KMLUtilities'
 import VectorStyleUtilities from '../util/VectorStyleUtilities'
 import URLUtilities  from '../util/URLUtilities'
 import GeoPackageCommon from '../geopackage/GeoPackageCommon'
-import FileUtilities from "../util/FileUtilities";
+import FileUtilities from '../util/FileUtilities'
 
 export default class KMLSource extends Source {
+
+  /**
+   * Determines the style from a kml feature's properties
+   * @param feature
+   * @returns {null}
+   */
   static getStyleFromFeature (feature) {
     let style = null
     // check if feature contains style properties
@@ -53,7 +59,14 @@ export default class KMLSource extends Source {
     return style
   }
 
-  async generateStyleForKML (features, originalFileDir, cacheFolder) {
+  /**
+   * Generates the icons and styles for a kml doc's features
+   * @param features
+   * @param kmlDir
+   * @param tmpDir
+   * @returns {Promise<{features: {}, styleRowMap: {}, iconRowMap: {}}>}
+   */
+  async generateStyleForKML (features, kmlDir, tmpDir) {
     let layerStyle = {
       features: {},
       styleRowMap: {},
@@ -67,13 +80,13 @@ export default class KMLSource extends Source {
       let featureIcon = null
       if (feature.properties.icon) {
         // if the files are on the file system, they may be relative paths
-        let iconFile = path.join(originalFileDir, feature.properties.icon)
-        let cachedIconFile = path.join(cacheFolder, feature.properties.icon)
+        let iconFile = path.join(kmlDir, feature.properties.icon)
+        let cachedIconFile = path.join(tmpDir, feature.properties.icon)
         if (isNil(fileIcons[iconFile])) {
           // it is a url, go try to get the image..
           if (feature.properties.icon.startsWith('http')) {
-            iconFile = path.join(originalFileDir, path.basename(feature.properties.icon))
-            cachedIconFile = path.join(cacheFolder, path.basename(feature.properties.icon))
+            iconFile = path.join(kmlDir, path.basename(feature.properties.icon))
+            cachedIconFile = path.join(tmpDir, path.basename(feature.properties.icon))
             const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
               return axios({
@@ -88,10 +101,11 @@ export default class KMLSource extends Source {
                   resolve()
                 })
               })
+              // eslint-disable-next-line no-unused-vars
               .catch(err => {
                 fs.unlinkSync(iconFile)
                 // eslint-disable-next-line no-console
-                console.error(err)
+                console.error('Failed to retrieve remote icon file')
                 resolve()
               })
             })
@@ -113,10 +127,10 @@ export default class KMLSource extends Source {
                 anchorSelection: 6, // anchored to center
                 name: 'Icon #' + iconNumber
               }
+              // eslint-disable-next-line no-unused-vars
             } catch (exception) {
               // eslint-disable-next-line no-console
-              console.error(exception)
-              // eslint-disable-next-line no-console
+              console.error('Failed to generate icon.')
               fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
             }
           } else {
@@ -162,19 +176,32 @@ export default class KMLSource extends Source {
     return layerStyle
   }
 
+  /**
+   * Retrieves all of the layers belonging to this source
+   * @returns {Promise<*[]>}
+   */
   async retrieveLayers () {
-    const layers = []
+    let layers = []
+    // setup tmp directory
+    const tmpDir = path.join(this.directory, 'tmp')
+    FileUtilities.createDirectory(tmpDir)
+    // get kml string, note this could get rather large depending on the file
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
-    let originalFileDir = path.dirname(this.filePath)
-    let parsedKML = await KMLUtilities.parseKML(kml, originalFileDir, this.sourceCacheFolder, () => {
+    // the base directory for the kml content
+    let kmlDirectory = path.dirname(this.filePath)
+    // parse kml will break up kml into vector layers for each document and geotiff layers for each ground overlay
+    let { documents, geotiffs } = await KMLUtilities.parseKML(kml, kmlDirectory, tmpDir, () => {
       const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory)
-      return { layerId: sourceId, layerDirectory: sourceDirectory}
+      return { layerId: sourceId, layerDirectory: sourceDirectory, sourceDirectory: this.directory}
     })
-    let documents = parsedKML.documents
+
+    // if no document was found, the document is the whole kml
     if (documents.length === 0) {
       // no documents found, let's try the whole document
       documents.push({name: path.basename(this.filePath, path.extname(this.filePath)), xmlDoc: kml})
     }
+
+    // create a vector layer for each document
     for (let kmlDoc of documents) {
       const name = kmlDoc.name
       const featureCollection = ToGeoJSON.kml(kmlDoc.xmlDoc)
@@ -187,12 +214,13 @@ export default class KMLSource extends Source {
         const { layerId, layerDirectory } = this.createLayerDirectory()
         let fileName = name + '.gpkg'
         let filePath = path.join(layerDirectory, fileName)
-        let style = await this.generateStyleForKML(featureCollection.features, originalFileDir, this.sourceCacheFolder)
+        let style = await this.generateStyleForKML(featureCollection.features, kmlDirectory, tmpDir)
         await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, name, featureCollection, style)
         const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, name)
         layers.push(new VectorLayer({
           id: layerId,
-          sourceDirectory: layerDirectory,
+          directory: layerDirectory,
+          sourceDirectory: this.directory,
           geopackageFilePath: filePath,
           sourceLayerName: name,
           sourceType: 'KML',
@@ -201,9 +229,13 @@ export default class KMLSource extends Source {
         }))
       }
     }
-    parsedKML.geotiffs.forEach((layer) => {
-      layers.push(layer)
-    })
+
+    // add GeoTIFF layers to layers list
+    layers = layers.concat(geotiffs)
+
+    // clean up
+    FileUtilities.rmDir(tmpDir)
+
     return layers
   }
 }

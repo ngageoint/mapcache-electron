@@ -350,7 +350,7 @@
   import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import NumberPicker from '../Common/NumberPicker'
   import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
   import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
   import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
@@ -474,9 +474,10 @@
         this.maxZoom = val
       },
       setBoundingBoxFilterToExtent () {
-        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+        // eslint-disable-next-line no-unused-vars
+        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to set bounding box filter to the extent of visible layers.')
         })
       },
       resetBoundingBox () {

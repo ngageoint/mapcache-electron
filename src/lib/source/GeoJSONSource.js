@@ -29,10 +29,11 @@ export default class GeoJSONSource extends Source {
     return [
       new VectorLayer({
         id: layerId,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
         name: name,
         geopackageFilePath: filePath,
         sourceFilePath: this.filePath,
-        sourceDirectory: layerDirectory,
         sourceLayerName: name,
         sourceType: 'GeoJSON',
         count: featureCollection.features.length,

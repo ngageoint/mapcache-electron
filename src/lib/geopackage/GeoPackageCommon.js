@@ -28,18 +28,20 @@ export default class GeoPackageCommon {
         } else {
           result = func(gp)
         }
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         result = {error: error}
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to perform GeoPackage operation')
       }
       try {
         gp.close()
         gp = undefined
+        // eslint-disable-next-line no-unused-vars
       } catch (e) {
         result = {error: e}
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to close GeoPackage.')
       }
     }
     return result
@@ -148,9 +150,10 @@ export default class GeoPackageCommon {
     try {
       gp.close()
       gp = undefined
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to close GeoPackage')
     }
 
     return geopackage

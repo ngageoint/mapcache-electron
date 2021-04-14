@@ -2,9 +2,16 @@ import Source from './Source'
 import WMSLayer from './layer/tile/WMSLayer'
 
 export default class WMSSource extends Source {
+  constructor (id, directory, filePath, layers = [], sourceName, format = 'image/png') {
+    super(id, directory, filePath)
+    this.layers = layers
+    this.sourceName = sourceName
+    this.format = format
+  }
   async retrieveLayers () {
-    this.wmsLayers = []
-    if (this.layers.length > 0) {
+    if (this.layers.length === 0) {
+      return []
+    } else {
       const layerNames = this.layers.map(layer => layer.name)
       let extent = this.layers[0].extent
       this.layers.forEach(layer => {
@@ -23,8 +30,20 @@ export default class WMSSource extends Source {
       })
       const version = this.layers[0].version
       const { layerId, layerDirectory } = this.createLayerDirectory()
-      this.wmsLayers.push(new WMSLayer({id: layerId, sourceDirectory: layerDirectory, filePath: this.filePath, name: this.sourceName, sourceLayerName: this.sourceName, layers: layerNames, extent, version, format: this.format}))
+      return [
+        new WMSLayer({
+          id: layerId,
+          directory: layerDirectory,
+          sourceDirectory: this.directory,
+          filePath: this.filePath,
+          name: this.sourceName,
+          sourceLayerName: this.sourceName,
+          layers: layerNames,
+          extent,
+          version,
+          format: this.format
+        })
+      ]
     }
-    return this.wmsLayers
   }
 }

@@ -3,6 +3,7 @@ import isNil from 'lodash/isNil'
 import CanvasUtilities from '../../../util/CanvasUtilities'
 
 export default class GeoPackageVectorTileRenderer {
+  layer
   geopackage
   featureTableName
   featureDao
@@ -10,8 +11,8 @@ export default class GeoPackageVectorTileRenderer {
   maxFeatures
 
   constructor (layer) {
+    this.layer = layer
     this.featureTableName = layer.name
-    this.maxFeatures = layer.maxFeatures
   }
 
   close () {

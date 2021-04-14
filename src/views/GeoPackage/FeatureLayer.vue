@@ -463,7 +463,7 @@
   import StyleEditor from '../StyleEditor/StyleEditor'
   import FeatureLayerField from './FeatureLayerField'
   import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
   import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
   import { mdiChevronLeft, mdiSpeedometer, mdiPencil, mdiContentCopy, mdiFormatText, mdiPound, mdiToggleSwitch, mdiCalendar, mdiCalendarClock, mdiTableEye, mdiTrashCan, mdiPalette } from '@mdi/js'
@@ -603,16 +603,18 @@
         let gp = await GeoPackageAPI.open(this.geopackage.path)
         try {
           hasStyle = gp.featureStyleExtension.has(this.tableName)
+          // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to determine if style extension is enabled.')
         }
         try {
           gp.close()
           gp = undefined
+          // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to close geopackage.')
         }
         return hasStyle
       },

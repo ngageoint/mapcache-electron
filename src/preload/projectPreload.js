@@ -1,11 +1,10 @@
 const { clipboard, ipcRenderer } = require('electron')
-
 window.mapcache = {
   getUserDataDirectory: () => {
     return ipcRenderer.sendSync('get-user-data-directory')
   },
-  openExternal: (link) => {
-    ipcRenderer.send('open-external', link)
+  getAppDataDirectory: () => {
+    return ipcRenderer.sendSync('get-app-data-directory')
   },
   showOpenDialog: (options) => {
     return new Promise (resolve => {

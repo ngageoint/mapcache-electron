@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import FileUtilities from './FileUtilities'
 
 export default class VectorStyleUtilities {
   static generateColor () {
@@ -17,7 +18,7 @@ export default class VectorStyleUtilities {
       description: '',
       contentType: 'image/png',
       // eslint-disable-next-line no-undef
-      data: fs.readFileSync(path.join(__static, 'map-marker.png'))
+      data: fs.readFileSync(path.join(FileUtilities.getExtraResourcesDirectory(), 'map-marker.png'))
     }
   }
 

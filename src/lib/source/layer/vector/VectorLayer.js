@@ -46,9 +46,10 @@ export default class VectorLayer extends Layer {
     if (this.geopackage) {
       try {
         this.geopackage.close()
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to close GeoPackage.')
       }
       this.geopackage = undefined
     }
@@ -62,7 +63,7 @@ export default class VectorLayer extends Layer {
 
   async styleChanged () {
     this.close()
-    this.geopackage = await GeoPackageAPI.open(this.filePath)
+    this.geopackage = await GeoPackageAPI.open(this.geopackageFilePath)
     if (this.renderer) {
       this.renderer.setGeoPackage(this.geopackage)
     }

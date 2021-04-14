@@ -1,17 +1,17 @@
 import path from 'path'
 import WorkerThreadPool from '../pool/workerThreadPool'
-import os from 'os'
+// import os from 'os'
 
 /**
  * Helper class that handles calls to the geotiff web worker
  */
-export default class GeotiffThreadHelper {
+export default class TileRenderingThreadHelper {
   threadPool
 
   constructor () {
-    let file = path.join(__dirname, 'geotiffThread.js')
+    let file = path.join(__dirname, 'tileRenderingThread.js')
     file = file.replace('app.asar', 'app.asar.unpacked')
-    this.threadPool = new WorkerThreadPool(Math.min(2, os.cpus().length), file)
+    this.threadPool = new WorkerThreadPool(1, file)
   }
 
   hasTasks () {

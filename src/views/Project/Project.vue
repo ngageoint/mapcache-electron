@@ -172,7 +172,7 @@
   import GeoPackages from '../GeoPackage/GeoPackages'
   import DataSources from '../DataSources/DataSources'
   import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import BasicAuth from '../Common/BasicAuth'
   import FileUtilities from '../../lib/util/FileUtilities'
   import { mdiPackageVariant, mdiLayersOutline, mdiCogOutline } from '@mdi/js'

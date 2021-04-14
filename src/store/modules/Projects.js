@@ -141,10 +141,11 @@ const mutations = {
 }
 
 const actions = {
-  newProject ({ commit }, { id, name }) {
+  newProject ({ commit }, { id, name, directory }) {
     let project = {
       id: id,
       name: name || 'New Project',
+      directory: directory,
       sources: {},
       geopackages: {},
       zoomToExtent: {

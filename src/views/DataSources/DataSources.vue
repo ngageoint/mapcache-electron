@@ -179,15 +179,19 @@
         this.processingSourceList.push(source)
         let self = this
         ipcRenderer.once('process_source_completed_' + source.id, (event, result) => {
+          // if there is no error, go ahead and add data sources
           if (isNil(result.error)) {
             setTimeout(() => {
-              self.clearProcessing(result.source)
               ProjectActions.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
+              self.$nextTick(() => {
+                self.clearProcessing(source)
+              })
             }, 1000)
           } else {
+            // iterate over list of sources and set error
             for (let i = 0; i < this.processingSourceList.length; i++) {
               let s = this.processingSourceList[i]
-              if (s.id && source.id) {
+              if (s.id === source.id) {
                 const sCopy = cloneDeep(s)
                 sCopy.error = result.error
                 this.processingSourceList.splice(i, 1, sCopy)
@@ -201,11 +205,7 @@
       clearProcessing (processingSource) {
         for (let i = 0; i < this.processingSourceList.length; i++) {
           let source = this.processingSourceList[i]
-          if (source.url && source.url === processingSource.url) {
-            this.processingSourceList.splice(i, 1)
-            ProjectActions.notifyTab({projectId: this.project.id, tabId: 1})
-            break
-          } else if (source.file && source.file.path === processingSource.file.path) {
+          if (source.id === processingSource.id) {
             this.processingSourceList.splice(i, 1)
             ProjectActions.notifyTab({projectId: this.project.id, tabId: 1})
             break
@@ -214,8 +214,10 @@
       },
       processFiles (files) {
         files.forEach((file) => {
+          const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
-            id: UniqueIDUtilities.createUniqueID(),
+            id: id,
+            directory: ElectronUtilities.createSourceDirectory(this.project.id, id),
             file: {
               lastModified: file.lastModified,
               lastModifiedDate: file.lastModifiedDate,
@@ -224,7 +226,6 @@
               type: file.type,
               path: file.path
             },
-            directory: ElectronUtilities.appDataDirectory(),
             status: undefined,
             error: undefined
           }

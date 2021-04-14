@@ -109,7 +109,7 @@ Prior to release, any modifications that need to be made to the vuex store to su
 # Limitations and Notes
 It is worth noting that there are several libraries using native dependencies. The native depdencies are
 1. better-sqlite3
-2. canvas
+2. canvas (this module is not context aware, thus we are unable to use it in worker_threads)
 
 ## Testing
 Any changes made in development should be tested in the production version of the application for all supported platforms.

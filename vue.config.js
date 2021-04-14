@@ -1,8 +1,10 @@
-const webpack = require('webpack')
+const { IgnorePlugin } = require('webpack')
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 module.exports = {
   configureWebpack: {
     plugins: [
-      new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+      new IgnorePlugin(/^\.\/locale$/, /moment$/),
+      new IgnorePlugin(/sql-asm-memory-growth.js$/),
     ]
   },
   css: {
@@ -20,18 +22,38 @@ module.exports = {
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
       chainWebpackMainProcess: config => {
+        // config.plugin('analyse').use(
+        //   BundleAnalyzerPlugin,
+        //   [{
+        //     analyzerHost: '0.0.0.0',
+        //     analyzerPort: 'auto'
+        //   }]
+        // )
+        config.plugin('ignore-moment-locales').use(
+          IgnorePlugin,
+          [{
+            resourceRegExp: /^\.\/locale$/,
+            contextRegExp: /moment$/
+          }]
+        )
+        config.plugin('ignore-asm-mem-growth-geopackage-js').use(
+          IgnorePlugin,
+          [{
+            resourceRegExp: /sql-asm-memory-growth.js$/
+          }]
+        )
         config
-          .entry('geotiff')
-          .add('./src/threads/geotiffThread.js')
-          .end()
           .entry('mapcache')
           .add('./src/threads/mapcacheThread.js')
           .end()
+          .entry('tileRendering')
+          .add('./src/threads/tileRenderingThread.js')
+          .end()
           .output
           .filename((pathData) => {
-            if (pathData.chunk.name === 'geotiff') {
+            if (pathData.chunk.name === 'mapcache') {
               return '[name]Thread.js'
-            } else if (pathData.chunk.name === 'mapcache') {
+            } else if (pathData.chunk.name === 'tileRendering') {
               return '[name]Thread.js'
             } else {
               return '[name].js'
@@ -51,6 +73,26 @@ module.exports = {
           .end()
       },
       chainWebpackRendererProcess: config => {
+        // config.plugin('analyse').use(
+        //   BundleAnalyzerPlugin,
+        //   [{
+        //     analyzerHost: '0.0.0.0',
+        //     analyzerPort: 'auto'
+        //   }]
+        // )
+        config.plugin('ignore-moment-locales').use(
+          IgnorePlugin,
+          [{
+            resourceRegExp: /^\.\/locale$/,
+            contextRegExp: /moment$/
+          }]
+        )
+        config.plugin('ignore-asm-mem-growth-geopackage-js').use(
+          IgnorePlugin,
+          [{
+            resourceRegExp: /sql-asm-memory-growth.js$/
+          }]
+        )
         config.module
           .rule("node")
           .test(/\.node$/)
@@ -69,6 +111,7 @@ module.exports = {
         appId: "mil.nga.mapcache",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
+        extraResources: ['./extraResources/**'],
         asarUnpack: [
           "**/node_modules/bin-wrapper/**/*",
           "**/node_modules/imagemin-pngquant/**/*",
@@ -78,7 +121,7 @@ module.exports = {
           "**/node_modules/mime/**/*",
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
-          "**/geotiffThread.js",
+          "**/tileRenderingThread.js",
           "**/mapcacheThread.js"
         ],
         directories: {

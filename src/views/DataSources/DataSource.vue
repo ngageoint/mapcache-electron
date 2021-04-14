@@ -408,7 +408,7 @@
   import TransparencyOptions from '../Common/Style/TransparencyOptions'
   import StyleEditor from '../StyleEditor/StyleEditor'
   import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import SourceVisibilitySwitch from './SourceVisibilitySwitch'
   import MBTilesOptions from '../Common/Style/MBTilesOptions'
   import DataSourceTroubleshooting from './DataSourceTroubleshooting'
@@ -543,9 +543,10 @@
               }
             }
           })
+          // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to export GeoPackage file.')
         }
       },
       overwrite () {

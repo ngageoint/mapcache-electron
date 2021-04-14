@@ -13,7 +13,14 @@ import WFS from 'ol/format/WFS'
 import OpenLayersProjectionUtilities from '../projection/OpenLayersProjectionUtilities'
 import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 import GeoPackageCommon from '../geopackage/GeoPackageCommon'
+
 export default class WFSSource extends Source {
+  constructor (id, directory, filePath, layers = [], sourceName) {
+    super(id, directory, filePath)
+    this.layers = layers
+    this.sourceName = sourceName
+  }
+
   /**
    * Will attempt to make a GetFeature request.
    * Supports WFS 1.0.0, 1.1.0 and 2.0.0
@@ -92,10 +99,11 @@ export default class WFSSource extends Source {
     return [
       new VectorLayer({
         id: layerId,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
         name: this.sourceName,
         geopackageFilePath: filePath,
         sourceFilePath: this.filePath,
-        sourceDirectory: layerDirectory,
         sourceLayerName: this.sourceName,
         sourceType: 'WFS',
         count: featureCollection.features.length,

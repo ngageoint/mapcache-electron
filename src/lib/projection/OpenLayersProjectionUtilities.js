@@ -1,28 +1,53 @@
 import proj4 from 'proj4'
-import proj4Defs from './proj4Defs'
 import { addProjection, get, addCoordinateTransforms, addEquivalentProjections, createSafeCoordinateTransform } from 'ol/proj'
 import { get as getTransform } from 'ol/proj/transforms'
 import Projection from 'ol/proj/Projection'
 import { assign } from 'ol/obj'
+import path from 'path'
+import Database from 'better-sqlite3'
+import FileUtilities from '../util/FileUtilities'
 
 export default class OpenLayersProjectionUtilities {
+
+  static getCode (name) {
+    let code = -1
+    if (name.startsWith('EPSG:')) {
+      code = Number.parseInt(name.substring(5))
+    }
+    return code
+  }
+
+  static getDef (code) {
+    let def
+    const db = new Database(path.join(FileUtilities.getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
+    const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
+    const row = stmt.get(code)
+    if (row && row.def) {
+      def = row.def
+    }
+    return def
+  }
+
   static defineProjection (name) {
-    const definition = proj4Defs[name]
-    if (definition) {
-      proj4.defs(name, definition)
-      proj4.defs('urn:ogc:def:crs:EPSG::' + name.substring(5), definition)
-      addProjection(new Projection({
-        code: name,
-        axisOrientation: definition.axis,
-        metersPerUnit: definition.to_meter,
-        units: definition.units,
-      }))
-      addProjection(new Projection({
-        code: 'urn:ogc:def:crs:EPSG::' + name.substring(5),
-        axisOrientation: definition.axis,
-        metersPerUnit: definition.to_meter,
-        units: definition.units,
-      }))
+    const code = OpenLayersProjectionUtilities.getCode(name)
+    if (code !== -1) {
+      const definition = OpenLayersProjectionUtilities.getDef(code)
+      if (definition) {
+        proj4.defs(name, definition)
+        proj4.defs('urn:ogc:def:crs:EPSG::' + code, definition)
+        addProjection(new Projection({
+          code: name,
+          axisOrientation: definition.axis,
+          metersPerUnit: definition.to_meter,
+          units: definition.units,
+        }))
+        addProjection(new Projection({
+          code: 'urn:ogc:def:crs:EPSG::' + code,
+          axisOrientation: definition.axis,
+          metersPerUnit: definition.to_meter,
+          units: definition.units,
+        }))
+      }
     }
   }
 

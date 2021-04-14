@@ -253,9 +253,10 @@
               if (column.dataType === GeoPackageDataType.TEXT && value.length > 15) {
                 value = value.substring(0, 15) + '...'
               }
+              // eslint-disable-next-line no-unused-vars
             } catch (e) {
               // eslint-disable-next-line no-console
-              console.error(e)
+              console.error('Failed to set value for property ' + key)
             }
             item[key.toLowerCase() + '_table'] = value
           })

@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron'
 import GeoTiffRenderer from './GeoTiffRenderer'
+import UniqueIDUtilities from '../../../util/UniqueIDUtilities'
 
 /**
  * GeoTIFF Renderer
@@ -15,8 +16,8 @@ export default class ElectronGeoTiffRenderer extends GeoTiffRenderer {
     const coordsString = coords.x + '_' + coords.y + '_' + coords.z
     if (this.tileRequests[coordsString]) {
       const requestId = this.tileRequests[coordsString].id
-      ipcRenderer.send('cancel_geotiff_tile_request', {id: requestId})
-      ipcRenderer.removeAllListeners('request_geotiff_tile_' + requestId)
+      ipcRenderer.send('cancel_tile_request', {id: requestId})
+      ipcRenderer.removeAllListeners('request_tile_' + requestId)
       delete this.tileRequests[coordsString]
     }
   }
@@ -32,7 +33,8 @@ export default class ElectronGeoTiffRenderer extends GeoTiffRenderer {
     if (GeoTiffRenderer.intersects(coords, this.layer.extent)) {
       const coordsString = coords.x + '_' + coords.y + '_' + coords.z
       const tileRequest = {
-        id: coords.x + '_' + coords.y + '_' + coords.z + '_' + this.layer.name + '_' + Date.now(),
+        id: UniqueIDUtilities.createUniqueID(),
+        layerType: this.layer.layerType,
         rasterFile: this.layer.rasterFile,
         coords: coords,
         width: 256,
@@ -69,7 +71,7 @@ export default class ElectronGeoTiffRenderer extends GeoTiffRenderer {
       }
 
       this.tileRequests[coordsString] = tileRequest
-      ipcRenderer.once('request_geotiff_tile_' + tileRequest.id, (event, result) => {
+      ipcRenderer.once('request_tile_' + tileRequest.id, (event, result) => {
         delete this.tileRequests[coordsString]
         try {
           if (result.error) {
@@ -81,7 +83,7 @@ export default class ElectronGeoTiffRenderer extends GeoTiffRenderer {
           callback(e, null)
         }
       })
-      ipcRenderer.send('request_geotiff_tile', tileRequest)
+      ipcRenderer.send('request_tile', tileRequest)
     } else {
       callback(null, null)
     }

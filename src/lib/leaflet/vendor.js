@@ -10,7 +10,7 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import isNil from 'lodash/isNil'
 import ServiceConnectionUtils from '../network/ServiceConnectionUtils'
 import ProjectActions from '../vuex/ProjectActions'
-import EventBus from '../../EventBus'
+import EventBus from '../vue/EventBus'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import XYZTileUtilities from '../util/XYZTileUtilities'
 import GeoServiceUtilities from '../util/GeoServiceUtilities'
@@ -18,6 +18,8 @@ import LayerTypes from '../source/layer/LayerTypes'
 import HttpUtilities from '../network/HttpUtilities'
 import RendererFactory from '../source/layer/renderer/RendererFactory'
 import ElectronGeoTiffRenderer from '../source/layer/renderer/ElectronGeoTiffRenderer'
+import ElectronMBTilesRenderer from '../source/layer/renderer/ElectronMBTilesRenderer'
+import ElectronGeoPackageRenderer from '../source/layer/renderer/ElectronGeoPackageRenderer'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -42,8 +44,11 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
     this.layer = options.layer
     this.id = options.layer.id
     this.initializationState = L.INIT_STATES.INITIALIZATION_NOT_STARTED
+    this.maxFeatures = options.maxFeatures
     this.unloadListener = (event) => {
       this.layer.cancel(event.coords)
+      let ctx = event.tile.getContext('2d')
+      ctx.clearRect(0, 0, event.tile.width, event.tile.height)
     }
     this.on('tileunload', this.unloadListener)
   },
@@ -52,6 +57,13 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
     await this.layer.initialize()
     if (this.layer.layerType === LayerTypes.GEOTIFF) {
       this.layer.setRenderer(new ElectronGeoTiffRenderer(this.layer))
+    } else if (this.layer.layerType === LayerTypes.MBTILES) {
+      this.layer.setRenderer(new ElectronMBTilesRenderer(this.layer))
+    } else if (this.layer.layerType === LayerTypes.VECTOR) {
+      const renderer = new ElectronGeoPackageRenderer(this.layer)
+      renderer.updateMaxFeatures(this.maxFeatures)
+      this.layer.setRenderer(renderer)
+
     } else {
       this.layer.setRenderer(RendererFactory.constructRenderer(this.layer))
     }
@@ -65,14 +77,14 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
     let size = this.getTileSize()
     tile.width = size.x
     tile.height = size.y
+    let ctx = tile.getContext('2d')
+    ctx.clearRect(0, 0, tile.width, tile.height)
     try {
       if (this.layer.isInitialized()) {
         this.layer.renderTile(coords, (err, base64Image) => {
           if (err) {
             done(err, null)
           } else if (!isNil(base64Image)) {
-            let ctx = tile.getContext('2d')
-            ctx.clearRect(0, 0, tile.width, tile.height)
             let image = new Image()
             image.onload = () => {
               ctx.drawImage(image, 0, 0)
@@ -84,9 +96,10 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
           }
         })
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('error', e)
+      console.error('Failed to render tile.')
     }
     return tile
   },

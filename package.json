@@ -5,7 +5,7 @@
   "author": "Dan Barela <daniel.barela@gmail.com>",
   "mapcache": {
     "store": {
-      "version": "6"
+      "version": "7"
     }
   },
   "scripts": {
@@ -19,6 +19,7 @@
     "build:dir": "node .electron-vue/build.js && electron-builder --dir",
     "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
     "electron:serve": "node --max_old_space_size=8192 node_modules/.bin/vue-cli-service electron:serve",
+    "electron:debug": "node --max_old_space_size=8192 node_modules/.bin/vue-cli-service electron:serve --debug; electron --inspect=5858 dist_electron",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
@@ -44,7 +45,7 @@
     "electron-log": "4.3.0",
     "file-url": "3.0.0",
     "fs-jetpack": "4.0.1",
-    "geotiff": "1.0.0-beta.16",
+    "geotiff": "1.0.4",
     "image-size": "0.9.3",
     "imagemin": "7.0.1",
     "imagemin-pngquant": "git://github.com/caldwellc/imagemin-pngquant.git#master",
@@ -102,7 +103,8 @@
     "vue-cli-plugin-electron-builder": "git://github.com/nklayman/vue-cli-plugin-electron-builder.git#master",
     "vue-cli-plugin-vuetify": "2.3.1",
     "vue-template-compiler": "2.6.12",
-    "vuetify-loader": "1.7.2"
+    "vuetify-loader": "1.7.2",
+    "webpack-bundle-analyzer": "^4.4.0"
   },
   "contributors": [
     {

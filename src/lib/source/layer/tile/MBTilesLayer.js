@@ -92,14 +92,14 @@ export default class MBTilesLayer extends TileLayer {
       extent = MBTilesUtilities.getInfo(db).bounds
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to open MBTiles database or retrieve extent.')
     } finally {
       if (db) {
         try {
           db.close()
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to close MBTiles database file.')
         }
       }
     }
@@ -112,7 +112,7 @@ export default class MBTilesLayer extends TileLayer {
         this.db.close()
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to close MBTiles database file.')
       }
       this.db = undefined
     }

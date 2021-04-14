@@ -352,9 +352,10 @@
         this.back()
       },
       setBoundingBoxFilterToExtent () {
-        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch(e => {
+        // eslint-disable-next-line no-unused-vars
+        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to set bounding box filter to the extent of visible layers.')
         })
       },
       resetBoundingBox () {

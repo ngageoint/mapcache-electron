@@ -9,7 +9,12 @@ export default class GeoTIFFSource extends Source {
     let filePath = path.join(layerDirectory, path.basename(this.filePath))
     jetpack.copy(this.filePath, filePath)
     return [
-      new GeoTiffLayer({id: layerId, filePath: filePath, sourceDirectory: layerDirectory})
+      new GeoTiffLayer({
+        id: layerId,
+        directory: layerDirectory,
+        filePath: filePath,
+        sourceDirectory: this.directory
+      })
     ]
   }
 }

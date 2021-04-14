@@ -2,8 +2,8 @@ import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session } from 'elect
 import path from 'path'
 import isNil from 'lodash/isNil'
 import CredentialsManagement from '../network/CredentialsManagement'
-import GeotiffThreadHelper from '../../threads/helpers/geotiffThreadHelper'
 import MapcacheThreadHelper from '../../threads/helpers/mapcacheThreadHelper'
+import TileRenderingThreadHelper from '../../threads/helpers/tileRenderingThreadHelper'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -185,6 +185,7 @@ class MapCacheWindowManager {
   static clearEventHandlers () {
     ipcMain.removeAllListeners('get-app-version')
     ipcMain.removeAllListeners('get-user-data-directory')
+    ipcMain.removeAllListeners('get-app-data-directory')
     ipcMain.removeAllListeners('open-external')
     ipcMain.removeAllListeners('show-save-dialog')
     ipcMain.removeAllListeners('show-open-dialog')
@@ -200,7 +201,7 @@ class MapCacheWindowManager {
     ipcMain.removeAllListeners('read_raster')
     ipcMain.removeAllListeners('cancel_read_raster')
     ipcMain.removeAllListeners('attach_media')
-    ipcMain.removeAllListeners('request-geotiff-tile')
+    ipcMain.removeAllListeners('request_tile')
   }
 
   /**
@@ -219,6 +220,10 @@ class MapCacheWindowManager {
 
     ipcMain.on('get-user-data-directory', (event) => {
       event.returnValue = app.getPath('userData')
+    })
+
+    ipcMain.on('get-app-data-directory', (event) => {
+      event.returnValue = app.getPath('appData')
     })
 
     ipcMain.on('show-save-dialog', (event, options) => {
@@ -240,9 +245,10 @@ class MapCacheWindowManager {
 
     ipcMain.on('quick_download_geopackage', (event, payload) => {
       this.downloadURL(payload.url).then(() => {
+        // eslint-disable-next-line no-unused-vars
       }).catch(e => {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to download GeoPackage.')
       })
     })
 
@@ -340,26 +346,25 @@ class MapCacheWindowManager {
 
     ipcMain.on('cancel_process_source', (event, payload) => {
       const taskId = payload.id
-     this.mapcacheThreadHelper.cancelTask(taskId)
-      event.sender.send('cancel_process_source_completed_' + taskId)
+      this.mapcacheThreadHelper.cancelTask(taskId).then(() => {
+        event.sender.send('cancel_process_source_completed_' + taskId)
+      })
     })
 
-
-    this.geotiffThreadHelper = new GeotiffThreadHelper()
-    ipcMain.on('cancel_geotiff_tile_request', async (event, payload) => {
+    this.tileRenderingThreadHelper = new TileRenderingThreadHelper()
+    ipcMain.on('cancel_tile_request', async (event, payload) => {
       const taskId = payload.id
-      this.geotiffThreadHelper.cancelTask(taskId)
-      // TODO: we may have a nifty way to cancel the process without destroying it, look into this
+      this.tileRenderingThreadHelper.cancelTask(taskId)
     })
-    ipcMain.on('request_geotiff_tile', async (event, payload) => {
+    ipcMain.on('request_tile', async (event, payload) => {
       const taskId = payload.id
       try {
-        const response = await this.geotiffThreadHelper.renderTile(payload)
-        event.sender.send('request_geotiff_tile_' + taskId, {
+        const response = await this.tileRenderingThreadHelper.renderTile(payload)
+        event.sender.send('request_tile_' + taskId, {
           base64Image: response
         })
       } catch (e) {
-        event.sender.send('request_geotiff_tile_' + taskId, {
+        event.sender.send('request_tile_' + taskId, {
           error: e
         })
       }
@@ -382,8 +387,8 @@ class MapCacheWindowManager {
       // eslint-disable-next-line no-empty
     } catch (e) {}
     try {
-      if (!isNil(this.geotiffThreadHelper)) {
-        await this.geotiffThreadHelper.terminate()
+      if (!isNil(this.tileRenderingThreadHelper)) {
+        await this.tileRenderingThreadHelper.terminate()
       }
       // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -424,9 +429,10 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
+    // eslint-disable-next-line no-unused-vars
     window.loadURL(url).then(onFulfilled).catch((e) => {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to load content.')
     })
   }
 
@@ -558,7 +564,7 @@ class MapCacheWindowManager {
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
         let leave = true
-        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks() || this.geotiffThreadHelper.hasTasks()
+        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks() || this.tileRenderingThreadHelper.hasTasks()
         if (hasTasks && !this.forceClose) {
           const choice = dialog.showMessageBoxSync(this.projectWindow, {
             type: 'question',
@@ -615,9 +621,10 @@ class MapCacheWindowManager {
       const download = require('electron-dl').download
       const fileUrl = require('file-url')
       await download(this.projectWindow, fileUrl(url))
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to download file.')
     }
   }
 
@@ -653,9 +660,10 @@ class MapCacheWindowManager {
           }
         }, 250)
       })
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to show project')
     }
   }
 

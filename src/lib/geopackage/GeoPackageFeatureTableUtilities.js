@@ -1188,15 +1188,17 @@ export default class GeoPackageFeatureTableUtilities {
         }
       }
       await GeoPackageFeatureTableUtilities._indexFeatureTable(gp, tableName)
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to index feature table.')
     }
     try {
       gp.close()
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to close GeoPackage')
     }
   }
 }

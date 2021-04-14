@@ -46,13 +46,13 @@
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
-  import offline from '../../assets/ne_50m_countries.geo'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
   import LayerTypes from '../../lib/source/layer/LayerTypes'
   import { mdiMapOutline } from '@mdi/js'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     components: {BaseMapTroubleshooting},
@@ -122,7 +122,7 @@
         let self = this
         const baseMapId = baseMap.id
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId] = vendor.L.geoJson(offline, {
+          self.baseMapLayers[baseMapId] = vendor.L.geoJson(ElectronUtilities.getOfflineMap(), {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -141,8 +141,7 @@
           self.$forceUpdate()
         } else {
           let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          layer._maxFeatures = this.project.maxFeatures
-          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer(layer)
+          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
           if (this.selectedBaseMapId === baseMapId) {
             self.initializeBaseMap(baseMapId, map)
           }
@@ -194,7 +193,7 @@
       },
       async setupPreviewLayer () {
         const layer = LayerFactory.constructLayer(this.previewLayer)
-        this.previewMapLayer = LeafletMapLayerFactory.constructMapLayer(layer, 'markerPane', true)
+        this.previewMapLayer = LeafletMapLayerFactory.constructMapLayer({layer: layer, mapPane: 'markerPane', isPreview: true, maxFeatures: this.project.maxFeatures})
         await this.previewMapLayer.initializeLayer()
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()

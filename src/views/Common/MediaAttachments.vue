@@ -261,9 +261,10 @@
           } else {
             self.attaching = false
           }
+          // eslint-disable-next-line no-unused-vars
         }).catch(e => {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to attach file.')
           self.attaching = false
           self.attachErrorMessage = 'Unable to attach file'
           self.attachError = true

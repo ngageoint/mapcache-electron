@@ -314,9 +314,10 @@
       this.getStyle().then(function () {
         _this.loading = false
         _this.updatingStyle = false
+        // eslint-disable-next-line no-unused-vars
       }).catch((e) => {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to retrieve style from GeoPackage.')
         _this.updatingStyle = false
         _this.loading = false
       })
@@ -479,16 +480,18 @@
               this.assignmentListItems.hint = true
             }
           }
+          // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to get GeoPackage style.')
         } finally {
           try {
             gp.close()
             gp = undefined
+            // eslint-disable-next-line no-unused-vars
           } catch (error) {
             // eslint-disable-next-line no-console
-            console.error(error)
+            console.error('Failed to close GeoPackage.')
           }
         }
       },

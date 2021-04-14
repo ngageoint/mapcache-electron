@@ -4,7 +4,7 @@
 
 <script>
   import isNil from 'lodash/isNil'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import CommonActions from '../../lib/vuex/CommonActions'
 
   export default {

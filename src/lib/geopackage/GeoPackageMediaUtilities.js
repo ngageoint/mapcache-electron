@@ -84,9 +84,10 @@ export default class GeoPackageMediaUtilities {
         const linkedMedia = GeoPackageMediaUtilities._getMediaRelationshipsForFeatureRow(gp, tableName, featureDao, featureId)
         mediaRelationships.push(...linkedMedia)
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to get media relationships.')
     }
     return mediaRelationships
   }
@@ -148,9 +149,10 @@ export default class GeoPackageMediaUtilities {
         featureDao.linkMediaRow(featureRow, mediaRow)
         success = true
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to add media attachment')
     }
     return success
   }
@@ -197,9 +199,10 @@ export default class GeoPackageMediaUtilities {
           }
         }
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to get media attachments')
     }
     return counts
   }

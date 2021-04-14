@@ -210,12 +210,16 @@ export default class ProjectActions {
   static removeDataSource ({projectId, sourceId}) {
     try {
       const source = store.state.Projects[projectId].sources[sourceId]
-      if (!isNil(source.sourceDirectory)) {
+      if (!isNil(source.directory)) {
+        FileUtilities.rmDir(source.directory)
+      }
+      if (!isNil(source.sourceDirectory) && FileUtilities.exists(source.sourceDirectory) && FileUtilities.isDirEmpty(source.sourceDirectory)) {
         FileUtilities.rmDir(source.sourceDirectory)
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to remove data source.')
     }
     store.dispatch('Projects/removeDataSource', {projectId, sourceId})
   }
@@ -501,9 +505,10 @@ export default class ProjectActions {
           }
         }
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to determine overall extent.')
     }
     store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter: overallExtent})
   }
@@ -673,12 +678,11 @@ export default class ProjectActions {
 
   static removeBaseMap (baseMap) {
     try {
-      if (baseMap.layerConfiguration.sourceDirectory) {
-        FileUtilities.rmDir(baseMap.layerConfiguration.sourceDirectory)
-      }
+      FileUtilities.rmDir(baseMap.directory)
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to remove base map.')
     }
     store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
   }

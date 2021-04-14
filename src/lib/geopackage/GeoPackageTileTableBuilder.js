@@ -56,7 +56,6 @@ export default class GeoPackageTileTableBuilder {
       for (let i = 0; i < configuration.sourceLayers.length; i++) {
         const sourceLayer = configuration.sourceLayers[i]
         const layer = LayerFactory.constructLayer(sourceLayer)
-        layer._maxFeatures = undefined
         await layer.initialize()
         layer.setRenderer(RendererFactory.constructRenderer(layer))
 
@@ -66,9 +65,10 @@ export default class GeoPackageTileTableBuilder {
             await layer.testConnection(false)
           }
           layers.push(await layer.initialize(true))
+          // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(error)
+          console.error('Failed to initialize data source.')
           status.message = 'Failed to initialize data source: ' + isNil(layer.displayName) ? layer.name : layer.displayName
           status.error = {
             layer: layer.id,
@@ -103,7 +103,6 @@ export default class GeoPackageTileTableBuilder {
         } else {
           layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
         }
-        layer._maxFeatures = undefined
         await layer.initialize()
         layer.setRenderer(RendererFactory.constructRenderer(layer))
         layers.push(layer)
@@ -137,9 +136,10 @@ export default class GeoPackageTileTableBuilder {
 
       try {
         await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error)
+        console.error('Failed to create tile table.')
         status.message = 'Failed: Table already exists...'
         throttleStatusCallback(status)
         return
@@ -193,7 +193,7 @@ export default class GeoPackageTileTableBuilder {
             layer.renderTile({x, y, z}, (err, result) => {
               if (err) {
                 // eslint-disable-next-line no-console
-                console.error(err)
+                console.error('Failed to render tile.')
                 reject(err)
               } else if (!isNil(result)) {
                 try {
@@ -204,15 +204,17 @@ export default class GeoPackageTileTableBuilder {
                     ctx.globalAlpha = 1.0
                     resolve()
                   }
+                  // eslint-disable-next-line no-unused-vars
                   img.onerror = (error) => {
                     // eslint-disable-next-line no-console
-                    console.error(error)
+                    console.error('Failed to load image.')
                     resolve()
                   }
                   img.src = result
+                  // eslint-disable-next-line no-unused-vars
                 } catch (error) {
                   // eslint-disable-next-line no-console
-                  console.error(error)
+                  console.error('Failed to load image.')
                   resolve()
                 }
               } else {
@@ -235,9 +237,10 @@ export default class GeoPackageTileTableBuilder {
                 ]
               })
               gp.addTile(buffer, tableName, z, y, x)
+              // eslint-disable-next-line no-unused-vars
             } catch (e) {
               // eslint-disable-next-line no-console
-              console.error(e)
+              console.error('Failed to add tile')
             }
           } else {
             gp.addTile(canvas.toBuffer('image/jpeg', { quality: 0.7 }), tableName, z, y, x)

@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
-import Protobuf from 'pbf'
 import vt from 'vector-tile'
 import pako from 'pako'
+import Protobuf from 'pbf'
 import keys from 'lodash/keys'
 
 export default class MBTilesUtilities {
@@ -38,9 +38,10 @@ export default class MBTilesUtilities {
             break
         }
       })
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error(err)
+      console.error('Failed to determine MBTiles metadata.')
     }
     if (!info.bounds) {
       info.bounds = [-180, -90, 180, 90]
@@ -71,6 +72,18 @@ export default class MBTilesUtilities {
     return new Database(filePath, {readonly: true})
   }
 
+  static close (db) {
+    if (db) {
+      try {
+        db.close()
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to close MBTiles database file.')
+      }
+    }
+  }
+
   static getTile(db, z, x, y, format) {
     // Flip Y coordinate because MBTiles files are TMS.
     y = (1 << z) - 1 - y
@@ -82,9 +95,10 @@ export default class MBTilesUtilities {
       if (row && row.tile_data) {
         tileData = 'data:' + format + ';base64,' + Buffer.from(row.tile_data).toString('base64')
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to get MBTiles tile data.')
     }
     return tileData
   }
@@ -113,9 +127,10 @@ export default class MBTilesUtilities {
           }
         })
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to get MBTiles vector features.')
     }
     return vectorTileFeatures
   }
@@ -132,9 +147,10 @@ export default class MBTilesUtilities {
       stmt = db.prepare('SELECT max(zoom_level) as \'zoom_level\' FROM tiles')
       row = stmt.get()
       zoomRange.max = row.zoom_level
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Failed to get zoom range for MBTiles file.')
     }
     return zoomRange;
   }

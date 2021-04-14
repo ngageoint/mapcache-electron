@@ -1,10 +1,10 @@
 import log from 'electron-log'
 import Vue from 'vue'
-import App from './App.vue'
+import App from './views/App.vue'
 import router from './router'
 import store from './store'
 import AsyncComputed from 'vue-async-computed'
-import vuetify from './vuetify/vuetify.js' // path to vuetify export
+import vuetify from './lib/vuetify/vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
 import axios from 'axios'

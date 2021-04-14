@@ -228,7 +228,7 @@
   import 'leaflet-geosearch/dist/geosearch.css'
   import jetpack from 'fs-jetpack'
   import { GeoPackageDataType } from '@ngageoint/geopackage'
-  import EventBus from '../../EventBus'
+  import EventBus from '../../lib/vue/EventBus'
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import DrawBounds from './DrawBounds'
   import GridBounds from './GridBounds'
@@ -243,7 +243,6 @@
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import draggable from 'vuedraggable'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
-  import offline from '../../assets/ne_50m_countries.geo'
   import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
   import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
@@ -602,8 +601,7 @@
         const self = this
         const sourceId = sourceConfiguration.id
         let source = LayerFactory.constructLayer(sourceConfiguration)
-        source.maxFeatures = this.project.maxFeatures
-        self.dataSourceMapLayers[sourceId] = LeafletMapLayerFactory.constructMapLayer(source)
+        self.dataSourceMapLayers[sourceId] = LeafletMapLayerFactory.constructMapLayer({layer: source, maxFeatures: this.project.maxFeatures})
         // if it is visible, try to initialize it
         if (source.visible) {
           self.initializeDataSource(sourceId, map)
@@ -632,7 +630,7 @@
         let self = this
         const baseMapId = baseMap.id
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId] = vendor.L.geoJson(offline, {
+          self.baseMapLayers[baseMapId] = vendor.L.geoJson(ElectronUtilities.getOfflineMap(), {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -651,8 +649,7 @@
           self.$forceUpdate()
         } else {
           let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          layer.maxFeatures = this.project.maxFeatures
-          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer(layer)
+          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
           if (this.selectedBaseMapId === baseMapId) {
             self.initializeBaseMap(baseMapId, map)
           }
@@ -728,9 +725,10 @@
               }
             }
             this.displayFeatureTable()
+            // eslint-disable-next-line no-unused-vars
           } catch (e) {
             // eslint-disable-next-line no-console
-            console.error(e)
+            console.error('Failed to retrieve features.')
             this.hideFeatureTable()
           }
         } else {
@@ -767,7 +765,7 @@
       addGeoPackageTileTable (geopackage, map, tableName) {
         let self = this
         let layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
-        let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+        let mapLayer = LeafletMapLayerFactory.constructMapLayer({layer: layer})
         if (geopackage.tables.tiles[tableName].visible) {
           mapLayer.initializeLayer().then(() => {
             self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
@@ -784,11 +782,10 @@
           sourceLayerName: tableName,
           sourceType: 'GeoPackage',
           layerType: 'Vector',
-          maxFeatures: this.project.maxFeatures,
           count: geopackage.tables.features[tableName].featureCount,
           extent: geopackage.tables.features[tableName].extent,
         })
-        let mapLayer = LeafletMapLayerFactory.constructMapLayer(layer)
+        let mapLayer = LeafletMapLayerFactory.constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
         if (geopackage.tables.features[tableName].visible) {
           mapLayer.initializeLayer().then(() => {
             self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
@@ -1446,8 +1443,8 @@
           }
           let geoPackageFeatureLayerSelection = 0
           if (!isNil(this.project.activeGeoPackage) && !isNil(this.project.activeGeoPackage.geopackageId) && this.project.activeGeoPackage.geopackageId === updatedGeoPackageSelection && !isNil(this.project.activeGeoPackage.tableName)) {
-            const tableNameIndex = layers.findIndex(choice => choice.text === this.project.activeGeoPackage.tableName)
-            if (tableNameIndex > 0) {
+            const tableNameIndex = layers.findIndex(choice => choice.value !== 0 && choice.text === this.project.activeGeoPackage.tableName)
+            if (tableNameIndex !== -1) {
               geoPackageFeatureLayerSelection = layers[tableNameIndex].value
             }
           }
