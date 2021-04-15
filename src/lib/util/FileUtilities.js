@@ -24,6 +24,19 @@ export default class FileUtilities {
     return extraResourcesPath
   }
 
+  static getWorkerDirectory () {
+    let workerPath
+    // eslint-disable-next-line no-undef
+    if (!isNil(__static)) {
+      // static only set in electron process
+      // eslint-disable-next-line no-undef
+      workerPath = path.join(path.dirname(__static), 'dist_electron')
+    } else {
+      workerPath = path.join(path.dirname(__dirname), 'dist_electron')
+    }
+    return workerPath
+  }
+
   /**
    * Slices a chunk out of a file
    * @param fd

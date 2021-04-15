@@ -1,9 +1,9 @@
 const { parentPort } = require('worker_threads')
-import GeoTiffRenderingUtilities from '../lib/util/GeoTiffRenderingUtilities'
-import MBTilesRenderingUtilities from '../lib/util/MBTilesRenderingUtilities'
-import GeoPackageRenderingUtilities from '../lib/util/GeoPackageRenderingUtilities'
-import CanvasUtilities from '../lib/util/CanvasUtilities'
-import LayerTypes from '../lib/source/layer/LayerTypes'
+import GeoTiffRenderingUtilities from '../util/GeoTiffRenderingUtilities'
+import MBTilesRenderingUtilities from '../util/MBTilesRenderingUtilities'
+import GeoPackageRenderingUtilities from '../util/GeoPackageRenderingUtilities'
+import CanvasUtilities from '../util/CanvasUtilities'
+import LayerTypes from '../source/layer/LayerTypes'
 import { createCanvas } from 'canvas'
 
 CanvasUtilities.setCreateCanvasFunction((width, height) => {

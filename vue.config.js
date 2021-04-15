@@ -15,9 +15,9 @@ module.exports = {
     electronBuilder: {
       externals: ['better-sqlite3', 'canvas', 'bindings'],
       preload: {
-        mainPreload: 'src/preload/mainPreload.js',
-        projectPreload: 'src/preload/projectPreload.js',
-        workerPreload: 'src/preload/workerPreload.js'
+        mainPreload: 'src/lib/preload/mainPreload.js',
+        projectPreload: 'src/lib/preload/projectPreload.js',
+        workerPreload: 'src/lib/preload/workerPreload.js'
       },
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
@@ -43,21 +43,18 @@ module.exports = {
           }]
         )
         config
-          .entry('mapcache')
-          .add('./src/threads/mapcacheThread.js')
+          .entry('mapcacheThread')
+          .add('./src/lib/threads/mapcacheThread.js')
           .end()
-          .entry('tileRendering')
-          .add('./src/threads/tileRenderingThread.js')
+          .entry('tileRenderingThread')
+          .add('./src/lib/threads/tileRenderingThread.js')
+          .end()
+          .entry('tileRenderingProcess')
+          .add('./src/lib/processes/tileRenderingProcess.js')
           .end()
           .output
-          .filename((pathData) => {
-            if (pathData.chunk.name === 'mapcache') {
-              return '[name]Thread.js'
-            } else if (pathData.chunk.name === 'tileRendering') {
-              return '[name]Thread.js'
-            } else {
-              return '[name].js'
-            }
+          .filename(() => {
+            return '[name].js'
           })
         config.module
           .rule("node")

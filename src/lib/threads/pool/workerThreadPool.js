@@ -36,7 +36,6 @@ class WorkerPoolTaskInfo extends AsyncResource {
 class WorkerThreadPool extends EventEmitter {
   constructor(numThreads, workerPath) {
     super()
-    this.poolSize = numThreads
     this.workerPath = workerPath
     this.workers = []
     this.freeWorkers = []
@@ -59,7 +58,7 @@ class WorkerThreadPool extends EventEmitter {
       this.freeWorkers.push(worker)
       this.emit(kWorkerFreedEvent)
     })
-    worker.once('error', (err) => {
+    worker.on('error', (err) => {
       if (worker[kTaskInfo]) {
         worker[kTaskInfo].done(err, null)
       }

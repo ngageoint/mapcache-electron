@@ -15,7 +15,7 @@ window.mapcache = {
       const statusCallback = (status) => {
         ipcRenderer.send('worker_build_feature_layer_status_' + data.taskId, status)
       }
-      require('../lib/geopackage/GeoPackageFeatureTableBuilder').default.buildFeatureLayer(data.configuration, statusCallback).then(() => {
+      require('../geopackage/GeoPackageFeatureTableBuilder').default.buildFeatureLayer(data.configuration, statusCallback).then(() => {
         ipcRenderer.send('worker_build_feature_layer_completed_' + data.taskId)
       })
     })
@@ -23,7 +23,7 @@ window.mapcache = {
       const statusCallback = (status) => {
         ipcRenderer.send('worker_build_tile_layer_status_' + data.taskId, status)
       }
-      require('../lib/geopackage/GeoPackageTileTableBuilder').default.buildTileLayer(data.configuration, statusCallback).then(() => {
+      require('../geopackage/GeoPackageTileTableBuilder').default.buildTileLayer(data.configuration, statusCallback).then(() => {
         ipcRenderer.send('worker_build_tile_layer_completed_' + data.taskId)
       })
     })

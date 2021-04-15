@@ -2,7 +2,7 @@ import path from 'path'
 import WorkerThreadPool from '../pool/workerThreadPool'
 import os from 'os'
 import isNil from 'lodash/isNil'
-import FileUtilities from '../../lib/util/FileUtilities'
+import FileUtilities from '../../util/FileUtilities'
 
 /**
  * Helper class that handles calls to the geotiff web worker

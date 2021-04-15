@@ -2,8 +2,9 @@ import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session } from 'elect
 import path from 'path'
 import isNil from 'lodash/isNil'
 import CredentialsManagement from '../network/CredentialsManagement'
-import MapcacheThreadHelper from '../../threads/helpers/mapcacheThreadHelper'
-import TileRenderingThreadHelper from '../../threads/helpers/tileRenderingThreadHelper'
+import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
+import TileRenderingThreadHelper from '../threads/helpers/tileRenderingThreadHelper'
+// import TileRenderingProcessHelper from '../processes/helpers/tileRenderingProcessHelper'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -351,15 +352,15 @@ class MapCacheWindowManager {
       })
     })
 
-    this.tileRenderingThreadHelper = new TileRenderingThreadHelper()
+    this.tileRenderingthreadHelper = new TileRenderingThreadHelper()
     ipcMain.on('cancel_tile_request', async (event, payload) => {
       const taskId = payload.id
-      this.tileRenderingThreadHelper.cancelTask(taskId)
+      this.tileRenderingthreadHelper.cancelTask(taskId)
     })
     ipcMain.on('request_tile', async (event, payload) => {
       const taskId = payload.id
       try {
-        const response = await this.tileRenderingThreadHelper.renderTile(payload)
+        const response = await this.tileRenderingthreadHelper.renderTile(payload)
         event.sender.send('request_tile_' + taskId, {
           base64Image: response
         })
@@ -387,8 +388,8 @@ class MapCacheWindowManager {
       // eslint-disable-next-line no-empty
     } catch (e) {}
     try {
-      if (!isNil(this.tileRenderingThreadHelper)) {
-        await this.tileRenderingThreadHelper.terminate()
+      if (!isNil(this.tileRenderingthreadHelper)) {
+        await this.tileRenderingthreadHelper.terminate()
       }
       // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -551,7 +552,8 @@ class MapCacheWindowManager {
         nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
         contextIsolation: false,
         webSecurity: false,
-        preload: path.join(__dirname, 'projectPreload.js')
+        preload: path.join(__dirname, 'projectPreload.js'),
+        sandbox: false
       },
       show: false,
       width: 1200,
@@ -564,7 +566,7 @@ class MapCacheWindowManager {
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
         let leave = true
-        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks() || this.tileRenderingThreadHelper.hasTasks()
+        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks() || this.tileRenderingthreadHelper.hasTasks()
         if (hasTasks && !this.forceClose) {
           const choice = dialog.showMessageBoxSync(this.projectWindow, {
             type: 'question',

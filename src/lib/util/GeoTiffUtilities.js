@@ -139,7 +139,7 @@ export default class GeoTiffUtilities {
    */
   static getSample (fd, offset = 0, sampleBytes, bitsPerSample, reader, littleEndian) {
     const arrayBuffer = FileUtilities.slice(fd, offset, offset + sampleBytes)
-    return bitsPerSample.map((sample, i) => {
+    return Object.keys(bitsPerSample).map((sample, i) => {
       return reader.call(arrayBuffer, i, littleEndian)
     })
   }

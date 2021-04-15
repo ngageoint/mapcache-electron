@@ -1,6 +1,6 @@
 const { parentPort } = require('worker_threads')
-import GeoPackageMediaUtilities from '../lib/geopackage/GeoPackageMediaUtilities'
-import SourceFactory from '../lib/source/SourceFactory'
+import GeoPackageMediaUtilities from '../geopackage/GeoPackageMediaUtilities'
+import SourceFactory from '../source/SourceFactory'
 import isNil from 'lodash/isNil'
 
 /**

@@ -1,13 +1,18 @@
 const { AsyncResource } = require('async_hooks')
+const fork = require('child_process').fork
 const { EventEmitter } = require('events')
 const path = require('path')
-const { Worker } = require('worker_threads')
 const kTaskInfo = Symbol('kTaskInfo')
-const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
+const kProcessFreedEvent = Symbol('kProcessFreedEvent')
 
-class WorkerPoolTaskInfo extends AsyncResource {
+const parameters = []
+const options = {
+  stdio: [ 'pipe', 'pipe', 'pipe', 'ipc' ]
+}
+
+class ProcessPoolTaskInfo extends AsyncResource {
   constructor (task, callback = () => {}, cancelCallback = () => {}) {
-    super('WorkerPoolTaskInfo')
+    super('ProcessPoolTaskInfo')
     this.task = task
     this.callback = callback
     this.cancelled = false
@@ -18,8 +23,8 @@ class WorkerPoolTaskInfo extends AsyncResource {
     return this.task.id
   }
 
-  setWorker (worker) {
-    this.worker = worker
+  setProcess (process) {
+    this.process = process
   }
 
   setCancelled () {
@@ -33,73 +38,79 @@ class WorkerPoolTaskInfo extends AsyncResource {
   }
 }
 
-class WorkerThreadPool extends EventEmitter {
-  constructor(numThreads, workerPath) {
+class ProcessThreadPool extends EventEmitter {
+  constructor(numThreads, processPath) {
     super()
-    this.poolSize = numThreads
-    this.workerPath = workerPath
-    this.workers = []
-    this.freeWorkers = []
+    this.processPath = processPath
+    this.processes = []
+    this.freeProcesses = []
     this.queue = []
 
-    this.on(kWorkerFreedEvent, () => this.run())
+    this.on(kProcessFreedEvent, () => this.run())
 
     for (let i = 0; i < numThreads; i++) {
       this.addNewWorker()
     }
   }
-
   addNewWorker () {
-    const worker = new Worker(path.resolve(this.workerPath))
-    worker.on('message', (result) => {
-      if (worker[kTaskInfo]) {
-        worker[kTaskInfo].done(null, result)
-        worker[kTaskInfo] = null
+    const process = fork(path.resolve(this.processPath), parameters, options)
+    process.on('message', (result) => {
+      if (process[kTaskInfo]) {
+        process[kTaskInfo].done(null, result)
+        process[kTaskInfo] = null
       }
-      this.freeWorkers.push(worker)
-      this.emit(kWorkerFreedEvent)
+      this.freeProcesses.push(process)
+      this.emit(kProcessFreedEvent)
     })
-    worker.once('error', (err) => {
-      if (worker[kTaskInfo]) {
-        worker[kTaskInfo].done(err, null)
+    process.stdout.setEncoding('utf8')
+    process.stdout.on('data', (data) => {
+      console.log(data)
+    })
+    process.stderr.setEncoding('utf8')
+    process.stderr.on('data', (data) => {
+      console.error(data);
+    })
+    process.on('error', (err) => {
+      if (process[kTaskInfo]) {
+        process[kTaskInfo].done(err, null)
       }
     })
-    this.workers.push(worker)
-    this.freeWorkers.push(worker)
-    this.emit(kWorkerFreedEvent)
+    this.processes.push(process)
+    this.freeProcesses.push(process)
+    this.emit(kProcessFreedEvent)
   }
 
   hasTasks () {
-    return this.queue.length > 0 || this.workers.length !== this.freeWorkers.length
+    return this.queue.length > 0 || this.processes.length !== this.freeProcesses.length
   }
 
   addTask (task, callback, cancelled) {
-    this.queue.push(new WorkerPoolTaskInfo(task, callback, cancelled))
+    this.queue.push(new ProcessPoolTaskInfo(task, callback, cancelled))
     this.run()
   }
 
   run () {
-    if (this.freeWorkers.length === 0 || this.queue.length === 0) {
+    if (this.freeProcesses.length === 0 || this.queue.length === 0) {
       return
     }
 
-    const worker = this.freeWorkers.pop()
+    const process = this.freeProcesses.pop()
     const taskInfo = this.queue.shift()
-    worker[kTaskInfo] = taskInfo
-    taskInfo.setWorker(worker)
-    worker.postMessage(taskInfo.task)
+    process[kTaskInfo] = taskInfo
+    taskInfo.setProcess(process)
+    process.send(taskInfo.task)
   }
 
   async cancelTask (taskId) {
     let cancelled = this.cancelPendingTask(taskId)
     if (!cancelled) {
-      const worker = this.workers.find(worker => worker[kTaskInfo] && worker[kTaskInfo].getTaskId() === taskId)
-      if (worker) {
-        this.workers.splice(this.workers.indexOf(worker), 1)
-        worker[kTaskInfo].setCancelled()
-        await worker.terminate()
-        worker[kTaskInfo].done('Cancelled.', null)
-        worker[kTaskInfo] = null
+      const process = this.processes.find(process => process[kTaskInfo] && process[kTaskInfo].getTaskId() === taskId)
+      if (process) {
+        this.processes.splice(this.processes.indexOf(process), 1)
+        process[kTaskInfo].setCancelled()
+        process.kill('SIGKILL')
+        process[kTaskInfo].done('Cancelled.', null)
+        process[kTaskInfo] = null
         this.addNewWorker()
         cancelled = true
       }
@@ -122,10 +133,10 @@ class WorkerThreadPool extends EventEmitter {
 
   async close () {
     this.queue = []
-    for (const worker of this.workers) {
-      await worker.terminate()
+    for (const process of this.processes) {
+      process.kill('SIGKILL')
     }
   }
 }
 
-module.exports = WorkerThreadPool
+module.exports = ProcessThreadPool
