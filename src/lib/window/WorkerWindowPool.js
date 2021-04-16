@@ -110,7 +110,7 @@ class WorkerWindowPool {
         await this.restartWorkerWindow(activeTask.worker.id)
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Unable to restart worker window.')
       }
       delete this.activeTasks[taskId]
     } else {
@@ -140,7 +140,7 @@ class WorkerWindowPool {
   }) {
     window.loadURL(url).then(onFulfilled).catch((e) => {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Unable to load worker.')
     })
   }
 

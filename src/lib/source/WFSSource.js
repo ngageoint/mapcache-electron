@@ -119,7 +119,6 @@ export default class WFSSource extends Source {
         url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer.name, outputFormat, srs, layer.version),
         withCredentials: true
       }).then(response => {
-
         // setup options for parsing response
         const options = {
           featureProjection: 'EPSG:4326'
@@ -139,15 +138,15 @@ export default class WFSSource extends Source {
         } else if (outputFormat === 'GML2') {
           features = new WFS({gmlFormat: new GML2(), version: layer.version}).readFeatures(response.data, options)
         } else {
-          throw new Error('Service in unsupported WFS format: ' + outputFormat)
+          reject(new Error('Service in unsupported WFS format: ' + outputFormat))
         }
         featureCollection = new GeoJSON().writeFeaturesObject(features)
         if (_.isNil(featureCollection) || _.isNil(featureCollection.features) || _.isEmpty(featureCollection.features)) {
-          throw new Error('Error retrieving features.')
+          reject(new Error('Error retrieving features.'))
         }
         resolve(featureCollection.features.filter(f => f !== undefined))
-      }).catch(err => {
-        reject(err)
+      }).catch(() => {
+        reject('Error retrieving WFS features.')
       })
     })
   }

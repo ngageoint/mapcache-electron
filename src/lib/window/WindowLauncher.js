@@ -482,7 +482,7 @@ class WindowLauncher {
       await download(this.projectWindow, fileUrl(url))
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error)
+      console.error('Unable to download file.')
     }
   }
 
@@ -507,7 +507,7 @@ class WindowLauncher {
       })
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Unable to show project.')
     }
   }
 
