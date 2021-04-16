@@ -62,10 +62,10 @@ export default class KMLUtilities {
                     resolve()
                   })
                 })
-                .catch(err => {
+                .catch(() => {
                   fs.unlinkSync(fullFile)
                   // eslint-disable-next-line no-console
-                  console.error(err)
+                  console.error('Failed to retrieve remote kml icon.')
                   resolve()
                 })
             })

@@ -30,14 +30,14 @@ export default class GeoTIFFUtilities {
         GeoTIFF.writeArrayBuffer(values, metadata).then(arrayBuffer => {
           jetpack.writeAsync(geotiffFilePath, Buffer.from(arrayBuffer)).then(() => {
             resolve(true)
-          }).catch(e => {
+          }).catch(() => {
             // eslint-disable-next-line no-console
-            console.error(e)
+            console.error('Failed to write ground overlay geotiff to file system.')
             resolve(false)
           })
-        }).catch(e => {
+        }).catch(() => {
           // eslint-disable-next-line no-console
-          console.error(e)
+          console.error('Failed to convert ground overlay into geotiff.')
           resolve(false)
         })
       })
