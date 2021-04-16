@@ -121,10 +121,11 @@ export default class KMLSource extends Source {
                   resolve()
                 })
               })
-              .catch(err => {
+              // eslint-disable-next-line no-unused-vars
+                .catch(() => {
                 fs.unlinkSync(iconFile)
                 // eslint-disable-next-line no-console
-                console.error(err)
+                console.error('Failed to download KML icon.')
                 resolve()
               })
             })

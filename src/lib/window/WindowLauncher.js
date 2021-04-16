@@ -273,9 +273,9 @@ class WindowLauncher {
     })
     ipcMain.on('quick_download_geopackage', (event, payload) => {
       this.downloadURL(payload.url).then(() => {
-      }).catch(e => {
+      }).catch(() => {
         // eslint-disable-next-line no-console
-        console.error(e)
+        console.error('Failed to download the GeoPackage.')
       })
     })
     ipcMain.on('read_raster', (event, payload) => {
@@ -363,7 +363,6 @@ class WindowLauncher {
     }
     this.mainWindow = new BrowserWindow(windowOptions)
     this.mainWindow.setMenu(menu)
-    // mainWindowState.track(this.mainWindow)
     this.loadContent(this.mainWindow, winURL, () => {
       this.loadingWindow.hide()
       this.mainWindow.show()
@@ -382,9 +381,9 @@ class WindowLauncher {
   }
 
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch((e) => {
+    window.loadURL(url).then(onFulfilled).catch(() => {
       // eslint-disable-next-line no-console
-      console.error(e)
+      console.error('Failed to load the BrowserWindow content.')
     })
   }
 
@@ -403,10 +402,6 @@ class WindowLauncher {
     setTimeout(() => {
       this.loadContent(this.loadingWindow, winURL)
     }, 0)
-  }
-
-  getProjectWindow () {
-    return this.projectWindow
   }
 
   launchProjectWindow () {
@@ -468,7 +463,7 @@ class WindowLauncher {
             if (credentials === null || credentials === undefined) {
               callback()
             } else {
-              callback(credentials.username, await CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
+              callback(credentials.username, CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
             }
           })
           this.projectWindow.webContents.send('request-client-credentials', {
