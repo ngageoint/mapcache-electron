@@ -52,7 +52,6 @@ export default class KMLUtilities {
             const writer = fs.createWriteStream(fullFile)
             await new Promise((resolve) => {
               return axios({
-                method: 'get',
                 url: iconPath,
                 responseType: 'arraybuffer'
               })

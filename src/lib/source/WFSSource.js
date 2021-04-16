@@ -115,7 +115,6 @@ export default class WFSSource extends Source {
       }
 
       axios({
-        method: 'get',
         url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer.name, outputFormat, srs, layer.version),
         withCredentials: true
       }).then(response => {

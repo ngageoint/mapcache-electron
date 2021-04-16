@@ -65,7 +65,6 @@ export default class CancellableTileRequest {
         const CancelToken = axios.CancelToken
         this.source = CancelToken.source()
         let response = await axiosRequestScheduler.getAxiosInstance()({
-          method: 'get',
           url: url,
           responseType: 'arraybuffer',
           headers: headers,

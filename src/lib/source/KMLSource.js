@@ -110,7 +110,6 @@ export default class KMLSource extends Source {
             const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
               return axios({
-                method: 'get',
                 url: feature.properties.icon,
                 responseType: 'arraybuffer'
               })
