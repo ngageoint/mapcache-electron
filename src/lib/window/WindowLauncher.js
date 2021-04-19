@@ -556,7 +556,7 @@ class WindowLauncher {
             label: 'Documentation',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.8/README.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.9/README.md`
               )
             }
           },
@@ -564,7 +564,7 @@ class WindowLauncher {
             label: 'What\'s New...',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.8/changelog/v1.0.8.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.9/changelog/v1.0.9.md`
               )
             }
           }
