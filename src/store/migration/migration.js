@@ -183,6 +183,7 @@ export default async function runMigration () {
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error('Migration script failed: ' + i)
+            console.error(e)
             success = false
           }
         } else {

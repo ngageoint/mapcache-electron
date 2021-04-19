@@ -93,7 +93,6 @@ export default class ArcGISFeatureServiceSource extends Source {
         url = url + '&token=' + queryParams['token']
       }
       axios({
-        method: 'get',
         url: url,
         withCredentials: true
       }).then(response => {

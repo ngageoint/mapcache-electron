@@ -90,7 +90,6 @@ export default class KMLSource extends Source {
             const writer = fs.createWriteStream(cachedIconFile)
             await new Promise((resolve) => {
               return axios({
-                method: 'get',
                 url: feature.properties.icon,
                 responseType: 'arraybuffer'
               })
@@ -101,8 +100,7 @@ export default class KMLSource extends Source {
                   resolve()
                 })
               })
-              // eslint-disable-next-line no-unused-vars
-              .catch(err => {
+              .catch(() => {
                 fs.unlinkSync(iconFile)
                 // eslint-disable-next-line no-console
                 console.error('Failed to retrieve remote icon file')

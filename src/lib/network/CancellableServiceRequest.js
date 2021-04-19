@@ -50,7 +50,6 @@ export default class CancellableServiceRequest {
       const CancelToken = axios.CancelToken
       this.source = CancelToken.source()
       const request = {
-        method: 'get',
         url: url,
         withCredentials: true,
         cancelToken: this.source.token

@@ -60,7 +60,7 @@
         this.signIn(credentials)
       },
       async getCredentials () {
-        const {encrypted, iv, key} = await CredentialsManagement.encrypt(this.password)
+        const {encrypted, iv, key} = CredentialsManagement.encrypt(this.password)
         return {
           type: CredentialsManagement.CREDENTIAL_TYPE_BASIC,
           username: this.username,

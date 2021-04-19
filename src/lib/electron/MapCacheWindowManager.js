@@ -246,8 +246,7 @@ class MapCacheWindowManager {
 
     ipcMain.on('quick_download_geopackage', (event, payload) => {
       this.downloadURL(payload.url).then(() => {
-        // eslint-disable-next-line no-unused-vars
-      }).catch(e => {
+      }).catch(() => {
         // eslint-disable-next-line no-console
         console.error('Failed to download GeoPackage.')
       })
@@ -599,7 +598,7 @@ class MapCacheWindowManager {
             if (credentials === null || credentials === undefined) {
               callback()
             } else {
-              callback(credentials.username, await CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
+              callback(credentials.username, CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
             }
           })
           this.projectWindow.webContents.send('request-client-credentials', {
@@ -718,7 +717,7 @@ class MapCacheWindowManager {
             label: 'Documentation',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.8/README.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.9/README.md`
               )
             }
           },
@@ -726,7 +725,7 @@ class MapCacheWindowManager {
             label: 'What\'s New...',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.8/changelog/v1.0.8.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.0.9/changelog/v1.0.9.md`
               )
             }
           }
