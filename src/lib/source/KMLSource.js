@@ -189,8 +189,7 @@ export default class KMLSource extends Source {
     let kmlDirectory = path.dirname(this.filePath)
     // parse kml will break up kml into vector layers for each document and geotiff layers for each ground overlay
     let { documents, geotiffs } = await KMLUtilities.parseKML(kml, kmlDirectory, tmpDir, () => {
-      const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory)
-      return { layerId: sourceId, layerDirectory: sourceDirectory, sourceDirectory: this.directory}
+      return { layerId: UniqueIDUtilities.createUniqueID(), layerDirectory: FileUtilities.createNextAvailableLayerDirectory(this.directory), sourceDirectory: this.directory}
     })
 
     // if no document was found, the document is the whole kml

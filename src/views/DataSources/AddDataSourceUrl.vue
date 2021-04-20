@@ -497,7 +497,7 @@
           const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
             id: id,
-            directory: ElectronUtilities.createSourceDirectory(this.project.id, id),
+            directory: ElectronUtilities.createSourceDirectory(this.project.directory),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
             layers: this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
@@ -529,7 +529,7 @@
         const id = UniqueIDUtilities.createUniqueID()
         let sourceToProcess = {
           id: id,
-          directory: ElectronUtilities.createSourceDirectory(this.projectId, id),
+          directory: ElectronUtilities.createSourceDirectory(this.project.directory),
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,

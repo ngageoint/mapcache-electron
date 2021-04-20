@@ -217,7 +217,7 @@
           const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
             id: id,
-            directory: ElectronUtilities.createSourceDirectory(this.project.id, id),
+            directory: ElectronUtilities.createSourceDirectory(this.project.directory),
             file: {
               lastModified: file.lastModified,
               lastModifiedDate: file.lastModifiedDate,

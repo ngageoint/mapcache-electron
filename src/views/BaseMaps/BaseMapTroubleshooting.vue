@@ -28,9 +28,9 @@
 
 <script>
   import { mapState } from 'vuex'
-  import ProjectActions from '../../../lib/vuex/ProjectActions'
-  import ServiceConnectionUtils from '../../../lib/network/ServiceConnectionUtils'
-  import HttpUtilities from '../../../lib/network/HttpUtilities'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
+  import HttpUtilities from '../../lib/network/HttpUtilities'
   import { mdiAlertCircle } from '@mdi/js'
 
   export default {

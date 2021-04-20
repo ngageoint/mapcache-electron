@@ -22,8 +22,7 @@ export default class Source {
    * @returns {{layerDirectory: string, layerId: *}}
    */
   createLayerDirectory (id = UniqueIDUtilities.createUniqueID()) {
-    const { sourceId, sourceDirectory } = FileUtilities.createSourceDirectory(this.directory, id)
-    return { layerId: sourceId, layerDirectory: sourceDirectory}
+    return { layerId: id, layerDirectory: FileUtilities.createNextAvailableLayerDirectory(this.directory)}
   }
 
   /**

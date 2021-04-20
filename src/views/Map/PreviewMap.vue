@@ -46,7 +46,7 @@
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
   import LeafletActiveLayersTool from './LeafletActiveLayersTool'
   import LeafletBaseMapTool from './LeafletBaseMapTool'
-  import BaseMapTroubleshooting from '../Settings/BaseMaps/BaseMapTroubleshooting'
+  import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
   import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import BaseMapUtilities from '../../lib/util/BaseMapUtilities'

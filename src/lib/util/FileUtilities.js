@@ -6,6 +6,7 @@ import UniqueIDUtilities from './UniqueIDUtilities'
 export default class FileUtilities {
   static PROJECT_DIRECTORY_IDENTIFIER = 'p'
   static SOURCE_DIRECTORY_IDENTIFIER = 's'
+  static LAYER_DIRECTORY_IDENTIFIER = 'l'
   static BASEMAP_DIRECTORY_IDENTIFIER = 'b'
   static ICON_DIRECTORY_IDENTIFIER = 'i'
   static SUPPORTED_FILE_EXTENSIONS = ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
@@ -35,6 +36,152 @@ export default class FileUtilities {
       workerPath = path.join(path.dirname(__dirname), 'dist_electron')
     }
     return workerPath
+  }
+
+  /**
+   * Creates the next available project directory and necessary subdirectories
+   * @param userDataDir
+   * @param create
+   * @returns {String}
+   */
+  static createNextAvailableProjectDirectory (userDataDir, create = true) {
+    let projectDirectory = null
+    let nextDirectory = 0
+    const projectsDirectory = path.join(userDataDir, FileUtilities.PROJECT_DIRECTORY_IDENTIFIER)
+    let projectDirectories = readdirSync(projectsDirectory)
+    while (isNil(projectDirectory) && existsSync(projectsDirectory)) {
+      if (projectDirectories.indexOf(nextDirectory.toString()) === -1) {
+        projectDirectory = path.join(projectsDirectory, nextDirectory.toString())
+        if (create) {
+          try {
+            mkdirSync(projectDirectory)
+            mkdirSync(path.join(projectDirectory, FileUtilities.SOURCE_DIRECTORY_IDENTIFIER))
+          } catch (e) {
+            projectDirectories = readdirSync(projectsDirectory)
+            projectDirectory = null
+            nextDirectory++
+          }
+        } else {
+          if (existsSync(projectDirectory)) {
+            projectDirectories = readdirSync(projectsDirectory)
+            projectDirectory = null
+            nextDirectory++
+          }
+        }
+      } else {
+        nextDirectory++
+      }
+    }
+    return projectDirectory
+  }
+
+  /**
+   * Creates the next available baseMap directory
+   * @param userDataDir
+   * @param create
+   * @returns {String}
+   */
+  static createNextAvailableBaseMapDirectory (userDataDir, create = true) {
+    let baseMapDirectory = null
+    let nextDirectory = 0
+    const baseMapsDirectory = path.join(userDataDir, FileUtilities.BASEMAP_DIRECTORY_IDENTIFIER)
+    let baseMapDirectories = readdirSync(baseMapsDirectory)
+    while (isNil(baseMapDirectory) && existsSync(baseMapsDirectory)) {
+      if (baseMapDirectories.indexOf(nextDirectory.toString()) === -1) {
+        baseMapDirectory = path.join(baseMapsDirectory, nextDirectory.toString())
+        if (create) {
+          try {
+            mkdirSync(baseMapDirectory)
+          } catch (e) {
+            baseMapDirectories = readdirSync(baseMapsDirectory)
+            baseMapDirectory = null
+            nextDirectory++
+          }
+        } else {
+          if (existsSync(baseMapDirectory)) {
+            baseMapDirectories = readdirSync(baseMapsDirectory)
+            baseMapDirectory = null
+            nextDirectory++
+          }
+        }
+      } else {
+        nextDirectory++
+      }
+    }
+    return baseMapDirectory
+  }
+
+  /**
+   * Creates the next available source directory and necessary subdirectories
+   * @param projectDirectory
+   * @param create
+   * @returns {*|string}
+   */
+  static createNextAvailableSourceDirectory (projectDirectory, create = true) {
+    let sourceDirectory = null
+    let nextDirectory = 0
+    const sourcesDirectory = path.join(projectDirectory, FileUtilities.SOURCE_DIRECTORY_IDENTIFIER)
+    let sourceDirectories = readdirSync(sourcesDirectory)
+    while (isNil(sourceDirectory) && existsSync(sourcesDirectory)) {
+      if (sourceDirectories.indexOf(nextDirectory.toString()) === -1) {
+        sourceDirectory = path.join(sourcesDirectory, nextDirectory.toString())
+        if (create) {
+          try {
+            mkdirSync(sourceDirectory)
+            mkdirSync(path.join(sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER))
+          } catch (e) {
+            sourceDirectories = readdirSync(sourcesDirectory)
+            sourceDirectory = null
+            nextDirectory++
+          }
+        } else {
+          if (existsSync(sourceDirectory)) {
+            sourceDirectories = readdirSync(sourcesDirectory)
+            sourceDirectory = null
+            nextDirectory++
+          }
+        }
+      } else {
+        nextDirectory++
+      }
+    }
+    return sourceDirectory
+  }
+
+  /**
+   * Creates the next available layer directory
+   * @param sourceDirectory
+   * @param create
+   * @returns {*|string}
+   */
+  static createNextAvailableLayerDirectory (sourceDirectory, create = true) {
+    let layerDirectory = null
+    let nextDirectory = 0
+    const layersDirectory = path.join(sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER)
+    let layerDirectories = readdirSync(layersDirectory)
+    while (isNil(layerDirectory) && existsSync(layersDirectory)) {
+      if (layerDirectories.indexOf(nextDirectory.toString()) === -1) {
+        layerDirectory = path.join(layersDirectory, nextDirectory.toString())
+        if (create) {
+          try {
+            mkdirSync(layerDirectory)
+          } catch (e) {
+            layerDirectories = readdirSync(layersDirectory)
+            layerDirectory = null
+            nextDirectory++
+          }
+        } else {
+          if (existsSync(layerDirectory)) {
+            layerDirectories = readdirSync(layersDirectory)
+            layerDirectory = null
+            nextDirectory++
+          }
+        }
+      } else {
+        nextDirectory++
+      }
+    }
+    return layerDirectory
   }
 
   /**

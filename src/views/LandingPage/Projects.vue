@@ -129,7 +129,7 @@
         this.dialog = true
         this.projectName = ''
         const id = UniqueIDUtilities.createUniqueID()
-        const directory = ElectronUtilities.createProjectDirectory(id)
+        const directory = ElectronUtilities.createProjectDirectory()
         LandingActions.newProject({id: id, name: projectName, directory: directory})
         ipcRenderer.once('show-project-completed', () => {
           this.dialog = false

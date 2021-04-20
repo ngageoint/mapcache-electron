@@ -55,10 +55,10 @@
                           :value="i">
                           <v-list-item-icon style="margin-top: 12px;">
                             <v-btn icon @click.stop="item.zoomTo">
-                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else src="../../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
                             </v-btn>
                           </v-list-item-icon>
                           <v-list-item-content>
@@ -127,13 +127,13 @@
   import debounce from 'lodash/debounce'
   import path from 'path'
   import jetpack from 'fs-jetpack'
-  import ColorPicker from '../../Common/ColorPicker'
-  import ProjectActions from '../../../lib/vuex/ProjectActions'
-  import DataSourceTroubleshooting from '../../DataSources/DataSourceTroubleshooting'
-  import GeoPackageCommon from '../../../lib/geopackage/GeoPackageCommon'
-  import LayerFactory from '../../../lib/source/layer/LayerFactory'
-  import ElectronUtilities from '../../../lib/electron/ElectronUtilities'
-  import UniqueIDUtilities from '../../../lib/util/UniqueIDUtilities'
+  import ColorPicker from '../Common/ColorPicker'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
+  import LayerFactory from '../../lib/source/layer/LayerFactory'
+  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
+  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
 
   export default {
     components: {
@@ -242,7 +242,7 @@
 
         // create a base map directory, the data source will be copied to this directory
         const baseMapId = UniqueIDUtilities.createUniqueID()
-        const baseMapDirectory = ElectronUtilities.createBaseMapDirectory(baseMapId)
+        const baseMapDirectory = ElectronUtilities.createBaseMapDirectory()
 
         // handle geopackage
         let extent = [-180, -90, 180, 90]
@@ -270,15 +270,16 @@
           layerConfiguration.id = baseMapId
           extent = layerConfiguration.extent || [-180, -90, 180, 90]
           await jetpack.copyAsync(layerConfiguration.directory, baseMapDirectory, {overwrite: true})
+          const layerDirectory = layerConfiguration.directory
           layerConfiguration.directory = baseMapDirectory
           if (!isNil(layerConfiguration.filePath)) {
-            layerConfiguration.filePath = configuration.filePath.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+            layerConfiguration.filePath = configuration.filePath.replace(layerDirectory, baseMapDirectory)
           }
           if (!isNil(layerConfiguration.rasterFile)) {
-            layerConfiguration.rasterFile = configuration.rasterFile.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+            layerConfiguration.rasterFile = configuration.rasterFile.replace(layerDirectory, baseMapDirectory)
           }
           if (!isNil(configuration.geopackageFilePath)) {
-            layerConfiguration.geopackageFilePath = configuration.geopackageFilePath.replace(ElectronUtilities.sourceDirectory(this.project.id, configuration.id), baseMapDirectory)
+            layerConfiguration.geopackageFilePath = configuration.geopackageFilePath.replace(layerDirectory, baseMapDirectory)
             extent = await GeoPackageCommon.getBoundingBoxForTable(layerConfiguration.geopackageFilePath, layerConfiguration.sourceLayerName)
           }
         }

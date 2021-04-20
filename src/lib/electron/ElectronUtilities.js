@@ -11,40 +11,20 @@ export default class ElectronUtilities {
     return window.mapcache.getAppDataDirectory()
   }
 
-  static sourcesDirectory (projectId) {
-    return path.join(ElectronUtilities.projectDirectory(projectId), FileUtilities.SOURCE_DIRECTORY_IDENTIFIER)
+  static createLayerDirectory (sourceDirectory) {
+    return FileUtilities.createNextAvailableLayerDirectory(sourceDirectory)
   }
 
-  static sourceDirectory (projectId, sourceId) {
-    return path.join(ElectronUtilities.sourcesDirectory(projectId), sourceId)
+  static createSourceDirectory (projectDirectory) {
+    return FileUtilities.createNextAvailableSourceDirectory(projectDirectory)
   }
 
-  static createSourceDirectory (projectId, sourceId) {
-    const directory = ElectronUtilities.sourceDirectory(projectId, sourceId)
-    FileUtilities.createDirectory(directory)
-    return directory
+  static createBaseMapDirectory () {
+    return FileUtilities.createNextAvailableBaseMapDirectory(ElectronUtilities.userDataDirectory())
   }
 
-  static baseMapDirectory (baseMapId) {
-    return path.join(ElectronUtilities.userDataDirectory(), FileUtilities.BASEMAP_DIRECTORY_IDENTIFIER, baseMapId)
-  }
-
-  static createBaseMapDirectory (baseMapId) {
-    const directory = ElectronUtilities.baseMapDirectory(baseMapId)
-    FileUtilities.createDirectory(directory)
-    return directory
-  }
-
-  static projectDirectory (projectId) {
-    return path.join(ElectronUtilities.userDataDirectory(), FileUtilities.PROJECT_DIRECTORY_IDENTIFIER, projectId)
-  }
-
-  static createProjectDirectory (projectId) {
-    const directory = ElectronUtilities.projectDirectory(projectId)
-    FileUtilities.createDirectory(directory)
-    // create sources
-    FileUtilities.createDirectory(ElectronUtilities.sourcesDirectory(projectId))
-    return directory
+  static createProjectDirectory () {
+    return FileUtilities.createNextAvailableProjectDirectory(ElectronUtilities.userDataDirectory())
   }
 
   static openExternal (link) {

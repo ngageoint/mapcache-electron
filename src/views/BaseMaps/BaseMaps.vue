@@ -58,7 +58,7 @@
   import values from 'lodash/values'
   import keys from 'lodash/keys'
   import AddBaseMap from './AddBaseMap'
-  import ProjectActions from '../../../lib/vuex/ProjectActions'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
   import BaseMap from './BaseMap'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
   import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'

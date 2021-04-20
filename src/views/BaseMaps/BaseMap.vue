@@ -315,16 +315,16 @@
 <script>
   import isNil from 'lodash/isNil'
   import cloneDeep from 'lodash/cloneDeep'
-  import ProjectActions from '../../../lib/vuex/ProjectActions'
-  import TransparencyOptions from '../../Common/Style/TransparencyOptions'
-  import GeotiffOptions from '../../Common/Style/GeotiffOptions'
-  import BackgroundTileColor from '../../Common/Style/BackgroundTileColor'
-  import MBTilesOptions from '../../Common/Style/MBTilesOptions'
-  import StyleEditor from '../../StyleEditor/StyleEditor'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import TransparencyOptions from '../Common/Style/TransparencyOptions'
+  import GeotiffOptions from '../Common/Style/GeotiffOptions'
+  import BackgroundTileColor from '../Common/Style/BackgroundTileColor'
+  import MBTilesOptions from '../Common/Style/MBTilesOptions'
+  import StyleEditor from '../StyleEditor/StyleEditor'
   import BaseMapTroubleshooting from './BaseMapTroubleshooting'
-  import NumberPicker from '../../Common/NumberPicker'
-  import HttpUtilities from '../../../lib/network/HttpUtilities'
-  import {mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiMapOutline, mdiPalette} from '@mdi/js'
+  import NumberPicker from '../Common/NumberPicker'
+  import HttpUtilities from '../../lib/network/HttpUtilities'
+  import {mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiTrashCan} from '@mdi/js'
 
   export default {
     props: {
@@ -364,6 +364,7 @@
         mdiCloudBraces: mdiCloudBraces,
         mdiMapOutline: mdiMapOutline,
         mdiPalette: mdiPalette,
+        mdiTrashCan: mdiTrashCan,
         defaultTimeout: HttpUtilities.DEFAULT_TIMEOUT,
         defaultRateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
         defaultRetryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,

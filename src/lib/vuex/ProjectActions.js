@@ -213,7 +213,7 @@ export default class ProjectActions {
       if (!isNil(source.directory)) {
         FileUtilities.rmDir(source.directory)
       }
-      if (!isNil(source.sourceDirectory) && FileUtilities.exists(source.sourceDirectory) && FileUtilities.isDirEmpty(source.sourceDirectory)) {
+      if (!isNil(source.sourceDirectory) && FileUtilities.exists(source.sourceDirectory) && FileUtilities.isDirEmpty(path.join(source.sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER))) {
         FileUtilities.rmDir(source.sourceDirectory)
       }
       // eslint-disable-next-line no-unused-vars

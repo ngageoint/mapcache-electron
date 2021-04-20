@@ -84,37 +84,36 @@ const migrations = {
     // create project directories
     keys(state.Projects).forEach(projectId => {
       const project = state.Projects[projectId]
-      project.directory = path.join(projectDir, projectId)
-      if (!existsSync(project.directory)) {
-        mkdirSync(project.directory)
-      }
-
-      // create sources directory
-      const sourcesDir = path.join(project.directory, FileUtilities.SOURCE_DIRECTORY_IDENTIFIER)
-      if (!existsSync(sourcesDir)) {
-        mkdirSync(sourcesDir)
-      }
+      project.directory = FileUtilities.createNextAvailableProjectDirectory(userDataDir)
 
       // create source directories
       keys(state.Projects[projectId].sources).forEach(sourceId => {
         const source = state.Projects[projectId].sources[sourceId]
-        const sourceDir = path.join(sourcesDir, sourceId)
-        const oldDir = path.join(userDataDir, sourceId)
+        source.sourceDirectory = FileUtilities.createNextAvailableSourceDirectory(project.directory)
+        source.directory = FileUtilities.createNextAvailableLayerDirectory(source.sourceDirectory, false)
+
+        let oldDir = path.join(userDataDir, sourceId)
+        if (!existsSync(oldDir) && !isNil(source.sourceId)) {
+          oldDir = path.join(userDataDir, source.sourceId)
+        }
+
+        console.log('old layer dir: ' + oldDir + '? ' + (existsSync(oldDir) ? ' exists' : ' not found'))
+        console.log('new layer dir: ' + source.directory + '? ' + (existsSync(source.directory) ? ' exists' : ' not found'))
+
         // move source contents
-        if (!existsSync(sourceDir)) {
-          jetpack.move(oldDir, sourceDir)
+        if (!existsSync(source.directory) && existsSync(oldDir)) {
+          jetpack.move(oldDir, source.directory)
+          console.log('moved content from ' + oldDir + ' to ' + source.directory)
         }
         // update source file references
-        source.directory = sourceDir
-        source.sourceDirectory = sourceDir
         if (!isNil(source.filePath)) {
-          source.filePath = source.filePath.replace(oldDir, sourceDir)
+          source.filePath = source.filePath.replace(oldDir, source.directory)
         }
         if (!isNil(source.rasterFile)) {
-          source.rasterFile = source.rasterFile.replace(oldDir, sourceDir)
+          source.rasterFile = source.rasterFile.replace(oldDir, source.directory)
         }
         if (!isNil(source.geopackageFilePath)) {
-          source.geopackageFilePath = source.geopackageFilePath.replace(oldDir, sourceDir)
+          source.geopackageFilePath = source.geopackageFilePath.replace(oldDir, source.directory)
         }
       })
     })
@@ -127,9 +126,9 @@ const migrations = {
 
     state.BaseMaps.baseMaps.filter(baseMap => ['0','1','2','3'].indexOf(baseMap.id) === -1).map(baseMap => {
       // move base map contents to new directory
-      const baseMapDir = path.join(baseMapsDir, baseMap.id)
+      const baseMapDir = FileUtilities.createNextAvailableBaseMapDirectory(userDataDir, false)
       const oldDir = path.join(userDataDir, baseMap.id)
-      if (!existsSync(baseMapDir)) {
+      if (!existsSync(baseMapDir) && existsSync(oldDir)) {
         jetpack.move(oldDir, baseMapDir)
       }
       // update base map file references
