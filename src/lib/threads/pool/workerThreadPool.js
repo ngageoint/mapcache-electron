@@ -53,19 +53,21 @@ class WorkerThreadPool extends EventEmitter {
     worker.on('message', (result) => {
       if (worker[kTaskInfo]) {
         worker[kTaskInfo].done(null, result)
-        worker[kTaskInfo] = null
+        delete worker[kTaskInfo]
       }
       this.freeWorkers.push(worker)
       this.emit(kWorkerFreedEvent)
+      if (result != null && result.ready === false) {
+        console.error(result.error)
+      }
     })
     worker.on('error', (err) => {
       if (worker[kTaskInfo]) {
         worker[kTaskInfo].done(err, null)
+        delete worker[kTaskInfo]
       }
     })
     this.workers.push(worker)
-    this.freeWorkers.push(worker)
-    this.emit(kWorkerFreedEvent)
   }
 
   hasTasks () {

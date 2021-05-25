@@ -322,7 +322,6 @@
   import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
   import XYZTileUtilities from '../../lib/util/XYZTileUtilities'
   import GeoServiceUtilities from '../../lib/util/GeoServiceUtilities'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
   import HttpUtilities from '../../lib/network/HttpUtilities'
   import { mdiTrashCan } from '@mdi/js'
   import XYZServerLayer from '../../lib/source/layer/tile/XYZServerLayer'
@@ -497,7 +496,7 @@
           const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
             id: id,
-            directory: ElectronUtilities.createSourceDirectory(this.project.directory),
+            directory: window.mapcache.createSourceDirectory(this.project.directory),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
             layers: this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
@@ -529,7 +528,7 @@
         const id = UniqueIDUtilities.createUniqueID()
         let sourceToProcess = {
           id: id,
-          directory: ElectronUtilities.createSourceDirectory(this.project.directory),
+          directory: window.mapcache.createSourceDirectory(this.project.directory),
           url: url,
           serviceType: this.selectedServiceType,
           separateLayers: false,

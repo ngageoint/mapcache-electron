@@ -14,7 +14,6 @@ import UniqueIDUtilities from '../util/UniqueIDUtilities'
 import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 import KMLUtilities from '../util/KMLUtilities'
 import VectorStyleUtilities from '../util/VectorStyleUtilities'
-import URLUtilities  from '../util/URLUtilities'
 import GeoPackageCommon from '../geopackage/GeoPackageCommon'
 import FileUtilities from '../util/FileUtilities'
 
@@ -94,7 +93,7 @@ export default class KMLSource extends Source {
                 responseType: 'arraybuffer'
               })
               .then(response => {
-                URLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                KMLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
                 writer.on('finish', () => {
                   writer.close()
                   resolve()

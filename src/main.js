@@ -1,4 +1,3 @@
-import log from 'electron-log'
 import Vue from 'vue'
 import App from './views/App.vue'
 import router from './router'
@@ -9,7 +8,15 @@ import './styles/app.css'
 import 'typeface-roboto/index.css'
 import axios from 'axios'
 import CanvasUtilites from './lib/util/CanvasUtilities'
+import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
+import log from 'electron-log'
 
+Object.assign(console, log.functions)
+if (window.mapcache.setupGeoPackgeContext) {
+  window.mapcache.setupGeoPackgeContext()
+}
+Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter);
+// use BrowserCanvasAdapter in renderer processes
 CanvasUtilites.setCreateCanvasFunction((width, height) => {
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -17,7 +24,6 @@ CanvasUtilites.setCreateCanvasFunction((width, height) => {
   return canvas
 })
 
-Object.assign(console, log.functions)
 axios.defaults.withCredentials = true
 
 Vue.use(AsyncComputed)

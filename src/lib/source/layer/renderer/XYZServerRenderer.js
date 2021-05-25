@@ -10,13 +10,17 @@ export default class XYZServerRenderer extends NetworkTileRenderer {
   }
 
   async renderTile (coords, callback) {
-    if (this.hasError()) {
+    if (!isNil(this.error)) {
       callback(this.error, null)
     } else {
       const cancellableTileRequest = new CancellableTileRequest()
       cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileUrl(coords), this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!isNil(error)) {
           this.setError(error)
+        }
+        if (isNil(dataUrl) || dataUrl.startsWith('data:text/html')) {
+          dataUrl = null
+          error = null
         }
         callback(error, dataUrl)
       })

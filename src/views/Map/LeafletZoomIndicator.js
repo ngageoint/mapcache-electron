@@ -1,6 +1,6 @@
-import * as vendor from '../../lib/leaflet/vendor'
+import { L } from '../../lib/leaflet/vendor'
 
-export default class LeafletZoomIndicator extends vendor.L.Control {
+export default class LeafletZoomIndicator extends L.Control {
   constructor (options) {
     let mergedOptions = {
       ...{
@@ -13,8 +13,8 @@ export default class LeafletZoomIndicator extends vendor.L.Control {
   }
 
   onAdd (map) {
-    var container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-control')
-    this._link = vendor.L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
+    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+    this._link = L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
     this._link.innerHTML = map.getZoom()
     map.on('zoomend', () => {
       this._link.innerHTML = map.getZoom()

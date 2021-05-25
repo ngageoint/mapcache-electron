@@ -13,7 +13,7 @@ export default class WMSRenderer extends NetworkTileRenderer {
   }
 
   async renderTile (coords, callback) {
-    if (this.hasError()) {
+    if (!isNil(this.error)) {
       callback (this.error, null)
     } else {
       let {x, y, z} = coords
@@ -38,6 +38,9 @@ export default class WMSRenderer extends NetworkTileRenderer {
       cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
         if (!isNil(error)) {
           this.setError(error)
+        }
+        if (isNil(dataUrl) || dataUrl.startsWith('data:text/html')) {
+          dataUrl = null
         }
         callback(error, dataUrl)
       })

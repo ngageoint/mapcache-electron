@@ -84,6 +84,7 @@
           </v-icon>
         </v-btn>
         <v-btn
+          v-if="item.geometry != null"
           icon
           small
           @click="(e) => {
@@ -229,8 +230,9 @@
             geopackageId: this.geopackage.id,
             layer: this.table.tableName,
             id: feature.id,
-            geometryType: feature.geometry.type,
-            geometryTypeCode: GeometryType.fromName(feature.geometry.type.toUpperCase()),
+            geometry: feature.geometry,
+            geometryType: isNil(feature.geometry) ? null : feature.geometry.type,
+            geometryTypeCode: isNil(feature.geometry) ? -1 : GeometryType.fromName(feature.geometry.type.toUpperCase()),
             style: this.table.featureStyleAssignments[feature.id],
             attachmentCount: this.table.featureAttachmentCounts[feature.id] || 0
           }

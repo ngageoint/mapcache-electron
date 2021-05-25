@@ -1,15 +1,19 @@
-import { GeoPackageAPI, BoundingBox } from '@ngageoint/geopackage'
+import { GeoPackageAPI } from '@ngageoint/geopackage'
 import TileLayer from './TileLayer'
 import LayerTypes from '../LayerTypes'
 
 export default class GeoPackageTileLayer extends TileLayer {
   geopackage
 
+  constructor (configuration) {
+    super(configuration)
+    this.extent = configuration.extent
+    this.minZoom = configuration.minZoom
+    this.maxZoom = configuration.maxZoom
+  }
+
   async initialize () {
     this.geopackage = await GeoPackageAPI.open(this.filePath)
-    const dao = this.geopackage.getTileDao(this.sourceLayerName)
-    this.minZoom = dao.minZoom
-    this.maxZoom = dao.maxZoom
     await super.initialize()
     return this
   }
@@ -33,14 +37,6 @@ export default class GeoPackageTileLayer extends TileLayer {
         maxZoom: this.maxZoom
       }
     }
-  }
-
-  get extent () {
-    let contentsDao = this.geopackage.contentsDao
-    let contents = contentsDao.queryForId(this.sourceLayerName)
-    let proj = contentsDao.getProjection(contents)
-    let boundingBox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
-    return [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
   }
 
   close () {

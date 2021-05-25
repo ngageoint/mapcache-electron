@@ -1,6 +1,6 @@
-import * as vendor from '../../lib/leaflet/vendor'
+import { L } from '../../lib/leaflet/vendor'
 
-export default class LeafletDraw extends vendor.L.Control {
+export default class LeafletDraw extends L.Control {
   constructor (options) {
     let mergedOptions = {
       ...{
@@ -19,12 +19,12 @@ export default class LeafletDraw extends vendor.L.Control {
     map.createPane('drawingMapPane')
     map.getPane('drawingMapPane').style.zIndex = 501
 
-    let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control')
-    this._pointLink = vendor.L.DomUtil.create('a', '', container)
-    this._polyLink = vendor.L.DomUtil.create('a', '', container)
-    this._rectLink = vendor.L.DomUtil.create('a', '', container)
-    this._linestringLink = vendor.L.DomUtil.create('a', '', container)
-    this._cancelLink = vendor.L.DomUtil.create('a', 'warning--text hidden', container)
+    let container = L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control')
+    this._pointLink = L.DomUtil.create('a', '', container)
+    this._polyLink = L.DomUtil.create('a', '', container)
+    this._rectLink = L.DomUtil.create('a', '', container)
+    this._linestringLink = L.DomUtil.create('a', '', container)
+    this._cancelLink = L.DomUtil.create('a', 'warning--text hidden', container)
 
     this._pointLink.title = 'Draw Point'
     this._polyLink.title = 'Draw Polygon'
@@ -65,27 +65,27 @@ export default class LeafletDraw extends vendor.L.Control {
     }
 
     this.show = function () {
-      if (vendor.L.DomUtil.hasClass(container, 'hidden')) {
-        vendor.L.DomUtil.removeClass(container, 'hidden')
+      if (L.DomUtil.hasClass(container, 'hidden')) {
+        L.DomUtil.removeClass(container, 'hidden')
       }
     }
 
     this.hide = function () {
-      vendor.L.DomUtil.addClass(container, 'hidden')
+      L.DomUtil.addClass(container, 'hidden')
     }
 
     this.disableDrawingLinks = function () {
       this._drawingLinks.forEach(function (link) {
         link.onclick = function () {}
-        vendor.L.DomUtil.addClass(link, 'leaflet-control-disabled')
+        L.DomUtil.addClass(link, 'leaflet-control-disabled')
       })
     }.bind(this)
 
     this.enableDrawingLinks = function () {
       this._drawingLinks.forEach(function (link) {
         link.onclick = function () {}
-        if (vendor.L.DomUtil.hasClass(link, 'leaflet-control-disabled')) {
-          vendor.L.DomUtil.removeClass(link, 'leaflet-control-disabled')
+        if (L.DomUtil.hasClass(link, 'leaflet-control-disabled')) {
+          L.DomUtil.removeClass(link, 'leaflet-control-disabled')
         }
       })
       this._pointLink.onclick = function (e) {
@@ -94,7 +94,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.disableDrawingLinks()
         this.drawing = map.editTools.startMarker(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
-        vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
+        L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
         e.preventDefault()
       }.bind(this)
@@ -104,7 +104,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.disableDrawingLinks()
         this.drawing = map.editTools.startPolygon(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
-        vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
+        L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
         e.preventDefault()
       }.bind(this)
@@ -114,7 +114,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.disableDrawingLinks()
         this.drawing = map.editTools.startRectangle(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
-        vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
+        L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
         e.preventDefault()
       }.bind(this)
@@ -124,7 +124,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.disableDrawingLinks()
         this.drawing = map.editTools.startPolyline(undefined, {pane: 'drawingMapPane'})
         this.isDrawing = true
-        vendor.L.DomUtil.removeClass(this._cancelLink, 'hidden')
+        L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
         e.preventDefault()
       }.bind(this)
@@ -139,7 +139,7 @@ export default class LeafletDraw extends vendor.L.Control {
         this.drawing = null
         this.drawingType = null
         this.enableDrawingLinks()
-        vendor.L.DomUtil.addClass(this._cancelLink, 'hidden')
+        L.DomUtil.addClass(this._cancelLink, 'hidden')
       }
       e.stopPropagation()
       e.preventDefault()
@@ -150,12 +150,12 @@ export default class LeafletDraw extends vendor.L.Control {
       this.enableDrawingLinks()
       this.isDrawing = false
       this.drawing = null
-      vendor.L.DomUtil.addClass(this._cancelLink, 'hidden')
+      L.DomUtil.addClass(this._cancelLink, 'hidden')
     }.bind(this))
 
     this.enableDrawingLinks()
 
-    const tooltip = vendor.L.DomUtil.get('tooltip')
+    const tooltip = L.DomUtil.get('tooltip')
     const self = this
     function addTooltip () {
       tooltip.innerHTML = self.drawingType.tooltip

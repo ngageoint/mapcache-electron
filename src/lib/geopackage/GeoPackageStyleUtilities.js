@@ -1,8 +1,4 @@
-import {
-  FeatureTableStyles,
-  GeometryType,
-  FeatureStyleExtension,
-} from '@ngageoint/geopackage'
+import { FeatureTableStyles, GeometryType, FeatureStyleExtension } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import values from 'lodash/values'
 import GeoPackageCommon from './GeoPackageCommon'

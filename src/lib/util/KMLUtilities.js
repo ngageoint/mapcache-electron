@@ -8,10 +8,17 @@ import bbox from '@turf/bbox'
 import transformRotate from '@turf/transform-rotate'
 import isNil from 'lodash/isNil'
 import GeoTiffLayer from '../source/layer/tile/GeoTiffLayer'
-import URLUtilities from './URLUtilities'
 import * as GeoTIFF from 'geotiff'
+import { Readable } from 'stream'
 
 export default class KMLUtilities {
+
+  static bufferToStream(buffer) {
+    let stream = new Readable()
+    stream.push(buffer)
+    stream.push(null)
+    return stream
+  }
 
   /**
    * Converts a 4326 jimp supported image into a geotiff
@@ -106,7 +113,7 @@ export default class KMLUtilities {
                 responseType: 'arraybuffer'
               })
                 .then(response => {
-                  URLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                  KMLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
                   writer.on('finish', () => {
                     writer.close()
                     resolve()

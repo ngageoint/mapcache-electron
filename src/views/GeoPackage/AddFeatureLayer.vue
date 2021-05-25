@@ -255,7 +255,6 @@
   import isNil from 'lodash/isNil'
   import keys from 'lodash/keys'
   import debounce from 'lodash/debounce'
-  import { ipcRenderer } from 'electron'
   import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
@@ -296,27 +295,26 @@
       async cancelAddFeatureLayer () {
         const self = this
         this.cancelling = true
-        ipcRenderer.removeAllListeners('build_feature_layer_status_' + this.configuration.id)
-        ipcRenderer.removeAllListeners('build_feature_layer_completed_' + this.configuration.id)
-        this.status.message = 'Cancelling...'
-        self.status.progress = -1
-        ipcRenderer.once('cancel_build_feature_layer_completed_' + this.configuration.id, () => {
-          GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
-            self.done = true
-            self.cancelling = false
-            self.status.message = 'Cancelled'
-            self.status.progress = 100
-            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          }).catch(() => {
-            // table may not have been created yet
-            self.done = true
-            self.cancelling = false
-            self.status.message = 'Cancelled'
-            self.status.progress = 100
-            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          })
+        window.mapcache.cancelAddFeatureLayer(this.configuration, () => {
+          setTimeout(() => {
+            GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+              self.done = true
+              self.cancelling = false
+              self.status.message = 'Cancelled'
+              self.status.progress = 100
+              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            }).catch(() => {
+              // table may not have been created yet
+              self.done = true
+              self.cancelling = false
+              self.status.message = 'Cancelled'
+              self.status.progress = 100
+              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            })
+          }, 500)
         })
-        ipcRenderer.send('cancel_build_feature_layer', {configuration: this.configuration})
+        this.status.message = 'Cancelling...'
+        this.status.progress = -1
       },
       async addFeatureLayer () {
         this.processing = true
@@ -332,18 +330,15 @@
           })
         }
 
-        ipcRenderer.once('build_feature_layer_completed_' + this.configuration.id, () => {
-          this.done = true
-          ipcRenderer.removeAllListeners('build_feature_layer_status_' + this.configuration.id)
-          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
-        })
-        ipcRenderer.on('build_feature_layer_status_' + this.configuration.id, (event, status) => {
+        window.mapcache.addFeatureLayer(this.configuration, (status) => {
           if (!this.done) {
             this.status = status
           }
+        }, () => {
+          this.done = true
+          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
         })
-        ipcRenderer.send('build_feature_layer', {configuration: this.configuration})
       },
       cancel () {
         if (!isNil(this.project.boundingBoxFilterEditing)) {

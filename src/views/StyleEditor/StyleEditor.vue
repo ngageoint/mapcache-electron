@@ -235,7 +235,7 @@
   import EditTableStyleAssignment from './EditTableStyleAssignment'
   import isNil from 'lodash/isNil'
   import values from 'lodash/values'
-  import {GeoPackageAPI, GeometryType} from '@ngageoint/geopackage'
+  import { GeoPackageAPI, GeometryType } from '@ngageoint/geopackage'
   import VectorStyleUtilities from '../../lib/util/VectorStyleUtilities'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import GeometryStyleSvg from '../Common/GeometryStyleSvg'

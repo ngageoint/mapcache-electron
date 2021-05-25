@@ -105,6 +105,37 @@ export default class GeoPackageCommon {
     })
   }
 
+  static _getInternalTableInformation (gp) {
+    const tables = {
+      features: {},
+      tiles: {}
+    }
+    const gpTables = gp.getTables()
+    gpTables.features.forEach(table => {
+      tables.features[table] = GeoPackageCommon._getGeoPackageFeatureTableForApp(gp, table)
+    })
+    gpTables.tiles.forEach(table => {
+      const tileDao = gp.getTileDao(table)
+      const count = tileDao.count()
+      tables.tiles[table] = {
+        visible: false,
+        tileCount: count,
+        minZoom: tileDao.minZoom,
+        maxZoom: tileDao.maxZoom,
+        extent: this._calculateTrueExtentForTileTable(gp, table),
+        description: 'An image layer with ' + count + ' tiles',
+        styleKey: 0
+      }
+    })
+    return tables
+  }
+
+  static async getInternalTableInformation (filePath) {
+    return GeoPackageCommon.performSafeGeoPackageOperation(filePath, (gp) => {
+      return GeoPackageCommon._getInternalTableInformation(gp)
+    })
+  }
+
   /**
    * Gets geopackage information required by the app to ensure functionality in all vue components
    * @param filePath
@@ -124,28 +155,8 @@ export default class GeoPackageCommon {
       size: FileUtilities.toHumanReadable(FileUtilities.getFileSizeInBytes(filePath)),
       name: filename.substring(0, filename.indexOf(path.extname(filename))),
       path: filePath,
-      tables: {
-        features: {},
-        tiles: {}
-      }
+      tables: GeoPackageCommon._getInternalTableInformation(gp)
     }
-
-    const tables = gp.getTables()
-    tables.features.forEach(table => {
-      geopackage.tables.features[table] = GeoPackageCommon._getGeoPackageFeatureTableForApp(gp, table)
-    })
-    tables.tiles.forEach(table => {
-      const tileDao = gp.getTileDao(table)
-      const count = tileDao.count()
-      geopackage.tables.tiles[table] = {
-        visible: false,
-        tileCount: count,
-        minZoom: tileDao.minZoom,
-        maxZoom: tileDao.maxZoom,
-        description: 'An image layer with ' + count + ' tiles',
-        styleKey: 0
-      }
-    })
 
     try {
       gp.close()
@@ -348,6 +359,50 @@ export default class GeoPackageCommon {
     return GeoPackageCommon.performSafeGeoPackageOperation(filePath, (gp) => {
       return GeoPackageCommon._deleteGeoPackageTable(gp, tableName)
     })
+  }
+
+  /**
+   * Calculates the actual extent of a table based on it's features or tiles
+   * @param gp
+   * @param tableName
+   * @private
+   */
+  static _calculateTrueExtentForTileTable (gp, tableName) {
+    let tableBounds = null
+    const tileDao = gp.getTileDao(tableName)
+    const minZoom = tileDao.minZoom
+    const maxZoom = tileDao.maxZoom
+    for (let zoom = minZoom; zoom < maxZoom; zoom++) {
+      const bbox = tileDao.getBoundingBoxWithZoomLevel(zoom)
+      if (!isNil(bbox)) {
+        if (isNil(tableBounds)) {
+          tableBounds = bbox
+        } else {
+          tableBounds.minLongitude = Math.min(tableBounds.minLongitude, bbox.minLongitude)
+          tableBounds.maxLongitude = Math.max(tableBounds.maxLongitude, bbox.maxLongitude)
+          tableBounds.minLatitude = Math.min(tableBounds.minLatitude, bbox.minLatitude)
+          tableBounds.maxLatitude = Math.max(tableBounds.maxLatitude, bbox.maxLatitude)
+          tableBounds.width = tableBounds.maxLongitude - tableBounds.minLongitude
+          tableBounds.height = tableBounds.maxLatitude - tableBounds.minLatitude
+        }
+      }
+    }
+    if (isNil(tableBounds)) {
+      tableBounds = this._getBoundingBoxForTable(gp, tableName)
+    } else {
+      const contents = gp.getTableContents(tableName)
+      const srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
+      const projection = 'EPSG:' + contents.srs_id
+      if (
+        !isNil(tableBounds) &&
+        srs.definition &&
+        srs.definition !== 'undefined' &&
+        srs.organization.toUpperCase() + ':' + srs.organization_coordsys_id !== 'EPSG:4326'
+      ) {
+        tableBounds = tableBounds.projectBoundingBox(projection, 'EPSG:4326')
+      }
+    }
+    return [tableBounds.minLongitude, tableBounds.minLatitude, tableBounds.maxLongitude, tableBounds.maxLatitude]
   }
 
   /**

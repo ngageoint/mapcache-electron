@@ -113,7 +113,6 @@
   import isEmpty from 'lodash/isEmpty'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import { mdiTrashCan, mdiLink, mdiLinkOff } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -325,7 +324,7 @@
         return anchorLoc
       },
       getIconClick () {
-        ElectronUtilities.showOpenDialog({
+        window.mapcache.showOpenDialog({
           filters: [
             {
               name: 'All Files',

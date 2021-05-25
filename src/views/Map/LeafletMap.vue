@@ -212,7 +212,6 @@
 </template>
 
 <script>
-  import { ipcRenderer } from 'electron'
   import { mapState } from 'vuex'
   import isNil from 'lodash/isNil'
   import debounce from 'lodash/debounce'
@@ -223,7 +222,7 @@
   import difference from 'lodash/difference'
   import pick from 'lodash/pick'
   import throttle from 'lodash/throttle'
-  import * as vendor from '../../lib/leaflet/vendor'
+  import { L } from '../../lib/leaflet/vendor'
   import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch'
   import 'leaflet-geosearch/dist/geosearch.css'
   import jetpack from 'fs-jetpack'
@@ -252,10 +251,12 @@
   import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
   import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
   import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
+  import LayerInitializationState from '../../lib/leaflet/layerInitializationState'
 
   const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
   const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
+  // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
+  const DOUBLE_CLICK_THRESHOLD = 200
 
   // objects for storing state
   const geopackageLayers = {}
@@ -268,7 +269,7 @@
       zoomTo: debounce((e) => {
         e.stopPropagation()
         let boundingBox = [[source.extent[1], source.extent[0]], [source.extent[3], source.extent[2]]]
-        let bounds = vendor.L.latLngBounds(boundingBox)
+        let bounds = L.latLngBounds(boundingBox)
         bounds = bounds.pad(0.05)
         boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
         map.fitBounds(boundingBox, {maxZoom: 20})
@@ -288,7 +289,7 @@
         e.stopPropagation()
         GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
           let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-          let bounds = vendor.L.latLngBounds(boundingBox)
+          let bounds = L.latLngBounds(boundingBox)
           bounds = bounds.pad(0.05)
           boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
           map.fitBounds(boundingBox, {maxZoom: 20})
@@ -329,7 +330,7 @@
                 e.stopPropagation()
                 const extent = baseMapConfig.extent || [-180, -90, 180, 90]
                 let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-                let bounds = vendor.L.latLngBounds(boundingBox)
+                let bounds = L.latLngBounds(boundingBox)
                 bounds = bounds.pad(0.05)
                 boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
                 map.fitBounds(boundingBox, {maxZoom: 20})
@@ -350,6 +351,7 @@
     },
     data () {
       return {
+        consecutiveClicks: 0,
         mdiAlert: mdiAlert,
         mdiClose: mdiClose,
         mdiContentCopy: mdiContentCopy,
@@ -410,9 +412,9 @@
       sendSourceInitializationStatus (sourceId) {
         const sourceLayer = this.dataSourceMapLayers[sourceId]
         if (!isNil(sourceLayer)) {
-          if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+          if (sourceLayer.getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED) {
             EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZED(sourceId))
-          } else if (sourceLayer.getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
+          } else if (sourceLayer.getInitializationState() === LayerInitializationState.INITIALIZATION_STARTED) {
             EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
           }
         }
@@ -510,7 +512,7 @@
           features: [feature]
         }
         if (this.geoPackageSelection === 0) {
-          ElectronUtilities.showSaveDialog({
+          window.mapcache.showSaveDialog({
             title: 'New GeoPackage'
           }).then(({canceled, filePath}) => {
             if (!canceled) {
@@ -581,7 +583,7 @@
         GeoPackageFeatureTableUtilities.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
           if (extent) {
             let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-            let bounds = vendor.L.latLngBounds(boundingBox)
+            let bounds = L.latLngBounds(boundingBox)
             bounds = bounds.pad(0.05)
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             map.fitBounds(boundingBox, {maxZoom: 20})
@@ -590,6 +592,9 @@
       },
       async initializeDataSource (sourceId, map) {
         EventBus.$emit(EventBus.EventTypes.SOURCE_INITIALIZING(sourceId))
+        if (this.dataSourceMapLayers[sourceId].updateMaxFeatures) {
+          this.dataSourceMapLayers[sourceId].updateMaxFeatures(this.project.maxFeatures)
+        }
         await this.dataSourceMapLayers[sourceId].initializeLayer()
         // only add if the source layer was not deleted
         if (!isNil(this.dataSourceMapLayers[sourceId]) && this.dataSourceMapLayers[sourceId].getLayer().visible) {
@@ -604,20 +609,20 @@
         self.dataSourceMapLayers[sourceId] = LeafletMapLayerFactory.constructMapLayer({layer: source, maxFeatures: this.project.maxFeatures})
         // if it is visible, try to initialize it
         if (source.visible) {
-          self.initializeDataSource(sourceId, map)
+          await self.initializeDataSource(sourceId, map)
         }
       },
       removeDataSource (sourceId) {
         if (!isNil(this.dataSourceMapLayers[sourceId])) {
-          if (this.dataSourceMapLayers[sourceId].getLayer()._configuration.layerType === LayerTypes.GEOTIFF && this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_STARTED) {
-            ipcRenderer.send('cancel_read_raster', {id: sourceId})
-          }
           this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
           this.dataSourceMapLayers[sourceId].close()
           delete this.dataSourceMapLayers[sourceId]
         }
       },
       async initializeBaseMap (baseMapId, map) {
+        if (this.baseMapLayers[baseMapId].updateMaxFeatures) {
+          this.baseMapLayers[baseMapId].updateMaxFeatures(this.project.maxFeatures)
+        }
         await this.baseMapLayers[baseMapId].initializeLayer()
         // only add if the source layer was not deleted
         if (!isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
@@ -630,7 +635,7 @@
         let self = this
         const baseMapId = baseMap.id
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId] = vendor.L.geoJson(ElectronUtilities.getOfflineMap(), {
+          self.baseMapLayers[baseMapId] = L.geoJson(window.mapcache.getOfflineMap(), {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -764,7 +769,15 @@
       },
       addGeoPackageTileTable (geopackage, map, tableName) {
         let self = this
-        let layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+        let layer = LayerFactory.constructLayer({
+          id: geopackage.id + '_' + tableName,
+          filePath: geopackage.path,
+          sourceLayerName: tableName,
+          layerType: 'GeoPackage',
+          extent: geopackage.tables.tiles[tableName].extent,
+          minZoom: geopackage.tables.tiles[tableName].minZoom,
+          maxZoom: geopackage.tables.tiles[tableName].maxZoom
+        })
         let mapLayer = LeafletMapLayerFactory.constructMapLayer({layer: layer})
         if (geopackage.tables.tiles[tableName].visible) {
           mapLayer.initializeLayer().then(() => {
@@ -798,7 +811,7 @@
         self.getExtentForVisibleGeoPackagesAndLayers().then((extent) => {
           if (!isNil(extent)) {
             let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-            let bounds = vendor.L.latLngBounds(boundingBox)
+            let bounds = L.latLngBounds(boundingBox)
             bounds = bounds.pad(0.05)
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             self.map.fitBounds(boundingBox, {maxZoom: 20})
@@ -971,7 +984,7 @@
       async initializeMap () {
         const defaultCenter = [39.658748, -104.843165]
         const defaultZoom = 3
-        this.map = vendor.L.map('map', {
+        this.map = L.map('map', {
           editable: true,
           attributionControl: false,
           center: defaultCenter,
@@ -1027,7 +1040,7 @@
           }
         })
 
-        vendor.L.control.scale().addTo(this.map)
+        L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
         this.drawingControl = new LeafletDraw()
         this.editingControl = new LeafletEdit()
@@ -1037,6 +1050,12 @@
         this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
         this.project.displayAddressSearchBar ? this.addressSearchBarControl.container.style.display = '' : this.addressSearchBarControl.container.style.display = 'none'
       },
+      debounceClickHandler: debounce(function (e) {
+        if (this.consecutiveClicks === 1) {
+          this.queryForFeatures(e)
+        }
+        this.consecutiveClicks = 0
+      }, DOUBLE_CLICK_THRESHOLD),
       setupEventHandlers () {
         const self = this
         const checkFeatureCount = throttle(async function (e) {
@@ -1069,7 +1088,8 @@
         this.map.on('click', (e) => {
           this.showLayerOrderingDialog = false
           this.showBaseMapSelection = false
-          this.queryForFeatures(e)
+          this.consecutiveClicks++
+          this.debounceClickHandler(e)
         })
         this.map.on('mousemove', checkFeatureCount)
         this.map.on('contextmenu', e => {
@@ -1080,7 +1100,7 @@
             } else {
               this.dialogCoordinate = e.latlng
               this.$nextTick(() => {
-                this.coordinatePopup = vendor.L.popup({minWidth: 300, closeButton: false, className: this.$vuetify.theme.dark ? 'theme--dark' : 'theme--light'})
+                this.coordinatePopup = L.popup({minWidth: 300, closeButton: false, className: this.$vuetify.theme.dark ? 'theme--dark' : 'theme--light'})
                   .setLatLng(e.latlng)
                   .setContent(this.$refs['leafletCoordinatePopup'])
                   .openOn(this.map)
@@ -1176,7 +1196,7 @@
               const newConfig = selectedBaseMap.layerConfiguration
               const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
               const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
-              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
               // styleChanged performs an asynchronous recycling of the geopackage connection
               if (styleKeyChanged) {
                 await self.baseMapLayers[selectedBaseMapId].styleChanged()
@@ -1215,10 +1235,10 @@
                 if (newBaseMapId !== self.offlineBaseMapId) {
                   self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
-                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED) {
                   self.map.addLayer(self.baseMapLayers[newBaseMapId])
                 }
-                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
+                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_NOT_STARTED) {
                   self.initializeBaseMap(newBaseMapId, self.map)
                 }
               }
@@ -1315,7 +1335,7 @@
             const disablingLayer = oldConfig.visible && !newConfig.visible
             const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
             const repaintFields = this.dataSourceMapLayers[sourceId].getLayer().getRepaintFields()
-            const repaintRequired = this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && oldConfig.visible && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
+            const repaintRequired = this.dataSourceMapLayers[sourceId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED && oldConfig.visible && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
 
             // update layer
             this.dataSourceMapLayers[sourceId].update(updatedSources[sourceId])
@@ -1341,9 +1361,9 @@
               }
               if (valid) {
                 // enabling map layer, if this has been initialized, we are good to go
-                if (this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
-                  this.initializeDataSource(sourceId, map)
-                } else if (this.dataSourceMapLayers[sourceId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                if (this.dataSourceMapLayers[sourceId].getInitializationState() === LayerInitializationState.INITIALIZATION_NOT_STARTED) {
+                  await this.initializeDataSource(sourceId, map)
+                } else if (this.dataSourceMapLayers[sourceId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED) {
                   this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
                 }
               }
@@ -1505,7 +1525,7 @@
           if (!isNil(updatedProject.zoomToExtent) && !isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
             this.zoomToExtentKey = updatedProject.zoomToExtent.key
             let boundingBox = [[updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]], [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]]
-            let bounds = vendor.L.latLngBounds(boundingBox)
+            let bounds = L.latLngBounds(boundingBox)
             bounds = bounds.pad(0.05)
             boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
             this.map.fitBounds(boundingBox, {maxZoom: 20})

@@ -1,5 +1,5 @@
 import isNil from 'lodash/isNil'
-import * as Vendor from '../../lib/leaflet/vendor'
+import { L } from '../../lib/leaflet/vendor'
 
 export default {
   methods: {
@@ -10,7 +10,7 @@ export default {
       }
     },
     enableGridSelection () {
-      this.gridLayer = new Vendor.L.GridLayer.TileSelectionMapLayer({
+      this.gridLayer = new L.GridLayer.TileSelectionLayer({
         pane: 'gridSelectionPane',
         zIndex: 625,
         projectId: this.project.id

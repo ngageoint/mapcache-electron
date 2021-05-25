@@ -1,11 +1,7 @@
 import path from 'path'
-import WorkerThreadPool from '../pool/workerThreadPool'
-import os from 'os'
-import isNil from 'lodash/isNil'
-import FileUtilities from '../../util/FileUtilities'
 
 /**
- * Helper class that handles calls to the geotiff web worker
+ * MapcacheThreadHelper
  */
 export default class MapcacheThreadHelper {
   threadPool
@@ -13,13 +9,25 @@ export default class MapcacheThreadHelper {
   constructor () {
     let file = path.join(__dirname, 'mapcacheThread.js')
     file = file.replace('app.asar', 'app.asar.unpacked')
-    this.threadPool = new WorkerThreadPool(Math.min(2, os.cpus().length), file)
+    const os = require('os')
+    const WorkerThreadPool = require('../pool/workerThreadPool')
+
+    this.threadPool = new WorkerThreadPool(Math.min(4, os.cpus().length), file)
   }
 
+  /**
+   * Returns whether the threadpool has any pending or active tasks
+   * @returns {boolean}
+   */
   hasTasks () {
     return this.threadPool.hasTasks()
   }
 
+  /**
+   * Attaches media to a geopackage
+   * @param data
+   * @returns {Promise<unknown>}
+   */
   attachMedia (data) {
     return new Promise((resolve) => {
       this.threadPool.addTask({id: data.id, type: 'attach_media', data: data}, (err, result) => {
@@ -31,26 +39,39 @@ export default class MapcacheThreadHelper {
     })
   }
 
+  /**
+   * Processes a data source
+   * @param data
+   * @returns {Promise<unknown>}
+   */
   processDataSource (data) {
     return new Promise((resolve) => {
       // set up initial directory
       const directory = data.source.directory
       this.threadPool.addTask({id: data.id, type: 'process_source', data: data}, (err, result) => {
+        const isNil = require('lodash/isNil')
         if (!isNil(err)) {
           if (isNil(result)) {
             result = {}
           }
           result.error = err
+          const FileUtilities = require('../../util/FileUtilities').default
           FileUtilities.rmDir(directory)
         }
         resolve(result)
       }, () => {
+        const FileUtilities = require('../../util/FileUtilities').default
         FileUtilities.rmDir(directory)
       })
     })
   }
 
-  renderGeoPackageTile (data) {
+  /**
+   * Renders a tile
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  renderTile (data) {
     return new Promise((resolve) => {
       this.threadPool.addTask({id: data.id, type: 'render_tile', data: data}, (err, result) => {
         if (err) {
@@ -61,10 +82,36 @@ export default class MapcacheThreadHelper {
     })
   }
 
+  takeSnapshot () {
+    this.threadPool.takeSnapshot()
+  }
+
+  gc () {
+    this.threadPool.gc()
+  }
+
+  /**
+   * Cancels a task, will terminate the thread running the task, if needed
+   * @param id
+   * @returns {Promise<void>}
+   */
   async cancelTask (id) {
     await this.threadPool.cancelTask(id)
   }
 
+  /**
+   * Cancels a pending task
+   * @param id
+   * @returns {Promise<void>}
+   */
+  async cancelPendingTask (id) {
+    await this.threadPool.cancelPendingTask(id)
+  }
+
+  /**
+   * Terminates the thread pool and all of it's threads
+   * @returns {Promise<void>}
+   */
   async terminate () {
     await this.threadPool.close()
   }

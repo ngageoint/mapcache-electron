@@ -1,5 +1,4 @@
 import L from 'leaflet'
-
 // hack so that leaflet's images work after going through webpack
 import marker from 'leaflet/dist/images/marker-icon.png'
 import marker2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -20,6 +19,8 @@ import RendererFactory from '../source/layer/renderer/RendererFactory'
 import ElectronGeoTiffRenderer from '../source/layer/renderer/ElectronGeoTiffRenderer'
 import ElectronMBTilesRenderer from '../source/layer/renderer/ElectronMBTilesRenderer'
 import ElectronGeoPackageRenderer from '../source/layer/renderer/ElectronGeoPackageRenderer'
+import ElectronGeoPackageTileRenderer from '../source/layer/renderer/ElectronGeoPackageTileRenderer'
+import LayerInitializationState from './layerInitializationState'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -29,21 +30,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow
 })
 
-L.INIT_STATES = {
-  INITIALIZATION_NOT_STARTED: 0,
-  INITIALIZATION_STARTED: 1,
-  INITIALIZATION_COMPLETED: 2
-}
-
 /**
  * The map cache map layer is a wrapper for a MapCache Layer object. This object has functions for handling the rendering of EPSG:3857 tiles
  */
-L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
+L.GridLayer.MapCacheLayer = L.GridLayer.extend({
   initialize: function (options) {
     L.GridLayer.prototype.initialize.call(this, options)
     this.layer = options.layer
     this.id = options.layer.id
-    this.initializationState = L.INIT_STATES.INITIALIZATION_NOT_STARTED
+    this.initializationState = LayerInitializationState.INITIALIZATION_NOT_STARTED
     this.maxFeatures = options.maxFeatures
     this.unloadListener = (event) => {
       this.layer.cancel(event.coords)
@@ -53,21 +48,22 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
     this.on('tileunload', this.unloadListener)
   },
   initializeLayer: async function () {
-    this.initializationState = L.INIT_STATES.INITIALIZATION_STARTED
+    this.initializationState = LayerInitializationState.INITIALIZATION_STARTED
     await this.layer.initialize()
     if (this.layer.layerType === LayerTypes.GEOTIFF) {
       this.layer.setRenderer(new ElectronGeoTiffRenderer(this.layer))
     } else if (this.layer.layerType === LayerTypes.MBTILES) {
       this.layer.setRenderer(new ElectronMBTilesRenderer(this.layer))
+    } else if (this.layer.layerType === LayerTypes.GEOPACKAGE) {
+      this.layer.setRenderer(new ElectronGeoPackageTileRenderer(this.layer))
     } else if (this.layer.layerType === LayerTypes.VECTOR) {
       const renderer = new ElectronGeoPackageRenderer(this.layer)
       renderer.updateMaxFeatures(this.maxFeatures)
       this.layer.setRenderer(renderer)
-
     } else {
       this.layer.setRenderer(RendererFactory.constructRenderer(this.layer))
     }
-    this.initializationState = L.INIT_STATES.INITIALIZATION_COMPLETED
+    this.initializationState = LayerInitializationState.INITIALIZATION_COMPLETED
   },
   getInitializationState: function () {
     return this.initializationState
@@ -127,10 +123,10 @@ L.GridLayer.MapCacheMapLayer = L.GridLayer.extend({
 /**
  * The map cache networking map layer is a wrapper for WMS/XYZ and other services
  */
-L.TileLayer.MapCacheNetworkingLayer = L.TileLayer.extend({
+L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   initialize: function (options) {
     L.TileLayer.prototype.initialize.call(this, GeoServiceUtilities.getBaseURL(options.layer.filePath), options)
-    this.initializationState = L.INIT_STATES.INITIALIZATION_NOT_STARTED
+    this.initializationState = LayerInitializationState.INITIALIZATION_NOT_STARTED
     this.layer = options.layer
     this.id = options.layer.id
     this.isPreview = !isNil(options.isPreview) ? options.preview : false
@@ -140,10 +136,10 @@ L.TileLayer.MapCacheNetworkingLayer = L.TileLayer.extend({
     this.axiosRequestScheduler = ServiceConnectionUtils.getAxiosRequestScheduler(this.layer.rateLimit || HttpUtilities.DEFAULT_RATE_LIMIT)
   },
   initializeLayer: async function () {
-    this.initializationState = L.INIT_STATES.INITIALIZATION_STARTED
+    this.initializationState = LayerInitializationState.INITIALIZATION_STARTED
     await this.layer.initialize()
     this.layer.setRenderer(RendererFactory.constructRenderer(this.layer))
-    this.initializationState = L.INIT_STATES.INITIALIZATION_COMPLETED
+    this.initializationState = LayerInitializationState.INITIALIZATION_COMPLETED
   },
   getInitializationState: function () {
     return this.initializationState
@@ -207,7 +203,7 @@ L.TileLayer.MapCacheNetworkingLayer = L.TileLayer.extend({
     }
   },
   createTile (coords, done) {
-    const img = document.createElement('img')
+    let img = document.createElement('img')
     if (!this.hasError()) {
       const cancellableTileRequest = new CancellableTileRequest()
       const unloadListener = (event) => {
@@ -220,8 +216,10 @@ L.TileLayer.MapCacheNetworkingLayer = L.TileLayer.extend({
         if (!isNil(error) && !this.isPreview) {
           this.setError(error)
         }
-        if (!isNil(dataUrl)) {
+        if (!isNil(dataUrl) && !dataUrl.startsWith('data:text/html')) {
           img.src = dataUrl
+        } else {
+          error = new Error('no data')
         }
         this.off('tileunload', unloadListener)
         done(error, img)
@@ -255,7 +253,7 @@ L.TileLayer.MapCacheNetworkingLayer = L.TileLayer.extend({
   }
 })
 
-L.GridLayer.TileSelectionMapLayer = L.GridLayer.extend({
+L.GridLayer.TileSelectionLayer = L.GridLayer.extend({
   initialize: function (options) {
     L.GridLayer.prototype.initialize.call(this, options)
     this.projectId = options.projectId

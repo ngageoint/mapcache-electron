@@ -36,7 +36,6 @@
 
 <script>
   import path from 'path'
-  import { ipcRenderer } from 'electron'
   import URLUtilities from '../../lib/util/URLUtilities'
   export default {
     props: {
@@ -67,16 +66,14 @@
     methods: {
       cancelProcessing () {
         const self = this
-        ipcRenderer.removeAllListeners('process_source_completed_' + self.source.id)
-        ipcRenderer.once('cancel_process_source_completed_' + self.source.id, () => {
-          self.cancelling = false
-          self.cancelled = true
-        })
         self.cancelling = true
         this.$nextTick(() => {
-          setTimeout(() => {
-            ipcRenderer.send('cancel_process_source', self.source)
-          }, 500)
+          window.mapcache.cancelProcessingSource(self.source, () => {
+            setTimeout(() => {
+              self.cancelling = false
+              self.cancelled = true
+            }, 500)
+          })
         })
       },
       closeCard () {

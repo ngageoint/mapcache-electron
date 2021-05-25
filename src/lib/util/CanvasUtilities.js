@@ -14,6 +14,26 @@ export default class CanvasUtilities {
     return CanvasUtilities.createCanvasFunction(width, height)
   }
 
+  static makeImageDataFunction = (width, height) => {
+    return new ImageData(width, height)
+  }
+
+  static disposeCanvas (canvas) {
+    if (canvas != null && canvas.dispose) {
+      canvas.dispose()
+      canvas = null
+    }
+  }
+
+
+  static setMakeImageDataFunction (f) {
+    CanvasUtilities.makeImageDataFunction = f
+  }
+
+  static makeImageData (width, height) {
+    return CanvasUtilities.makeImageDataFunction(width, height)
+  }
+
   static hasTransparentPixels (canvas) {
     let result = false
     let data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data

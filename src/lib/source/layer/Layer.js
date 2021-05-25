@@ -34,6 +34,10 @@ export default class Layer {
     this.opacity = !isNil(this._configuration.opacity) ? this._configuration.opacity : 1.0
   }
 
+  getTileRequestOptions () {
+    return {}
+  }
+
   async initialize () {
     this.initialized = true
     return this

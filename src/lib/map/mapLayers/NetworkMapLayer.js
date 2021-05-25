@@ -1,4 +1,4 @@
-import * as Vendor from '../../leaflet/vendor'
+import { L } from '../../leaflet/vendor'
 import isNil from 'lodash/isNil'
 
 /**
@@ -6,9 +6,9 @@ import isNil from 'lodash/isNil'
  */
 export default class NetworkMapLayer {
   static constructMapLayer (layer, mapPane = 'overlayPane', isPreview = false) {
-    let southWest = Vendor.L.latLng(layer.extent[1], layer.extent[0])
-    let northEast = Vendor.L.latLng(layer.extent[3], layer.extent[2])
-    let bounds = Vendor.L.latLngBounds(southWest, northEast)
+    let southWest = L.latLng(layer.extent[1], layer.extent[0])
+    let northEast = L.latLng(layer.extent[3], layer.extent[2])
+    let bounds = L.latLngBounds(southWest, northEast)
     const options = {
       layer: layer,
       bounds: bounds,
@@ -25,6 +25,6 @@ export default class NetworkMapLayer {
 
     }
 
-    return new Vendor.L.TileLayer.MapCacheNetworkingLayer(options)
+    return new L.TileLayer.MapCacheRemoteLayer(options)
   }
 }

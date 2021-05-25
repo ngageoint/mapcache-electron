@@ -2,16 +2,15 @@ import { readSync, mkdirSync, readdirSync, statSync, rmdirSync, existsSync, unli
 import path from 'path'
 import isNil from 'lodash/isNil'
 import UniqueIDUtilities from './UniqueIDUtilities'
+import FileConstants from './FileConstants'
 
 export default class FileUtilities {
-  static PROJECT_DIRECTORY_IDENTIFIER = 'p'
-  static SOURCE_DIRECTORY_IDENTIFIER = 's'
-  static LAYER_DIRECTORY_IDENTIFIER = 'l'
-  static BASEMAP_DIRECTORY_IDENTIFIER = 'b'
-  static ICON_DIRECTORY_IDENTIFIER = 'i'
-  static SUPPORTED_FILE_EXTENSIONS = ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
-  static SUPPORTED_FILE_EXTENSIONS_WITH_DOT = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip', '.mbtiles']
-
+  /**
+   * ExtraResources is a directory that is used to include files that we do not wish to bundle but will access on the file system.
+   * Electron Process: it can be found relative to the __static directory
+   * Node process: it is always one directory up from the __dirname
+   * @returns {string}
+   */
   static getExtraResourcesDirectory () {
     let extraResourcesPath
     // eslint-disable-next-line no-undef
@@ -47,7 +46,7 @@ export default class FileUtilities {
   static createNextAvailableProjectDirectory (userDataDir, create = true) {
     let projectDirectory = null
     let nextDirectory = 0
-    const projectsDirectory = path.join(userDataDir, FileUtilities.PROJECT_DIRECTORY_IDENTIFIER)
+    const projectsDirectory = path.join(userDataDir, FileConstants.PROJECT_DIRECTORY_IDENTIFIER)
     let projectDirectories = readdirSync(projectsDirectory)
     while (isNil(projectDirectory) && existsSync(projectsDirectory)) {
       if (projectDirectories.indexOf(nextDirectory.toString()) === -1) {
@@ -55,7 +54,7 @@ export default class FileUtilities {
         if (create) {
           try {
             mkdirSync(projectDirectory)
-            mkdirSync(path.join(projectDirectory, FileUtilities.SOURCE_DIRECTORY_IDENTIFIER))
+            mkdirSync(path.join(projectDirectory, FileConstants.SOURCE_DIRECTORY_IDENTIFIER))
           } catch (e) {
             projectDirectories = readdirSync(projectsDirectory)
             projectDirectory = null
@@ -84,7 +83,7 @@ export default class FileUtilities {
   static createNextAvailableBaseMapDirectory (userDataDir, create = true) {
     let baseMapDirectory = null
     let nextDirectory = 0
-    const baseMapsDirectory = path.join(userDataDir, FileUtilities.BASEMAP_DIRECTORY_IDENTIFIER)
+    const baseMapsDirectory = path.join(userDataDir, FileConstants.BASEMAP_DIRECTORY_IDENTIFIER)
     let baseMapDirectories = readdirSync(baseMapsDirectory)
     while (isNil(baseMapDirectory) && existsSync(baseMapsDirectory)) {
       if (baseMapDirectories.indexOf(nextDirectory.toString()) === -1) {
@@ -120,7 +119,7 @@ export default class FileUtilities {
   static createNextAvailableSourceDirectory (projectDirectory, create = true) {
     let sourceDirectory = null
     let nextDirectory = 0
-    const sourcesDirectory = path.join(projectDirectory, FileUtilities.SOURCE_DIRECTORY_IDENTIFIER)
+    const sourcesDirectory = path.join(projectDirectory, FileConstants.SOURCE_DIRECTORY_IDENTIFIER)
     let sourceDirectories = readdirSync(sourcesDirectory)
     while (isNil(sourceDirectory) && existsSync(sourcesDirectory)) {
       if (sourceDirectories.indexOf(nextDirectory.toString()) === -1) {
@@ -128,7 +127,7 @@ export default class FileUtilities {
         if (create) {
           try {
             mkdirSync(sourceDirectory)
-            mkdirSync(path.join(sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER))
+            mkdirSync(path.join(sourceDirectory, FileConstants.LAYER_DIRECTORY_IDENTIFIER))
           } catch (e) {
             sourceDirectories = readdirSync(sourcesDirectory)
             sourceDirectory = null
@@ -157,7 +156,7 @@ export default class FileUtilities {
   static createNextAvailableLayerDirectory (sourceDirectory, create = true) {
     let layerDirectory = null
     let nextDirectory = 0
-    const layersDirectory = path.join(sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER)
+    const layersDirectory = path.join(sourceDirectory, FileConstants.LAYER_DIRECTORY_IDENTIFIER)
     let layerDirectories = readdirSync(layersDirectory)
     while (isNil(layerDirectory) && existsSync(layersDirectory)) {
       if (layerDirectories.indexOf(nextDirectory.toString()) === -1) {
@@ -287,16 +286,16 @@ export default class FileUtilities {
   static setupInitialDirectories (userDataDirectory) {
     if (existsSync(userDataDirectory)) {
       // ensure projects directory exists
-      if (!existsSync(path.join(userDataDirectory, FileUtilities.PROJECT_DIRECTORY_IDENTIFIER))) {
-        mkdirSync(path.join(userDataDirectory, FileUtilities.PROJECT_DIRECTORY_IDENTIFIER))
+      if (!existsSync(path.join(userDataDirectory, FileConstants.PROJECT_DIRECTORY_IDENTIFIER))) {
+        mkdirSync(path.join(userDataDirectory, FileConstants.PROJECT_DIRECTORY_IDENTIFIER))
       }
       // ensure baseMaps directory exists
-      if (!existsSync(path.join(userDataDirectory, FileUtilities.BASEMAP_DIRECTORY_IDENTIFIER))) {
-        mkdirSync(path.join(userDataDirectory, FileUtilities.BASEMAP_DIRECTORY_IDENTIFIER))
+      if (!existsSync(path.join(userDataDirectory, FileConstants.BASEMAP_DIRECTORY_IDENTIFIER))) {
+        mkdirSync(path.join(userDataDirectory, FileConstants.BASEMAP_DIRECTORY_IDENTIFIER))
       }
       // ensure icons directory exists
-      if (!existsSync(path.join(userDataDirectory, FileUtilities.ICON_DIRECTORY_IDENTIFIER))) {
-        mkdirSync(path.join(userDataDirectory, FileUtilities.ICON_DIRECTORY_IDENTIFIER))
+      if (!existsSync(path.join(userDataDirectory, FileConstants.ICON_DIRECTORY_IDENTIFIER))) {
+        mkdirSync(path.join(userDataDirectory, FileConstants.ICON_DIRECTORY_IDENTIFIER))
       }
     }
   }
@@ -304,6 +303,10 @@ export default class FileUtilities {
   static readJSONFile (path) {
     const content = readFileSync(path, 'utf8')
     return JSON.parse(content)
+  }
+
+  static readFile (path) {
+    return readFileSync(path);
   }
 
   /**

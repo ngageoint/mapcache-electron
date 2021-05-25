@@ -1,6 +1,4 @@
-import {
-  BoundingBox,
-} from '@ngageoint/geopackage'
+import { BoundingBox } from '@ngageoint/geopackage'
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import GeoPackageCommon from './GeoPackageCommon'
@@ -14,7 +12,8 @@ import throttle from 'lodash/throttle'
 import GeoPackageTileTableUtilities from './GeoPackageTileTableUtilities'
 import RendererFactory from '../source/layer/renderer/RendererFactory'
 import ProjectActions from '../vuex/ProjectActions'
-import LayerTypes from '../source/layer/LayerTypes'
+import ElectronGeoPackageTileRenderer from '../source/layer/renderer/ElectronGeoPackageTileRenderer'
+import ElectronGeoPackageRenderer from '../source/layer/renderer/ElectronGeoPackageRenderer'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
@@ -49,6 +48,7 @@ export default class GeoPackageTileTableBuilder {
 
       throttleStatusCallback(status)
 
+
       let layersPrepared = 0
       const numberOfLayers = configuration.sourceLayers.length + configuration.geopackageLayers.length
       let layers = []
@@ -61,10 +61,10 @@ export default class GeoPackageTileTableBuilder {
 
         // TODO: be sure to pre-test each connection to ensure data is available for building layer..
         try {
-          if (LayerTypes.isRemote(layer)) {
-            await layer.testConnection(false)
-          }
-          layers.push(await layer.initialize(true))
+          // if (LayerTypes.isRemote(layer)) {
+          //   await layer.testConnection(false)
+          // }
+          layers.push(layer)
           // eslint-disable-next-line no-unused-vars
         } catch (error) {
           // eslint-disable-next-line no-console
@@ -76,7 +76,6 @@ export default class GeoPackageTileTableBuilder {
           }
           throttleStatusCallback(status)
           // if an error occurs trying to initialize a source, we should exit
-          // TODO: figure out way to set error on source that failed to initialize...
           ProjectActions.setSourceError({id: layer.id, error: error})
           return
         }
@@ -98,13 +97,28 @@ export default class GeoPackageTileTableBuilder {
             sourceDirectory: geopackage.path,
             sourceLayerName: tableName,
             sourceType: 'GeoPackage',
-            layerType: 'Vector'
+            layerType: 'Vector',
+            count: geopackage.tables.features[tableName].featureCount,
+            extent: geopackage.tables.features[tableName].extent,
           })
+          await layer.initialize().catch(e => {
+            console.error(e)
+          })
+          layer.setRenderer(new ElectronGeoPackageRenderer(layer))
         } else {
-          layer = LayerFactory.constructLayer({id: geopackage.id + '_' + tableName, filePath: geopackage.path, sourceLayerName: tableName, layerType: 'GeoPackage'})
+          layer = LayerFactory.constructLayer({
+            id: geopackage.id + '_' + tableName,
+            filePath: geopackage.path,
+            sourceLayerName: tableName,
+            layerType: 'GeoPackage',
+            extent: geopackage.tables.tiles[tableName].extent
+          })
+          await layer.initialize().catch(e => {
+            console.error(e)
+          })
+          layer.setRenderer(new ElectronGeoPackageTileRenderer(layer))
         }
-        await layer.initialize()
-        layer.setRenderer(RendererFactory.constructRenderer(layer))
+
         layers.push(layer)
         layersPrepared++
         status.progress = 20.0 * layersPrepared / numberOfLayers
@@ -139,9 +153,9 @@ export default class GeoPackageTileTableBuilder {
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('Failed to create tile table.')
-        status.message = 'Failed: Table already exists...'
-        throttleStatusCallback(status)
+        console.error('Failed to create tile table...')
+        status.message = 'Failed: Unable to create tile table...'
+        statusCallback(status)
         return
       }
 
@@ -162,15 +176,14 @@ export default class GeoPackageTileTableBuilder {
         // setup canvas that we will draw each layer into
         let canvas = CanvasUtilities.createCanvas(256, 256)
         let ctx = canvas.getContext('2d')
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         let tileBounds = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
         let tileBoundingBox = new BoundingBox(tileBounds.minLon, tileBounds.maxLon, tileBounds.minLat, tileBounds.maxLat)
+        const tileWidth = tileBoundingBox.maxLongitude - tileBoundingBox.minLongitude
+        const tileHeight = tileBoundingBox.maxLatitude - tileBoundingBox.minLatitude
         // clips tile so that only the intersection of the tile and the user specified bounds are drawn
         const intersection = GeoPackageCommon.intersection(tileBoundingBox, contentsWebMercator)
         if (!isNil(intersection)) {
-          const tileWidth = tileBoundingBox.maxLongitude - tileBoundingBox.minLongitude
-          const tileHeight = tileBoundingBox.maxLatitude - tileBoundingBox.minLatitude
           const getX = (lng, mathFunc) => {
             return mathFunc(256.0 / tileWidth * (lng - tileBoundingBox.minLongitude))
           }
@@ -186,43 +199,99 @@ export default class GeoPackageTileTableBuilder {
           ctx.clip()
         }
 
-        for (let i = 0; i < sortedLayers.length; i++) {
+        try {
           await new Promise((resolve, reject) => {
-            let layer = sortedLayers[i]
-            const layerAlpha = !isNil(layer.opacity) ? layer.opacity : 1.0
-            layer.renderTile({x, y, z}, (err, result) => {
-              if (err) {
-                // eslint-disable-next-line no-console
-                console.error('Failed to render tile.')
-                reject(err)
-              } else if (!isNil(result)) {
-                try {
-                  let img = new Image()
-                  img.onload = () => {
-                    ctx.globalAlpha = layerAlpha
-                    ctx.drawImage(img, 0, 0)
-                    ctx.globalAlpha = 1.0
-                    resolve()
+            // iteratre over sorted layers and push promises in sorted order
+            const tilePromises = []
+            for (let i = 0; i < sortedLayers.length; i++) {
+              const layer = sortedLayers[i]
+              tilePromises.push(new Promise((resolve, reject) => {
+                layer.renderTile({x, y, z}, (err, result) => {
+                  if (err) {
+                    reject(err)
+                  } else if (!isNil(result)) {
+                    try {
+                      let img = new Image()
+                      img.onload = () => {
+                        resolve({
+                          image: img,
+                          opacity: !isNil(layer.opacity) ? layer.opacity : 1.0
+                        })
+                      }
+                      img.onerror = (e) => {
+                        reject(e)
+                      }
+                      img.src = result
+                      // eslint-disable-next-line no-unused-vars
+                    } catch (e) {
+                      reject(e)
+                    }
+                  } else {
+                    resolve({
+                      image: null
+                    })
                   }
-                  // eslint-disable-next-line no-unused-vars
-                  img.onerror = (error) => {
-                    // eslint-disable-next-line no-console
-                    console.error('Failed to load image.')
-                    resolve()
-                  }
-                  img.src = result
-                  // eslint-disable-next-line no-unused-vars
-                } catch (error) {
-                  // eslint-disable-next-line no-console
-                  console.error('Failed to load image.')
-                  resolve()
+                })
+              }))
+            }
+            // settle promises and draw onto the context
+            Promise.allSettled(tilePromises).then(results => {
+              results.forEach(result => {
+                if (result.status === 'rejected') {
+                  console.error('Failed to render tile.')
+                  reject(result.reason)
+                } else if (!isNil(result.value) && !isNil(result.value.image)) {
+                  ctx.globalAlpha = result.value.opacity
+                  ctx.drawImage(result.value.image, 0, 0)
+                  ctx.globalAlpha = 1.0
                 }
-              } else {
-                resolve()
-              }
+              })
+              resolve()
             })
           })
+        } catch (e) {
+          console.error(e)
+          status.message = e.message || 'Failed to render tile'
+          statusCallback(status)
+          await GeoPackageCommon.wait(10000)
+
         }
+
+        // for (let i = 0; i < sortedLayers.length; i++) {
+        //   await new Promise((resolve, reject) => {
+        //     let layer = sortedLayers[i]
+        //     layer.renderTile({x, y, z}, (err, result) => {
+        //       if (err) {
+        //         // eslint-disable-next-line no-console
+        //         console.error('Failed to render tile.')
+        //         reject(err)
+        //       } else if (!isNil(result)) {
+        //         try {
+        //           let img = new Image()
+        //           img.onload = () => {
+        //             ctx.globalAlpha = !isNil(layer.opacity) ? layer.opacity : 1.0
+        //             ctx.drawImage(img, 0, 0)
+        //             ctx.globalAlpha = 1.0
+        //             resolve()
+        //           }
+        //           img.onerror = () => {
+        //             // eslint-disable-next-line no-console
+        //             console.error('Failed to load image.')
+        //             resolve()
+        //           }
+        //           img.src = result
+        //           // eslint-disable-next-line no-unused-vars
+        //         } catch (e) {
+        //           // eslint-disable-next-line no-console
+        //           console.error('Failed to load image.')
+        //           resolve()
+        //         }
+        //       } else {
+        //         resolve()
+        //       }
+        //     })
+        //   })
+        // }
 
         // look at merged canvas
         if (!CanvasUtilities.isBlank(canvas)) {
@@ -245,6 +314,10 @@ export default class GeoPackageTileTableBuilder {
           } else {
             gp.addTile(canvas.toBuffer('image/jpeg', { quality: 0.7 }), tableName, z, y, x)
           }
+        }
+        if (canvas.dispose) {
+          canvas.dispose();
+          canvas = null;
         }
         tilesAdded += 1
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded

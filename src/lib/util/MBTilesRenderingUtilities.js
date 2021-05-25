@@ -97,6 +97,9 @@ export default class MBTilesRenderingUtilities {
             drawingMap[feature.type](ctx, feature.loadGeometry(), feature.extent / 256)
           }
           base64Image = canvas.toDataURL('image/png')
+          if (canvas.dispose) {
+            canvas.dispose();
+          }
         } else {
           base64Image = MBTilesUtilities.getTile(db, coords.z, coords.x, coords.y, format)
         }

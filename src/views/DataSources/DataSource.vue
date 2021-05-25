@@ -416,7 +416,6 @@
   import HttpUtilities from '../../lib/network/HttpUtilities'
   import URLUtilities from '../../lib/util/URLUtilities'
   import { mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiTrashCan, mdiExportVariant, mdiPalette, mdiTableEye } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -524,7 +523,7 @@
       },
       downloadGeoPackage () {
         try {
-          ElectronUtilities.showSaveDialog({
+          window.mapcache.showSaveDialog({
             title: 'Export GeoPackage',
             defaultPath: this.initialDisplayName.replace(' ', '_')
           }).then(({canceled, filePath}) => {

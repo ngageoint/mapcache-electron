@@ -4,16 +4,15 @@ module.exports = {
   configureWebpack: {
     plugins: [
       new IgnorePlugin(/^\.\/locale$/, /moment$/),
-      new IgnorePlugin(/sql-asm-memory-growth.js$/),
     ]
   },
   css: {
     extract: { ignoreOrder: true },
   },
-  transpileDependencies: ["vuetify"],
+  transpileDependencies: ['vuetify'],
   pluginOptions: {
     electronBuilder: {
-      externals: ['better-sqlite3', 'canvas', 'bindings'],
+      externals: ['better-sqlite3', 'bindings'],
       preload: {
         mainPreload: 'src/lib/preload/mainPreload.js',
         projectPreload: 'src/lib/preload/projectPreload.js',
@@ -25,8 +24,7 @@ module.exports = {
         // config.plugin('analyse').use(
         //   BundleAnalyzerPlugin,
         //   [{
-        //     analyzerHost: '0.0.0.0',
-        //     analyzerPort: 'auto'
+        //     analyzerMode: 'static'
         //   }]
         // )
         config.plugin('ignore-moment-locales').use(
@@ -36,21 +34,10 @@ module.exports = {
             contextRegExp: /moment$/
           }]
         )
-        config.plugin('ignore-asm-mem-growth-geopackage-js').use(
-          IgnorePlugin,
-          [{
-            resourceRegExp: /sql-asm-memory-growth.js$/
-          }]
-        )
+        config.module.noParse(/node_modules\/rtree-sql\.js\/dist\/sql-wasm\.js$/)
         config
           .entry('mapcacheThread')
           .add('./src/lib/threads/mapcacheThread.js')
-          .end()
-          .entry('tileRenderingThread')
-          .add('./src/lib/threads/tileRenderingThread.js')
-          .end()
-          .entry('tileRenderingProcess')
-          .add('./src/lib/processes/tileRenderingProcess.js')
           .end()
           .output
           .filename(() => {
@@ -68,15 +55,10 @@ module.exports = {
           .use("babel-loader")
           .loader("babel-loader")
           .end()
+        // needed to update mainFields for electron-renderer target to look at browser last, for geopackage-js
+        config.resolve.mainFields.clear().add('module').add('main').add('browser')
       },
       chainWebpackRendererProcess: config => {
-        // config.plugin('analyse').use(
-        //   BundleAnalyzerPlugin,
-        //   [{
-        //     analyzerHost: '0.0.0.0',
-        //     analyzerPort: 'auto'
-        //   }]
-        // )
         config.plugin('ignore-moment-locales').use(
           IgnorePlugin,
           [{
@@ -84,12 +66,8 @@ module.exports = {
             contextRegExp: /moment$/
           }]
         )
-        config.plugin('ignore-asm-mem-growth-geopackage-js').use(
-          IgnorePlugin,
-          [{
-            resourceRegExp: /sql-asm-memory-growth.js$/
-          }]
-        )
+        config.module.noParse(/node_modules\/rtree-sql\.js\/dist\/sql-wasm\.js$/)
+        // config.plugin('threads-plugin').use(ThreadsPlugin, [{target: 'electron-node-worker'}])
         config.module
           .rule("node")
           .test(/\.node$/)
@@ -102,23 +80,26 @@ module.exports = {
           .use("babel-loader")
           .loader("babel-loader")
           .end()
+        // needed to update mainFields for electron-renderer target to look at browser last, for geopackage-js
+        config.resolve.mainFields.clear().add('module').add('main').add('browser')
       },
       builderOptions: {
         productName: "MapCache",
         appId: "mil.nga.mapcache",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
-        extraResources: ['./extraResources/**'],
+        extraResources: ['./extraResources/**', {
+          from: './node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm',
+          to: 'canvaskit/canvaskit.wasm',
+        }],
         asarUnpack: [
           "**/node_modules/bin-wrapper/**/*",
           "**/node_modules/imagemin-pngquant/**/*",
           "**/node_modules/pngquant-bin/**/*",
           "**/node_modules/better-sqlite3/**/*",
-          "**/node_modules/canvas/**/*",
           "**/node_modules/mime/**/*",
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
-          "**/tileRenderingThread.js",
           "**/mapcacheThread.js"
         ],
         directories: {

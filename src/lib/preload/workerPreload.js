@@ -1,5 +1,14 @@
 import { ipcRenderer } from 'electron'
+import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
+import GeoPackageFeatureTableBuilder from '../geopackage/GeoPackageFeatureTableBuilder'
+import GeoPackageTileTableBuilder from '../geopackage/GeoPackageTileTableBuilder'
+import log from 'electron-log'
+Object.assign(console, log.functions)
+
 window.mapcache = {
+  setupGeoPackgeContext: () => {
+    Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
+  },
   getUserDataDirectory: () => {
     return ipcRenderer.sendSync('get-user-data-directory')
   },
@@ -15,7 +24,7 @@ window.mapcache = {
       const statusCallback = (status) => {
         ipcRenderer.send('worker_build_feature_layer_status_' + data.taskId, status)
       }
-      require('../geopackage/GeoPackageFeatureTableBuilder').default.buildFeatureLayer(data.configuration, statusCallback).then(() => {
+      GeoPackageFeatureTableBuilder.buildFeatureLayer(data.configuration, statusCallback).then(() => {
         ipcRenderer.send('worker_build_feature_layer_completed_' + data.taskId)
       })
     })
@@ -23,7 +32,7 @@ window.mapcache = {
       const statusCallback = (status) => {
         ipcRenderer.send('worker_build_tile_layer_status_' + data.taskId, status)
       }
-      require('../geopackage/GeoPackageTileTableBuilder').default.buildTileLayer(data.configuration, statusCallback).then(() => {
+      GeoPackageTileTableBuilder.buildTileLayer(data.configuration, statusCallback).then(() => {
         ipcRenderer.send('worker_build_tile_layer_completed_' + data.taskId)
       })
     })

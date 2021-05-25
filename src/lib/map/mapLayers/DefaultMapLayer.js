@@ -1,4 +1,4 @@
-import * as Vendor from '../../leaflet/vendor'
+import { L } from '../../leaflet/vendor'
 import isNil from 'lodash/isNil'
 
 /**
@@ -6,16 +6,32 @@ import isNil from 'lodash/isNil'
  */
 export default class DefaultMapLayer {
   static constructMapLayer (layer, mapPane = 'overlayPane', maxFeatures) {
-    let southWest = Vendor.L.latLng(layer.extent[1], layer.extent[0])
-    let northEast = Vendor.L.latLng(layer.extent[3], layer.extent[2])
-    let bounds = Vendor.L.latLngBounds(southWest, northEast)
-    return new Vendor.L.GridLayer.MapCacheMapLayer({
+    const options = {
       layer: layer,
       pane: mapPane,
       zIndex: 401,
-      opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
-      bounds: bounds,
       maxFeatures: maxFeatures
-    })
+    }
+
+    try {
+      // let southWest = L.latLng(layer.extent[1], layer.extent[0])
+      // let northEast = L.latLng(layer.extent[3], layer.extent[2])
+      // options.bounds = L.latLngBounds(southWest, northEast)
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+
+    // if (!isNil(layer.minZoom)) {
+    //   options.minZoom = layer.minZoom
+    // }
+    //
+    // if (!isNil(layer.maxZoom)) {
+    //   options.maxZoom = layer.maxZoom
+    // }
+
+    if (!isNil(layer.opacity)) {
+      options.opacity = layer.opacity
+    }
+
+    return new L.GridLayer.MapCacheLayer(options)
   }
 }

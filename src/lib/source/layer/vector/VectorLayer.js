@@ -95,6 +95,14 @@ export default class VectorLayer extends Layer {
     return ['count'].concat(super.getRepaintFields())
   }
 
+  getTileRequestOptions() {
+    return {
+      tableName: this.name,
+      dbFile: this.geopackageFilePath,
+      ...super.getTileRequestOptions(),
+    }
+  }
+
   async renderTile (coords, callback) {
     return this.renderer.renderTile(coords, callback)
   }

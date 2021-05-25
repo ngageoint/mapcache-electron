@@ -32,6 +32,7 @@ export default class ElectronGeoTiffRenderer extends GeoTiffRenderer {
   async renderTile (coords, callback) {
     if (GeoTiffRenderer.intersects(coords, this.layer.extent)) {
       const coordsString = coords.x + '_' + coords.y + '_' + coords.z
+
       const tileRequest = {
         id: UniqueIDUtilities.createUniqueID(),
         layerType: this.layer.layerType,

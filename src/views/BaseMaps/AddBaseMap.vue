@@ -132,7 +132,6 @@
   import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
   import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
   import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
 
   export default {
@@ -242,7 +241,7 @@
 
         // create a base map directory, the data source will be copied to this directory
         const baseMapId = UniqueIDUtilities.createUniqueID()
-        const baseMapDirectory = ElectronUtilities.createBaseMapDirectory()
+        const baseMapDirectory = window.mapcache.createBaseMapDirectory()
 
         // handle geopackage
         let extent = [-180, -90, 180, 90]

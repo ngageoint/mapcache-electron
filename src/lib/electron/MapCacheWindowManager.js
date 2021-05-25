@@ -1,10 +1,8 @@
-import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session } from 'electron'
+import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut } from 'electron'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import CredentialsManagement from '../network/CredentialsManagement'
 import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
-import TileRenderingThreadHelper from '../threads/helpers/tileRenderingThreadHelper'
-// import TileRenderingProcessHelper from '../processes/helpers/tileRenderingProcessHelper'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -35,6 +33,16 @@ class MapCacheWindowManager {
   // userCredentialRequestInProgress
   userCredentialRequestInProgress = false
 
+  setupGlobalShortcuts () {
+    globalShortcut.register('CommandOrControl+Shift+S', () => {
+      this.showAllDevTools()
+    })
+
+    globalShortcut.register('CommandOrControl+Shift+H', () => {
+      this.hideAllDevTools()
+    })
+  }
+
   /**
    * Is the app running
    * @returns {boolean}
@@ -52,7 +60,6 @@ class MapCacheWindowManager {
     app.removeAllListeners('select-client-certificate')
     app.on('select-client-certificate', (event, webContents, url, list, callback) => {
       event.preventDefault()
-
       if (!this.certSelectionMade && !this.certSelectionInProgress) {
         this.certSelectionCallbacks = true
         ipcMain.removeAllListeners('client-certificate-selected')
@@ -67,7 +74,6 @@ class MapCacheWindowManager {
         })
       }
     })
-
     app.removeAllListeners('certificate-error')
     app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
       event.preventDefault()
@@ -174,8 +180,8 @@ class MapCacheWindowManager {
    * Starts the app
    */
   start () {
+    this.setupGlobalShortcuts()
     this.setupWebRequestWorkflow()
-    this.launchLoaderWindow()
     this.launchMainWindow()
     this.registerEventHandlers()
   }
@@ -199,8 +205,6 @@ class MapCacheWindowManager {
     ipcMain.removeAllListeners('build_tile_layer')
     ipcMain.removeAllListeners('cancel_build_tile_layer')
     ipcMain.removeAllListeners('quick_download_geopackage')
-    ipcMain.removeAllListeners('read_raster')
-    ipcMain.removeAllListeners('cancel_read_raster')
     ipcMain.removeAllListeners('attach_media')
     ipcMain.removeAllListeners('request_tile')
   }
@@ -261,7 +265,7 @@ class MapCacheWindowManager {
       const completedCallback = () => {
         event.sender.send('build_feature_layer_completed_' + taskId)
       }
-      ipcMain.once('worker_build_feature_layer_completed_' + taskId, (e) => {
+      ipcMain.once('worker_build_feature_layer_completed_' + taskId, () => {
         ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
@@ -299,7 +303,7 @@ class MapCacheWindowManager {
       const completedCallback = () => {
         event.sender.send('build_tile_layer_completed_' + taskId)
       }
-      ipcMain.once('worker_build_tile_layer_completed_' + taskId, (event) => {
+      ipcMain.once('worker_build_tile_layer_completed_' + taskId, () => {
         ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
@@ -351,23 +355,22 @@ class MapCacheWindowManager {
       })
     })
 
-    this.tileRenderingthreadHelper = new TileRenderingThreadHelper()
     ipcMain.on('cancel_tile_request', async (event, payload) => {
       const taskId = payload.id
-      this.tileRenderingthreadHelper.cancelTask(taskId)
+      await this.mapcacheThreadHelper.cancelPendingTask(taskId)
     })
+
     ipcMain.on('request_tile', async (event, payload) => {
       const taskId = payload.id
-      try {
-        const response = await this.tileRenderingthreadHelper.renderTile(payload)
+      this.mapcacheThreadHelper.renderTile(payload).then(response => {
         event.sender.send('request_tile_' + taskId, {
           base64Image: response
         })
-      } catch (e) {
+      }).catch(e => {
         event.sender.send('request_tile_' + taskId, {
           error: e
         })
-      }
+      })
     })
   }
 
@@ -383,12 +386,6 @@ class MapCacheWindowManager {
     try {
       if (!isNil(this.mapcacheThreadHelper)) {
         await this.mapcacheThreadHelper.terminate()
-      }
-      // eslint-disable-next-line no-empty
-    } catch (e) {}
-    try {
-      if (!isNil(this.tileRenderingthreadHelper)) {
-        await this.tileRenderingthreadHelper.terminate()
       }
       // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -429,9 +426,9 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    // eslint-disable-next-line no-unused-vars
     window.loadURL(url).then(onFulfilled).catch((e) => {
       // eslint-disable-next-line no-console
+      console.log(e);
       console.error('Failed to load content.')
     })
   }
@@ -443,8 +440,7 @@ class MapCacheWindowManager {
     const workerURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}#/worker`
       : 'app://./index.html/#/worker'
-
-    let windowOptions = {
+    this.workerWindow = new BrowserWindow({
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
         nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
@@ -453,8 +449,7 @@ class MapCacheWindowManager {
         preload: path.join(__dirname, 'workerPreload.js')
       },
       show: false
-    }
-    this.workerWindow = new BrowserWindow(windowOptions)
+    })
     this.loadContent(this.workerWindow, workerURL, () => {})
   }
 
@@ -471,7 +466,7 @@ class MapCacheWindowManager {
 
     const windowHeight = 620 + (isWin ? 20 : 0)
 
-    let windowOptions = {
+    this.mainWindow = new BrowserWindow({
       title: 'MapCache',
       icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
@@ -489,9 +484,7 @@ class MapCacheWindowManager {
       fullscreenable: false,
       resizable: false,
       maximizable: false
-    }
-
-    this.mainWindow = new BrowserWindow(windowOptions)
+    })
     this.mainWindow.setMenu(menu)
     this.loadContent(this.mainWindow, winURL, () => {
       if (!isNil(this.loadingWindow)) {
@@ -504,7 +497,7 @@ class MapCacheWindowManager {
         this.projectWindow.destroy()
         this.projectWindow = null
       }
-      this.mainWindow.show()
+      this.mainWindow.showInactive()
     })
     this.mainWindow.on('close', () => {
       if (this.quitFromParent) {
@@ -524,16 +517,18 @@ class MapCacheWindowManager {
     const winURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}/loader.html`
       : `app://./loader.html`
-    let windowOptions = {
+    this.loadingWindow = new BrowserWindow({
       frame: false,
+      show: false,
       width: 256,
       height: 256,
       transparent: true,
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
-    }
-    this.loadingWindow = new BrowserWindow(windowOptions)
+    })
     setTimeout(() => {
-      this.loadContent(this.loadingWindow, winURL)
+      this.loadContent(this.loadingWindow, winURL, () => {
+        this.loadingWindow.showInactive()
+      })
     }, 0)
   }
 
@@ -543,7 +538,7 @@ class MapCacheWindowManager {
   launchProjectWindow () {
     const windowHeight = 700 + (isWin ? 20 : 0)
 
-    let windowOptions = {
+    this.projectWindow = new BrowserWindow({
       title: 'MapCache',
       icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
@@ -560,12 +555,11 @@ class MapCacheWindowManager {
       minHeight: windowHeight,
       minWidth: 1000,
       useContentSize: true
-    }
-    this.projectWindow = new BrowserWindow(windowOptions)
+    })
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
         let leave = true
-        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks() || this.tileRenderingthreadHelper.hasTasks()
+        let hasTasks = !isNil(this.workerWindow) || this.mapcacheThreadHelper.hasTasks()
         if (hasTasks && !this.forceClose) {
           const choice = dialog.showMessageBoxSync(this.projectWindow, {
             type: 'question',
@@ -651,7 +645,7 @@ class MapCacheWindowManager {
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
         : `app://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
-        this.projectWindow.show()
+        this.projectWindow.showInactive()
         this.setupCertificateAuth()
         setTimeout(() => {
           if (!isNil(this.mainWindow)) {

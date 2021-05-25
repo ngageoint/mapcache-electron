@@ -31,8 +31,6 @@
 </template>
 
 <script>
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
-
   const sidebarItems = [{
     title: 'What is a GeoPackage?',
     description: 'Visit geopackage.org to learn more',
@@ -62,7 +60,7 @@
     },
     methods: {
       open (link) {
-        ElectronUtilities.openExternal(link)
+        window.mapcache.openExternal(link)
       }
     }
   }

@@ -165,7 +165,6 @@
   import Vue from 'vue'
   import path from 'path'
   import jetpack from 'fs-jetpack'
-  import { ipcRenderer } from 'electron'
   import LeafletMap from '../Map/LeafletMap'
   import PreviewMap from '../Map/PreviewMap'
   import Settings from '../Settings/Settings'
@@ -174,8 +173,8 @@
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import EventBus from '../../lib/vue/EventBus'
   import BasicAuth from '../Common/BasicAuth'
-  import FileUtilities from '../../lib/util/FileUtilities'
   import { mdiPackageVariant, mdiLayersOutline, mdiCogOutline } from '@mdi/js'
+  import FileConstants from '../../lib/util/FileConstants'
 
   export default {
     data () {
@@ -321,7 +320,7 @@
           e.preventDefault()
           let geopackagesToAdd = []
           let dataSourcesToAdd = []
-          const supportedExtensions = FileUtilities.SUPPORTED_FILE_EXTENSIONS_WITH_DOT
+          const supportedExtensions = FileConstants.SUPPORTED_FILE_EXTENSIONS_WITH_DOT
           for (let f of e.dataTransfer.files) {
             const extension = path.extname(f.path)
             // try to add a geopackage to the project
@@ -357,21 +356,21 @@
         }
       },
       cancelSignIn () {
-        ipcRenderer.send('client-credentials-input')
+        window.mapcache.sendClientCredentials()
         this.showCertificateSelectionDialog = false
         this.showSignIn = false
       },
       signIn (credentials) {
-        ipcRenderer.send('client-credentials-input', credentials)
+        window.mapcache.sendClientCredentials(credentials)
         this.showCertificateSelectionDialog = false
         this.showSignIn = false
       },
       cancelCertificateSelection () {
-        ipcRenderer.send('client-certificate-selected', null)
+        window.mapcache.sendCertificateSelection(null)
         this.showCertificateSelectionDialog = false
       },
       selectCertificate () {
-        ipcRenderer.send('client-certificate-selected', this.certificateList[this.certificateSelection].certificate)
+        window.mapcache.sendCertificateSelection(this.certificateList[this.certificateSelection].certificate)
         this.showCertificateSelectionDialog = false
       },
       selectCertificateRow (row) {
@@ -406,8 +405,11 @@
       ProjectActions.clearNotifications({projectId: this.project.id})
       ProjectActions.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
-      ipcRenderer.removeAllListeners('closing-project-window')
-      ipcRenderer.on('closing-project-window', (event, args) => {
+
+      window.mapcache.removeClosingProjectWindowListener()
+      window.mapcache.removeSelectClientCertificateListener()
+      window.mapcache.removeRequestClientCredentialsListener()
+      window.mapcache.addClosingProjectWindowListener((args) => {
         if (args.isDeleting) {
           this.closingMessage = 'Deleting project...'
         } else {
@@ -415,8 +417,7 @@
         }
         this.closingDialog = true
       })
-      ipcRenderer.removeAllListeners('select-client-certificate')
-      ipcRenderer.on('select-client-certificate', (event, args) => {
+      window.mapcache.addSelectClientCertificateListener((args) => {
         this.certificateList = args.certificates.map((certificate, i) => {
           return {
             id: i,
@@ -430,8 +431,7 @@
         this.certificateRequestUrl = args.url
         this.showCertificateSelectionDialog = true
       })
-      ipcRenderer.removeAllListeners('request-client-credentials')
-      ipcRenderer.on('request-client-credentials', (event, args) => {
+      window.mapcache.addRequestClientCredentialsListener((args) => {
         this.requestAuthInfo = args.authInfo
         this.requestDetails = args.details
         this.showSignIn = true
@@ -446,6 +446,9 @@
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
       EventBus.$off([EventBus.EventTypes.NETWORK_ERROR])
+      window.mapcache.removeClosingProjectWindowListener()
+      window.mapcache.removeSelectClientCertificateListener()
+      window.mapcache.removeRequestClientCredentialsListener()
     }
   }
 </script>

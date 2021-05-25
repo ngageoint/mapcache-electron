@@ -1,12 +1,12 @@
 /* eslint-disable no-empty */
-import * as vendor from '../../lib/leaflet/vendor'
+import { L } from '../../lib/leaflet/vendor'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
 import ProjectActions from '../../lib/vuex/ProjectActions'
 import { GeometryType } from '@ngageoint/geopackage'
 
-export default class LeafletEdit extends vendor.L.Control {
+export default class LeafletEdit extends L.Control {
   constructor (options) {
     let mergedOptions = {
       ...{
@@ -113,22 +113,22 @@ export default class LeafletEdit extends vendor.L.Control {
   }
 
   onAdd (map) {
-    let container = vendor.L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control hidden')
-    this._saveLink = vendor.L.DomUtil.create('a', '', container)
-    this._cancelLink = vendor.L.DomUtil.create('a', 'warning--text', container)
+    let container = L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control hidden')
+    this._saveLink = L.DomUtil.create('a', '', container)
+    this._cancelLink = L.DomUtil.create('a', 'warning--text', container)
     this._saveLink.title = 'Save'
     this._saveLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="24" height="24" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path fill="currentColor" d="M17 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V7L17 3M19 19H5V5H16.17L19 7.83V19M12 12C10.34 12 9 13.34 9 15S10.34 18 12 18 15 16.66 15 15 13.66 12 12 12M6 6H15V10H6V6Z" /></svg>`
     this._cancelLink.title = 'Cancel'
     this._cancelLink.innerHTML = `<svg style="margin-top: 3px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" preserveAspectRatio="xMidYMid meet" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>`
 
     this.show = function () {
-      if (vendor.L.DomUtil.hasClass(container, 'hidden')) {
-        vendor.L.DomUtil.removeClass(container, 'hidden')
+      if (L.DomUtil.hasClass(container, 'hidden')) {
+        L.DomUtil.removeClass(container, 'hidden')
       }
     }
 
     this.hide = function () {
-      vendor.L.DomUtil.addClass(container, 'hidden')
+      L.DomUtil.addClass(container, 'hidden')
     }
 
     this.editFeature = function (map, projectId, editingFeature) {
@@ -149,11 +149,11 @@ export default class LeafletEdit extends vendor.L.Control {
           features: flattenResults.features
         }
 
-        this.editingLayer = vendor.L.geoJSON(featureCollection, {
+        this.editingLayer = L.geoJSON(featureCollection, {
           pane: 'markerPane',
           zIndex: '501',
           pointToLayer: function (geojson, latlng) {
-            return new vendor.L.Marker(latlng, {draggable: true})
+            return new L.Marker(latlng, {draggable: true})
           },
           onEachFeature: function (featureData, layer) {
             try {

@@ -118,16 +118,12 @@
 </template>
 
 <script>
-  import { ipcRenderer } from 'electron'
   import isNil from 'lodash/isNil'
   import isEmpty from 'lodash/isEmpty'
-  import jetpack from 'fs-jetpack'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import MediaUtilities from '../../lib/util/MediaUtilities'
-  import FileUtilities from '../../lib/util/FileUtilities'
   import GeoPackageMediaUtilities from '../../lib/geopackage/GeoPackageMediaUtilities'
   import { mdiTrashCan, mdiAlertCircle, mdiPaperclip, mdiPlus, mdiFullscreen, mdiFullscreenExit, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -201,18 +197,12 @@
         this.cancelDeleteAttachment()
       },
       async downloadAttachment () {
-        ElectronUtilities.showSaveDialog({
+        window.mapcache.showSaveDialog({
           title: 'Save Attachment',
           defaultPath: 'attachment'
         }).then(async ({canceled, filePath}) => {
           if (!canceled && !isNil(filePath)) {
-            const mediaRow = await GeoPackageMediaUtilities.getMediaRow(this.geopackagePath, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
-            const extension = MediaUtilities.getExtension(mediaRow.contentType)
-            let file = filePath
-            if (extension !== false) {
-              file = filePath + '.' + extension
-            }
-            await jetpack.writeAsync(file, mediaRow.data)
+            await window.mapcache.downloadAttachment(filePath, this.geopackagePath, this.attachments[this.model].relatedTable, this.attachments[this.model].relatedId)
             this.downloaded = true
           }
         })
@@ -220,14 +210,22 @@
       attach () {
         const self = this
         self.attaching = true
-        ElectronUtilities.showOpenDialog({
+        window.mapcache.showOpenDialog({
           properties: ['openFile']
         }).then((result) => {
           if (result.filePaths && !isEmpty(result.filePaths)) {
             const filePath = result.filePaths[0]
             self.$nextTick(() => {
               if (!MediaUtilities.exceedsFileSizeLimit(filePath)) {
-                ipcRenderer.once('attach_media_completed_' + this.id, (event, success) => {
+                window.mapcache.attachMediaToGeoPackage({
+                  projectId: self.projectId,
+                  id: self.id,
+                  isGeoPackage: self.isGeoPackage,
+                  geopackagePath: self.geopackagePath,
+                  tableName: self.tableName,
+                  featureId: self.featureId,
+                  filePath: result.filePaths[0]
+                }, (success) => {
                   if (success) {
                     if (self.isGeoPackage) {
                       ProjectActions.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
@@ -243,18 +241,9 @@
                   }
                   self.attaching = false
                 })
-                ipcRenderer.send('attach_media', {
-                  projectId: self.projectId,
-                  id: self.id,
-                  isGeoPackage: self.isGeoPackage,
-                  geopackagePath: self.geopackagePath,
-                  tableName: self.tableName,
-                  featureId: self.featureId,
-                  filePath: result.filePaths[0]
-                })
               } else {
                 self.attaching = false
-                self.attachErrorMessage = 'File exceeds maximum file size allowed of ' + FileUtilities.toHumanReadable(MediaUtilities.getMaxFileSize())
+                self.attachErrorMessage = 'File exceeds maximum file size allowed of ' + MediaUtilities.getMaxFileSizeString()
                 self.attachError = true
               }
             })
@@ -278,7 +267,7 @@
       })
     },
     beforeDestroy () {
-      ipcRenderer.removeAllListeners('attach_media_completed_' + this.id)
+      window.mapcache.removeMediaCompletedListener(this.id)
     },
     watch: {
       model: {

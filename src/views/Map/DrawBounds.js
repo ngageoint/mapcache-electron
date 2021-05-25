@@ -1,4 +1,5 @@
-import * as vendor from '../../lib/leaflet/vendor'
+import { L } from '../../lib/leaflet/vendor'
+
 import isNil from 'lodash/isNil'
 import ProjectActions from '../../lib/vuex/ProjectActions'
 
@@ -18,13 +19,13 @@ export default {
         let sw = this.map.getBounds().getSouthWest()
         let ne = this.map.getBounds().getNorthEast()
         boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-        bounds = vendor.L.latLngBounds(boundingBox)
+        bounds = L.latLngBounds(boundingBox)
         bounds = bounds.pad(-0.05)
         boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
       } else {
-        bounds = vendor.L.latLngBounds(boundingBox)
+        bounds = L.latLngBounds(boundingBox)
       }
-      this.r = vendor.L.rectangle(bounds, {pane: 'markerPane'})
+      this.r = L.rectangle(bounds, {pane: 'markerPane'})
       this.r.addTo(this.map)
       this.r.enableEdit()
 

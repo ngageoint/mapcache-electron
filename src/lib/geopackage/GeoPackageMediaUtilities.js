@@ -1,7 +1,4 @@
-import {
-  MediaTable,
-  IconTable
-} from '@ngageoint/geopackage'
+import { MediaTable, IconTable } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import difference from 'lodash/difference'
 import jetpack from 'fs-jetpack'

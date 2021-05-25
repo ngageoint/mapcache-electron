@@ -16,6 +16,9 @@ export default class GeoPackageVectorTileRenderer {
   }
 
   close () {
+    if (this.featureTile) {
+      this.featureTile.cleanup()
+    }
     this.featureTile = null
     this.featureDao = null
     this.geopackage = null
@@ -24,6 +27,9 @@ export default class GeoPackageVectorTileRenderer {
   setGeoPackage (geopackage) {
     this.geopackage = geopackage
     this.featureDao = this.geopackage.getFeatureDao(this.featureTableName)
+    if (this.featureTile) {
+      this.featureTile.cleanup()
+    }
     this.featureTile = new FeatureTiles(this.featureDao, 256, 256)
     this.updateMaxFeatures(this.maxFeatures)
   }
@@ -41,7 +47,11 @@ export default class GeoPackageVectorTileRenderer {
     if (this.geopackage) {
       const canvas = CanvasUtilities.createCanvas(256, 256)
       await this.featureTile.drawTile(x, y, z, canvas)
-      callback(null, canvas.toDataURL('image/png'))
+      const dataUrl = canvas.toDataURL();
+      if (canvas.dispose) {
+        canvas.dispose();
+      }
+      callback(null, dataUrl)
     } else {
       callback('GeoPackage connection not found.', null)
     }

@@ -14,7 +14,6 @@ export default class ArcGISFeatureServiceSource extends Source {
     super (id, directory, filePath)
     this.layers = layers
     this.sourceName = sourceName
-    this.format = format
   }
 
   async retrieveLayers () {

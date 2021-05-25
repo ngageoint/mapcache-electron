@@ -123,7 +123,6 @@
   import GeoPackageList from './GeoPackageList'
   import ProjectActions from '../../lib/vuex/ProjectActions'
   import { mdiAlert, mdiFileDocumentOutline, mdiPlus, mdiChevronLeft } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
 
   export default {
     props: {
@@ -151,7 +150,7 @@
       createNewGeoPackage () {
         this.fab = false
         this.geopackageExistsDialog = false
-        ElectronUtilities.showSaveDialog({
+        window.mapcache.showSaveDialog({
           title: 'New GeoPackage'
         }).then(({canceled, filePath}) => {
           if (!canceled && !isNil(filePath)) {
@@ -170,7 +169,7 @@
       importGeoPackage () {
         this.fab = false
         const geopackages = this.geopackages
-        ElectronUtilities.showOpenDialog({
+        window.mapcache.showOpenDialog({
           filters: [
             {
               name: 'GeoPackages',

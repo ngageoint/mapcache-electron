@@ -7,7 +7,8 @@ import {
   FeatureTableStyles,
   GeometryType,
   GeoPackage,
-  GeometryData, MediaTable,
+  GeometryData,
+  MediaTable,
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'

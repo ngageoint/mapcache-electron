@@ -196,15 +196,14 @@
 </template>
 
 <script>
-  import { ipcRenderer } from 'electron'
   import EditTextModal from '../Common/EditTextModal'
   import EditNumberModal from '../Common/EditNumberModal'
   import Help from './Help'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
   import SavedUrls from './SavedUrls'
   import BaseMaps from '../BaseMaps/BaseMaps'
-  import CommonActions from '../../lib/vuex/CommonActions'
   import { mdiChevronLeft, mdiPencil, mdiTrashCan, mdiCloudOutline, mdiHelpCircleOutline } from '@mdi/js'
+  import ProjectActions from '../../lib/vuex/ProjectActions'
+  import CommonActions from '../../lib/vuex/CommonActions'
 
   export default {
     props: {
@@ -318,7 +317,7 @@
       },
       deleteProjectAndClose () {
         CommonActions.deleteProject(this.project)
-        ipcRenderer.send('close-project')
+        window.mapcache.closeProject()
       }
     }
   }

@@ -97,7 +97,6 @@
 </template>
 
 <script>
-  import { ipcRenderer } from 'electron'
   import jetpack from 'fs-jetpack'
   import { mapState } from 'vuex'
   import ProcessingSource from './ProcessingSource'
@@ -109,9 +108,8 @@
   import DataSourceList from './DataSourceList'
   import AddDataSourceUrl from './AddDataSourceUrl'
   import ProjectActions from '../../lib/vuex/ProjectActions'
-  import FileUtilities from '../../lib/util/FileUtilities'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
   import { mdiChevronLeft, mdiLayersPlus, mdiFileDocumentOutline, mdiCloudDownloadOutline } from '@mdi/js'
+  import FileConstants from '../../lib/util/FileConstants'
 
   let selectedDataSource = null
   let fab = false
@@ -150,11 +148,11 @@
     methods: {
       addFileClick () {
         this.fab = false
-        ElectronUtilities.showOpenDialog({
+        window.mapcache.showOpenDialog({
           filters: [
             {
               name: 'All Files',
-              extensions: FileUtilities.SUPPORTED_FILE_EXTENSIONS
+              extensions: FileConstants.SUPPORTED_FILE_EXTENSIONS
             }
           ],
           properties: ['openFile', 'multiSelections']
@@ -178,8 +176,7 @@
       async addSource (source) {
         this.processingSourceList.push(source)
         let self = this
-        ipcRenderer.once('process_source_completed_' + source.id, (event, result) => {
-          // if there is no error, go ahead and add data sources
+        window.mapcache.onceProcessSourceCompleted(source.id, (result) => {
           if (isNil(result.error)) {
             setTimeout(() => {
               ProjectActions.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
@@ -200,7 +197,7 @@
             }
           }
         })
-        ipcRenderer.send('process_source', {project: self.project, source: source})
+        window.mapcache.processSource({project: self.project, source: source})
       },
       clearProcessing (processingSource) {
         for (let i = 0; i < this.processingSourceList.length; i++) {
@@ -217,7 +214,7 @@
           const id = UniqueIDUtilities.createUniqueID()
           let sourceToProcess = {
             id: id,
-            directory: ElectronUtilities.createSourceDirectory(this.project.directory),
+            directory: window.mapcache.createSourceDirectory(this.project.directory),
             file: {
               lastModified: file.lastModified,
               lastModifiedDate: file.lastModifiedDate,

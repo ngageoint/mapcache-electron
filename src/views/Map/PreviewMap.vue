@@ -40,7 +40,7 @@
   import isEqual from 'lodash/isEqual'
   import debounce from 'lodash/debounce'
   import { mapState } from 'vuex'
-  import * as vendor from '../../lib/leaflet/vendor'
+  import { L } from '../../lib/leaflet/vendor'
   import LeafletZoomIndicator from './LeafletZoomIndicator'
   import LayerFactory from '../../lib/source/layer/LayerFactory'
   import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
@@ -52,7 +52,7 @@
   import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
   import LayerTypes from '../../lib/source/layer/LayerTypes'
   import { mdiMapOutline } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
+  import LayerInitializationState from '../../lib/leaflet/layerInitializationState'
 
   export default {
     components: {BaseMapTroubleshooting},
@@ -88,7 +88,7 @@
                 e.stopPropagation()
                 const extent = baseMapConfig.extent || [-180, -90, 180, 90]
                 let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-                let bounds = vendor.L.latLngBounds(boundingBox)
+                let bounds = L.latLngBounds(boundingBox)
                 bounds = bounds.pad(0.05)
                 boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
                 map.fitBounds(boundingBox, {maxZoom: 20})
@@ -122,7 +122,7 @@
         let self = this
         const baseMapId = baseMap.id
         if (baseMap.layerConfiguration.filePath === 'offline') {
-          self.baseMapLayers[baseMapId] = vendor.L.geoJson(ElectronUtilities.getOfflineMap(), {
+          self.baseMapLayers[baseMapId] = L.geoJson(window.mapcache.getOfflineMap(), {
             pane: 'baseMapPane',
             style: function() {
               return {
@@ -151,7 +151,7 @@
         const defaultCenter = [39.658748, -104.843165]
         const defaultZoom = 3
 
-        this.map = vendor.L.map('map-preview', {
+        this.map = L.map('map-preview', {
           editable: true,
           attributionControl: false,
           center: defaultCenter,
@@ -186,9 +186,9 @@
         this.displayZoomControl = new LeafletZoomIndicator()
         this.map.addControl(this.displayZoomControl)
         this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
-          self.setBounds(vendor.L.latLngBounds([[self.previewLayer.extent[1], self.previewLayer.extent[0]], [self.previewLayer.extent[3], self.previewLayer.extent[2]]]))
+          self.setBounds(L.latLngBounds([[self.previewLayer.extent[1], self.previewLayer.extent[0]], [self.previewLayer.extent[3], self.previewLayer.extent[2]]]))
         }, null, null)
-        vendor.L.control.scale().addTo(this.map)
+        L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
       },
       async setupPreviewLayer () {
@@ -242,7 +242,7 @@
               const newConfig = selectedBaseMap.layerConfiguration
               const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
               const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
-              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
+              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
               // styleChanged performs an asynchronous recycling of the geopackage connection
               if (styleKeyChanged) {
                 await self.baseMapLayers[selectedBaseMapId].styleChanged()
@@ -281,10 +281,10 @@
                 if (newBaseMapId !== self.offlineBaseMapId) {
                   self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
-                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_COMPLETED) {
+                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED) {
                   self.map.addLayer(self.baseMapLayers[newBaseMapId])
                 }
-                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === vendor.L.INIT_STATES.INITIALIZATION_NOT_STARTED) {
+                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_NOT_STARTED) {
                   self.initializeBaseMap(newBaseMapId, self.map)
                 }
               }

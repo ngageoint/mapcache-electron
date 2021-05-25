@@ -7,12 +7,14 @@ import XYZTileUtilities from '../util/XYZTileUtilities'
 import CancellableServiceRequest from './CancellableServiceRequest'
 import AxiosRequestScheduler from './AxiosRequestScheduler'
 import HttpUtilities from './HttpUtilities'
+import { parseStringPromise } from 'xml2js'
 
 /**
  * This utility class handles connections to supported GIS services
  * WMS, WFS, XYZ and ArcGIS
  */
 export default class ServiceConnectionUtils {
+
   /**
    * Gets throttled axios instance
    * @param rateLimit
@@ -86,7 +88,7 @@ export default class ServiceConnectionUtils {
         const url = GeoServiceUtilities.getGetCapabilitiesURL(serviceUrl, version, 'WMS')
         let cancellableServiceRequest = new CancellableServiceRequest()
         let response = await cancellableServiceRequest.request(url, options)
-        let result = await URLUtilities.parseXMLString(response.data)
+        let result = await parseStringPromise(response.data)
         let wmsInfo = GeoServiceUtilities.getWMSInfo(result, version)
         serviceInfo = {
           title: wmsInfo.title || 'WMS Service',
@@ -134,7 +136,7 @@ export default class ServiceConnectionUtils {
         const url = GeoServiceUtilities.getGetCapabilitiesURL(serviceUrl, version, 'WFS')
         let cancellableServiceRequest = new CancellableServiceRequest()
         let response = await cancellableServiceRequest.request(url, options)
-        let result = await URLUtilities.parseXMLString(response.data)
+        let result = await parseStringPromise(response.data)
         let wfsInfo = GeoServiceUtilities.getWFSInfo(result, version)
         serviceInfo = {
           title: wfsInfo.title || 'WFS Service',

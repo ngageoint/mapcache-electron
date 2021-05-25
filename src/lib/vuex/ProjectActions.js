@@ -10,6 +10,7 @@ import GarbageCollector from '../util/GarbageCollector'
 import GeoPackageCommon from '../geopackage/GeoPackageCommon'
 import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
 import GeoPackageStyleUtilities from '../geopackage/GeoPackageStyleUtilities'
+import FileConstants from '../util/FileConstants'
 
 /**
  * ProjectActions is a helper class for performing actions prior to updating the store
@@ -213,7 +214,7 @@ export default class ProjectActions {
       if (!isNil(source.directory)) {
         FileUtilities.rmDir(source.directory)
       }
-      if (!isNil(source.sourceDirectory) && FileUtilities.exists(source.sourceDirectory) && FileUtilities.isDirEmpty(path.join(source.sourceDirectory, FileUtilities.LAYER_DIRECTORY_IDENTIFIER))) {
+      if (!isNil(source.sourceDirectory) && FileUtilities.exists(source.sourceDirectory) && FileUtilities.isDirEmpty(path.join(source.sourceDirectory, FileConstants.LAYER_DIRECTORY_IDENTIFIER))) {
         FileUtilities.rmDir(source.sourceDirectory)
       }
       // eslint-disable-next-line no-unused-vars

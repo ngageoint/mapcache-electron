@@ -4,7 +4,7 @@ import XYZServerLayer from './layer/tile/XYZServerLayer'
 export default class XYZSource extends Source {
   constructor (id, directory, filePath, subdomains = [], sourceName) {
     super (id, directory, filePath)
-    this.subdomains = layers
+    this.subdomains = subdomains
     this.sourceName = sourceName
   }
 

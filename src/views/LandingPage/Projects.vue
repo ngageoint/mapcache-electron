@@ -87,17 +87,14 @@
 
 <script>
   import { mapState } from 'vuex'
-  import { ipcRenderer } from 'electron'
   import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
   import LandingActions from '../../lib/vuex/LandingActions'
   import EditTextModal from '../Common/EditTextModal'
   import CommonActions from '../../lib/vuex/CommonActions'
   import { mdiTrashCan, mdiTrashCanOutline, mdiPlus } from '@mdi/js'
-  import ElectronUtilities from '../../lib/electron/ElectronUtilities'
-
 
   export default {
-    components: {EditTextModal},
+    components: { EditTextModal },
     computed: {
       ...mapState({
         projects: state => {
@@ -129,13 +126,13 @@
         this.dialog = true
         this.projectName = ''
         const id = UniqueIDUtilities.createUniqueID()
-        const directory = ElectronUtilities.createProjectDirectory()
+        const directory = window.mapcache.createProjectDirectory()
         LandingActions.newProject({id: id, name: projectName, directory: directory})
-        ipcRenderer.once('show-project-completed', () => {
+        window.mapcache.onceProjectShown(() => {
           this.dialog = false
         })
         this.$nextTick(() => {
-          ipcRenderer.send('show-project', id)
+          window.mapcache.showProject(id)
         })
       },
       onClickNewProject () {
@@ -158,13 +155,13 @@
       onClickOpenProject (project) {
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
-
         LandingActions.disableRemoteSources(project.id)
-
-        ipcRenderer.once('show-project-completed', () => {
+        window.mapcache.onceProjectShown(() => {
           this.dialog = false
         })
-        ipcRenderer.send('show-project', project.id)
+        this.$nextTick(() => {
+          window.mapcache.showProject(project.id)
+        })
       }
     }
   }

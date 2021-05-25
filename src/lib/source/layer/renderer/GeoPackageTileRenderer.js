@@ -20,8 +20,12 @@ export default class GeoPackageTileRenderer {
     let {x, y, z} = coords
     if (!isNil(this.geopackage)) {
       const canvas = CanvasUtilities.createCanvas(256, 256)
-      await this.geopackage.xyzTile(this.layer.sourceLayerName, x, y, z, 256, 256, canvas)
-      callback(null, canvas.toDataURL('image/png'))
+      await this.geopackage.xyzTileScaled(this.layer.sourceLayerName, x, y, z, 256, 256, canvas, 2, 2)
+      const dataUrl = canvas.toDataURL();
+      if (canvas.dispose) {
+        canvas.dispose();
+      }
+      callback(null, dataUrl)
     } else {
       callback('GeoPackage connection is null', null)
     }
