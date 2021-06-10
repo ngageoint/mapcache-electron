@@ -48,11 +48,11 @@
 </template>
 
 <script>
-  import GeoPackageFeatureTable from '../GeoPackage/GeoPackageFeatureTable'
-  import DataSourceFeatureTable from '../DataSources/DataSourceFeatureTable'
-  import { mdiClose } from '@mdi/js'
+import GeoPackageFeatureTable from '../GeoPackage/GeoPackageFeatureTable'
+import DataSourceFeatureTable from '../DataSources/DataSourceFeatureTable'
+import {mdiClose} from '@mdi/js'
 
-  export default {
+export default {
     components: {
       GeoPackageFeatureTable,
       DataSourceFeatureTable

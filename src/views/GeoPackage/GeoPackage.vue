@@ -344,24 +344,27 @@
 </template>
 
 <script>
-  import { shell } from 'electron'
-  import { mapState } from 'vuex'
-  import values from 'lodash/values'
-  import keys from 'lodash/keys'
-  import isNil from 'lodash/isNil'
-  import path from 'path'
-  import fs from 'fs'
-  import TileLayer from './TileLayer'
-  import FeatureLayer from './FeatureLayer'
-  import GeoPackageDetails from './GeoPackageDetails'
-  import GeoPackageLayerList from './GeoPackageLayerList'
-  import AddFeatureLayer from './AddFeatureLayer'
-  import AddTileLayer from './AddTileLayer'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import { mdiChevronLeft, mdiPencil, mdiContentCopy, mdiTrashCan, mdiInformationOutline, mdiFolder, mdiLayersPlus } from '@mdi/js'
+import {mapState} from 'vuex'
+import values from 'lodash/values'
+import keys from 'lodash/keys'
+import isNil from 'lodash/isNil'
+import TileLayer from './TileLayer'
+import FeatureLayer from './FeatureLayer'
+import GeoPackageDetails from './GeoPackageDetails'
+import GeoPackageLayerList from './GeoPackageLayerList'
+import AddFeatureLayer from './AddFeatureLayer'
+import AddTileLayer from './AddTileLayer'
+import {
+  mdiChevronLeft,
+  mdiContentCopy,
+  mdiFolder,
+  mdiInformationOutline,
+  mdiLayersPlus,
+  mdiPencil,
+  mdiTrashCan
+} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       geopackage: Object,
       project: Object,
@@ -398,7 +401,7 @@
         renamedGeoPackageRules: [
           v => !!v || 'Name is required',
           v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
-          v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
+          v => !window.mapcache.fileExists(window.mapcache.pathJoin(window.mapcache.getDirectoryName(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ],
         renaming: false,
         copyDialog: false,
@@ -407,7 +410,7 @@
         copiedGeoPackageRules: [
           v => !!v || 'Name is required',
           v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
-          v => !fs.existsSync(path.join(path.dirname(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
+          v => !window.mapcache.fileExists(window.mapcache.pathJoin(window.mapcache.getDirectoryName(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ],
         showErrorAlert: false
       }
@@ -424,11 +427,11 @@
           return (allTableKeys.filter(table => !table.visible).length === 0 && allTableKeys.length > 0) || false
         },
         set (value) {
-          ProjectActions.setGeoPackageLayersVisible({projectId: this.project.id, geopackageId: this.geopackage.id, visible: value})
+          window.mapcache.setGeoPackageLayersVisible({projectId: this.project.id, geopackageId: this.geopackage.id, visible: value})
         }
       },
       size () {
-        return GeoPackageCommon.getGeoPackageFileSize(this.geopackage.path)
+        return window.mapcache.getGeoPackageFileSize(this.geopackage.path)
       },
       hasLayers () {
         return keys(this.geopackage.tables.features).concat(keys(this.geopackage.tables.tiles)).length > 0
@@ -445,7 +448,7 @@
     asyncComputed: {
       tables: {
         get () {
-          return GeoPackageCommon.getTables(this.geopackage.path).then(result => {
+          return window.mapcache.getTables(this.geopackage.path).then(result => {
             if (isNil(result)) {
               return []
             }
@@ -462,7 +465,7 @@
       rename () {
         this.renaming = true
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
-        ProjectActions.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage}).then(() => {
+        window.mapcache.renameGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, name: this.renamedGeoPackage}).then(() => {
           this.$nextTick(() => {
             this.renameDialog = false
             this.renaming = false
@@ -480,37 +483,38 @@
       copy () {
         this.copyDialog = false
         const oldPath = this.geopackage.path
-        const newPath = path.join(path.dirname(oldPath), this.copiedGeoPackage + '.gpkg')
+        const newPath = window.mapcache.pathJoin(window.mapcache.getDirectoryName(oldPath), this.copiedGeoPackage + '.gpkg')
         try {
-          fs.copyFileSync(oldPath, newPath)
-          ProjectActions.addGeoPackage({projectId: this.project.id, filePath: newPath})
+          window.mapcache.copyFile(oldPath, newPath).then(() => {
+            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: newPath})
+            this.showCopiedAlert = true
+          })
           // eslint-disable-next-line no-unused-vars
         } catch (e) {
           // eslint-disable-next-line no-console
           console.error('Failed to copy GeoPackage')
         }
-        this.showCopiedAlert = true
       },
       remove () {
         this.removeDialog = false
-        ProjectActions.removeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+        window.mapcache.removeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         this.back()
       },
       layerSelected (layer) {
         this.selectedLayer = layer
         if (!isNil(this.geopackage.tables.features[layer])) {
-          ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+          window.mapcache.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
         }
       },
       selectedLayerRenamed (layer) {
         if (!isNil(this.geopackage.tables.features[this.selectedLayer])) {
-          ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
+          window.mapcache.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: layer})
         }
         this.selectedLayerNewName = layer
       },
       deselectLayer () {
         this.selectedLayer = null
-        ProjectActions.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: null})
+        window.mapcache.setActiveGeoPackageFeatureLayer({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: null})
       },
       addFeatureLayer () {
         this.fab = false
@@ -527,7 +531,7 @@
         this.addTileLayerDialog = false
       },
       openFolder () {
-        shell.showItemInFolder(this.geopackage.path)
+        window.mapcache.showItemInFolder(this.geopackage.path)
       }
     },
     watch: {

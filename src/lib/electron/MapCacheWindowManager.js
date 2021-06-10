@@ -6,6 +6,7 @@ import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
+const isProduction = process.env.NODE_ENV === 'production'
 
 /**
  * MapCacheWindowManager manages all interactions with browser windows
@@ -40,6 +41,10 @@ class MapCacheWindowManager {
 
     globalShortcut.register('CommandOrControl+Shift+H', () => {
       this.hideAllDevTools()
+    })
+
+    globalShortcut.register('CommandOrControl+Shift+C', () => {
+      session.defaultSession.clearAuthCache()
     })
   }
 
@@ -180,10 +185,70 @@ class MapCacheWindowManager {
    * Starts the app
    */
   start () {
-    this.setupGlobalShortcuts()
+    if (!isProduction) {
+      this.setupGlobalShortcuts()
+    }
     this.setupWebRequestWorkflow()
-    this.launchMainWindow()
     this.registerEventHandlers()
+    Promise.all([this.registerWorkerThreads(), this.launchMainWindow()]).then(() => {
+      this.showMainWindow()
+    })
+  }
+
+  /**
+   * Clear event listeners for worker threads
+   */
+  static clearWorkerThreadEventHandlers () {
+    ipcMain.removeAllListeners('process_source')
+    ipcMain.removeAllListeners('cancel_process_source')
+    ipcMain.removeAllListeners('attach_media')
+    ipcMain.removeAllListeners('request_tile')
+    ipcMain.removeAllListeners('cancel_tile_request')
+  }
+
+  async registerWorkerThreads () {
+    if (this.mapcacheThreadHelper == null) {
+      MapCacheWindowManager.clearWorkerThreadEventHandlers()
+      this.mapcacheThreadHelper = new MapcacheThreadHelper()
+      await this.mapcacheThreadHelper.initialize()
+      ipcMain.on('attach_media', async (event, payload) => {
+        const taskId = payload.id
+        const success = await this.mapcacheThreadHelper.attachMedia(payload)
+        event.sender.send('attach_media_completed_' + taskId, success)
+      })
+
+      ipcMain.on('process_source', async (event, payload) => {
+        const taskId = payload.source.id
+        payload.id = taskId
+        const result = await this.mapcacheThreadHelper.processDataSource(payload)
+        event.sender.send('process_source_completed_' + taskId, result)
+      })
+
+      ipcMain.on('cancel_process_source', (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.cancelTask(taskId).then(() => {
+          event.sender.send('cancel_process_source_completed_' + taskId)
+        })
+      })
+
+      ipcMain.on('cancel_tile_request', async (event, payload) => {
+        const taskId = payload.id
+        await this.mapcacheThreadHelper.cancelPendingTask(taskId)
+      })
+
+      ipcMain.on('request_tile', async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.renderTile(payload).then(response => {
+          event.sender.send('request_tile_' + taskId, {
+            base64Image: response
+          })
+        }).catch(e => {
+          event.sender.send('request_tile_' + taskId, {
+            error: e
+          })
+        })
+      })
+    }
   }
 
   /**
@@ -240,6 +305,11 @@ class MapCacheWindowManager {
     })
 
     ipcMain.on('show-project', (event, payload) => {
+      // this.registerWorkerThreads().then(() => {
+      //   this.showProject(payload)
+      // }).catch((err) => {
+      //   console.error(err)
+      // })
       this.showProject(payload)
     })
 
@@ -265,11 +335,15 @@ class MapCacheWindowManager {
       const completedCallback = () => {
         event.sender.send('build_feature_layer_completed_' + taskId)
       }
-      ipcMain.once('worker_build_feature_layer_completed_' + taskId, () => {
+      ipcMain.once('worker_build_feature_layer_completed_' + taskId, (event, result) => {
         ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
           this.workerWindow = null
+        }
+        if (!isNil(result) && !isNil(result.error)) {
+          result.message = 'Error'
+          statusCallback(result)
         }
         completedCallback()
       })
@@ -303,11 +377,16 @@ class MapCacheWindowManager {
       const completedCallback = () => {
         event.sender.send('build_tile_layer_completed_' + taskId)
       }
-      ipcMain.once('worker_build_tile_layer_completed_' + taskId, () => {
+      ipcMain.once('worker_build_tile_layer_completed_' + taskId, (event, result) => {
         ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
           this.workerWindow = null
+        }
+
+        if (!isNil(result) && !isNil(result.error)) {
+          result.message = 'Error'
+          statusCallback(result)
         }
         completedCallback()
       })
@@ -333,45 +412,6 @@ class MapCacheWindowManager {
       }
       event.sender.send('cancel_build_tile_layer_completed_' + taskId)
     })
-
-    this.mapcacheThreadHelper = new MapcacheThreadHelper()
-    ipcMain.on('attach_media', async (event, payload) => {
-      const taskId = payload.id
-      const success = await this.mapcacheThreadHelper.attachMedia(payload)
-      event.sender.send('attach_media_completed_' + taskId, success)
-    })
-
-    ipcMain.on('process_source', async (event, payload) => {
-      const taskId = payload.source.id
-      payload.id = taskId
-      const result = await this.mapcacheThreadHelper.processDataSource(payload)
-      event.sender.send('process_source_completed_' + taskId, result)
-    })
-
-    ipcMain.on('cancel_process_source', (event, payload) => {
-      const taskId = payload.id
-      this.mapcacheThreadHelper.cancelTask(taskId).then(() => {
-        event.sender.send('cancel_process_source_completed_' + taskId)
-      })
-    })
-
-    ipcMain.on('cancel_tile_request', async (event, payload) => {
-      const taskId = payload.id
-      await this.mapcacheThreadHelper.cancelPendingTask(taskId)
-    })
-
-    ipcMain.on('request_tile', async (event, payload) => {
-      const taskId = payload.id
-      this.mapcacheThreadHelper.renderTile(payload).then(response => {
-        event.sender.send('request_tile_' + taskId, {
-          base64Image: response
-        })
-      }).catch(e => {
-        event.sender.send('request_tile_' + taskId, {
-          error: e
-        })
-      })
-    })
   }
 
   /**
@@ -382,6 +422,7 @@ class MapCacheWindowManager {
     this.quitFromParent = true
     this.isShuttingDown = true
     MapCacheWindowManager.clearEventHandlers()
+    MapCacheWindowManager.clearWorkerThreadEventHandlers()
     MapCacheWindowManager.disableCertificateAuth()
     try {
       if (!isNil(this.mapcacheThreadHelper)) {
@@ -426,9 +467,8 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch((e) => {
+    window.loadURL(url).then(onFulfilled).catch(() => {
       // eslint-disable-next-line no-console
-      console.log(e);
       console.error('Failed to load content.')
     })
   }
@@ -442,9 +482,6 @@ class MapCacheWindowManager {
       : 'app://./index.html/#/worker'
     this.workerWindow = new BrowserWindow({
       webPreferences: {
-        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
-        contextIsolation: false,
         webSecurity: false,
         preload: path.join(__dirname, 'workerPreload.js')
       },
@@ -453,61 +490,64 @@ class MapCacheWindowManager {
     this.loadContent(this.workerWindow, workerURL, () => {})
   }
 
+  showMainWindow () {
+    if (!isNil(this.loadingWindow)) {
+      this.loadingWindow.hide()
+      this.loadingWindow.destroy()
+      this.loadingWindow = null
+    }
+    if (!isNil(this.projectWindow)) {
+      this.projectWindow.hide()
+      this.projectWindow.destroy()
+      this.projectWindow = null
+    }
+    this.mainWindow.showInactive()
+  }
+
   /**
    * Launches the main window (LandingPage)
    */
   launchMainWindow () {
-    const winURL = process.env.NODE_ENV === 'development'
-      ? `${process.env.WEBPACK_DEV_SERVER_URL}`
-      : `app://./index.html`
+    return new Promise((resolve => {
+      const winURL = process.env.NODE_ENV === 'development'
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}`
+        : `app://./index.html`
 
-    const menu = Menu.buildFromTemplate(this.getMenuTemplate())
-    Menu.setApplicationMenu(menu)
+      const menu = Menu.buildFromTemplate(this.getMenuTemplate())
+      Menu.setApplicationMenu(menu)
 
-    const windowHeight = 620 + (isWin ? 20 : 0)
+      const windowHeight = 620 + (isWin ? 20 : 0)
 
-    this.mainWindow = new BrowserWindow({
-      title: 'MapCache',
-      icon: path.join(__dirname, 'assets', '64x64.png'),
-      webPreferences: {
-        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
-        contextIsolation: false,
-        webSecurity: false,
-        preload: path.join(__dirname, 'mainPreload.js')
-      },
-      show: false,
-      width: 790,
-      height: windowHeight,
-      minHeight: windowHeight,
-      minWidth: 790,
-      fullscreenable: false,
-      resizable: false,
-      maximizable: false
-    })
-    this.mainWindow.setMenu(menu)
-    this.loadContent(this.mainWindow, winURL, () => {
-      if (!isNil(this.loadingWindow)) {
-        this.loadingWindow.hide()
-        this.loadingWindow.destroy()
-        this.loadingWindow = null
-      }
-      if (!isNil(this.projectWindow)) {
-        this.projectWindow.hide()
-        this.projectWindow.destroy()
-        this.projectWindow = null
-      }
-      this.mainWindow.showInactive()
-    })
-    this.mainWindow.on('close', () => {
-      if (this.quitFromParent) {
-        this.isShuttingDown = true
-        if (!isNil(this.projectWindow)) {
-          this.projectWindow.destroy()
+      this.mainWindow = new BrowserWindow({
+        title: 'MapCache',
+        icon: path.join(__dirname, 'assets', '64x64.png'),
+        webPreferences: {
+          webSecurity: false,
+          preload: path.join(__dirname, 'mainPreload.js')
+        },
+        show: false,
+        width: 790,
+        height: windowHeight,
+        minHeight: windowHeight,
+        minWidth: 790,
+        fullscreenable: false,
+        resizable: false,
+        maximizable: false
+      })
+      this.mainWindow.setMenu(menu)
+      this.loadContent(this.mainWindow, winURL, () => {
+        resolve()
+      })
+      this.mainWindow.on('close', () => {
+        if (this.quitFromParent) {
+          this.isShuttingDown = true
+          if (!isNil(this.projectWindow)) {
+            this.projectWindow.destroy()
+          }
+          this.mainWindow = null
         }
-        this.mainWindow = null
-      }
-    })
+      })
+    }))
   }
 
   /**
@@ -522,8 +562,7 @@ class MapCacheWindowManager {
       show: false,
       width: 256,
       height: 256,
-      transparent: true,
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
+      transparent: true
     })
     setTimeout(() => {
       this.loadContent(this.loadingWindow, winURL, () => {
@@ -542,9 +581,6 @@ class MapCacheWindowManager {
       title: 'MapCache',
       icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
-        nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-        nodeIntegrationInWorker: process.env.ELECTRON_NODE_INTEGRATION,
-        contextIsolation: false,
         webSecurity: false,
         preload: path.join(__dirname, 'projectPreload.js'),
         sandbox: false
@@ -630,7 +666,15 @@ class MapCacheWindowManager {
     MapCacheWindowManager.disableCertificateAuth()
     if (this.projectWindow) {
       this.projectWindow.webContents.send('closing-project-window', {isDeleting})
-      this.launchMainWindow()
+      // closing means we no longer need to have these running
+      // MapCacheWindowManager.clearWorkerThreadEventHandlers()
+      // this.mapcacheThreadHelper.terminate().then(() => {
+      //   this.mapcacheThreadHelper = null
+      //   this.launchMainWindow()
+      // })
+      this.launchMainWindow().then(() => {
+        this.showMainWindow()
+      })
     }
   }
 
@@ -670,9 +714,12 @@ class MapCacheWindowManager {
     const viewSubmenu = [
       { role: 'reload' },
       { role: 'forcereload' },
-      { role: 'togglefullscreen' },
-      { role: 'toggledevtools' }
+      { role: 'togglefullscreen' }
     ]
+
+    if (!isProduction) {
+      viewSubmenu.push({ role: 'toggledevtools' })
+    }
 
     const template = [
       {

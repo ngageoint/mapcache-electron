@@ -2,57 +2,59 @@ import proj4 from 'proj4'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
-import FileUtilities from '../util/FileUtilities'
+import { getExtraResourcesDirectory } from '../util/FileUtilities'
 
-export default class ProjectionUtilities {
+function getCode (name) {
+  const matches = name.match(/\d+$/)
+  return matches.length > 0 ? Number.parseInt(matches[0]) : -1
+}
 
-  static getCode (name) {
-    let code = -1
-    if (name.startsWith('EPSG:')) {
-      code = Number.parseInt(name.substring(5))
-    }
-    return code
+function getDef (code) {
+  let def
+  const db = new Database(path.join(getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
+  const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
+  const row = stmt.get(code)
+  if (row && row.def) {
+    def = row.def
   }
+  db.close()
+  return def
+}
 
-  static getDef (code) {
-    let def
-    const db = new Database(path.join(FileUtilities.getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
-    const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
-    const row = stmt.get(code)
-    if (row && row.def) {
-      def = row.def
-    }
-    db.close()
-    return def
-  }
-
-  static defineProjection (name) {
-    const code = ProjectionUtilities.getCode(name)
-    if (code !== -1) {
-      const def = ProjectionUtilities.getDef(code)
-      if (def) {
-        proj4.defs(name, def)
-        proj4.defs('urn:ogc:def:crs:EPSG::' + code, def)
-      }
+function defineProjection (name) {
+  const code = getCode(name)
+  if (code !== -1) {
+    const def = getDef(code)
+    if (def) {
+      proj4.defs(name, def)
+      proj4.defs('urn:ogc:def:crs:EPSG::' + code, def)
     }
   }
+}
 
-  static getConverter (from, to) {
-    if (from && !proj4.defs(from)) {
-      ProjectionUtilities.defineProjection(from)
-    }
-
-    if (isNil(to)) {
-      to = from
-      from = 'EPSG:4326'
-    }
-
-    if (to && !proj4.defs(to)) {
-      ProjectionUtilities.defineProjection(to)
-    }
-
-    return proj4(from, to)
+function getConverter (from, to) {
+  if (from && !proj4.defs(from)) {
+    defineProjection(from)
   }
 
-  static wgs84ToWebMercator = ProjectionUtilities.getConverter('EPSG:4326', 'EPSG:3857')
+  if (isNil(to)) {
+    to = from
+    from = 'EPSG:4326'
+  }
+
+  if (to && !proj4.defs(to)) {
+    defineProjection(to)
+  }
+
+  return proj4(from, to)
+}
+
+const wgs84ToWebMercator = getConverter('EPSG:4326', 'EPSG:3857')
+
+export {
+  getCode,
+  getDef,
+  defineProjection,
+  getConverter,
+  wgs84ToWebMercator
 }

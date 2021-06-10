@@ -196,16 +196,14 @@
 </template>
 
 <script>
-  import EditTextModal from '../Common/EditTextModal'
-  import EditNumberModal from '../Common/EditNumberModal'
-  import Help from './Help'
-  import SavedUrls from './SavedUrls'
-  import BaseMaps from '../BaseMaps/BaseMaps'
-  import { mdiChevronLeft, mdiPencil, mdiTrashCan, mdiCloudOutline, mdiHelpCircleOutline } from '@mdi/js'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import CommonActions from '../../lib/vuex/CommonActions'
+import EditTextModal from '../Common/EditTextModal'
+import EditNumberModal from '../Common/EditNumberModal'
+import Help from './Help'
+import SavedUrls from './SavedUrls'
+import BaseMaps from '../BaseMaps/BaseMaps'
+import {mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       project: Object,
       dark: {
@@ -227,7 +225,7 @@
           return this.dark
         },
         set (val) {
-          ProjectActions.setDarkTheme({projectId: this.project.id, enabled: val})
+          window.mapcache.setDarkTheme({projectId: this.project.id, enabled: val})
         }
       },
       showToolTip: {
@@ -235,7 +233,7 @@
           return this.project.showToolTips
         },
         set (val) {
-          ProjectActions.showToolTips({projectId: this.project.id, show: val})
+          window.mapcache.showToolTips({projectId: this.project.id, show: val})
         }
       },
       settings: {
@@ -261,13 +259,13 @@
           const displayAddressSearchBarFound = settings.findIndex(setting => setting === 2) >= 0
 
           if (zoomControlEnabled !== zoomControlSettingFound) {
-            ProjectActions.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
+            window.mapcache.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
           }
           if (displayZoomEnabled !== displayZoomSettingFound) {
-            ProjectActions.setDisplayZoomEnabled({projectId: this.project.id, enabled: displayZoomSettingFound})
+            window.mapcache.setDisplayZoomEnabled({projectId: this.project.id, enabled: displayZoomSettingFound})
           }
           if (displayAddressSearchBar !== displayAddressSearchBarFound) {
-            ProjectActions.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
+            window.mapcache.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
           }
         }
       }
@@ -290,18 +288,18 @@
     },
     methods: {
       saveProjectName (val) {
-        ProjectActions.setProjectName({project: this.project, name: val})
+        window.mapcache.setProjectName({project: this.project, name: val})
         this.toggleEditProjectNameDialog()
       },
       saveMaxFeatures (val) {
-        ProjectActions.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
+        window.mapcache.setProjectMaxFeatures({projectId: this.project.id, maxFeatures: val})
         this.toggleEditMaxFeaturesDialog()
       },
       toggleShowToolTip () {
-        ProjectActions.showToolTips({projectId: this.project.id, show: !this.project.showToolTips})
+        window.mapcache.showToolTips({projectId: this.project.id, show: !this.project.showToolTips})
       },
       toggleDarkTheme () {
-        ProjectActions.setDarkTheme({projectId: this.project.id, enabled: !this.dark})
+        window.mapcache.setDarkTheme({projectId: this.project.id, enabled: !this.dark})
       },
       toggleEditProjectNameDialog () {
         this.editProjectNameDialog = !this.editProjectNameDialog
@@ -316,7 +314,7 @@
         this.editMaxFeaturesDialog = !this.editMaxFeaturesDialog
       },
       deleteProjectAndClose () {
-        CommonActions.deleteProject(this.project)
+        window.mapcache.deleteProject(this.project)
         window.mapcache.closeProject()
       }
     }

@@ -35,9 +35,7 @@
 </template>
 
 <script>
-  import path from 'path'
-  import URLUtilities from '../../lib/util/URLUtilities'
-  export default {
+export default {
     props: {
       source: Object
     },
@@ -57,9 +55,9 @@
       },
       displayName () {
         if (this.source.url) {
-          return URLUtilities.getBaseUrlAndQueryParams(this.source.url).baseUrl
+          return window.mapcache.getBaseUrlAndQueryParams(this.source.url).baseUrl
         } else {
-          return path.basename(this.source.file.path)
+          return window.mapcache.getBaseName(this.source.file.path)
         }
       }
     },
@@ -68,7 +66,7 @@
         const self = this
         self.cancelling = true
         this.$nextTick(() => {
-          window.mapcache.cancelProcessingSource(self.source, () => {
+          window.mapcache.cancelProcessingSource(self.source).then(() => {
             setTimeout(() => {
               self.cancelling = false
               self.cancelled = true

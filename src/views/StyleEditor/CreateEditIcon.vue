@@ -106,15 +106,11 @@
 </template>
 
 <script>
-  import jetpack from 'fs-jetpack'
-  import fs from 'fs'
-  import path from 'path'
-  import isNil from 'lodash/isNil'
-  import isEmpty from 'lodash/isEmpty'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import { mdiTrashCan, mdiLink, mdiLinkOff } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import isEmpty from 'lodash/isEmpty'
+import {mdiLink, mdiLinkOff, mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       id: String,
       tableName: String,
@@ -219,7 +215,7 @@
         this.aspectRatio = this.width / this.height
       },
       deleteIcon () {
-        ProjectActions.deleteIconRow({
+        window.mapcache.deleteIconRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,
@@ -242,7 +238,7 @@
         }
         if (this.iconRow.id) {
           iconRow.id = this.iconRow.id
-          ProjectActions.updateIconRow({
+          window.mapcache.updateIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -251,7 +247,7 @@
             isBaseMap: this.isBaseMap
           })
         } else {
-          ProjectActions.createIconRow({
+          window.mapcache.createIconRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -327,20 +323,15 @@
         window.mapcache.showOpenDialog({
           filters: [
             {
-              name: 'All Files',
-              extensions: ['jpeg', 'jpg', 'gif', 'png']
+              name: 'Image Files',
+              extensions: ['jpeg', 'jpg', 'png']
             }
           ],
           properties: ['openFile']
         }).then(async (result) => {
           if (result.filePaths && !isEmpty(result.filePaths)) {
             for (const file of result.filePaths) {
-              const fileInfo = jetpack.inspect(file, {times: true, absolutePath: true})
-              let extension = path.extname(fileInfo.absolutePath).slice(1)
-              if (extension === 'jpg') {
-                extension = 'jpeg'
-              }
-              let url = 'data:image/' + extension + ';base64,' + fs.readFileSync(fileInfo.absolutePath).toString('base64')
+              const { extension, url } = window.mapcache.getIconImageData(file)
               const uploadedImage = await new Promise(function (resolve) {
                 const image = new Image()
                 image.onload = () => { resolve(image) }

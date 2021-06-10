@@ -12,11 +12,11 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import debounce from 'lodash/debounce'
-  import ColorPicker from '../ColorPicker'
+import isNil from 'lodash/isNil'
+import debounce from 'lodash/debounce'
+import ColorPicker from '../ColorPicker'
 
-  export default {
+export default {
     components: {
       ColorPicker
     },

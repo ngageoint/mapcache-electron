@@ -134,17 +134,12 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import cloneDeep from 'lodash/cloneDeep'
-  import orderBy from 'lodash/orderBy'
-  import isEmpty from 'lodash/isEmpty'
-  import moment from 'moment'
-  import { GeoPackageDataType } from '@ngageoint/geopackage'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
-  import { mdiCalendar, mdiClock } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import cloneDeep from 'lodash/cloneDeep'
+import moment from 'moment'
+import {mdiCalendar, mdiClock} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       geopackagePath: String,
@@ -166,11 +161,11 @@
       return {
         mdiCalendar: mdiCalendar,
         mdiClock: mdiClock,
-        TEXT: GeoPackageDataType.TEXT,
-        FLOAT: GeoPackageDataType.FLOAT,
-        BOOLEAN: GeoPackageDataType.BOOLEAN,
-        DATETIME: GeoPackageDataType.DATETIME,
-        DATE: GeoPackageDataType.DATE,
+        TEXT: window.mapcache.GeoPackageDataType.TEXT,
+        FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
+        BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,
+        DATETIME: window.mapcache.GeoPackageDataType.DATETIME,
+        DATE: window.mapcache.GeoPackageDataType.DATE,
         dateMenu: false,
         date: null,
         formValid: false,
@@ -181,77 +176,7 @@
     asyncComputed: {
       editableColumns: {
         async get () {
-          if (isNil(this.columns) || isNil(this.columns._columns)) {
-            return []
-          }
-          const features = await GeoPackageFeatureTableUtilities.getAllFeatureRows(this.geopackagePath, this.tableName)
-          const properties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
-          const columns = this.columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id')
-          const columnObjects = columns.map((column) => {
-            const columnObject = {
-              name: column.name,
-              lowerCaseName: column.name.toLowerCase(),
-              dataType: column.dataType,
-              index: column.index
-            }
-            let value = this.feature.properties[column.name]
-            if (value === undefined || value === null) {
-              value = column.defaultValue
-            }
-            if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
-              value = false
-            } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
-              value = properties[column.name] === 1 || properties[column.name] === true
-            }
-            if (column.dataType === GeoPackageDataType.DATETIME) {
-              columnObject.dateMenu = false
-              columnObject.showDate = true
-              columnObject.timeMenu = false
-              columnObject.showTime = true
-              if (!isNil(value)) {
-                try {
-                  const dateVal = moment.utc(value)
-                  value = new Date(value)
-                  columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-                  columnObject.timeValue = dateVal.format('hh:mm:ss')
-                } catch (e) {
-                  value = null
-                }
-              }
-            }
-            if (column.dataType === GeoPackageDataType.DATE) {
-              columnObject.dateMenu = false
-              columnObject.showDate = true
-              if (!isNil(value)) {
-                try {
-                  const dateVal = moment.utc(value)
-                  value = new Date(value)
-                  columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-                } catch (e) {
-                  value = null
-                }
-              }
-            }
-            columnObject.value = value
-            if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-              columnObject.rules = []
-              if (column.notNull) {
-                columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
-              }
-              if (column.max) {
-                columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
-              }
-              if (column.min) {
-                columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
-              }
-              if (column.unique) {
-                columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
-              }
-            }
-            return columnObject
-          })
-
-          return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
+          return window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
         },
         default: []
       }
@@ -259,44 +184,12 @@
     methods: {
       async save () {
         if (this.isEditing) {
-          const filePath = this.geopackagePath
-          const featureRow = await GeoPackageFeatureTableUtilities.getFeatureRow(filePath, this.tableName, this.feature.id)
-          this.editableColumns.forEach(column => {
-            let value = column.value
-            if (column.dataType === GeoPackageDataType.BOOLEAN) {
-              value = (value === 1 || value === true || value === 'true' || value === '1') ? 1 : 0
-            }
-            if (column.dataType === GeoPackageDataType.DATE) {
-              try {
-                if (!isEmpty(column.dateValue)) {
-                  value = new Date(column.dateValue).toISOString().substring(0, 10)
-                } else {
-                  value = null
-                }
-              } catch (e) {
-                value = null
-              }
-            }
-            if (column.dataType === GeoPackageDataType.DATETIME) {
-              try {
-                const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
-                if (!isEmpty(dateString)) {
-                  value = moment.utc(dateString).toISOString()
-                } else {
-                  value = null
-                }
-              } catch (e) {
-                value = null
-              }
-            }
-            featureRow.setValueNoValidationWithIndex(column.index, value)
-          })
-          const result = await GeoPackageFeatureTableUtilities.updateFeatureRow(filePath, this.tableName, featureRow)
+          const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.feature, this.editableColumns)
           if (result.changes > 0) {
             if (this.isGeoPackage) {
-              ProjectActions.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
+              window.mapcache.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})
             } else {
-              ProjectActions.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})
+              window.mapcache.synchronizeDataSource({projectId: this.projectId, sourceId: this.id})
             }
             this.close()
           } else if (result.error) {
@@ -307,10 +200,10 @@
           const feature = cloneDeep(this.feature)
           this.editableColumns.forEach(column => {
             let value = column.value
-            if (column.dataType === GeoPackageDataType.BOOLEAN) {
+            if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
               value = value === 1 || value === true || value === 'true' || value === '1'
             }
-            if (column.dataType === GeoPackageDataType.DATE) {
+            if (column.dataType === window.mapcache.GeoPackageDataType.DATE) {
               try {
                 if (!isNil(column.dateValue)) {
                   value = moment.utc(column.dateValue).toISOString().substring(0, 10)
@@ -321,7 +214,7 @@
                 value = null
               }
             }
-            if (column.dataType === GeoPackageDataType.DATETIME) {
+            if (column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
               try {
                 if (!isNil(column.dateValue)) {
                   const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
@@ -338,7 +231,7 @@
             }
           })
           if (this.isGeoPackage) {
-            ProjectActions.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
+            window.mapcache.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
           } else {
             // not supported - adding feature to data source
           }

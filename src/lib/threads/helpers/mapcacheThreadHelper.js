@@ -10,9 +10,12 @@ export default class MapcacheThreadHelper {
     let file = path.join(__dirname, 'mapcacheThread.js')
     file = file.replace('app.asar', 'app.asar.unpacked')
     const os = require('os')
-    const WorkerThreadPool = require('../pool/workerThreadPool')
-
+    const WorkerThreadPool = require('../pool/workerThreadPool').default
     this.threadPool = new WorkerThreadPool(Math.min(4, os.cpus().length), file)
+  }
+
+  async initialize () {
+    return this.threadPool.initialize()
   }
 
   /**
@@ -55,13 +58,13 @@ export default class MapcacheThreadHelper {
             result = {}
           }
           result.error = err
-          const FileUtilities = require('../../util/FileUtilities').default
-          FileUtilities.rmDir(directory)
+          const { rmDir } = require('../../util/FileUtilities')
+          rmDir(directory)
         }
         resolve(result)
       }, () => {
-        const FileUtilities = require('../../util/FileUtilities').default
-        FileUtilities.rmDir(directory)
+        const { rmDir } = require('../../util/FileUtilities')
+        rmDir(directory)
       })
     })
   }

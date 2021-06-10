@@ -68,10 +68,9 @@
 </template>
 
 <script>
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 
-  export default {
+export default {
     components: {GeometryStyleSvg},
     props: {
       id: String,
@@ -100,16 +99,16 @@
         if (this.model !== null && this.model !== undefined && this.model >= 0) {
           const items = this.styles.concat(this.icons)
           const selection = items[this.model]
-          if (selection.styleRow) {
-            ProjectActions.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: selection.styleRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            ProjectActions.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-          } else if (selection.iconRow) {
-            ProjectActions.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: selection.iconRow.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            ProjectActions.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          if (this.model < this.styles.length) {
+            window.mapcache.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: selection.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            window.mapcache.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          } else {
+            window.mapcache.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: selection.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+            window.mapcache.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           }
         } else {
-          ProjectActions.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-          ProjectActions.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          window.mapcache.setTableStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          window.mapcache.setTableIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, geometryType: this.assignment.geometryType, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
         }
         this.close()
       }

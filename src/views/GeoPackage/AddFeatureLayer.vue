@@ -13,8 +13,10 @@
         <v-card-title>{{'Adding ' + layerName}}</v-card-title>
         <v-card-text>
           <v-card-subtitle>{{status.message}}</v-card-subtitle>
-          <v-progress-linear :indeterminate="status.progress === -1" :value="error ? 100 : status.progress"
-                             :color="error ? 'warning' : 'primary'"></v-progress-linear>
+          <p v-if="status.error">
+            {{ status.error }}
+          </p>
+          <v-progress-linear class="mt-4" :indeterminate="status.progress === -1" :value="status.error ? 100 : status.progress" :color="status.error ? 'warning' : 'primary'"></v-progress-linear>
         </v-card-text>
         <v-card-actions class="mt-8">
           <v-spacer></v-spacer>
@@ -252,16 +254,12 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import keys from 'lodash/keys'
-  import debounce from 'lodash/debounce'
-  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import debounce from 'lodash/debounce'
+import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 
-  export default {
+export default {
     components: {
       SourceVisibilitySwitch
     },
@@ -295,21 +293,21 @@
       async cancelAddFeatureLayer () {
         const self = this
         this.cancelling = true
-        window.mapcache.cancelAddFeatureLayer(this.configuration, () => {
+        window.mapcache.cancelAddFeatureLayer(this.configuration).then(() => {
           setTimeout(() => {
-            GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+            window.mapcache.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
               self.status.progress = 100
-              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             }).catch(() => {
               // table may not have been created yet
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
               self.status.progress = 100
-              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             })
           }, 500)
         })
@@ -319,7 +317,7 @@
       async addFeatureLayer () {
         this.processing = true
         this.configuration = {
-          id: UniqueIDUtilities.createUniqueID(),
+          id: window.mapcache.createUniqueID(),
           path: this.geopackage.path,
           projectId: this.project.id,
           table: this.layerName,
@@ -334,33 +332,33 @@
           if (!this.done) {
             this.status = status
           }
-        }, () => {
+        }).then(() => {
           this.done = true
-          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
+          window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
         })
       },
       cancel () {
         if (!isNil(this.project.boundingBoxFilterEditing)) {
-          ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+          window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
         }
         this.back()
       },
       setBoundingBoxFilterToExtent () {
         // eslint-disable-next-line no-unused-vars
-        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
+        window.mapcache.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
           // eslint-disable-next-line no-console
           console.error('Failed to set bounding box filter to the extent of visible layers.')
         })
       },
       resetBoundingBox () {
-        ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+        window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
       },
       editBoundingBox (mode) {
-        ProjectActions.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+        window.mapcache.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
       },
       stopEditingBoundingBox () {
-        ProjectActions.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+        window.mapcache.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       async getFilteredFeatures () {
         let numberOfFeatures = 0
@@ -368,7 +366,7 @@
         for (let i = 0; i < sourceItems.length; i++) {
           const source = this.project.sources[sourceItems[i].id]
           if (!isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageFeatureTableUtilities.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
+            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
           } else {
             numberOfFeatures += source.count
           }
@@ -379,7 +377,7 @@
           const tableName = item.tableName
           const geopackage = this.project.geopackages[item.geopackageId]
           if (!isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await GeoPackageFeatureTableUtilities.getFeatureCountInBoundingBox(geopackage.path, tableName, this.project.boundingBoxFilter)
+            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(geopackage.path, tableName, this.project.boundingBoxFilter)
           } else {
             numberOfFeatures += geopackage.tables.features[tableName].featureCount
           }
@@ -392,7 +390,7 @@
         const geopackageKeys = keys(this.project.geopackages)
         for (let i = 0; i < geopackageKeys.length; i++) {
           const geopackage = this.project.geopackages[geopackageKeys[i]]
-          if (await GeoPackageCommon.isHealthy(geopackage)) {
+          if (await window.mapcache.isHealthy(geopackage)) {
             Object.keys(geopackage.tables.features).forEach(table => {
               const tableName = table
               const visible = geopackage.tables.features[table].visible
@@ -405,12 +403,12 @@
                 subtitle: table,
                 visible,
                 changeVisibility: debounce(() => {
-                  ProjectActions.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                  window.mapcache.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ProjectActions.zoomToExtent({projectId, extent})
+                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    window.mapcache.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
@@ -427,9 +425,12 @@
             value: source.id,
             id: source.id,
             visible: source.visible,
+            changeVisibility: debounce(() => {
+              window.mapcache.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
+            }, 100),
             zoomTo: debounce((e) => {
               e.stopPropagation()
-              ProjectActions.zoomToExtent({projectId, extent: source.extent})
+              window.mapcache.zoomToExtent({projectId, extent: source.extent})
             }, 100)
           }
         })
@@ -488,10 +489,10 @@
           this.$refs.layerNameForm.validate()
         }
       })
-      ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+      window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
     },
     beforeUnmount () {
-      ProjectActions.resetBoundingBox()
+      window.mapcache.resetBoundingBox()
     }
   }
 </script>

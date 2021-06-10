@@ -1,5 +1,6 @@
 import Source from './Source'
-import XYZServerLayer from './layer/tile/XYZServerLayer'
+import XYZServerLayer from '../layer/tile/XYZServerLayer'
+import { XYZ_SERVER } from '../layer/LayerTypes'
 
 export default class XYZSource extends Source {
   constructor (id, directory, filePath, subdomains = [], sourceName) {
@@ -18,7 +19,8 @@ export default class XYZSource extends Source {
         filePath: this.filePath,
         subdomains: this.subdomains,
         sourceLayerName: this.sourceName,
-        visible: false
+        visible: false,
+        layerType: XYZ_SERVER
       })
     ]
   }

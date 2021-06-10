@@ -115,16 +115,14 @@
 </template>
 
 <script>
-  import jetpack from 'fs-jetpack'
-  import isNil from 'lodash/isNil'
-  import isEmpty from 'lodash/isEmpty'
+import isNil from 'lodash/isNil'
+import isEmpty from 'lodash/isEmpty'
 
-  import GeoPackage from './GeoPackage'
-  import GeoPackageList from './GeoPackageList'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import { mdiAlert, mdiFileDocumentOutline, mdiPlus, mdiChevronLeft } from '@mdi/js'
+import GeoPackage from './GeoPackage'
+import GeoPackageList from './GeoPackageList'
+import {mdiAlert, mdiChevronLeft, mdiFileDocumentOutline, mdiPlus} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       geopackages: Object,
       project: Object,
@@ -157,11 +155,10 @@
             if (!filePath.endsWith('.gpkg')) {
               filePath = filePath + '.gpkg'
             }
-            const existsOnFileSystem = jetpack.exists(filePath)
-            if (existsOnFileSystem) {
+            if (window.mapcache.fileExists(filePath)) {
               this.geopackageExistsDialog = true
             } else {
-              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: filePath})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath})
             }
           }
         })
@@ -172,20 +169,17 @@
         window.mapcache.showOpenDialog({
           filters: [
             {
-              name: 'GeoPackages',
+              name: 'GeoPackage Files',
               extensions: ['gpkg', 'geopackage']
             }
           ],
           properties: ['openFile']
         }).then((result) => {
           if (result.filePaths && !isEmpty(result.filePaths)) {
-            let fileInfo = jetpack.inspect(result.filePaths[0], {
-              times: true,
-              absolutePath: true
-            })
+            let fileInfo = window.mapcache.getFileInfo(result.filePaths[0])
             const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
             if (!existsInApp) {
-              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
             } else {
               // exists in app, show error
               this.addGeoPackageError = true
@@ -195,11 +189,11 @@
       },
       geopackageSelected (geopackageId) {
         this.selectedGeoPackage = this.geopackages[geopackageId]
-        ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
+        window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
       },
       deselectGeoPackage () {
         this.selectedGeoPackage = null
-        ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+        window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
       }
     },
     watch: {

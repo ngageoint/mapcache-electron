@@ -313,20 +313,19 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import cloneDeep from 'lodash/cloneDeep'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import TransparencyOptions from '../Common/Style/TransparencyOptions'
-  import GeotiffOptions from '../Common/Style/GeotiffOptions'
-  import BackgroundTileColor from '../Common/Style/BackgroundTileColor'
-  import MBTilesOptions from '../Common/Style/MBTilesOptions'
-  import StyleEditor from '../StyleEditor/StyleEditor'
-  import BaseMapTroubleshooting from './BaseMapTroubleshooting'
-  import NumberPicker from '../Common/NumberPicker'
-  import HttpUtilities from '../../lib/network/HttpUtilities'
-  import {mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiTrashCan} from '@mdi/js'
+import isNil from 'lodash/isNil'
+import cloneDeep from 'lodash/cloneDeep'
+import TransparencyOptions from '../Common/Style/TransparencyOptions'
+import GeotiffOptions from '../Common/Style/GeotiffOptions'
+import BackgroundTileColor from '../Common/Style/BackgroundTileColor'
+import MBTilesOptions from '../Common/Style/MBTilesOptions'
+import StyleEditor from '../StyleEditor/StyleEditor'
+import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+import NumberPicker from '../Common/NumberPicker'
+import {mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
+import {DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS} from '../../lib/network/HttpUtilities'
 
-  export default {
+export default {
     props: {
       baseMap: {
         type: Object,
@@ -365,9 +364,9 @@
         mdiMapOutline: mdiMapOutline,
         mdiPalette: mdiPalette,
         mdiTrashCan: mdiTrashCan,
-        defaultTimeout: HttpUtilities.DEFAULT_TIMEOUT,
-        defaultRateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
-        defaultRetryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
+        defaultTimeout: DEFAULT_TIMEOUT,
+        defaultRateLimit: DEFAULT_RATE_LIMIT,
+        defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,
         styleEditorVisible: false,
         renameDialog: false,
         renameValid: false,
@@ -378,9 +377,9 @@
           v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'
         ],
         connectionSettingsDialog: false,
-        timeoutMs: HttpUtilities.DEFAULT_TIMEOUT,
-        rateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
-        retryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
+        timeoutMs: DEFAULT_TIMEOUT,
+        rateLimit: DEFAULT_RATE_LIMIT,
+        retryAttempts: DEFAULT_RETRY_ATTEMPTS,
         rateLimitValid: true,
         timeoutValid: true,
         retryAttemptsValid: true
@@ -391,25 +390,25 @@
         this.connectionSettingsDialog = false
       },
       saveConnectionSettings () {
-        ProjectActions.saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+        window.mapcache.saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = !isNil(this.configuration.timeoutMs) ? this.configuration.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT
-        this.rateLimit = this.configuration.rateLimit || HttpUtilities.DEFAULT_RATE_LIMIT
-        this.retryAttempts = !isNil(this.configuration.retryAttempts) ? this.configuration.retryAttempts : HttpUtilities.DEFAULT_RETRY_ATTEMPTS
+        this.timeoutMs = !isNil(this.configuration.timeoutMs) ? this.configuration.timeoutMs : DEFAULT_TIMEOUT
+        this.rateLimit = this.configuration.rateLimit || DEFAULT_RATE_LIMIT
+        this.retryAttempts = !isNil(this.configuration.retryAttempts) ? this.configuration.retryAttempts : DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {
           this.connectionSettingsDialog = true
         })
       },
       deleteBaseMap () {
-        ProjectActions.removeBaseMap(this.baseMap)
+        window.mapcache.removeBaseMap(this.baseMap)
         this.deleteDialog = false
         this.back()
       },
       zoomTo () {
         const extent = this.baseMap.extent || [-180, -90, 180, 90]
-        ProjectActions.zoomToExtent({projectId: this.project.id, extent})
+        window.mapcache.zoomToExtent({projectId: this.project.id, extent})
       },
       hideStyleEditor () {
         this.styleEditorVisible = false
@@ -417,18 +416,18 @@
       saveBaseMapName () {
         const baseMap = cloneDeep(this.baseMap)
         baseMap.name = this.renamedBaseMap
-        ProjectActions.editBaseMap(baseMap)
+        window.mapcache.editBaseMap(baseMap)
         this.renameDialog = false
       },
       updateBackground (value) {
         const baseMap = cloneDeep(this.baseMap)
         baseMap.background = value
-        ProjectActions.editBaseMap(baseMap)
+        window.mapcache.editBaseMap(baseMap)
       },
       updateConfiguration (newConfiguration) {
         const baseMap = cloneDeep(this.baseMap)
         baseMap.layerConfiguration = newConfiguration
-        ProjectActions.editBaseMap(baseMap)
+        window.mapcache.editBaseMap(baseMap)
       }
     }
   }

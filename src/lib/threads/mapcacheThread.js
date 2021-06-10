@@ -1,10 +1,102 @@
-const { parentPort } = require('worker_threads')
-import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
-import CanvasUtilities from '../util/CanvasUtilities'
-import GeoTiffRenderingUtilities from '../util/GeoTiffRenderingUtilities'
-import MBTilesRenderingUtilities from '../util/MBTilesRenderingUtilities'
-import GeoPackageRenderingUtilities from '../util/GeoPackageRenderingUtilities'
-import LayerTypes from '../source/layer/LayerTypes'
+import { parentPort } from 'worker_threads'
+import { CanvasKitCanvasAdapter, FeatureTiles, GeoPackageAPI, NumberFeaturesTile } from '@ngageoint/geopackage'
+import { setCreateCanvasFunction, setMakeImageDataFunction } from '../util/CanvasUtilities'
+import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
+import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
+import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
+import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
+
+/**
+ * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
+ */
+class ExpiringGeoPackageConnection {
+  geoPackageConnection
+  featureTiles = {}
+  filePath
+  expiryMs
+  expiryId = null
+  styleKey = 0
+
+  constructor(filePath, expiryMs = 5000) {
+    this.filePath = filePath
+    this.expiryMs = expiryMs
+  }
+
+  expire () {
+    if (this.geoPackageConnection != null) {
+      try {
+        this.geoPackageConnection.close()
+        Object.values(this.featureTiles).forEach(featureTile => {
+          try {
+            featureTile.cleanup()
+            // eslint-disable-next-line no-empty
+          } catch (e) {}
+        })
+        this.featureTiles = {}
+        // eslint-disable-next-line no-empty
+      } catch (e) {
+      } finally {
+        this.geoPackageConnection = null
+        this.expiryId = null
+      }
+    }
+  }
+
+  startExpiry () {
+    this.expiryId = setTimeout(() => {
+      this.expire()
+    }, this.expiryMs)
+  }
+
+  cancelExpiry () {
+    if (this.expiryId != null) {
+      clearTimeout(this.expiryId)
+      this.expiryId = null
+    }
+  }
+
+  async accessConnection () {
+    this.cancelExpiry()
+    if (this.geoPackageConnection == null) {
+      this.geoPackageConnection = await GeoPackageAPI.open(this.filePath)
+    }
+    return this.geoPackageConnection
+  }
+
+  async accessFeatureTiles (tableName, maxFeatures) {
+    if (this.featureTiles[tableName] == null) {
+      const geoPackageConnection = await this.accessConnection()
+      this.featureTiles[tableName] = new FeatureTiles(geoPackageConnection.getFeatureDao(tableName), 256, 256)
+      this.featureTiles[tableName].maxFeaturesPerTile = maxFeatures
+      this.featureTiles[tableName].maxFeaturesTileDraw = new NumberFeaturesTile()
+    } else {
+      this.cancelExpiry()
+    }
+    return this.featureTiles[tableName]
+  }
+
+  finished () {
+    this.startExpiry()
+  }
+}
+
+// cache geopackage connections
+const cachedGeoPackageConnections = {}
+// track style changes, anytime the style changes, the cached connection will need to be reset
+const styleKeyMap = {}
+
+
+/**
+ * Sets up an expiring geopackage connection wrapper.
+ * @param filePath
+ * @returns {*}
+ */
+function getExpiringGeoPackageConnection (filePath) {
+  if (cachedGeoPackageConnections[filePath] == null) {
+    cachedGeoPackageConnections[filePath] = new ExpiringGeoPackageConnection(filePath, 5000)
+  }
+  return cachedGeoPackageConnections[filePath]
+}
 
 /**
  * Attaches media to a geopackage
@@ -12,8 +104,8 @@ import LayerTypes from '../source/layer/LayerTypes'
  * @returns {Promise<any>}
  */
 async function attachMedia (data) {
-  const GeoPackageMediaUtilities = require('../geopackage/GeoPackageMediaUtilities').default
-  return GeoPackageMediaUtilities.addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath)
+  const { addMediaAttachment } = require('../geopackage/GeoPackageMediaUtilities')
+  return addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath)
 }
 
 /**
@@ -30,15 +122,14 @@ async function processDataSource (data) {
     let createdSource = await SourceFactory.constructSource(source)
     if (createdSource != null) {
       let layers = await createdSource.retrieveLayers().catch(err => {
+        console.error(err)
         throw err
       })
       if (layers.length > 0) {
         for (let i = 0; i < layers.length; i++) {
           try {
             let layer = layers[i]
-            await layer.initialize()
             dataSources.push({id: layer.id, config: layer.configuration})
-            layer.close()
             // eslint-disable-next-line no-unused-vars
           } catch (err) {
             // eslint-disable-next-line no-console
@@ -67,6 +158,57 @@ async function processDataSource (data) {
 }
 
 /**
+ * Requests a geopackage vector tile
+ * @param data
+ * @param resolve
+ * @param reject
+ * @returns {Promise<void>}
+ */
+async function requestGeoPackageVectorTile (data, resolve, reject) {
+  const expiringGeoPackage = getExpiringGeoPackageConnection(data.dbFile)
+  // add style key map entry
+  if (styleKeyMap[data.dbFile] == null) {
+    styleKeyMap[data.dbFile] = {}
+  }
+  // if style key for table does not match style key from request, it means the style has changed and the connection needs to be reset
+  if (styleKeyMap[data.dbFile][data.tableName] !== data.styleKey) {
+    styleKeyMap[data.dbFile][data.tableName] = data.styleKey
+    expiringGeoPackage.expire()
+  }
+  const featureTile = await expiringGeoPackage.accessFeatureTiles(data.tableName, data.maxFeatures)
+  const {x, y, z} = data.coords
+  featureTile.drawTile(x, y, z).then((result) => {
+    resolve(result)
+  }).catch(error => {
+    console.error('Failed to render tile.')
+    reject(error)
+  }).finally(() => {
+    expiringGeoPackage.finished()
+  })
+}
+
+/**
+ * Requests a geo package tile table tile
+ * @param data
+ * @param resolve
+ * @param reject
+ * @returns {Promise<void>}
+ */
+async function requestGeoPackageTile (data, resolve, reject) {
+  const expiringGeoPackage = getExpiringGeoPackageConnection(data.dbFile)
+  const connection = await expiringGeoPackage.accessConnection()
+  const {x, y, z} = data.coords
+  connection.xyzTile(data.tableName, x, y, z, 256, 256).then((result) => {
+    resolve(result)
+  }).catch(error => {
+    console.error('Failed to render tile.')
+    reject(error)
+  }).finally(() => {
+    expiringGeoPackage.finished()
+  })
+}
+
+/**
  * This function handles a render tile request for GeoTIFF, GeoPackage (Vector + Raster) and MBTiles (Vector + Raster)
  * @param data
  * @returns {Promise<unknown>}
@@ -74,33 +216,32 @@ async function processDataSource (data) {
 async function renderTile (data) {
   return new Promise((resolve, reject) => {
     switch (data.layerType) {
-      case LayerTypes.GEOTIFF:
-        GeoTiffRenderingUtilities.requestTile(data).then((result) => {
+      case GEOTIFF:
+        requestGeoTIFFTile(data).then((result) => {
           resolve(result)
         }).catch(error => {
           reject(error)
         })
         break;
-      case LayerTypes.MBTILES:
-        MBTilesRenderingUtilities.requestTile(data).then((result) => {
+      case MBTILES:
+        requestMBTilesTile(data).then((result) => {
           resolve(result)
         }).catch(error => {
           reject(error)
         })
         break;
-      case LayerTypes.VECTOR:
-        GeoPackageRenderingUtilities.requestVectorTile(data).then((result) => {
+      case VECTOR:
+        requestGeoPackageVectorTile(data, resolve, reject)
+        break;
+      case XYZ_FILE:
+        requestXYZFileTile(data).then((result) => {
           resolve(result)
         }).catch(error => {
           reject(error)
         })
         break;
-      case LayerTypes.GEOPACKAGE:
-        GeoPackageRenderingUtilities.requestImageryTile(data).then((result) => {
-          resolve(result)
-        }).catch(error => {
-          reject(error)
-        })
+      case GEOPACKAGE:
+        requestGeoPackageTile(data, resolve, reject)
         break;
       default:
         reject(new Error(data.layerType + ' not a supported layer type'))
@@ -115,21 +256,21 @@ function setupRequestListener () {
   parentPort.on('message', (message) => {
     if (message.type === 'attach_media') {
       attachMedia(message.data).then((result) => {
-        parentPort.postMessage(result)
+        parentPort.postMessage({error: null, result: result})
       }).catch(error => {
-        throw error
+        parentPort.postMessage({error: error, result: null})
       })
     } else if (message.type === 'process_source') {
       processDataSource(message.data).then((result) => {
-        parentPort.postMessage(result)
+        parentPort.postMessage({error: null, result: result})
       }).catch(error => {
-        throw error
+        parentPort.postMessage({error: error, result: null})
       })
     } else if (message.type === 'render_tile') {
       renderTile(message.data).then((result) => {
-        parentPort.postMessage(result)
+        parentPort.postMessage({error: null, result: result})
       }).catch(error => {
-        throw error
+        parentPort.postMessage({error: error, result: null})
       })
     }
   })
@@ -145,27 +286,16 @@ function startThread () {
     locateFile: (file) => process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(path.dirname(__dirname), 'node_modules', '@ngageoint/geopackage', 'dist', 'canvaskit', file)
   }).then((CanvasKit) => {
     CanvasKitCanvasAdapter.setCanvasKit(CanvasKit)
-    CanvasUtilities.setCreateCanvasFunction((width, height) => {
+    setCreateCanvasFunction((width, height) => {
       return CanvasKit.MakeCanvas(width, height)
     })
-    CanvasUtilities.setMakeImageDataFunction((width, height) => {
+    setMakeImageDataFunction((width, height) => {
       return new CanvasKit.ImageData(width, height)
     })
     setupRequestListener()
-    parentPort.postMessage({ready: true})
+    parentPort.postMessage({error: null})
   })
 }
-
-function printMemUsage () {
-  setTimeout(() => {
-    const memory = process.memoryUsage()
-    console.log('MapCache Thread: ' + (memory.heapUsed / 1024.0 / 1024.0) + ' of ' + (memory.heapTotal / 1024.0 / 1024.0) + ' MB used, rss: ' + (memory.rss / 1024.0 / 1024.0) + ' MB, external: ' + (memory.external / 1024.0 / 1024.0) + ' MB');
-    printMemUsage()
-  }, 5000)
-}
-
-printMemUsage()
-
 
 /**
  * Start thread, if error, notify parent process
@@ -173,7 +303,7 @@ printMemUsage()
 try {
   startThread()
 } catch (e) {
-  parentPort.postMessage({ready: false, error: e})
+  parentPort.postMessage({error: e})
 }
 
 

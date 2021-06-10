@@ -20,11 +20,6 @@
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
-              <v-progress-circular
-                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializationState === 1"
-                indeterminate
-                color="primary"
-              ></v-progress-circular>
             </v-list-item>
           </v-list-item-group>
         </v-list>
@@ -34,27 +29,25 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import keys from 'lodash/keys'
-  import pick from 'lodash/pick'
-  import isEqual from 'lodash/isEqual'
-  import debounce from 'lodash/debounce'
-  import { mapState } from 'vuex'
-  import { L } from '../../lib/leaflet/vendor'
-  import LeafletZoomIndicator from './LeafletZoomIndicator'
-  import LayerFactory from '../../lib/source/layer/LayerFactory'
-  import LeafletMapLayerFactory from '../../lib/map/mapLayers/LeafletMapLayerFactory'
-  import LeafletActiveLayersTool from './LeafletActiveLayersTool'
-  import LeafletBaseMapTool from './LeafletBaseMapTool'
-  import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
-  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
-  import LayerTypes from '../../lib/source/layer/LayerTypes'
-  import { mdiMapOutline } from '@mdi/js'
-  import LayerInitializationState from '../../lib/leaflet/layerInitializationState'
+import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import pick from 'lodash/pick'
+import isEqual from 'lodash/isEqual'
+import debounce from 'lodash/debounce'
+import { mapState } from 'vuex'
+import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
+import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
+import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
+import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
+import { mdiMapOutline } from '@mdi/js'
+import { L } from '../../lib/leaflet/vendor'
+import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
+import { constructLayer } from '../../lib/layer/LayerFactory'
+import { getOfflineBaseMapId } from '../../lib/util/BaseMapUtilities'
+import { isRemote } from '../../lib/layer/LayerTypes'
+import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 
-  export default {
+export default {
     components: {BaseMapTroubleshooting},
     props: {
       project: Object,
@@ -72,8 +65,8 @@
         showBaseMapSelection: false,
         selectedBaseMapId: '0',
         baseMapLayers: {},
-        offlineBaseMapId: BaseMapUtilities.getOfflineBaseMapId(),
-        offlineBaseMapFilter: baseMap => baseMap.id !== BaseMapUtilities.getOfflineBaseMapId(),
+        offlineBaseMapId: getOfflineBaseMapId(),
+        offlineBaseMapFilter: baseMap => baseMap.id !== getOfflineBaseMapId(),
       }
     },
     computed: {
@@ -109,15 +102,6 @@
         }
         this.map.fitBounds([[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]], {maxZoom: 20})
       },
-      async initializeBaseMap (baseMapId, map) {
-        await this.baseMapLayers[baseMapId].initializeLayer()
-        // only add if the source layer was not deleted
-        if (!isNil(this.baseMapLayers[baseMapId]) && this.selectedBaseMapId === baseMapId) {
-          map.addLayer(this.baseMapLayers[baseMapId])
-        }
-        // updating initializing to false is not always updating the UI
-        this.$forceUpdate()
-      },
       addBaseMap (baseMap, map) {
         let self = this
         const baseMapId = baseMap.id
@@ -135,19 +119,17 @@
             }
           })
           if (this.selectedBaseMapId === baseMapId) {
-            self.addLayer(self.baseMapLayers[baseMapId])
+            map.addLayer(self.baseMapLayers[baseMapId])
           }
-          // updating initializing to false is not always updating the UI
-          self.$forceUpdate()
         } else {
-          let layer = LayerFactory.constructLayer(baseMap.layerConfiguration)
-          self.baseMapLayers[baseMapId] = LeafletMapLayerFactory.constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
-          if (this.selectedBaseMapId === baseMapId) {
-            self.initializeBaseMap(baseMapId, map)
+          let layer = constructLayer(baseMap.layerConfiguration)
+          self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
+          if (self.selectedBaseMapId === baseMapId) {
+            map.addLayer(self.baseMapLayers[baseMapId])
           }
         }
       },
-      async initializeMap () {
+      initializeMap () {
         const defaultCenter = [39.658748, -104.843165]
         const defaultZoom = 3
 
@@ -164,24 +146,24 @@
         this.map.setView(defaultCenter, defaultZoom)
         this.map.createPane('baseMapPane')
         this.map.getPane('baseMapPane').style.zIndex = 200
-        await this.setupControls()
+        this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
         if (!isNil(this.previewLayer)) {
           this.setupPreviewLayer()
         }
       },
-      async setupBaseMaps () {
+      setupBaseMaps () {
         for (let i = 0; i < this.baseMaps.length; i++) {
-          await this.addBaseMap(this.baseMaps[i], this.map)
+          this.addBaseMap(this.baseMaps[i], this.map)
         }
       },
-      async setupControls () {
+      setupControls () {
         let self = this
         this.basemapControl = new LeafletBaseMapTool({}, function () {
           self.showBaseMapSelection = !self.showBaseMapSelection
         })
         this.map.addControl(this.basemapControl)
-        await this.setupBaseMaps()
+        this.setupBaseMaps()
         this.map.zoomControl.setPosition('topright')
         this.displayZoomControl = new LeafletZoomIndicator()
         this.map.addControl(this.displayZoomControl)
@@ -191,10 +173,9 @@
         L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
       },
-      async setupPreviewLayer () {
-        const layer = LayerFactory.constructLayer(this.previewLayer)
-        this.previewMapLayer = LeafletMapLayerFactory.constructMapLayer({layer: layer, mapPane: 'markerPane', isPreview: true, maxFeatures: this.project.maxFeatures})
-        await this.previewMapLayer.initializeLayer()
+      setupPreviewLayer () {
+        const layer = constructLayer(this.previewLayer)
+        this.previewMapLayer = constructMapLayer({layer: layer, mapPane: 'markerPane', isPreview: true, maxFeatures: this.project.maxFeatures})
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
       },
@@ -207,7 +188,7 @@
     },
     watch: {
       baseMaps: {
-        async handler (newBaseMaps) {
+        handler (newBaseMaps) {
           const self = this
           const selectedBaseMapId = this.selectedBaseMapId
 
@@ -232,21 +213,13 @@
               const layer = self.baseMapLayers[selectedBaseMapId]
               if (layer) {
                 self.map.removeLayer(self.baseMapLayers[selectedBaseMapId])
-                if (layer && Object.prototype.hasOwnProperty.call(layer, 'close')) {
-                  layer.close()
-                }
               }
               delete self.baseMapLayers[selectedBaseMapId]
               self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
             } else if (!isNil(oldConfig)) {
               const newConfig = selectedBaseMap.layerConfiguration
-              const styleKeyChanged = oldConfig.pane === 'vector' && oldConfig.styleKey !== newConfig.styleKey
               const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
-              const repaintRequired = self.baseMapLayers[selectedBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
-              // styleChanged performs an asynchronous recycling of the geopackage connection
-              if (styleKeyChanged) {
-                await self.baseMapLayers[selectedBaseMapId].styleChanged()
-              }
+              const repaintRequired = !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
               if (repaintRequired) {
                 self.baseMapLayers[selectedBaseMapId].redraw()
               }
@@ -263,8 +236,8 @@
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && LayerTypes.isRemote(newBaseMap.layerConfiguration)) {
-              success = await ServiceConnectionUtils.connectToBaseMap(newBaseMap, ProjectActions.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
+              success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
             }
 
             // remove old map layer
@@ -281,12 +254,7 @@
                 if (newBaseMapId !== self.offlineBaseMapId) {
                   self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
-                if (newBaseMapId === self.offlineBaseMapId || self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_COMPLETED) {
-                  self.map.addLayer(self.baseMapLayers[newBaseMapId])
-                }
-                if (newBaseMapId !== self.offlineBaseMapId && self.baseMapLayers[newBaseMapId].getInitializationState() === LayerInitializationState.INITIALIZATION_NOT_STARTED) {
-                  self.initializeBaseMap(newBaseMapId, self.map)
-                }
+                self.map.addLayer(self.baseMapLayers[newBaseMapId])
               }
               self.mapBackground = newBaseMap.background || '#ddd'
             } else {
@@ -356,20 +324,14 @@
         deep: true
       }
     },
-    mounted: async function () {
-      await this.initializeMap()
+    mounted: function () {
+      this.initializeMap()
     },
     beforeDestroy: function () {
       if (!isNil(this.previewMapLayer)) {
         this.previewMapLayer.remove()
         this.previewMapLayer = null
       }
-      keys(self.baseMapLayers).forEach(key => {
-        let layer = self.baseMapLayers[key]
-        if (!isNil(layer) && Object.prototype.hasOwnProperty.call(layer, 'close')) {
-          layer.close()
-        }
-      })
     },
     beforeUpdate: function () {
       const self = this

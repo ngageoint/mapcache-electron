@@ -4,16 +4,17 @@ import cloneDeep from 'lodash/cloneDeep'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import { mapcache } from '../../../package.json'
-import BaseMapUtilities from '../../lib/util/BaseMapUtilities'
-import HttpUtilities from '../../lib/network/HttpUtilities'
+import { getDefaultBaseMaps } from '../../lib/util/BaseMapUtilities'
+import { DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, NO_LIMIT } from '../../lib/network/HttpUtilities'
 import { mkdirSync, readdirSync, existsSync } from 'fs'
 import jetpack from 'fs-jetpack'
-import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
+import { V4_REGEX } from '../../lib/util/UniqueIDUtilities'
 import path from 'path'
-import FileUtilities from '../../lib/util/FileUtilities'
+import { rmDir, createNextAvailableLayerDirectory, createNextAvailableSourceDirectory, createNextAvailableBaseMapDirectory, createNextAvailableProjectDirectory } from '../../lib/util/FileUtilities'
 import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
-import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-import FileConstants from '../../lib/util/FileConstants'
+import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
+import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
+
 
 /**
  * Executes the necessary migration scripts based on current version of the store and the installation version of the store
@@ -51,7 +52,7 @@ export async function runMigration (forceReset = false) {
     3: async function (state) {
       // setup initial BaseMaps
       state.BaseMaps = {
-        baseMaps: BaseMapUtilities.getDefaultBaseMaps()
+        baseMaps: getDefaultBaseMaps()
       }
     },
     4: async function (state) {
@@ -69,9 +70,9 @@ export async function runMigration (forceReset = false) {
     5: async function (state) {
       // add network settings to default base maps
       state.BaseMaps.baseMaps.filter(baseMap => baseMap.readonly && baseMap.id < 3).forEach(baseMap => {
-        baseMap.layerConfiguration.timeoutMs = HttpUtilities.DEFAULT_TIMEOUT
-        baseMap.layerConfiguration.retryAttempts = HttpUtilities.DEFAULT_RETRY_ATTEMPTS
-        baseMap.layerConfiguration.rateLimit = HttpUtilities.NO_LIMIT
+        baseMap.layerConfiguration.timeoutMs = DEFAULT_TIMEOUT
+        baseMap.layerConfiguration.retryAttempts = DEFAULT_RETRY_ATTEMPTS
+        baseMap.layerConfiguration.rateLimit = NO_LIMIT
       })
     },
     6: async function (state) {
@@ -87,7 +88,7 @@ export async function runMigration (forceReset = false) {
 
       // create projects directory
       const userDataDir = app.getPath('userData')
-      const projectDir = path.join(userDataDir, FileConstants.PROJECT_DIRECTORY_IDENTIFIER)
+      const projectDir = path.join(userDataDir, PROJECT_DIRECTORY_IDENTIFIER)
       if (!existsSync(projectDir)) {
         mkdirSync(projectDir)
       }
@@ -95,13 +96,13 @@ export async function runMigration (forceReset = false) {
       // create project directories
       keys(state.Projects).forEach(projectId => {
         const project = state.Projects[projectId]
-        project.directory = FileUtilities.createNextAvailableProjectDirectory(userDataDir)
+        project.directory = createNextAvailableProjectDirectory(userDataDir)
 
         // create source directories
         keys(state.Projects[projectId].sources).forEach(sourceId => {
           const source = state.Projects[projectId].sources[sourceId]
-          source.sourceDirectory = FileUtilities.createNextAvailableSourceDirectory(project.directory)
-          source.directory = FileUtilities.createNextAvailableLayerDirectory(source.sourceDirectory, false)
+          source.sourceDirectory = createNextAvailableSourceDirectory(project.directory)
+          source.directory = createNextAvailableLayerDirectory(source.sourceDirectory, false)
 
           let oldDir = path.join(userDataDir, sourceId)
           if (!existsSync(oldDir) && !isNil(source.sourceId)) {
@@ -130,14 +131,14 @@ export async function runMigration (forceReset = false) {
       })
 
       // create basemaps directory
-      const baseMapsDir = path.join(userDataDir, FileConstants.BASEMAP_DIRECTORY_IDENTIFIER)
+      const baseMapsDir = path.join(userDataDir, BASEMAP_DIRECTORY_IDENTIFIER)
       if (!existsSync(baseMapsDir)) {
         mkdirSync(baseMapsDir)
       }
 
       state.BaseMaps.baseMaps.filter(baseMap => ['0','1','2','3'].indexOf(baseMap.id) === -1).map(baseMap => {
         // move base map contents to new directory
-        const baseMapDir = FileUtilities.createNextAvailableBaseMapDirectory(userDataDir, false)
+        const baseMapDir = createNextAvailableBaseMapDirectory(userDataDir, false)
         const oldDir = path.join(userDataDir, baseMap.id)
         if (!existsSync(baseMapDir) && existsSync(oldDir)) {
           jetpack.move(oldDir, baseMapDir)
@@ -162,11 +163,11 @@ export async function runMigration (forceReset = false) {
       const uuidv4Dirs = readdirSync(userDataDir, { withFileTypes: true })
         .filter(dir => dir.isDirectory())
         .map(dir => dir.name)
-        .filter(dir => dir.match(UniqueIDUtilities.V4_REGEX))
+        .filter(dir => dir.match(V4_REGEX))
         .map(dir => path.join(userDataDir, dir))
 
       uuidv4Dirs.forEach(dir => {
-        FileUtilities.rmDir(dir)
+        rmDir(dir)
       })
 
       const projectKeys = keys(state.Projects)
@@ -174,7 +175,7 @@ export async function runMigration (forceReset = false) {
         const geopackageIds = keys(state.Projects[projectId].geopackages)
         for (const geopackageId of geopackageIds) {
           const geopackage = state.Projects[projectId].geopackages[geopackageId]
-          geopackage.tables = await GeoPackageCommon.getInternalTableInformation(geopackage.path)
+          geopackage.tables = await getInternalTableInformation(geopackage.path)
         }
       }
     }

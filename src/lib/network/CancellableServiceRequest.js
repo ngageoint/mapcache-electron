@@ -1,8 +1,7 @@
-import { ipcRenderer } from 'electron'
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import UniqueIDUtilities from '../util/UniqueIDUtilities'
-import HttpUtilities from './HttpUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+import { USER_CANCELLED_MESSAGE, TIMEOUT_MESSAGE } from './HttpUtilities'
 
 export default class CancellableServiceRequest {
   source
@@ -13,7 +12,7 @@ export default class CancellableServiceRequest {
    */
   cancel () {
     if (!isNil(this.source)) {
-      this.source.cancel(HttpUtilities.USER_CANCELLED_MESSAGE)
+      this.source.cancel(USER_CANCELLED_MESSAGE)
     }
   }
 
@@ -23,7 +22,7 @@ export default class CancellableServiceRequest {
    */
   timeout () {
     if (!isNil(this.source)) {
-      this.source.cancel(HttpUtilities.TIMEOUT_MESSAGE)
+      this.source.cancel(TIMEOUT_MESSAGE)
     }
   }
 
@@ -41,8 +40,7 @@ export default class CancellableServiceRequest {
    */
   async request (url, options) {
     let response = undefined
-    const requestId = UniqueIDUtilities.createUniqueID()
-    const requestTimeoutChannel = 'request-timeout-' + requestId
+    const requestId = createUniqueID()
     const timeoutListener = () => {
       this.timeout()
     }
@@ -62,10 +60,10 @@ export default class CancellableServiceRequest {
         request.headers['x-mapcache-timeout'] = options.timeout
       }
       request.headers['x-mapcache-connection-id'] = requestId
-      ipcRenderer.once(requestTimeoutChannel, timeoutListener)
+      window.mapcache.registerRequestTimeoutListener(requestId, timeoutListener)
       response = await axios(request)
     } finally {
-      ipcRenderer.removeListener(requestTimeoutChannel, timeoutListener)
+      window.mapcache.unregisterRequestTimeoutListener(requestId, timeoutListener)
     }
     return response
   }

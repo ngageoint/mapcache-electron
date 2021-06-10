@@ -2,9 +2,10 @@ import path from 'path'
 import jetpack from 'fs-jetpack'
 import isNil from 'lodash/isNil'
 import Source from './Source'
-import VectorLayer from './layer/vector/VectorLayer'
-import GeoPackageCommon from '../geopackage/GeoPackageCommon'
-import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
+import VectorLayer from '../layer/vector/VectorLayer'
+import { getGeoPackageExtent } from '../geopackage/GeoPackageCommon'
+import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
+import { VECTOR } from '../layer/LayerTypes'
 
 export default class GeoJSONSource extends Source {
   async retrieveLayers () {
@@ -24,11 +25,12 @@ export default class GeoJSONSource extends Source {
     const name = path.basename(this.filePath, path.extname(this.filePath))
     let fileName = name + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, name, featureCollection)
-    const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, name)
+    await buildGeoPackage(filePath, name, featureCollection)
+    const extent = await getGeoPackageExtent(filePath, name)
     return [
       new VectorLayer({
         id: layerId,
+        layerType: VECTOR,
         directory: layerDirectory,
         sourceDirectory: this.directory,
         name: name,

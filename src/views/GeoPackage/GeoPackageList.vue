@@ -63,11 +63,9 @@
 </template>
 
 <script>
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import { mdiAlertCircle, mdiChevronRight } from '@mdi/js'
+import {mdiAlertCircle, mdiChevronRight} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       geopackages: Object,
       projectId: String,
@@ -98,9 +96,9 @@
               name: geopackage.name,
               featureLayersText: 'Feature Layers: ' + Object.keys(geopackage.tables.features).length,
               tileLayersText: 'Tile Layers: ' + Object.keys(geopackage.tables.tiles).length,
-              health: await GeoPackageCommon.checkGeoPackageHealth(geopackage),
+              health: await window.mapcache.checkGeoPackageHealth(geopackage),
               click: async function (item) {
-                item.health = await GeoPackageCommon.checkGeoPackageHealth(geopackage)
+                item.health = await window.mapcache.checkGeoPackageHealth(geopackage)
                 if (!item.health.missing && !item.health.invalid && item.health.synchronized) {
                   _this.geopackageSelected(geopackage.id)
                 } else {
@@ -122,7 +120,7 @@
                 _this.dialogSubText = 'File not found at ' + geopackage.path + '. Would you like to remove this GeoPackage?'
                 _this.dialogActionText = 'Remove'
                 _this.showDialog = true
-                _this.dialogAction = () => ProjectActions.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => window.mapcache.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
               },
               showInvalidFileDialog: function () {
                 _this.dialogGeoPackageId = geopackage.id
@@ -130,14 +128,14 @@
                 _this.dialogSubText = 'Would you like to remove this GeoPackage?'
                 _this.dialogActionText = 'Remove'
                 _this.showDialog = true
-                _this.dialogAction = () => ProjectActions.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => window.mapcache.removeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
               },
               showSynchronizedFileDialog: function () {
                 _this.dialogGeoPackageId = geopackage.id
                 _this.dialogText = geopackage.name + ' GeoPackage not synchronized'
                 _this.dialogSubText = geopackage.name + ' GeoPackage has been modified outside of the application. Would you like to synchronize this GeoPackage?'
                 _this.dialogActionText = 'Synchronize'
-                _this.dialogAction = () => ProjectActions.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
+                _this.dialogAction = () => window.mapcache.synchronizeGeoPackage({projectId: _this.projectId, geopackageId: geopackage.id})
                 _this.showDialog = true
               }
             })

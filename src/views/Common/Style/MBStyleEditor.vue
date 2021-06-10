@@ -48,11 +48,11 @@
 </template>
 
 <script>
-  import ColorPicker from '../ColorPicker'
-  import NumberPicker from '../NumberPicker'
-  import GeometryStyleSvg from '../GeometryStyleSvg'
+import ColorPicker from '../ColorPicker'
+import NumberPicker from '../NumberPicker'
+import GeometryStyleSvg from '../GeometryStyleSvg'
 
-  export default {
+export default {
     props: {
       title: String,
       geometryType: Number,

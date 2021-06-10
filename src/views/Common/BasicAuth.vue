@@ -45,9 +45,9 @@
 </template>
 
 <script>
-  import CredentialsManagement from '../../lib/network/CredentialsManagement'
+import { CREDENTIAL_TYPE_BASIC } from '../../lib/network/HttpUtilities'
 
-  export default {
+export default {
     props: {
       cancel: Function,
       signIn: Function,
@@ -60,9 +60,9 @@
         this.signIn(credentials)
       },
       async getCredentials () {
-        const {encrypted, iv, key} = CredentialsManagement.encrypt(this.password)
+        const {encrypted, iv, key} = window.mapcache.encryptPassword(this.password)
         return {
-          type: CredentialsManagement.CREDENTIAL_TYPE_BASIC,
+          type: CREDENTIAL_TYPE_BASIC,
           username: this.username,
           password: encrypted,
           iv: iv,

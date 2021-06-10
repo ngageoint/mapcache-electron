@@ -1,7 +1,5 @@
-export default class GarbageCollector {
-    static tryCollect () {
-        if (global.gc) {
-            global.gc()
-        }
+export function tryCollect () {
+    if (global.gc) {
+        global.gc()
     }
 }

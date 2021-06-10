@@ -1,9 +1,17 @@
-export default class FileConstants {
-  static PROJECT_DIRECTORY_IDENTIFIER = 'p'
-  static SOURCE_DIRECTORY_IDENTIFIER = 's'
-  static LAYER_DIRECTORY_IDENTIFIER = 'l'
-  static BASEMAP_DIRECTORY_IDENTIFIER = 'b'
-  static ICON_DIRECTORY_IDENTIFIER = 'i'
-  static SUPPORTED_FILE_EXTENSIONS = ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
-  static SUPPORTED_FILE_EXTENSIONS_WITH_DOT = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip', '.mbtiles']
+const PROJECT_DIRECTORY_IDENTIFIER = 'p'
+const SOURCE_DIRECTORY_IDENTIFIER = 's'
+const LAYER_DIRECTORY_IDENTIFIER = 'l'
+const BASEMAP_DIRECTORY_IDENTIFIER = 'b'
+const ICON_DIRECTORY_IDENTIFIER = 'i'
+const SUPPORTED_FILE_EXTENSIONS = ['tif', 'tiff', 'geotiff', 'kml', 'kmz', 'geojson', 'json', 'shp', 'zip', 'mbtiles']
+const SUPPORTED_FILE_EXTENSIONS_WITH_DOT = ['.tif', '.tiff', '.geotiff', '.kml', '.kmz', '.geojson', '.json', '.shp', '.zip', '.mbtiles']
+
+export {
+  PROJECT_DIRECTORY_IDENTIFIER,
+  SOURCE_DIRECTORY_IDENTIFIER,
+  LAYER_DIRECTORY_IDENTIFIER,
+  BASEMAP_DIRECTORY_IDENTIFIER,
+  ICON_DIRECTORY_IDENTIFIER,
+  SUPPORTED_FILE_EXTENSIONS,
+  SUPPORTED_FILE_EXTENSIONS_WITH_DOT,
 }

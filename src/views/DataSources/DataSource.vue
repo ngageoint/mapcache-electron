@@ -398,26 +398,30 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import fs from 'fs'
-  import path from 'path'
-  import isNil from 'lodash/isNil'
-  import isEmpty from 'lodash/isEmpty'
-  import keys from 'lodash/keys'
-  import GeotiffOptions from '../Common/Style/GeotiffOptions'
-  import TransparencyOptions from '../Common/Style/TransparencyOptions'
-  import StyleEditor from '../StyleEditor/StyleEditor'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../lib/vue/EventBus'
-  import SourceVisibilitySwitch from './SourceVisibilitySwitch'
-  import MBTilesOptions from '../Common/Style/MBTilesOptions'
-  import DataSourceTroubleshooting from './DataSourceTroubleshooting'
-  import NumberPicker from '../Common/NumberPicker'
-  import HttpUtilities from '../../lib/network/HttpUtilities'
-  import URLUtilities from '../../lib/util/URLUtilities'
-  import { mdiChevronLeft, mdiPencil, mdiCloudBraces, mdiTrashCan, mdiExportVariant, mdiPalette, mdiTableEye } from '@mdi/js'
+import {mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import isEmpty from 'lodash/isEmpty'
+import keys from 'lodash/keys'
+import GeotiffOptions from '../Common/Style/GeotiffOptions'
+import TransparencyOptions from '../Common/Style/TransparencyOptions'
+import StyleEditor from '../StyleEditor/StyleEditor'
+import EventBus from '../../lib/vue/EventBus'
+import SourceVisibilitySwitch from './SourceVisibilitySwitch'
+import MBTilesOptions from '../Common/Style/MBTilesOptions'
+import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import NumberPicker from '../Common/NumberPicker'
+import {
+  mdiChevronLeft,
+  mdiCloudBraces,
+  mdiExportVariant,
+  mdiPalette,
+  mdiPencil,
+  mdiTableEye,
+  mdiTrashCan
+} from '@mdi/js'
+import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../../lib/network/HttpUtilities'
 
-  export default {
+export default {
     props: {
       source: {
         type: Object,
@@ -455,9 +459,9 @@
         mdiExportVariant: mdiExportVariant,
         mdiPalette: mdiPalette,
         mdiTableEye: mdiTableEye,
-        defaultTimeout: HttpUtilities.DEFAULT_TIMEOUT,
-        defaultRateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
-        defaultRetryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
+        defaultTimeout: DEFAULT_TIMEOUT,
+        defaultRateLimit: DEFAULT_RATE_LIMIT,
+        defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,
         exportingProgressDialog: false,
         styleEditorVisible: false,
         showExportAlert: false,
@@ -473,9 +477,9 @@
           v => !!v || 'Name is required'
         ],
         connectionSettingsDialog: false,
-        timeoutMs: HttpUtilities.DEFAULT_TIMEOUT,
-        rateLimit: HttpUtilities.DEFAULT_RATE_LIMIT,
-        retryAttempts: HttpUtilities.DEFAULT_RETRY_ATTEMPTS,
+        timeoutMs: DEFAULT_TIMEOUT,
+        rateLimit: DEFAULT_RATE_LIMIT,
+        retryAttempts: DEFAULT_RETRY_ATTEMPTS,
         rateLimitValid: true,
         timeoutValid: true,
         retryAttemptsValid: true
@@ -483,35 +487,35 @@
     },
     methods: {
       hasSubdomains () {
-        return !isEmpty(this.source.subdomains) && URLUtilities.requiresSubdomains(this.source.filePath)
+        return !isEmpty(this.source.subdomains) && window.mapcache.requiresSubdomains(this.source.filePath)
       },
       closeConnectionSettingsDialog () {
         this.connectionSettingsDialog = false
       },
       saveConnectionSettings () {
-        ProjectActions.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+        window.mapcache.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
         this.closeConnectionSettingsDialog()
       },
       showConnectingSettingsDialog () {
-        this.timeoutMs = !isNil(this.source.timeoutMs) ? this.source.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT
-        this.rateLimit = this.source.rateLimit || HttpUtilities.DEFAULT_RATE_LIMIT
-        this.retryAttempts = !isNil(this.source.retryAttempts) ? this.source.retryAttempts : HttpUtilities.DEFAULT_RETRY_ATTEMPTS
+        this.timeoutMs = !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT
+        this.rateLimit = this.source.rateLimit || DEFAULT_RATE_LIMIT
+        this.retryAttempts = !isNil(this.source.retryAttempts) ? this.source.retryAttempts : DEFAULT_RETRY_ATTEMPTS
         this.$nextTick(() => {
           this.connectionSettingsDialog = true
         })
       },
       saveLayerName () {
         this.renameDialog = false
-        ProjectActions.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})
+        window.mapcache.setDataSourceDisplayName({projectId: this.project.id, sourceId: this.source.id, displayName: this.renamedSource})
       },
       copyAndAddGeoPackage (filePath) {
         this.exportingProgressDialog = true
-        fs.copyFile(this.source.geopackageFilePath, filePath, () => {
+        window.mapcache.copyFile(this.source.geopackageFilePath, filePath).then(() => {
           const geopackageKey = keys(this.project.geopackages).find(key => this.project.geopackages[key].path === filePath)
           if (isNil(geopackageKey)) {
-            ProjectActions.addGeoPackage({projectId: this.project.id, filePath: filePath})
+            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath})
           } else {
-            ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: geopackageKey})
+            window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: geopackageKey})
           }
           this.overwriteFile = ''
           setTimeout(() => {
@@ -532,11 +536,11 @@
                 if (!filePath.endsWith('.gpkg')) {
                   filePath = filePath + '.gpkg'
                 }
-                if (!fs.existsSync(filePath)) {
+                if (!window.mapcache.fileExists(filePath)) {
                   this.copyAndAddGeoPackage(filePath)
                 } else {
                   this.overwriteFile = filePath
-                  this.overwriteFileName = path.basename(filePath)
+                  this.overwriteFileName = window.mapcache.getBaseName(filePath)
                   this.showOverwriteDialog = true
                 }
               }
@@ -560,7 +564,7 @@
         this.styleEditorVisible = false
       },
       zoomToSource () {
-        ProjectActions.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
+        window.mapcache.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
       },
       showFeatureTable () {
         const payload = {
@@ -571,10 +575,10 @@
         EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload)
       },
       removeDataSource () {
-        ProjectActions.removeDataSource({projectId: this.project.id, sourceId: this.source.id})
+        window.mapcache.removeDataSource({projectId: this.project.id, sourceId: this.source.id})
       },
       updateSource (updatedSource) {
-        ProjectActions.setDataSource({
+        window.mapcache.setDataSource({
           projectId: this.project.id,
           source: updatedSource
         })

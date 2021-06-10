@@ -245,12 +245,10 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import { mdiChevronLeft, mdiPencil, mdiContentCopy, mdiTrashCan, mdiPalette } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import {mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       geopackage: Object,
@@ -289,7 +287,7 @@
           return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].visible : false
         },
         set (value) {
-          ProjectActions.setGeoPackageTileTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
+          window.mapcache.setGeoPackageTileTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
       tileCount () {
@@ -309,19 +307,19 @@
       rename () {
         this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
-        ProjectActions.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        window.mapcache.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
         this.$nextTick(() => {
           this.renameDialog = false
         })
       },
       copy () {
         this.copyDialog = false
-        ProjectActions.copyGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
+        window.mapcache.copyGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
         this.showCopiedAlert = true
       },
       deleteTable () {
         this.deleteDialog = false
-        ProjectActions.deleteGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+        window.mapcache.deleteGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
       },
       showRenameDialog () {
         this.renameValid = false
@@ -338,8 +336,8 @@
         })
       },
       async zoomToLayer () {
-        const extent = await GeoPackageCommon.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        ProjectActions.zoomToExtent({projectId: this.projectId, extent})
+        const extent = await window.mapcache.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        window.mapcache.zoomToExtent({projectId: this.projectId, extent})
       }
     }
   }

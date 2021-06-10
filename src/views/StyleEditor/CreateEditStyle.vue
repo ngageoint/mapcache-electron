@@ -97,14 +97,13 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import ColorPicker from '../Common/ColorPicker'
-  import NumberPicker from '../Common/NumberPicker'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
-  import { mdiTrashCan } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import ColorPicker from '../Common/ColorPicker'
+import NumberPicker from '../Common/NumberPicker'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import {mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       id: String,
       tableName: String,
@@ -174,7 +173,7 @@
         }
         if (this.styleRow.id) {
           styleRow.id = this.styleRow.id
-          ProjectActions.updateStyleRow({
+          window.mapcache.updateStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -183,7 +182,7 @@
             isBaseMap: this.isBaseMap
           })
         } else {
-          ProjectActions.createStyleRow({
+          window.mapcache.createStyleRow({
             projectId: this.projectId,
             id: this.id,
             tableName: this.tableName,
@@ -195,7 +194,7 @@
         this.close()
       },
       deleteStyle () {
-        ProjectActions.deleteStyleRow({
+        window.mapcache.deleteStyleRow({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,

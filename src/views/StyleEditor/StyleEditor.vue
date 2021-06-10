@@ -85,16 +85,7 @@
             v-for="style in styleListItems.items"
             :key="style.id"
             link
-            @click="() => showStyleEditor({
-              id: style.styleRow.id,
-              name: style.styleRow.getName(),
-              description: style.styleRow.getDescription(),
-              color: style.styleRow.getHexColor(),
-              opacity: style.styleRow.getOpacity(),
-              fillColor: style.styleRow.getFillHexColor(),
-              fillOpacity: style.styleRow.getFillOpacity(),
-              width: style.styleRow.getWidth(),
-            })"
+            @click="() => showStyleEditor(style)"
           >
             <v-list-item-content>
               <v-row no-gutters justify="space-between" align="center">
@@ -138,7 +129,7 @@
             v-for="icon in iconListItems.items"
             :key="icon.id"
             link
-            @click="() => showIconEditor(icon.iconRow)"
+            @click="() => showIconEditor(icon)"
           >
             <v-list-item-content>
               <v-row no-gutters justify="space-between" align="center">
@@ -188,18 +179,18 @@
                   </v-row>
                   <v-row no-gutters>
                     <v-list-item-subtitle v-if="assignment.icon" v-text="assignment.icon.name"></v-list-item-subtitle>
-                    <v-list-item-subtitle v-else-if="assignment.style">{{assignment.style.getName()}}</v-list-item-subtitle>
+                    <v-list-item-subtitle v-else-if="assignment.style">{{assignment.style.name}}</v-list-item-subtitle>
                     <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>
                   </v-row>
                 </v-col>
                 <v-col cols="4" v-if="assignment.icon">
                   <v-row no-gutters justify="end" class="mr-5">
-                    <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.iconUrl"/>
+                    <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.icon.url"/>
                   </v-row>
                 </v-col>
                 <v-col cols="4" v-if="assignment.style">
                   <v-row no-gutters justify="end" class="mr-5">
-                    <geometry-style-svg :geometry-type="assignment.geometryType" :color="assignment.style.getHexColor()" :fill-color="assignment.style.getFillHexColor()" :fill-opacity="assignment.style.getFillOpacity()"/>
+                    <geometry-style-svg :geometry-type="assignment.geometryType" :color="assignment.style.color" :fill-color="assignment.style.fillColor" :fill-opacity="assignment.style.fillOpacity"/>
                   </v-row>
                 </v-col>
               </v-row>
@@ -230,19 +221,13 @@
 </template>
 
 <script>
-  import CreateEditStyle from './CreateEditStyle'
-  import CreateEditIcon from './CreateEditIcon'
-  import EditTableStyleAssignment from './EditTableStyleAssignment'
-  import isNil from 'lodash/isNil'
-  import values from 'lodash/values'
-  import { GeoPackageAPI, GeometryType } from '@ngageoint/geopackage'
-  import VectorStyleUtilities from '../../lib/util/VectorStyleUtilities'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
-  import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
-  import { mdiTrashCan, mdiPlus, mdiPencil, mdiPalette, mdiMapMarker, mdiLinkVariant } from '@mdi/js'
+import CreateEditStyle from './CreateEditStyle'
+import CreateEditIcon from './CreateEditIcon'
+import EditTableStyleAssignment from './EditTableStyleAssignment'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import {mdiLinkVariant, mdiMapMarker, mdiPalette, mdiPencil, mdiPlus, mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       id: String,
       path: String,
@@ -324,31 +309,15 @@
     },
     methods: {
       addStyle() {
-        this.showStyleEditor(VectorStyleUtilities.randomStyle())
+        this.showStyleEditor(window.mapcache.randomStyle())
       },
       addIcon() {
-        const icon = VectorStyleUtilities.getDefaultIcon()
+        const icon = window.mapcache.getDefaultIcon()
+        icon.data = Buffer.from(icon.data)
         this.showIconEditor(icon)
       },
-      determineAssignment(gp, geometryType) {
-        const assignment = {
-          icon: undefined,
-          iconUrl: undefined,
-          style: undefined
-        }
-        let style = GeoPackageStyleUtilities._getTableStyle(gp, this.tableName, geometryType)
-        let icon = GeoPackageStyleUtilities._getTableIcon(gp, this.tableName, geometryType)
-        if (!isNil(style)) {
-          assignment.style = style
-        }
-        if (!isNil(icon)) {
-          assignment.icon = icon
-          assignment.iconUrl = 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
-        }
-        return assignment
-      },
       showStyleEditor(style) {
-        this.editStyle = style
+        this.editStyle = Object.assign({}, style)
         this.editStyleDialog = true
       },
       closeStyleEditor() {
@@ -372,131 +341,91 @@
         this.styleAssignment = null
       },
       async getStyle() {
-        let gp = await GeoPackageAPI.open(this.path)
-        try {
-          this.styleListItems.items = []
-          this.iconListItems.items = []
-          this.assignmentListItems.items = []
-          let featureTableName = this.tableName
-          this.hasStyleExtension = gp.featureStyleExtension.has(featureTableName)
-          if (this.hasStyleExtension) {
-            const styleRows = GeoPackageStyleUtilities._getStyleRows(gp, featureTableName)
-            const iconRows = GeoPackageStyleUtilities._getIconRows(gp, featureTableName)
-            this.styleItems = values(styleRows).map(style => {
-              return {
-                id: style.id,
-                name: style.getName(),
-                description: style.getDescription(),
-                color: style.getHexColor(),
-                opacity: style.getOpacity(),
-                fillColor: style.getFillHexColor(),
-                fillOpacity: style.getFillOpacity(),
-                width: style.getWidth(),
-                styleRow: style
+        const result = await window.mapcache.getGeoPackageFeatureTableStyleData(this.path, this.tableName)
+        this.styleListItems.items = []
+        this.iconListItems.items = []
+        this.assignmentListItems.items = []
+        this.hasStyleExtension = result.hasStyleExtension
+        if (this.hasStyleExtension) {
+          const styleRows = result.styleRows
+          const iconRows = result.iconRows
+          this.styleItems = styleRows
+          this.styleListItems.items = this.styleItems.slice()
+          this.styleListItems.hint = this.styleListItems.items.length === 0
+          this.iconItems = iconRows.map(icon => {
+            icon.data = Buffer.from(icon.data)
+            return icon
+          })
+          this.iconListItems.items = this.iconItems.slice()
+          this.iconListItems.hint = this.iconListItems.items.length === 0
+          const hasStyles = this.styleItems.length > 0
+          if (this.styleItems.length + this.iconItems.length > 0) {
+            const pointAssignment = result.pointAssignment
+            const lineAssignment = result.lineAssignment
+            const polygonAssignment = result.polygonAssignment
+            const multipointAssignment = result.multipointAssignment
+            const multilineAssignment = result.multilineAssignment
+            const multipolygonAssignment = result.multipolygonAssignment
+            const geometryCollectionAssignment = result.geometryCollectionAssignment
+            this.assignmentListItems.items = [
+              {
+                id: 'assignment_point',
+                name: 'Point',
+                geometryType: window.mapcache.GeometryType.POINT,
+                style: pointAssignment.style,
+                icon: pointAssignment.icon
+              },
+              {
+                id: 'assignment_line',
+                name: 'Line',
+                geometryType: window.mapcache.GeometryType.LINESTRING,
+                style: lineAssignment.style,
+                disabled: !hasStyles
+              },
+              {
+                id: 'assignment_polygon',
+                name: 'Polygon',
+                geometryType: window.mapcache.GeometryType.POLYGON,
+                style: polygonAssignment.style,
+                disabled: !hasStyles
+              },
+              {
+                id: 'assignment_multipoint',
+                name: 'Multi Point',
+                geometryType: window.mapcache.GeometryType.MULTIPOINT,
+                style: multipointAssignment.style,
+                icon: multipointAssignment.icon
+              },
+              {
+                id: 'assignment_multiline',
+                name: 'Multi Line',
+                geometryType: window.mapcache.GeometryType.MULTILINESTRING,
+                style: multilineAssignment.style,
+                disabled: !hasStyles
+              },
+              {
+                id: 'assignment_multipolygon',
+                name: 'Multi Polygon',
+                geometryType: window.mapcache.GeometryType.MULTIPOLYGON,
+                style: multipolygonAssignment.style,
+                disabled: !hasStyles
+              },
+              {
+                id: 'assignment_geometrycollection',
+                name: 'Geometry Collection',
+                geometryType: window.mapcache.GeometryType.GEOMETRYCOLLECTION,
+                style: geometryCollectionAssignment.style,
+                disabled: !hasStyles
               }
-            })
-            this.styleListItems.items = this.styleItems.slice()
-            this.styleListItems.hint = this.styleListItems.items.length === 0
-            this.iconItems = values(iconRows).map(icon => {
-              return {
-                id: icon.id,
-                name: icon.name,
-                data: icon.data,
-                width: icon.width,
-                height: icon.height,
-                anchorU: icon.anchorU,
-                anchorV: icon.anchorV,
-                contentType: icon.contentType,
-                url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64'),
-                iconRow: icon
-              }
-            })
-            this.iconListItems.items = this.iconItems.slice()
-            this.iconListItems.hint = this.iconListItems.items.length === 0
-            const hasStyles = this.styleItems.length > 0
-            if (this.styleItems.length + this.iconItems.length > 0) {
-              const pointAssignment = this.determineAssignment(gp, GeometryType.POINT)
-              const lineAssignment = this.determineAssignment(gp, GeometryType.LINESTRING)
-              const polygonAssignment = this.determineAssignment(gp, GeometryType.POLYGON)
-              const multipointAssignment = this.determineAssignment(gp, GeometryType.MULTIPOINT)
-              const multilineAssignment = this.determineAssignment(gp, GeometryType.MULTILINESTRING)
-              const multipolygonAssignment = this.determineAssignment(gp, GeometryType.MULTIPOLYGON)
-              const geometryCollectionAssignment = this.determineAssignment(gp, GeometryType.GEOMETRYCOLLECTION)
-              this.assignmentListItems.items = [
-                {
-                  id: 'assignment_point',
-                  name: 'Point',
-                  geometryType: GeometryType.POINT,
-                  style: pointAssignment.style,
-                  icon: pointAssignment.icon,
-                  iconUrl: pointAssignment.iconUrl
-                },
-                {
-                  id: 'assignment_line',
-                  name: 'Line',
-                  geometryType: GeometryType.LINESTRING,
-                  style: lineAssignment.style,
-                  disabled: !hasStyles
-                },
-                {
-                  id: 'assignment_polygon',
-                  name: 'Polygon',
-                  geometryType: GeometryType.POLYGON,
-                  style: polygonAssignment.style,
-                  disabled: !hasStyles
-                },
-                {
-                  id: 'assignment_multipoint',
-                  name: 'Multi Point',
-                  geometryType: GeometryType.MULTIPOINT,
-                  style: multipointAssignment.style,
-                  icon: multipointAssignment.icon,
-                  iconUrl: multipointAssignment.iconUrl
-                },
-                {
-                  id: 'assignment_multiline',
-                  name: 'Multi Line',
-                  geometryType: GeometryType.MULTILINESTRING,
-                  style: multilineAssignment.style,
-                  disabled: !hasStyles
-                },
-                {
-                  id: 'assignment_multipolygon',
-                  name: 'Multi Polygon',
-                  geometryType: GeometryType.MULTIPOLYGON,
-                  style: multipolygonAssignment.style,
-                  disabled: !hasStyles
-                },
-                {
-                  id: 'assignment_geometrycollection',
-                  name: 'Geometry Collection',
-                  geometryType: GeometryType.GEOMETRYCOLLECTION,
-                  style: geometryCollectionAssignment.style,
-                  disabled: !hasStyles
-                }
-              ]
-              this.assignmentListItems.hint = false
-            } else {
-              this.assignmentListItems.hint = true
-            }
-          }
-          // eslint-disable-next-line no-unused-vars
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to get GeoPackage style.')
-        } finally {
-          try {
-            gp.close()
-            gp = undefined
-            // eslint-disable-next-line no-unused-vars
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to close GeoPackage.')
+            ]
+            this.assignmentListItems.hint = false
+          } else {
+            this.assignmentListItems.hint = true
           }
         }
       },
       addStyleExtensionAndDefaultStyles() {
-        ProjectActions.addStyleExtensionForTable({
+        window.mapcache.addStyleExtensionForTable({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,
@@ -506,7 +435,7 @@
       },
       removeStyleExtensionAndTableStyles() {
         this.removeDialog = false
-        ProjectActions.removeStyleExtensionForTable({
+        window.mapcache.removeStyleExtensionForTable({
           projectId: this.projectId,
           id: this.id,
           tableName: this.tableName,

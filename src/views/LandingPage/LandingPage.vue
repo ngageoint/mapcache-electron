@@ -13,10 +13,10 @@
 </template>
 
 <script>
-  import MapcacheWelcome from './MapcacheWelcome'
-  import Projects from './Projects'
+import MapcacheWelcome from './MapcacheWelcome'
+import Projects from './Projects'
 
-  export default {
+export default {
     name: 'landing-page',
     components: {
       MapcacheWelcome,

@@ -458,17 +458,26 @@
 </template>
 
 <script>
-  import orderBy from 'lodash/orderBy'
-  import { GeoPackageAPI, GeoPackageDataType } from '@ngageoint/geopackage'
-  import StyleEditor from '../StyleEditor/StyleEditor'
-  import FeatureLayerField from './FeatureLayerField'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../lib/vue/EventBus'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
-  import { mdiChevronLeft, mdiSpeedometer, mdiPencil, mdiContentCopy, mdiFormatText, mdiPound, mdiToggleSwitch, mdiCalendar, mdiCalendarClock, mdiTableEye, mdiTrashCan, mdiPalette } from '@mdi/js'
+import orderBy from 'lodash/orderBy'
+import StyleEditor from '../StyleEditor/StyleEditor'
+import FeatureLayerField from './FeatureLayerField'
+import EventBus from '../../lib/vue/EventBus'
+import {
+  mdiCalendar,
+  mdiCalendarClock,
+  mdiChevronLeft,
+  mdiContentCopy,
+  mdiFormatText,
+  mdiPalette,
+  mdiPencil,
+  mdiPound,
+  mdiSpeedometer,
+  mdiTableEye,
+  mdiToggleSwitch,
+  mdiTrashCan
+} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       project: Object,
@@ -484,7 +493,7 @@
     created () {
       let _this = this
       this.loading = true
-      this.styleExtensionEnabled().then(function (hasStyleExtension) {
+      window.mapcache.hasStyleExtension(this.geopackage.path, this.tableName).then(function (hasStyleExtension) {
         _this.hasStyleExtension = hasStyleExtension
         _this.loading = false
       })
@@ -536,12 +545,12 @@
           v => !!v || 'Field name is required',
           v => this.columnNames.map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Field name already exists'
         ],
-        addFieldType: GeoPackageDataType.TEXT,
-        TEXT: GeoPackageDataType.TEXT,
-        FLOAT: GeoPackageDataType.FLOAT,
-        BOOLEAN: GeoPackageDataType.BOOLEAN,
-        DATETIME: GeoPackageDataType.DATETIME,
-        DATE: GeoPackageDataType.DATE
+        addFieldType: window.mapcache.GeoPackageDataType.TEXT,
+        TEXT: window.mapcache.GeoPackageDataType.TEXT,
+        FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
+        BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,
+        DATETIME: window.mapcache.GeoPackageDataType.DATETIME,
+        DATE: window.mapcache.GeoPackageDataType.DATE
       }
     },
     computed: {
@@ -550,7 +559,7 @@
           return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
         },
         set (value) {
-          ProjectActions.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
+          window.mapcache.setGeoPackageFeatureTableVisible({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, visible: value})
         }
       },
       indexed () {
@@ -569,11 +578,11 @@
     asyncComputed: {
       tableFields: {
         get () {
-          return GeoPackageFeatureTableUtilities.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
+          return window.mapcache.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
             const tableFields = []
             this.columnNames = columns._columns.map(c => c.name)
             columns._columns.forEach((column, index) => {
-              if (!column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+              if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
                 tableFields.push({
                   id: column.name + '_' + index,
                   name: column.name.toLowerCase(),
@@ -598,39 +607,19 @@
       }
     },
     methods: {
-      async styleExtensionEnabled () {
-        let hasStyle = false
-        let gp = await GeoPackageAPI.open(this.geopackage.path)
-        try {
-          hasStyle = gp.featureStyleExtension.has(this.tableName)
-          // eslint-disable-next-line no-unused-vars
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to determine if style extension is enabled.')
-        }
-        try {
-          gp.close()
-          gp = undefined
-          // eslint-disable-next-line no-unused-vars
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to close geopackage.')
-        }
-        return hasStyle
-      },
       getSimplifiedType (dataType) {
         let simplifiedType = 'Number'
         switch (dataType) {
-          case GeoPackageDataType.BOOLEAN:
+          case window.mapcache.GeoPackageDataType.BOOLEAN:
             simplifiedType = 'Boolean'
             break
-          case GeoPackageDataType.TEXT:
+          case window.mapcache.GeoPackageDataType.TEXT:
             simplifiedType = 'Text'
             break
-          case GeoPackageDataType.DATE:
+          case window.mapcache.GeoPackageDataType.DATE:
             simplifiedType = 'Date'
             break
-          case GeoPackageDataType.DATETIME:
+          case window.mapcache.GeoPackageDataType.DATETIME:
             simplifiedType = 'Date & Time'
             break
           default:
@@ -641,16 +630,16 @@
       getSimplifiedTypeIcon (dataType) {
         let simplifiedTypeIcon = mdiPound
         switch (dataType) {
-          case GeoPackageDataType.BOOLEAN:
+          case window.mapcache.GeoPackageDataType.BOOLEAN:
             simplifiedTypeIcon = mdiToggleSwitch
             break
-          case GeoPackageDataType.TEXT:
+          case window.mapcache.GeoPackageDataType.TEXT:
             simplifiedTypeIcon = mdiFormatText
             break
-          case GeoPackageDataType.DATE:
+          case window.mapcache.GeoPackageDataType.DATE:
             simplifiedTypeIcon = mdiCalendar
             break
-          case GeoPackageDataType.DATETIME:
+          case window.mapcache.GeoPackageDataType.DATETIME:
             simplifiedTypeIcon = mdiCalendarClock
             break
           default:
@@ -661,19 +650,19 @@
       rename () {
         this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
-        ProjectActions.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
+        window.mapcache.renameGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
         this.$nextTick(() => {
           this.renameDialog = false
         })
       },
       copy () {
         this.copyDialog = false
-        ProjectActions.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
+        window.mapcache.copyGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
         this.showCopiedAlert = true
       },
       deleteTable () {
         this.deleteDialog = false
-        ProjectActions.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+        window.mapcache.deleteGeoPackageFeatureTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
       },
       showRenameDialog () {
         this.renameValid = false
@@ -696,11 +685,11 @@
         this.indexDialog = true
         setTimeout(function () {
           _this.indexMessage = 'Indexing...'
-          GeoPackageFeatureTableUtilities.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
+          window.mapcache.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
             setTimeout(function () {
               _this.indexingDone = true
               _this.indexMessage = 'Indexing Completed'
-              ProjectActions.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
+              window.mapcache.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
             }, 2000)
           })
         }, 1000)
@@ -718,19 +707,19 @@
         this.featureLayerField.name = name
       },
       async zoomToLayer () {
-        const extent = await GeoPackageCommon.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        ProjectActions.zoomToExtent({projectId: this.projectId, extent})
+        const extent = await window.mapcache.getBoundingBoxForTable(this.geopackage.path, this.tableName)
+        window.mapcache.zoomToExtent({projectId: this.projectId, extent})
       },
       addField () {
         this.addFieldDialog = false
-        ProjectActions.addGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.addFieldValue, columnType: this.addFieldType})
+        window.mapcache.addGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.addFieldValue, columnType: this.addFieldType})
         this.addFieldValue = ''
-        this.addFieldType = GeoPackageDataType.TEXT
+        this.addFieldType = window.mapcache.GeoPackageDataType.TEXT
       },
       cancelAddField () {
         this.addFieldDialog = false
         this.addFieldValue = ''
-        this.addFieldType = GeoPackageDataType.TEXT
+        this.addFieldType = window.mapcache.GeoPackageDataType.TEXT
       },
       showFeatureTable () {
         const payload = {
@@ -747,7 +736,7 @@
           if (styleKey !== oldValue) {
             let _this = this
             _this.loading = true
-            this.styleExtensionEnabled().then(function (hasStyleExtension) {
+            window.mapcache.hasStyleExtension(this.geopackage.path, this.tableName).then(function (hasStyleExtension) {
               _this.hasStyleExtension = hasStyleExtension
               _this.loading = false
             })

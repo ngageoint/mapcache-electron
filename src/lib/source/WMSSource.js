@@ -1,5 +1,6 @@
 import Source from './Source'
-import WMSLayer from './layer/tile/WMSLayer'
+import WMSLayer from '../layer/tile/WMSLayer'
+import { WMS } from '../layer/LayerTypes'
 
 export default class WMSSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName, format = 'image/png') {
@@ -41,7 +42,8 @@ export default class WMSSource extends Source {
           layers: layerNames,
           extent,
           version,
-          format: this.format
+          format: this.format,
+          layerType: WMS
         })
       ]
     }

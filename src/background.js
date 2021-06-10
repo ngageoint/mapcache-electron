@@ -57,6 +57,7 @@ async function start() {
 
   MapCacheWindowManager.launchLoaderWindow()
 
+  // TODO: migrate this into loader page...
   const { runMigration } = require('./store/migration/migration')
   // check if store is out of date, if so, delete content
   try {
@@ -73,7 +74,7 @@ async function start() {
     app.quit();
   }
 
-  const { setupInitialDirectories } = require('./lib/util/FileUtilities').default
+  const { setupInitialDirectories } = require('./lib/util/FileUtilities')
   setupInitialDirectories(app.getPath('userData'))
 
   MapCacheWindowManager.start()
@@ -126,13 +127,3 @@ app.once('ready', async () => {
   }
   start()
 })
-
-// function printMemUsage () {
-//   setTimeout(() => {
-//     const memory = process.memoryUsage()
-//     console.log('Electron Main: ' + (memory.heapUsed / 1024.0 / 1024.0) + ' of ' + (memory.heapTotal / 1024.0 / 1024.0) + ' MB used, rss: ' + (memory.rss / 1024.0 / 1024.0) + ' MB, external: ' + (memory.external / 1024.0 / 1024.0) + ' MB');
-//     printMemUsage()
-//   }, 5000)
-// }
-//
-// printMemUsage()

@@ -27,13 +27,12 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
-  import HttpUtilities from '../../lib/network/HttpUtilities'
-  import { mdiAlertCircle } from '@mdi/js'
+import {mapState} from 'vuex'
+import {mdiAlertCircle} from '@mdi/js'
+import {isAuthenticationError, isServerError, isTimeoutError} from '../../lib/network/HttpUtilities'
+import {connectToBaseMap} from '../../lib/network/ServiceConnectionUtils'
 
-  export default {
+export default {
     props: {
       baseMap: Object
     },
@@ -45,11 +44,11 @@
       }),
       troubleShootingMessage () {
         let message = ''
-        if (HttpUtilities.isAuthenticationError(this.baseMap.error)) {
+        if (isAuthenticationError(this.baseMap.error)) {
           message = 'The credentials for this data source are not valid.'
-        } else if (HttpUtilities.isServerError(this.baseMap.error)) {
+        } else if (isServerError(this.baseMap.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
-        } else if (HttpUtilities.isTimeoutError(this.baseMap.error)) {
+        } else if (isTimeoutError(this.baseMap.error)) {
           message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
@@ -78,7 +77,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToBaseMap(this.baseMap, ProjectActions.editBaseMap)) {
+        if (await connectToBaseMap(this.baseMap, window.mapcache.editBaseMap)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

@@ -1,13 +1,52 @@
-import { ipcRenderer } from 'electron'
-import FileUtilities from '../util/FileUtilities'
+import { contextBridge, ipcRenderer } from 'electron'
 import log from 'electron-log'
-import {Context, HtmlCanvasAdapter, SqliteAdapter} from "@ngageoint/geopackage";
+import Store from 'electron-store'
+import { deleteProject } from '../vue/vuex/CommonActions'
+import { disableRemoteSources, newProject } from '../vue/vuex/LandingActions'
+import { createNextAvailableProjectDirectory } from '../util/FileUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+
 Object.assign(console, log.functions)
 
-window.mapcache = {
-  getUserDataDirectory: () => {
-    return ipcRenderer.sendSync('get-user-data-directory')
+const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
+const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
+const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
+
+let storage
+
+const getUserDataDirectory = () => {
+  return ipcRenderer.sendSync('get-user-data-directory')
+}
+
+contextBridge.exposeInMainWorld('mapcache', {
+  connect(payload) {
+    ipcRenderer.send(IPC_EVENT_CONNECT, payload)
   },
+  notifyMain(payload) {
+    ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
+  },
+  onNotifyRenderers(handler) {
+    ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
+  },
+  createStorage(name) {
+    storage = new Store({ name: name })
+  },
+  getState(key) {
+    return storage.get(key)
+  },
+  setState(key, state) {
+    storage.set(key, state)
+  },
+  checkStorage(testKey) {
+    try {
+      storage.set(testKey, testKey)
+      storage.get(testKey)
+      storage.delete(testKey)
+    } catch (error) {
+      throw new Error("[Vuex Electron] Storage is not valid. Please, read the docs.")
+    }
+  },
+  getUserDataDirectory,
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync('get-app-data-directory')
   },
@@ -24,6 +63,10 @@ window.mapcache = {
     ipcRenderer.once('show-project-completed', callback)
   },
   createProjectDirectory: () => {
-    return FileUtilities.createNextAvailableProjectDirectory(window.mapcache.getUserDataDirectory())
-  }
-}
+    return createNextAvailableProjectDirectory(getUserDataDirectory())
+  },
+  disableRemoteSources,
+  newProject,
+  deleteProject,
+  createUniqueID
+})

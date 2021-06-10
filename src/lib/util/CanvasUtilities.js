@@ -1,60 +1,67 @@
-export default class CanvasUtilities {
-  static createCanvasFunction = (width, height) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    return canvas
-  }
+let makeImageDataFunction = (width, height) => {
+  return new ImageData(width, height)
+}
 
-  static setCreateCanvasFunction (f) {
-    CanvasUtilities.createCanvasFunction = f
-  }
+let createCanvasFunction = (width, height) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return canvas
+}
 
-  static createCanvas (width, height) {
-    return CanvasUtilities.createCanvasFunction(width, height)
-  }
+function setCreateCanvasFunction (f) {
+  createCanvasFunction = f
+}
 
-  static makeImageDataFunction = (width, height) => {
-    return new ImageData(width, height)
-  }
+function createCanvas (width, height) {
+  return createCanvasFunction(width, height)
+}
 
-  static disposeCanvas (canvas) {
-    if (canvas != null && canvas.dispose) {
-      canvas.dispose()
-      canvas = null
+function disposeCanvas (canvas) {
+  if (canvas != null && canvas.dispose) {
+    canvas.dispose()
+    canvas = null
+  }
+}
+
+function setMakeImageDataFunction (f) {
+  makeImageDataFunction = f
+}
+
+function makeImageData (width, height) {
+  return makeImageDataFunction(width, height)
+}
+
+function hasTransparentPixels (canvas) {
+  let result = false
+  let data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 255) {
+      result = true
+      break
     }
   }
+  return result
+}
 
-
-  static setMakeImageDataFunction (f) {
-    CanvasUtilities.makeImageDataFunction = f
-  }
-
-  static makeImageData (width, height) {
-    return CanvasUtilities.makeImageDataFunction(width, height)
-  }
-
-  static hasTransparentPixels (canvas) {
-    let result = false
-    let data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 255) {
-        result = true
-        break
-      }
+function isBlank (canvas) {
+  let result = true
+  let data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] !== 0) {
+      result = false
+      break
     }
-    return result
   }
+  return result
+}
 
-  static isBlank (canvas) {
-    let result = true
-    let data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] !== 0) {
-        result = false
-        break
-      }
-    }
-    return result
-  }
+export {
+  setCreateCanvasFunction,
+  createCanvas,
+  disposeCanvas,
+  setMakeImageDataFunction,
+  makeImageData,
+  hasTransparentPixels,
+  isBlank
 }

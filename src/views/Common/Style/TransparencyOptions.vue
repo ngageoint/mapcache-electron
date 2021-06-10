@@ -15,10 +15,10 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import debounce from 'lodash/debounce'
+import isNil from 'lodash/isNil'
+import debounce from 'lodash/debounce'
 
-  export default {
+export default {
     created () {
       this.debounceOpacityUpdated = debounce((value) => {
         if (!isNil(value)) {

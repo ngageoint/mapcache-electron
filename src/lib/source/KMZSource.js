@@ -3,7 +3,7 @@ import path from 'path'
 import AdmZip from 'adm-zip'
 import KMLSource from './KMLSource'
 import Source from './Source'
-import FileUtilities from '../util/FileUtilities'
+import { rmDir } from '../util/FileUtilities'
 
 /**
  * KMZSource represents a .kmz file
@@ -32,7 +32,7 @@ export default class KMZSource extends Source {
     const layers = await kmlSource.retrieveLayers()
 
     // remove unzipped directory
-    FileUtilities.rmDir(unzippedDirectory)
+    rmDir(unzippedDirectory)
 
     return layers
   }

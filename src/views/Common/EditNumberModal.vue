@@ -36,9 +36,9 @@
 </template>
 
 <script>
-  import NumberPicker from './NumberPicker'
+import NumberPicker from './NumberPicker'
 
-  export default {
+export default {
     props: {
       title: String,
       icon: String,

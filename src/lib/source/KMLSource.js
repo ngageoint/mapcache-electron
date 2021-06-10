@@ -9,13 +9,14 @@ import isEmpty from 'lodash/isEmpty'
 import axios from 'axios'
 import { GeometryType } from '@ngageoint/geopackage'
 import Source from './Source'
-import VectorLayer from './layer/vector/VectorLayer'
-import UniqueIDUtilities from '../util/UniqueIDUtilities'
-import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
-import KMLUtilities from '../util/KMLUtilities'
-import VectorStyleUtilities from '../util/VectorStyleUtilities'
-import GeoPackageCommon from '../geopackage/GeoPackageCommon'
-import FileUtilities from '../util/FileUtilities'
+import VectorLayer from '../layer/vector/VectorLayer'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
+import { parseKML, bufferToStream, } from '../util/KMLUtilities'
+import { hashCode, getDefaultIcon } from '../util/VectorStyleUtilities'
+import { getGeoPackageExtent} from '../geopackage/GeoPackageCommon'
+import { createDirectory, createNextAvailableLayerDirectory, rmDir } from '../util/FileUtilities'
+import { VECTOR } from '../layer/LayerTypes'
 
 export default class KMLSource extends Source {
 
@@ -93,7 +94,7 @@ export default class KMLSource extends Source {
                 responseType: 'arraybuffer'
               })
               .then(response => {
-                KMLUtilities.bufferToStream(Buffer.from(response.data)).pipe(writer)
+                bufferToStream(Buffer.from(response.data)).pipe(writer)
                 writer.on('finish', () => {
                   writer.close()
                   resolve()
@@ -128,15 +129,15 @@ export default class KMLSource extends Source {
             } catch (exception) {
               // eslint-disable-next-line no-console
               console.error('Failed to generate icon.')
-              fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
+              fileIcons[iconFile] = getDefaultIcon('Default Icon')
             }
           } else {
-            fileIcons[iconFile] = VectorStyleUtilities.getDefaultIcon('Default Icon')
+            fileIcons[iconFile] = getDefaultIcon('Default Icon')
           }
           iconNumber++
         }
         let icon = fileIcons[iconFile]
-        let iconHash = VectorStyleUtilities.hashCode(icon)
+        let iconHash = hashCode(icon)
         if (isNil(layerStyle.iconRowMap[iconHash])) {
           layerStyle.iconRowMap[iconHash] = icon
         }
@@ -144,7 +145,7 @@ export default class KMLSource extends Source {
       } else {
         let style = KMLSource.getStyleFromFeature(feature)
         if (!isNil(style)) {
-          let styleHash = VectorStyleUtilities.hashCode(style)
+          let styleHash = hashCode(style)
           if (isNil(layerStyle.styleRowMap[styleHash])) {
             layerStyle.styleRowMap[styleHash] = style
           }
@@ -181,14 +182,14 @@ export default class KMLSource extends Source {
     let layers = []
     // setup tmp directory
     const tmpDir = path.join(this.directory, 'tmp')
-    FileUtilities.createDirectory(tmpDir)
+    createDirectory(tmpDir)
     // get kml string, note this could get rather large depending on the file
     const kml = new DOMParser().parseFromString(fs.readFileSync(this.filePath, 'utf8'), 'text/xml')
     // the base directory for the kml content
     let kmlDirectory = path.dirname(this.filePath)
     // parse kml will break up kml into vector layers for each document and geotiff layers for each ground overlay
-    let { documents, geotiffs } = await KMLUtilities.parseKML(kml, kmlDirectory, tmpDir, () => {
-      return { layerId: UniqueIDUtilities.createUniqueID(), layerDirectory: FileUtilities.createNextAvailableLayerDirectory(this.directory), sourceDirectory: this.directory}
+    let { documents, geotiffs } = await parseKML(kml, kmlDirectory, tmpDir, () => {
+      return { layerId: createUniqueID(), layerDirectory: createNextAvailableLayerDirectory(this.directory), sourceDirectory: this.directory}
     })
 
     // if no document was found, the document is the whole kml
@@ -204,17 +205,18 @@ export default class KMLSource extends Source {
       if (featureCollection.features.length > 0) {
         for (let feature of featureCollection.features) {
           if (isNil(feature.id)) {
-            feature.id = UniqueIDUtilities.createUniqueID()
+            feature.id = createUniqueID()
           }
         }
         const { layerId, layerDirectory } = this.createLayerDirectory()
         let fileName = name + '.gpkg'
         let filePath = path.join(layerDirectory, fileName)
         let style = await this.generateStyleForKML(featureCollection.features, kmlDirectory, tmpDir)
-        await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, name, featureCollection, style)
-        const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, name)
+        await buildGeoPackage(filePath, name, featureCollection, style)
+        const extent = await getGeoPackageExtent(filePath, name)
         layers.push(new VectorLayer({
           id: layerId,
+          layerType: VECTOR,
           directory: layerDirectory,
           sourceDirectory: this.directory,
           geopackageFilePath: filePath,
@@ -230,7 +232,7 @@ export default class KMLSource extends Source {
     layers = layers.concat(geotiffs)
 
     // clean up
-    FileUtilities.rmDir(tmpDir)
+    rmDir(tmpDir)
 
     return layers
   }

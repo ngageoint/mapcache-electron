@@ -161,10 +161,9 @@
 </template>
 
 <script>
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import { mdiChevronLeft, mdiPencil, mdiTrashCan } from '@mdi/js'
+import {mdiChevronLeft, mdiPencil, mdiTrashCan} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       geopackage: Object,
@@ -192,12 +191,12 @@
     methods: {
       rename () {
         this.renameDialog = false
-        ProjectActions.renameGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, oldColumnName: this.column.name, newColumnName: this.renamedColumn})
+        window.mapcache.renameGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, oldColumnName: this.column.name, newColumnName: this.renamedColumn})
         this.renamed(this.renamedColumn)
       },
       deleteField () {
         this.deleteDialog = false
-        ProjectActions.deleteGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.column.name})
+        window.mapcache.deleteGeoPackageFeatureTableColumn({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnName: this.column.name})
         this.back()
       },
       showRenameDialog () {

@@ -86,14 +86,11 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import LandingActions from '../../lib/vuex/LandingActions'
-  import EditTextModal from '../Common/EditTextModal'
-  import CommonActions from '../../lib/vuex/CommonActions'
-  import { mdiTrashCan, mdiTrashCanOutline, mdiPlus } from '@mdi/js'
+import {mapState} from 'vuex'
+import EditTextModal from '../Common/EditTextModal'
+import {mdiPlus, mdiTrashCan, mdiTrashCanOutline} from '@mdi/js'
 
-  export default {
+export default {
     components: { EditTextModal },
     computed: {
       ...mapState({
@@ -125,9 +122,9 @@
         this.dialogText = 'Creating '  + projectName + '...'
         this.dialog = true
         this.projectName = ''
-        const id = UniqueIDUtilities.createUniqueID()
+        const id = window.mapcache.createUniqueID()
         const directory = window.mapcache.createProjectDirectory()
-        LandingActions.newProject({id: id, name: projectName, directory: directory})
+        window.mapcache.newProject({id: id, name: projectName, directory: directory})
         window.mapcache.onceProjectShown(() => {
           this.dialog = false
         })
@@ -148,14 +145,14 @@
         this.projectToDelete = null
       },
       remove () {
-        CommonActions.deleteProject(this.projectToDelete)
+        window.mapcache.deleteProject(this.projectToDelete)
         this.deleteProjectDialog = false
         this.projectToDelete = null
       },
       onClickOpenProject (project) {
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
-        LandingActions.disableRemoteSources(project.id)
+        window.mapcache.disableRemoteSources(project.id)
         window.mapcache.onceProjectShown(() => {
           this.dialog = false
         })

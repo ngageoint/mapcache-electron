@@ -33,41 +33,61 @@ class WorkerPoolTaskInfo extends AsyncResource {
   }
 }
 
-class WorkerThreadPool extends EventEmitter {
+export default class WorkerThreadPool extends EventEmitter {
   constructor(numThreads, workerPath) {
     super()
+    this.numThreads = numThreads
     this.workerPath = workerPath
     this.workers = []
     this.freeWorkers = []
     this.queue = []
+  }
 
-    this.on(kWorkerFreedEvent, () => this.run())
-
-    for (let i = 0; i < numThreads; i++) {
-      this.addNewWorker()
+  async initialize () {
+    this.on(kWorkerFreedEvent, this.run)
+    for (let i = 0; i < this.numThreads; i++) {
+      await this.addNewWorker()
     }
   }
 
-  addNewWorker () {
-    const worker = new Worker(path.resolve(this.workerPath))
-    worker.on('message', (result) => {
-      if (worker[kTaskInfo]) {
-        worker[kTaskInfo].done(null, result)
-        delete worker[kTaskInfo]
-      }
-      this.freeWorkers.push(worker)
-      this.emit(kWorkerFreedEvent)
-      if (result != null && result.ready === false) {
-        console.error(result.error)
-      }
+  async addNewWorker () {
+    return new Promise ((resolve, reject) => {
+      const worker = new Worker(path.resolve(this.workerPath))
+      worker.once('error', (err) => {
+        worker.removeAllListeners('error')
+        worker.removeAllListeners('message')
+        reject(err)
+      })
+      // wait for ready message
+      worker.once('message', ({error}) => {
+        worker.removeAllListeners('error')
+        worker.removeAllListeners('message')
+        if (error != null) {
+          reject(error)
+        } else {
+          worker.on('message', ({error, result}) => {
+            if (worker[kTaskInfo]) {
+              worker[kTaskInfo].done(error, result)
+              delete worker[kTaskInfo]
+            }
+            this.freeWorkers.push(worker)
+            this.emit(kWorkerFreedEvent)
+          })
+          worker.on('error', (err) => {
+            if (worker[kTaskInfo]) {
+              worker[kTaskInfo].done(err, null)
+              delete worker[kTaskInfo]
+            }
+            this.freeWorkers.push(worker)
+            this.emit(kWorkerFreedEvent)
+          })
+          this.workers.push(worker)
+          this.freeWorkers.push(worker)
+          this.emit(kWorkerFreedEvent)
+          resolve()
+        }
+      })
     })
-    worker.on('error', (err) => {
-      if (worker[kTaskInfo]) {
-        worker[kTaskInfo].done(err, null)
-        delete worker[kTaskInfo]
-      }
-    })
-    this.workers.push(worker)
   }
 
   hasTasks () {
@@ -101,7 +121,7 @@ class WorkerThreadPool extends EventEmitter {
         await worker.terminate()
         worker[kTaskInfo].done('Cancelled.', null)
         worker[kTaskInfo] = null
-        this.addNewWorker()
+        await this.addNewWorker()
         cancelled = true
       }
     }
@@ -128,5 +148,3 @@ class WorkerThreadPool extends EventEmitter {
     }
   }
 }
-
-module.exports = WorkerThreadPool

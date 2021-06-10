@@ -73,12 +73,11 @@
 </template>
 
 <script>
-  import { mapState, mapActions } from 'vuex'
-  import URLUtilities from '../../lib/util/URLUtilities'
-  import EditTextModal from '../Common/EditTextModal'
-  import { mdiPencil, mdiTrashCan, mdiCloudOutline } from '@mdi/js'
+import {mapActions, mapState} from 'vuex'
+import {mdiCloudOutline, mdiPencil, mdiTrashCan} from '@mdi/js'
+import EditTextModal from '../Common/EditTextModal'
 
-  export default {
+export default {
     components: {
       EditTextModal
     },
@@ -104,7 +103,7 @@
         addUrlDialog: false,
         urlRules: [
           v => !!v || 'URL is required',
-          v => URLUtilities.isUrlValid(v) || 'Invalid URL',
+          v => window.mapcache.isUrlValid(v) || 'Invalid URL',
           v => !this.urls.find(url => url.url.toLowerCase() === v) || 'URL already exists'
         ],
         urlValid: false,
@@ -113,7 +112,7 @@
         editUrlDialog: false,
         editUrlRules: [
           v => !!v || 'URL is required',
-          v => URLUtilities.isUrlValid(v) || 'Invalid URL',
+          v => window.mapcache.isUrlValid(v) || 'Invalid URL',
           v => v !== this.editUrlInitialValue || 'URL unchanged',
           v => !this.urls.find(url => url.url === v) || 'URL already exists'
         ],

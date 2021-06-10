@@ -53,17 +53,16 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import isNil from 'lodash/isNil'
-  import values from 'lodash/values'
-  import keys from 'lodash/keys'
-  import AddBaseMap from './AddBaseMap'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import BaseMap from './BaseMap'
-  import BaseMapTroubleshooting from './BaseMapTroubleshooting'
-  import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
+import {mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import values from 'lodash/values'
+import keys from 'lodash/keys'
+import AddBaseMap from './AddBaseMap'
+import BaseMap from './BaseMap'
+import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 
-  export default {
+export default {
     components: {
       BaseMapTroubleshooting,
       AddBaseMap,
@@ -90,7 +89,7 @@
                 e.stopPropagation()
                 e.preventDefault()
                 const extent = baseMap.extent || [-180, -90, 180, 90]
-                ProjectActions.zoomToExtent({projectId, extent})
+                window.mapcache.zoomToExtent({projectId, extent})
               }
             }
           })

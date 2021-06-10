@@ -239,7 +239,7 @@
         <v-stepper-content  v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0)" step="4">
           <v-card flat tile>
             <v-card-subtitle>
-              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
+              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
             </v-card-subtitle>
             <v-card-text>
               <draggable
@@ -312,20 +312,16 @@
 
 <script>
   import draggable from 'vuedraggable'
-  import { mapActions, mapState } from 'vuex'
-  import URLUtilities from '../../lib/util/URLUtilities'
+  import {mapActions, mapState} from 'vuex'
   import isNil from 'lodash/isNil'
   import difference from 'lodash/difference'
   import isEmpty from 'lodash/isEmpty'
-  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
-  import XYZTileUtilities from '../../lib/util/XYZTileUtilities'
-  import GeoServiceUtilities from '../../lib/util/GeoServiceUtilities'
-  import HttpUtilities from '../../lib/network/HttpUtilities'
-  import { mdiTrashCan } from '@mdi/js'
-  import XYZServerLayer from '../../lib/source/layer/tile/XYZServerLayer'
-  import WMSLayer from '../../lib/source/layer/tile/WMSLayer'
+  import {mdiTrashCan} from '@mdi/js'
+  import WMSLayer from '../../lib/layer/tile/WMSLayer'
+  import XYZServerLayer from '../../lib/layer/tile/XYZServerLayer'
+  import {SERVICE_TYPE, DEFAULT_TIMEOUT, getServiceName, isAuthenticationError, isServerError, isTimeoutError} from '../../lib/network/HttpUtilities'
+  import {testServiceConnection} from '../../lib/network/ServiceConnectionUtils'
+  import reverse from 'lodash/reverse'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -352,7 +348,7 @@
         }
       },
       importReady () {
-        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === HttpUtilities.SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ)
+        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === SERVICE_TYPE.XYZ)
       },
       dragOptions () {
         return {
@@ -364,7 +360,7 @@
     data () {
       return {
         mdiTrashCan: mdiTrashCan,
-        supportedImageFormats: GeoServiceUtilities.supportedImageFormats,
+        supportedImageFormats: window.mapcache.supportedImageFormats,
         connected: false,
         step: 1,
         drag: false,
@@ -379,8 +375,8 @@
         dataSourceUrl: null,
         dataSourceUrlValid: true,
         dataSourceUrlRules: [v => !!v || 'URL is required'],
-        supportedServiceTypes: [{value: HttpUtilities.SERVICE_TYPE.WMS, name: 'WMS'}, {value: HttpUtilities.SERVICE_TYPE.WFS, name: 'WFS'}, {value: HttpUtilities.SERVICE_TYPE.XYZ, name: 'XYZ'}, {value: HttpUtilities.SERVICE_TYPE.ARCGIS_FS, name: 'ArcGIS FS'}],
-        selectedServiceType: HttpUtilities.SERVICE_TYPE.XYZ,
+        supportedServiceTypes: [{value: SERVICE_TYPE.WMS, name: 'WMS'}, {value: SERVICE_TYPE.WFS, name: 'WFS'}, {value: SERVICE_TYPE.XYZ, name: 'XYZ'}, {value: SERVICE_TYPE.ARCGIS_FS, name: 'ArcGIS FS'}],
+        selectedServiceType: SERVICE_TYPE.XYZ,
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
         serviceLayers: [],
@@ -419,15 +415,15 @@
         this.getServiceInfo(this.selectedServiceType)
       },
       async addLayer () {
-        if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ) {
-          await this.processXYZUrl(XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl))
+        if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
+          await this.processXYZUrl(window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl))
         } else {
           await this.confirmLayerImport()
         }
       },
       close () {
         this.previewing = false
-        ProjectActions.clearPreviewLayer(({projectId: this.project.id}))
+        window.mapcache.clearPreviewLayer(({projectId: this.project.id}))
         this.$nextTick(() => {
           this.back()
         })
@@ -442,27 +438,27 @@
         this.unsupportedServiceLayers = []
         this.error = null
         const options = {}
-        options.timeout = HttpUtilities.DEFAULT_TIMEOUT
+        options.timeout = DEFAULT_TIMEOUT
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
         }
         options.allowAuth = true
 
-        const {queryParams} = URLUtilities.getBaseUrlAndQueryParams(this.dataSourceUrl)
+        const {queryParams} = window.mapcache.getBaseUrlAndQueryParams(this.dataSourceUrl)
         if (!isNil(queryParams.version)) {
           options.version = queryParams.version
         }
 
-        const {serviceInfo, error} = await ServiceConnectionUtils.testServiceConnection(this.dataSourceUrl, serviceType, options)
+        const {serviceInfo, error} = await testServiceConnection(this.dataSourceUrl, serviceType, options)
 
         if (!isNil(error)) {
           this.authValid = false
-          if (HttpUtilities.isAuthenticationError(error)) {
-            this.error = 'Access to the ' + HttpUtilities.getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
-          } else if (HttpUtilities.isServerError(error)) {
-            this.error = 'Something went wrong trying to access the ' + HttpUtilities.getServiceName(serviceType) + ' service.'
-          } else if (HttpUtilities.isTimeoutError(error)) {
-            this.error = 'The request to the ' + HttpUtilities.getServiceName(serviceType) + ' service timed out.'
+          if (isAuthenticationError(error)) {
+            this.error = 'Access to the ' + getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
+          } else if (isServerError(error)) {
+            this.error = 'Something went wrong trying to access the ' + getServiceName(serviceType) + ' service.'
+          } else if (isTimeoutError(error)) {
+            this.error = 'The request to the ' + getServiceName(serviceType) + ' service timed out.'
           } else {
             this.error = error
           }
@@ -471,11 +467,11 @@
         if (!isNil(serviceInfo)) {
           setTimeout(() => {
             this.authValid = true
-            this.accessDeniedOrForbidden = HttpUtilities.isAuthenticationError(error)
+            this.accessDeniedOrForbidden = isAuthenticationError(error)
             if (!isNil(serviceInfo)) {
-              if (serviceType === HttpUtilities.SERVICE_TYPE.WMS) {
+              if (serviceType === SERVICE_TYPE.WMS) {
                 this.summaryStep = 5
-              } else if (serviceType === HttpUtilities.SERVICE_TYPE.WFS || serviceType === HttpUtilities.SERVICE_TYPE.ARCGIS_FS) {
+              } else if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS) {
                 this.summaryStep = 4
               } else {
                 this.summaryStep = 3
@@ -493,13 +489,13 @@
       },
       async confirmLayerImport () {
         if (this.selectedDataSourceLayers.length > 0) {
-          const id = UniqueIDUtilities.createUniqueID()
+          const id = window.mapcache.createUniqueID()
           let sourceToProcess = {
             id: id,
             directory: window.mapcache.createSourceDirectory(this.project.directory),
             url: this.dataSourceUrl,
             serviceType: this.selectedServiceType,
-            layers: this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : this.sortedLayers.slice(),
+            layers: this.selectedServiceType === SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : reverse(this.sortedLayers.slice()),
             name: this.dataSourceName,
             format: this.serviceInfo.format
           }
@@ -525,7 +521,7 @@
         }
       },
       async processXYZUrl (url) {
-        const id = UniqueIDUtilities.createUniqueID()
+        const id = window.mapcache.createUniqueID()
         let sourceToProcess = {
           id: id,
           directory: window.mapcache.createSourceDirectory(this.project.directory),
@@ -570,8 +566,8 @@
       async sendLayerPreview () {
         let layer
         if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
-          if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WMS) {
-            const layerNames = this.sortedLayers.map(layer => layer.name)
+          if (this.selectedServiceType === SERVICE_TYPE.WMS && this.sortedLayers.length > 0) {
+            const layerNames = reverse(this.sortedLayers.map(layer => layer.name))
             let extent = this.sortedLayers[0].extent
             this.sortedLayers.forEach(layer => {
               if (layer.extent[0] < extent[0]) {
@@ -588,14 +584,13 @@
               }
             })
             const version = this.sortedLayers[0].version
-            layer = new WMSLayer({id: UniqueIDUtilities.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format})
-          } else if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.XYZ) {
-            layer = new XYZServerLayer({id: UniqueIDUtilities.createUniqueID(), filePath: XYZTileUtilities.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false})
+            layer = new WMSLayer({id: window.mapcache.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format})
+          } else if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
+            layer = new XYZServerLayer({id: window.mapcache.createUniqueID(), filePath: window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false})
           }
         }
         if (!isNil(layer)) {
-          await layer.initialize()
-          ProjectActions.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
+          window.mapcache.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
         } else {
           this.previewing = false
         }
@@ -632,22 +627,22 @@
             let selectedServiceType = -1
             let requiresSubdomains = false
             let valid = false
-            if (URLUtilities.isXYZ(newValue)) {
-              requiresSubdomains = URLUtilities.requiresSubdomains(newValue)
+            if (window.mapcache.isXYZ(newValue)) {
+              requiresSubdomains = window.mapcache.requiresSubdomains(newValue)
               selectedServiceType = 2
               valid = true
-            } else if (URLUtilities.isWFS(newValue)) {
+            } else if (window.mapcache.isWFS(newValue)) {
               selectedServiceType = 1
               valid = true
-            } else if (URLUtilities.isWMS(newValue)) {
+            } else if (window.mapcache.isWMS(newValue)) {
               selectedServiceType = 0
               valid = true
-            } else if (URLUtilities.isArcGISFeatureService(newValue)) {
+            } else if (window.mapcache.isArcGISFeatureService(newValue)) {
               selectedServiceType = 3
               valid = true
             } else {
               serviceTypeAutoDetected = false
-              valid = URLUtilities.isUrlValid(newValue)
+              valid = window.mapcache.isUrlValid(newValue)
             }
             this.urlIsValid = valid
             if (valid) {
@@ -714,14 +709,14 @@
             if (previewing) {
               this.sendLayerPreview()
             } else {
-              ProjectActions.clearPreviewLayer(({projectId: this.project.id}))
+              window.mapcache.clearPreviewLayer(({projectId: this.project.id}))
             }
           })
         }
       },
       sortedLayers: {
         handler () {
-          if (this.selectedServiceType === HttpUtilities.SERVICE_TYPE.WMS && this.connected && this.previewing) {
+          if (this.selectedServiceType === SERVICE_TYPE.WMS && this.connected && this.previewing) {
             this.sendLayerPreview()
           }
         }

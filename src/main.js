@@ -1,23 +1,39 @@
 import Vue from 'vue'
 import App from './views/App.vue'
 import router from './router'
-import store from './store'
 import AsyncComputed from 'vue-async-computed'
-import vuetify from './lib/vuetify/vuetify.js' // path to vuetify export
+import vuetify from './lib/vue/vuetify/vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
 import axios from 'axios'
-import CanvasUtilites from './lib/util/CanvasUtilities'
-import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
-import log from 'electron-log'
+import { setCreateCanvasFunction } from './lib/util/CanvasUtilities'
+import createMapCachePersistedStateWrapper from './lib/vue/vuex/MapCachePersistedStateWrapper'
+import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedMutationsWrapper'
+import Vuex from 'vuex'
+import modules from './store/modules'
 
-Object.assign(console, log.functions)
+Vue.use(Vuex)
+
 if (window.mapcache.setupGeoPackgeContext) {
   window.mapcache.setupGeoPackgeContext()
 }
-Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter);
+
+let store
+try {
+  store = new Vuex.Store({
+    modules,
+    plugins: [
+      createMapCachePersistedStateWrapper(),
+      createMapCacheSharedMutationsWrapper(),
+    ],
+    strict: true
+  })
+} catch (e) {
+  console.error(e)
+}
+
 // use BrowserCanvasAdapter in renderer processes
-CanvasUtilites.setCreateCanvasFunction((width, height) => {
+setCreateCanvasFunction((width, height) => {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height

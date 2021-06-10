@@ -1,13 +1,35 @@
-import { ipcRenderer } from 'electron'
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import UniqueIDUtilities from '../util/UniqueIDUtilities'
-import HttpUtilities from './HttpUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+import { USER_CANCELLED_MESSAGE, TIMEOUT_MESSAGE } from './HttpUtilities'
 
 export default class CancellableTileRequest {
   cancelled = false
   source
   axiosRequestScheduler
+  registerRequestTimeoutListener
+  unregisterRequestTimeoutListener
+
+  /**
+   * Constructor
+   * @param isElectron - used to specify the context. if the context is the browser, it will need to use the mapcache api, otherwise it can import electron libraries
+   */
+  constructor (isElectron = false) {
+    if (isElectron) {
+      const { ipcRenderer } = require('electron')
+      this.registerRequestTimeoutListener = (requestId, listener) => {
+        const channel = 'request-timeout-' + requestId
+        ipcRenderer.once(channel, listener)
+      }
+      this.unregisterRequestTimeoutListener = (requestId, listener) => {
+        const channel = 'request-timeout-' + requestId
+        ipcRenderer.off(channel, listener)
+      }
+    } else {
+      this.registerRequestTimeoutListener = window.mapcache.registerRequestTimeoutListener
+      this.unregisterRequestTimeoutListener = window.mapcache.unregisterRequestTimeoutListener
+    }
+  }
 
   /**
    * If a request is currently active, call cancelToken function
@@ -17,7 +39,7 @@ export default class CancellableTileRequest {
     this.cancelled = true
     if (!isNil(this.source)) {
       const token = this.source.token
-      this.source.cancel(HttpUtilities.USER_CANCELLED_MESSAGE)
+      this.source.cancel(USER_CANCELLED_MESSAGE)
       if (!isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.cancel(token)
       }
@@ -27,7 +49,7 @@ export default class CancellableTileRequest {
   timeout () {
     if (!isNil(this.source)) {
       const token = this.source.token
-      this.source.cancel(HttpUtilities.TIMEOUT_MESSAGE)
+      this.source.cancel(TIMEOUT_MESSAGE)
       if (!isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.cancel(token)
       }
@@ -49,8 +71,7 @@ export default class CancellableTileRequest {
 
     this.axiosRequestScheduler = axiosRequestScheduler
     while (!this.cancelled && isNil(dataUrl) && attempts <= retryAttempts) {
-      const requestId = UniqueIDUtilities.createUniqueID()
-      const requestTimeoutChannel = 'request-timeout-' + requestId
+      const requestId = createUniqueID()
       const timeoutListener = () => {
         this.timeout()
       }
@@ -60,7 +81,7 @@ export default class CancellableTileRequest {
       }
       headers['x-mapcache-connection-id'] = requestId
       try {
-        ipcRenderer.once(requestTimeoutChannel, timeoutListener)
+        this.registerRequestTimeoutListener(requestId, timeoutListener)
         const CancelToken = axios.CancelToken
         this.source = CancelToken.source()
         let response = await axiosRequestScheduler.getAxiosInstance()({
@@ -82,7 +103,7 @@ export default class CancellableTileRequest {
           error = undefined
         }
       } finally {
-        ipcRenderer.off(requestTimeoutChannel, timeoutListener)
+        this.unregisterRequestTimeoutListener(requestId, timeoutListener)
         attempts++
       }
     }

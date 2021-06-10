@@ -1,7 +1,8 @@
 import Source from './Source'
 import AdmZip from 'adm-zip'
 import path from 'path'
-import XYZFileLayer from './layer/tile/XYZFileLayer'
+import XYZFileLayer from '../layer/tile/XYZFileLayer'
+import { XYZ_FILE } from '../layer/LayerTypes'
 
 export default class XYZFileSource extends Source {
   async retrieveLayers () {
@@ -33,10 +34,12 @@ export default class XYZFileSource extends Source {
     return [
       new XYZFileLayer({
         id: layerId,
+        layerType: XYZ_FILE,
         directory: layerDirectory,
         sourceDirectory: this.directory,
         filePath: filePath,
         sourceLayerName: name,
+        extent: [-180, -90, 180, 90],
         minZoom,
         maxZoom
       })

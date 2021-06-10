@@ -18,8 +18,6 @@ module.exports = {
         projectPreload: 'src/lib/preload/projectPreload.js',
         workerPreload: 'src/lib/preload/workerPreload.js'
       },
-      nodeIntegration: true,
-      nodeIntegrationInWorker: true,
       chainWebpackMainProcess: config => {
         // config.plugin('analyse').use(
         //   BundleAnalyzerPlugin,
@@ -98,6 +96,8 @@ module.exports = {
           "**/node_modules/pngquant-bin/**/*",
           "**/node_modules/better-sqlite3/**/*",
           "**/node_modules/mime/**/*",
+          "**/node_modules/conf/**/*",
+          "**/node_modules/ajv-formats/**/*",
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
           "**/mapcacheThread.js"

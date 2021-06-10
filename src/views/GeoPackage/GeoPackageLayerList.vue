@@ -38,9 +38,6 @@
 </template>
 
 <script>
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-
   export default {
     props: {
       geopackage: Object,
@@ -62,12 +59,12 @@
               _this.layerSelected(key)
             },
             setVisible: function (e) {
-              ProjectActions.setGeoPackageTileTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !tileLayer.visible})
+              window.mapcache.setGeoPackageTileTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !tileLayer.visible})
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              GeoPackageCommon.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                ProjectActions.zoomToExtent({projectId: _this.projectId, extent})
+              window.mapcache.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                window.mapcache.zoomToExtent({projectId: _this.projectId, extent})
               })
               e.stopPropagation()
             },
@@ -85,12 +82,12 @@
               _this.layerSelected(key)
             },
             setVisible: function (e) {
-              ProjectActions.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
+              window.mapcache.setGeoPackageFeatureTableVisible({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: key, visible: !featureLayer.visible})
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              GeoPackageCommon.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                ProjectActions.zoomToExtent({projectId: _this.projectId, extent})
+              window.mapcache.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
+                window.mapcache.zoomToExtent({projectId: _this.projectId, extent})
               })
               e.stopPropagation()
             },

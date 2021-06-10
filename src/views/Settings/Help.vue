@@ -40,9 +40,16 @@
 </template>
 
 <script>
-  import { mdiHelpCircleOutline, mdiFolderOutline, mdiPackageVariant, mdiLayersOutline, mdiCogOutline, mdiChatQuestionOutline } from '@mdi/js'
+import {
+  mdiChatQuestionOutline,
+  mdiCogOutline,
+  mdiFolderOutline,
+  mdiHelpCircleOutline,
+  mdiLayersOutline,
+  mdiPackageVariant
+} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       close: Function
     },

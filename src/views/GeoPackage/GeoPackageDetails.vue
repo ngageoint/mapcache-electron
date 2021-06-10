@@ -63,8 +63,6 @@
 </template>
 
 <script>
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-
   export default {
     props: {
       geopackage: Object
@@ -77,7 +75,7 @@
     asyncComputed: {
       details: {
         get () {
-          return GeoPackageCommon.getDetails(this.geopackage.path).then(result => {
+          return window.mapcache.getDetails(this.geopackage.path).then(result => {
             return result
           })
         },

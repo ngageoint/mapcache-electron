@@ -15,7 +15,10 @@
           <v-card-subtitle :class="index === 0 ? 'mt-2 mb-0 pa-0' : 'mt-1 mb-0 pa-0'" v-for="(text, index) in status.message.split('\n')" :key="index">
             {{ text }}
           </v-card-subtitle>
-          <v-progress-linear class="mt-4" :indeterminate="status.progress === -1" :value="error ? 100 : status.progress" :color="error ? 'warning' : 'primary'"></v-progress-linear>
+          <p v-if="status.error">
+            {{ status.error }}
+          </p>
+          <v-progress-linear class="mt-4" :indeterminate="status.progress === -1" :value="status.error ? 100 : status.progress" :color="status.error ? 'warning' : 'primary'"></v-progress-linear>
         </v-card-text>
         <v-card-actions class="mt-8">
           <v-spacer></v-spacer>
@@ -173,7 +176,7 @@
         <v-stepper-content step="4">
           <v-card flat tile>
             <v-card-subtitle>
-              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered first.
+              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
             </v-card-subtitle>
             <v-card-text>
               <draggable
@@ -341,22 +344,17 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import isNil from 'lodash/isNil'
-  import keys from 'lodash/keys'
-  import debounce from 'lodash/debounce'
-  import draggable from 'vuedraggable'
-  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import NumberPicker from '../Common/NumberPicker'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../lib/vue/EventBus'
-  import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
-  import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
-  import GeoPackageCommon from '../../lib/geopackage/GeoPackageCommon'
-  import GeoPackageTileTableUtilities from '../../lib/geopackage/GeoPackageTileTableUtilities'
-  import CommonActions from '../../lib/vuex/CommonActions'
+import {mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import debounce from 'lodash/debounce'
+import draggable from 'vuedraggable'
+import NumberPicker from '../Common/NumberPicker'
+import EventBus from '../../lib/vue/EventBus'
+import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 
-  export default {
+export default {
     props: {
       project: Object,
       geopackage: Object,
@@ -382,7 +380,6 @@
           progress: 0.0
         },
         processing: false,
-        error: false,
         done: false,
         tileScaling: false,
         minZoom: 0,
@@ -401,21 +398,21 @@
       async cancelAddTileLayer () {
         const self = this
         this.cancelling = true
-        window.mapcache.cancelAddTileLayer(this.configuration, () => {
+        window.mapcache.cancelAddTileLayer(this.configuration).then(() => {
           setTimeout(() => {
-            GeoPackageCommon.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+            window.mapcache.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
               self.status.progress = 100
-              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             }).catch(() => {
               // table may not have been created yet
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
               self.status.progress = 100
-              ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             })
           }, 500)
         })
@@ -425,7 +422,7 @@
       async addTileLayer () {
         this.processing = true
         this.configuration = {
-          id: UniqueIDUtilities.createUniqueID(),
+          id: window.mapcache.createUniqueID(),
           path: this.geopackage.path,
           projectId: this.project.id,
           table: this.layerName,
@@ -444,15 +441,15 @@
           if (!this.done) {
             this.status = status
           }
-        }, () => {
+        }).then(() => {
           this.done = true
-          ProjectActions.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          ProjectActions.notifyTab({projectId: this.project.id, tabId: 0})
+          window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
         })
       },
       cancel () {
         if (!isNil(this.project.boundingBoxFilterEditing)) {
-          ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+          window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
         }
         this.back()
       },
@@ -470,19 +467,19 @@
       },
       setBoundingBoxFilterToExtent () {
         // eslint-disable-next-line no-unused-vars
-        ProjectActions.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
+        window.mapcache.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
           // eslint-disable-next-line no-console
           console.error('Failed to set bounding box filter to the extent of visible layers.')
         })
       },
       resetBoundingBox () {
-        ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+        window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
       },
       editBoundingBox (mode) {
-        ProjectActions.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
+        window.mapcache.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
       },
       stopEditingBoundingBox () {
-        ProjectActions.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+        window.mapcache.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
       },
       areZoomsValid () {
         return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
@@ -494,7 +491,7 @@
         })
         let tiles = 0
         if (this.areZoomsValid()) {
-          tiles = GeoPackageTileTableUtilities.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
+          tiles = window.mapcache.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
         }
         return tiles
       },
@@ -504,7 +501,7 @@
         const geopackageKeys = keys(this.project.geopackages)
         for (let i = 0; i < geopackageKeys.length; i++) {
           const geopackage = this.project.geopackages[geopackageKeys[i]]
-          if (await GeoPackageCommon.isHealthy(geopackage)) {
+          if (await window.mapcache.isHealthy(geopackage)) {
             Object.keys(geopackage.tables.tiles).forEach(table => {
               const tableName = table
               const visible = geopackage.tables.tiles[table].visible
@@ -518,12 +515,12 @@
                 visible,
                 type: 'tile',
                 changeVisibility: debounce(() => {
-                  ProjectActions.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                  window.mapcache.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ProjectActions.zoomToExtent({projectId, extent})
+                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    window.mapcache.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
@@ -541,12 +538,12 @@
                 visible,
                 type: 'feature',
                 changeVisibility: debounce(() => {
-                  ProjectActions.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                  window.mapcache.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  GeoPackageCommon.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    ProjectActions.zoomToExtent({projectId, extent})
+                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
+                    window.mapcache.zoomToExtent({projectId, extent})
                   })
                 }, 100)
               })
@@ -567,12 +564,12 @@
             type: source.pane === 'vector' ? 'feature' : 'tile',
             changeVisibility: debounce(() => {
               if (isNil(source.error)) {
-                CommonActions.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
+                window.mapcache.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
               }
             }, 100),
             zoomTo: debounce((e) => {
               e.stopPropagation()
-              ProjectActions.zoomToExtent({projectId, extent: source.extent})
+              window.mapcache.zoomToExtent({projectId, extent: source.extent})
             }, 100)
           }
         })
@@ -671,7 +668,7 @@
       this.$nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
-      ProjectActions.clearBoundingBoxFilter({projectId: this.project.id})
+      window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
       const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
       this.minZoom = Math.min(20, Math.max(0, mapZoom))
       this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
@@ -679,7 +676,7 @@
       this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
     },
     beforeUnmount () {
-      ProjectActions.resetBoundingBox()
+      window.mapcache.resetBoundingBox()
     }
   }
 </script>

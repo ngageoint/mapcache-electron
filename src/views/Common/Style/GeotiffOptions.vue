@@ -147,11 +147,11 @@
 </template>
 
 <script>
-  import debounce from 'lodash/debounce'
-  import cloneDeep from 'lodash/cloneDeep'
-  import isNil from 'lodash/isNil'
+import debounce from 'lodash/debounce'
+import cloneDeep from 'lodash/cloneDeep'
+import isNil from 'lodash/isNil'
 
-  export default {
+export default {
     data () {
       return {
         globalNoDataValue: this.configuration.globalNoDataValue

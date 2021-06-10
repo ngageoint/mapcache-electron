@@ -35,12 +35,11 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import SourceVisibilitySwitch from './SourceVisibilitySwitch'
-  import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import isNil from 'lodash/isNil'
+import SourceVisibilitySwitch from './SourceVisibilitySwitch'
+import DataSourceTroubleshooting from './DataSourceTroubleshooting'
 
-  export default {
+export default {
     components: {
       DataSourceTroubleshooting,
       SourceVisibilitySwitch
@@ -59,7 +58,7 @@
           const sourceId = key
           const projectId = _this.projectId
           const zoomTo = (e) => {
-            ProjectActions.zoomToExtent({projectId, extent: source.extent})
+            window.mapcache.zoomToExtent({projectId, extent: source.extent})
             e.stopPropagation()
           }
           items.push({

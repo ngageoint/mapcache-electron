@@ -27,14 +27,13 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import isNil from 'lodash/isNil'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import ServiceConnectionUtils from '../../lib/network/ServiceConnectionUtils'
-  import HttpUtilities from '../../lib/network/HttpUtilities'
-  import { mdiAlertCircle } from '@mdi/js'
+import {mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import {mdiAlertCircle} from '@mdi/js'
+import {DEFAULT_TIMEOUT, isAuthenticationError, isServerError, isTimeoutError} from '../../lib/network/HttpUtilities'
+import {connectToSource} from '../../lib/network/ServiceConnectionUtils'
 
-  export default {
+export default {
     props: {
       source: {
         type: Object,
@@ -54,11 +53,11 @@
       }),
       troubleShootingMessage () {
         let message = ''
-        if (HttpUtilities.isAuthenticationError(this.source.error)) {
+        if (isAuthenticationError(this.source.error)) {
           message = 'The credentials for this data source are not valid.'
-        } else if (HttpUtilities.isServerError(this.source.error)) {
+        } else if (isServerError(this.source.error)) {
           message = 'There is something wrong with this data source\'s server. Please contact the server\'s administrator for assistance.'
-        } else if (HttpUtilities.isTimeoutError(this.source.error)) {
+        } else if (isTimeoutError(this.source.error)) {
           message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
         } else {
           message = 'There was an error requesting data from the data source\'s server.'
@@ -87,7 +86,7 @@
         this.reconnecting = false
       },
       async signIn () {
-        if (await ServiceConnectionUtils.connectToSource(this.projectId, this.source, ProjectActions.setDataSource, true, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : HttpUtilities.DEFAULT_TIMEOUT)) {
+        if (await connectToSource(this.projectId, this.source, window.mapcache.setDataSource, true, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0

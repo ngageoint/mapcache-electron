@@ -56,12 +56,12 @@
 </template>
 
 <script>
-  import debounce from 'lodash/debounce'
-  import isNil from 'lodash/isNil'
-  import MBStyleEditor from './MBStyleEditor'
-  import GeometryStyleSvg from '../GeometryStyleSvg'
+import debounce from 'lodash/debounce'
+import isNil from 'lodash/isNil'
+import MBStyleEditor from './MBStyleEditor'
+import GeometryStyleSvg from '../GeometryStyleSvg'
 
-  export default {
+export default {
     components: {
       GeometryStyleSvg,
       MBStyleEditor

@@ -160,23 +160,20 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
-  import isNil from 'lodash/isNil'
-  import Vue from 'vue'
-  import path from 'path'
-  import jetpack from 'fs-jetpack'
-  import LeafletMap from '../Map/LeafletMap'
-  import PreviewMap from '../Map/PreviewMap'
-  import Settings from '../Settings/Settings'
-  import GeoPackages from '../GeoPackage/GeoPackages'
-  import DataSources from '../DataSources/DataSources'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import EventBus from '../../lib/vue/EventBus'
-  import BasicAuth from '../Common/BasicAuth'
-  import { mdiPackageVariant, mdiLayersOutline, mdiCogOutline } from '@mdi/js'
-  import FileConstants from '../../lib/util/FileConstants'
+import {mapGetters, mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import Vue from 'vue'
+import EventBus from '../../lib/vue/EventBus'
+import LeafletMap from '../Map/LeafletMap'
+import PreviewMap from '../Map/PreviewMap'
+import Settings from '../Settings/Settings'
+import GeoPackages from '../GeoPackage/GeoPackages'
+import DataSources from '../DataSources/DataSources'
+import BasicAuth from '../Common/BasicAuth'
+import {mdiCogOutline, mdiLayersOutline, mdiPackageVariant} from '@mdi/js'
+import {SUPPORTED_FILE_EXTENSIONS_WITH_DOT} from '../../lib/util/FileConstants'
 
-  export default {
+export default {
     data () {
       return {
         mdiPackageVariant: mdiPackageVariant,
@@ -259,7 +256,7 @@
           }
           if (!isNil(this.item) && this.item >= 0 && tabNotification[this.item]) {
             tabNotification[this.item] = false
-            ProjectActions.clearNotification({projectId: this.project.id, tabId: this.item})
+            window.mapcache.clearNotification({projectId: this.project.id, tabId: this.item})
           }
           return tabNotification
         },
@@ -297,7 +294,7 @@
         return bounds
       },
       saveProjectName (val) {
-        ProjectActions.setProjectName({project: this.project, name: val})
+        window.mapcache.setProjectName({project: this.project, name: val})
       },
       back () {
         this.item = undefined
@@ -320,9 +317,9 @@
           e.preventDefault()
           let geopackagesToAdd = []
           let dataSourcesToAdd = []
-          const supportedExtensions = FileConstants.SUPPORTED_FILE_EXTENSIONS_WITH_DOT
+          const supportedExtensions = SUPPORTED_FILE_EXTENSIONS_WITH_DOT
           for (let f of e.dataTransfer.files) {
-            const extension = path.extname(f.path)
+            const extension = window.mapcache.getExtensionName(f.path)
             // try to add a geopackage to the project
             if (extension === '.gpkg') {
               geopackagesToAdd.push(f.path)
@@ -335,17 +332,14 @@
             const path = geopackagesToAdd[i]
             const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
             if (!existsInApp) {
-              ProjectActions.addGeoPackage({projectId: this.project.id, filePath: path})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: path})
             }
           }
 
           let fileInfos = []
           for (let i = 0; i < dataSourcesToAdd.length; i++) {
             const file = dataSourcesToAdd[i]
-            let fileInfo = jetpack.inspect(file, {
-              times: true,
-              absolutePath: true
-            })
+            let fileInfo = window.mapcache.getFileInfo(file)
             fileInfo.lastModified = fileInfo.modifyTime.getTime()
             fileInfo.lastModifiedDate = fileInfo.modifyTime
             fileInfo.path = fileInfo.absolutePath
@@ -391,7 +385,7 @@
       item: {
         handler (newValue) {
           if (!isNil(this.tabNotification[newValue]) && this.tabNotification[newValue]) {
-            ProjectActions.clearNotification({projectId: this.project.id, tabId: newValue})
+            window.mapcache.clearNotification({projectId: this.project.id, tabId: newValue})
           }
         }
       }
@@ -399,11 +393,11 @@
     mounted: function () {
       let uistate = this.getUIStateByProjectId(this.project.id)
       if (!uistate) {
-        ProjectActions.addProjectState({projectId: this.project.id})
+        window.mapcache.addProjectState({projectId: this.project.id})
       }
-      ProjectActions.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
-      ProjectActions.clearNotifications({projectId: this.project.id})
-      ProjectActions.clearPreviewLayer({projectId: this.project.id})
+      window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+      window.mapcache.clearNotifications({projectId: this.project.id})
+      window.mapcache.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
 
       window.mapcache.removeClosingProjectWindowListener()

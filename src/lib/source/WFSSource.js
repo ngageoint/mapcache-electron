@@ -1,18 +1,19 @@
 import Source from './Source'
 import axios from 'axios'
 import path from 'path'
-import VectorLayer from './layer/vector/VectorLayer'
+import VectorLayer from '../layer/vector/VectorLayer'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import GeoServiceUtilities from '../util/GeoServiceUtilities'
+import { getLayerOutputFormat, getFeatureRequestURL } from '../util/GeoServiceUtilities'
 import GML2 from 'ol/format/GML2'
 import GML3 from 'ol/format/GML3'
 import GML32 from 'ol/format/GML32'
 import GeoJSON from 'ol/format/GeoJSON'
 import WFS from 'ol/format/WFS'
-import OpenLayersProjectionUtilities from '../projection/OpenLayersProjectionUtilities'
-import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
-import GeoPackageCommon from '../geopackage/GeoPackageCommon'
+import { addTransformation } from '../projection/OpenLayersProjectionUtilities'
+import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
+import { getGeoPackageExtent } from '../geopackage/GeoPackageCommon'
+import { VECTOR } from '../layer/LayerTypes'
 
 export default class WFSSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName) {
@@ -30,7 +31,7 @@ export default class WFSSource extends Source {
    */
   getFeaturesInLayer (layer) {
     return new Promise((resolve, reject) => {
-      let outputFormat = GeoServiceUtilities.getLayerOutputFormat(layer)
+      let outputFormat = getLayerOutputFormat(layer)
 
       let srs = layer.defaultSRS
       const otherSrs = layer.otherSRS.find(s => s.endsWith(':4326'))
@@ -38,10 +39,10 @@ export default class WFSSource extends Source {
         srs = otherSrs
       }
 
-      OpenLayersProjectionUtilities.addTransformation(srs, 'EPSG:4326')
+      addTransformation(srs, 'EPSG:4326')
 
       axios({
-        url: GeoServiceUtilities.getFeatureRequestURL(this.filePath, layer.name, outputFormat, srs, layer.version),
+        url: getFeatureRequestURL(this.filePath, layer.name, outputFormat, srs, layer.version),
         withCredentials: true
       }).then(response => {
         // setup options for parsing response
@@ -65,6 +66,7 @@ export default class WFSSource extends Source {
         } else {
           reject(new Error('Service in unsupported WFS format: ' + outputFormat))
         }
+
         featureCollection = new GeoJSON().writeFeaturesObject(features)
         if (isNil(featureCollection) || isNil(featureCollection.features) || isEmpty(featureCollection.features)) {
           throw new Error('Error retrieving features.')
@@ -90,13 +92,14 @@ export default class WFSSource extends Source {
     const { layerId, layerDirectory } = this.createLayerDirectory()
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection).catch(err => {
+    await buildGeoPackage(filePath, this.sourceName, featureCollection).catch(err => {
       throw err
     })
-    const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, this.sourceName)
+    const extent = await getGeoPackageExtent(filePath, this.sourceName)
     return [
       new VectorLayer({
         id: layerId,
+        layerType: VECTOR,
         directory: layerDirectory,
         sourceDirectory: this.directory,
         name: this.sourceName,

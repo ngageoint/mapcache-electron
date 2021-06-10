@@ -124,7 +124,7 @@
               showStyleAssignment(item)
             }"
             title="Assign style">
-          <geometry-style-svg v-if="item.style.style" :color="item.style.style.getHexColor()" :fill-color="item.style.style.getFillHexColor()" :fill-opacity="item.style.style.getFillOpacity()" :geometry-type="item.geometryTypeCode"/>
+          <geometry-style-svg v-if="item.style.style" :color="item.style.style.color" :fill-color="item.style.style.fillColor" :fill-opacity="item.style.style.fillOpacity" :geometry-type="item.geometryTypeCode"/>
           <img v-else-if="item.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
         </v-btn>
         <v-row v-else justify="start" align="center" no-gutters>
@@ -171,21 +171,17 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import keys from 'lodash/keys'
-  import orderBy from 'lodash/orderBy'
-  import moment from 'moment'
-  import { GeoPackageDataType, GeometryType } from '@ngageoint/geopackage'
-  import FeatureEditor from '../Common/FeatureEditor'
-  import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import MediaAttachments from '../Common/MediaAttachments'
-  import GeometryStyleSvg from '../Common/GeometryStyleSvg'
-  import GeoPackageStyleUtilities from '../../lib/geopackage/GeoPackageStyleUtilities'
-  import GeoPackageFeatureTableUtilities from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
-  import { mdiTrashCan, mdiPencil, mdiVectorSquare, mdiPalette, mdiPaperclip } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import orderBy from 'lodash/orderBy'
+import moment from 'moment'
+import FeatureEditor from '../Common/FeatureEditor'
+import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
+import MediaAttachments from '../Common/MediaAttachments'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import {mdiPalette, mdiPaperclip, mdiPencil, mdiTrashCan, mdiVectorSquare} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       geopackage: Object,
@@ -232,24 +228,25 @@
             id: feature.id,
             geometry: feature.geometry,
             geometryType: isNil(feature.geometry) ? null : feature.geometry.type,
-            geometryTypeCode: isNil(feature.geometry) ? -1 : GeometryType.fromName(feature.geometry.type.toUpperCase()),
+            geometryTypeCode: isNil(feature.geometry) ? -1 : window.mapcache.GeometryType.fromName(feature.geometry.type.toUpperCase()),
             style: this.table.featureStyleAssignments[feature.id],
             attachmentCount: this.table.featureAttachmentCounts[feature.id] || 0
           }
           keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
             try {
-              const column = this.table.columns.getColumn(key)
-              if (column.dataType === GeoPackageDataType.BOOLEAN) {
+              const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
+              const column = this.table.columns._columns[columnIndex]
+              if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
                 value = value === 1 || value === true
               }
-              if (value !== '' && column.dataType === GeoPackageDataType.DATE) {
+              if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
                 value = moment.utc(value).format('MM/DD/YYYY')
               }
-              if (value !== '' && column.dataType === GeoPackageDataType.DATETIME) {
+              if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
                 value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
               }
-              if (column.dataType === GeoPackageDataType.TEXT && value.length > 15) {
+              if (column.dataType === window.mapcache.GeoPackageDataType.TEXT && value.length > 15) {
                 value = value.substring(0, 15) + '...'
               }
               // eslint-disable-next-line no-unused-vars
@@ -271,7 +268,7 @@
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
-          if (!column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+          if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
             tableHeaders.push({
               text: column.name.toLowerCase(),
               value: column.name.toLowerCase() + '_table',
@@ -304,7 +301,7 @@
       editItem (item) {
         const self = this
         this.editFeature = this.table.features.find(feature => feature.id === item.id)
-        GeoPackageFeatureTableUtilities.getFeatureColumns(this.geopackage.path, this.table.tableName).then(columns => {
+        window.mapcache.getFeatureColumns(this.geopackage.path, this.table.tableName).then(columns => {
           self.editFeatureColumns = columns
           self.editDialog = true
         })
@@ -319,7 +316,7 @@
       },
       remove () {
         if (!isNil(this.featureToRemove)) {
-          ProjectActions.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.table.tableName, featureId: this.featureToRemove.id})
+          window.mapcache.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.table.tableName, featureId: this.featureToRemove.id})
           // eslint-disable-next-line vue/no-mutating-props
           this.table.features = this.table.features.filter(f => f.id !== this.featureToRemove.id)
           if (this.table.features.length === 0) {
@@ -330,11 +327,11 @@
         }
       },
       async showStyleAssignment (item) {
-        this.styleAssignment = await GeoPackageStyleUtilities.getStyleItemsForFeature(this.geopackage.path, this.table.tableName, item.id)
+        this.styleAssignment = await window.mapcache.getStyleItemsForFeature(this.geopackage.path, this.table.tableName, item.id)
         this.assignStyleDialog = true
       },
       async editDrawing (item) {
-        ProjectActions.editFeatureGeometry({projectId: this.projectId, id: this.geopackage.id, isGeoPackage: true, tableName: this.table.tableName, featureToEdit: this.table.features.find(feature => feature.id === item.id)})
+        window.mapcache.editFeatureGeometry({projectId: this.projectId, id: this.geopackage.id, isGeoPackage: true, tableName: this.table.tableName, featureToEdit: this.table.features.find(feature => feature.id === item.id)})
       },
       closeStyleAssignment () {
         this.assignStyleDialog = false

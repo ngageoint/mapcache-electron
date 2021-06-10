@@ -118,14 +118,20 @@
 </template>
 
 <script>
-  import isNil from 'lodash/isNil'
-  import isEmpty from 'lodash/isEmpty'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import MediaUtilities from '../../lib/util/MediaUtilities'
-  import GeoPackageMediaUtilities from '../../lib/geopackage/GeoPackageMediaUtilities'
-  import { mdiTrashCan, mdiAlertCircle, mdiPaperclip, mdiPlus, mdiFullscreen, mdiFullscreenExit, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import isNil from 'lodash/isNil'
+import isEmpty from 'lodash/isEmpty'
+import {
+  mdiAlertCircle,
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiFullscreen,
+  mdiFullscreenExit,
+  mdiPaperclip,
+  mdiPlus,
+  mdiTrashCan
+} from '@mdi/js'
 
-  export default {
+export default {
     props: {
       projectId: String,
       geopackagePath: String,
@@ -162,7 +168,7 @@
     methods: {
       async loadContent (mediaToLoad) {
         this.loadingContent = true
-        this.contentSrc = await GeoPackageMediaUtilities.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
+        this.contentSrc = await window.mapcache.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
         this.$nextTick(() => {
           this.loadingContent = false
         })
@@ -188,11 +194,11 @@
           this.loadContent(this.attachments[this.model])
         }
 
-        await GeoPackageMediaUtilities.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
+        await window.mapcache.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
         if (self.isGeoPackage) {
-          ProjectActions.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+          window.mapcache.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
         } else {
-          ProjectActions.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+          window.mapcache.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
         }
         this.cancelDeleteAttachment()
       },
@@ -216,7 +222,7 @@
           if (result.filePaths && !isEmpty(result.filePaths)) {
             const filePath = result.filePaths[0]
             self.$nextTick(() => {
-              if (!MediaUtilities.exceedsFileSizeLimit(filePath)) {
+              if (!window.mapcache.exceedsFileSizeLimit(filePath)) {
                 window.mapcache.attachMediaToGeoPackage({
                   projectId: self.projectId,
                   id: self.id,
@@ -225,15 +231,15 @@
                   tableName: self.tableName,
                   featureId: self.featureId,
                   filePath: result.filePaths[0]
-                }, (success) => {
+                }).then((success) => {
                   if (success) {
                     if (self.isGeoPackage) {
-                      ProjectActions.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
+                      window.mapcache.synchronizeGeoPackage({projectId: self.projectId, geopackageId: self.id})
                     } else {
-                      ProjectActions.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+                      window.mapcache.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
                     }
                     self.$nextTick(() => {
-                      GeoPackageMediaUtilities.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
+                      window.mapcache.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
                         self.attachments = relationships
                         self.model = relationships.length - 1
                       })
@@ -243,7 +249,7 @@
                 })
               } else {
                 self.attaching = false
-                self.attachErrorMessage = 'File exceeds maximum file size allowed of ' + MediaUtilities.getMaxFileSizeString()
+                self.attachErrorMessage = 'File exceeds maximum file size allowed of ' + window.mapcache.getMaxFileSizeString()
                 self.attachError = true
               }
             })
@@ -261,7 +267,7 @@
       }
     },
     mounted () {
-      GeoPackageMediaUtilities.getMediaRelationships(this.geopackagePath, this.tableName, this.featureId).then(attachments => {
+      window.mapcache.getMediaRelationships(this.geopackagePath, this.tableName, this.featureId).then(attachments => {
         this.attachments = attachments
         this.loading = false
       })

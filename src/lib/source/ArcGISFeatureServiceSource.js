@@ -3,11 +3,12 @@ import axios from 'axios'
 import isNil from 'lodash/isNil'
 import path from 'path'
 import { GeoPackageDataType } from '@ngageoint/geopackage'
-import VectorLayer from './layer/vector/VectorLayer'
+import VectorLayer from '../layer/vector/VectorLayer'
 import { arcgisToGeoJSON } from '@esri/arcgis-to-geojson-utils'
-import URLUtilities from '../util/URLUtilities'
-import GeoPackageCommon from '../geopackage/GeoPackageCommon'
-import GeoPackageFeatureTableUtilities from '../geopackage/GeoPackageFeatureTableUtilities'
+import { getBaseUrlAndQueryParams } from '../util/URLUtilities'
+import { getGeoPackageExtent } from '../geopackage/GeoPackageCommon'
+import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
+import { VECTOR } from '../layer/LayerTypes'
 
 export default class ArcGISFeatureServiceSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName) {
@@ -35,11 +36,12 @@ export default class ArcGISFeatureServiceSource extends Source {
     const { layerId, layerDirectory } = this.createLayerDirectory()
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    await GeoPackageFeatureTableUtilities.buildGeoPackage(filePath, this.sourceName, featureCollection, null, fields)
-    const extent = await GeoPackageCommon.getGeoPackageExtent(filePath, this.sourceName)
+    await buildGeoPackage(filePath, this.sourceName, featureCollection, null, fields)
+    const extent = await getGeoPackageExtent(filePath, this.sourceName)
     return [
       new VectorLayer({
         id: layerId,
+        layerType: VECTOR,
         directory: layerDirectory,
         sourceDirectory: this.directory,
         name: this.sourceName,
@@ -71,7 +73,7 @@ export default class ArcGISFeatureServiceSource extends Source {
 
   getContent (layer) {
     return new Promise( (resolve) => {
-      const { baseUrl, queryParams } = URLUtilities.getBaseUrlAndQueryParams(this.filePath)
+      const { baseUrl, queryParams } = getBaseUrlAndQueryParams(this.filePath)
       let url =
         baseUrl + '/' + layer.id + '/query/?f=json&' +
         'returnGeometry=true&spatialRel=esriSpatialRelIntersects&geometry=' +

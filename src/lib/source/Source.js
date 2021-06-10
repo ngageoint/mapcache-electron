@@ -1,5 +1,5 @@
-import UniqueIDUtilities from '../util/UniqueIDUtilities'
-import FileUtilities from '../util/FileUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+import { createNextAvailableLayerDirectory } from '../util/FileUtilities'
 
 /**
  * A Source is a representation of a file or url (denoted in the filePath variable)
@@ -21,8 +21,8 @@ export default class Source {
    * Returns a directory and id for a source layer
    * @returns {{layerDirectory: string, layerId: *}}
    */
-  createLayerDirectory (id = UniqueIDUtilities.createUniqueID()) {
-    return { layerId: id, layerDirectory: FileUtilities.createNextAvailableLayerDirectory(this.directory)}
+  createLayerDirectory (id = createUniqueID()) {
+    return { layerId: id, layerDirectory: createNextAvailableLayerDirectory(this.directory)}
   }
 
   /**

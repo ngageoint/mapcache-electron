@@ -97,21 +97,18 @@
 </template>
 
 <script>
-  import jetpack from 'fs-jetpack'
-  import { mapState } from 'vuex'
-  import ProcessingSource from './ProcessingSource'
-  import isNil from 'lodash/isNil'
-  import isEmpty from 'lodash/isEmpty'
-  import cloneDeep from 'lodash/cloneDeep'
-  import UniqueIDUtilities from '../../lib/util/UniqueIDUtilities'
-  import DataSource from './DataSource'
-  import DataSourceList from './DataSourceList'
-  import AddDataSourceUrl from './AddDataSourceUrl'
-  import ProjectActions from '../../lib/vuex/ProjectActions'
-  import { mdiChevronLeft, mdiLayersPlus, mdiFileDocumentOutline, mdiCloudDownloadOutline } from '@mdi/js'
-  import FileConstants from '../../lib/util/FileConstants'
+import {mapState} from 'vuex'
+import isNil from 'lodash/isNil'
+import isEmpty from 'lodash/isEmpty'
+import cloneDeep from 'lodash/cloneDeep'
+import ProcessingSource from './ProcessingSource'
+import DataSource from './DataSource'
+import DataSourceList from './DataSourceList'
+import AddDataSourceUrl from './AddDataSourceUrl'
+import {mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus} from '@mdi/js'
+import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
 
-  let selectedDataSource = null
+let selectedDataSource = null
   let fab = false
 
   export default {
@@ -152,34 +149,23 @@
           filters: [
             {
               name: 'All Files',
-              extensions: FileConstants.SUPPORTED_FILE_EXTENSIONS
+              extensions: SUPPORTED_FILE_EXTENSIONS
             }
           ],
           properties: ['openFile', 'multiSelections']
         }).then((result) => {
           if (result.filePaths && !isEmpty(result.filePaths)) {
-            let fileInfos = []
-            for (const file of result.filePaths) {
-              let fileInfo = jetpack.inspect(file, {
-                times: true,
-                absolutePath: true
-              })
-              fileInfo.lastModified = fileInfo.modifyTime.getTime()
-              fileInfo.lastModifiedDate = fileInfo.modifyTime
-              fileInfo.path = fileInfo.absolutePath
-              fileInfos.push(fileInfo)
-            }
-            this.processFiles(fileInfos)
+            this.processFiles(window.mapcache.getFileListInfo(result.filePaths))
           }
         })
       },
       async addSource (source) {
         this.processingSourceList.push(source)
         let self = this
-        window.mapcache.onceProcessSourceCompleted(source.id, (result) => {
+        window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
           if (isNil(result.error)) {
             setTimeout(() => {
-              ProjectActions.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
+              window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
               self.$nextTick(() => {
                 self.clearProcessing(source)
               })
@@ -204,14 +190,14 @@
           let source = this.processingSourceList[i]
           if (source.id === processingSource.id) {
             this.processingSourceList.splice(i, 1)
-            ProjectActions.notifyTab({projectId: this.project.id, tabId: 1})
+            window.mapcache.notifyTab({projectId: this.project.id, tabId: 1})
             break
           }
         }
       },
       processFiles (files) {
         files.forEach((file) => {
-          const id = UniqueIDUtilities.createUniqueID()
+          const id = window.mapcache.createUniqueID()
           let sourceToProcess = {
             id: id,
             directory: window.mapcache.createSourceDirectory(this.project.directory),
