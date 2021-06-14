@@ -1,22 +1,25 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import {contextBridge, ipcRenderer} from 'electron'
 import log from 'electron-log'
 import Store from 'electron-store'
 import { deleteProject } from '../vue/vuex/CommonActions'
 import { disableRemoteSources, newProject } from '../vue/vuex/LandingActions'
 import { createNextAvailableProjectDirectory } from '../util/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
+import path from 'path'
 
+const getUserDataDirectory = () => {
+  return ipcRenderer.sendSync('get-user-data-directory')
+}
+
+log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
+contextBridge.exposeInMainWorld('log', log.functions)
 
 const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
 const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
 const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
 
 let storage
-
-const getUserDataDirectory = () => {
-  return ipcRenderer.sendSync('get-user-data-directory')
-}
 
 contextBridge.exposeInMainWorld('mapcache', {
   connect(payload) {

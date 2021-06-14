@@ -3,7 +3,7 @@ import path from 'path'
 import AdmZip from 'adm-zip'
 import KMLSource from './KMLSource'
 import Source from './Source'
-import { rmDir } from '../util/FileUtilities'
+import { rmDirAsync } from '../util/FileUtilities'
 
 /**
  * KMZSource represents a .kmz file
@@ -32,7 +32,11 @@ export default class KMZSource extends Source {
     const layers = await kmlSource.retrieveLayers()
 
     // remove unzipped directory
-    rmDir(unzippedDirectory)
+    rmDirAsync(unzippedDirectory).then((err) => {
+      if (err) {
+        console.error('Failed to remove unzipped KMZ directory: ' + unzippedDirectory)
+      }
+    })
 
     return layers
   }

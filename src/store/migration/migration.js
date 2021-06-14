@@ -10,7 +10,15 @@ import { mkdirSync, readdirSync, existsSync } from 'fs'
 import jetpack from 'fs-jetpack'
 import { V4_REGEX } from '../../lib/util/UniqueIDUtilities'
 import path from 'path'
-import { rmDir, createNextAvailableLayerDirectory, createNextAvailableSourceDirectory, createNextAvailableBaseMapDirectory, createNextAvailableProjectDirectory } from '../../lib/util/FileUtilities'
+import {
+  clearUserDirectory,
+  createNextAvailableLayerDirectory,
+  createNextAvailableSourceDirectory,
+  createNextAvailableBaseMapDirectory,
+  createNextAvailableProjectDirectory,
+  removeUnusedFromUserDirectory,
+  rmDirAsync
+} from '../../lib/util/FileUtilities'
 import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
@@ -166,9 +174,9 @@ export async function runMigration (forceReset = false) {
         .filter(dir => dir.match(V4_REGEX))
         .map(dir => path.join(userDataDir, dir))
 
-      uuidv4Dirs.forEach(dir => {
-        rmDir(dir)
-      })
+      for (let i = 0; i < uuidv4Dirs.length; i++) {
+        await rmDirAsync(uuidv4Dirs[i])
+      }
 
       const projectKeys = keys(state.Projects)
       for (const projectId of projectKeys) {
@@ -178,6 +186,7 @@ export async function runMigration (forceReset = false) {
           geopackage.tables = await getInternalTableInformation(geopackage.path)
         }
       }
+      // TODO: update source layers and base maps information (no more initialization)
     }
   }
 
@@ -213,7 +222,8 @@ export async function runMigration (forceReset = false) {
           store.dispatch('URLs/migrateState', {migratedState: state.URLs}),
           store.dispatch('BaseMaps/migrateState', {migratedState: state.BaseMaps}),
           store.dispatch('Projects/migrateState', {migratedState: state.Projects}),
-          store.dispatch('Version/setVersion', installationVersion)])
+          store.dispatch('Version/setVersion', installationVersion),
+          removeUnusedFromUserDirectory(app.getPath('userData'), state)])
       }
     } else {
       // store version not set or major revision is off, delete store
@@ -222,8 +232,12 @@ export async function runMigration (forceReset = false) {
         store.dispatch('URLs/resetState'),
         store.dispatch('BaseMaps/resetState'),
         store.dispatch('Projects/resetState'),
-        store.dispatch('Version/setVersion', installationVersion)])
+        store.dispatch('Version/setVersion', installationVersion),
+        clearUserDirectory(app.getPath('userData'))])
     }
+  } else {
+    await removeUnusedFromUserDirectory(app.getPath('userData'), store.state)
   }
   return success
 }
+

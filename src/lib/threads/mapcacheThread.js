@@ -272,6 +272,11 @@ function setupRequestListener () {
       }).catch(error => {
         parentPort.postMessage({error: error, result: null})
       })
+    } else if (message.type === 'close_gpkg_connections') {
+      const filePath = message.data.filePath
+      if (cachedGeoPackageConnections[filePath] != null) {
+        cachedGeoPackageConnections[filePath].expire()
+      }
     }
   })
 }

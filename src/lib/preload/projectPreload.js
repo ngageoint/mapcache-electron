@@ -121,7 +121,14 @@ import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
 
+function getUserDataDirectory () {
+  return ipcRenderer.sendSync('get-user-data-directory')
+}
+
+log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
+contextBridge.exposeInMainWorld('log', log.functions)
+
 
 const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
 const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
@@ -164,10 +171,6 @@ function determineAssignment (gp, tableName, geometryType) {
     }
   }
   return assignment
-}
-
-function getUserDataDirectory () {
-  return ipcRenderer.sendSync('get-user-data-directory')
 }
 
 function createBaseMapDirectory () {
@@ -657,9 +660,17 @@ contextBridge.exposeInMainWorld('mapcache', {
     getOrCreateGeoPackage(filePath).then(gp => {
       _createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
         addGeoPackage({projectId: projectId, filePath: filePath})
-      }).catch(() => {
-        gp.close()
-        gp = undefined
+      }).catch((e) => {
+        console.error(e)
+      }).finally(() => {
+        try {
+          gp.close()
+          gp = undefined
+          // eslint-disable-next-line no-unused-vars
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to close geopackage.')
+        }
       })
     })
   },

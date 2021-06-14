@@ -1,4 +1,4 @@
-import { ipcRenderer, contextBridge } from 'electron'
+import {ipcRenderer, contextBridge} from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
 import GeoPackageFeatureTableBuilder from '../geopackage/GeoPackageFeatureTableBuilder'
 import GeoPackageTileTableBuilder from '../geopackage/GeoPackageTileTableBuilder'
@@ -6,8 +6,15 @@ import log from 'electron-log'
 import Store from 'electron-store'
 import { tileIntersectsXYZ, getWebMercatorBoundingBoxFromXYZ } from '../util/TileBoundingBoxUtils'
 import { setSourceError } from '../vue/vuex/ProjectActions'
+import path from 'path'
 
+const getUserDataDirectory = () => {
+  return ipcRenderer.sendSync('get-user-data-directory')
+}
+
+log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
+contextBridge.exposeInMainWorld('log', log.functions)
 
 const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
 const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
@@ -46,9 +53,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   setupGeoPackgeContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
-  getUserDataDirectory: () => {
-    return ipcRenderer.sendSync('get-user-data-directory')
-  },
+  getUserDataDirectory,
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync('get-app-data-directory')
   },

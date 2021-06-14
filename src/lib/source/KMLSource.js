@@ -15,7 +15,7 @@ import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
 import { parseKML, bufferToStream, } from '../util/KMLUtilities'
 import { hashCode, getDefaultIcon } from '../util/VectorStyleUtilities'
 import { getGeoPackageExtent} from '../geopackage/GeoPackageCommon'
-import { createDirectory, createNextAvailableLayerDirectory, rmDir } from '../util/FileUtilities'
+import { createDirectory, createNextAvailableLayerDirectory, rmDirAsync } from '../util/FileUtilities'
 import { VECTOR } from '../layer/LayerTypes'
 
 export default class KMLSource extends Source {
@@ -232,7 +232,7 @@ export default class KMLSource extends Source {
     layers = layers.concat(geotiffs)
 
     // clean up
-    rmDir(tmpDir)
+    rmDirAsync(tmpDir)
 
     return layers
   }

@@ -1,5 +1,6 @@
 'use strict'
 import { app, protocol } from 'electron'
+import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
 
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
@@ -17,6 +18,7 @@ let readyToQuit = false
  */
 function setupElectronLog () {
   const log = require('electron-log')
+  log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'mapcache.log')
   Object.assign(console, log.functions)
 }
 

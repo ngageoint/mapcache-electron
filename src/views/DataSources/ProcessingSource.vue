@@ -63,6 +63,7 @@ export default {
     },
     methods: {
       cancelProcessing () {
+        console.log('cancelling')
         const self = this
         self.cancelling = true
         this.$nextTick(() => {

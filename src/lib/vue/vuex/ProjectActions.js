@@ -3,7 +3,7 @@ import jetpack from 'fs-jetpack'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
-import { getLastModifiedDate, rmDir, isDirEmpty, exists } from '../../util/FileUtilities'
+import { getLastModifiedDate, rmDirAsync, isDirEmpty, exists } from '../../util/FileUtilities'
 import store from '../../../store'
 import Vue from 'vue'
 import { tryCollect } from '../../util/GarbageCollector'
@@ -260,18 +260,20 @@ function addGeoPackageFeatureTableColumn ({projectId, geopackageId, tableName, c
 }
 
 function removeDataSource ({projectId, sourceId}) {
-  try {
-    const source = store.state.Projects[projectId].sources[sourceId]
-    if (!isNil(source.directory)) {
-      rmDir(source.directory)
-    }
-    if (!isNil(source.sourceDirectory) && exists(source.sourceDirectory) && isDirEmpty(path.join(source.sourceDirectory, LAYER_DIRECTORY_IDENTIFIER))) {
-      rmDir(source.sourceDirectory)
-    }
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to remove data source.')
+  const source = store.state.Projects[projectId].sources[sourceId]
+  if (!isNil(source.directory)) {
+    rmDirAsync(source.directory).then((err) => {
+      if (err) {
+        console.error('Failed to remove source layer directory: ' + source.directory)
+      }
+    })
+  }
+  if (!isNil(source.sourceDirectory) && exists(source.sourceDirectory) && isDirEmpty(path.join(source.sourceDirectory, LAYER_DIRECTORY_IDENTIFIER))) {
+    rmDirAsync(source.sourceDirectory).then((err) => {
+      if (err) {
+        console.error('Failed to remove source directory: ' + source.sourceDirectory)
+      }
+    })
   }
   store.dispatch('Projects/removeDataSource', {projectId, sourceId})
 }
@@ -667,13 +669,12 @@ function editBaseMap (baseMap) {
 }
 
 function removeBaseMap (baseMap) {
-  try {
-    rmDir(baseMap.directory)
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to remove base map.')
-  }
+  rmDirAsync(baseMap.directory).then((err) => {
+    if (err) {
+      console.error('Failed to remove base map directory: ' + baseMap.directory)
+    }
+  })
+
   store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
 }
 

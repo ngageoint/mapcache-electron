@@ -41,6 +41,7 @@ export default class WorkerThreadPool extends EventEmitter {
     this.workers = []
     this.freeWorkers = []
     this.queue = []
+    this.restartWorker = true
   }
 
   async initialize () {
@@ -52,7 +53,16 @@ export default class WorkerThreadPool extends EventEmitter {
 
   async addNewWorker () {
     return new Promise ((resolve, reject) => {
-      const worker = new Worker(path.resolve(this.workerPath))
+      const worker = new Worker(path.resolve(this.workerPath), {
+        stderr: true,
+        stdout: true
+      })
+      worker.stdout.on('data', chunk => {
+        console.log(chunk.toString())
+      })
+      worker.stderr.on('data', chunk => {
+        console.error(chunk.toString())
+      })
       worker.once('error', (err) => {
         worker.removeAllListeners('error')
         worker.removeAllListeners('message')
@@ -81,6 +91,13 @@ export default class WorkerThreadPool extends EventEmitter {
             this.freeWorkers.push(worker)
             this.emit(kWorkerFreedEvent)
           })
+          worker.on('exit', () => {
+            if (this.restartWorker) {
+              console.log('this.workers: ' + this.workers.length)
+              console.log('adding a new worker')
+              this.addNewWorker()
+            }
+          })
           this.workers.push(worker)
           this.freeWorkers.push(worker)
           this.emit(kWorkerFreedEvent)
@@ -103,7 +120,6 @@ export default class WorkerThreadPool extends EventEmitter {
     if (this.freeWorkers.length === 0 || this.queue.length === 0) {
       return
     }
-
     const worker = this.freeWorkers.pop()
     const taskInfo = this.queue.shift()
     worker[kTaskInfo] = taskInfo
@@ -121,7 +137,6 @@ export default class WorkerThreadPool extends EventEmitter {
         await worker.terminate()
         worker[kTaskInfo].done('Cancelled.', null)
         worker[kTaskInfo] = null
-        await this.addNewWorker()
         cancelled = true
       }
     }
@@ -143,6 +158,7 @@ export default class WorkerThreadPool extends EventEmitter {
 
   async close () {
     this.queue = []
+    this.restartWorker = false
     for (const worker of this.workers) {
       await worker.terminate()
     }

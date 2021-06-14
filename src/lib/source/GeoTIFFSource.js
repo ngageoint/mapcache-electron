@@ -12,7 +12,7 @@ export default class GeoTIFFSource extends Source {
   async retrieveLayers () {
     const { layerId, layerDirectory } = this.createLayerDirectory()
     let filePath = path.join(layerDirectory, path.basename(this.filePath))
-    jetpack.copy(this.filePath, filePath)
+    await jetpack.copyAsync(this.filePath, filePath)
 
     const geotiff = await GeoTIFF.fromFile(filePath)
     const image = await geotiff.getImage()

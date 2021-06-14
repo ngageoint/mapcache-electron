@@ -353,29 +353,33 @@ async function getInternalTableInformation (filePath) {
  * @returns {Promise<{path: *, tables: {features: {}, tiles: {}}, size: *, name: string, id: *}>}
  */
 async function getOrCreateGeoPackageForApp (filePath) {
-  let gp
+  let gp, geopackage
   if (!exists(filePath)) {
     gp = await GeoPackageAPI.create(filePath)
   } else {
     gp = await GeoPackageAPI.open(filePath)
   }
-  const filename = path.basename(filePath)
-  const geopackage = {
-    id: createUniqueID(),
-    modifiedDate: getLastModifiedDate(filePath),
-    size: toHumanReadable(getFileSizeInBytes(filePath)),
-    name: filename.substring(0, filename.indexOf(path.extname(filename))),
-    path: filePath,
-    tables: _getInternalTableInformation(gp)
-  }
-
   try {
-    gp.close()
-    gp = undefined
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to close GeoPackage')
+    const filename = path.basename(filePath)
+    geopackage = {
+      id: createUniqueID(),
+      modifiedDate: getLastModifiedDate(filePath),
+      size: toHumanReadable(getFileSizeInBytes(filePath)),
+      name: filename.substring(0, filename.indexOf(path.extname(filename))),
+      path: filePath,
+      tables: _getInternalTableInformation(gp)
+    }
+  } catch (e) {
+    console.error('Failed to getOrCreate GeoPackage.')
+  } finally {
+    try {
+      gp.close()
+      gp = undefined
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to close GeoPackage')
+    }
   }
 
   return geopackage

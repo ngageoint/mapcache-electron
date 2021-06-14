@@ -1,29 +1,90 @@
-import { readSync, mkdirSync, readdirSync, statSync, rmdirSync, existsSync, unlinkSync, readFileSync } from 'fs'
+import { readSync, mkdirSync, readdirSync, statSync, rmSync, existsSync, rm, readFileSync } from 'fs'
 import path from 'path'
 import isNil from 'lodash/isNil'
+import difference from 'lodash/difference'
 import { createUniqueID } from './UniqueIDUtilities'
 import { PROJECT_DIRECTORY_IDENTIFIER, SOURCE_DIRECTORY_IDENTIFIER, LAYER_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER, ICON_DIRECTORY_IDENTIFIER } from './FileConstants'
+import keys from 'lodash/keys'
 
 function rmDir (dirPath) {
-  if (!isNil(dirPath)) {
-    let files
-    try {
-      files = readdirSync(dirPath)
-    } catch (e) {
-      return
-    }
-    if (files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        let filePath = path.join(dirPath, files[i])
-        if (statSync(filePath).isFile()) {
-          unlinkSync(filePath)
-        } else {
-          rmDir(filePath)
-        }
-      }
-    }
-    rmdirSync(dirPath)
-  }
+  rmSync(dirPath, {
+    maxRetries: 5,
+    recurisve: true
+  })
+}
+
+async function rmDirAsync (dirPath) {
+  return new Promise(resolve => {
+    rm(dirPath, {
+      maxRetires: 5,
+      recursive: true,
+      force: true
+    }, resolve)
+  })
+}
+
+/**
+ * Compares the user data directory to the vuex store's state and removes any unused project, basemap, source and layer directories
+ * @param userDirectory
+ * @param state
+ * @returns any
+ */
+async function removeUnusedFromUserDirectory (userDirectory, state) {
+  const projectDir = path.join(userDirectory, PROJECT_DIRECTORY_IDENTIFIER)
+  const baseMapDir = path.join(userDirectory, BASEMAP_DIRECTORY_IDENTIFIER)
+
+  const promises = []
+
+  // delete unused base map directories
+  const baseMapDirectories = readdirSync(baseMapDir).map(name => path.join(baseMapDir, name))
+  const existingBaseMapDirectories = state.BaseMaps.baseMaps.filter(baseMap => ['0','1','2','3'].indexOf(baseMap.id) === -1).map(baseMap => baseMap.directory)
+  difference(baseMapDirectories, existingBaseMapDirectories).forEach(directory => {
+    promises.push(rmDirAsync(directory))
+  })
+
+  // delete unused project directories
+  const projectDirectories = readdirSync(projectDir).map(name => path.join(projectDir, name))
+  const existingProjectDirectories = keys(state.Projects).map(projectId => state.Projects[projectId].directory)
+  difference(projectDirectories, existingProjectDirectories).forEach(directory => {
+    promises.push(rmDirAsync(directory))
+  })
+
+  // delete unused layer directories
+  keys(state.Projects).forEach(projectId => {
+    const project = state.Projects[projectId]
+    const existingSourceDirectories = keys(project.sources).map(sourceId => project.sources[sourceId].sourceDirectory)
+    const existingLayerDirectories = keys(project.sources).map(sourceId => project.sources[sourceId].directory)
+    const sourcesDir = path.join(project.directory, SOURCE_DIRECTORY_IDENTIFIER)
+    const sourceDirectories = readdirSync(sourcesDir).map(name => path.join(sourcesDir, name))
+
+    difference(sourceDirectories, existingSourceDirectories).forEach(directory => {
+      promises.push(rmDirAsync(directory))
+    })
+
+    const layerDirs = existingSourceDirectories.flatMap(sourceDir => {
+      const layerDir = path.join(sourceDir, LAYER_DIRECTORY_IDENTIFIER)
+      return readdirSync(layerDir).map(name => path.join(layerDir, name))
+    })
+    difference(layerDirs, existingLayerDirectories).map(directory => {
+      promises.push(rmDirAsync(directory))
+    })
+  })
+
+  return Promise.allSettled(promises)
+}
+
+/**
+ * Clears out the project, basemap and icon directories
+ * @param userDirectory
+ * @returns result
+ */
+async function clearUserDirectory (userDirectory) {
+  await Promise.allSettled([
+    rmDirAsync(path.join(userDirectory, PROJECT_DIRECTORY_IDENTIFIER)),
+    rmDirAsync(path.join(userDirectory, BASEMAP_DIRECTORY_IDENTIFIER)),
+    rmDirAsync(path.join(userDirectory, ICON_DIRECTORY_IDENTIFIER)),
+  ])
+  setupInitialDirectories(userDirectory)
 }
 
 /**
@@ -336,10 +397,13 @@ export {
   toHumanReadable,
   getFileSizeInBytes,
   rmDir,
+  rmDirAsync,
   getLastModifiedDate,
   exists,
   setupInitialDirectories,
   readJSONFile,
   readFile,
-  isDirEmpty
+  isDirEmpty,
+  removeUnusedFromUserDirectory,
+  clearUserDirectory
 }

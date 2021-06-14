@@ -14,7 +14,7 @@ export default class GeoJSONSource extends Source {
       features: []
     }
 
-    const data = jetpack.read(this.filePath, 'json')
+    const data = await jetpack.readAsync(this.filePath, 'json')
     if (!isNil(data) && data.type === 'FeatureCollection') {
       featureCollection = data
     } else if (!isNil(data) && data.type === 'Feature') {

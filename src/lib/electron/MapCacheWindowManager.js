@@ -46,6 +46,10 @@ class MapCacheWindowManager {
     globalShortcut.register('CommandOrControl+Shift+C', () => {
       session.defaultSession.clearAuthCache()
     })
+
+    globalShortcut.register('CommandOrControl+Shift+L', () => {
+      shell.showItemInFolder(path.join(app.getPath('userData'), 'logs', 'mapcache.log'))
+    })
   }
 
   /**
@@ -221,7 +225,9 @@ class MapCacheWindowManager {
         const taskId = payload.source.id
         payload.id = taskId
         const result = await this.mapcacheThreadHelper.processDataSource(payload)
-        event.sender.send('process_source_completed_' + taskId, result)
+        if (result && !result.cancelled) {
+          event.sender.send('process_source_completed_' + taskId, result)
+        }
       })
 
       ipcMain.on('cancel_process_source', (event, payload) => {
@@ -501,7 +507,7 @@ class MapCacheWindowManager {
       this.projectWindow.destroy()
       this.projectWindow = null
     }
-    this.mainWindow.showInactive()
+    this.mainWindow.show()
   }
 
   /**
@@ -566,7 +572,7 @@ class MapCacheWindowManager {
     })
     setTimeout(() => {
       this.loadContent(this.loadingWindow, winURL, () => {
-        this.loadingWindow.showInactive()
+        this.loadingWindow.show()
       })
     }, 0)
   }
@@ -689,7 +695,7 @@ class MapCacheWindowManager {
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
         : `app://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
-        this.projectWindow.showInactive()
+        this.projectWindow.show()
         this.setupCertificateAuth()
         setTimeout(() => {
           if (!isNil(this.mainWindow)) {

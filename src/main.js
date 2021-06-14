@@ -12,6 +12,8 @@ import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedM
 import Vuex from 'vuex'
 import modules from './store/modules'
 
+Object.assign(console, window.log)
+
 Vue.use(Vuex)
 
 if (window.mapcache.setupGeoPackgeContext) {

@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 12.16.3
+* Install Node 14.16.0
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64
@@ -19,7 +19,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 12.16.3
+  * nvm install 14.16.0
 * Install Yarn
   * npm install yarn -g
 
@@ -29,7 +29,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 12.16.3
+  * nvm install 14.16.0
 * Install Yarn
   * npm install yarn -g
 
@@ -38,7 +38,7 @@ Once you have set up a development environment, these steps will let you build a
 1. Download the code:  
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
 2. Install dependencies:  
-`yarm`
+`yarn`
 3. Run:  
 `yarn electron:serve` (run locally in development mode)
 
@@ -58,17 +58,15 @@ The MapCache Desktop build and runtime processes will generate several files. Th
 ## Logging
 The application uses https://www.npmjs.com/package/electron-log for logging.
 
-Log files can be found:
-1. on Linux: ~/.config/MapCache/logs/{process type}.log
-2. on macOS: ~/Library/Logs/MapCache/{process type}.log
-3. on Windows: %USERPROFILE%\AppData\Roaming\{app name}\logs\{process type}.log
-
-where `process type` can be one of `(renderer, main)`
+Log files can be found in the user's data directory:
+1. on Linux: {userData}/logs/mapcache.log
+2. on macOS: {userData}/logs/mapcache.log
+3. on Windows: {userData}\logs\mapcache.log
 
 ## Debugging
-The application is broken up into a main process and renderer processes inside of electron. 
+The application is broken up into a main node.js process, node worker_threads and electron browser window processes. 
 
-The renderer processes can be debugged using the chrome developer tools. 
+The browser window processes can be debugged using the chrome developer tools. 
 * Dev tools can be toggled via the file menu for a browser window.
 * All dev tools windows can be shown by using the keyboard shortcut CommandOrControl+Shift+S.
 * All dev tools windows can be hidden by using the keyboard shortcut CommandOrControl+Shift+H.
@@ -109,7 +107,6 @@ Prior to release, any modifications that need to be made to the vuex store to su
 # Limitations and Notes
 It is worth noting that there are several libraries using native dependencies. The native depdencies are
 1. better-sqlite3
-2. canvas (this module is not context aware, thus we are unable to use it in worker_threads)
 
 ## Testing
 Any changes made in development should be tested in the production version of the application for all supported platforms.
