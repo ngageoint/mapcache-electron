@@ -93,8 +93,12 @@ export default class WorkerThreadPool extends EventEmitter {
           })
           worker.on('exit', () => {
             if (this.restartWorker) {
-              console.log('this.workers: ' + this.workers.length)
-              console.log('adding a new worker')
+              if (this.workers.indexOf(worker) !== -1) {
+                this.workers.splice(this.workers.indexOf(worker), 1)
+              }
+              if (this.freeWorkers.indexOf(worker) !== -1) {
+                this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
+              }
               this.addNewWorker()
             }
           })
