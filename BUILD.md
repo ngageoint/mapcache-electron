@@ -35,11 +35,14 @@
 
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:
-1. Download the code:  
+1. Update node's max old space size
+   (mac/linux: `export NODE_OPTIONS=--max-old-space-size=8192`)
+   (win: `set NODE_OPTIONS=-max-old-space-size=8192`)
+2. Download the code:  
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
-2. Install dependencies:  
+3. Install dependencies:  
 `yarn`
-3. Run:  
+4. Run:  
 `yarn electron:serve` (run locally in development mode)
 
 # Cleaning MapCache Desktop

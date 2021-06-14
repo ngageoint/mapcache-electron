@@ -10,6 +10,7 @@ import isNil from 'lodash/isNil'
 import GeoTiffLayer from '../layer/tile/GeoTiffLayer'
 import * as GeoTIFF from 'geotiff'
 import { Readable } from 'stream'
+import GeoTIFFSource from "@/lib/source/GeoTIFFSource";
 
 function bufferToStream(buffer) {
   let stream = new Readable()
@@ -195,7 +196,8 @@ async function parseKML (kmlDom, kmlDirectory, tmpDir, createLayerDirectory) {
         const fileName = path.basename(fullFile, path.extname(fullFile)) + '.tif'
         const geotiffFilePath = path.join(layerDirectory, fileName)
         if (await convert4326ImageToGeoTIFF(fullFile, geotiffFilePath, extent)) {
-          parsedKML.geotiffs.push(new GeoTiffLayer({id: layerId, directory: layerDirectory, sourceDirectory: sourceDirectory, filePath: geotiffFilePath, sourceLayerName: name}))
+          const geotiffLayer = await GeoTIFFSource.createGeoTiffLayer(geotiffFilePath, name, layerId, layerDirectory, sourceDirectory)
+          parsedKML.geotiffs.push(geotiffLayer)
         }
       }
       // eslint-disable-next-line no-unused-vars

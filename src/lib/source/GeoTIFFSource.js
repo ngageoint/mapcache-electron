@@ -9,11 +9,17 @@ import { GEOTIFF } from '../layer/LayerTypes'
 import { getConverter } from '../projection/ProjectionUtilities'
 
 export default class GeoTIFFSource extends Source {
-  async retrieveLayers () {
-    const { layerId, layerDirectory } = this.createLayerDirectory()
-    let filePath = path.join(layerDirectory, path.basename(this.filePath))
-    await jetpack.copyAsync(this.filePath, filePath)
 
+  /**
+   * Creates the GeoTiff layer
+   * @param filePath
+   * @param name
+   * @param id
+   * @param directory
+   * @param sourceDirectory
+   * @returns {Promise<GeoTiffLayer>}
+   */
+  static async createGeoTiffLayer (filePath, name, id, directory, sourceDirectory) {
     const geotiff = await GeoTIFF.fromFile(filePath)
     const image = await geotiff.getImage()
     const imageOrigin = image.getOrigin()
@@ -119,54 +125,60 @@ export default class GeoTIFFSource extends Source {
     const minCoord = transform.inverse([bbox[0], bbox[1]])
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
     const extent = [minCoord[0], minCoord[1], maxCoord[0], maxCoord[1]]
-    const name = path.basename(this.filePath, path.extname(this.filePath))
     geotiff.close()
 
-    return [
-      new GeoTiffLayer({
-        alphaBand: alphaBand,
-        bandOptions: bandOptions,
-        bitsPerSample: bitsPerSample,
-        blueBand: blueBand,
-        blueBandMin: blueBandMin,
-        blueBandMax: blueBandMax,
-        bytesPerSample: bytesPerSample,
-        colorMap: colorMap,
-        directory: layerDirectory,
-        enableGlobalNoDataValue: enableGlobalNoDataValue,
-        extent: extent,
-        filePath: filePath,
-        globalNoDataValue: globalNoDataValue,
-        grayScaleColorGradient: grayScaleColorGradient,
-        grayBand: grayBand,
-        grayBandMin: grayBandMin,
-        grayBandMax: grayBandMax,
-        greenBand: greenBand,
-        greenBandMin: greenBandMin,
-        greenBandMax: greenBandMax,
-        id: layerId,
-        imageHeight: imageHeight,
-        imageOrigin: imageOrigin,
-        imageResolution: imageResolution,
-        imageWidth: imageWidth,
-        layerType: GEOTIFF,
-        littleEndian: littleEndian,
-        name: name,
-        paletteBand: paletteBand,
-        photometricInterpretation: photometricInterpretation,
-        rasterFile: rasterFile,
-        redBand: redBand,
-        redBandMin: redBandMin,
-        redBandMax: redBandMax,
-        renderingMethod: renderingMethod,
-        sampleFormat: sampleFormat,
-        samplesPerPixel: samplesPerPixel,
-        sourceDirectory: this.directory,
-        sourceLayerName: name,
-        srs: srs,
-        stretchToMinMax: stretchToMinMax,
-        visible: false
-      })
-    ]
+    return new GeoTiffLayer({
+      alphaBand: alphaBand,
+      bandOptions: bandOptions,
+      bitsPerSample: bitsPerSample,
+      blueBand: blueBand,
+      blueBandMin: blueBandMin,
+      blueBandMax: blueBandMax,
+      bytesPerSample: bytesPerSample,
+      colorMap: colorMap,
+      directory: directory,
+      enableGlobalNoDataValue: enableGlobalNoDataValue,
+      extent: extent,
+      filePath: filePath,
+      globalNoDataValue: globalNoDataValue,
+      grayScaleColorGradient: grayScaleColorGradient,
+      grayBand: grayBand,
+      grayBandMin: grayBandMin,
+      grayBandMax: grayBandMax,
+      greenBand: greenBand,
+      greenBandMin: greenBandMin,
+      greenBandMax: greenBandMax,
+      id: id,
+      imageHeight: imageHeight,
+      imageOrigin: imageOrigin,
+      imageResolution: imageResolution,
+      imageWidth: imageWidth,
+      layerType: GEOTIFF,
+      littleEndian: littleEndian,
+      name: name,
+      paletteBand: paletteBand,
+      photometricInterpretation: photometricInterpretation,
+      rasterFile: rasterFile,
+      redBand: redBand,
+      redBandMin: redBandMin,
+      redBandMax: redBandMax,
+      renderingMethod: renderingMethod,
+      sampleFormat: sampleFormat,
+      samplesPerPixel: samplesPerPixel,
+      sourceDirectory: sourceDirectory,
+      sourceLayerName: name,
+      srs: srs,
+      stretchToMinMax: stretchToMinMax,
+      visible: false
+    })
+  }
+
+  async retrieveLayers () {
+    const { layerId, layerDirectory } = this.createLayerDirectory()
+    let filePath = path.join(layerDirectory, path.basename(this.filePath))
+    await jetpack.copyAsync(this.filePath, filePath)
+    const name = path.basename(this.filePath, path.extname(this.filePath))
+    const geotiffLayer = await GeoTIFFSource.createGeoTiffLayer(filePath, name, layerId, layerDirectory, this.directory)
+    return [geotiffLayer]
   }
 }
