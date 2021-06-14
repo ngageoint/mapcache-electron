@@ -11,7 +11,8 @@ import { GEOTIFF, MBTILES, XYZ_FILE, XYZ_SERVER, WMS, GEOPACKAGE, VECTOR } from 
 
 /**
  * Constructs a layer's renderer
- * @param layer - must be initialized
+ * @param layer
+ * @param isElectron - electron
  * @returns any
  */
 function constructRenderer (layer, isElectron = false) {

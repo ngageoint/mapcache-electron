@@ -38,7 +38,11 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
       ctx.clearRect(0, 0, event.tile.width, event.tile.height)
     }
     this.on('tileunload', this.unloadListener)
-    this.layer.setRenderer(constructRenderer(this.layer, false))
+    const renderer = constructRenderer(this.layer, false)
+    if (renderer.updateMaxFeatures != null) {
+      renderer.updateMaxFeatures(this.maxFeatures)
+    }
+    this.layer.setRenderer(renderer)
   },
   createTile: function (coords, done) {
     let tile = L.DomUtil.create('canvas', 'leaflet-tile')
