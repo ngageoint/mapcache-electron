@@ -1269,8 +1269,19 @@ export default {
         updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) >= 0).forEach(geoPackageId => {
           let updatedGeoPackage = updatedGeoPackages[geoPackageId]
           let oldGeoPackage = geopackageLayers[geoPackageId]
-          // check if the tables have changed
-          if (!isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
+
+          if (!isEqual(updatedGeoPackage.path, oldGeoPackage.path)) {
+            const newVisibleFeatureTables = keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible)
+            const newVisibleTileTables = keys(updatedGeoPackage.tables.tiles).filter(table => updatedGeoPackage.tables.tiles[table].visible)
+            newVisibleTileTables.forEach(tableName => {
+              this.removeGeoPackageTable(geoPackageId, tableName)
+              this.addGeoPackageTileTable(updatedGeoPackage, map, tableName)
+            })
+            newVisibleFeatureTables.forEach(tableName => {
+              this.removeGeoPackageTable(geoPackageId, tableName)
+              this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
+            })
+          } else if (!isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
             const oldVisibleFeatureTables = keys(oldGeoPackage.tables.features).filter(table => oldGeoPackage.tables.features[table].visible)
             const oldVisibleTileTables = keys(oldGeoPackage.tables.tiles).filter(table => oldGeoPackage.tables.tiles[table].visible)
             const newVisibleFeatureTables = keys(updatedGeoPackage.tables.features).filter(table => updatedGeoPackage.tables.features[table].visible)
@@ -1293,7 +1304,6 @@ export default {
               this.removeGeoPackageTable(geoPackageId, tableName)
             })
 
-            geopackageLayers[updatedGeoPackage.id] = cloneDeep(updatedGeoPackage)
             // add feature and tile tables that were turned on
             tileTablesTurnedOn.forEach(tableName => {
               this.addGeoPackageTileTable(updatedGeoPackage, map, tableName)
@@ -1309,6 +1319,8 @@ export default {
               this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
             })
           }
+
+          geopackageLayers[updatedGeoPackage.id] = cloneDeep(updatedGeoPackage)
         })
 
         this.refreshFeatureTable()
