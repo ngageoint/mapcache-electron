@@ -38,11 +38,20 @@ export default class GeoTIFFSource extends Source {
     const sampleFormat = fileDirectory.SampleFormat
     const bytesPerSample = bitsPerSample ? bitsPerSample.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / 8 : 8
 
-    // read raster data and store into data file
-    let rasters = await image.readRasters({interleave: true})
+    // read chunks of a raster file at a time and store the decoded data into the data.bin file
     const rasterFile = path.join(path.dirname(filePath), 'data.bin')
-    fs.writeFileSync(rasterFile, rasters)
-    rasters = null
+    const height = image.getHeight()
+    const width = image.getWidth()
+    const tileHeight = image.getTileHeight()
+    const fd = fs.openSync(rasterFile, 'w')
+    for (let i = 0; i < height; i = i + tileHeight) {
+      const raster = await image.readRasters({
+        window: [0, i, width, Math.min(height, (i + tileHeight))],
+        interleave: true
+      })
+      fs.writeSync(fd, raster)
+    }
+    fs.closeSync(fd)
 
     let enableGlobalNoDataValue = false
     if (globalNoDataValue !== null) {

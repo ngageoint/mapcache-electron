@@ -6,7 +6,7 @@ import { wgs84ToWebMercator, getConverter } from '../../projection/ProjectionUti
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersects } from '../TileBoundingBoxUtils'
 import { trimExtentToWebMercatorMax } from '../XYZTileUtilities'
 import { getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../GeoTiffUtilities'
-import { createCanvas, makeImageData } from '../CanvasUtilities'
+import { disposeCanvas, createCanvas, makeImageData } from '../CanvasUtilities'
 
 const maxByteValue = 255
 
@@ -348,7 +348,7 @@ function requestTile (tileRequest) {
       reject(e)
     } finally {
       disposeCanvas(canvas)
-      fs.close(fd)
+      fs.closeSync(fd)
     }
   })
 }
