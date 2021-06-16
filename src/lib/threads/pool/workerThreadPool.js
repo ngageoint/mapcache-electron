@@ -6,9 +6,10 @@ const kTaskInfo = Symbol('kTaskInfo')
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
 
 class WorkerPoolTaskInfo extends AsyncResource {
-  constructor (task, callback = () => {}, cancelCallback = () => {}) {
+  constructor (task, sender, callback = () => {}, cancelCallback = () => {}) {
     super('WorkerPoolTaskInfo')
     this.task = task
+    this.sender = sender
     this.callback = callback
     this.cancelled = false
     this.cancelCallback = cancelCallback
@@ -31,12 +32,30 @@ class WorkerPoolTaskInfo extends AsyncResource {
     this.runInAsyncScope(this.callback, null, err, result)
     this.emitDestroy()
   }
+
+  emitQueued () {
+    if (this.sender) {
+      this.sender.send('task-status-' + this.getTaskId(), 'Queued')
+    }
+  }
+
+  emitProcessing () {
+    if (this.sender) {
+      this.sender.send('task-status-' + this.getTaskId(), 'Processing')
+    }
+  }
+
+  emitCancelling () {
+    if (this.sender) {
+      this.sender.send('task-status-' + this.getTaskId(), 'Cancelling')
+    }
+  }
 }
 
 export default class WorkerThreadPool extends EventEmitter {
-  constructor(numThreads, workerPath) {
+  constructor(config, workerPath) {
     super()
-    this.numThreads = numThreads
+    this.config = config
     this.workerPath = workerPath
     this.workers = []
     this.freeWorkers = []
@@ -46,17 +65,18 @@ export default class WorkerThreadPool extends EventEmitter {
 
   async initialize () {
     this.on(kWorkerFreedEvent, this.run)
-    for (let i = 0; i < this.numThreads; i++) {
-      await this.addNewWorker()
+    for (let i = 0; i < this.config.length; i++) {
+      await this.addNewWorker(this.config[i])
     }
   }
 
-  async addNewWorker () {
+  async addNewWorker (config) {
     return new Promise ((resolve, reject) => {
       const worker = new Worker(path.resolve(this.workerPath), {
         stderr: true,
         stdout: true
       })
+      worker.config = config
       worker.stdout.on('data', chunk => {
         console.log(chunk.toString())
       })
@@ -99,7 +119,7 @@ export default class WorkerThreadPool extends EventEmitter {
               if (this.freeWorkers.indexOf(worker) !== -1) {
                 this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
               }
-              this.addNewWorker()
+              this.addNewWorker(worker.config)
             }
           })
           this.workers.push(worker)
@@ -115,8 +135,10 @@ export default class WorkerThreadPool extends EventEmitter {
     return this.queue.length > 0 || this.workers.length !== this.freeWorkers.length
   }
 
-  addTask (task, callback, cancelled) {
-    this.queue.push(new WorkerPoolTaskInfo(task, callback, cancelled))
+  addTask (task, sender, callback, cancelled) {
+    const taskInfo = new WorkerPoolTaskInfo(task, sender, callback, cancelled)
+    taskInfo.emitQueued()
+    this.queue.push(taskInfo)
     this.run()
   }
 
@@ -124,11 +146,19 @@ export default class WorkerThreadPool extends EventEmitter {
     if (this.freeWorkers.length === 0 || this.queue.length === 0) {
       return
     }
-    const worker = this.freeWorkers.pop()
-    const taskInfo = this.queue.shift()
-    worker[kTaskInfo] = taskInfo
-    taskInfo.setWorker(worker)
-    worker.postMessage(taskInfo.task)
+    // iterate over queue looking for next task that can be executed
+    for (let i = 0; i < this.queue.length && this.freeWorkers.length > 0; i++) {
+      const worker = this.freeWorkers.find(worker => worker.config.types.indexOf(this.queue[i].task.type) !== -1)
+      if (worker) {
+        const taskInfo = this.queue.splice(i, 1)[0]
+        const worker = this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)[0]
+        worker[kTaskInfo] = taskInfo
+        taskInfo.setWorker(worker)
+        taskInfo.emitProcessing()
+        worker.postMessage(taskInfo.task)
+        i--
+      }
+    }
   }
 
   async cancelTask (taskId) {
@@ -137,8 +167,9 @@ export default class WorkerThreadPool extends EventEmitter {
       const worker = this.workers.find(worker => worker[kTaskInfo] && worker[kTaskInfo].getTaskId() === taskId)
       if (worker) {
         this.workers.splice(this.workers.indexOf(worker), 1)
-        worker[kTaskInfo].setCancelled()
+        worker[kTaskInfo].emitCancelling()
         await worker.terminate()
+        worker[kTaskInfo].setCancelled()
         worker[kTaskInfo].done('Cancelled.', null)
         worker[kTaskInfo] = null
         cancelled = true

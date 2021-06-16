@@ -1,4 +1,5 @@
 import path from 'path'
+import {REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA} from '../mapcacheThreadRequestTypes'
 
 /**
  * MapcacheThreadHelper
@@ -11,7 +12,20 @@ export default class MapcacheThreadHelper {
     file = file.replace('app.asar', 'app.asar.unpacked')
     const os = require('os')
     const WorkerThreadPool = require('../pool/workerThreadPool').default
-    this.threadPool = new WorkerThreadPool(Math.min(4, os.cpus().length), file)
+    const workerCount = Math.max(2, Math.min(4, os.cpus().length))
+    const config = []
+    // perform tile rendering only
+    config.push({
+      types: [REQUEST_RENDER]
+    })
+    // perform any task
+    for (let i = 1; i < workerCount; i++) {
+      config.push({
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA]
+      })
+    }
+
+    this.threadPool = new WorkerThreadPool(config, file)
   }
 
   async initialize () {
@@ -33,7 +47,7 @@ export default class MapcacheThreadHelper {
    */
   attachMedia (data) {
     return new Promise((resolve) => {
-      this.threadPool.addTask({id: data.id, type: 'attach_media', data: data}, (err, result) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_ATTACH_MEDIA, data: data}, null, (err, result) => {
         if (err) {
           result = { error: err }
         }
@@ -45,13 +59,14 @@ export default class MapcacheThreadHelper {
   /**
    * Processes a data source
    * @param data
+   * @param sender
    * @returns {Promise<unknown>}
    */
-  processDataSource (data) {
+  processDataSource (data, sender) {
     return new Promise((resolve) => {
       // set up initial directory
       const directory = data.source.directory
-      this.threadPool.addTask({id: data.id, type: 'process_source', data: data}, (err, result) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_PROCESS_SOURCE, data: data}, sender, (err, result) => {
         const isNil = require('lodash/isNil')
         if (!isNil(err)) {
           if (isNil(result)) {
@@ -86,21 +101,13 @@ export default class MapcacheThreadHelper {
    */
   renderTile (data) {
     return new Promise((resolve) => {
-      this.threadPool.addTask({id: data.id, type: 'render_tile', data: data}, (err, result) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_RENDER, data: data}, null, (err, result) => {
         if (err) {
           result = { error: err }
         }
         resolve(result)
       })
     })
-  }
-
-  takeSnapshot () {
-    this.threadPool.takeSnapshot()
-  }
-
-  gc () {
-    this.threadPool.gc()
   }
 
   /**

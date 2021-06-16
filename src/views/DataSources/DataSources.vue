@@ -162,28 +162,30 @@ let selectedDataSource = null
       async addSource (source) {
         this.processingSourceList.push(source)
         let self = this
-        window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
-          if (isNil(result.error)) {
-            setTimeout(() => {
-              window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
-              self.$nextTick(() => {
-                self.clearProcessing(source)
-              })
-            }, 1000)
-          } else {
-            // iterate over list of sources and set error
-            for (let i = 0; i < this.processingSourceList.length; i++) {
-              let s = this.processingSourceList[i]
-              if (s.id === source.id) {
-                const sCopy = cloneDeep(s)
-                sCopy.error = result.error
-                this.processingSourceList.splice(i, 1, sCopy)
-                break
+        this.$nextTick(() => {
+          window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
+            if (isNil(result.error)) {
+              setTimeout(() => {
+                window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
+                self.$nextTick(() => {
+                  self.clearProcessing(source)
+                })
+              }, 1000)
+            } else {
+              // iterate over list of sources and set error
+              for (let i = 0; i < this.processingSourceList.length; i++) {
+                let s = this.processingSourceList[i]
+                if (s.id === source.id) {
+                  const sCopy = cloneDeep(s)
+                  sCopy.error = result.error
+                  this.processingSourceList.splice(i, 1, sCopy)
+                  break
+                }
               }
             }
-          }
+          })
+          window.mapcache.processSource({project: self.project, source: source})
         })
-        window.mapcache.processSource({project: self.project, source: source})
       },
       clearProcessing (processingSource) {
         for (let i = 0; i < this.processingSourceList.length; i++) {

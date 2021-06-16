@@ -224,7 +224,7 @@ class MapCacheWindowManager {
       ipcMain.on('process_source', async (event, payload) => {
         const taskId = payload.source.id
         payload.id = taskId
-        const result = await this.mapcacheThreadHelper.processDataSource(payload)
+        const result = await this.mapcacheThreadHelper.processDataSource(payload, event.sender)
         if (result && !result.cancelled) {
           event.sender.send('process_source_completed_' + taskId, result)
         }
@@ -311,11 +311,6 @@ class MapCacheWindowManager {
     })
 
     ipcMain.on('show-project', (event, payload) => {
-      // this.registerWorkerThreads().then(() => {
-      //   this.showProject(payload)
-      // }).catch((err) => {
-      //   console.error(err)
-      // })
       this.showProject(payload)
     })
 

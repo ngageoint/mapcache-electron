@@ -3,7 +3,7 @@
     <v-card flat tile :loading="!error && !cancelled">
       <v-card-title>
         <span class="processing-title">
-          {{(cancelling ? 'Cancelling ' : (cancelled ? 'Cancelled ' : (error ? 'Failed ' : 'Processing '))) + displayName}}
+          {{((cancelled ? 'Cancelled ' : (error ? 'Failed ' : (status + ' ')))) + displayName}}
         </span>
       </v-card-title>
       <v-card-text>
@@ -23,13 +23,15 @@
           Close
         </v-btn>
         <v-btn
-          v-else-if="!cancelling"
+          v-else-if="!error && !cancelled"
+          :disabled="status === 'Cancelling'"
           text
           color="warning"
           @click="cancelProcessing">
           Cancel Processing
         </v-btn>
       </v-card-actions>
+      <v-divider/>
     </v-card>
   </v-sheet>
 </template>
@@ -41,7 +43,7 @@ export default {
     },
     data () {
       return {
-        cancelling: false,
+        status: 'Queued',
         cancelled: false
       }
     },
@@ -63,13 +65,10 @@ export default {
     },
     methods: {
       cancelProcessing () {
-        console.log('cancelling')
         const self = this
-        self.cancelling = true
         this.$nextTick(() => {
           window.mapcache.cancelProcessingSource(self.source).then(() => {
             setTimeout(() => {
-              self.cancelling = false
               self.cancelled = true
             }, 500)
           })
@@ -78,8 +77,16 @@ export default {
       closeCard () {
         this.$emit('clear-processing', this.source)
       }
+    },
+    mounted () {
+      window.mapcache.addTaskStatusListener(this.source.id, (status) => {
+        this.status = status
+      })
+    },
+    beforeDestroy () {
+      window.mapcache.removeTaskStatusListener(this.source.id)
     }
-  }
+}
 </script>
 
 <style scoped>

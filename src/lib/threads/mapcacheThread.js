@@ -5,6 +5,7 @@ import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRend
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
+import {REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER} from "@/lib/threads/mapcacheThreadRequestTypes";
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -254,29 +255,24 @@ async function renderTile (data) {
  */
 function setupRequestListener () {
   parentPort.on('message', (message) => {
-    if (message.type === 'attach_media') {
+    if (message.type === REQUEST_ATTACH_MEDIA) {
       attachMedia(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
       }).catch(error => {
         parentPort.postMessage({error: error, result: null})
       })
-    } else if (message.type === 'process_source') {
+    } else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
       }).catch(error => {
         parentPort.postMessage({error: error, result: null})
       })
-    } else if (message.type === 'render_tile') {
+    } else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
       }).catch(error => {
         parentPort.postMessage({error: error, result: null})
       })
-    } else if (message.type === 'close_gpkg_connections') {
-      const filePath = message.data.filePath
-      if (cachedGeoPackageConnections[filePath] != null) {
-        cachedGeoPackageConnections[filePath].expire()
-      }
     }
   })
 }

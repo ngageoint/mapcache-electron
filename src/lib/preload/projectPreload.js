@@ -283,6 +283,14 @@ contextBridge.exposeInMainWorld('mapcache', {
   removeRequestClientCredentialsListener: () => {
     ipcRenderer.removeAllListeners('request-client-credentials')
   },
+  addTaskStatusListener: (id, callback) => {
+    ipcRenderer.on('task-status-' + id, (event, args) => {
+      callback(args)
+    })
+  },
+  removeTaskStatusListener: (id) => {
+    ipcRenderer.removeAllListeners('task-status-' + id)
+  },
   addClosingProjectWindowListener: (callback) => {
     ipcRenderer.on('closing-project-window', (event, args) => {
       callback(args)
