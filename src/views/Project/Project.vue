@@ -121,11 +121,12 @@
           <settings v-show="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
         </v-col>
         <v-col>
-          <preview-map :visible="previewLayer !== null && previewLayer !== undefined && item === 1"
-                       :project="project"
-                       :preview-layer="previewLayer"
-                       :resizeListener="item"
-                       :get-map-center-and-zoom="getMapCenterAndZoom">
+          <preview-map
+            :visible="previewLayer !== null && previewLayer !== undefined && item === 1"
+            :project="project"
+            :preview-layer="previewLayer"
+            :resizeListener="item"
+            :get-map-center-and-zoom="getMapCenterAndZoom">
           </preview-map>
           <leaflet-map
             ref="map"

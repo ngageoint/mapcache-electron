@@ -667,12 +667,6 @@ class MapCacheWindowManager {
     MapCacheWindowManager.disableCertificateAuth()
     if (this.projectWindow) {
       this.projectWindow.webContents.send('closing-project-window', {isDeleting})
-      // closing means we no longer need to have these running
-      // MapCacheWindowManager.clearWorkerThreadEventHandlers()
-      // this.mapcacheThreadHelper.terminate().then(() => {
-      //   this.mapcacheThreadHelper = null
-      //   this.launchMainWindow()
-      // })
       this.launchMainWindow().then(() => {
         this.showMainWindow()
       })

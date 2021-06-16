@@ -5,7 +5,7 @@ import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRend
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
-import {REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER} from './mapcacheThreadRequestTypes'
+import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER } from './mapcacheThreadRequestTypes'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified

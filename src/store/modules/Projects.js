@@ -16,81 +16,117 @@ const mutations = {
     Vue.set(state, project.id, project)
   },
   setProjectName (state, {project, name}) {
-    Vue.set(state[project.id], 'name', name)
+    if (state[project.id]) {
+      Vue.set(state[project.id], 'name', name)
+    }
   },
   setDataSourceDisplayName (state, {projectId, sourceId, displayName}) {
-    Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
+    if (state[projectId]) {
+      Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
+    }
   },
   addDataSources (state, {projectId, dataSources}) {
-    dataSources.forEach(source => {
-      Vue.set(state[projectId].sources, source.id, source.config)
-    })
+    if (state[projectId]) {
+      dataSources.forEach(source => {
+        Vue.set(state[projectId].sources, source.id, source.config)
+      })
+    }
   },
   setGeoPackage (state, {projectId, geopackage}) {
-    Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
+    if (state[projectId]) {
+      Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
+    }
   },
   setDataSource (state, {projectId, source}) {
-    Vue.set(state[projectId].sources, source.id, source)
+    if (state[projectId]) {
+      Vue.set(state[projectId].sources, source.id, source)
+    }
   },
   setProjectMaxFeatures (state, {projectId, maxFeatures}) {
-    Vue.set(state[projectId], 'maxFeatures', maxFeatures)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'maxFeatures', maxFeatures)
+    }
   },
   setDataSourceVisible (state, {projectId, sourceId, visible}) {
-    Vue.set(state[projectId].sources[sourceId], 'visible', visible)
+    if (state[projectId]) {
+      Vue.set(state[projectId].sources[sourceId], 'visible', visible)
+    }
   },
   removeDataSource (state, {projectId, sourceId}) {
-    Vue.delete(state[projectId].sources, sourceId)
+    if (state[projectId]) {
+      Vue.delete(state[projectId].sources, sourceId)
+    }
   },
   deleteProject (state, { projectId }) {
     Vue.delete(state, projectId)
   },
   removeGeoPackage (state, {projectId, geopackageId}) {
-    Vue.delete(state[projectId].geopackages, geopackageId)
+    if (state[projectId]) {
+      Vue.delete(state[projectId].geopackages, geopackageId)
+    }
   },
   setZoomControlEnabled (state, {projectId, enabled}) {
-    Vue.set(state[projectId], 'zoomControlEnabled', enabled)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'zoomControlEnabled', enabled)
+    }
   },
   setDisplayZoomEnabled (state, {projectId, enabled}) {
-    Vue.set(state[projectId], 'displayZoomEnabled', enabled)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'displayZoomEnabled', enabled)
+    }
   },
   setDisplayAddressSearchBar (state, {projectId, enabled}) {
-    Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
+    }
   },
   clearActiveLayers (state, {projectId}) {
-    const projectCopy = Object.assign({}, state[projectId])
-    Object.keys(projectCopy.geopackages).forEach(key => {
-      const geopackage = projectCopy.geopackages[key]
-      Object.keys(geopackage.tables.tiles).forEach(table => {
-        geopackage.tables.tiles[table].visible = false
+    if (state[projectId]) {
+      const projectCopy = Object.assign({}, state[projectId])
+      Object.keys(projectCopy.geopackages).forEach(key => {
+        const geopackage = projectCopy.geopackages[key]
+        Object.keys(geopackage.tables.tiles).forEach(table => {
+          geopackage.tables.tiles[table].visible = false
+        })
+        Object.keys(geopackage.tables.features).forEach(table => {
+          geopackage.tables.features[table].visible = false
+        })
       })
-      Object.keys(geopackage.tables.features).forEach(table => {
-        geopackage.tables.features[table].visible = false
+      Object.keys(projectCopy.sources).forEach(key => {
+        const source = projectCopy.sources[key]
+        source.visible = false
       })
-    })
-    Object.keys(projectCopy.sources).forEach(key => {
-      const source = projectCopy.sources[key]
-      source.visible = false
-    })
-    Vue.set(state, projectId, projectCopy)
+      Vue.set(state, projectId, projectCopy)
+    }
   },
   zoomToExtent (state, {projectId, extent}) {
-    let key = 0
-    if (state[projectId].zoomToExtent !== null && state[projectId].zoomToExtent !== undefined) {
-      key = (state[projectId].zoomToExtent.key !== null && state[projectId].zoomToExtent.key !== undefined ? state[projectId].zoomToExtent.key : 0) + 1
+    if (state[projectId]) {
+      let key = 0
+      if (state[projectId].zoomToExtent !== null && state[projectId].zoomToExtent !== undefined) {
+        key = (state[projectId].zoomToExtent.key !== null && state[projectId].zoomToExtent.key !== undefined ? state[projectId].zoomToExtent.key : 0) + 1
+      }
+      Vue.set(state[projectId], 'zoomToExtent', {extent, key})
     }
-    Vue.set(state[projectId], 'zoomToExtent', {extent, key})
   },
   setBoundingBoxFilter (state, {projectId, boundingBoxFilter}) {
-    Vue.set(state[projectId], 'boundingBoxFilter', boundingBoxFilter)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'boundingBoxFilter', boundingBoxFilter)
+    }
   },
   setBoundingBoxFilterEditingEnabled (state, {projectId, mode}) {
-    Vue.set(state[projectId], 'boundingBoxFilterEditing', mode)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'boundingBoxFilterEditing', mode)
+    }
   },
   setBoundingBoxFilterEditingDisabled (state, {projectId}) {
-    Vue.delete(state[projectId], 'boundingBoxFilterEditing')
+    if (state[projectId]) {
+      Vue.delete(state[projectId], 'boundingBoxFilterEditing')
+    }
   },
   showToolTips (state, {projectId, show}) {
-    Vue.set(state[projectId], 'showToolTips', show)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'showToolTips', show)
+    }
   },
   clearBoundingBoxFilter (state, {projectId}) {
     const project = Object.assign({}, state[projectId])
@@ -99,18 +135,22 @@ const mutations = {
     Vue.set(state, projectId, project)
   },
   setActiveGeoPackage (state, {projectId, geopackageId}) {
-    Vue.set(state[projectId], 'activeGeoPackage', {
-      geopackageId: geopackageId,
-      tableName: undefined,
-      showFeaturesTableEvent: 0
-    })
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'activeGeoPackage', {
+        geopackageId: geopackageId,
+        tableName: undefined,
+        showFeaturesTableEvent: 0
+      })
+    }
   },
   setActiveGeoPackageFeatureLayer (state, {projectId, geopackageId, tableName}) {
-    Vue.set(state[projectId], 'activeGeoPackage', {
-      geopackageId: geopackageId,
-      tableName: tableName,
-      showFeaturesTableEvent: 0
-    })
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'activeGeoPackage', {
+        geopackageId: geopackageId,
+        tableName: tableName,
+        showFeaturesTableEvent: 0
+      })
+    }
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
@@ -119,18 +159,24 @@ const mutations = {
     Object.assign(state, getDefaultState())
   },
   editFeatureGeometry (state, {projectId, id, isGeoPackage, tableName, featureToEdit}) {
-    Vue.set(state[projectId], 'editingFeature', {
-      id: id,
-      tableName: tableName,
-      isGeoPackage: isGeoPackage,
-      featureToEdit: featureToEdit
-    })
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'editingFeature', {
+        id: id,
+        tableName: tableName,
+        isGeoPackage: isGeoPackage,
+        featureToEdit: featureToEdit
+      })
+    }
   },
   clearEditFeatureGeometry (state, {projectId}) {
-    Vue.delete(state[projectId], 'editingFeature')
+    if (state[projectId]) {
+      Vue.delete(state[projectId], 'editingFeature')
+    }
   },
   setMapRenderingOrder (state, {projectId, mapRenderingOrder}) {
-    Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
+    }
   },
   migrateState (state, {migratedState}) {
     Object.keys(state).forEach(key => {

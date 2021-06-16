@@ -1,3 +1,9 @@
-export const REQUEST_RENDER = 'render'
-export const REQUEST_ATTACH_MEDIA = 'attach_media'
-export const REQUEST_PROCESS_SOURCE = 'process_source'
+const REQUEST_RENDER = 'render'
+const REQUEST_ATTACH_MEDIA = 'attach_media'
+const REQUEST_PROCESS_SOURCE = 'process_source'
+
+export {
+  REQUEST_RENDER,
+  REQUEST_ATTACH_MEDIA,
+  REQUEST_PROCESS_SOURCE
+}
