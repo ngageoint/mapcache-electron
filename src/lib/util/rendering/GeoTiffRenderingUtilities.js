@@ -7,6 +7,7 @@ import { getWebMercatorBoundingBoxFromXYZ, tileIntersects } from '../TileBoundin
 import { trimExtentToWebMercatorMax } from '../XYZTileUtilities'
 import { getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../GeoTiffUtilities'
 import { disposeCanvas, createCanvas, makeImageData } from '../CanvasUtilities'
+import keys from 'lodash/keys'
 
 const maxByteValue = 255
 
@@ -232,9 +233,13 @@ function requestTile (tileRequest) {
                   if (offset >= 0 && offset < size) {
                     const sample = getSample(fd, offset, bytesPerSample, bitsPerSample, reader, littleEndian)
                     const mapIndex = p(sample)
+                    let colorMapLength = colorMap.length
+                    if (colorMapLength == null || colorMapLength <= 0) {
+                      colorMapLength = keys(colorMap).length
+                    }
                     targetData[position] = colorMap[mapIndex] / 65535 * maxByteValue
-                    targetData[position + 1] = colorMap[mapIndex + colorMap.length / 3] / 65535 * maxByteValue
-                    targetData[position + 2] = colorMap[mapIndex + colorMap.length / 3 * 2] / 65535 * maxByteValue
+                    targetData[position + 1] = colorMap[mapIndex + colorMapLength / 3] / 65535 * maxByteValue
+                    targetData[position + 2] = colorMap[mapIndex + colorMapLength / 3 * 2] / 65535 * maxByteValue
                     if (a) {
                       targetData[position + 3] = a(sample)
                     } else {

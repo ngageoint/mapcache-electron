@@ -9,6 +9,78 @@ import { GEOTIFF } from '../layer/LayerTypes'
 import { getConverter } from '../projection/ProjectionUtilities'
 
 export default class GeoTIFFSource extends Source {
+  static async getGeoTIFF (filePath) {
+    return GeoTIFF.fromFile(filePath)
+  }
+
+  static async getImage (geotiff) {
+    return geotiff.getImage()
+  }
+
+  static closeGeoTIFF (geotiff) {
+    geotiff.close()
+  }
+
+  static getImageData (image) {
+    const imageOrigin = image.getOrigin()
+    const imageResolution = image.getResolution()
+    const imageWidth = image.getWidth()
+    const imageHeight = image.getHeight()
+    const tileWidth = image.getTileWidth()
+    const tileHeight = image.getTileHeight()
+    const srs = getCRSForGeoTiff(image)
+    const globalNoDataValue = image.getGDALNoData()
+    const littleEndian = image.littleEndian
+    const fileDirectory = image.fileDirectory
+
+    return {
+      imageOrigin,
+      imageResolution,
+      imageWidth,
+      imageHeight,
+      srs,
+      littleEndian,
+      globalNoDataValue,
+      fileDirectory,
+      tileWidth,
+      tileHeight
+    }
+  }
+
+  static getFileDirectoryData (fileDirectory) {
+    const colorMap = fileDirectory.ColorMap ? new Uint16Array(fileDirectory.ColorMap.buffer) : null
+    let photometricInterpretation = fileDirectory.PhotometricInterpretation
+    const samplesPerPixel = fileDirectory.SamplesPerPixel
+    const bitsPerSample = fileDirectory.BitsPerSample
+    const sampleFormat = fileDirectory.SampleFormat
+    const bytesPerSample = bitsPerSample ? bitsPerSample.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / 8 : 8
+
+    return {
+      colorMap,
+      photometricInterpretation,
+      samplesPerPixel,
+      bitsPerSample,
+      sampleFormat,
+      bytesPerSample,
+    }
+  }
+
+  static async createGeoTIFFDataFile (image, rasterFilePath) {
+    // read chunks of a raster file at a time and store the decoded data into the data.bin file
+    const height = image.getHeight()
+    const width = image.getWidth()
+    const tileHeight = image.getTileHeight()
+    const fd = fs.openSync(rasterFilePath, 'w')
+    for (let i = 0; i < height; i = i + tileHeight) {
+      const raster = await image.readRasters({
+        window: [0, i, width, Math.min(height, (i + tileHeight))],
+        interleave: true
+      })
+      fs.writeSync(fd, raster)
+    }
+    fs.closeSync(fd)
+  }
+
 
   /**
    * Creates the GeoTiff layer
@@ -20,38 +92,31 @@ export default class GeoTIFFSource extends Source {
    * @returns {Promise<GeoTiffLayer>}
    */
   static async createGeoTiffLayer (filePath, name, id, directory, sourceDirectory) {
-    const geotiff = await GeoTIFF.fromFile(filePath)
-    const image = await geotiff.getImage()
-    const imageOrigin = image.getOrigin()
-    const imageResolution = image.getResolution()
-    const imageWidth = image.getWidth()
-    const imageHeight = image.getHeight()
-    const srs = getCRSForGeoTiff(image)
-    const globalNoDataValue = image.getGDALNoData()
-    const littleEndian = image.littleEndian
+    const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
+    const image = await GeoTIFFSource.getImage(geotiff)
+    let {
+      imageOrigin,
+      imageResolution,
+      imageWidth,
+      imageHeight,
+      srs,
+      littleEndian,
+      globalNoDataValue,
+      fileDirectory,
+    } = GeoTIFFSource.getImageData(image)
 
-    const fileDirectory = image.fileDirectory
-    const colorMap = fileDirectory.ColorMap ? new Uint16Array(fileDirectory.ColorMap.buffer) : null
-    let photometricInterpretation = fileDirectory.PhotometricInterpretation
-    const samplesPerPixel = fileDirectory.SamplesPerPixel
-    const bitsPerSample = fileDirectory.BitsPerSample
-    const sampleFormat = fileDirectory.SampleFormat
-    const bytesPerSample = bitsPerSample ? bitsPerSample.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / 8 : 8
+    let {
+      colorMap,
+      photometricInterpretation,
+      samplesPerPixel,
+      bitsPerSample,
+      sampleFormat,
+      bytesPerSample
+    } = GeoTIFFSource.getFileDirectoryData(fileDirectory)
 
     // read chunks of a raster file at a time and store the decoded data into the data.bin file
     const rasterFile = path.join(path.dirname(filePath), 'data.bin')
-    const height = image.getHeight()
-    const width = image.getWidth()
-    const tileHeight = image.getTileHeight()
-    const fd = fs.openSync(rasterFile, 'w')
-    for (let i = 0; i < height; i = i + tileHeight) {
-      const raster = await image.readRasters({
-        window: [0, i, width, Math.min(height, (i + tileHeight))],
-        interleave: true
-      })
-      fs.writeSync(fd, raster)
-    }
-    fs.closeSync(fd)
+    await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
 
     let enableGlobalNoDataValue = false
     if (globalNoDataValue !== null) {
@@ -134,7 +199,8 @@ export default class GeoTIFFSource extends Source {
     const minCoord = transform.inverse([bbox[0], bbox[1]])
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
     const extent = [minCoord[0], minCoord[1], maxCoord[0], maxCoord[1]]
-    geotiff.close()
+
+    GeoTIFFSource.closeGeoTIFF(geotiff)
 
     return new GeoTiffLayer({
       alphaBand: alphaBand,
