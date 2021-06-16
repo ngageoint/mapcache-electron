@@ -151,7 +151,7 @@ export default class WorkerThreadPool extends EventEmitter {
       const worker = this.freeWorkers.find(worker => worker.config.types.indexOf(this.queue[i].task.type) !== -1)
       if (worker) {
         const taskInfo = this.queue.splice(i, 1)[0]
-        const worker = this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)[0]
+        this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
         worker[kTaskInfo] = taskInfo
         taskInfo.setWorker(worker)
         taskInfo.emitProcessing()
