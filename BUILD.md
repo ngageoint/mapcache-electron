@@ -81,12 +81,16 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `yarn electron:build-win`
 2. Build Linux
 `npm run electron:build-linux`
-3. Build Mac
+3. Build Mac (note, ensure app is signed using Developer ID Application certificate)
 `yarn electron:build-mac`
-4. The newly created installers are located in the build folder:  
+4. Build for Mac App Store (note, ensure app is signed by Apple Distribution certificate)
+`yarn electron:build-mas`
+5. The newly created installers are located in the build folder:  
 `cd dist_electron`
+   
 
 # Notarization
+Notarizing the application is necessary for distributing outside of the Mac App Store.
 1. Build mac build
 `yarn electron:build-mac`
 2. Navigate to build folder

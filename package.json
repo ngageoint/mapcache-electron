@@ -12,6 +12,7 @@
     "electron:build": "vue-cli-service electron:build",
     "electron:build-linux": "vue-cli-service electron:build --linux",
     "electron:build-mac": "vue-cli-service electron:build -- --mac",
+    "electron:build-mas": "vue-cli-service electron:build -- --mas",
     "electron:build-win": "vue-cli-service electron:build -- --win portable nsis",
     "electron:debug": "vue-cli-service electron:serve --debug; electron --inspect=5858 dist_electron",
     "electron:serve": "vue-cli-service electron:serve",

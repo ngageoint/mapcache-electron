@@ -133,6 +133,18 @@ module.exports = {
           entitlements: "buildResources/entitlements.mac.plist",
           entitlementsInherit: "buildResources/entitlements.mac.plist"
         },
+        mas: {
+          category: "public.app-category.productivity",
+          target: [
+            "dmg",
+            "pkg"
+          ],
+          icon: "buildResources/icon.icns",
+          hardenedRuntime : true,
+          gatekeeperAssess: false,
+          entitlements: "buildResources/entitlements.mas.plist",
+          entitlementsInherit: "buildResources/entitlements.mas.plist"
+        },
         win: {
           target: [
             "portable",
