@@ -7,10 +7,9 @@ import jimp from './JimpUtilities'
 import bbox from '@turf/bbox'
 import transformRotate from '@turf/transform-rotate'
 import isNil from 'lodash/isNil'
-import GeoTiffLayer from '../layer/tile/GeoTiffLayer'
 import * as GeoTIFF from 'geotiff'
 import { Readable } from 'stream'
-import GeoTIFFSource from "@/lib/source/GeoTIFFSource";
+import GeoTIFFSource from '../source/GeoTIFFSource'
 
 function bufferToStream(buffer) {
   let stream = new Readable()
