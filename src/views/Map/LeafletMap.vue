@@ -165,10 +165,10 @@
             <li v-for="(item) in layerOrder" :key="item.id" :class="`layer-order-list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
               <v-list-item-icon>
                 <v-btn icon @click.stop="item.zoomTo">
-                  <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-content>
@@ -199,7 +199,7 @@
               <v-list-item-title>{{item.name}}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <v-progress-circular
-                v-if="baseMapLayers[item.id] !== undefined && baseMapLayers[item.id].initializationState === 1"
+                v-if="item.id == selectedBaseMapId && connectingToBaseMap"
                 indeterminate
                 color="primary"
               ></v-progress-circular>
@@ -396,7 +396,8 @@ export default {
       drag: false,
       layerOrder: [],
       mapBackground: '#ddd',
-      displayNetworkError: false
+      displayNetworkError: false,
+      connectingToBaseMap: false
     }
   },
   methods: {
@@ -602,14 +603,10 @@ export default {
           map.addLayer(self.baseMapLayers[baseMapId])
         }
       } else {
-        try {
-          let layer = constructLayer(baseMap.layerConfiguration)
-          self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
-          if (self.selectedBaseMapId === baseMapId) {
-            map.addLayer(self.baseMapLayers[baseMapId])
-          }
-        } catch (error) {
-          console.error(error)
+        let layer = constructLayer(baseMap.layerConfiguration)
+        self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
+        if (self.selectedBaseMapId === baseMapId) {
+          map.addLayer(self.baseMapLayers[baseMapId])
         }
       }
     },
@@ -1102,9 +1099,12 @@ export default {
           this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
           const newBaseMap = self.baseMaps[self.baseMapIndex]
 
+
           let success = true
           if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
-            success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+            this.connectingToBaseMap = true
+            success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
+            this.connectingToBaseMap = false
           }
 
           // remove old map layer
@@ -1229,7 +1229,7 @@ export default {
             let valid = true
             if (isRemote(newConfig)) {
               try {
-                await this.dataSourceMapLayers[sourceId].testConnection(true)
+                await this.dataSourceMapLayers[sourceId].testConnection()
               } catch (e) {
                 window.mapcache.setSourceError({id: sourceId, error: e})
                 valid = false

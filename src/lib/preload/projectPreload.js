@@ -120,6 +120,7 @@ import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/Til
 import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
+import { getDef } from '../projection/ProjectionUtilities'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync('get-user-data-directory')
@@ -133,6 +134,14 @@ contextBridge.exposeInMainWorld('log', log.functions)
 const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
 const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
 const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
+
+// if a user cancels inputting credentials, we will need to force a cancel of the the request
+const cancelRequestURLToCallbackMap = {}
+ipcRenderer.on('cancel-service-request', (event, url) => {
+  if (cancelRequestURLToCallbackMap[url]) {
+    cancelRequestURLToCallbackMap[url]()
+  }
+})
 
 let storage
 
@@ -234,9 +243,25 @@ contextBridge.exposeInMainWorld('mapcache', {
   getOfflineMap: () => {
     return readJSONFile(path.join(getExtraResourcesDirectory(), 'offline.json'))
   },
+  getProjectionDefinition: (code) => {
+    return getDef(code)
+  },
   createBaseMapDirectory,
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
+  },
+  webRequest: (request) => {
+    request.id = createUniqueID()
+    return new Promise((resolve, reject) => {
+      ipcRenderer.once('web-request-response-' + request.id, (event, response) => {
+        if (response.error) {
+          reject(response)
+        } else {
+          resolve(response)
+        }
+      })
+      ipcRenderer.send('web-request', request)
+    })
   },
   closeProject: () => {
     ipcRenderer.send('close-project')
@@ -268,11 +293,11 @@ contextBridge.exposeInMainWorld('mapcache', {
     }
     await jetpack.writeAsync(file, mediaRow.data)
   },
-  sendClientCredentials: (credentials) => {
-    ipcRenderer.send('client-credentials-input', credentials)
+  sendClientCredentials: (eventUrl, credentials) => {
+    ipcRenderer.send('client-credentials-input', eventUrl, credentials)
   },
-  sendCertificateSelection: (certificate) => {
-    ipcRenderer.send('client-certificate-selected', certificate)
+  sendCertificateSelection: (url, certificate) => {
+    ipcRenderer.send('client-certificate-selected', url, certificate)
   },
   removeClosingProjectWindowListener: () => {
     ipcRenderer.removeAllListeners('closing-project-window')
@@ -372,13 +397,11 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send('request_tile', request)
     })
   },
-  registerRequestTimeoutListener: (requestId, listener) => {
-    const channel = 'request-timeout-' + requestId
-    ipcRenderer.once(channel, listener)
+  registerServiceRequestCancelListener: (url, callback) => {
+    cancelRequestURLToCallbackMap[url] = callback
   },
-  unregisterRequestTimeoutListener: (requestId, listener) => {
-    const channel = 'request-timeout-' + requestId
-    ipcRenderer.off(channel, listener)
+  unregisterServiceRequestCancelListener: (url) => {
+    delete cancelRequestURLToCallbackMap[url]
   },
   async saveBaseMap (baseMapName, configuration, backgroundColor) {
     let layerConfiguration = {}
@@ -668,8 +691,8 @@ contextBridge.exposeInMainWorld('mapcache', {
     getOrCreateGeoPackage(filePath).then(gp => {
       _createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
         addGeoPackage({projectId: projectId, filePath: filePath})
-      }).catch((e) => {
-        console.error(e)
+      }).catch(() => {
+        console.error('Failed to create feature table.')
       }).finally(() => {
         try {
           gp.close()

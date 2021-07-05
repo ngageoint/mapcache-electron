@@ -1,9 +1,9 @@
 <template>
   <v-sheet>
-    <v-card flat tile :loading="!error && !cancelled">
+    <v-card flat tile :loading="!error && workflowState !== 4">
       <v-card-title>
         <span class="processing-title">
-          {{((cancelled ? 'Cancelled ' : (error ? 'Failed ' : (status + ' ')))) + displayName}}
+          {{((workflowState === 4 ? 'Cancelled ' : (error ? 'Failed ' : (status + ' ')))) + displayName}}
         </span>
       </v-card-title>
       <v-card-text>
@@ -16,15 +16,15 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          v-if="error || cancelled"
+          v-if="error || workflowState === 4"
           text
           color="warning"
           @click="closeCard">
           Close
         </v-btn>
         <v-btn
-          v-else-if="!error && !cancelled"
-          :disabled="status === 'Cancelling'"
+          v-else-if="!error && workflowState !== 4"
+          :disabled="workflowState === 3"
           text
           color="warning"
           @click="cancelProcessing">
@@ -37,24 +37,35 @@
 </template>
 
 <script>
+import isNil from 'lodash/isNil'
+import {isMapCacheUserCancellationError, SERVICE_TYPE} from '../../lib/network/HttpUtilities'
+import PreprocessSource from '../../lib/source/preprocessing/PreprocessSource'
+
+const WORKFLOW_STATES = {
+  PREPROCESSING: 0,
+  QUEUED: 1,
+  PROCESSING: 2,
+  CANCELLING: 3,
+  CANCELLED: 4,
+  COMPLETED: 5
+}
+
 export default {
     props: {
-      source: Object
+      project: Object,
+      source: Object,
+      onComplete: Function,
+      onCancel: Function,
+      onClose: Function
     },
     data () {
       return {
-        status: 'Queued',
-        cancelled: false
+        status: 'Preprocesing',
+        error: null,
+        workflowState: WORKFLOW_STATES.PREPROCESSING
       }
     },
     computed: {
-      error () {
-        let error = this.source.error
-        if (error && error.message) {
-          error = error.message
-        }
-        return error
-      },
       displayName () {
         if (this.source.url) {
           return window.mapcache.getBaseUrlAndQueryParams(this.source.url).baseUrl
@@ -64,23 +75,87 @@ export default {
       }
     },
     methods: {
-      cancelProcessing () {
+      async preprocessSource (sourceConfiguration) {
+        this.preprocessor = new PreprocessSource(sourceConfiguration)
+        return await this.preprocessor.preprocess()
+      },
+      sendSourceToProcess (source) {
         const self = this
-        this.$nextTick(() => {
-          window.mapcache.cancelProcessingSource(self.source).then(() => {
-            setTimeout(() => {
-              self.cancelled = true
-            }, 500)
-          })
+        self.status = 'Queued'
+        self.$nextTick(() => {
+          window.mapcache.processSource({project: self.project, source: source})
+          self.workflowState = WORKFLOW_STATES.QUEUED
         })
       },
+      reportCancelled () {
+        const self = this
+        setTimeout(() => {
+          self.workflowState = WORKFLOW_STATES.CANCELLED
+        }, 500)
+      },
+      cancelProcessing () {
+        const self = this
+        if (this.preprocessor != null) {
+          this.preprocessor.cancel()
+        }
+        // processing has not yet been sent to the server side to run
+        if (self.workflowState === WORKFLOW_STATES.QUEUED || self.workflowState === WORKFLOW_STATES.PROCESSING) {
+          self.onCancel().then(() => {
+            self.reportCancelled()
+          })
+        } else {
+          self.reportCancelled()
+        }
+        self.workflowState = WORKFLOW_STATES.CANCELLING
+      },
       closeCard () {
-        this.$emit('clear-processing', this.source)
+        this.onClose()
       }
     },
     mounted () {
-      window.mapcache.addTaskStatusListener(this.source.id, (status) => {
-        this.status = status
+      const self = this
+      const source = this.source
+      // setup listener for when processing is completed
+      window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
+        if (isNil(result.error)) {
+          setTimeout(() => {
+            window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
+            self.$nextTick(() => {
+              self.onComplete()
+            })
+          }, 1000)
+        } else {
+          self.error = result.error
+          if (result.error.message) {
+            self.error = self.error.message
+          }
+        }
+      })
+
+      self.$nextTick(() => {
+        // wfs and arcgis fs will require accessing features in browser, as opposed to trying that in node, given credentials
+        if (source.serviceType === SERVICE_TYPE.WFS || source.serviceType === SERVICE_TYPE.ARCGIS_FS) {
+          self.preprocessSource(source).then(updatedSource => {
+            if (self.workflowState !== WORKFLOW_STATES.CANCELLING && self.workflowState !== WORKFLOW_STATES.CANCELLED) {
+              self.sendSourceToProcess(updatedSource)
+            }
+          }).catch((error) => {
+            if (!isMapCacheUserCancellationError(error)) {
+              self.error = error
+              if (error.message) {
+                self.error = error.message
+              }
+            }
+          })
+        } else {
+          self.sendSourceToProcess(source)
+        }
+      })
+      window.mapcache.addTaskStatusListener(source.id, (status) => {
+        if (status === 'Processing') {
+          this.workflowState = WORKFLOW_STATES.PROCESSING
+        }
+        self.status = status
       })
     },
     beforeDestroy () {

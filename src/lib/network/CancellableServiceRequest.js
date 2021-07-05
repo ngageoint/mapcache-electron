@@ -1,70 +1,85 @@
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import { createUniqueID } from '../util/UniqueIDUtilities'
-import { USER_CANCELLED_MESSAGE, TIMEOUT_MESSAGE } from './HttpUtilities'
+import {isAuthenticationErrorResponse, USER_CANCELLED_MESSAGE} from './HttpUtilities'
 
+/**
+ * Cancellable Service Request allows a user to cancel an ongoing request.
+ * Service requests should be made to access capabilities of a service or when connecting for the first time.
+ * This class will attempt to make an axios request withCredentials set to false. If it fails, it will attempt the same
+ * request withCredentials enabled.
+ *
+ * Service requests should be made whenever a service is accessed for the first time in th session to ensure the user
+ * authenticates, if necessary.
+ */
 export default class CancellableServiceRequest {
-  source
+  cancelSource
+  cancelled = false
+  withCredentials = false
+
+  /**
+   * Did the request require credentials
+   * @returns {boolean}
+   */
+  requiredCredentials () {
+    return this.withCredentials
+  }
 
   /**
    * If a request is currently active, call cancelToken function
    * and set state to cancelled to prevent additional retries
    */
   cancel () {
-    if (!isNil(this.source)) {
-      this.source.cancel(USER_CANCELLED_MESSAGE)
+    this.cancelled = true
+    if (!isNil(this.cancelSource)) {
+      this.cancelSource.cancel(USER_CANCELLED_MESSAGE)
     }
   }
 
   /**
-   * If a request is currently active, call cancelToken function
-   * and set state to cancelled to prevent additional retries
-   */
-  timeout () {
-    if (!isNil(this.source)) {
-      this.source.cancel(TIMEOUT_MESSAGE)
-    }
-  }
-
-  /**
-   * Attempts to make a connection to the service endpoint
-   *
-   * Headers:
-   *  - x-mapcache-auth-enabled allows the login action to occur
-   *  - x-mapcache-timeout will perform a cancel of the request if response headers have no been received before the specified timeout value
-   *  - x-mapcache-connection-id is the reference id, so that communication between electron's web request listeners and this class can be made
-
+   * Will request the url and return the response.
    * @param url
-   * @param options
-   * @returns {Promise<{dataURL: undefined, error: *}>}
+   * @returns <any>
    */
-  async request (url, options) {
-    let response = undefined
-    const requestId = createUniqueID()
-    const timeoutListener = () => {
-      this.timeout()
-    }
+  async request (url) {
+    let response
+    let error
+    const self = this
+    window.mapcache.registerServiceRequestCancelListener(url, () => {
+      self.cancel()
+    })
     try {
-      const CancelToken = axios.CancelToken
-      this.source = CancelToken.source()
+      this.cancelSource = axios.CancelToken.source()
       const request = {
         url: url,
-        withCredentials: true,
-        cancelToken: this.source.token
+        cancelToken: this.cancelSource.token,
+        withCredentials: this.withCredentials,
       }
-      request.headers = {}
-      if (options.allowAuth) {
-        request.headers['x-mapcache-auth-enabled'] = true
-      }
-      if (options.timeout) {
-        request.headers['x-mapcache-timeout'] = options.timeout
-      }
-      request.headers['x-mapcache-connection-id'] = requestId
-      window.mapcache.registerRequestTimeoutListener(requestId, timeoutListener)
-      response = await axios(request)
+
+      await new Promise((resolve => {
+        axios(request).then(r => {
+          response = r
+          resolve()
+        }).catch(e => {
+          error = e
+          resolve()
+        })
+      }))
+      // response = await window.mapcache.webRequest(request)
     } finally {
-      window.mapcache.unregisterRequestTimeoutListener(requestId, timeoutListener)
+      window.mapcache.unregisterServiceRequestCancelListener(url)
     }
+
+    if (!isNil(error)) {
+      // made a request without credentials and received an authentication error
+      // give it a try now with credentials enabled.
+      if (!this.cancelled && !this.withCredentials && (error.isAxiosError || isAuthenticationErrorResponse(error.response))) {
+        this.withCredentials = true
+        response = await this.request(url)
+      } else if (!isNil(error)) {
+        throw(error)
+      }
+    }
+
     return response
   }
 }

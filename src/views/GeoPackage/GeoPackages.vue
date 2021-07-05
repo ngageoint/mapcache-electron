@@ -76,7 +76,7 @@
               color="primary"
               v-bind="attrs"
               v-on="on">
-              <img style="color: white;" src="../../assets/new-geopackage.svg" width="20px" height="20px">
+              <img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px">
             </v-btn>
           </template>
           <span>Add GeoPackage</span>

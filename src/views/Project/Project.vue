@@ -18,54 +18,10 @@
       </v-card>
     </v-dialog>
     <v-dialog max-width="580" v-model="showCertificateSelectionDialog" persistent>
-      <v-card>
-        <v-card-title>
-          Select a certificate
-        </v-card-title>
-        <v-card-subtitle>
-          Select a certificate to authenticate yourself to {{certificateRequestUrl}}
-        </v-card-subtitle>
-        <v-card-text>
-          <v-data-table
-            v-model="certificateSelection"
-            single-select
-            height="150px"
-            dense
-            disable-filtering
-            disable-pagination
-            disable-sort
-            :headers="headers"
-            :hide-default-footer="true"
-            :items="certificateList"
-            class="elevation-1"
-          >
-            <template v-slot:item="{ item }">
-              <tr :class="certificateSelection[0] === item.id ? 'grey lighten-1' : ''" @click.stop.prevent="selectCertificateRow(item)">
-                <td class="text-truncate" style="max-width: 200px;">{{item.subjectName}}</td>
-                <td class="text-truncate" style="max-width: 150px;">{{item.issuerName}}</td>
-                <td class="text-truncate" style="max-width: 150px;">{{item.serialNumber}}</td>
-              </tr>
-            </template>
-          </v-data-table>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            text
-            @click="cancelCertificateSelection">
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            text
-            @click="selectCertificate">
-            Select
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+      <cert-auth v-if="showCertificateSelectionDialog" :certificate-request-url="certificateRequestUrl" :certificate-list="certificateList" :select-certificate="selectCertificate" :cancel-selection="cancelCertificateSelection"></cert-auth>
     </v-dialog>
     <v-dialog v-if="showSignIn" v-model="showSignIn" max-width="400" persistent>
-      <basic-auth v-if="showSignIn" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
+      <basic-auth v-if="showSignIn" :event-url="requestEventUrl" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
     </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
@@ -81,7 +37,7 @@
         <v-list dense flat class="py-0">
           <v-list-item one-line class="px-0 pt-1 pb-1">
             <v-list-item-avatar class="ml-2">
-              <img src="../../assets/64x64.png">
+              <img alt="MapCache Icon" src="/images/64x64.png"/>
             </v-list-item-avatar>
             <v-list-item-content>
               <v-list-item-title>MapCache</v-list-item-title>
@@ -170,7 +126,8 @@ import PreviewMap from '../Map/PreviewMap'
 import Settings from '../Settings/Settings'
 import GeoPackages from '../GeoPackage/GeoPackages'
 import DataSources from '../DataSources/DataSources'
-import BasicAuth from '../Common/BasicAuth'
+import BasicAuth from '../Network/BasicAuth'
+import CertAuth from '../Network/CertAuth'
 import {mdiCogOutline, mdiLayersOutline, mdiPackageVariant} from '@mdi/js'
 import {SUPPORTED_FILE_EXTENSIONS_WITH_DOT} from '../../lib/util/FileConstants'
 
@@ -195,15 +152,10 @@ export default {
         ],
         showCertificateSelectionDialog: false,
         certificateList: [],
-        certificateSelection: [0],
         certificateRequestUrl: '',
-        headers: [
-          { text: 'Subject ', value: 'subjectName', width: 200 },
-          { text: 'Issuer', value: 'issuerName', width: 150 },
-          { text: 'Serial', value: 'serialNumber', width: 150 }
-        ],
         noInternet: !navigator.onLine,
         showSignIn: false,
+        requestEventUrl: '',
         requestAuthInfo: {},
         requestDetails: {}
       }
@@ -283,7 +235,8 @@ export default {
       LeafletMap,
       Settings,
       GeoPackages,
-      PreviewMap
+      PreviewMap,
+      CertAuth
     },
     methods: {
       getMapCenterAndZoom () {
@@ -350,26 +303,23 @@ export default {
           return false
         }
       },
-      cancelSignIn () {
-        window.mapcache.sendClientCredentials()
+      cancelSignIn (eventUrl) {
+        window.mapcache.sendClientCredentials(eventUrl, undefined)
         this.showCertificateSelectionDialog = false
         this.showSignIn = false
       },
-      signIn (credentials) {
-        window.mapcache.sendClientCredentials(credentials)
+      signIn (eventUrl, credentials) {
+        window.mapcache.sendClientCredentials(eventUrl, credentials)
         this.showCertificateSelectionDialog = false
         this.showSignIn = false
       },
-      cancelCertificateSelection () {
-        window.mapcache.sendCertificateSelection(null)
+      cancelCertificateSelection (url) {
+        window.mapcache.sendCertificateSelection(url, null)
         this.showCertificateSelectionDialog = false
       },
-      selectCertificate () {
-        window.mapcache.sendCertificateSelection(this.certificateList[this.certificateSelection].certificate)
+      selectCertificate (url, certificate) {
+        window.mapcache.sendCertificateSelection(url, certificate)
         this.showCertificateSelectionDialog = false
-      },
-      selectCertificateRow (row) {
-        this.certificateSelection = [row.id]
       }
     },
     watch: {
@@ -427,6 +377,7 @@ export default {
         this.showCertificateSelectionDialog = true
       })
       window.mapcache.addRequestClientCredentialsListener((args) => {
+        this.requestEventUrl = args.eventUrl
         this.requestAuthInfo = args.authInfo
         this.requestDetails = args.details
         this.showSignIn = true

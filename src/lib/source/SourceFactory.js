@@ -1,15 +1,4 @@
 import path from 'path'
-import XYZServerSource from './XYZServerSource'
-import KMLSource from './KMLSource'
-import KMZSource from './KMZSource'
-import WMSSource from './WMSSource'
-import WFSSource from './WFSSource'
-import ArcGISFeatureServiceSource from './ArcGISFeatureServiceSource'
-import ShapeFileSource from './ShapeFileSource'
-import ZipSource from './ZipSource'
-import GeoTIFFSource from './GeoTIFFSource'
-import GeoJSONSource from './GeoJSONSource'
-import MBTilesSource from './MBTilesSource'
 
 /**
  * Handles generation of a source object given a source configuration. These objects will be used to retrieve data
@@ -20,13 +9,13 @@ export default class SourceFactory {
     let source = null
     if (sourceConfiguration.serviceType !== null && sourceConfiguration.serviceType !== undefined) {
       if (sourceConfiguration.serviceType === 0) {
-        source = new WMSSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format)
+        source = new (require('./WMSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format, sourceConfiguration.withCredentials)
       } else if (sourceConfiguration.serviceType === 1) {
-        source = new WFSSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
+        source = new (require('./WFSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
       } else if (sourceConfiguration.serviceType === 2) {
-        source = new XYZServerSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name)
+        source = new (require('./XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials)
       } else if (sourceConfiguration.serviceType === 3) {
-        source = new ArcGISFeatureServiceSource(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
+        source = new (require('./ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
       }
     } else {
       const filePath = sourceConfiguration.file.path
@@ -34,28 +23,28 @@ export default class SourceFactory {
       try {
         switch (type) {
           case 'kml':
-            source = new KMLSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./KMLSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'kmz':
-            source = new KMZSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./KMZSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'zip':
-            source = new ZipSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./ZipSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'shp':
-            source = new ShapeFileSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./ShapeFileSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'mbtiles':
-            source = new MBTilesSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./MBTilesSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'json':
           case 'geojson':
-            source = new GeoJSONSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./GeoJSONSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'geotiff':
           case 'tif':
           case 'tiff':
-            source = new GeoTIFFSource(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./GeoTIFFSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           default:
             break

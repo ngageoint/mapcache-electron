@@ -237,7 +237,7 @@ export default {
 
             let success = true
             if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
-              success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, true, newBaseMap.layerConfiguration.timeoutMs)
+              success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             }
 
             // remove old map layer

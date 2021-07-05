@@ -197,7 +197,7 @@ export default {
           items: [
             {
               title: 'Why can\'t I select a different certificate?',
-              content: 'Similar to Google Chrome, once you have decided on your certificate, or chosen to not select a certificate, the session will remember your selection. If you would like to select a different certificate, you will need to restart the application.'
+              content: 'Similar to Google Chrome, once you have decided on your certificate, the session will remember your selection. If you would like to select a different certificate, you will need to restart the application.'
             },
             {
               title: 'What happens when I remove a GeoPackage from MapCache?',
@@ -208,8 +208,8 @@ export default {
               content: 'If the GeoPackage feature layer is not enabled, that layer\'s features will not be visible. This includes the newly added drawing. If you would like to see your drawing, enable the GeoPackage feature layer.'
             },
             {
-              title: 'Why are EPSG:3857 the only supported WMS layers?',
-              content: 'MapCache currently displays content using a Leaflet map. The default projection for Leaflet, Google Maps, and Open Street Maps (OSM) is EPSG:3857 (also known as Web Mercator).'
+              title: 'Why are some WMS layers not supported?',
+              content: 'MapCache currently displays content using a Leaflet map. The default projection for Leaflet, Google Maps, and Open Street Maps (OSM) is EPSG:3857 (also known as Web Mercator). If a WMS service is unable to reproject the data into EPSG:3857, then it can\'t be displayed on the map.'
             },
             {
               title: 'Why are some map tiles blank for my WMS/XYZ data source and/or base map?',

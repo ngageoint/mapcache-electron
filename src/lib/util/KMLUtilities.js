@@ -1,22 +1,14 @@
 import path from 'path'
 import { select } from 'xpath'
 import fs from 'fs'
-import axios from 'axios'
 import { BoundingBox } from '@ngageoint/geopackage'
 import jimp from './JimpUtilities'
 import bbox from '@turf/bbox'
 import transformRotate from '@turf/transform-rotate'
 import isNil from 'lodash/isNil'
 import * as GeoTIFF from 'geotiff'
-import { Readable } from 'stream'
 import GeoTIFFSource from '../source/GeoTIFFSource'
-
-function bufferToStream(buffer) {
-  let stream = new Readable()
-  stream.push(buffer)
-  stream.push(null)
-  return stream
-}
+import { getRemoteImage } from '../network/NetworkRequestUtils'
 
 /**
  * Converts a 4326 jimp supported image into a geotiff
@@ -104,27 +96,7 @@ async function parseKML (kmlDom, kmlDirectory, tmpDir, createLayerDirectory) {
       if (groundOverlayPath.startsWith('http')) {
         try {
           fullFile = path.join(tmpDir, path.basename(groundOverlayPath))
-          const writer = fs.createWriteStream(fullFile)
-          await new Promise((resolve) => {
-            return axios({
-              url: groundOverlayPath,
-              responseType: 'arraybuffer'
-            })
-              .then(response => {
-                bufferToStream(Buffer.from(response.data)).pipe(writer)
-                writer.on('finish', () => {
-                  writer.close()
-                  resolve()
-                })
-              })
-              // eslint-disable-next-line no-unused-vars
-              .catch(err => {
-                fs.unlinkSync(fullFile)
-                // eslint-disable-next-line no-console
-                console.error('Failed to retrieve remote Ground Overlay image.')
-                resolve()
-              })
-          })
+          await getRemoteImage(groundOverlayPath, fullFile)
           // eslint-disable-next-line no-unused-vars
         } catch (e) {
           // eslint-disable-next-line no-console
@@ -226,7 +198,6 @@ async function parseKML (kmlDom, kmlDirectory, tmpDir, createLayerDirectory) {
 }
 
 export {
-  bufferToStream,
   convert4326ImageToGeoTIFF,
   parseKML,
   rotateBoundingBox

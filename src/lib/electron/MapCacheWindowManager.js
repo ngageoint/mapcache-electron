@@ -1,8 +1,9 @@
 import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut } from 'electron'
 import path from 'path'
 import isNil from 'lodash/isNil'
-import CredentialsManagement from '../network/CredentialsManagement'
 import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
+import { getUserCertForUrl } from './auth/CertAuth'
+import { getClientCredentials } from './auth/BasicAuth'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -20,16 +21,8 @@ class MapCacheWindowManager {
   quitFromParent = false
   forceClose = false
 
-  // track request id's that have auth for mapcache enabled
-  requestAuthEnabledMap = {}
-  // timeout functions for requests that have mapcache timeout specified
-  requestTimeoutFunctions = {}
-  // track redirects
-  redirectedRequests = {}
-  // certSelectionInProgress
-  certSelectionInProgress = false
-  // certSelectionMade
-  certSelectionMade = false
+  // request tracking
+  requests = {}
 
   // userCredentialRequestInProgress
   userCredentialRequestInProgress = false
@@ -62,24 +55,30 @@ class MapCacheWindowManager {
 
   /**
    * Sets up authentication via a certificate
-   * TODO: currently this only works once. There is no way to allow a user to select a different certificate.
-   *  If no cert is selected, they will not be able to select again
    */
   setupCertificateAuth () {
     app.removeAllListeners('select-client-certificate')
     app.on('select-client-certificate', (event, webContents, url, list, callback) => {
-      event.preventDefault()
-      if (!this.certSelectionMade && !this.certSelectionInProgress) {
-        this.certSelectionCallbacks = true
-        ipcMain.removeAllListeners('client-certificate-selected')
-        ipcMain.once('client-certificate-selected', (event, item) => {
-          callback(item)
-          this.certSelectionMade = true
-          this.certSelectionInProgress = false
-        })
-        this.projectWindow.webContents.send('select-client-certificate', {
-          url: url,
-          certificates: list
+      const hostname = url.split(':')[0]
+      const associatedRequest = Object.values(this.requests).find(request => {
+        const hostnames = [new URL(request.url).hostname]
+        if (!isNil(request.redirectURLs)) {
+          request.redirectURLs.forEach(redirectURL => {
+            hostnames.push(new URL(redirectURL).hostname)
+          })
+        }
+        return hostnames.indexOf(hostname) !== -1
+      })
+      if (list && list.length > 0) {
+        event.preventDefault()
+        getUserCertForUrl(url, list, webContents).then((cert) => {
+          callback(cert)
+        }).catch(() => {
+          // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
+          // refreshed, we want Electron to try selecting a cert again when the app loads.
+          if (!isNil(associatedRequest)) {
+            webContents.send('cancel-service-request', associatedRequest.url)
+          }
         })
       }
     })
@@ -95,62 +94,25 @@ class MapCacheWindowManager {
    */
   static disableCertificateAuth () {
     app.removeAllListeners('select-client-certificate')
+    app.removeAllListeners('certificate-error')
   }
 
   /**
-   * Sets up the timeout function
-   * @param id
-   * @param requestId
-   * @param timeout
-   * @param webContentsId webContentsId
-   */
-  prepareTimeout (id, requestId, timeout, webContentsId) {
-    this.requestTimeoutFunctions[id] = setTimeout(() => {
-      const requestCancelChannel = 'request-timeout-' + requestId
-
-      // not sure who made this request, so try sending to both
-      if (this.projectWindow && this.projectWindow.webContents.id === webContentsId) {
-        this.projectWindow.webContents.send(requestCancelChannel)
-      }
-      if (this.workerWindow && this.workerWindow.webContents.id === webContentsId) {
-        this.workerWindow.webContents.send(requestCancelChannel)
-      }
-    }, timeout)
-  }
-
-  /**
-   * Clears timeout function
-   * @param id
-   */
-  clearTimeoutFunction (id) {
-    const timeoutFunction = this.requestTimeoutFunctions[id]
-    if (!isNil(timeoutFunction)) {
-      clearTimeout(timeoutFunction)
-      delete this.requestTimeoutFunctions[id]
-    }
-  }
-
-  /**
-   * Sets up the web request workflow. This function handles timeouts and performing auth requests
+   * Sets up the web request workflow.
    */
   setupWebRequestWorkflow () {
     // before sending headers, if it is marked with the auth enabled header, store the id of the request
     session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-      const headers = details.requestHeaders
-      if (!isNil(headers['x-mapcache-auth-enabled'])) {
-        this.requestAuthEnabledMap[details.id] = true
-      }
-      // set timeout function if timeout is provided and this isn't a redirected request
-      if (isNil(this.redirectedRequests[details.id]) && !isNil(headers['x-mapcache-connection-id']) && !isNil(headers['x-mapcache-timeout'])) {
-        const requestId = headers['x-mapcache-connection-id']
-        const timeout = parseInt(headers['x-mapcache-timeout'])
-        if (timeout > 0) {
-          this.prepareTimeout(details.id, requestId, timeout, details.webContentsId)
+      if (this.requests[details.id]) {
+        this.requests[details.id].redirectURLs.push(details.url)
+      } else {
+        this.requests[details.id] = {
+          url: details.url,
+          redirectURLs: []
         }
       }
-      delete headers['x-mapcache-auth-enabled']
-      delete headers['x-mapcache-timeout']
-      delete headers['x-mapcache-connection-id']
+      const headers = details.requestHeaders
+
       callback({
         requestHeaders: headers
       })
@@ -158,30 +120,46 @@ class MapCacheWindowManager {
 
     // if auth was enabled, be sure to add response header allow for auth to occur
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      this.clearTimeoutFunction(details.id)
       let headers = details.responseHeaders
-      if (!isNil(this.requestAuthEnabledMap[details.id])) {
-        headers['x-mapcache-auth-enabled'] = ['enabled']
+
+      // protect against servers without required cors headers
+      if (isNil(headers['Access-Control-Allow-Origin'])) {
+        headers['Access-Control-Allow-Origin'] = headers['access-control-allow-origin']
       }
+      if (isNil(headers['Access-Control-Allow-Origin']) || headers['Access-Control-Allow-Origin'] === [ '*' ] || headers['Access-Control-Allow-Origin'] === '*') {
+        headers['Access-Control-Allow-Origin'] = isProduction ? 'mapcache://.' : 'http://localhost:8081'
+      }
+      delete headers['access-control-allow-origin']
+
+      headers['Origin'] = headers['Access-Control-Allow-Origin']
+      delete headers['origin']
+
       callback({
         responseHeaders: headers
       })
     })
 
     session.defaultSession.webRequest.onBeforeRedirect((details) => {
-      this.redirectedRequests[details.id] = true
+      this.requests[details.id].redirectURLs.push(details.redirectURL)
+    })
+
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+      const url = webContents.getURL()
+      // Verify URL is from localhost server or custom protocol
+      if (!url.startsWith('http://localhost') && !url.startsWith('mapcache://')) {
+        // Denies the permissions request
+        return callback(false)
+      } else {
+        return callback(true)
+      }
     })
 
     // once completed, we need to delete the map's id to prevent memory leak
     session.defaultSession.webRequest.onCompleted(details => {
-      delete this.requestAuthEnabledMap[details.id]
-      delete this.requestTimeoutFunctions[details.id]
-      delete this.redirectedRequests[details.id]
+      delete this.requests[details.id]
     })
     session.defaultSession.webRequest.onErrorOccurred(details => {
-      delete this.requestAuthEnabledMap[details.id]
-      delete this.requestTimeoutFunctions[details.id]
-      delete this.redirectedRequests[details.id]
+      delete this.requests[details.id]
     })
   }
 
@@ -189,9 +167,10 @@ class MapCacheWindowManager {
    * Starts the app
    */
   start () {
-    if (!isProduction) {
-      this.setupGlobalShortcuts()
-    }
+    // if (!isProduction) {
+    //   this.setupGlobalShortcuts()
+    // }
+    this.setupGlobalShortcuts()
     this.setupWebRequestWorkflow()
     this.registerEventHandlers()
     Promise.all([this.registerWorkerThreads(), this.launchMainWindow()]).then(() => {
@@ -287,6 +266,9 @@ class MapCacheWindowManager {
     MapCacheWindowManager.clearEventHandlers()
 
     ipcMain.on('open-external', (event, link) => {
+      // this will only be received by the main page.
+      // There is a filter in place in the preload script to ensure only the links presented on the landing page can be
+      // passed through.
       shell.openExternal(link)
     })
 
@@ -480,10 +462,9 @@ class MapCacheWindowManager {
   launchWorkerAndExecuteConfiguration () {
     const workerURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}#/worker`
-      : 'app://./index.html/#/worker'
+      : 'mapcache://./index.html/#/worker'
     this.workerWindow = new BrowserWindow({
       webPreferences: {
-        webSecurity: false,
         preload: path.join(__dirname, 'workerPreload.js')
       },
       show: false
@@ -512,7 +493,7 @@ class MapCacheWindowManager {
     return new Promise((resolve => {
       const winURL = process.env.NODE_ENV === 'development'
         ? `${process.env.WEBPACK_DEV_SERVER_URL}`
-        : `app://./index.html`
+        : `mapcache://./index.html`
 
       const menu = Menu.buildFromTemplate(this.getMenuTemplate())
       Menu.setApplicationMenu(menu)
@@ -521,9 +502,7 @@ class MapCacheWindowManager {
 
       this.mainWindow = new BrowserWindow({
         title: 'MapCache',
-        icon: path.join(__dirname, 'assets', '64x64.png'),
         webPreferences: {
-          webSecurity: false,
           preload: path.join(__dirname, 'mainPreload.js')
         },
         show: false,
@@ -557,7 +536,7 @@ class MapCacheWindowManager {
   launchLoaderWindow () {
     const winURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}/loader.html`
-      : `app://./loader.html`
+      : `mapcache://./loader.html`
     this.loadingWindow = new BrowserWindow({
       frame: false,
       show: false,
@@ -580,11 +559,8 @@ class MapCacheWindowManager {
 
     this.projectWindow = new BrowserWindow({
       title: 'MapCache',
-      icon: path.join(__dirname, 'assets', '64x64.png'),
       webPreferences: {
-        webSecurity: false,
-        preload: path.join(__dirname, 'projectPreload.js'),
-        sandbox: false
+        preload: path.join(__dirname, 'projectPreload.js')
       },
       show: false,
       width: 1200,
@@ -617,28 +593,11 @@ class MapCacheWindowManager {
       }
     })
 
-    this.projectWindow.webContents.removeAllListeners('login')
+    // login will only be done via the project window.
     this.projectWindow.webContents.on('login', (event, details, authInfo, callback) => {
-      if (details.firstAuthAttempt && (!isNil(details.responseHeaders) && !isNil(details.responseHeaders['x-mapcache-auth-enabled']))) {
+      if (details.firstAuthAttempt) {
         event.preventDefault()
-        if (!this.userCredentialRequestInProgress) {
-          this.userCredentialRequestInProgress = true
-          ipcMain.removeAllListeners('client-credentials-input')
-          ipcMain.once('client-credentials-input', async (event, credentials) => {
-            this.userCredentialRequestInProgress = false
-            if (credentials === null || credentials === undefined) {
-              callback()
-            } else {
-              callback(credentials.username, CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
-            }
-          })
-          this.projectWindow.webContents.send('request-client-credentials', {
-            authInfo: authInfo,
-            details: details
-          })
-        } else {
-          callback()
-        }
+        getClientCredentials(details, authInfo, callback, this.projectWindow.webContents)
       }
     })
   }
@@ -682,7 +641,7 @@ class MapCacheWindowManager {
       this.launchProjectWindow()
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
-        : `app://./index.html/#/project/${projectId}`
+        : `mapcache://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
         this.projectWindow.show()
         this.setupCertificateAuth()

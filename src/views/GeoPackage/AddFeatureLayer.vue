@@ -86,8 +86,8 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon>
                           <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -131,8 +131,8 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon>
                           <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>

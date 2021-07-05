@@ -13,6 +13,7 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       externals: ['better-sqlite3', 'bindings'],
+      customFileProtocol: 'mapcache://./',
       preload: {
         mainPreload: 'src/lib/preload/mainPreload.js',
         projectPreload: 'src/lib/preload/projectPreload.js',
@@ -90,6 +91,13 @@ module.exports = {
           from: './node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm',
           to: 'canvaskit/canvaskit.wasm',
         }],
+        protocols: [
+          {
+            name: 'MapCache',
+            role: 'Viewer',
+            schemes: ['mapcache']
+          }
+        ],
         asarUnpack: [
           "**/node_modules/bin-wrapper/**/*",
           "**/node_modules/imagemin-pngquant/**/*",

@@ -122,10 +122,7 @@ async function processDataSource (data) {
   try {
     let createdSource = await SourceFactory.constructSource(source)
     if (createdSource != null) {
-      let layers = await createdSource.retrieveLayers().catch(err => {
-        console.error(err)
-        throw err
-      })
+      let layers = await createdSource.retrieveLayers()
       if (layers.length > 0) {
         for (let i = 0; i < layers.length; i++) {
           try {

@@ -11,6 +11,7 @@ export default class NetworkTileLayer extends TileLayer {
     this.rateLimit = this._configuration.rateLimit || DEFAULT_RATE_LIMIT
     this.retryAttempts = !isNil(this._configuration.retryAttempts) ? this._configuration.retryAttempts : DEFAULT_RETRY_ATTEMPTS
     this.timeoutMs = !isNil(this._configuration.timeoutMs) ? this._configuration.timeoutMs : DEFAULT_TIMEOUT
+    this.withCredentials = configuration.withCredentials || false
   }
 
   get configuration () {
@@ -20,6 +21,7 @@ export default class NetworkTileLayer extends TileLayer {
         rateLimit: this.rateLimit,
         retryAttempts: this.retryAttempts,
         timeoutMs: this.timeoutMs,
+        withCredentials: this.withCredentials
       }
     }
   }

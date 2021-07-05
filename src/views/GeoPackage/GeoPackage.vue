@@ -318,7 +318,7 @@
               color="accent"
               @click="addFeatureLayer"
               :disabled="projectFeatureLayerCount === 0">
-              <img :style="{verticalAlign: 'middle'}" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px">
+              <img :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px">
             </v-btn>
           </span>
         </template>
@@ -333,7 +333,7 @@
               color="accent"
               @click="addTileLayer"
               :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0">
-              <img :style="{verticalAlign: 'middle'}" src="../../assets/white_layers.png" alt="Feature Layer" width="24px" height="20px">
+              <img :style="{verticalAlign: 'middle'}" src="/images/white_layers.png" alt="Feature Layer" width="24px" height="20px">
             </v-btn>
           </span>
         </template>

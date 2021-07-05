@@ -217,10 +217,10 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomToSource" color="whitesmoke">
-              <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else-if="source.pane === 'tile'" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+              <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
             </v-btn>
             <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} Data Source</span>
           </p>

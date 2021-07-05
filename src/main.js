@@ -5,7 +5,7 @@ import AsyncComputed from 'vue-async-computed'
 import vuetify from './lib/vue/vuetify/vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
-import axios from 'axios'
+// import axios from 'axios'
 import { setCreateCanvasFunction } from './lib/util/CanvasUtilities'
 import createMapCachePersistedStateWrapper from './lib/vue/vuex/MapCachePersistedStateWrapper'
 import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedMutationsWrapper'
@@ -31,7 +31,7 @@ try {
     strict: true
   })
 } catch (e) {
-  console.error(e)
+  console.error('Failed to setup store. Exiting.')
 }
 
 // use BrowserCanvasAdapter in renderer processes
@@ -42,7 +42,7 @@ setCreateCanvasFunction((width, height) => {
   return canvas
 })
 
-axios.defaults.withCredentials = true
+// axios.defaults.withCredentials = true
 
 Vue.use(AsyncComputed)
 

@@ -113,10 +113,11 @@ function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = 
       }
     }
   })
-  gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
+  const rowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
   if (updateBoundingBox) {
     _updateBoundingBoxForFeatureTable(gp, tableName)
   }
+  return rowId
 }
 
 /**
@@ -1104,14 +1105,14 @@ async function featureExists (filePath, tableName, featureId) {
  * @param featureCollection
  * @param style
  * @param fields
- * @returns {Promise<void>}
+ * @returns {Promise<{error: any}>}
  */
 async function buildGeoPackage (fileName, tableName, featureCollection, style = null, fields = null) {
   // create the geopackage
   let gp = await GeoPackageAPI.create(fileName)
   try {
     // setup the columns for the feature table
-    await _createFeatureTable(gp, tableName, featureCollection, fields)
+    await _createFeatureTable(gp, tableName, featureCollection, false, fields)
 
     let featureTableStyles
     if (!isNil(style)) {
@@ -1139,7 +1140,7 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
           }
         })
       }
-      let featureRowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName)
+      let featureRowId = _addFeatureToFeatureTable (gp, tableName, feature, false)
       if (!isNil(style) && !isNil(style.features[feature.id])) {
         const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
         if (!isNil(style.features[feature.id].icon)) {
@@ -1187,17 +1188,14 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
       }
     }
     await _indexFeatureTable(gp, tableName)
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to index feature table.')
-  }
-  try {
-    gp.close()
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to close GeoPackage')
+  } finally {
+    try {
+      gp.close()
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to close GeoPackage')
+    }
   }
 }
 

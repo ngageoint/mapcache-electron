@@ -30,7 +30,7 @@
       <v-spacer></v-spacer>
       <v-btn
         text
-        @click="cancel">
+        @click="() => {cancel(eventUrl)}">
         Cancel
       </v-btn>
       <v-btn
@@ -52,12 +52,13 @@ export default {
       cancel: Function,
       signIn: Function,
       authInfo: Object,
-      details: Object
+      details: Object,
+      eventUrl: String,
     },
     methods: {
       async callSignIn () {
         const credentials = await this.getCredentials()
-        this.signIn(credentials)
+        this.signIn(this.eventUrl, credentials)
       },
       async getCredentials () {
         const {encrypted, iv, key} = window.mapcache.encryptPassword(this.password)

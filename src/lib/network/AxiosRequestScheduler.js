@@ -3,7 +3,7 @@ import axios from 'axios'
 import { DEFAULT_RATE_LIMIT, NO_LIMIT } from './HttpUtilities'
 
 /**
- * Scheduler for axios requests that handles cancellations
+ * Scheduler for axios requests that handles cancellations and timeouts
  */
 export default class AxiosRequestScheduler {
   axiosInstance

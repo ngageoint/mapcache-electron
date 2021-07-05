@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="app-title-block">
-      <img class="gp-img" src="~@/assets/256x256.png">
+      <img class="gp-img" src="/images/256x256.png">
       <h4>MapCache</h4>
       <p>
         Version: <strong id="mapcache-version">{{version}}</strong>
@@ -34,20 +34,20 @@
   const sidebarItems = [{
     title: 'What is a GeoPackage?',
     description: 'Visit geopackage.org to learn more',
-    link: 'http://www.geopackage.org',
-    image: require('../../assets/geopackage-2.png'),
+    link: 'http://www.geopackage.org/',
+    image: 'images/geopackage-2.png',
     key: 'sidebar-item-0'
   }, {
     title: 'NGA GeoPackage Libraries',
-    description: 'Learn about the GeoPackage libraries develoepd by NGA',
+    description: 'Learn about the GeoPackage libraries developed by NGA',
     link: 'http://ngageoint.github.io/GeoPackage/',
-    image: require('../../assets/nga.png'),
+    image: 'images/nga.png',
     key: 'sidebar-item-1'
   }, {
     title: 'EventKit',
     description: 'Import GeoPackage files created with EventKit',
     link: 'https://eventkit.gs.mil/',
-    image: require('../../assets/eventkit.png'),
+    image: 'images/eventkit.png',
     key: 'sidebar-item-2'
   }]
 

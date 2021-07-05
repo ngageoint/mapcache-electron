@@ -6,17 +6,17 @@ import { imageSize } from 'image-size'
 import keys from 'lodash/keys'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import axios from 'axios'
 import { GeometryType } from '@ngageoint/geopackage'
 import Source from './Source'
 import VectorLayer from '../layer/vector/VectorLayer'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { buildGeoPackage } from '../geopackage/GeoPackageFeatureTableUtilities'
-import { parseKML, bufferToStream, } from '../util/KMLUtilities'
+import { parseKML, } from '../util/KMLUtilities'
 import { hashCode, getDefaultIcon } from '../util/VectorStyleUtilities'
 import { getGeoPackageExtent} from '../geopackage/GeoPackageCommon'
 import { createDirectory, createNextAvailableLayerDirectory, rmDirAsync } from '../util/FileUtilities'
 import { VECTOR } from '../layer/LayerTypes'
+import { getRemoteImage } from '../network/NetworkRequestUtils'
 
 export default class KMLSource extends Source {
 
@@ -87,26 +87,7 @@ export default class KMLSource extends Source {
           if (feature.properties.icon.startsWith('http')) {
             iconFile = path.join(kmlDir, path.basename(feature.properties.icon))
             cachedIconFile = path.join(tmpDir, path.basename(feature.properties.icon))
-            const writer = fs.createWriteStream(cachedIconFile)
-            await new Promise((resolve) => {
-              return axios({
-                url: feature.properties.icon,
-                responseType: 'arraybuffer'
-              })
-              .then(response => {
-                bufferToStream(Buffer.from(response.data)).pipe(writer)
-                writer.on('finish', () => {
-                  writer.close()
-                  resolve()
-                })
-              })
-              .catch(() => {
-                fs.unlinkSync(iconFile)
-                // eslint-disable-next-line no-console
-                console.error('Failed to retrieve remote icon file')
-                resolve()
-              })
-            })
+            await getRemoteImage(feature.properties.icon, cachedIconFile)
             iconFile = cachedIconFile
           }
 

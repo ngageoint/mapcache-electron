@@ -32,7 +32,8 @@ export default {
         ellipse at bottom right,
         rgba(30, 77, 124, .5) 5%,
         rgba(0, 0, 0, 0.87) 100%
-      ), url("../../assets/nasa_earth.png") bottom right no-repeat;
+      ),
+      url('../../../public/images/nasa_earth.png') bottom right no-repeat;
     background-size: cover;
   }
 

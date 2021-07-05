@@ -82,11 +82,11 @@ export default {
       showTroubleshooting () {
         this.showTroubleshootingDialog = true
       },
-      cancelSignIn () {
+      cancelConnection () {
         this.reconnecting = false
       },
-      async signIn () {
-        if (await connectToSource(this.projectId, this.source, window.mapcache.setDataSource, true, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT)) {
+      async connect () {
+        if (await connectToSource(this.projectId, this.source, window.mapcache.setDataSource, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT)) {
           this.$nextTick(() => {
             this.showTroubleshootingDialog = false
             this.connectionAttempts = 0
@@ -102,7 +102,7 @@ export default {
       async reconnect () {
         this.reconnecting = true
         this.$nextTick(async () => {
-          await this.signIn()
+          await this.connect()
         })
       }
     }

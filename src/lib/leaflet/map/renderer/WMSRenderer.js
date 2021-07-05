@@ -41,9 +41,9 @@ export default class WMSRenderer extends NetworkTileRenderer {
         referenceSystemName = 'crs'
       }
 
-      const cancellableTileRequest = new CancellableTileRequest(this.isElectron)
+      const cancellableTileRequest = new CancellableTileRequest()
       const url = getTileRequestURL(this.layer.filePath, this.layer.layers, 256, 256, bbox, referenceSystemName, this.layer.version, this.layer.format)
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials).then(({dataUrl, error}) => {
         if (!isNil(error)) {
           this.setError(error)
         }

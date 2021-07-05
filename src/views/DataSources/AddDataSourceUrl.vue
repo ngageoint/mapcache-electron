@@ -143,7 +143,7 @@
                     Connected
                   </span>
                 </v-row>
-                <h4 v-if="error && !loading" class="warning--text">{{error}}</h4>
+                <h4 v-if="error && !loading" class="warning--text">{{error.statusText ? error.statusText : error}}</h4>
               </v-form>
             </v-card-text>
           </v-card>
@@ -176,9 +176,9 @@
             <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="warning--text pb-0 mb-4">{{'WMS server does not utilize any of the following web supported image formats: ' + supportedImageFormats.join(', ')}}</v-card-subtitle>
               <v-sheet v-else>
-                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Available EPSG:3857 supported layers from the WMS service to import.' : 'The WMS service does not have any EPSG:3857 supported layers available for import.'}}</v-card-subtitle>
-                <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Available layers from the WFS service to import.'}}</v-card-subtitle>
-                <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Available layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Supported layers from the WMS service to import.' : 'The WMS service does not have any supported layers.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Layers from the WFS service to import.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
                 <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
                   <v-list dense>
                     <v-list-item-group
@@ -320,7 +320,7 @@
   import WMSLayer from '../../lib/layer/tile/WMSLayer'
   import XYZServerLayer from '../../lib/layer/tile/XYZServerLayer'
   import {SERVICE_TYPE, DEFAULT_TIMEOUT, getServiceName, isAuthenticationError, isServerError, isTimeoutError} from '../../lib/network/HttpUtilities'
-  import {testServiceConnection} from '../../lib/network/ServiceConnectionUtils'
+  import { testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
   import reverse from 'lodash/reverse'
 
   const whiteSpaceRegex = /\s/
@@ -361,7 +361,6 @@
       return {
         mdiTrashCan: mdiTrashCan,
         supportedImageFormats: window.mapcache.supportedImageFormats,
-        connected: false,
         step: 1,
         drag: false,
         summaryStep: 3,
@@ -400,7 +399,10 @@
           v => !endsInComma.test(v) || 'Subdomain list may not end in a comma. (valid format: 1,2,3,4)'
         ],
         requiresSubdomains: false,
-        subdomainsValid: true
+        subdomainsValid: true,
+        withCredentials: false,
+        connected: false,
+        connectionId: null
       }
     },
     components: {
@@ -411,8 +413,56 @@
         addUrl: 'URLs/addUrl',
         removeUrl: 'URLs/removeUrl'
       }),
+      cancelConnect () {
+        this.connectionId = null
+        this.connected = false
+        this.loading = false
+      },
       connect () {
-        this.getServiceInfo(this.selectedServiceType)
+        const id = window.mapcache.createUniqueID()
+        this.connectionId = id
+        const serviceType = this.selectedServiceType
+        this.getServiceInfo(serviceType).then((result) => {
+          this.$nextTick(() => {
+            if (id === this.connectionId) {
+              this.loading = false
+              this.processServiceInfo(result.serviceInfo, result.error, result.withCredentials, serviceType)
+            }
+          })
+        })
+      },
+      processServiceInfo (serviceInfo, error, withCredentials, serviceType) {
+        if (!isNil(error)) {
+          this.authValid = false
+          if (isAuthenticationError(error)) {
+            this.error = 'Access to the ' + getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
+          } else if (isServerError(error)) {
+            this.error = 'Something went wrong trying to access the ' + getServiceName(serviceType) + ' service.'
+          } else if (isTimeoutError(error)) {
+            this.error = 'The request to the ' + getServiceName(serviceType) + ' service timed out.'
+          } else {
+            this.error = error
+          }
+        }
+
+        if (!isNil(serviceInfo)) {
+          this.authValid = true
+          this.accessDeniedOrForbidden = isAuthenticationError(error)
+          if (!isNil(serviceInfo)) {
+            if (serviceType === SERVICE_TYPE.WMS) {
+              this.summaryStep = 5
+            } else if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS) {
+              this.summaryStep = 4
+            } else {
+              this.summaryStep = 3
+            }
+          }
+          this.connected = true
+          this.serviceLayers = serviceInfo.serviceLayers || []
+          this.unsupportedServiceLayers = serviceInfo.unsupportedServiceLayers || []
+          this.serviceInfo = serviceInfo
+          this.withCredentials = withCredentials
+        }
       },
       async addLayer () {
         if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
@@ -437,55 +487,18 @@
         this.sortedRenderingLayers = []
         this.unsupportedServiceLayers = []
         this.error = null
+        const urlToTest = this.dataSourceUrl
         const options = {}
         options.timeout = DEFAULT_TIMEOUT
         if (this.requiresSubdomains && this.subdomainsValid) {
           options.subdomains = this.subdomainText.split(',')
         }
-        options.allowAuth = true
-
-        const {queryParams} = window.mapcache.getBaseUrlAndQueryParams(this.dataSourceUrl)
+        const {queryParams} = window.mapcache.getBaseUrlAndQueryParams(urlToTest)
         if (!isNil(queryParams.version)) {
           options.version = queryParams.version
         }
 
-        const {serviceInfo, error} = await testServiceConnection(this.dataSourceUrl, serviceType, options)
-
-        if (!isNil(error)) {
-          this.authValid = false
-          if (isAuthenticationError(error)) {
-            this.error = 'Access to the ' + getServiceName(serviceType) + ' service was denied. Verify your credentials and try again.'
-          } else if (isServerError(error)) {
-            this.error = 'Something went wrong trying to access the ' + getServiceName(serviceType) + ' service.'
-          } else if (isTimeoutError(error)) {
-            this.error = 'The request to the ' + getServiceName(serviceType) + ' service timed out.'
-          } else {
-            this.error = error
-          }
-        }
-
-        if (!isNil(serviceInfo)) {
-          setTimeout(() => {
-            this.authValid = true
-            this.accessDeniedOrForbidden = isAuthenticationError(error)
-            if (!isNil(serviceInfo)) {
-              if (serviceType === SERVICE_TYPE.WMS) {
-                this.summaryStep = 5
-              } else if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS) {
-                this.summaryStep = 4
-              } else {
-                this.summaryStep = 3
-              }
-            }
-            this.connected = true
-            this.serviceLayers = serviceInfo.serviceLayers || []
-            this.unsupportedServiceLayers = serviceInfo.unsupportedServiceLayers || []
-            this.serviceInfo = serviceInfo
-            this.loading = false
-          }, 500)
-        } else {
-          this.loading = false
-        }
+        return testServiceConnection(urlToTest, serviceType, options)
       },
       async confirmLayerImport () {
         if (this.selectedDataSourceLayers.length > 0) {
@@ -497,7 +510,8 @@
             serviceType: this.selectedServiceType,
             layers: this.selectedServiceType === SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : reverse(this.sortedLayers.slice()),
             name: this.dataSourceName,
-            format: this.serviceInfo.format
+            format: this.serviceInfo.format,
+            withCredentials: this.withCredentials || false
           }
           this.addUrlToHistory(this.dataSourceUrl)
           this.resetURLValidation()
@@ -529,7 +543,8 @@
           serviceType: this.selectedServiceType,
           separateLayers: false,
           subdomains: this.requiresSubdomains ? this.subdomainText.split(',') : undefined,
-          name: this.dataSourceName
+          name: this.dataSourceName,
+          withCredentials: this.withCredentials
         }
         this.resetURLValidation()
         this.close()
@@ -616,12 +631,20 @@
     watch: {
       dataSourceUrl: {
         handler (newValue) {
+          this.cancelConnect()
           this.connected = false
+          this.loading = false
           this.error = null
           this.previewing = false
           this.sortedLayers = []
           this.sortedRenderingLayers = []
           this.serviceInfo = null
+          this.withCredentials = false
+          this.selectedServiceType = -1
+          this.serviceTypeAutoDetected = true
+          this.requiresSubdomains = false
+          this.subdomainText = '1,2,3,4'
+          this.summaryStep = 3
           if (!isNil(newValue) && !isEmpty(newValue)) {
             let serviceTypeAutoDetected = true
             let selectedServiceType = -1
@@ -655,11 +678,6 @@
                 this.requiresSubdomains = requiresSubdomains
               }
             }
-          } else {
-            this.selectedServiceType = -1
-            this.serviceTypeAutoDetected = true
-            this.requiresSubdomains = false
-            this.subdomainText = '1,2,3,4'
           }
         }
       },

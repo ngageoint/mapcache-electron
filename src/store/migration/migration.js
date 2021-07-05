@@ -23,6 +23,7 @@ import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
 import GeoTIFFSource from '../../lib/source/GeoTIFFSource'
+import {isRemote} from '../../lib/layer/LayerTypes'
 
 
 /**
@@ -141,6 +142,8 @@ export async function runMigration (forceReset = false) {
           source.style = {}
         } else if (source.layerType === 'MBTiles') {
           source.style = {}
+        } else if (isRemote(source)) {
+          source.withCredentials = false
         }
       }
 
@@ -217,6 +220,9 @@ export async function runMigration (forceReset = false) {
         if (!isNil(baseMap.layerConfiguration.geopackageFilePath)) {
           baseMap.layerConfiguration.geopackageFilePath = baseMap.layerConfiguration.geopackageFilePath.replace(oldDir, baseMapDir)
         }
+        if (isRemote(baseMap.layerConfiguration)) {
+          baseMap.layerConfiguration.withCredentials = false
+        }
         await updateSource(baseMap.layerConfiguration)
         return baseMap
       })
@@ -260,7 +266,6 @@ export async function runMigration (forceReset = false) {
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error('Migration script failed: ' + i)
-            console.error(e)
             success = false
           }
         } else {

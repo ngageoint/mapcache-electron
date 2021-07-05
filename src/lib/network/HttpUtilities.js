@@ -17,6 +17,7 @@ const SERVICE_TYPE = {
 const USER_CANCELLED_MESSAGE = 'Operation cancelled by user.'
 const TIMEOUT_MESSAGE = 'Operation timed out.'
 const TIMEOUT_STATUS = -2
+const USER_CANCELLED_STATUS = -3
 
 function getAuthType(authString) {
   let credentialType = CREDENTIAL_TYPE_NONE
@@ -93,6 +94,15 @@ function isAuthenticationError (error) {
 }
 
 /**
+ * Checks if an error is a user cancellation error
+ * @param error
+ * @returns {boolean}
+ */
+function isUserCancellation (error) {
+  return !isNil(error) && error.status === -3
+}
+
+/**
  * Checks if an error is an authentication error
  * @param response
  * @returns {boolean}
@@ -125,7 +135,15 @@ function isTimeoutError (error) {
  * @returns {boolean}
  */
 function isMapCacheTimeoutError(error) {
-  return !isNil(error) && !isNil(error.message) && error.message === TIMEOUT_MESSAGE
+  return !isNil(error) && !isNil(error.message) && error.message.toLowerCase().indexOf('timeout') !== -1
+}
+/**
+ * Tests if error is a mapcache timeout (this timeout occurs when a response from the server has not been reached after waiting a user specified amount of time)
+ * @param error
+ * @returns {boolean}
+ */
+function isMapCacheUserCancellationError(error) {
+  return !isNil(error) && !isNil(error.message) && error.message === USER_CANCELLED_MESSAGE
 }
 
 export {
@@ -141,6 +159,7 @@ export {
   USER_CANCELLED_MESSAGE,
   TIMEOUT_MESSAGE,
   TIMEOUT_STATUS,
+  USER_CANCELLED_STATUS,
   getServiceName,
   getServiceType,
   getAuthType,
@@ -149,5 +168,7 @@ export {
   isAuthenticationErrorResponse,
   isServerError,
   isTimeoutError,
-  isMapCacheTimeoutError
+  isMapCacheTimeoutError,
+  isMapCacheUserCancellationError,
+  isUserCancellation
 }

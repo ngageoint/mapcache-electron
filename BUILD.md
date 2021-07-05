@@ -32,6 +32,11 @@
   * nvm install 14.16.0
 * Install Yarn
   * npm install yarn -g
+  
+### yarn.lock adjustments:
+* bindings@^1.5.0 does not work in electron, so it has been updated to use: 'git://github.com/caldwellc/node-bindings.git#master' which provides a fix for undefined filename errors
+
+
 
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:

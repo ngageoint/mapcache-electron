@@ -6,7 +6,18 @@ import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo } from '../util/GeoServic
 import { generateUrlForTile, fixXYZTileServerUrlForLeaflet } from '../util/XYZTileUtilities'
 import CancellableServiceRequest from './CancellableServiceRequest'
 import AxiosRequestScheduler from './AxiosRequestScheduler'
-import { isMapCacheTimeoutError, getAuthenticationMethod, TIMEOUT_STATUS, isAuthenticationError, SERVICE_TYPE, getServiceType } from './HttpUtilities'
+import {
+  isMapCacheTimeoutError,
+  getAuthenticationMethod,
+  TIMEOUT_STATUS,
+  isAuthenticationError,
+  SERVICE_TYPE,
+  getServiceType,
+  isMapCacheUserCancellationError,
+  USER_CANCELLED_MESSAGE,
+  USER_CANCELLED_STATUS,
+  isUserCancellation
+} from './HttpUtilities'
 import { parseStringPromise } from 'xml2js'
 
 /**
@@ -31,6 +42,11 @@ async function connectionWrapper (connFunc) {
       result.error = {
         status: TIMEOUT_STATUS,
         statusText: 'Request timed out'
+      }
+    } else if (isMapCacheUserCancellationError(e)) {
+      result.error = {
+        status: USER_CANCELLED_STATUS,
+        statusText: USER_CANCELLED_MESSAGE
       }
     } else if (e.response) {
       result.error = {
@@ -69,6 +85,7 @@ async function connectionWrapper (connFunc) {
 async function testWebMapServiceConnection (serviceUrl, options) {
   let serviceInfo
   let error = undefined
+  let withCredentials = false
   const supportedWMSVersions = options.version ? [options.version] : ['1.3.0', '1.1.1']
   for (let i = 0; i < supportedWMSVersions.length; i++) {
     const version = supportedWMSVersions[i]
@@ -77,10 +94,12 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       let error = undefined
       const url = getGetCapabilitiesURL(serviceUrl, version, 'WMS')
       let cancellableServiceRequest = new CancellableServiceRequest()
-      let response = await cancellableServiceRequest.request(url, options)
+      cancellableServiceRequest.withCredentials = options.withCredentials || false
+      let response = await cancellableServiceRequest.request(url)
+      withCredentials = cancellableServiceRequest.requiredCredentials()
       if (response) {
         let result = await parseStringPromise(response.data)
-        let wmsInfo = getWMSInfo(result, version)
+        let wmsInfo = getWMSInfo(result, version, serviceUrl.toLowerCase().indexOf('arcgis') >= 0)
         serviceInfo = {
           title: wmsInfo.title || 'WMS Service',
           abstract: wmsInfo.abstract,
@@ -94,7 +113,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       } else {
         error = 'No response.'
       }
-      return {serviceInfo, error}
+      return {serviceInfo, error, withCredentials}
     })
     serviceInfo = result.serviceInfo
     if (!isNil(serviceInfo)) {
@@ -103,11 +122,11 @@ async function testWebMapServiceConnection (serviceUrl, options) {
     } else if (isNil(error) || error.status < 0) {
       error = result.error
     }
-    if (isAuthenticationError(error)) {
+    if (isAuthenticationError(error) || isUserCancellation(error)) {
       break
     }
   }
-  return {serviceInfo, error}
+  return {serviceInfo, error, withCredentials}
 }
 
 /**
@@ -119,6 +138,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
 async function testWebFeatureServiceConnection (serviceUrl, options) {
   let serviceInfo
   let error = undefined
+  let withCredentials = false
   const supportedWFSVersions = options.version ? [options.version] : ['2.0.0', '1.1.0', '1.0.0']
   let version
   for (let i = 0; i < supportedWFSVersions.length; i++) {
@@ -129,7 +149,8 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
 
       const url = getGetCapabilitiesURL(serviceUrl, version, 'WFS')
       let cancellableServiceRequest = new CancellableServiceRequest()
-      let response = await cancellableServiceRequest.request(url, options)
+      cancellableServiceRequest.withCredentials = options.withCredentials || false
+      let response = await cancellableServiceRequest.request(url)
       let result = await parseStringPromise(response.data)
       let wfsInfo = getWFSInfo(result, version)
       serviceInfo = {
@@ -141,7 +162,8 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
         serviceLayers: wfsInfo.layers,
         unsupportedServiceLayers: []
       }
-      return {serviceInfo, error}
+      withCredentials = cancellableServiceRequest.requiredCredentials()
+      return {serviceInfo, error, withCredentials}
     })
     serviceInfo = result.serviceInfo
     if (!isNil(serviceInfo)) {
@@ -154,7 +176,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
       break
     }
   }
-  return {serviceInfo, error}
+  return {serviceInfo, error, withCredentials}
 }
 
 /**
@@ -167,6 +189,7 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
   return connectionWrapper(async () => {
     let serviceInfo
     let error
+    let requiredCredentials = false
 
     const requiresSubdomains = serviceUrl.indexOf('{s}') !== -1
     // test all subdomains
@@ -179,7 +202,9 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
           try {
             const url = generateUrlForTile(serviceUrl, [subdomain], 0, 0, 0)
             let cancellableServiceRequest = new CancellableServiceRequest()
-            await cancellableServiceRequest.request(url, options)
+            cancellableServiceRequest.withCredentials = options.withCredentials || false
+            await cancellableServiceRequest.request(url)
+            requiredCredentials = cancellableServiceRequest.requiredCredentials()
           } catch (e) {
             // 401 unauthorized, no need to keep checking
             if (e.response && e.response.status === 401) {
@@ -199,10 +224,12 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
     } else {
       const url = generateUrlForTile(serviceUrl, [], 0, 0, 0)
       let cancellableServiceRequest = new CancellableServiceRequest()
-      await cancellableServiceRequest.request(url, options)
+      cancellableServiceRequest.withCredentials = options.withCredentials || false
+      await cancellableServiceRequest.request(url)
       serviceInfo = {}
+      requiredCredentials = cancellableServiceRequest.requiredCredentials()
     }
-    return {serviceInfo, error}
+    return {serviceInfo, error, withCredentials: requiredCredentials}
   })
 }
 
@@ -212,6 +239,7 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
  * @param options
  * @returns {Promise<Object>}
  */
+// eslint-disable-next-line no-unused-vars
 async function testArcGISFeatureServiceConnection (serviceUrl, options) {
   return connectionWrapper(async () => {
     let serviceInfo
@@ -222,7 +250,8 @@ async function testArcGISFeatureServiceConnection (serviceUrl, options) {
       url = url + '&token=' + queryParams['token']
     }
     let cancellableServiceRequest = new CancellableServiceRequest()
-    let response = await cancellableServiceRequest.request(url, options)
+    cancellableServiceRequest.withCredentials = options.withCredentials || false
+    let response = await cancellableServiceRequest.request(url)
     serviceInfo = {
       title: 'ArcGIS REST Feature Service',
       abstract: response.data.serviceDescription || '',
@@ -238,7 +267,7 @@ async function testArcGISFeatureServiceConnection (serviceUrl, options) {
       return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
     })
     serviceInfo.unsupportedServiceLayers = []
-    return {serviceInfo, error}
+    return {serviceInfo, error, withCredentials: cancellableServiceRequest.requiredCredentials()}
   })
 }
 
@@ -250,7 +279,7 @@ async function testArcGISFeatureServiceConnection (serviceUrl, options) {
  * @returns {Promise<Object>}
  */
 async function testServiceConnection (serviceUrl, serviceType, options) {
-  let result = {serviceInfo: undefined, error: undefined}
+  let result = {serviceInfo: undefined, error: undefined, withCredentials: undefined}
   try {
     // validate url
     if (!isNil(serviceUrl) && !isEmpty(serviceUrl) && !isNil(serviceType) && serviceType !== -1) {
@@ -292,11 +321,10 @@ function getAxiosRequestScheduler (rateLimit) {
  * @param projectId
  * @param source
  * @param updateDataSource
- * @param allowAuth
  * @param timeout
  * @returns {Promise<boolean>}
  */
-async function connectToSource (projectId, source, updateDataSource, allowAuth = true, timeout = 5000) {
+async function connectToSource (projectId, source, updateDataSource, timeout = 10000) {
   let success = false
   if (!isNil(source)) {
     const serviceType = getServiceType(source.layerType)
@@ -310,7 +338,6 @@ async function connectToSource (projectId, source, updateDataSource, allowAuth =
     if (!isNil(timeout) && timeout > 0) {
       options.timeout = timeout
     }
-    options.allowAuth = allowAuth
     let {serviceInfo, error} = await testServiceConnection(source.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true
@@ -345,11 +372,10 @@ async function connectToSource (projectId, source, updateDataSource, allowAuth =
  * Attempts to connect to a source
  * @param baseMap
  * @param editBaseMap
- * @param allowAuth (default true)
  * @param timeout (default 5000)
  * @returns {Promise<boolean>}
  */
-async function connectToBaseMap (baseMap, editBaseMap, allowAuth = true, timeout = 5000) {
+async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
   let success = false
   if (!isNil(baseMap.layerConfiguration)) {
     const serviceType = getServiceType(baseMap.layerConfiguration.layerType)
@@ -363,7 +389,9 @@ async function connectToBaseMap (baseMap, editBaseMap, allowAuth = true, timeout
     if (!isNil(timeout) && timeout > 0) {
       options.timeout = timeout
     }
-    options.allowAuth = allowAuth
+    if (!isNil(baseMap.layerConfiguration.withCredentials)) {
+      options.withCredentials = baseMap.layerConfiguration.withCredentials
+    }
     let {serviceInfo, error} = await testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true

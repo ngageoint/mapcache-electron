@@ -5,6 +5,7 @@ import isEmpty from 'lodash/isEmpty'
 import keys from 'lodash/keys'
 
 const supportedImageFormats = ['image/png', 'image/svg+xml', 'image/jpg', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp']
+const supportedWFSResponseFormats = ['application/json', 'json', 'geojson', 'gml32', 'text/xml; subtype=gml/3.2', 'gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1', 'gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2']
 
 function getSRSForWMSLayer (layer, availableSrs) {
   let srs = []
@@ -97,6 +98,24 @@ function getGetCapabilitiesURL (wmsUrl, version, service) {
   return generateUrlWithQueryParams(baseUrl, queryParams)
 }
 
+// get the GetCapabilities URL
+function getWFSLayerCountURL (wfsUrl, version, layer) {
+  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wfsUrl)
+  if (queryParams['service']) {
+    delete queryParams['service']
+  }
+  queryParams['service'] = 'WFS'
+  if (version === '2.0.0') {
+    queryParams['typeNames'] = layer
+  } else {
+    queryParams['typeName'] = layer
+  }
+  queryParams['request'] = 'GetFeature'
+  queryParams['rseultType'] = 'hits'
+  queryParams['version'] = version
+  return generateUrlWithQueryParams(baseUrl, queryParams)
+}
+
 function getBaseURL (wmsUrl) {
   let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmsUrl)
   if (queryParams['request']) {
@@ -114,8 +133,9 @@ function getBaseURL (wmsUrl) {
  * Parses WMS info
  * @param json
  * @param version of this WMS GetCapabilities XML
+ * @param isArcGIS is this wms service hosted in arcgis
  */
-function getWMSInfo (json, version) {
+function getWMSInfo (json, version, isArcGIS = false) {
   let wmsInfo = {}
   let layers = []
   let format
@@ -125,6 +145,10 @@ function getWMSInfo (json, version) {
       capabilities = json['WMT_MS_Capabilities']
     } else if (!isNil(json['WMS_Capabilities'])) {
       capabilities = json['WMS_Capabilities']
+    }
+    // this is an arcgis service if it contains the esri_wms namespace
+    if (!isArcGIS && !isNil(capabilities['$']['xmlns:esri_wms'])) {
+      isArcGIS = true
     }
     if (!isNil(capabilities)) {
       const service = capabilities['Service'][0]
@@ -154,29 +178,42 @@ function getWMSInfo (json, version) {
     // eslint-disable-next-line no-console
     console.error('Failed to process WMS GetCapabilities.')
   }
-  wmsInfo.layers = layers.filter(layer => layer.has3857)
-  wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
+  wmsInfo.layers = layers
+  wmsInfo.unsupportedLayers = []
+  // if not ArcGIS, unless 3857 is supported, we can't use it
+  if (!isArcGIS) {
+    wmsInfo.layers = layers.filter(layer => layer.has3857)
+    wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
+  }
   wmsInfo.format = format
   return wmsInfo
 }
 
+function isGeoJSON (fmt) {
+  return ['application/json', 'json', 'geojson'].indexOf(fmt.toLowerCase()) !== -1
+}
+
+function isGML32 (fmt) {
+  return ['gml32', 'text/xml; subtype=gml/3.2'].indexOf(fmt.toLowerCase()) !== -1
+}
+
+function isGML3 (fmt) {
+  return ['gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1'].indexOf(fmt.toLowerCase()) !== -1
+}
+
+function isGML2 (fmt) {
+  return ['gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2'].indexOf(fmt.toLowerCase()) !== -1
+}
+
 function getLayerOutputFormat (layer) {
-  const geoJSONSupported = !isNil(layer.outputFormats.find(f => f.toLowerCase() === 'application/json' || f.toLowerCase() === 'json'))
-  const gml2Supported = !isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML2' || f.toLowerCase().startsWith('text/xml; subtype=gml/2')))
-  const gml3Supported = !isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML3' || f.toLowerCase().startsWith('text/xml; subtype=gml/3.1')))
-  const gml32Supported = !isNil(layer.outputFormats.find(f => f.toUpperCase() === 'GML32' || f.toLowerCase().startsWith('text/xml; subtype=gml/3.2')))
-
-  let outputFormat
-  if (geoJSONSupported) {
-    outputFormat = 'application/json'
-  } else if (gml32Supported) {
-    outputFormat = 'GML32'
-  } else if (gml3Supported) {
-    outputFormat = 'GML3'
-  } else if (gml2Supported) {
-    outputFormat = 'GML2'
+  let outputFormat = null
+  for (let i = 0; i < supportedWFSResponseFormats.length; i++) {
+    const fmt = supportedWFSResponseFormats[i]
+    outputFormat = layer.outputFormats.find(f => f.toLowerCase() === fmt)
+    if (!isNil(outputFormat)) {
+      break
+    }
   }
-
   // output format not found in capabilities document, use default for version
   if (isNil(outputFormat)) {
     if (layer.version === '1.0.0') {
@@ -258,7 +295,7 @@ function getWFSInfo (json, version) {
         }
         let defaultSRS = !isNil(layer['SRS']) ? layer['SRS'][0] : ''
         const otherSRS = []
-        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats, geoJSONSupported: !isNil(outputFormats.find(f => f === 'application/json'))})
+        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats})
       }
     } else if (!isNil(json['wfs:WFS_Capabilities'])) {
       let outputFormats = ['application/json']
@@ -309,7 +346,7 @@ function getWFSInfo (json, version) {
         if (isNil(title) || isEmpty(title)) {
           title = name
         }
-        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats, geoJSONSupported: !isNil(outputFormats.find(f => f === 'application/json'))})
+        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats})
       }
     }
     // eslint-disable-next-line no-unused-vars
@@ -359,6 +396,7 @@ function getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName,
   return generateUrlWithQueryParams(baseUrl, queryParams)
 }
 
+
 export {
   supportedImageFormats,
   getGetCapabilitiesURL,
@@ -371,5 +409,10 @@ export {
   getLayerOutputFormat,
   getWFSInfo,
   getTileRequestURL,
-  getFeatureRequestURL
+  getFeatureRequestURL,
+  getWFSLayerCountURL,
+  isGML3,
+  isGML32,
+  isGML2,
+  isGeoJSON
 }

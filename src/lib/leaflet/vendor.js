@@ -115,26 +115,26 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   hasError () {
     return this.error !== null && this.error !== undefined
   },
-  async testConnection (allowAuth = false, ignoreTimeoutError = true) {
+  async testConnection (ignoreTimeoutError = true) {
     const options = {
       timeout: this.timeout,
-      allowAuth: allowAuth
+      withCredentials: this.layer.withCredentials
     }
 
     if (this.layer.layerType === XYZ_SERVER) {
       options.subdomains = this.layer.subdomains || []
-      let {error} = await testServiceConnection(this.filePath, SERVICE_TYPE.XYZ, options)
+      let {error} = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.XYZ, options)
       if (!isNil(error) && !isTimeoutError(error) || !ignoreTimeoutError) {
         throw error
       }
     } else if (this.layer.layerType === WMS) {
       options.version = this.layer.version
-      let {serviceInfo, error} = await testServiceConnection(this.filePath, SERVICE_TYPE.WMS, options)
+      let {serviceInfo, error} = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.WMS, options)
       if (!isNil(serviceInfo)) {
         // verify that this source is still valid when compared to the service info
-        const layers = this.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
-        if (layers.length !== this.layers.length) {
-          const missingLayers = this.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
+        const layers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
+        if (layers.length !== this.layer.layers.length) {
+          const missingLayers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
           error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
         }
       }
@@ -177,7 +177,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
         }
       }
       this.on('tileunload', unloadListener)
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileUrl(coords), this.retryAttempts, this.timeout).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileUrl(coords), this.retryAttempts, this.timeout, this.layer.withCredentials).then(({dataUrl, error}) => {
         if (!isNil(error) && !this.isPreview) {
           this.setError(error)
         }

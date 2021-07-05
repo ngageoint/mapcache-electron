@@ -11,6 +11,8 @@ const getUserDataDirectory = () => {
   return ipcRenderer.sendSync('get-user-data-directory')
 }
 
+const allowedOpenExternalLinks = ['http://www.geopackage.org/', 'http://ngageoint.github.io/GeoPackage/', 'https://eventkit.gs.mil/']
+
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
@@ -57,7 +59,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     return ipcRenderer.sendSync('get-app-version')
   },
   openExternal: (link) => {
-    ipcRenderer.send('open-external', link)
+    if (allowedOpenExternalLinks.indexOf(link) !== -1) {
+      ipcRenderer.send('open-external', link)
+    }
   },
   showProject: (id) => {
     ipcRenderer.send('show-project', id)

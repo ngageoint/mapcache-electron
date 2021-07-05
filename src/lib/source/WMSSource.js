@@ -3,11 +3,12 @@ import WMSLayer from '../layer/tile/WMSLayer'
 import { WMS } from '../layer/LayerTypes'
 
 export default class WMSSource extends Source {
-  constructor (id, directory, filePath, layers = [], sourceName, format = 'image/png') {
+  constructor (id, directory, filePath, layers = [], sourceName, format = 'image/png', withCredentials = false) {
     super(id, directory, filePath)
     this.layers = layers
     this.sourceName = sourceName
     this.format = format
+    this.withCredentials = withCredentials
   }
   async retrieveLayers () {
     if (this.layers.length === 0) {
@@ -43,7 +44,8 @@ export default class WMSSource extends Source {
           extent,
           version,
           format: this.format,
-          layerType: WMS
+          layerType: WMS,
+          withCredentials: this.withCredentials
         })
       ]
     }

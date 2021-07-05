@@ -24,8 +24,11 @@
         <processing-source
           :source="source"
           :key="source.id"
+          :project="project"
           class="sources processing-source"
-          @clear-processing="clearProcessing">
+          :on-cancel="() => cancelProcessing(source)"
+          :on-complete="() => clearProcessing(source)"
+          :on-close="() => clearProcessing(source)">
         </processing-source>
       </template>
     </v-sheet>
@@ -100,7 +103,6 @@
 import {mapState} from 'vuex'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import cloneDeep from 'lodash/cloneDeep'
 import ProcessingSource from './ProcessingSource'
 import DataSource from './DataSource'
 import DataSourceList from './DataSourceList'
@@ -161,36 +163,14 @@ let selectedDataSource = null
       },
       async addSource (source) {
         this.processingSourceList.push(source)
-        let self = this
-        this.$nextTick(() => {
-          window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
-            if (isNil(result.error)) {
-              setTimeout(() => {
-                window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
-                self.$nextTick(() => {
-                  self.clearProcessing(source)
-                })
-              }, 1000)
-            } else {
-              // iterate over list of sources and set error
-              for (let i = 0; i < this.processingSourceList.length; i++) {
-                let s = this.processingSourceList[i]
-                if (s.id === source.id) {
-                  const sCopy = cloneDeep(s)
-                  sCopy.error = result.error
-                  this.processingSourceList.splice(i, 1, sCopy)
-                  break
-                }
-              }
-            }
-          })
-          window.mapcache.processSource({project: self.project, source: source})
-        })
       },
-      clearProcessing (processingSource) {
+      async cancelProcessing (source) {
+        return window.mapcache.cancelProcessingSource(source)
+      },
+      clearProcessing (source) {
         for (let i = 0; i < this.processingSourceList.length; i++) {
-          let source = this.processingSourceList[i]
-          if (source.id === processingSource.id) {
+          let s = this.processingSourceList[i]
+          if (s.id === source.id) {
             this.processingSourceList.splice(i, 1)
             window.mapcache.notifyTab({projectId: this.project.id, tabId: 1})
             break

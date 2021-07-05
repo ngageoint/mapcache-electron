@@ -1,11 +1,9 @@
 import proj4 from 'proj4'
-import { addProjection, get, addCoordinateTransforms, addEquivalentProjections, createSafeCoordinateTransform } from 'ol/proj'
-import { get as getTransform } from 'ol/proj/transforms'
-import Projection from 'ol/proj/Projection'
-import { assign } from 'ol/obj'
-import { getDef, getCode } from './ProjectionUtilities'
-
-
+import {getCode, getDef} from './ProjectionUtilities'
+import { addProjection, get, addCoordinateTransforms, addEquivalentProjections, createSafeCoordinateTransform } from 'ol-format-node/proj'
+import { get as getTransform } from 'ol-format-node/proj/transforms'
+import Projection from 'ol-format-node/proj/Projection'
+import { assign } from 'ol-format-node/obj'
 function defineProjection (name) {
   const code = getCode(name)
   if (code !== -1) {

@@ -12,10 +12,10 @@
               color="whitesmoke"
               @click="item.zoomTo"
             >
-              <img v-if="item.isTile && $vuetify.theme.dark" src="../../assets/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="../../assets/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else-if="item.isTile" src="../../assets/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else src="../../assets/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
+              <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
             </v-btn>
           </v-list-item-icon>
           <v-list-item-content>

@@ -137,8 +137,8 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomToLayer" color="whitesmoke">
-              <img v-if="$vuetify.theme.dark" src="../../assets/white_layers.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else src="../../assets/colored_layers.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="$vuetify.theme.dark" src="/images/white_layers.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-else src="/images/colored_layers.png" alt="Feature Layer" width="20px" height="20px"/>
             </v-btn>
             <span style="vertical-align: middle;">Tile Layer</span>
           </p>

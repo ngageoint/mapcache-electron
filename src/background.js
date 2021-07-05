@@ -3,14 +3,15 @@ import { app, protocol } from 'electron'
 import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
 
-app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 app.commandLine.appendSwitch('js-flags', '--expose_gc')
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
+  { scheme: 'mapcache', privileges: { secure: true, standard: true } }
 ])
 
 const isProduction = process.env.NODE_ENV === 'production'
+
 let readyToQuit = false
 
 /**
@@ -44,22 +45,47 @@ function setupEventHandlers () {
 }
 
 /**
+ * WebContent handling per Electron security recommendations
+ * Only allow navigation to the pages listed below
+ */
+function setupWebContentHandling () {
+  app.on('web-contents-created', (event, contents) => {
+    contents.setWindowOpenHandler(({ url }) => {
+      if (url.startsWith('http://localhost') ||
+        url.startsWith('mapcache://') ||
+        url.startsWith('http://www.geopackage.org') ||
+        url.startsWith('https://github.com/ngageoint') ||
+        url.startsWith('http://ngageoint.github.io') ||
+        url.startsWith('https://eventkit.gs.mil')) {
+        return { action: 'allow' }
+      }
+      return { action: 'deny' }
+    })
+  })
+  app.on('web-contents-created', (event, contents) => {
+    // do not allow web views to be attached, mapcache should not request any web views
+    contents.on('will-attach-webview', (event) => {
+      event.preventDefault()
+    })
+  })
+}
+
+/**
  * Will run migration, setup directory structure, event handlers, electron log, create the app protocol and then launch the
  * landing page.
  * @returns {Promise<void>}
  */
 async function start() {
-  setupEventHandlers()
-
   setupElectronLog()
+  setupEventHandlers()
+  setupWebContentHandling()
 
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
-    require('vue-cli-plugin-electron-builder/lib').createProtocol('app')
+    require('./lib/protocol/protocol').default('mapcache')
   }
 
   MapCacheWindowManager.launchLoaderWindow()
 
-  // TODO: migrate this into loader page...
   const { runMigration } = require('./store/migration/migration')
   // check if store is out of date, if so, delete content
   try {
@@ -72,7 +98,6 @@ async function start() {
       }
     }
   } catch (e) {
-    console.error(e);
     app.quit();
   }
 

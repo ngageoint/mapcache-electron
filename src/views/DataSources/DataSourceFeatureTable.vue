@@ -238,7 +238,8 @@ export default {
           keys(feature.properties).forEach(key => {
             let value = feature.properties[key] || ''
             try {
-              const column = this.table.columns.getColumn(key)
+              const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
+              const column = this.table.columns._columns[columnIndex]
               if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
                 value = value === 1 || value === true
               }

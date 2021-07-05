@@ -396,7 +396,6 @@ export default class GeoPackageFeatureTableBuilder {
         statusCallback(status)
         await wait(500)
       } catch (error) {
-        console.error(error)
         try {
           await deleteGeoPackageTable(configuration.path, configuration.table)
           // eslint-disable-next-line no-empty
