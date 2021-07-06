@@ -103,7 +103,7 @@ class MapCacheWindowManager {
   setupWebRequestWorkflow () {
     // before sending headers, if it is marked with the auth enabled header, store the id of the request
     session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-      if (this.requests[details.id]) {
+      if (!isNil(this.requests[details.id])) {
         this.requests[details.id].redirectURLs.push(details.url)
       } else {
         this.requests[details.id] = {
@@ -140,7 +140,9 @@ class MapCacheWindowManager {
     })
 
     session.defaultSession.webRequest.onBeforeRedirect((details) => {
-      this.requests[details.id].redirectURLs.push(details.redirectURL)
+      if (!isNil(this.requests[details.id]) && !isNil(this.requests[details.id].redirectURLs)) {
+        this.requests[details.id].redirectURLs.push(details.redirectURL)
+      }
     })
 
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
