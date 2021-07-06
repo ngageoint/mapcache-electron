@@ -473,17 +473,15 @@ class MapCacheWindowManager {
   }
 
   showMainWindow () {
+    this.mainWindow.show()
     if (!isNil(this.loadingWindow)) {
-      this.loadingWindow.hide()
       this.loadingWindow.destroy()
       this.loadingWindow = null
     }
     if (!isNil(this.projectWindow)) {
-      this.projectWindow.hide()
       this.projectWindow.destroy()
       this.projectWindow = null
     }
-    this.mainWindow.show()
   }
 
   /**
