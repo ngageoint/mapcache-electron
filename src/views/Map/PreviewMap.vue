@@ -120,12 +120,14 @@ export default {
           })
           if (this.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
+            self.baseMapLayers[baseMapId].bringToBack()
           }
         } else {
           let layer = constructLayer(baseMap.layerConfiguration)
           self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
           if (self.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
+            self.baseMapLayers[baseMapId].bringToBack()
           }
         }
       },
@@ -255,10 +257,12 @@ export default {
                   self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
                 self.map.addLayer(self.baseMapLayers[newBaseMapId])
+                self.baseMapLayers[newBaseMapId].bringToBack()
               }
               self.mapBackground = newBaseMap.background || '#ddd'
             } else {
               self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
+              self.baseMapLayers[self.offlineBaseMapId].bringToBack()
               self.selectedBaseMapId = self.offlineBaseMapId
             }
           })
