@@ -255,20 +255,20 @@ function setupRequestListener () {
     if (message.type === REQUEST_ATTACH_MEDIA) {
       attachMedia(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
-      }).catch(error => {
-        parentPort.postMessage({error: error, result: null})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to attach media.', result: null})
       })
     } else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
-      }).catch(error => {
-        parentPort.postMessage({error: error, result: null})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to process data source.', result: null})
       })
     } else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
         parentPort.postMessage({error: null, result: result})
-      }).catch(error => {
-        parentPort.postMessage({error: error, result: null})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to render tile.', result: null})
       })
     }
   })
