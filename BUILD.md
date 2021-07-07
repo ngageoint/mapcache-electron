@@ -36,8 +36,6 @@
 ### yarn.lock adjustments:
 * bindings@^1.5.0 does not work in electron, so it has been updated to use: 'git://github.com/caldwellc/node-bindings.git#master' which provides a fix for undefined filename errors
 
-
-
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:
 1. Update node's max old space size
@@ -131,7 +129,7 @@ Software source code previously released under an open source license and then m
 # Releasing a New Version
 1. Update package.json version
 2. Add a changelog file for the version describing new features added and bugs fixed
-3. Update WindowsLauncher.js to reference correct version tag
+3. Update MapCacheWindowManager.js to reference correct version tag
 4. Commit changes
 5. Tag version
 6. Build windows, linux and mac installers
