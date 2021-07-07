@@ -338,7 +338,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
     if (!isNil(timeout) && timeout > 0) {
       options.timeout = timeout
     }
-    let {serviceInfo, error} = await testServiceConnection(source.filePath, serviceType, options)
+    let {serviceInfo, error, withCredentials} = await testServiceConnection(source.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true
       // verify that this source is still valid when compared to the service info
@@ -354,6 +354,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
         let sourceClone = cloneDeep(source)
         sourceClone.error = undefined
         sourceClone.visible = true
+        sourceClone.withCredentials = withCredentials
         updateDataSource({projectId: projectId, source: sourceClone})
         success = true
       }
@@ -392,7 +393,7 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
     if (!isNil(baseMap.layerConfiguration.withCredentials)) {
       options.withCredentials = baseMap.layerConfiguration.withCredentials
     }
-    let {serviceInfo, error} = await testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
+    let {serviceInfo, error, withCredentials} = await testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true
       // verify that this baseMap is still valid when compared to the service info
@@ -407,6 +408,7 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
       if (valid) {
         let baseMapClone = cloneDeep(baseMap)
         baseMapClone.error = undefined
+        baseMapClone.withCredentials = withCredentials
         editBaseMap(baseMapClone)
         success = true
       }
