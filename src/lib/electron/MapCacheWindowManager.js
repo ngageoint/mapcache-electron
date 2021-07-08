@@ -235,6 +235,17 @@ class MapCacheWindowManager {
           })
         })
       })
+
+      ipcMain.on('generate_geotiff_raster_file', async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.generateGeoTIFFRaster(payload).then((result) => {
+          event.sender.send('generate_geotiff_raster_file_' + taskId, result)
+        }).catch(e => {
+          event.sender.send('generate_geotiff_raster_file_' + taskId, {
+            error: e
+          })
+        })
+      })
     }
   }
 
@@ -368,7 +379,6 @@ class MapCacheWindowManager {
           this.workerWindow.destroy()
           this.workerWindow = null
         }
-
         if (!isNil(result) && !isNil(result.error)) {
           result.message = 'Error'
           statusCallback(result)

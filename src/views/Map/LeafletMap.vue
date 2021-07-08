@@ -198,6 +198,7 @@
               </v-list-item-icon>
               <v-list-item-title>{{item.name}}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
+              <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
               <v-progress-circular
                 v-if="item.id == selectedBaseMapId && connectingToBaseMap"
                 indeterminate
@@ -242,6 +243,7 @@ import { getOfflineBaseMapId } from '../../lib/util/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline } from '@mdi/js'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 
 
 const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
@@ -317,6 +319,7 @@ export default {
             updateKey: 0,
             baseMap: baseMapConfig,
             name: baseMapConfig.name,
+            missingRaster: window.mapcache.isRasterMissing(baseMapConfig.layerConfiguration),
             zoomTo: debounce((e, map) => {
               e.stopPropagation()
               const extent = baseMapConfig.extent || [-180, -90, 180, 90]
@@ -335,6 +338,7 @@ export default {
     })
   },
   components: {
+    GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
     FeatureEditor,
     FeatureTable,
@@ -1101,9 +1105,8 @@ export default {
           this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
           const newBaseMap = self.baseMaps[self.baseMapIndex]
 
-
           let success = true
-          if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
+          if (!isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
             this.connectingToBaseMap = true
             success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             this.connectingToBaseMap = false
@@ -1114,7 +1117,7 @@ export default {
             self.map.removeLayer(self.baseMapLayers[oldBaseMapId])
           }
 
-          if (success) {
+          if (success && !window.mapcache.isRasterMissing(newBaseMap.layerConfiguration)) {
             // check to see if base map has already been added
             if (isNil(self.baseMapLayers[newBaseMapId])) {
               self.addBaseMap(newBaseMap, self.map)

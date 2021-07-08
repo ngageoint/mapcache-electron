@@ -121,6 +121,7 @@ import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
 import { getDef } from '../projection/ProjectionUtilities'
+import { GEOTIFF } from '../layer/LayerTypes'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync('get-user-data-directory')
@@ -326,6 +327,15 @@ contextBridge.exposeInMainWorld('mapcache', {
       callback(args)
     })
   },
+  generateGeoTIFFRasterFile: (id, filePath, callback) => {
+    ipcRenderer.once('generate_geotiff_raster_file_' + id, (event, args) => {
+      callback(args)
+    })
+    ipcRenderer.send('generate_geotiff_raster_file', {
+      id: id,
+      filePath: filePath
+    })
+  },
   addRequestClientCredentialsListener: (callback) => {
     ipcRenderer.on('request-client-credentials', (event, args) => {
       callback(args)
@@ -484,6 +494,9 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   fileExists: (filePath) => {
     return jetpack.exists(filePath)
+  },
+  isRasterMissing: (config) => {
+    return config != null && config.layerType === GEOTIFF && (config.rasterFile == null || !jetpack.exists(config.rasterFile))
   },
   getExtensionName: (filePath) => {
     return path.extname(filePath)

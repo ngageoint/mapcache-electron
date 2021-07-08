@@ -1,5 +1,5 @@
 import path from 'path'
-import {REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA} from '../mapcacheThreadRequestTypes'
+import {REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER} from '../mapcacheThreadRequestTypes'
 
 /**
  * MapcacheThreadHelper
@@ -21,7 +21,7 @@ export default class MapcacheThreadHelper {
     // perform any task
     for (let i = 1; i < workerCount; i++) {
       config.push({
-        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA]
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER]
       })
     }
 
@@ -104,6 +104,22 @@ export default class MapcacheThreadHelper {
       this.threadPool.addTask({id: data.id, type: REQUEST_RENDER, data: data}, null, (err, result) => {
         if (err) {
           result = { error: err }
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Create geotiff raster
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  generateGeoTIFFRaster (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_GEOTIFF_RASTER, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
         }
         resolve(result)
       })

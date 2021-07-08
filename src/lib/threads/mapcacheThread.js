@@ -5,7 +5,8 @@ import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRend
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
-import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER } from './mapcacheThreadRequestTypes'
+import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER, REQUEST_GEOTIFF_RASTER } from './mapcacheThreadRequestTypes'
+import path from 'path'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -247,6 +248,22 @@ async function renderTile (data) {
   });
 }
 
+
+/**
+ * Generates and returns the absolute path to a geotiff raster data file
+ * @param data
+ * @returns {Promise<string>}
+ */
+async function generateGeoTIFFRasterFile (data) {
+  const { filePath } = data
+  const GeoTIFFSource = require('../source/GeoTIFFSource').default
+  const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
+  const image = await GeoTIFFSource.getImage(geotiff)
+  const rasterFile = path.join(path.dirname(filePath), 'data.bin')
+  await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
+  return rasterFile
+}
+
 /**
  * Handles incoming requests from the parent port
  */
@@ -269,6 +286,12 @@ function setupRequestListener () {
         parentPort.postMessage({error: null, result: result})
       }).catch(() => {
         parentPort.postMessage({error: 'Failed to render tile.', result: null})
+      })
+    } else if (message.type === REQUEST_GEOTIFF_RASTER) {
+      generateGeoTIFFRasterFile(message.data).then((result) => {
+        parentPort.postMessage({error: null, result: result})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to generate raster file.', result: null})
       })
     }
   })

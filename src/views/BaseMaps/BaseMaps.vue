@@ -30,6 +30,9 @@
             <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">
               <base-map-troubleshooting :base-map="item.baseMap"></base-map-troubleshooting>
             </v-list-item-icon>
+            <v-list-item-icon class="mt-auto mb-auto" v-if="item.missingRaster">
+              <geo-t-i-f-f-troubleshooting :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
+            </v-list-item-icon>
           </v-list-item>
           <v-divider :key="item.id + 'divider'"></v-divider>
         </template>
@@ -61,9 +64,11 @@ import AddBaseMap from './AddBaseMap'
 import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 
 export default {
     components: {
+      GeoTIFFTroubleshooting,
       BaseMapTroubleshooting,
       AddBaseMap,
       BaseMap
@@ -84,6 +89,7 @@ export default {
               baseMap: baseMap,
               name: baseMap.name,
               readonly: baseMap.readonly,
+              missingRaster: window.mapcache.isRasterMissing(baseMap.layerConfiguration),
               background: baseMap.background || '#ddd',
               zoomTo: function (e, projectId) {
                 e.stopPropagation()

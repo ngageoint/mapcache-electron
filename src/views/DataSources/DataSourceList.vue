@@ -24,8 +24,11 @@
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.error">
             <data-source-troubleshooting :project-id="projectId" :source="sources[item.id]"></data-source-troubleshooting>
           </v-list-item-icon>
+          <v-list-item-icon class="mt-auto mb-auto" v-if="item.missingRaster">
+            <geo-t-i-f-f-troubleshooting :project-id="projectId" :source-or-base-map="sources[item.id]"></geo-t-i-f-f-troubleshooting>
+          </v-list-item-icon>
           <v-list-item-action>
-            <source-visibility-switch :input-value="item.visible" :project-id="projectId" :source="sources[item.id]"></source-visibility-switch>
+            <source-visibility-switch :disabled="item.missingRaster" :input-value="item.visible" :project-id="projectId" :source="sources[item.id]"></source-visibility-switch>
           </v-list-item-action>
         </v-list-item>
         <v-divider :key="item.id + 'divider'"></v-divider>
@@ -38,9 +41,11 @@
 import isNil from 'lodash/isNil'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 
 export default {
     components: {
+      GeoTIFFTroubleshooting,
       DataSourceTroubleshooting,
       SourceVisibilitySwitch
     },
@@ -63,6 +68,7 @@ export default {
           }
           items.push({
             id: key,
+            missingRaster: window.mapcache.isRasterMissing(source),
             error: source.error,
             visible: source.visible,
             name: isNil(source.displayName) ? source.name : source.displayName,

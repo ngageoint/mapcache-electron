@@ -3,13 +3,14 @@ import store from '../.'
 import cloneDeep from 'lodash/cloneDeep'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
+import jetpack from 'fs-jetpack'
+import path from 'path'
+import { mkdirSync, readdirSync, existsSync } from 'fs'
+import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { mapcache } from '../../../package.json'
 import { getDefaultBaseMaps } from '../../lib/util/BaseMapUtilities'
 import { DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, NO_LIMIT } from '../../lib/network/HttpUtilities'
-import { mkdirSync, readdirSync, existsSync } from 'fs'
-import jetpack from 'fs-jetpack'
 import {CONTAINS_V4_REGEX, V4_REGEX} from '../../lib/util/UniqueIDUtilities'
-import path from 'path'
 import {
   clearUserDirectory,
   createNextAvailableLayerDirectory,
@@ -19,11 +20,10 @@ import {
   removeUnusedFromUserDirectory,
   rmDirAsync
 } from '../../lib/util/FileUtilities'
-import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
 import GeoTIFFSource from '../../lib/source/GeoTIFFSource'
-import {isRemote} from '../../lib/layer/LayerTypes'
+import {GEOTIFF, VECTOR, MBTILES, isRemote} from '../../lib/layer/LayerTypes'
 
 
 /**
@@ -95,8 +95,8 @@ export async function runMigration (forceReset = false) {
     },
     7: async function (state) {
       // migrates existing project sources and basemaps into new directory structure. cleans up lost directories
-      const updateSource = async (source) => {
-        if (source.layerType === 'GeoTIFF') {
+      const updateSource = async function (source) {
+        if (source.layerType === GEOTIFF) {
           const geotiff = await GeoTIFFSource.getGeoTIFF(source.filePath)
           const image = await GeoTIFFSource.getImage(geotiff)
           let {
@@ -128,9 +128,8 @@ export async function runMigration (forceReset = false) {
           source.bitsPerSample = bitsPerSample
           source.sampleFormat = sampleFormat
           source.bytesPerSample = bytesPerSample
-          source.rasterFile = path.join(path.dirname(source.filePath), 'data.bin')
-          await GeoTIFFSource.createGeoTIFFDataFile(image, source.rasterFile)
-        } else if (source.layerType === 'Vector') {
+          source.visible = false
+        } else if (source.layerType === VECTOR) {
           delete source['styleAssignment']
           delete source['iconAssignment']
           delete source['tableStyleAssignment']
@@ -140,11 +139,12 @@ export async function runMigration (forceReset = false) {
           delete source['sourceId']
           source.styleKey = 0
           source.style = {}
-        } else if (source.layerType === 'MBTiles') {
+        } else if (source.layerType === MBTILES) {
           source.style = {}
         } else if (isRemote(source)) {
           source.withCredentials = false
         }
+        return source
       }
 
       // create projects directory
@@ -155,13 +155,18 @@ export async function runMigration (forceReset = false) {
       }
 
       // iterate over projects and add project directories
-      keys(state.Projects).forEach(projectId => {
+      const pKeys = keys(state.Projects)
+
+      for (let i = 0; i < pKeys.length; i++) {
+        const projectId = pKeys[i]
         const project = state.Projects[projectId]
         project.directory = createNextAvailableProjectDirectory(userDataDir)
 
         // iterate over sources and add source/layer directories. Also update sources as needed
-        keys(state.Projects[projectId].sources).forEach(async sourceId => {
-          let source = state.Projects[projectId].sources[sourceId]
+        const sKeys = keys(project.sources)
+        for (let j = 0; j < sKeys.length; j++) {
+          let sourceId = sKeys[j]
+          let source = project.sources[sourceId]
           source.sourceDirectory = createNextAvailableSourceDirectory(project.directory)
           source.directory = createNextAvailableLayerDirectory(source.sourceDirectory, false)
           source.id = sourceId
@@ -192,9 +197,9 @@ export async function runMigration (forceReset = false) {
           if (!isNil(source.geopackageFilePath)) {
             source.geopackageFilePath = source.geopackageFilePath.replace(oldDir, source.directory)
           }
-          await updateSource(source)
-        })
-      })
+          state.Projects[projectId].sources[sourceId] = await updateSource(source)
+        }
+      }
 
       // create basemaps directory
       const baseMapsDir = path.join(userDataDir, BASEMAP_DIRECTORY_IDENTIFIER)
@@ -203,7 +208,11 @@ export async function runMigration (forceReset = false) {
       }
 
       // iterate over basemaps and update them accordingly
-      state.BaseMaps.baseMaps.filter(baseMap => ['0','1','2','3'].indexOf(baseMap.id) === -1).map(async baseMap => {
+      for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
+        const baseMap = state.BaseMaps.baseMaps[i]
+        if (['0','1','2','3'].indexOf(baseMap.id) !== -1) {
+          continue
+        }
         // move base map contents to new directory
         const baseMapDir = createNextAvailableBaseMapDirectory(userDataDir, false)
         const oldDir = path.join(userDataDir, baseMap.id)
@@ -220,12 +229,8 @@ export async function runMigration (forceReset = false) {
         if (!isNil(baseMap.layerConfiguration.geopackageFilePath)) {
           baseMap.layerConfiguration.geopackageFilePath = baseMap.layerConfiguration.geopackageFilePath.replace(oldDir, baseMapDir)
         }
-        if (isRemote(baseMap.layerConfiguration)) {
-          baseMap.layerConfiguration.withCredentials = false
-        }
-        await updateSource(baseMap.layerConfiguration)
-        return baseMap
-      })
+        baseMap.layerConfiguration = await updateSource(baseMap.layerConfiguration)
+      }
 
       // delete all uuidv4 directories
       const uuidv4Dirs = readdirSync(userDataDir, { withFileTypes: true })

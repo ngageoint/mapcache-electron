@@ -228,6 +228,9 @@
         <v-col cols="1" v-if="source.error">
           <data-source-troubleshooting :source="source" :project-id="project.id"></data-source-troubleshooting>
         </v-col>
+        <v-col cols="1" v-if="missingRaster">
+          <geo-t-i-f-f-troubleshooting :source-or-base-map="source" :project-id="project.id"></geo-t-i-f-f-troubleshooting>
+        </v-col>
       </v-row>
       <v-row no-gutters class="pl-3 pb-3 pr-3 background" style="margin-left: -12px" justify="center" align-content="center">
         <v-hover>
@@ -322,7 +325,7 @@
                 <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                   Enable
                 </p>
-                <source-visibility-switch :input-value="source.visible" :project-id="project.id" :source="source" class="ml-2" :style="{marginTop: '-4px'}"></source-visibility-switch>
+                <source-visibility-switch :disabled="missingRaster" :input-value="source.visible" :project-id="project.id" :source="source" class="ml-2" :style="{marginTop: '-4px'}"></source-visibility-switch>
               </v-row>
             </v-col>
           </v-row>
@@ -420,6 +423,7 @@ import {
   mdiTrashCan
 } from '@mdi/js'
 import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../../lib/network/HttpUtilities'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 
 export default {
     props: {
@@ -435,6 +439,7 @@ export default {
       back: Function
     },
     components: {
+      GeoTIFFTroubleshooting,
       NumberPicker,
       DataSourceTroubleshooting,
       MBTilesOptions,
@@ -448,7 +453,10 @@ export default {
         initialDisplayName () {
           return isNil(this.source.displayName) ? this.source.name : this.source.displayName
         }
-      })
+      }),
+      missingRaster () {
+        return window.mapcache.isRasterMissing(this.source)
+      }
     },
     data () {
       return {

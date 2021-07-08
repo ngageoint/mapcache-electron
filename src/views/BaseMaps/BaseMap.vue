@@ -179,6 +179,9 @@
         <v-col cols="1" v-if="baseMap.error">
           <base-map-troubleshooting :base-map="baseMap"></base-map-troubleshooting>
         </v-col>
+        <v-col cols="1" v-if="rasterMissing">
+          <geo-t-i-f-f-troubleshooting :source-or-base-map="baseMap"></geo-t-i-f-f-troubleshooting>
+        </v-col>
       </v-row>
       <v-row v-if="!readonly" no-gutters class="pl-3 pb-3 pr-3 background" style="margin-left: -12px;" justify="center" align-content="center">
         <v-hover>
@@ -324,6 +327,7 @@ import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import NumberPicker from '../Common/NumberPicker'
 import {mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
 import {DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS} from '../../lib/network/HttpUtilities'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 
 export default {
     props: {
@@ -340,6 +344,7 @@ export default {
       back: Function
     },
     components: {
+      GeoTIFFTroubleshooting,
       NumberPicker,
       BaseMapTroubleshooting,
       StyleEditor,
@@ -354,6 +359,9 @@ export default {
       },
       readonly () {
         return this.baseMap.readonly
+      },
+      rasterMissing () {
+        return window.mapcache.isRasterMissing(this.baseMap.layerConfiguration || {})
       }
     },
     data () {
