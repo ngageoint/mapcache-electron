@@ -36,9 +36,11 @@ class MapCacheWindowManager {
       this.hideAllDevTools()
     })
 
-    globalShortcut.register('CommandOrControl+Shift+C', () => {
-      session.defaultSession.clearAuthCache()
-    })
+    if (!isProduction) {
+      globalShortcut.register('CommandOrControl+Shift+C', () => {
+        session.defaultSession.clearAuthCache()
+      })
+    }
 
     globalShortcut.register('CommandOrControl+Shift+L', () => {
       shell.showItemInFolder(path.join(app.getPath('userData'), 'logs', 'mapcache.log'))
@@ -169,9 +171,6 @@ class MapCacheWindowManager {
    * Starts the app
    */
   start () {
-    // if (!isProduction) {
-    //   this.setupGlobalShortcuts()
-    // }
     this.setupGlobalShortcuts()
     this.setupWebRequestWorkflow()
     this.registerEventHandlers()
@@ -675,16 +674,6 @@ class MapCacheWindowManager {
    * @returns {*[]}
    */
   getMenuTemplate () {
-    const viewSubmenu = [
-      { role: 'reload' },
-      { role: 'forcereload' },
-      { role: 'togglefullscreen' }
-    ]
-
-    if (!isProduction) {
-      viewSubmenu.push({ role: 'toggledevtools' })
-    }
-
     const template = [
       {
         label: 'Edit',
@@ -696,7 +685,12 @@ class MapCacheWindowManager {
       },
       {
         label: 'View',
-        submenu: viewSubmenu
+        submenu: [
+          { role: 'reload' },
+          { role: 'forcereload' },
+          { role: 'togglefullscreen' },
+          { role: 'toggledevtools' }
+        ]
       },
       {
         role: 'window',
