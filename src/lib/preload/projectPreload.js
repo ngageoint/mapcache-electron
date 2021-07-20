@@ -120,25 +120,63 @@ import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/Til
 import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
-import { getDef } from '../projection/ProjectionUtilities'
+import { getDef, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
+import {
+  ATTACH_MEDIA,
+  ATTACH_MEDIA_COMPLETED,
+  BUILD_FEATURE_LAYER,
+  BUILD_FEATURE_LAYER_COMPLETED,
+  BUILD_FEATURE_LAYER_STATUS,
+  BUILD_TILE_LAYER,
+  BUILD_TILE_LAYER_COMPLETED,
+  BUILD_TILE_LAYER_STATUS,
+  CANCEL_BUILD_FEATURE_LAYER,
+  CANCEL_BUILD_FEATURE_LAYER_COMPLETED,
+  CANCEL_BUILD_TILE_LAYER,
+  CANCEL_BUILD_TILE_LAYER_COMPLETED,
+  CANCEL_PROCESS_SOURCE,
+  CANCEL_PROCESS_SOURCE_COMPLETED,
+  CANCEL_REPROJECT_TILE_REQUEST,
+  CANCEL_SERVICE_REQUEST,
+  CANCEL_TILE_REQUEST,
+  CLIENT_CERTIFICATE_SELECTED,
+  CLIENT_CREDENTIALS_INPUT,
+  CLOSE_PROJECT,
+  CLOSING_PROJECT_WINDOW,
+  GENERATE_GEOTIFF_RASTER_FILE,
+  GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
+  GET_APP_DATA_DIRECTORY,
+  GET_USER_DATA_DIRECTORY,
+  IPC_EVENT_CONNECT,
+  IPC_EVENT_NOTIFY_MAIN,
+  IPC_EVENT_NOTIFY_RENDERERS,
+  PROCESS_SOURCE,
+  PROCESS_SOURCE_COMPLETED,
+  PROCESS_SOURCE_STATUS,
+  REQUEST_CLIENT_CREDENTIALS,
+  REQUEST_REPROJECT_TILE,
+  REQUEST_REPROJECT_TILE_COMPLETED,
+  REQUEST_TILE,
+  REQUEST_TILE_COMPLETED,
+  SELECT_CLIENT_CERTIFICATE,
+  SHOW_OPEN_DIALOG,
+  SHOW_OPEN_DIALOG_COMPLETED,
+  SHOW_SAVE_DIALOG,
+  SHOW_SAVE_DIALOG_COMPLETED
+} from '../electron/ipc/MapCacheIPC'
 
 function getUserDataDirectory () {
-  return ipcRenderer.sendSync('get-user-data-directory')
+  return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 
-
-const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
-const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
-const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
-
 // if a user cancels inputting credentials, we will need to force a cancel of the the request
 const cancelRequestURLToCallbackMap = {}
-ipcRenderer.on('cancel-service-request', (event, url) => {
+ipcRenderer.on(CANCEL_SERVICE_REQUEST, (event, url) => {
   if (cancelRequestURLToCallbackMap[url]) {
     cancelRequestURLToCallbackMap[url]()
   }
@@ -220,22 +258,22 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getUserDataDirectory,
   getAppDataDirectory: () => {
-    return ipcRenderer.sendSync('get-app-data-directory')
+    return ipcRenderer.sendSync(GET_APP_DATA_DIRECTORY)
   },
   showOpenDialog: (options) => {
     return new Promise (resolve => {
-      ipcRenderer.once('show-open-dialog-completed', (event, result) => {
+      ipcRenderer.once(SHOW_OPEN_DIALOG_COMPLETED, (event, result) => {
         resolve(result)
       })
-      ipcRenderer.send('show-open-dialog', options)
+      ipcRenderer.send(SHOW_OPEN_DIALOG, options)
     })
   },
   showSaveDialog: (options) => {
     return new Promise (resolve => {
-      ipcRenderer.once('show-save-dialog-completed', (event, result) => {
+      ipcRenderer.once(SHOW_SAVE_DIALOG_COMPLETED, (event, result) => {
         resolve(result)
       })
-      ipcRenderer.send('show-save-dialog', options)
+      ipcRenderer.send(SHOW_SAVE_DIALOG, options)
     })
   },
   copyToClipboard: (text) => {
@@ -251,39 +289,26 @@ contextBridge.exposeInMainWorld('mapcache', {
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
   },
-  webRequest: (request) => {
-    request.id = createUniqueID()
-    return new Promise((resolve, reject) => {
-      ipcRenderer.once('web-request-response-' + request.id, (event, response) => {
-        if (response.error) {
-          reject(response)
-        } else {
-          resolve(response)
-        }
-      })
-      ipcRenderer.send('web-request', request)
-    })
-  },
   closeProject: () => {
-    ipcRenderer.send('close-project')
+    ipcRenderer.send(CLOSE_PROJECT)
   },
   cancelProcessingSource: (source) => {
     return new Promise(resolve => {
-      ipcRenderer.removeAllListeners('process_source_completed_' + source.id)
-      ipcRenderer.once('cancel_process_source_completed_' + source.id, resolve)
-      ipcRenderer.send('cancel_process_source', source)
+      ipcRenderer.removeAllListeners(PROCESS_SOURCE_COMPLETED(source.id))
+      ipcRenderer.once(CANCEL_PROCESS_SOURCE_COMPLETED(source.id), resolve)
+      ipcRenderer.send(CANCEL_PROCESS_SOURCE, source)
     })
   },
   attachMediaToGeoPackage: (data) => {
     return new Promise(resolve => {
-      ipcRenderer.once('attach_media_completed_' + data.id, (event, success) => {
+      ipcRenderer.once(ATTACH_MEDIA_COMPLETED(data.id), (event, success) => {
         resolve(success)
       })
-      ipcRenderer.send('attach_media', data)
+      ipcRenderer.send(ATTACH_MEDIA, data)
     })
   },
   removeMediaCompletedListener: (id) => {
-    ipcRenderer.removeAllListeners('attach_media_completed_' + id)
+    ipcRenderer.removeAllListeners(ATTACH_MEDIA_COMPLETED(id))
   },
   downloadAttachment: async (filePath, geopackagePath, relatedTable, relatedId) => {
     const mediaRow = await getMediaRow(geopackagePath, relatedTable, relatedId)
@@ -295,116 +320,128 @@ contextBridge.exposeInMainWorld('mapcache', {
     await jetpack.writeAsync(file, mediaRow.data)
   },
   sendClientCredentials: (eventUrl, credentials) => {
-    ipcRenderer.send('client-credentials-input', eventUrl, credentials)
+    ipcRenderer.send(CLIENT_CREDENTIALS_INPUT, eventUrl, credentials)
   },
   sendCertificateSelection: (url, certificate) => {
-    ipcRenderer.send('client-certificate-selected', url, certificate)
+    ipcRenderer.send(CLIENT_CERTIFICATE_SELECTED, url, certificate)
   },
   removeClosingProjectWindowListener: () => {
-    ipcRenderer.removeAllListeners('closing-project-window')
+    ipcRenderer.removeAllListeners(CLOSING_PROJECT_WINDOW)
   },
   removeSelectClientCertificateListener: () => {
-    ipcRenderer.removeAllListeners('select-client-certificate')
+    ipcRenderer.removeAllListeners(SELECT_CLIENT_CERTIFICATE)
   },
   removeRequestClientCredentialsListener: () => {
-    ipcRenderer.removeAllListeners('request-client-credentials')
+    ipcRenderer.removeAllListeners(REQUEST_CLIENT_CREDENTIALS)
   },
   addTaskStatusListener: (id, callback) => {
-    ipcRenderer.on('task-status-' + id, (event, args) => {
+    ipcRenderer.on(PROCESS_SOURCE_STATUS(id), (event, args) => {
       callback(args)
     })
   },
   removeTaskStatusListener: (id) => {
-    ipcRenderer.removeAllListeners('task-status-' + id)
+    ipcRenderer.removeAllListeners(PROCESS_SOURCE_STATUS(id))
   },
   addClosingProjectWindowListener: (callback) => {
-    ipcRenderer.on('closing-project-window', (event, args) => {
+    ipcRenderer.on(CLOSING_PROJECT_WINDOW, (event, args) => {
       callback(args)
     })
   },
   addSelectClientCertificateListener: (callback) => {
-    ipcRenderer.on('select-client-certificate', (event, args) => {
+    ipcRenderer.on(SELECT_CLIENT_CERTIFICATE, (event, args) => {
       callback(args)
     })
   },
   generateGeoTIFFRasterFile: (id, filePath, callback) => {
-    ipcRenderer.once('generate_geotiff_raster_file_' + id, (event, args) => {
+    ipcRenderer.once(GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(id), (event, args) => {
       callback(args)
     })
-    ipcRenderer.send('generate_geotiff_raster_file', {
+    ipcRenderer.send(GENERATE_GEOTIFF_RASTER_FILE, {
       id: id,
       filePath: filePath
     })
   },
   addRequestClientCredentialsListener: (callback) => {
-    ipcRenderer.on('request-client-credentials', (event, args) => {
+    ipcRenderer.on(REQUEST_CLIENT_CREDENTIALS, (event, args) => {
       callback(args)
     })
   },
   processSource: (data) => {
-    ipcRenderer.send('process_source', data)
+    ipcRenderer.send(PROCESS_SOURCE, data)
   },
   onceProcessSourceCompleted: (id) => {
     return new Promise(resolve => {
-      ipcRenderer.once('process_source_completed_' + id, (event, result) => {
+      ipcRenderer.once(PROCESS_SOURCE_COMPLETED(id), (event, result) => {
         resolve(result)
       })
     })
   },
   addFeatureLayer: (configuration, statusCallback) => {
     return new Promise(resolve => {
-      ipcRenderer.once('build_feature_layer_completed_' + configuration.id, () => {
-        ipcRenderer.removeAllListeners('build_feature_layer_status_' + configuration.id)
+      ipcRenderer.once(BUILD_FEATURE_LAYER_COMPLETED(configuration.id), () => {
+        ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_STATUS(configuration.id))
         resolve()
       })
-      ipcRenderer.on('build_feature_layer_status_' + configuration.id, (event, status) => {
+      ipcRenderer.on(BUILD_FEATURE_LAYER_STATUS(configuration.id), (event, status) => {
         statusCallback(status)
       })
-      ipcRenderer.send('build_feature_layer', {configuration: configuration})
+      ipcRenderer.send(BUILD_FEATURE_LAYER, {configuration: configuration})
     })
   },
   cancelAddFeatureLayer: (configuration) => {
     return new Promise(resolve => {
-      ipcRenderer.removeAllListeners('build_feature_layer_status_' + configuration.id)
-      ipcRenderer.removeAllListeners('build_feature_layer_completed_' + configuration.id)
-      ipcRenderer.once('cancel_build_feature_layer_completed_' + configuration.id, () => {
+      ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_STATUS(configuration.id))
+      ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_COMPLETED(configuration.id))
+      ipcRenderer.once(CANCEL_BUILD_FEATURE_LAYER_COMPLETED(configuration.id), () => {
         resolve()
       })
-      ipcRenderer.send('cancel_build_feature_layer', {configuration: configuration})
+      ipcRenderer.send(CANCEL_BUILD_FEATURE_LAYER, {configuration: configuration})
     })
   },
   addTileLayer: (configuration, statusCallback) => {
     return new Promise(resolve => {
-      ipcRenderer.once('build_tile_layer_completed_' + configuration.id, () => {
-        ipcRenderer.removeAllListeners('build_tile_layer_status_' + configuration.id)
+      ipcRenderer.once(BUILD_TILE_LAYER_COMPLETED(configuration.id), () => {
+        ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_STATUS(configuration.id))
         resolve()
       })
-      ipcRenderer.on('build_tile_layer_status_' + configuration.id, (event, status) => {
+      ipcRenderer.on(BUILD_TILE_LAYER_STATUS(configuration.id), (event, status) => {
         statusCallback(status)
       })
-      ipcRenderer.send('build_tile_layer', {configuration: configuration})
+      ipcRenderer.send(BUILD_TILE_LAYER, {configuration: configuration})
     })
   },
   cancelAddTileLayer: (configuration) => {
     return new Promise(resolve => {
-      ipcRenderer.removeAllListeners('build_tile_layer_status_' + configuration.id)
-      ipcRenderer.removeAllListeners('build_tile_layer_completed_' + configuration.id)
-      ipcRenderer.once('cancel_build_tile_layer_completed_' + configuration.id, () => {
+      ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_STATUS(configuration.id))
+      ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_COMPLETED(configuration.id))
+      ipcRenderer.once(CANCEL_BUILD_TILE_LAYER_COMPLETED(configuration.id), () => {
         resolve()
       })
-      ipcRenderer.send('cancel_build_tile_layer', {configuration: configuration})
+      ipcRenderer.send(CANCEL_BUILD_TILE_LAYER, {configuration: configuration})
     })
   },
   cancelTileRequest: (id) => {
-    ipcRenderer.send('cancel_tile_request', {id: id})
-    ipcRenderer.removeAllListeners('request_tile_' + id)
+    ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
+    ipcRenderer.removeAllListeners(REQUEST_TILE_COMPLETED(id))
   },
   requestTile: (request) => {
     return new Promise(resolve => {
-      ipcRenderer.once('request_tile_' + request.id, (event, result) => {
+      ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
         resolve(result)
       })
-      ipcRenderer.send('request_tile', request)
+      ipcRenderer.send(REQUEST_TILE, request)
+    })
+  },
+  cancelTileReprojectionReqeust: (id) => {
+    ipcRenderer.send(CANCEL_REPROJECT_TILE_REQUEST, {id: id})
+    ipcRenderer.removeAllListeners(REQUEST_REPROJECT_TILE_COMPLETED(id))
+  },
+  requestTileReprojection: (request) => {
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_REPROJECT_TILE_COMPLETED(request.id), (event, result) => {
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_REPROJECT_TILE, request)
     })
   },
   registerServiceRequestCancelListener: (url, callback) => {
@@ -718,6 +755,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       })
     })
   },
+  reprojectWebMercatorBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
     POINT: GeometryType.POINT,

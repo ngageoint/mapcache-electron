@@ -28,6 +28,6 @@ export default class XYZServerLayer extends NetworkTileLayer {
    * @param coords
    */
   getTileUrl (coords) {
-    return generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)
+    return { url: generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)}
   }
 }

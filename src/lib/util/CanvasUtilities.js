@@ -2,6 +2,25 @@ let makeImageDataFunction = (width, height) => {
   return new ImageData(width, height)
 }
 
+let makeImageFunction = async (source) => {
+  return new Promise (resolve => {
+    const image = new Image()
+    image.onload = function () {
+      resolve(image)
+    }
+    image.src = source
+  })
+}
+
+let readPixelsFunction = (image) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const context = canvas.getContext('2d')
+  context.drawImage(image, 0, 0)
+  return context.getImageData(0, 0, image.width, image.height).data
+}
+
 let createCanvasFunction = (width, height) => {
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -15,6 +34,29 @@ function setCreateCanvasFunction (f) {
 
 function createCanvas (width, height) {
   return createCanvasFunction(width, height)
+}
+
+function setMakeImageFunction (f) {
+  makeImageFunction = f
+}
+
+function makeImage (source) {
+  return makeImageFunction(source)
+}
+
+function setReadPixelsFunction (f) {
+  readPixelsFunction = f
+}
+
+function readPixels (image) {
+  return readPixelsFunction(image)
+}
+
+function disposeImage (image) {
+  if (image != null && image.delete) {
+    image.delete()
+    image = null
+  }
 }
 
 function disposeCanvas (canvas) {
@@ -63,5 +105,10 @@ export {
   setMakeImageDataFunction,
   makeImageData,
   hasTransparentPixels,
-  isBlank
+  isBlank,
+  disposeImage,
+  setMakeImageFunction,
+  makeImage,
+  setReadPixelsFunction,
+  readPixels
 }

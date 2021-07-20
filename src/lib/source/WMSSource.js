@@ -9,6 +9,7 @@ export default class WMSSource extends Source {
     this.sourceName = sourceName
     this.format = format
     this.withCredentials = withCredentials
+    this.srs = this.layers[0].srs
   }
   async retrieveLayers () {
     if (this.layers.length === 0) {
@@ -45,7 +46,8 @@ export default class WMSSource extends Source {
           version,
           format: this.format,
           layerType: WMS,
-          withCredentials: this.withCredentials
+          withCredentials: this.withCredentials,
+          srs: this.srs
         })
       ]
     }

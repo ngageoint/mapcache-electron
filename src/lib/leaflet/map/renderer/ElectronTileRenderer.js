@@ -15,29 +15,30 @@ export default class ElectronTileRenderer {
     this.layer = layer
     if (isElectron) {
       const { ipcRenderer } = require('electron')
-        this.requestTile = (request) => {
-          return new Promise(resolve => {
-            ipcRenderer.once('request_tile_' + request.id, (event, result) => {
-              resolve(result)
-            })
-            ipcRenderer.send('request_tile', request)
+      const { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } = require('../../../electron/ipc/MapCacheIPC')
+      this.requestTile = (request) => {
+        return new Promise(resolve => {
+          ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
+            resolve(result)
           })
-        }
+          ipcRenderer.send(REQUEST_TILE, request)
+        })
+      }
 
-        this.cancelTileRequest = (id) => {
-          ipcRenderer.send('cancel_tile_request', {id: id})
-          ipcRenderer.removeAllListeners('request_tile_' + id)
-        }
+      this.cancelTileRequest = (id) => {
+        ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
+        ipcRenderer.removeAllListeners(REQUEST_TILE_COMPLETED(id))
+      }
 
-        const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/TileBoundingBoxUtils')
-        const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
-        this.tileIntersects = (x, y, z, extent) => {
-          let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
-          // assumes projection from 3857 to 4326
-          let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
-          let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
-          return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
-        }
+      const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/TileBoundingBoxUtils')
+      const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
+      this.tileIntersects = (x, y, z, extent) => {
+        let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        // assumes projection from 3857 to 4326
+        let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
+        let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
+        return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
+      }
     } else {
       this.requestTile = window.mapcache.requestTile
       this.cancelTileRequest = window.mapcache.cancelTileRequest

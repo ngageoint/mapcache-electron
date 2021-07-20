@@ -6,9 +6,18 @@ import { disableRemoteSources, newProject } from '../vue/vuex/LandingActions'
 import { createNextAvailableProjectDirectory } from '../util/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import path from 'path'
+import {
+  GET_APP_VERSION,
+  GET_USER_DATA_DIRECTORY,
+  IPC_EVENT_CONNECT,
+  IPC_EVENT_NOTIFY_MAIN,
+  IPC_EVENT_NOTIFY_RENDERERS,
+  OPEN_EXTERNAL,
+  SHOW_PROJECT
+} from '../electron/ipc/MapCacheIPC'
 
 const getUserDataDirectory = () => {
-  return ipcRenderer.sendSync('get-user-data-directory')
+  return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
 const allowedOpenExternalLinks = ['http://www.geopackage.org/', 'http://ngageoint.github.io/GeoPackage/', 'https://eventkit.gs.mil/']
@@ -16,10 +25,6 @@ const allowedOpenExternalLinks = ['http://www.geopackage.org/', 'http://ngageoin
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
-
-const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
-const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
-const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
 
 let storage
 
@@ -53,21 +58,18 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getUserDataDirectory,
   getAppDataDirectory: () => {
-    return ipcRenderer.sendSync('get-app-data-directory')
+    return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
   },
   getAppVersion: () => {
-    return ipcRenderer.sendSync('get-app-version')
+    return ipcRenderer.sendSync(GET_APP_VERSION)
   },
   openExternal: (link) => {
     if (allowedOpenExternalLinks.indexOf(link) !== -1) {
-      ipcRenderer.send('open-external', link)
+      ipcRenderer.send(OPEN_EXTERNAL, link)
     }
   },
   showProject: (id) => {
-    ipcRenderer.send('show-project', id)
-  },
-  onceProjectShown: (callback) => {
-    ipcRenderer.once('show-project-completed', callback)
+    ipcRenderer.send(SHOW_PROJECT, id)
   },
   createProjectDirectory: () => {
     return createNextAvailableProjectDirectory(getUserDataDirectory())

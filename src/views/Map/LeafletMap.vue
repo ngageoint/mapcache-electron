@@ -1214,42 +1214,44 @@ export default {
         })
 
         // update existing data sources, some may have not been initialized yet
-        const changedSourceIds = updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) >= 0)
-        for (let i = 0; i < changedSourceIds.length; i++) {
-          const sourceId = changedSourceIds[i]
-          const newConfig = cloneDeep(updatedSources[sourceId])
-          const oldConfig = this.dataSourceMapLayers[sourceId].getLayer()._configuration
+        this.$nextTick(async () => {
+          const changedSourceIds = updatedSourceIds.filter((i) => existingSourceIds.indexOf(i) >= 0)
+          for (let i = 0; i < changedSourceIds.length; i++) {
+            const sourceId = changedSourceIds[i]
+            const newConfig = cloneDeep(updatedSources[sourceId])
+            const oldConfig = this.dataSourceMapLayers[sourceId].getLayer()._configuration
 
-          const enablingLayer = !oldConfig.visible && newConfig.visible
-          const disablingLayer = oldConfig.visible && !newConfig.visible
-          const repaintFields = this.dataSourceMapLayers[sourceId].getLayer().getRepaintFields()
-          const repaintRequired = oldConfig.visible && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
+            const enablingLayer = !oldConfig.visible && newConfig.visible
+            const disablingLayer = oldConfig.visible && !newConfig.visible
+            const repaintFields = this.dataSourceMapLayers[sourceId].getLayer().getRepaintFields()
+            const repaintRequired = oldConfig.visible && !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
 
-          // update layer
-          this.dataSourceMapLayers[sourceId].update(newConfig)
+            // update layer
+            this.dataSourceMapLayers[sourceId].update(newConfig)
 
-          // disabling layer, so remove it from the map
-          if (disablingLayer) {
-            this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
-          } else if (enablingLayer) {
-            // test if remote source is healthy
-            let valid = true
-            if (isRemote(newConfig)) {
-              try {
-                await this.dataSourceMapLayers[sourceId].testConnection()
-              } catch (e) {
-                window.mapcache.setSourceError({id: sourceId, error: e})
-                valid = false
+            // disabling layer, so remove it from the map
+            if (disablingLayer) {
+              this.removeLayerFromMap(this.dataSourceMapLayers[sourceId], sourceId)
+            } else if (enablingLayer) {
+              // test if remote source is healthy
+              let valid = true
+              if (isRemote(newConfig)) {
+                try {
+                  await this.dataSourceMapLayers[sourceId].testConnection()
+                } catch (e) {
+                  window.mapcache.setSourceError({id: sourceId, error: e})
+                  valid = false
+                }
               }
+              if (valid && this.dataSourceMapLayers[sourceId].getLayer().visible) {
+                // enabling map layer, if this has been initialized, we are good to go
+                this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
+              }
+            } else if (repaintRequired) {
+              this.dataSourceMapLayers[sourceId].redraw()
             }
-            if (valid) {
-              // enabling map layer, if this has been initialized, we are good to go
-              this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
-            }
-          } else if (repaintRequired) {
-            this.dataSourceMapLayers[sourceId].redraw()
           }
-        }
+        })
 
         this.refreshFeatureTable()
       },

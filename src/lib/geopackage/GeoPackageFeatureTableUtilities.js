@@ -101,18 +101,20 @@ async function updateFeatureGeometry (filePath, tableName, featureGeoJson, updat
  * @param tableName
  * @param feature
  * @param updateBoundingBox
+ * @param datesUpdated
  */
-function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = true) {
-  // fix dates
-  gp.getFeatureDao(tableName).table.getUserColumns().getColumns().forEach(column => {
-    if (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME) {
-      if (!isNil(feature.properties[column.getName()]) && !isEmpty(feature.properties[column.getName()])) {
-        feature.properties[column.getName()] = moment.utc(feature.properties[column.getName()]).toDate()
-      } else {
-        delete feature.properties[column.getName()]
+function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = true, datesUpdated = false) {
+  if (!datesUpdated) {
+    gp.getFeatureDao(tableName).table.getUserColumns().getColumns().forEach(column => {
+      if (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME) {
+        if (!isNil(feature.properties[column.getName()]) && !isEmpty(feature.properties[column.getName()])) {
+          feature.properties[column.getName()] = moment.utc(feature.properties[column.getName()]).toDate()
+        } else {
+          delete feature.properties[column.getName()]
+        }
       }
-    }
-  })
+    })
+  }
   const rowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
   if (updateBoundingBox) {
     _updateBoundingBoxForFeatureTable(gp, tableName)
@@ -1131,6 +1133,9 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
     let iconIdToIconRowId = {}
     let styleIdToStyleRowId = {}
     let iterator = featureCollection.features
+
+    let dateColumns = gp.getFeatureDao(tableName).table.getUserColumns().getColumns().filter(column => column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME).map(column => column.getName())
+
     for (let feature of iterator) {
       if (feature.properties) {
         feature.properties.id = undefined
@@ -1138,9 +1143,18 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
           if (isObject(feature.properties[key])) {
             delete feature.properties[key]
           }
+
+          // date correction
+          if (dateColumns.indexOf(key) !== -1) {
+            if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
+              feature.properties[key] = moment.utc(feature.properties[key]).toDate()
+            } else {
+              delete feature.properties[key]
+            }
+          }
         })
       }
-      let featureRowId = _addFeatureToFeatureTable (gp, tableName, feature, false)
+      let featureRowId = _addFeatureToFeatureTable (gp, tableName, feature, false, true)
       if (!isNil(style) && !isNil(style.features[feature.id])) {
         const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
         if (!isNil(style.features[feature.id].icon)) {

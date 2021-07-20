@@ -108,6 +108,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     this.error = null
     this.axiosRequestScheduler = getAxiosRequestScheduler(this.layer.rateLimit || DEFAULT_RATE_LIMIT)
     this.layer.setRenderer(constructRenderer(this.layer, false))
+    this.requiresReprojection = !isNil(this.layer.srs) && !this.layer.srs.endsWith(':3857')
   },
   getLayer () {
     return this.layer
@@ -171,23 +172,52 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     let img = document.createElement('img')
     if (!this.hasError()) {
       const cancellableTileRequest = new CancellableTileRequest()
+      const tileProjectionRequestId = window.mapcache.createUniqueID()
       const unloadListener = (event) => {
         if (coords.z === event.coords.z && coords.x === event.coords.x && coords.y === event.coords.y) {
           cancellableTileRequest.cancel()
+          window.mapcache.cancelTileReprojectionReqeust(tileProjectionRequestId)
         }
       }
       this.on('tileunload', unloadListener)
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileUrl(coords), this.retryAttempts, this.timeout, this.layer.withCredentials).then(({dataUrl, error}) => {
+      const { url, bbox, srs, webMercatorBoundingBox } = this.layer.getTileUrl(coords)
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeout, this.layer.withCredentials).then(({dataUrl, error}) => {
         if (!isNil(error) && !this.isPreview) {
           this.setError(error)
         }
         if (!isNil(dataUrl) && !dataUrl.startsWith('data:text/html')) {
-          img.src = dataUrl
+          if (this.requiresReprojection) {
+            window.mapcache.requestTileReprojection({
+              id: tileProjectionRequestId,
+              sourceTile: dataUrl,
+              sourceBoundingBox: bbox,
+              sourceSrs: srs,
+              targetSrs: 'EPSG:3857',
+              targetWidth: 256,
+              targetHeight: 256,
+              targetBoundingBox: webMercatorBoundingBox
+            }).then(result => {
+              this.off('tileunload', unloadListener)
+              img.onload = () => {
+                done(error, img)
+              }
+              img.src = result.base64Image
+            }).catch(e => {
+              this.off('tileunload', unloadListener)
+              done(e, img)
+            })
+          } else {
+            this.off('tileunload', unloadListener)
+            img.onload = () => {
+              done(error, img)
+            }
+            img.src = dataUrl
+          }
         } else {
           error = new Error('no data')
+          this.off('tileunload', unloadListener)
+          done(error, img)
         }
-        this.off('tileunload', unloadListener)
-        done(error, img)
       })
     }
     return img

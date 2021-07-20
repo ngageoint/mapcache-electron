@@ -125,9 +125,6 @@ export default {
         const id = window.mapcache.createUniqueID()
         const directory = window.mapcache.createProjectDirectory()
         window.mapcache.newProject({id: id, name: projectName, directory: directory})
-        window.mapcache.onceProjectShown(() => {
-          this.dialog = false
-        })
         this.$nextTick(() => {
           window.mapcache.showProject(id)
         })
@@ -153,9 +150,6 @@ export default {
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
         window.mapcache.disableRemoteSources(project.id)
-        window.mapcache.onceProjectShown(() => {
-          this.dialog = false
-        })
         this.$nextTick(() => {
           window.mapcache.showProject(project.id)
         })

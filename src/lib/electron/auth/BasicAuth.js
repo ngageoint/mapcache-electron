@@ -1,3 +1,5 @@
+import {CLIENT_CREDENTIALS_INPUT, REQUEST_CLIENT_CREDENTIALS} from '../ipc/MapCacheIPC'
+
 const { ipcMain } = require('electron')
 import CredentialsManagement from '../../network/CredentialsManagement'
 
@@ -20,7 +22,7 @@ async function getUserCredentialsForUrl (details, authInfo, webContents) {
     promises[url] = new Promise((resolve, reject) => {
       const callback = (event, eventUrl, credentials) => {
         if (eventUrl === url) {
-          ipcMain.removeListener('client-credentials-input', callback)
+          ipcMain.removeListener(CLIENT_CREDENTIALS_INPUT, callback)
           delete promises[url]
           // An explicit undefined value means the user did not make a choice (ie, page reload), null means the user
           // cancelled the request and a credentials should not be used.
@@ -31,8 +33,8 @@ async function getUserCredentialsForUrl (details, authInfo, webContents) {
           }
         }
       }
-      ipcMain.on('client-credentials-input', callback)
-      webContents.send('request-client-credentials', {
+      ipcMain.on(CLIENT_CREDENTIALS_INPUT, callback)
+      webContents.send(REQUEST_CLIENT_CREDENTIALS, {
         authInfo: authInfo,
         eventUrl: url,
         details: details

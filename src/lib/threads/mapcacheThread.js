@@ -1,12 +1,22 @@
 import { parentPort } from 'worker_threads'
 import { CanvasKitCanvasAdapter, FeatureTiles, GeoPackageAPI, NumberFeaturesTile } from '@ngageoint/geopackage'
-import { setCreateCanvasFunction, setMakeImageDataFunction } from '../util/CanvasUtilities'
+import {
+  createCanvas,
+  makeImageData,
+  setCreateCanvasFunction,
+  setMakeImageDataFunction,
+  disposeCanvas,
+  setMakeImageFunction,
+  setReadPixelsFunction
+} from '../util/CanvasUtilities'
 import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
-import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER, REQUEST_GEOTIFF_RASTER } from './mapcacheThreadRequestTypes'
+import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION } from './mapcacheThreadRequestTypes'
 import path from 'path'
+import { reproject } from '../projection/ReprojectionUtilities'
+import { base64toUInt8Array } from '../util/Base64Utilities'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -265,6 +275,22 @@ async function generateGeoTIFFRasterFile (data) {
 }
 
 /**
+ * Handles a reprojection request
+ * @param data
+ * @returns {ArrayBufferLike}
+ */
+async function reprojectTile (data) {
+  const { targetWidth, targetHeight } = data
+  const canvas = createCanvas(targetWidth, targetHeight)
+  const imageData = makeImageData(targetWidth, targetHeight)
+  await reproject(data, imageData)
+  canvas.getContext('2d').putImageData(imageData, 0, 0)
+  const result = canvas.toDataURL()
+  disposeCanvas(canvas)
+  return result
+}
+
+/**
  * Handles incoming requests from the parent port
  */
 function setupRequestListener () {
@@ -293,6 +319,13 @@ function setupRequestListener () {
       }).catch(() => {
         parentPort.postMessage({error: 'Failed to generate raster file.', result: null})
       })
+    } else if (message.type === REQUEST_TILE_REPROJECTION) {
+      reprojectTile(message.data).then(result => {
+        parentPort.postMessage({error: null, result: result})
+      }).catch(e => {
+        console.error(e)
+        parentPort.postMessage({error: 'Failed to project tile.', result: null})
+      })
     }
   })
 }
@@ -312,6 +345,18 @@ function startThread () {
     })
     setMakeImageDataFunction((width, height) => {
       return new CanvasKit.ImageData(width, height)
+    })
+    setReadPixelsFunction (image => {
+      return image.readPixels(0, 0, {
+        width: image.width(),
+        height: image.height(),
+        colorType: CanvasKit.ColorType.RGBA_8888,
+        alphaType: CanvasKit.AlphaType.Unpremul,
+        colorSpace: CanvasKit.ColorSpace.SRGB
+      })
+    })
+    setMakeImageFunction(base64String => {
+      return Promise.resolve(CanvasKit.MakeImageFromEncoded(base64toUInt8Array(base64String)))
     })
     setupRequestListener()
     parentPort.postMessage({error: null})

@@ -23,7 +23,7 @@ import {
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
 import GeoTIFFSource from '../../lib/source/GeoTIFFSource'
-import {GEOTIFF, VECTOR, MBTILES, isRemote} from '../../lib/layer/LayerTypes'
+import {GEOTIFF, VECTOR, MBTILES, WMS, isRemote} from '../../lib/layer/LayerTypes'
 
 
 /**
@@ -249,6 +249,29 @@ export async function runMigration (forceReset = false) {
         for (const geopackageId of geopackageIds) {
           const geopackage = state.Projects[projectId].geopackages[geopackageId]
           geopackage.tables = await getInternalTableInformation(geopackage.path)
+        }
+      }
+    },
+    8: async function (state) {
+      // add default srs to existing wms data sources and base maps
+      const projectKeys = keys(state.Projects)
+      for (let i = 0; i < projectKeys.length; i++) {
+        const projectId = projectKeys[i]
+        const sourceKeys = keys(state.Projects[projectId].sources)
+        for (let j = 0; j < sourceKeys.length; j++) {
+          const sourceId = sourceKeys[j]
+          if (state.Projects[projectId].sources[sourceId].layerType === WMS) {
+            state.Projects[projectId].sources[sourceId].srs = 'EPSG:3857'
+          }
+        }
+      }
+      for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
+        const baseMap = state.BaseMaps.baseMaps[i]
+        if (['0', '1', '2', '3'].indexOf(baseMap.id) !== -1) {
+          continue
+        }
+        if (baseMap.layerConfiguration.layerType === WMS) {
+          baseMap.layerConfiguration.srs = 'EPSG:3857'
         }
       }
     }

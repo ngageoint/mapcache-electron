@@ -2,7 +2,7 @@ import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
 import { getBaseUrlAndQueryParams } from '../util/URLUtilities'
-import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo } from '../util/GeoServiceUtilities'
+import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo, WMS_VERSIONS, WFS_VERSIONS } from '../util/GeoServiceUtilities'
 import { generateUrlForTile, fixXYZTileServerUrlForLeaflet } from '../util/XYZTileUtilities'
 import CancellableServiceRequest from './CancellableServiceRequest'
 import AxiosRequestScheduler from './AxiosRequestScheduler'
@@ -86,7 +86,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
   let serviceInfo
   let error = undefined
   let withCredentials = false
-  const supportedWMSVersions = options.version ? [options.version] : ['1.3.0', '1.1.1']
+  const supportedWMSVersions = options.version ? [options.version] : [WMS_VERSIONS.V1_3_0, WMS_VERSIONS.V1_1_1]
   for (let i = 0; i < supportedWMSVersions.length; i++) {
     const version = supportedWMSVersions[i]
     let result = await connectionWrapper(async () => {
@@ -99,7 +99,8 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       withCredentials = cancellableServiceRequest.requiredCredentials()
       if (response) {
         let result = await parseStringPromise(response.data)
-        let wmsInfo = getWMSInfo(result, version, serviceUrl.toLowerCase().indexOf('arcgis') >= 0)
+        let wmsInfo = await getWMSInfo(serviceUrl, result, version, withCredentials)
+
         serviceInfo = {
           title: wmsInfo.title || 'WMS Service',
           abstract: wmsInfo.abstract,
@@ -139,7 +140,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
   let serviceInfo
   let error = undefined
   let withCredentials = false
-  const supportedWFSVersions = options.version ? [options.version] : ['2.0.0', '1.1.0', '1.0.0']
+  const supportedWFSVersions = options.version ? [options.version] : [WFS_VERSIONS.V2_0_0, WFS_VERSIONS.V1_1_0, WFS_VERSIONS.V1_0_0]
   let version
   for (let i = 0; i < supportedWFSVersions.length; i++) {
     version = supportedWFSVersions[i]

@@ -5,6 +5,55 @@ import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
 import { getUserCertForUrl } from './auth/CertAuth'
 import { getClientCredentials } from './auth/BasicAuth'
 
+import {
+  MAIN_CHANNELS,
+  WORKER_CHANNELS,
+  CANCEL_SERVICE_REQUEST,
+  GET_APP_VERSION,
+  GET_USER_DATA_DIRECTORY,
+  GET_APP_DATA_DIRECTORY,
+  OPEN_EXTERNAL,
+  SHOW_SAVE_DIALOG,
+  SHOW_SAVE_DIALOG_COMPLETED,
+  SHOW_OPEN_DIALOG,
+  SHOW_OPEN_DIALOG_COMPLETED,
+  SHOW_PROJECT,
+  CLOSE_PROJECT,
+  CLOSING_PROJECT_WINDOW,
+  BUILD_FEATURE_LAYER,
+  CANCEL_BUILD_FEATURE_LAYER,
+  BUILD_TILE_LAYER,
+  CANCEL_BUILD_TILE_LAYER,
+  QUICK_DOWNLOAD_GEOPACKAGE,
+  WORKER_READY,
+  PROCESS_SOURCE,
+  PROCESS_SOURCE_COMPLETED,
+  CANCEL_PROCESS_SOURCE,
+  CANCEL_PROCESS_SOURCE_COMPLETED,
+  ATTACH_MEDIA,
+  ATTACH_MEDIA_COMPLETED,
+  REQUEST_TILE,
+  REQUEST_TILE_COMPLETED,
+  CANCEL_TILE_REQUEST,
+  GENERATE_GEOTIFF_RASTER_FILE,
+  GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
+  REQUEST_REPROJECT_TILE,
+  REQUEST_REPROJECT_TILE_COMPLETED,
+  CANCEL_REPROJECT_TILE_REQUEST,
+  BUILD_TILE_LAYER_STATUS,
+  BUILD_TILE_LAYER_COMPLETED,
+  WORKER_BUILD_TILE_LAYER,
+  WORKER_BUILD_TILE_LAYER_STATUS,
+  WORKER_BUILD_TILE_LAYER_COMPLETED,
+  CANCEL_BUILD_TILE_LAYER_COMPLETED,
+  BUILD_FEATURE_LAYER_STATUS,
+  BUILD_FEATURE_LAYER_COMPLETED,
+  WORKER_BUILD_FEATURE_LAYER,
+  WORKER_BUILD_FEATURE_LAYER_STATUS,
+  WORKER_BUILD_FEATURE_LAYER_COMPLETED,
+  CANCEL_BUILD_FEATURE_LAYER_COMPLETED
+} from './ipc/MapCacheIPC'
+
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
 const isProduction = process.env.NODE_ENV === 'production'
@@ -79,7 +128,7 @@ class MapCacheWindowManager {
           // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
           // refreshed, we want Electron to try selecting a cert again when the app loads.
           if (!isNil(associatedRequest)) {
-            webContents.send('cancel-service-request', associatedRequest.url)
+            webContents.send(CANCEL_SERVICE_REQUEST, associatedRequest.url)
           }
         })
       }
@@ -162,6 +211,7 @@ class MapCacheWindowManager {
     session.defaultSession.webRequest.onCompleted(details => {
       delete this.requests[details.id]
     })
+
     session.defaultSession.webRequest.onErrorOccurred(details => {
       delete this.requests[details.id]
     })
@@ -183,11 +233,9 @@ class MapCacheWindowManager {
    * Clear event listeners for worker threads
    */
   static clearWorkerThreadEventHandlers () {
-    ipcMain.removeAllListeners('process_source')
-    ipcMain.removeAllListeners('cancel_process_source')
-    ipcMain.removeAllListeners('attach_media')
-    ipcMain.removeAllListeners('request_tile')
-    ipcMain.removeAllListeners('cancel_tile_request')
+    WORKER_CHANNELS.forEach(channel => {
+      ipcMain.removeAllListeners(channel)
+    })
   }
 
   async registerWorkerThreads () {
@@ -195,55 +243,73 @@ class MapCacheWindowManager {
       MapCacheWindowManager.clearWorkerThreadEventHandlers()
       this.mapcacheThreadHelper = new MapcacheThreadHelper()
       await this.mapcacheThreadHelper.initialize()
-      ipcMain.on('attach_media', async (event, payload) => {
+      ipcMain.on(ATTACH_MEDIA, async (event, payload) => {
         const taskId = payload.id
         const success = await this.mapcacheThreadHelper.attachMedia(payload)
-        event.sender.send('attach_media_completed_' + taskId, success)
+        event.sender.send(ATTACH_MEDIA_COMPLETED(taskId), success)
       })
 
-      ipcMain.on('process_source', async (event, payload) => {
+      ipcMain.on(PROCESS_SOURCE, async (event, payload) => {
         const taskId = payload.source.id
         payload.id = taskId
         const result = await this.mapcacheThreadHelper.processDataSource(payload, event.sender)
         if (result && !result.cancelled) {
-          event.sender.send('process_source_completed_' + taskId, result)
+          event.sender.send(PROCESS_SOURCE_COMPLETED(taskId), result)
         }
       })
 
-      ipcMain.on('cancel_process_source', (event, payload) => {
+      ipcMain.on(CANCEL_PROCESS_SOURCE, (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.cancelTask(taskId).then(() => {
-          event.sender.send('cancel_process_source_completed_' + taskId)
+          event.sender.send(CANCEL_PROCESS_SOURCE_COMPLETED(taskId))
         })
       })
 
-      ipcMain.on('cancel_tile_request', async (event, payload) => {
+      ipcMain.on(CANCEL_TILE_REQUEST, async (event, payload) => {
         const taskId = payload.id
         await this.mapcacheThreadHelper.cancelPendingTask(taskId)
       })
 
-      ipcMain.on('request_tile', async (event, payload) => {
+      ipcMain.on(REQUEST_TILE, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.renderTile(payload).then(response => {
-          event.sender.send('request_tile_' + taskId, {
+          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
             base64Image: response
           })
         }).catch(e => {
-          event.sender.send('request_tile_' + taskId, {
+          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
             error: e
           })
         })
       })
 
-      ipcMain.on('generate_geotiff_raster_file', async (event, payload) => {
+      ipcMain.on(GENERATE_GEOTIFF_RASTER_FILE, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.generateGeoTIFFRaster(payload).then((result) => {
-          event.sender.send('generate_geotiff_raster_file_' + taskId, result)
+          event.sender.send(GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), result)
         }).catch(e => {
-          event.sender.send('generate_geotiff_raster_file_' + taskId, {
+          event.sender.send(GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), {
             error: e
           })
         })
+      })
+
+      ipcMain.on(REQUEST_REPROJECT_TILE, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.reprojectTile(payload).then(response => {
+          event.sender.send(REQUEST_REPROJECT_TILE_COMPLETED(taskId), {
+            base64Image: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_REPROJECT_TILE_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(CANCEL_REPROJECT_TILE_REQUEST, async (event, payload) => {
+        const taskId = payload.id
+        await this.mapcacheThreadHelper.cancelPendingTask(taskId)
       })
     }
   }
@@ -252,23 +318,7 @@ class MapCacheWindowManager {
    * Clear event listeners
    */
   static clearEventHandlers () {
-    ipcMain.removeAllListeners('get-app-version')
-    ipcMain.removeAllListeners('get-user-data-directory')
-    ipcMain.removeAllListeners('get-app-data-directory')
-    ipcMain.removeAllListeners('open-external')
-    ipcMain.removeAllListeners('show-save-dialog')
-    ipcMain.removeAllListeners('show-open-dialog')
-    ipcMain.removeAllListeners('show-project')
-    ipcMain.removeAllListeners('close-project')
-    ipcMain.removeAllListeners('process_source')
-    ipcMain.removeAllListeners('cancel_process_source')
-    ipcMain.removeAllListeners('build_feature_layer')
-    ipcMain.removeAllListeners('cancel_build_feature_layer')
-    ipcMain.removeAllListeners('build_tile_layer')
-    ipcMain.removeAllListeners('cancel_build_tile_layer')
-    ipcMain.removeAllListeners('quick_download_geopackage')
-    ipcMain.removeAllListeners('attach_media')
-    ipcMain.removeAllListeners('request_tile')
+    MAIN_CHANNELS.forEach(channel => ipcMain.removeAllListeners(channel))
   }
 
   /**
@@ -277,61 +327,59 @@ class MapCacheWindowManager {
   registerEventHandlers () {
     MapCacheWindowManager.clearEventHandlers()
 
-    ipcMain.on('open-external', (event, link) => {
+    ipcMain.on(OPEN_EXTERNAL, (event, link) => {
       // this will only be received by the main page.
       // There is a filter in place in the preload script to ensure only the links presented on the landing page can be
       // passed through.
       shell.openExternal(link)
     })
 
-    ipcMain.on('get-app-version', (event) => {
+    ipcMain.on(GET_APP_VERSION, (event) => {
       event.returnValue = app.getVersion()
     })
 
-    ipcMain.on('get-user-data-directory', (event) => {
+    ipcMain.on(GET_USER_DATA_DIRECTORY, (event) => {
       event.returnValue = app.getPath('userData')
     })
 
-    ipcMain.on('get-app-data-directory', (event) => {
+    ipcMain.on(GET_APP_DATA_DIRECTORY, (event) => {
       event.returnValue = app.getPath('appData')
     })
 
-    ipcMain.on('show-save-dialog', (event, options) => {
-      dialog.showSaveDialog(this.projectWindow, options).then(result => event.sender.send('show-save-dialog-completed', result))
+    ipcMain.on(SHOW_SAVE_DIALOG, (event, options) => {
+      dialog.showSaveDialog(this.projectWindow, options).then(result => event.sender.send(SHOW_SAVE_DIALOG_COMPLETED, result))
     })
 
-    ipcMain.on('show-open-dialog', (event, options) => {
-      dialog.showOpenDialog(this.projectWindow, options).then(result => event.sender.send('show-open-dialog-completed', result))
+    ipcMain.on(SHOW_OPEN_DIALOG, (event, options) => {
+      dialog.showOpenDialog(this.projectWindow, options).then(result => event.sender.send(SHOW_OPEN_DIALOG_COMPLETED, result))
     })
 
-    ipcMain.on('show-project', (event, payload) => {
+    ipcMain.on(SHOW_PROJECT, (event, payload) => {
       this.showProject(payload)
     })
 
-    ipcMain.on('close-project', () => {
+    ipcMain.on(CLOSE_PROJECT, () => {
       this.forceClose = true
       this.closeProject(true)
     })
 
-    ipcMain.on('quick_download_geopackage', (event, payload) => {
+    ipcMain.on(QUICK_DOWNLOAD_GEOPACKAGE, (event, payload) => {
       this.downloadURL(payload.url).then(() => {
       }).catch(() => {
         // eslint-disable-next-line no-console
         console.error('Failed to download GeoPackage.')
       })
     })
-
-    // Utilize BrowserWindow in order to use electron session
-    ipcMain.on('build_feature_layer', (event, payload) => {
+    ipcMain.on(BUILD_FEATURE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
       const statusCallback = (status) => {
-        event.sender.send('build_feature_layer_status_' + taskId, status)
+        event.sender.send(BUILD_FEATURE_LAYER_STATUS(taskId), status)
       }
       const completedCallback = () => {
-        event.sender.send('build_feature_layer_completed_' + taskId)
+        event.sender.send(BUILD_FEATURE_LAYER_COMPLETED(taskId))
       }
-      ipcMain.once('worker_build_feature_layer_completed_' + taskId, (event, result) => {
-        ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+      ipcMain.once(WORKER_BUILD_FEATURE_LAYER_COMPLETED(taskId), (event, result) => {
+        ipcMain.removeAllListeners(WORKER_BUILD_FEATURE_LAYER_STATUS(taskId))
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
           this.workerWindow = null
@@ -342,38 +390,38 @@ class MapCacheWindowManager {
         }
         completedCallback()
       })
-      ipcMain.on('worker_build_feature_layer_status_' + taskId, (event, status) => {
+      ipcMain.on(WORKER_BUILD_FEATURE_LAYER_STATUS(taskId), (event, status) => {
         statusCallback(status)
       })
-      ipcMain.removeAllListeners('worker_ready')
-      ipcMain.on('worker_ready', (event) => {
-        event.sender.send('worker_build_feature_layer', {
+      ipcMain.removeAllListeners(WORKER_READY)
+      ipcMain.on(WORKER_READY, (event) => {
+        event.sender.send(WORKER_BUILD_FEATURE_LAYER, {
           taskId: payload.configuration.id,
           configuration: payload.configuration
         })
       })
       this.launchWorkerAndExecuteConfiguration()
     })
-    ipcMain.on('cancel_build_feature_layer', (event, payload) => {
+    ipcMain.on(CANCEL_BUILD_FEATURE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
-      ipcMain.removeAllListeners('worker_build_feature_layer_completed_' + taskId)
-      ipcMain.removeAllListeners('worker_build_feature_layer_status_' + taskId)
+      ipcMain.removeAllListeners(WORKER_BUILD_FEATURE_LAYER_COMPLETED(taskId))
+      ipcMain.removeAllListeners(WORKER_BUILD_FEATURE_LAYER_STATUS(taskId))
       if (!isNil(this.workerWindow)) {
         this.workerWindow.destroy()
         this.workerWindow = null
       }
-      event.sender.send('cancel_build_feature_layer_completed_' + taskId)
+      event.sender.send(CANCEL_BUILD_FEATURE_LAYER_COMPLETED(taskId))
     })
-    ipcMain.on('build_tile_layer', (event, payload) => {
+    ipcMain.on(BUILD_TILE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
       const statusCallback = (status) => {
-        event.sender.send('build_tile_layer_status_' + taskId, status)
+        event.sender.send(BUILD_TILE_LAYER_STATUS(taskId), status)
       }
       const completedCallback = () => {
-        event.sender.send('build_tile_layer_completed_' + taskId)
+        event.sender.send(BUILD_TILE_LAYER_COMPLETED(taskId))
       }
-      ipcMain.once('worker_build_tile_layer_completed_' + taskId, (event, result) => {
-        ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+      ipcMain.once(WORKER_BUILD_TILE_LAYER_COMPLETED(taskId), (event, result) => {
+        ipcMain.removeAllListeners(WORKER_BUILD_TILE_LAYER_STATUS(taskId))
         if (!isNil(this.workerWindow)) {
           this.workerWindow.destroy()
           this.workerWindow = null
@@ -384,27 +432,27 @@ class MapCacheWindowManager {
         }
         completedCallback()
       })
-      ipcMain.on('worker_build_tile_layer_status_' + taskId, (event, status) => {
+      ipcMain.on(WORKER_BUILD_TILE_LAYER_STATUS(taskId), (event, status) => {
         statusCallback(status)
       })
-      ipcMain.removeAllListeners('worker_ready')
-      ipcMain.on('worker_ready', (event) => {
-        event.sender.send('worker_build_tile_layer', {
+      ipcMain.removeAllListeners(WORKER_READY)
+      ipcMain.on(WORKER_READY, (event) => {
+        event.sender.send(WORKER_BUILD_TILE_LAYER, {
           taskId: payload.configuration.id,
           configuration: payload.configuration
         })
       })
       this.launchWorkerAndExecuteConfiguration()
     })
-    ipcMain.on('cancel_build_tile_layer', (event, payload) => {
+    ipcMain.on(CANCEL_BUILD_TILE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
-      ipcMain.removeAllListeners('worker_build_tile_layer_completed_' + taskId)
-      ipcMain.removeAllListeners('worker_build_tile_layer_status_' + taskId)
+      ipcMain.removeAllListeners(WORKER_BUILD_TILE_LAYER_COMPLETED(taskId))
+      ipcMain.removeAllListeners(WORKER_BUILD_TILE_LAYER_STATUS(taskId))
       if (!isNil(this.workerWindow)) {
         this.workerWindow.destroy()
         this.workerWindow = null
       }
-      event.sender.send('cancel_build_tile_layer_completed_' + taskId)
+      event.sender.send(CANCEL_BUILD_TILE_LAYER_COMPLETED(taskId))
     })
   }
 
@@ -634,7 +682,7 @@ class MapCacheWindowManager {
   closeProject (isDeleting = false) {
     MapCacheWindowManager.disableCertificateAuth()
     if (this.projectWindow) {
-      this.projectWindow.webContents.send('closing-project-window', {isDeleting})
+      this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, {isDeleting})
       this.launchMainWindow().then(() => {
         this.showMainWindow()
       })

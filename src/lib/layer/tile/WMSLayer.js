@@ -1,4 +1,7 @@
-import { getTileRequestURL } from '../../util/GeoServiceUtilities'
+import {
+  getTileRequestURL,
+  getBoundingBoxForWMSRequest
+} from '../../util/GeoServiceUtilities'
 import NetworkTileLayer from './NetworkTileLayer'
 import { WMS } from '../LayerTypes'
 
@@ -8,6 +11,8 @@ export default class WMSLayer extends NetworkTileLayer {
     this.layers = configuration.layers
     this.format = configuration.format || 'image/png'
     this.version = configuration.version
+    this.requiresReprojection = !configuration.srs.endsWith(':3857')
+    this.srs = configuration.srs
   }
 
   get configuration () {
@@ -32,12 +37,21 @@ export default class WMSLayer extends NetworkTileLayer {
    */
   getTileUrl (coords) {
     let {x, y, z} = coords
-    let tileBbox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-    let referenceSystemName = 'srs'
-    let bbox = tileBbox.minLon + ',' + tileBbox.minLat + ',' + tileBbox.maxLon + ',' + tileBbox.maxLat
-    if (this.version === '1.3.0') {
-      referenceSystemName = 'crs'
+    let requestBoundingBox
+    const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+
+    if (this.requiresReprojection) {
+      requestBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(webMercatorBoundingBox.minLon, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLat, this.srs)
+    } else {
+      requestBoundingBox = webMercatorBoundingBox
     }
-    return getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, referenceSystemName, this.version, this.format)
+    const bbox = getBoundingBoxForWMSRequest(requestBoundingBox, this.version, this.srs)
+
+    return {
+      url: getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, this.srs, this.version, this.format),
+      bbox: requestBoundingBox,
+      srs: this.srs,
+      webMercatorBoundingBox: webMercatorBoundingBox
+    }
   }
 }

@@ -378,6 +378,16 @@
               </v-row>
             </v-col>
           </v-row>
+          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS'">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Spatial Reference System
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{source.srs}}
+              </p>
+            </v-col>
+          </v-row>
           <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer'">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">

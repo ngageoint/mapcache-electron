@@ -173,10 +173,10 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact Organization:' + serviceInfo.contactOrg}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
-            <v-card flat tile v-if="!loading && (unsupportedServiceLayers.length + serviceLayers.length) > 0 && !error">
+            <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
               <v-card-subtitle v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="warning--text pb-0 mb-4">{{'WMS server does not utilize any of the following web supported image formats: ' + supportedImageFormats.join(', ')}}</v-card-subtitle>
               <v-sheet v-else>
-                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Supported layers from the WMS service to import.' : 'The WMS service does not have any supported layers.'}}</v-card-subtitle>
+                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Layers from the WMS service to import.' : 'The WMS service does not have any layers.'}}</v-card-subtitle>
                 <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Layers from the WFS service to import.'}}</v-card-subtitle>
                 <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
                 <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
@@ -209,23 +209,6 @@
                   </v-list>
                 </v-card-text>
               </v-sheet>
-            </v-card>
-            <v-card flat tile v-if="unsupportedServiceLayers.length > 0">
-              <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{'Unsupported layers from the WMS service.'}}</v-card-subtitle>
-              <v-card-text class="pt-0 mt-1">
-                <v-list dense v-if="unsupportedServiceLayers.length > 0">
-                  <v-list-item
-                    v-for="(item, i) in unsupportedServiceLayers"
-                    :key="`unsupported-service-layer-${i}`"
-                    :value="item"
-                  >
-                    <v-list-item-content>
-                      <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-unsupported-service-layer-title'" v-html="title"></div></div>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-card-text>
             </v-card>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 4">
@@ -379,7 +362,6 @@
         serviceTypeAutoDetected: true,
         selectedDataSourceLayersSourceType: '',
         serviceLayers: [],
-        unsupportedServiceLayers: [],
         selectedDataSourceLayers: [],
         error: null,
         authValid: true,
@@ -459,7 +441,6 @@
           }
           this.connected = true
           this.serviceLayers = serviceInfo.serviceLayers || []
-          this.unsupportedServiceLayers = serviceInfo.unsupportedServiceLayers || []
           this.serviceInfo = serviceInfo
           this.withCredentials = withCredentials
         }
@@ -485,7 +466,6 @@
         this.serviceLayers = []
         this.sortedLayers = []
         this.sortedRenderingLayers = []
-        this.unsupportedServiceLayers = []
         this.error = null
         const urlToTest = this.dataSourceUrl
         const options = {}
@@ -584,6 +564,7 @@
           if (this.selectedServiceType === SERVICE_TYPE.WMS && this.sortedLayers.length > 0) {
             const layerNames = reverse(this.sortedLayers.map(layer => layer.name))
             let extent = this.sortedLayers[0].extent
+            let srs = this.sortedLayers[0].srs
             this.sortedLayers.forEach(layer => {
               if (layer.extent[0] < extent[0]) {
                 extent[0] = layer.extent[0]
@@ -599,7 +580,7 @@
               }
             })
             const version = this.sortedLayers[0].version
-            layer = new WMSLayer({id: window.mapcache.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format, withCredentials: this.withCredentials})
+            layer = new WMSLayer({id: window.mapcache.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format, withCredentials: this.withCredentials, srs})
           } else if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
             layer = new XYZServerLayer({id: window.mapcache.createUniqueID(), filePath: window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false, withCredentials: this.withCredentials})
           }

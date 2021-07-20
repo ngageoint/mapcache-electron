@@ -1,24 +1,35 @@
-import {ipcRenderer, contextBridge} from 'electron'
+import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
-import GeoPackageFeatureTableBuilder from '../geopackage/GeoPackageFeatureTableBuilder'
-import GeoPackageTileTableBuilder from '../geopackage/GeoPackageTileTableBuilder'
+import { buildFeatureLayer } from '../geopackage/GeoPackageFeatureTableBuilder'
+import { buildTileLayer } from '../geopackage/GeoPackageTileTableBuilder'
 import log from 'electron-log'
 import Store from 'electron-store'
-import { tileIntersectsXYZ, getWebMercatorBoundingBoxFromXYZ } from '../util/TileBoundingBoxUtils'
 import { setSourceError } from '../vue/vuex/ProjectActions'
 import path from 'path'
+import { createUniqueID } from '../util/UniqueIDUtilities'
+import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/TileBoundingBoxUtils'
+import { reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
+import {
+  GET_USER_DATA_DIRECTORY,
+  IPC_EVENT_CONNECT,
+  IPC_EVENT_NOTIFY_MAIN,
+  IPC_EVENT_NOTIFY_RENDERERS,
+  WORKER_BUILD_FEATURE_LAYER,
+  WORKER_BUILD_FEATURE_LAYER_COMPLETED,
+  WORKER_BUILD_FEATURE_LAYER_STATUS,
+  WORKER_BUILD_TILE_LAYER,
+  WORKER_BUILD_TILE_LAYER_COMPLETED,
+  WORKER_BUILD_TILE_LAYER_STATUS,
+  WORKER_READY
+} from '../electron/ipc/MapCacheIPC'
 
 const getUserDataDirectory = () => {
-  return ipcRenderer.sendSync('get-user-data-directory')
+  return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
-
-const IPC_EVENT_CONNECT = 'vuex-mutations-connect'
-const IPC_EVENT_NOTIFY_MAIN = 'vuex-mutations-notify-main'
-const IPC_EVENT_NOTIFY_RENDERERS = 'vuex-mutations-notify-renderers'
 
 let storage
 
@@ -55,34 +66,36 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getUserDataDirectory,
   getAppDataDirectory: () => {
-    return ipcRenderer.sendSync('get-app-data-directory')
+    return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
   },
   removeListeners: () => {
-    ipcRenderer.removeAllListeners('worker_build_feature_layer')
-    ipcRenderer.removeAllListeners('worker_build_tile_layer')
+    ipcRenderer.removeAllListeners(WORKER_BUILD_FEATURE_LAYER)
+    ipcRenderer.removeAllListeners(WORKER_BUILD_TILE_LAYER)
   },
   addListeners: () => {
-    ipcRenderer.on('worker_build_feature_layer', (e, data) => {
+    ipcRenderer.on(WORKER_BUILD_FEATURE_LAYER, (e, data) => {
       const statusCallback = (status) => {
-        ipcRenderer.send('worker_build_feature_layer_status_' + data.taskId, status)
+        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_STATUS(data.taskId), status)
       }
-      GeoPackageFeatureTableBuilder.buildFeatureLayer(data.configuration, statusCallback).then((result) => {
-        ipcRenderer.send('worker_build_feature_layer_completed_' + data.taskId, result)
+      buildFeatureLayer(data.configuration, statusCallback).then((result) => {
+        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_COMPLETED(data.taskId), result)
       })
     })
-    ipcRenderer.on('worker_build_tile_layer', (e, data) => {
+    ipcRenderer.on(WORKER_BUILD_TILE_LAYER, (e, data) => {
       const statusCallback = (status) => {
-        ipcRenderer.send('worker_build_tile_layer_status_' + data.taskId, status)
+        ipcRenderer.send(WORKER_BUILD_TILE_LAYER_STATUS(data.taskId), status)
       }
-      GeoPackageTileTableBuilder.buildTileLayer(data.configuration, statusCallback).then((result) => {
-        ipcRenderer.send('worker_build_tile_layer_completed_' + data.taskId, result)
+      buildTileLayer(data.configuration, statusCallback).then((result) => {
+        ipcRenderer.send(WORKER_BUILD_TILE_LAYER_COMPLETED(data.taskId), result)
       })
     })
   },
   sendReady: () => {
-    ipcRenderer.send('worker_ready')
+    ipcRenderer.send(WORKER_READY)
   },
-  tileIntersectsXYZ,
+  createUniqueID,
   getWebMercatorBoundingBoxFromXYZ,
+  tileIntersectsXYZ,
+  reprojectWebMercatorBoundingBox,
   setSourceError
 })

@@ -1,5 +1,11 @@
 import path from 'path'
-import {REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER} from '../mapcacheThreadRequestTypes'
+import {
+  REQUEST_RENDER,
+  REQUEST_PROCESS_SOURCE,
+  REQUEST_ATTACH_MEDIA,
+  REQUEST_GEOTIFF_RASTER,
+  REQUEST_TILE_REPROJECTION
+} from '../mapcacheThreadRequestTypes'
 
 /**
  * MapcacheThreadHelper
@@ -16,12 +22,12 @@ export default class MapcacheThreadHelper {
     const config = []
     // perform tile rendering only
     config.push({
-      types: [REQUEST_RENDER]
+      types: [REQUEST_RENDER, REQUEST_TILE_REPROJECTION]
     })
     // perform any task
     for (let i = 1; i < workerCount; i++) {
       config.push({
-        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER]
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION]
       })
     }
 
@@ -118,6 +124,22 @@ export default class MapcacheThreadHelper {
   generateGeoTIFFRaster (data) {
     return new Promise((resolve, reject) => {
       this.threadPool.addTask({id: data.id, type: REQUEST_GEOTIFF_RASTER, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Reprojects a tile reprojection request
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  reprojectTile (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_TILE_REPROJECTION, data: data}, null, (err, result) => {
         if (err) {
           reject(err)
         }

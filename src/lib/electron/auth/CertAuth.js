@@ -1,3 +1,5 @@
+import {CLIENT_CERTIFICATE_SELECTED, SELECT_CLIENT_CERTIFICATE} from '../ipc/MapCacheIPC'
+
 const { ipcMain } = require('electron')
 
 /**
@@ -23,7 +25,7 @@ function getUserCertForUrl (url, list, webContents) {
     promises[url] = new Promise((resolve, reject) => {
       const callback = (event, eventUrl, cert) => {
         if (eventUrl === url) {
-          ipcMain.removeListener('client-certificate-selected', callback)
+          ipcMain.removeListener(CLIENT_CERTIFICATE_SELECTED, callback)
           // An explicit undefined value means the user did not make a choice (ie, page reload), null means the user
           // cancelled the request and a cert should not be used.
           if (cert == null) {
@@ -35,8 +37,8 @@ function getUserCertForUrl (url, list, webContents) {
         }
       }
 
-      ipcMain.on('client-certificate-selected', callback)
-      webContents.send('select-client-certificate', {
+      ipcMain.on(CLIENT_CERTIFICATE_SELECTED, callback)
+      webContents.send(SELECT_CLIENT_CERTIFICATE, {
         url: url,
         certificates: list
       })

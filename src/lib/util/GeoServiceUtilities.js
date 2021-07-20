@@ -3,9 +3,40 @@ import { generateUrlWithQueryParams, getBaseUrlAndQueryParams } from './URLUtili
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import keys from 'lodash/keys'
+import axios from 'axios'
 
-const supportedImageFormats = ['image/png', 'image/svg+xml', 'image/jpg', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp']
+const WMS_VERSIONS = {
+  V1_3_0: '1.3.0',
+  V1_1_1: '1.1.1'
+}
+const WMS_CONSTANTS = {
+  CRS: 'crs',
+  SRS: 'srs'
+}
+const WFS_VERSIONS = {
+  V1_0_0: '1.0.0',
+  V1_1_0: '1.1.0',
+  V2_0_0: '2.0.0'
+}
+
+const supportedImageFormats = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/bmp', 'image/webp']
 const supportedWFSResponseFormats = ['application/json', 'json', 'geojson', 'gml32', 'text/xml; subtype=gml/3.2', 'gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1', 'gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2']
+
+function getBoundingBoxForWMSRequest (bbox, version, srs) {
+  if (srs.endsWith(':4326') && version === WMS_VERSIONS.V1_3_0) {
+    return [bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon].join(',')
+  } else {
+    return [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat].join(',')
+  }
+}
+
+function getReferenceSystemNameForWMSRequest (version) {
+  let referenceSystemName = WMS_CONSTANTS.SRS
+  if (version === WMS_VERSIONS.V1_3_0) {
+    referenceSystemName = WMS_CONSTANTS.CRS
+  }
+  return referenceSystemName
+}
 
 function getSRSForWMSLayer (layer, availableSrs) {
   let srs = []
@@ -48,7 +79,33 @@ function getRecommendedFormat (formats) {
   return format
 }
 
-function getLayers (layer, version, titles = [], availableSrs = [], parentExtent = [-180, -90, 180, 90]) {
+/**
+ * Selects a recommended SRS for MapCache, otherwise, uses the first in the list.
+ * @param srsList
+ * @returns {string|*}
+ */
+function getRecommendedSrs (srsList) {
+  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':3857')) !== -1) {
+    return 'EPSG:3857'
+  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':4326')) !== -1) {
+    return 'EPSG:4326'
+  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':84')) !== -1) {
+    return 'CRS:84'
+  } else {
+    return srsList[0]
+  }
+}
+
+/**
+ * Gets layers for wms
+ * @param layer
+ * @param version
+ * @param titles
+ * @param availableSrs
+ * @param parentExtent
+ * @returns {*[]}
+ */
+function getWMSLayers (layer, version, titles = [], availableSrs = [], parentExtent = [-180, -90, 180, 90]) {
   const layers = []
   const layerSrs = availableSrs.slice()
   if (!isNil(layer['Layer'])) {
@@ -66,25 +123,23 @@ function getLayers (layer, version, titles = [], availableSrs = [], parentExtent
         layerTitles.push(title)
       }
       let extent = getBoundingBoxFromWMSLayer(l) || parentExtent.slice()
-      layers.push(...getLayers(l, version, layerTitles, layerSrs.concat(srs), extent))
+      layers.push(...getWMSLayers(l, version, layerTitles, layerSrs.concat(srs), extent))
     }
   } else {
     let extent
     let title
     let name
-    let has3857 = false
     const layerTitles = titles.slice()
     const supportedProjections = availableSrs.concat(getSRSForWMSLayer(layer, availableSrs))
     extent = getBoundingBoxFromWMSLayer(layer) || parentExtent.slice()
     try { title = layer['Title'][0] } catch (e) {}
     try { name = layer['Name'][0] } catch (e) {}
-    try { has3857 = supportedProjections.findIndex(crs => crs.toUpperCase() === '3857' || crs.toUpperCase() === 'EPSG:3857') !== -1 } catch (e) {}
     if (!isNil(title) && !isEmpty(title)) {
       layerTitles.push(title)
     } else if (!isNil(name) && !isEmpty(name)) {
       layerTitles.push(name)
     }
-    layers.push({name, title: layerTitles[0], subtitles: layerTitles.length > 1 ? layerTitles.slice(1) : [], extent, wms: true, version, has3857})
+    layers.push({name, title: layerTitles[0], subtitles: layerTitles.length > 1 ? layerTitles.slice(1) : [], extent, wms: true, version, srs: getRecommendedSrs(supportedProjections), supportedProjections: supportedProjections})
   }
   return layers
 }
@@ -105,7 +160,7 @@ function getWFSLayerCountURL (wfsUrl, version, layer) {
     delete queryParams['service']
   }
   queryParams['service'] = 'WFS'
-  if (version === '2.0.0') {
+  if (version === WFS_VERSIONS.V2_0_0) {
     queryParams['typeNames'] = layer
   } else {
     queryParams['typeName'] = layer
@@ -131,11 +186,13 @@ function getBaseURL (wmsUrl) {
 }
 /**
  * Parses WMS info
+ * @param serviceUrl
  * @param json
  * @param version of this WMS GetCapabilities XML
- * @param isArcGIS is this wms service hosted in arcgis
+ * @param withCredentials
  */
-function getWMSInfo (json, version, isArcGIS = false) {
+async function getWMSInfo (serviceUrl, json, version, withCredentials) {
+  let isArcGIS = serviceUrl.toLowerCase().indexOf('arcgis') >= 0
   let wmsInfo = {}
   let layers = []
   let format
@@ -170,7 +227,7 @@ function getWMSInfo (json, version, isArcGIS = false) {
             format = getRecommendedFormat(getMap[0]['Format'])
           }
         }
-        layers.push(...getLayers(wmsCapability[0], version))
+        layers.push(...getWMSLayers(wmsCapability[0], version))
       }
     }
     // eslint-disable-next-line no-unused-vars
@@ -178,15 +235,47 @@ function getWMSInfo (json, version, isArcGIS = false) {
     // eslint-disable-next-line no-console
     console.error('Failed to process WMS GetCapabilities.')
   }
-  wmsInfo.layers = layers
-  wmsInfo.unsupportedLayers = []
-  // if not ArcGIS, unless 3857 is supported, we can't use it
-  if (!isArcGIS) {
-    wmsInfo.layers = layers.filter(layer => layer.has3857)
-    wmsInfo.unsupportedLayers = layers.filter(layer => !layer.has3857)
+
+  // if arcgis and none of the layers support 3857 based on get capabilities, see if GetMap automatically handles 3857
+  if (isArcGIS && layers.length > 0 && isNil(layers.find(l => l.srs.endsWith(':3857') || !isNil(l.supportedProjections.find(p => p.endsWith(':3857')))))) {
+    // test if the first layer accepts EPSG:3857
+    if (await testGetMapFor3857(serviceUrl, [layers[0].name], version, format, withCredentials)) {
+      // ensure each layer has 3857 as an option, and the default to use
+      layers.forEach(layer => {
+        layer.supportedProjections.push('EPSG:3857')
+        layer.srs = 'EPSG:3857'
+      })
+    }
   }
+
+  wmsInfo.layers = layers
   wmsInfo.format = format
   return wmsInfo
+}
+
+/**
+ * Attempts a GetMap request for the layer
+ * @param wmsUrl
+ * @param layers
+ * @param version
+ * @param format
+ * @param withCredentials
+ * @returns {Promise<boolean>}
+ */
+async function testGetMapFor3857 (wmsUrl, layers, version, format, withCredentials) {
+  let webMercatorSupport
+  const url = getTileRequestURL(wmsUrl, layers, 256, 256, [-20026376.39, -20048966.10, 20026376.39, 20048966.10], 'EPSG:3857', version, format)
+  try {
+    const response = await axios({
+      url: url,
+      withCredentials: withCredentials,
+      timeout: 5000
+    })
+    webMercatorSupport = response.headers['content-type'].startsWith('image')
+  } catch (e) {
+    webMercatorSupport = false
+  }
+  return webMercatorSupport
 }
 
 function isGeoJSON (fmt) {
@@ -216,9 +305,9 @@ function getLayerOutputFormat (layer) {
   }
   // output format not found in capabilities document, use default for version
   if (isNil(outputFormat)) {
-    if (layer.version === '1.0.0') {
+    if (layer.version === WFS_VERSIONS.V1_0_0) {
       outputFormat = 'GML2'
-    } else if (layer.version === '1.1.0') {
+    } else if (layer.version === WFS_VERSIONS.V1_1_0) {
       outputFormat = 'GML3'
     } else {
       outputFormat = 'GML32'
@@ -358,7 +447,7 @@ function getWFSInfo (json, version) {
   return wfsInfo
 }
 
-function getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystemName, version, format) {
+function getTileRequestURL (wmsUrl, layers, width, height, bbox, srs, version, format) {
   let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmsUrl)
   if (queryParams['service']) {
     delete queryParams['service']
@@ -370,7 +459,7 @@ function getTileRequestURL (wmsUrl, layers, width, height, bbox, referenceSystem
   queryParams['height'] = height
   queryParams['format'] = format
   queryParams['transparent'] = 'true'
-  queryParams[referenceSystemName] = 'EPSG:3857'
+  queryParams[getReferenceSystemNameForWMSRequest(version)] = srs
   queryParams['bbox'] = bbox
   queryParams['styles'] = ''
   return generateUrlWithQueryParams(baseUrl, queryParams)
@@ -382,7 +471,7 @@ function getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName,
     delete queryParams['service']
   }
   queryParams['service'] = 'WFS'
-  if (version === '2.0.0') {
+  if (version === WFS_VERSIONS.V2_0_0) {
     queryParams['typeNames'] = layer
   } else {
     queryParams['typeName'] = layer
@@ -398,12 +487,17 @@ function getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName,
 
 
 export {
+  WFS_VERSIONS,
+  WMS_VERSIONS,
+  WMS_CONSTANTS,
   supportedImageFormats,
   getGetCapabilitiesURL,
   getBaseURL,
   getBoundingBoxFromWMSLayer,
+  getBoundingBoxForWMSRequest,
+  getReferenceSystemNameForWMSRequest,
   getSRSForWMSLayer,
-  getLayers,
+  getWMSLayers,
   getRecommendedFormat,
   getWMSInfo,
   getLayerOutputFormat,
@@ -414,5 +508,6 @@ export {
   isGML3,
   isGML32,
   isGML2,
-  isGeoJSON
+  isGeoJSON,
+  testGetMapFor3857
 }
