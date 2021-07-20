@@ -1,102 +1,104 @@
 <template>
-  <data-source v-if="selectedDataSource !== null && selectedDataSource !== undefined"
-    :key="selectedDataSource.id"
-    class="sources"
-    :source="selectedDataSource"
-    :project="project"
-    :back="deselectDataSource">
-  </data-source>
-  <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
-  <v-sheet v-else class="mapcache-sheet">
-    <v-toolbar
-      color="main"
-      dark
-      flat
-      class="sticky-toolbar"
-    >
-      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title>Data Sources</v-toolbar-title>
-    </v-toolbar>
-    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
-      <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
-      </data-source-list>
-      <template v-for="source in processingSourceList">
-        <processing-source
-          :source="source"
-          :key="source.id"
-          :project="project"
-          class="sources processing-source"
-          :on-cancel="() => cancelProcessing(source)"
-          :on-complete="() => clearProcessing(source)"
-          :on-close="() => clearProcessing(source)">
-        </processing-source>
-      </template>
-    </v-sheet>
-    <v-card class="card-position" v-if="Object.keys(project.sources).length === 0">
-      <v-row no-gutters justify="space-between" align="end">
-        <v-col>
-          <v-row class="pa-0" no-gutters>
-            <v-col class="pa-0 align-center">
-              <h5 class="align-self-center">No data sources found</h5>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0" no-gutters>
-            <v-col class="pa-0 align-center">
-              <h5 class="align-self-center primary--text">Get Started</h5>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-    </v-card>
-    <v-speed-dial
-      class="fab-position"
-      v-model="fab"
-      transition="slide-y-reverse-transition"
-    >
-      <template v-slot:activator>
+  <div class="ma-0 pa-0">
+    <data-source v-if="selectedDataSource !== null && selectedDataSource !== undefined"
+      :key="selectedDataSource.id"
+      class="sources"
+      :source="selectedDataSource"
+      :project="project"
+      :back="deselectDataSource">
+    </data-source>
+    <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
+    <v-sheet v-show="!urlSourceDialog && selectedDataSource == null" class="mapcache-sheet">
+      <v-toolbar
+        color="main"
+        dark
+        flat
+        class="sticky-toolbar"
+      >
+        <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
+        <v-toolbar-title>Data Sources</v-toolbar-title>
+      </v-toolbar>
+      <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
+        <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
+        </data-source-list>
+        <template v-for="source in processingSourceList">
+          <processing-source
+            :source="source"
+            :key="source.id"
+            :project="project"
+            class="sources processing-source"
+            :on-cancel="() => cancelProcessing(source)"
+            :on-complete="() => clearProcessing(source)"
+            :on-close="() => clearProcessing(source)">
+          </processing-source>
+        </template>
+      </v-sheet>
+      <v-card class="card-position" v-if="Object.keys(project.sources).length === 0">
+        <v-row no-gutters justify="space-between" align="end">
+          <v-col>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center">No data sources found</h5>
+              </v-col>
+            </v-row>
+            <v-row class="pa-0" no-gutters>
+              <v-col class="pa-0 align-center">
+                <h5 class="align-self-center primary--text">Get Started</h5>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-card>
+      <v-speed-dial
+        class="fab-position"
+        v-model="fab"
+        transition="slide-y-reverse-transition"
+      >
+        <template v-slot:activator>
+          <v-tooltip right :disabled="!project.showToolTips">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                fab
+                color="primary"
+                v-bind="attrs"
+                v-on="on">
+                <v-icon>{{mdiLayersPlus}}</v-icon>
+              </v-btn>
+            </template>
+            <span>Add data source</span>
+          </v-tooltip>
+        </template>
         <v-tooltip right :disabled="!project.showToolTips">
           <template v-slot:activator="{ on, attrs }">
             <v-btn
               fab
-              color="primary"
+              small
+              color="accent"
+              @click.stop="addFileClick"
               v-bind="attrs"
               v-on="on">
-              <v-icon>{{mdiLayersPlus}}</v-icon>
+              <v-icon>{{mdiFileDocumentOutline}}</v-icon>
             </v-btn>
           </template>
-          <span>Add data source</span>
+          <span>Import from file</span>
         </v-tooltip>
-      </template>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            small
-            color="accent"
-            @click.stop="addFileClick"
-            v-bind="attrs"
-            v-on="on">
-            <v-icon>{{mdiFileDocumentOutline}}</v-icon>
-          </v-btn>
-        </template>
-        <span>Import from file</span>
-      </v-tooltip>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            small
-            color="accent"
-            @click.stop.prevent="showUrlDialog"
-            v-bind="attrs"
-            v-on="on">
-            <v-icon>{{mdiCloudDownloadOutline}}</v-icon>
-          </v-btn>
-        </template>
-        <span>Download from URL</span>
-      </v-tooltip>
-    </v-speed-dial>
-  </v-sheet>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              fab
+              small
+              color="accent"
+              @click.stop.prevent="showUrlDialog"
+              v-bind="attrs"
+              v-on="on">
+              <v-icon>{{mdiCloudDownloadOutline}}</v-icon>
+            </v-btn>
+          </template>
+          <span>Download from URL</span>
+        </v-tooltip>
+      </v-speed-dial>
+    </v-sheet>
+  </div>
 </template>
 
 <script>
