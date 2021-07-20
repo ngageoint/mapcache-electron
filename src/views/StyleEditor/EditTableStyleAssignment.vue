@@ -14,7 +14,7 @@
               <v-list-item-content>
                 <v-row no-gutters justify="space-between" align="center">
                   <v-col cols="8">
-                    <v-radio-group hide-details dense class="ml-2" :value="active ? style.id : null">
+                    <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="active ? style.id : null">
                       <v-radio class="ma-0 pa-0" dense :label="style.name" :value="style.id"></v-radio>
                     </v-radio-group>
                   </v-col>
@@ -35,7 +35,7 @@
                 <v-list-item-content>
                   <v-row no-gutters class="justify-space-between" align="center">
                     <v-col cols="8">
-                      <v-radio-group hide-details dense class="ml-2" :value="active ? icon.id : null">
+                      <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="active ? icon.id : null">
                         <v-radio class="ma-0 pa-0" dense :label="icon.name" :value="icon.id"></v-radio>
                       </v-radio-group>
                     </v-col>
