@@ -212,7 +212,7 @@ export default {
               content: 'If you find that one or more tiles for your WMS/XYZ source are missing, it is likely that your request timeout (ms) and/or max retry attempts are too low. You can adjust these network settings in the data source or base map.'
             },
             {
-              title: 'What does tile scaling impact my GeoPackage tile layer?',
+              title: 'How does tile scaling affect a GeoPackage tile layer?',
               content: 'Tile scaling is used to reduce the overall number of tiles in your tile layer, which reduces the size of your GeoPackage. The draw back to tile scaling is that some of your tiles may be less detailed due to scaling and there could be unintended visual artifacts.'
             },
           ],
