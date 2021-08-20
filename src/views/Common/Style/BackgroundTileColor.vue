@@ -1,10 +1,10 @@
 <template>
   <v-list two-line subheader>
-    <v-subheader>Tile Background Color</v-subheader>
+    <v-subheader>Tile background color</v-subheader>
     <v-list-item class="pt-2">
       <v-row no-gutters>
         <v-col cols="12">
-          <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile Background" />
+          <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile background" />
         </v-col>
       </v-row>
     </v-list-item>

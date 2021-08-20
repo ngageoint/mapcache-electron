@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios'
 import fs from 'fs'
 import { Readable } from 'stream'
 
@@ -12,6 +12,7 @@ function bufferToStream(buffer) {
 /**
  * Gets a remote image and writes it to file using Node.js libraries
  * @param url
+ * @param filePath
  * @returns {Promise<void>}
  */
 async function getRemoteImage (url, filePath) {

@@ -1,6 +1,6 @@
 <template>
-  <v-form v-on:submit.prevent v-model="valid" style="width: 100%">
-    <v-text-field :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
+  <v-form ref="form" v-on:submit.prevent v-model="valid" style="width: 100%">
+    <v-text-field :disabled="disabled" :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue" type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
   </v-form>
 </template>
 
@@ -16,7 +16,15 @@
         type: Boolean,
         default: false
       },
-      hint: String
+      additionalRules: {
+        type: Array,
+        default: () => []
+      },
+      hint: String,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
     },
     data () {
       return {
@@ -33,10 +41,13 @@
         if (this.max !== null && this.max !== undefined) {
           rules.push(v => Number(v) <= this.max || 'value may not be more than ' + this.max)
         }
-        return rules
+        return rules.concat(this.additionalRules)
       }
     },
     methods: {
+      revalidate () {
+        this.$refs['form'].validate()
+      },
       handleKeyDown: (e) => {
         if (e.keyCode === 69) {
           e.stopPropagation()

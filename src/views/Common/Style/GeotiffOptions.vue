@@ -4,7 +4,7 @@
       <v-subheader>Rendering method</v-subheader>
       <v-list-item>
         <v-list-item-content style="padding-right: 12px;">
-          <v-select v-model="renderingMethod" :items="renderMethods" label="Rendering Method" dense>
+          <v-select v-model="renderingMethod" :items="renderMethods" label="Rendering method" dense>
           </v-select>
         </v-list-item-content>
       </v-list-item>
@@ -121,7 +121,7 @@
       </v-list-item>
       <v-list-item v-if="renderingMethod < 2">
         <v-list-item-content style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-          Specify No Data value
+          Specify no data value
         </v-list-item-content>
         <v-list-item-action>
           <v-switch color="primary" v-model="enableGlobalNoDataValue"></v-switch>

@@ -99,40 +99,10 @@ const mutations = {
       Vue.set(state, projectId, projectCopy)
     }
   },
-  zoomToExtent (state, {projectId, extent}) {
-    if (state[projectId]) {
-      let key = 0
-      if (state[projectId].zoomToExtent !== null && state[projectId].zoomToExtent !== undefined) {
-        key = (state[projectId].zoomToExtent.key !== null && state[projectId].zoomToExtent.key !== undefined ? state[projectId].zoomToExtent.key : 0) + 1
-      }
-      Vue.set(state[projectId], 'zoomToExtent', {extent, key})
-    }
-  },
-  setBoundingBoxFilter (state, {projectId, boundingBoxFilter}) {
-    if (state[projectId]) {
-      Vue.set(state[projectId], 'boundingBoxFilter', boundingBoxFilter)
-    }
-  },
-  setBoundingBoxFilterEditingEnabled (state, {projectId, mode}) {
-    if (state[projectId]) {
-      Vue.set(state[projectId], 'boundingBoxFilterEditing', mode)
-    }
-  },
-  setBoundingBoxFilterEditingDisabled (state, {projectId}) {
-    if (state[projectId]) {
-      Vue.delete(state[projectId], 'boundingBoxFilterEditing')
-    }
-  },
   showToolTips (state, {projectId, show}) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'showToolTips', show)
     }
-  },
-  clearBoundingBoxFilter (state, {projectId}) {
-    const project = Object.assign({}, state[projectId])
-    delete project.boundingBoxFilterEditing
-    delete project.boundingBoxFilter
-    Vue.set(state, projectId, project)
   },
   setActiveGeoPackage (state, {projectId, geopackageId}) {
     if (state[projectId]) {
@@ -194,14 +164,9 @@ const actions = {
       directory: directory,
       sources: {},
       geopackages: {},
-      zoomToExtent: {
-        key: 0
-      },
       zoomControlEnabled: true,
       displayZoomEnabled: true,
       maxFeatures: 1000,
-      boundingBoxFilterEditing: undefined,
-      boundingBoxFilter: undefined,
       showToolTips: true,
       displayAddressSearchBar: true,
       activeGeoPackage: {
@@ -253,21 +218,6 @@ const actions = {
   },
   clearActiveLayers ({ commit }, {projectId}) {
     commit('clearActiveLayers', {projectId})
-  },
-  zoomToExtent ({ commit }, {projectId, extent}) {
-    commit('zoomToExtent', {projectId, extent})
-  },
-  setBoundingBoxFilter ({ commit }, {projectId, boundingBoxFilter}) {
-    commit('setBoundingBoxFilter', {projectId, boundingBoxFilter})
-  },
-  setBoundingBoxFilterEditingEnabled ({ commit }, {projectId, mode}) {
-    commit('setBoundingBoxFilterEditingEnabled', {projectId, mode})
-  },
-  setBoundingBoxFilterEditingDisabled ({ commit }, {projectId}) {
-    commit('setBoundingBoxFilterEditingDisabled', {projectId})
-  },
-  clearBoundingBoxFilter ({ commit }, {projectId}) {
-    commit('clearBoundingBoxFilter', {projectId})
   },
   setActiveGeoPackage ({ commit }, {projectId, geopackageId}) {
     commit('setActiveGeoPackage', {projectId, geopackageId})

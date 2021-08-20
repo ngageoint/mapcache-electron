@@ -85,6 +85,15 @@ function getAuthenticationMethod (response) {
 }
 
 /**
+ * Checks if an error is a not found error
+ * @param error
+ * @returns {boolean}
+ */
+function isNotFoundError (error) {
+  return !isNil(error) && !isNil(error.response) && error.response.status === 404
+}
+
+/**
  * Checks if an error is an authentication error
  * @param error
  * @returns {boolean}
@@ -170,5 +179,6 @@ export {
   isTimeoutError,
   isMapCacheTimeoutError,
   isMapCacheUserCancellationError,
-  isUserCancellation
+  isUserCancellation,
+  isNotFoundError
 }

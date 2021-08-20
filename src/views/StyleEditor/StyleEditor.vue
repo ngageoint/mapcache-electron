@@ -108,7 +108,7 @@
               <v-btn
                 @click.stop.prevent="addStyle"
                 color="primary">
-                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add Style
+                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add style
               </v-btn>
             </v-row>
           </v-list-item>
@@ -150,7 +150,7 @@
               <v-btn
                 @click.stop.prevent="addIcon"
                 color="primary">
-                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add Icon
+                <v-icon small class="mr-1">{{mdiPlus}}</v-icon> Add icon
               </v-btn>
             </v-row>
           </v-list-item>
@@ -273,7 +273,7 @@ export default {
         assignmentListItems: {
           action: mdiLinkVariant,
           items: [],
-          title: 'Default Assignment',
+          title: 'Default assignment',
           active: false
         },
         editIcon: null,
@@ -391,28 +391,28 @@ export default {
               },
               {
                 id: 'assignment_multipoint',
-                name: 'Multi Point',
+                name: 'Multi point',
                 geometryType: window.mapcache.GeometryType.MULTIPOINT,
                 style: multipointAssignment.style,
                 icon: multipointAssignment.icon
               },
               {
                 id: 'assignment_multiline',
-                name: 'Multi Line',
+                name: 'Multi line',
                 geometryType: window.mapcache.GeometryType.MULTILINESTRING,
                 style: multilineAssignment.style,
                 disabled: !hasStyles
               },
               {
                 id: 'assignment_multipolygon',
-                name: 'Multi Polygon',
+                name: 'Multi polygon',
                 geometryType: window.mapcache.GeometryType.MULTIPOLYGON,
                 style: multipolygonAssignment.style,
                 disabled: !hasStyles
               },
               {
                 id: 'assignment_geometrycollection',
-                name: 'Geometry Collection',
+                name: 'Geometry collection',
                 geometryType: window.mapcache.GeometryType.GEOMETRYCOLLECTION,
                 style: geometryCollectionAssignment.style,
                 disabled: !hasStyles

@@ -1,6 +1,6 @@
 <template>
   <v-card style="max-height: 400px;">
-    <v-card-title>{{assignment.name + ' Style Assignment'}}</v-card-title>
+    <v-card-title>{{assignment.name + ' style assignment'}}</v-card-title>
     <v-card-subtitle class="mt-1">Select a style to assign. Deselect to remove assignment.</v-card-subtitle>
     <v-card-text>
       <v-list>

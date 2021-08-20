@@ -17,18 +17,18 @@ function tile2lat (y, z) {
 }
 
 function long2tile (lon, zoom) {
-  return Math.min(Math.pow(2, zoom) - 1, (Math.floor((lon + 180) / 360 * Math.pow(2, zoom))))
+  return Math.min(Math.pow(2, zoom) - 1, (Math.floor((lon + 180.0) / 360.0 * Math.pow(2, zoom))))
 }
 
 function lat2tile (lat, zoom) {
-  return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)))
+  return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180.0) + 1 / Math.cos(lat * Math.PI / 180.0)) / Math.PI) / 2 * Math.pow(2, zoom))
 }
 
 function trimToWebMercatorMax(boundingBox) {
   if (boundingBox) {
     const copy = boundingBox.slice()
-    copy[0][0] = Math.max(boundingBox[0][0], -85.0511)
-    copy[1][0] = Math.min(boundingBox[1][0], 85.0511)
+    copy[0][0] = Math.max(boundingBox[0][0], -85.051128)
+    copy[1][0] = Math.min(boundingBox[1][0], 85.051128)
     return copy
   } else {
     return boundingBox
@@ -51,16 +51,46 @@ function calculateYTileRange (bbox, z) {
   var north = lat2tile(trimmedBbox[1][0], z)
   return {
     min: Math.max(0, Math.min(south, north)),
-    max: Math.max(0, Math.max(south, north)),
-    current: Math.max(0, Math.min(south, north))
+    max: Math.max(0, Math.max(south, north))
+  }
+}
+
+function calculateXTileRangeForExtent (extent, z) {
+  var west = long2tile(extent[0], z)
+  var east = long2tile(extent[2], z)
+  return {
+    min: Math.max(0, Math.min(west, east)),
+    max: Math.max(0, Math.max(west, east))
+  }
+}
+
+function calculateYTileRangeForExtent (extent, z) {
+  var south = lat2tile(extent[1], z)
+  var north = lat2tile(extent[3], z)
+  return {
+    min: Math.max(0, Math.min(south, north)),
+    max: Math.max(0, Math.max(south, north))
+  }
+}
+
+function trimExtentToFilter(extent, filter) {
+  if (extent) {
+    const copy = extent.slice()
+    copy[0] = Math.max(extent[0], filter[0])
+    copy[1] = Math.max(extent[1], filter[1])
+    copy[2] = Math.min(extent[2], filter[2])
+    copy[3] = Math.min(extent[3], filter[3])
+    return copy
+  } else {
+    return extent
   }
 }
 
 function trimExtentToWebMercatorMax(extent) {
   if (extent) {
     const copy = extent.slice()
-    copy[1] = Math.max(extent[1], -85.0511)
-    copy[3] = Math.min(extent[3], 85.0511)
+    copy[1] = Math.max(extent[1], -85.051128)
+    copy[3] = Math.min(extent[3], 85.051128)
     return copy
   } else {
     return extent
@@ -77,6 +107,19 @@ function tileBboxCalculator (x, y, z) {
     south: tile2lat(y + 1, z),
     west: tile2lon(x, z)
   }
+}
+
+function tilesInExtentAtZoom (extent, z) {
+  const trimmedBbox = trimToWebMercatorMax(extent)
+  const tiles = []
+  const yRange = calculateYTileRange(trimmedBbox, z)
+  const xRange = calculateXTileRange(trimmedBbox, z)
+  for (let x = xRange.min; x <= xRange.max; x++) {
+    for (let y = yRange.min; y <= yRange.max; y++) {
+      tiles.push({x, y, z})
+    }
+  }
+  return tiles
 }
 
 function tileCountInExtent (extent, minZoom, maxZoom) {
@@ -99,21 +142,6 @@ function tileCountInExtentForZoomLevels (extent, zoomLevels) {
     tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
   })
   return tiles
-}
-
-async function iterateAllTilesInExtentForZoomLevels (extent, zoomLevels, tileCallback) {
-  const trimmedBbox = trimToWebMercatorMax(extent)
-  let stop = false
-  for (let i = 0; i <= zoomLevels.length && !stop; i++) {
-    let z = zoomLevels[i]
-    var yRange = calculateYTileRange(trimmedBbox, z)
-    var xRange = calculateXTileRange(trimmedBbox, z)
-    for (let x = xRange.min; x <= xRange.max && !stop; x++) {
-      for (let y = yRange.min; y <= yRange.max && !stop; y++) {
-        stop = await tileCallback({z, x, y})
-      }
-    }
-  }
 }
 
 /**
@@ -144,17 +172,45 @@ function fixXYZTileServerUrlForLeaflet (filePath) {
   return filePath.replaceAll('${', '{').replace('{X}', '{x}').replace('{Y}', '{y}').replace('{Z}', '{z}').replace('{S}', '{s}')
 }
 
+/**
+ * Determines the intersection of two bounding boxes intersect
+ * @param bbox1
+ * @param bbox2
+ * @return {null || {maxLongitude: number, minLatitude: number, minLongitude: number, maxLatitude: number}}
+ */
+function getIntersection (bbox1, bbox2) {
+  let intersection = null
+  const minLon = Math.max(bbox1.minLongitude, bbox2.minLongitude)
+  const minLat = Math.max(bbox1.minLatitude, bbox2.minLatitude)
+  const maxLon = Math.min(bbox1.maxLongitude, bbox2.maxLongitude)
+  const maxLat = Math.min(bbox1.maxLatitude, bbox2.maxLatitude)
+  if (minLon < maxLon && minLat < maxLat) {
+    intersection = {
+      minLongitude: minLon,
+      maxLongitude: maxLon,
+      minLatitude: minLat,
+      maxLatitude: maxLat,
+    }
+  }
+  return intersection
+}
+
 export {
+  lat2tile,
   tile2lat,
   tile2lon,
   trimToWebMercatorMax,
   calculateXTileRange,
   calculateYTileRange,
+  calculateXTileRangeForExtent,
+  calculateYTileRangeForExtent,
   trimExtentToWebMercatorMax,
+  trimExtentToFilter,
   tileBboxCalculator,
   tileCountInExtent,
   tileCountInExtentForZoomLevels,
-  iterateAllTilesInExtentForZoomLevels,
   generateUrlForTile,
-  fixXYZTileServerUrlForLeaflet
+  fixXYZTileServerUrlForLeaflet,
+  getIntersection,
+  tilesInExtentAtZoom
 }

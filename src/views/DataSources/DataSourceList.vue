@@ -12,10 +12,10 @@
               color="whitesmoke"
               @click="item.zoomTo"
             >
-              <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
           </v-list-item-icon>
           <v-list-item-content>
@@ -42,6 +42,7 @@ import isNil from 'lodash/isNil'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import {zoomToSource} from '../../lib/util/ZoomUtilities'
 
 export default {
     components: {
@@ -61,10 +62,9 @@ export default {
         Object.keys(this.sources).forEach(key => {
           const source = this.sources[key]
           const sourceId = key
-          const projectId = _this.projectId
           const zoomTo = (e) => {
-            window.mapcache.zoomToExtent({projectId, extent: source.extent})
             e.stopPropagation()
+            zoomToSource(source)
           }
           items.push({
             id: key,

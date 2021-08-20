@@ -35,7 +35,7 @@ export default class KMLSource extends Source {
         opacity: 1.0,
         fillColor: '#000000',
         fillOpacity: 1.0,
-        name: 'KML Style'
+        name: 'KML style'
       }
       const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
       if (geometryType === GeometryType.LINESTRING || geometryType === GeometryType.MULTILINESTRING) {

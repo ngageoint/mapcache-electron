@@ -1,6 +1,6 @@
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import {isAuthenticationErrorResponse, USER_CANCELLED_MESSAGE} from './HttpUtilities'
+import {isAuthenticationErrorResponse, isNotFoundError, USER_CANCELLED_MESSAGE} from './HttpUtilities'
 
 /**
  * Cancellable Service Request allows a user to cancel an ongoing request.
@@ -64,19 +64,17 @@ export default class CancellableServiceRequest {
           resolve()
         })
       }))
-      // response = await window.mapcache.webRequest(request)
     } finally {
       window.mapcache.unregisterServiceRequestCancelListener(url)
     }
 
     if (!isNil(error)) {
-      // made a request without credentials and received an authentication error
-      // give it a try now with credentials enabled.
-      if (!this.cancelled && !this.withCredentials && (error.isAxiosError || isAuthenticationErrorResponse(error.response))) {
+      // made a request without credentials and received an authentication error, give it a try now with credentials enabled.
+      if (!this.cancelled && !this.withCredentials && !isNotFoundError(error) && (error.isAxiosError || isAuthenticationErrorResponse(error.response))) {
         this.withCredentials = true
         response = await this.request(url)
       } else if (!isNil(error)) {
-        throw(error)
+        throw error
       }
     }
 

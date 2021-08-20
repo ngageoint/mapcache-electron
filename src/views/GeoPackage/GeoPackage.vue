@@ -300,13 +300,12 @@
             <span v-bind="attrs" v-on="on">
               <v-btn
                 fab
-                :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0"
                 color="primary">
                 <v-icon>{{mdiLayersPlus}}</v-icon>
               </v-btn>
             </span>
           </template>
-          <span>{{projectTileLayerCount === 0 && projectFeatureLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add layer'}}</span>
+          <span>Add layer</span>
         </v-tooltip>
       </template>
       <v-tooltip right :disabled="!project.showToolTips">
@@ -316,9 +315,8 @@
               fab
               small
               color="accent"
-              @click="addFeatureLayer"
-              :disabled="projectFeatureLayerCount === 0">
-              <img :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px">
+              @click="addFeatureLayer">
+              <img :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px">
             </v-btn>
           </span>
         </template>
@@ -333,7 +331,7 @@
               color="accent"
               @click="addTileLayer"
               :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0">
-              <img :style="{verticalAlign: 'middle'}" src="/images/white_layers.png" alt="Feature Layer" width="24px" height="20px">
+              <img :style="{verticalAlign: 'middle'}" src="/images/white_layers.png" alt="Tile layer" width="24px" height="20px">
             </v-btn>
           </span>
         </template>
@@ -459,9 +457,6 @@ export default {
       }
     },
     methods: {
-      zoomToExtent (extent) {
-        this.$emit('zoom-to', extent)
-      },
       rename () {
         this.renaming = true
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'

@@ -4,10 +4,10 @@
       <v-card>
         <v-card-title>
           <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
-          Delete URL
+          Delete url
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete {{urlToDelete}} from your saved URLs?
+          Are you sure you want to delete {{urlToDelete}} from your saved urls?
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -26,14 +26,14 @@
       </v-card>
     </v-dialog>
     <v-dialog v-model="addUrlDialog" max-width="400" persistent @keydown.esc="cancelAddNewUrl">
-      <edit-text-modal v-if="addUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Add URL" :rules="urlRules" save-text="Add" :on-cancel="cancelAddNewUrl" :value="addUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="addNewUrl"/>
+      <edit-text-modal v-if="addUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Add url" :rules="urlRules" save-text="Add" :on-cancel="cancelAddNewUrl" :value="addUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="addNewUrl"/>
     </v-dialog>
     <v-dialog v-model="editUrlDialog" max-width="400" persistent @keydown.esc="cancelEditUrl">
-      <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Edit URL" :rules="editUrlRules" save-text="Save" :on-cancel="cancelEditUrl" :value="editUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="editSavedUrl"/>
+      <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Edit url" :rules="editUrlRules" save-text="Save" :on-cancel="cancelEditUrl" :value="editUrlValue" font-size="16px" font-weight="bold" label="URL" :on-save="editSavedUrl"/>
     </v-dialog>
     <v-card-title>
       <v-icon color="primary" class="pr-2">{{mdiCloudOutline}}</v-icon>
-      Saved URLs
+      Saved urls
     </v-card-title>
     <v-card-text class="pb-0">
       <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
@@ -60,7 +60,7 @@
         text
         color="primary"
         @click="showAddUrlDialog">
-        Add URL
+        Add url
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
@@ -102,19 +102,19 @@ export default {
         addUrlValue: 'https://',
         addUrlDialog: false,
         urlRules: [
-          v => !!v || 'URL is required',
-          v => window.mapcache.isUrlValid(v) || 'Invalid URL',
-          v => !this.urls.find(url => url.url.toLowerCase() === v) || 'URL already exists'
+          v => !!v || 'Url is required',
+          v => window.mapcache.isUrlValid(v) || 'Invalid url',
+          v => !this.urls.find(url => url.url.toLowerCase() === v) || 'Urk already exists'
         ],
         urlValid: false,
         editUrlValue: null,
         editUrlInitialValue: null,
         editUrlDialog: false,
         editUrlRules: [
-          v => !!v || 'URL is required',
-          v => window.mapcache.isUrlValid(v) || 'Invalid URL',
-          v => v !== this.editUrlInitialValue || 'URL unchanged',
-          v => !this.urls.find(url => url.url === v) || 'URL already exists'
+          v => !!v || 'Url is required',
+          v => window.mapcache.isUrlValid(v) || 'Invalid url',
+          v => v !== this.editUrlInitialValue || 'Url unchanged',
+          v => !this.urls.find(url => url.url === v) || 'Url already exists'
         ],
         editUrlValid: false
       }

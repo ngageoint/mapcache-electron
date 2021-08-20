@@ -63,11 +63,11 @@ export default {
               content: 'A project is a workspace for creating and editing content for a GeoPackage. A user can import data sources and populate a GeoPackage with that content.'
             },
             {
-              title: 'Edit Name',
+              title: 'Edit name',
               content: 'The project\'s name can be edited by navigating to \'Settings > General > Project name\''
             },
             {
-              title: 'Delete Project',
+              title: 'Delete project',
               content: 'The project can be deleted by navigating to \'Settings > General > Delete project\''
             }
           ],
@@ -106,19 +106,19 @@ export default {
               content: 'Showing the GeoPackage will open the folder on the file system containing the GeoPackage. This can be done by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to show. Click on the \'Show\' button.'
             },
             {
-              title: 'View GeoPackage Details',
+              title: 'View GeoPackage details',
               content: 'Showing the GeoPackage\'s details can be done by navigating to the \'GeoPackage\' tab and clicking on the GeoPackage you wish to view. Click on the \'Details\' button.'
             },
             {
-              title: 'Add Feature Layer',
+              title: 'Add feature layer',
               content: 'To add a feature layer to your GeoPackage, first, navigate to the \'GeoPackage\' tab and click on the GeoPackage you wish to add the layer to. Second, click on the \'Add Layer\' button at the bottom of the page. Select the \'Add feature layer\' button and complete the steps.'
             },
             {
-              title: 'Add Tile Layer',
+              title: 'Add tile layer',
               content: 'To add a tile layer to your GeoPackage, first, navigate to the \'GeoPackage\' tab and click on the GeoPackage you wish to add the layer to. Second, click on the \'Add Layer\' button at the bottom of the page. Select the \'Add tile layer\' button and complete the steps.'
             }
           ],
-          title: 'GeoPackage'
+          title: 'GeoPackages'
         },
         {
           action: mdiLayersOutline,
@@ -128,27 +128,27 @@ export default {
               content: 'Data sources consist of files in a variety of supported geospatial formats (KML/KMZ, GeoJSON, Shapefile, MBTiles, XYZ tile zip, and GeoTIFF) or online services such as WMS, WFS, XYZ, and ArcGIS Feature Service. The contents of a data source can either be features or imagery.'
             },
             {
-              title: 'Import Data Source from file',
-              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (.zip or .shp), and GeoTIFF.'
+              title: 'Import data source from file',
+              content: 'A data source can be imported by navigating to the \'data source\' tab and clicking on the \'Add data source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (.zip or .shp), and GeoTIFF.'
             },
             {
-              title: 'Import Data Source from URL',
-              content: 'A data source can be imported by navigating to the \'Data Source\' tab and clicking on the \'Add Data Source\' button at the bottom of the page. Click the \'Download from URL\' button and complete the steps to import. Supported geospatial services include WMS, WFS, XYZ, and ArcGIS Feature Service.'
+              title: 'Import data source from url',
+              content: 'A data source can be imported by navigating to the \'data source\' tab and clicking on the \'Add data source\' button at the bottom of the page. Click the \'Download from URL\' button and complete the steps to import. Supported geospatial services include WMS, WFS, XYZ, and ArcGIS Feature Service.'
             },
             {
-              title: 'Export Data Source as GeoPackage',
-              content: 'A data source containing features can be exported as a GeoPackage by navigating to the \'Data Source\' tab and clicking on the feature data source you wish to export. Click on the \'Export\' button'
+              title: 'Export data source as GeoPackage',
+              content: 'A data source containing features can be exported as a GeoPackage by navigating to the \'data source\' tab and clicking on the feature data source you wish to export. Click on the \'Export\' button'
             },
             {
-              title: 'Delete Data Source',
-              content: 'A data source can be deleted by navigating to the \'Data Source\' tab and clicking on the data source you wish to delete. Click on the \'Delete\' button.'
+              title: 'Delete data source',
+              content: 'A data source can be deleted by navigating to the \'data source\' tab and clicking on the data source you wish to delete. Click on the \'Delete\' button.'
             },
             {
-              title: 'Rename Data Source',
-              content: 'A data source can be renamed by navigating to the \'Data Source\' tab and clicking on the data source you wish to rename. Click on the \'Rename\' button.'
+              title: 'Rename data source',
+              content: 'A data source can be renamed by navigating to the \'data source\' tab and clicking on the data source you wish to rename. Click on the \'Rename\' button.'
             }
           ],
-          title: 'Data Source'
+          title: 'Data sources'
         },
         {
           action: mdiCogOutline,
@@ -166,16 +166,16 @@ export default {
               content: 'Tooltips display additional information for various buttons within the application. If you would like to disable tooltips, navigate to \'Settings > General > Tooltips\'.'
             },
             {
-              title: 'Saved URLs',
-              content: 'URLs are used to import data sources from the internet are saved internally. If you would like to manage the saved URLs, navigate to \'Settings > General > Saved URLs\'.'
+              title: 'Saved urls',
+              content: 'Urls are used to import data sources from the internet are saved internally. If you would like to manage the saved URLs, navigate to \'Settings > General > Saved urls\'.'
             },
             {
-              title: 'Base Maps',
-              content: 'A base map is the underlying layer on the map view that is always visible. To manage your base maps, navigate to \'Settings > General > Base Maps\'.'
+              title: 'Base maps',
+              content: 'A base map is the underlying layer on the map view that is always visible. To manage your base maps, navigate to \'Settings > General > Base maps\'.'
             },
             {
               title: 'Zoom control',
-              content: 'The zoom control allows the user to click to zoom in or zoom out on the map. If disabled, a user may still zoom in and out using a mouse or touch pad. If you would like to hide the zoom control, navigate to \'Settings > Map > Zoom Control\' and disable it.'
+              content: 'The zoom control allows the user to click to zoom in or zoom out on the map. If disabled, a user may still zoom in and out using a mouse or touch pad. If you would like to hide the zoom control, navigate to \'Settings > Map > Zoom control\' and disable it.'
             },
             {
               title: 'Display current zoom',
@@ -208,13 +208,13 @@ export default {
               content: 'If the GeoPackage feature layer is not enabled, that layer\'s features will not be visible. This includes the newly added drawing. If you would like to see your drawing, enable the GeoPackage feature layer.'
             },
             {
-              title: 'Why are some WMS layers not supported?',
-              content: 'MapCache currently displays content using a Leaflet map. The default projection for Leaflet, Google Maps, and Open Street Maps (OSM) is EPSG:3857 (also known as Web Mercator). If a WMS service is unable to reproject the data into EPSG:3857, then it can\'t be displayed on the map.'
-            },
-            {
               title: 'Why are some map tiles blank for my WMS/XYZ data source and/or base map?',
               content: 'If you find that one or more tiles for your WMS/XYZ source are missing, it is likely that your request timeout (ms) and/or max retry attempts are too low. You can adjust these network settings in the data source or base map.'
-            }
+            },
+            {
+              title: 'What does tile scaling impact my GeoPackage tile layer?',
+              content: 'Tile scaling is used to reduce the overall number of tiles in your tile layer, which reduces the size of your GeoPackage. The draw back to tile scaling is that some of your tiles may be less detailed due to scaling and there could be unintended visual artifacts.'
+            },
           ],
           title: 'Frequently asked questions (FAQs)'
         }]

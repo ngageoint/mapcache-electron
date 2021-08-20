@@ -9,7 +9,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title>Base Maps</v-toolbar-title>
+      <v-toolbar-title>Base maps</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
       <v-list class="pa-0">
@@ -65,6 +65,7 @@ import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import {zoomToBaseMap} from '../../lib/util/ZoomUtilities'
 
 export default {
     components: {
@@ -91,11 +92,10 @@ export default {
               readonly: baseMap.readonly,
               missingRaster: window.mapcache.isRasterMissing(baseMap.layerConfiguration),
               background: baseMap.background || '#ddd',
-              zoomTo: function (e, projectId) {
+              zoomTo: function (e) {
                 e.stopPropagation()
                 e.preventDefault()
-                const extent = baseMap.extent || [-180, -90, 180, 90]
-                window.mapcache.zoomToExtent({projectId, extent})
+                zoomToBaseMap(baseMap)
               }
             }
           })

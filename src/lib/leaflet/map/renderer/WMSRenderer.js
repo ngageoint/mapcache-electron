@@ -39,7 +39,7 @@ export default class WMSRenderer extends NetworkTileRenderer {
     }
   }
 
-  async renderTile (coords, callback) {
+  async renderTile (requestId, coords, callback) {
     if (!isNil(this.error)) {
       callback(this.error, null)
     } else {

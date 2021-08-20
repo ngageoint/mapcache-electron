@@ -7,7 +7,8 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title><b class="ml-2">{{baseMap.name}}</b> Style Editor</v-toolbar-title>
+      <v-toolbar-title><v-icon large color="white" class="pr-2">{{mdiPalette}}</v-icon>{{baseMap.name}}</v-toolbar-title>
+
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-card flat tile>
@@ -173,7 +174,7 @@
             <v-btn icon @click="zoomTo" color="whitesmoke">
               <v-icon style="width: 20px; height: 20px;">{{mdiMapOutline}}</v-icon>
             </v-btn>
-            <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} Base Map</span>
+            <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} base map</span>
           </p>
         </v-col>
         <v-col cols="1" v-if="baseMap.error">
@@ -276,7 +277,7 @@
           <v-row class="pb-2" no-gutters v-if="configuration.minZoom !== undefined && configuration.maxZoom !== undefined">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Zoom Levels
+                Zoom levels
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{configuration.minZoom + ' - ' + configuration.maxZoom}}
@@ -328,6 +329,7 @@ import NumberPicker from '../Common/NumberPicker'
 import {mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
 import {DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import {zoomToBaseMap} from '../../lib/util/ZoomUtilities'
 
 export default {
     props: {
@@ -415,8 +417,7 @@ export default {
         this.back()
       },
       zoomTo () {
-        const extent = this.baseMap.extent || [-180, -90, 180, 90]
-        window.mapcache.zoomToExtent({projectId: this.project.id, extent})
+        zoomToBaseMap(this.baseMap)
       },
       hideStyleEditor () {
         this.styleEditorVisible = false

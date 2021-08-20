@@ -264,7 +264,7 @@ export default {
           { text: 'Actions', value: 'actions', sortable: false, width: 140 },
           { text: 'Attachments', value: 'attachments', width: 140 },
           { text: 'Style', value: 'style', sortable: false, width: 140 },
-          { text: 'Geometry Type', value: 'geometryType', width: 140 }
+          { text: 'Geometry type', value: 'geometryType', width: 140 }
         ]
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {

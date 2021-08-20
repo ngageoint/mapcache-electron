@@ -88,7 +88,7 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-icon color="primary" class="mr-1" :style="{width: '36px', height: '36px'}">{{column.icon}}</v-icon>
-            <span style="vertical-align: middle;">Feature Layer Field</span>
+            <span style="vertical-align: middle;">Feature layer field</span>
           </p>
         </v-col>
       </v-row>
@@ -137,7 +137,7 @@
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Feature Layer
+                Feature layer
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{tableName}}
@@ -147,7 +147,7 @@
           <v-row no-gutters justify="space-between">
             <v-col style="margin-top: 8px;">
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Field Type
+                Field type
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{column.type}}

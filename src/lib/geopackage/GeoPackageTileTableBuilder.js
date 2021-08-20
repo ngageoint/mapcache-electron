@@ -1,4 +1,6 @@
-import { BoundingBox } from '@ngageoint/geopackage'
+import { BoundingBox, TileScaling, TileScalingType } from '@ngageoint/geopackage'
+import isNil from 'lodash/isNil'
+import throttle from 'lodash/throttle'
 import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import {
@@ -9,14 +11,13 @@ import {
   deleteGeoPackageTable
 } from './GeoPackageCommon'
 import { constructLayer } from '../layer/LayerFactory'
-import { trimToWebMercatorMax, iterateAllTilesInExtentForZoomLevels } from '../util/XYZTileUtilities'
+import { trimExtentToFilter, trimExtentToWebMercatorMax } from '../util/XYZTileUtilities'
 import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
 import { createCanvas, isBlank, hasTransparentPixels } from '../util/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
-import isNil from 'lodash/isNil'
-import throttle from 'lodash/throttle'
-import { estimatedTileCount } from './GeoPackageTileTableUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
+import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix, SCALING_METHOD } from '../util/TileUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
@@ -82,6 +83,7 @@ async function buildTileLayer (configuration, statusCallback) {
             sourceLayerName: tableName,
             sourceType: 'GeoPackage',
             layerType: 'Vector',
+            drawOverlap: geopackageLayer.drawOverlap,
             count: geopackage.tables.features[tableName].featureCount,
             extent: geopackage.tables.features[tableName].extent,
           })
@@ -113,11 +115,24 @@ async function buildTileLayer (configuration, statusCallback) {
         }
       }
 
-      // create geopackage table
-      let { estimatedNumberOfTiles, tileScaling, boundingBox, zoomLevels } = estimatedTileCount(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScaling, configuration.minZoom, configuration.maxZoom)
-      boundingBox = trimToWebMercatorMax(boundingBox)
+      const tileMatrix = getTileMatrix(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScalingEnabled, configuration.minZoom, configuration.maxZoom)
+      const estimatedNumberOfTiles = getZoomTileMatrixCount(tileMatrix)
 
-      const contentsBounds = new BoundingBox(boundingBox[0][1], boundingBox[1][1], boundingBox[0][0], boundingBox[1][0])
+      let totalExtent
+      const extents = configuration.sourceLayers.map(layer => layer.extent).concat(configuration.geopackageLayers.map(geopackageLayer => geopackageLayer.type === 'feature' ? geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent : geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent))
+      extents.forEach(extent => {
+        if (totalExtent == null) {
+          totalExtent = extent.slice()
+        } else {
+          totalExtent[0] = Math.min(totalExtent[0], extent[0])
+          totalExtent[1] = Math.min(totalExtent[1], extent[1])
+          totalExtent[2] = Math.max(totalExtent[2], extent[2])
+          totalExtent[3] = Math.max(totalExtent[3], extent[3])
+        }
+      })
+      totalExtent = trimExtentToWebMercatorMax(trimExtentToFilter(totalExtent, configuration.boundingBoxFilter))
+
+      const contentsBounds = new BoundingBox(totalExtent[0], totalExtent[2], totalExtent[1], totalExtent[3])
       const contentsSrsId = 4326
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857
@@ -128,10 +143,14 @@ async function buildTileLayer (configuration, statusCallback) {
 
       await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
 
-      if (!isNil(tileScaling)) {
+      if (configuration.tileScalingEnabled) {
+        const tileScalingRecord = new TileScaling()
+        tileScalingRecord.scaling_type = TileScalingType.OUT
+        tileScalingRecord.zoom_in = null
+        tileScalingRecord.zoom_out = 1
         const tileScalingExtension = gp.getTileScalingExtension(tableName)
         await tileScalingExtension.getOrCreateExtension()
-        tileScalingExtension.createOrUpdate(tileScaling)
+        tileScalingExtension.createOrUpdate(tileScalingRecord)
       }
 
       await wait(500)
@@ -141,7 +160,8 @@ async function buildTileLayer (configuration, statusCallback) {
       throttleStatusCallback(status)
       let tilesAdded = 0
       let timeStart = new Date().getTime()
-      await iterateAllTilesInExtentForZoomLevels(boundingBox, zoomLevels, async ({z, x, y}) => {
+
+      await iterateTilesInMatrix(tileMatrix, async (z, x, y) => {
         // setup canvas that we will draw each layer into
         let canvas = createCanvas(256, 256)
         let ctx = canvas.getContext('2d')
@@ -152,6 +172,7 @@ async function buildTileLayer (configuration, statusCallback) {
         const tileHeight = tileBoundingBox.maxLatitude - tileBoundingBox.minLatitude
         // clips tile so that only the intersection of the tile and the user specified bounds are drawn
         const intersection = boundingBoxIntersection(tileBoundingBox, contentsWebMercator)
+        let clippingRectangle
         if (!isNil(intersection)) {
           const getX = (lng, mathFunc) => {
             return mathFunc(256.0 / tileWidth * (lng - tileBoundingBox.minLongitude))
@@ -163,20 +184,15 @@ async function buildTileLayer (configuration, statusCallback) {
           const maxX = Math.min(256, getX(intersection.maxLongitude, Math.ceil) + 1)
           const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
           const maxY = Math.min(256, getY(intersection.minLatitude, Math.floor) + 1)
-          ctx.beginPath()
-          ctx.rect(minX, minY, maxX - minX, maxY - minY)
-          ctx.clip()
+          clippingRectangle = [minX, minY, maxX - minX, maxY - minY]
         }
 
-        ctx.save()
-
         await new Promise((resolve, reject) => {
-          // iteratre over sorted layers and push promises in sorted order
           const tilePromises = []
           for (let i = 0; i < sortedLayers.length; i++) {
             const layer = sortedLayers[i]
             tilePromises.push(new Promise((resolve, reject) => {
-              layer.renderTile({x, y, z}, (err, result) => {
+              layer.renderTile(createUniqueID(), {x, y, z}, (err, result) => {
                 if (err) {
                   reject(err)
                 } else if (!isNil(result)) {
@@ -185,7 +201,8 @@ async function buildTileLayer (configuration, statusCallback) {
                     img.onload = () => {
                       resolve({
                         image: img,
-                        opacity: !isNil(layer.opacity) ? layer.opacity : 1.0
+                        opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
+                        drawOverlap: layer._configuration.drawOverlap
                       })
                     }
                     img.onerror = (e) => {
@@ -211,15 +228,28 @@ async function buildTileLayer (configuration, statusCallback) {
                 console.error('Failed to render tile.')
                 reject(result.reason)
               } else if (!isNil(result.value) && !isNil(result.value.image)) {
+                ctx.save()
                 ctx.globalAlpha = result.value.opacity
+                if (!isNil(clippingRectangle)) {
+                  ctx.beginPath()
+                  if (!isNil(result.value.drawOverlap)) {
+                    ctx.rect(Math.max(0, clippingRectangle[0] - result.value.drawOverlap.width),
+                      Math.max(0, clippingRectangle[1] - result.value.drawOverlap.height),
+                      Math.min(256, clippingRectangle[2] + result.value.drawOverlap.width * 2),
+                      Math.min(256, clippingRectangle[3] + result.value.drawOverlap.height * 2))
+                  } else {
+                    ctx.rect(clippingRectangle[0], clippingRectangle[1], clippingRectangle[2], clippingRectangle[3])
+                  }
+                  ctx.clip()
+                }
                 ctx.drawImage(result.value.image, 0, 0)
                 ctx.globalAlpha = 1.0
+                ctx.restore()
               }
             })
             resolve()
           })
         })
-        ctx.restore()
 
         // look at merged canvas
         if (!isBlank(canvas)) {
@@ -252,13 +282,6 @@ async function buildTileLayer (configuration, statusCallback) {
         status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nApprox. time remaining: ' + prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
         throttleStatusCallback(status)
-      })
-
-      // close geopackage vector and tile layers
-      sortedLayers.forEach(layer => {
-        if (!isNil(layer.close) && typeof layer.close === 'function') {
-          layer.close()
-        }
       })
 
       status.message = 'Completed in ' + prettyPrintMs(new Date().getTime() - buildStart) + '.'

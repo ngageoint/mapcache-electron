@@ -37,7 +37,7 @@
         <v-list dense flat class="py-0">
           <v-list-item one-line class="px-0 pt-1 pb-1">
             <v-list-item-avatar class="ml-2">
-              <img alt="MapCache Icon" src="/images/64x64.png"/>
+              <img alt="MapCache icon" src="/images/64x64.png"/>
             </v-list-item-avatar>
             <v-list-item-content>
               <v-list-item-title>MapCache</v-list-item-title>
@@ -147,7 +147,7 @@ export default {
         item: 0,
         items: [
           { id: 0, text: 'GeoPackages', icon: mdiPackageVariant, notify: false },
-          { id: 1, text: 'Data Sources', icon: mdiLayersOutline, notify: false },
+          { id: 1, text: 'Data sources', icon: mdiLayersOutline, notify: false },
           { id: 2, text: 'Settings', icon: mdiCogOutline, notify: false }
         ],
         showCertificateSelectionDialog: false,

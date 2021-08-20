@@ -7,7 +7,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title><b class="ml-2">{{initialDisplayName}}</b> Style Editor</v-toolbar-title>
+      <v-toolbar-title><v-icon large color="white" class="pr-2">{{mdiPalette}}</v-icon>{{initialDisplayName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-card flat tile>
@@ -44,6 +44,13 @@
       <v-toolbar-title :title="initialDisplayName">{{initialDisplayName}}</v-toolbar-title>
       <v-spacer></v-spacer>
     </v-toolbar>
+    <v-dialog
+      v-model="editZoomLevelsDialog"
+      max-width="400"
+      persistent
+      @keydown.esc="editZoomLevelsDialog = false">
+      <edit-zoom-range :close="() => {editZoomLevelsDialog = false}" :save-zoom-range="saveZoomRange" :min-zoom="source.minZoom" :max-zoom="source.maxZoom"></edit-zoom-range>
+    </v-dialog>
     <v-dialog
       v-model="renameDialog"
       max-width="400"
@@ -216,13 +223,13 @@
       <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="space-between">
         <v-col>
           <p class="text-subtitle-1">
-            <v-btn icon @click="zoomToSource" color="whitesmoke">
-              <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+            <v-btn icon @click="zoomTo" color="whitesmoke">
+              <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-            <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} Data Source</span>
+            <span>{{source.pane === 'vector' ? 'Feature' : 'Tile'}} data source</span>
           </p>
         </v-col>
         <v-col cols="1" v-if="source.error">
@@ -352,10 +359,11 @@
           <v-row class="pb-2" no-gutters v-if="source.minZoom !== undefined && source.maxZoom !== undefined">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Zoom Levels
+                Zoom levels
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{source.minZoom + ' - ' + source.maxZoom}}
+                <span style="margin-top: 8px;">{{source.minZoom + ' - ' + source.maxZoom}}</span>
+                <v-btn style="margin-top: -2px;" icon small v-if="source.layerType === 'XYZServer'" @click="editZoomLevels"><v-icon small>{{mdiPencil}}</v-icon></v-btn>
               </p>
             </v-col>
           </v-row>
@@ -381,7 +389,7 @@
           <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS'">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Spatial Reference System
+                Spatial reference system
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{source.srs}}
@@ -434,6 +442,8 @@ import {
 } from '@mdi/js'
 import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import EditZoomRange from '../../views/Common/EditZoomRange'
+import {zoomToSource} from '../../lib/util/ZoomUtilities'
 
 export default {
     props: {
@@ -449,6 +459,7 @@ export default {
       back: Function
     },
     components: {
+      EditZoomRange,
       GeoTIFFTroubleshooting,
       NumberPicker,
       DataSourceTroubleshooting,
@@ -500,7 +511,8 @@ export default {
         retryAttempts: DEFAULT_RETRY_ATTEMPTS,
         rateLimitValid: true,
         timeoutValid: true,
-        retryAttemptsValid: true
+        retryAttemptsValid: true,
+        editZoomLevelsDialog: false
       }
     },
     methods: {
@@ -521,6 +533,16 @@ export default {
         this.$nextTick(() => {
           this.connectionSettingsDialog = true
         })
+      },
+      editZoomLevels () {
+        this.editZoomLevelsDialog = true
+      },
+      saveZoomRange (minZoom, maxZoom) {
+        let updatedConfiguration = Object.assign({}, this.source)
+        updatedConfiguration.minZoom = minZoom
+        updatedConfiguration.maxZoom = maxZoom
+        this.updateSource(updatedConfiguration)
+        this.editZoomLevelsDialog = false
       },
       saveLayerName () {
         this.renameDialog = false
@@ -581,8 +603,8 @@ export default {
       hideStyleEditor () {
         this.styleEditorVisible = false
       },
-      zoomToSource () {
-        window.mapcache.zoomToExtent({projectId: this.project.id, extent: this.source.extent})
+      zoomTo () {
+        zoomToSource(this.source)
       },
       showFeatureTable () {
         const payload = {

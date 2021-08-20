@@ -3,11 +3,14 @@ import XYZServerLayer from '../layer/tile/XYZServerLayer'
 import { XYZ_SERVER } from '../layer/LayerTypes'
 
 export default class XYZSource extends Source {
-  constructor (id, directory, filePath, subdomains = [], sourceName, withCredentials = false) {
+  constructor (id, directory, filePath, subdomains = [], sourceName, withCredentials = false, minZoom, maxZoom, extent) {
     super (id, directory, filePath)
     this.subdomains = subdomains
     this.sourceName = sourceName
     this.withCredentials = withCredentials
+    this.minZoom = minZoom
+    this.maxZoom = maxZoom
+    this.extent = extent
   }
 
   async retrieveLayers () {
@@ -22,7 +25,10 @@ export default class XYZSource extends Source {
         sourceLayerName: this.sourceName,
         visible: false,
         layerType: XYZ_SERVER,
-        withCredentials: this.withCredentials
+        withCredentials: this.withCredentials,
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom,
+        extent: this.extent
       })
     ]
   }

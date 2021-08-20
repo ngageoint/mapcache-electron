@@ -464,15 +464,7 @@ function clearActiveLayers ({projectId}) {
   store.dispatch('Projects/clearActiveLayers', {projectId})
 }
 
-function zoomToExtent ({projectId, extent}) {
-  store.dispatch('Projects/zoomToExtent', {projectId, extent})
-}
-
-function setBoundingBoxFilter ({projectId, boundingBoxFilter}) {
-  store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter})
-}
-
-async function setBoundingBoxFilterToExtent (projectId) {
+async function getExtentOfActiveLayers (projectId) {
   let overallExtent = null
   try {
     let geopackageKeys = keys(store.state.Projects[projectId].geopackages)
@@ -527,19 +519,7 @@ async function setBoundingBoxFilterToExtent (projectId) {
     // eslint-disable-next-line no-console
     console.error('Failed to determine overall extent.')
   }
-  store.dispatch('Projects/setBoundingBoxFilter', {projectId, boundingBoxFilter: overallExtent})
-}
-
-function setBoundingBoxFilterEditingEnabled ({projectId, mode}) {
-  store.dispatch('Projects/setBoundingBoxFilterEditingEnabled', {projectId, mode})
-}
-
-function setBoundingBoxFilterEditingDisabled ({projectId}) {
-  store.dispatch('Projects/setBoundingBoxFilterEditingDisabled', {projectId})
-}
-
-function clearBoundingBoxFilter ({projectId}) {
-  store.dispatch('Projects/clearBoundingBoxFilter', {projectId})
+  return overallExtent
 }
 
 /**
@@ -774,12 +754,7 @@ export {
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
   clearActiveLayers,
-  zoomToExtent,
-  setBoundingBoxFilter,
-  setBoundingBoxFilterToExtent,
-  setBoundingBoxFilterEditingEnabled,
-  setBoundingBoxFilterEditingDisabled,
-  clearBoundingBoxFilter,
+  getExtentOfActiveLayers,
   synchronizeGeoPackage,
   synchronizeDataSource,
   setActiveGeoPackage,

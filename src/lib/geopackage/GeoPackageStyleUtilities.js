@@ -1,4 +1,4 @@
-import {FeatureTableStyles, GeometryType, FeatureStyleExtension} from '@ngageoint/geopackage'
+import {FeatureTableStyles, GeometryType, FeatureStyleExtension, FeatureTiles} from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import values from 'lodash/values'
 import { performSafeGeoPackageOperation } from './GeoPackageCommon'
@@ -951,6 +951,18 @@ function _getTableStyleMappings(gp, tableName) {
   }
 }
 
+function _getStyleDrawOverlap (gp, tableName) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const featureTiles = new FeatureTiles(featureDao)
+  return {width: featureTiles.widthOverlap, height: featureTiles.heightOverlap}
+}
+
+function getStyleDrawOverlap (filePath, tableName) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getStyleDrawOverlap(gp, tableName)
+  })
+}
+
 /**
  * GeoPackage Style Utilities is a utility class to support utilizing the NGA Style Extension for GeoPackage feature tables.
  */
@@ -1007,5 +1019,7 @@ export {
   _getFeatureStyleMapping,
   _getTableStyleMappings,
   _getStyleRowObjects,
-  _getIconRowObjects
+  _getIconRowObjects,
+  getStyleDrawOverlap,
+  _getStyleDrawOverlap
 }

@@ -10,7 +10,7 @@
         <v-card>
           <v-card-title>
             <v-icon color="orange" class="pr-2">{{mdiAlert}}</v-icon>
-            Create GeoPackage Warning
+            Create GeoPackage warning
           </v-card-title>
           <v-card-text>
             <v-card-subtitle>
@@ -40,7 +40,7 @@
         @keydown.esc="cancelDrawing">
         <v-card v-if="layerSelectionVisible">
           <v-card-title>
-            Add Drawing
+            Add drawing
           </v-card-title>
           <v-card-text>
             Add drawing to the selected GeoPackage and feature layer.
@@ -64,7 +64,7 @@
                       autofocus
                       v-model="featureTableName"
                       :rules="featureTableNameRules"
-                      label="Feature Layer Name"
+                      label="Feature layer name"
                       required
                     ></v-text-field>
                   </v-col>
@@ -165,10 +165,10 @@
             <li v-for="(item) in layerOrder" :key="item.id" :class="`layer-order-list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
               <v-list-item-icon>
                 <v-btn icon @click.stop="item.zoomTo">
-                  <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                  <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-content>
@@ -182,7 +182,7 @@
     </v-card>
     <v-card outlined v-if="showBaseMapSelection" class="basemap-card">
       <v-card-title class="pb-2">
-        Base Maps
+        Base maps
       </v-card-title>
       <v-card-text class="pb-2">
         <v-card-subtitle class="pt-1 pb-1">
@@ -192,7 +192,7 @@
           <v-list-item-group v-model="selectedBaseMapId" mandatory>
             <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
-                <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e, map)">
+                <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e)">
                   <v-icon small>{{mdiMapOutline}}</v-icon>
                 </v-btn>
               </v-list-item-icon>
@@ -244,33 +244,36 @@ import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import {
+  zoomToBaseMap,
+  zoomToExtent,
+  zoomToGeoPackageFeature,
+  zoomToGeoPackageTable,
+  zoomToSource
+} from '../../lib/util/ZoomUtilities'
 
 
 const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
-const NEW_FEATURE_LAYER_OPTION = {text: 'New Feature Layer', value: 0}
+const NEW_FEATURE_LAYER_OPTION = {text: 'New feature layer', value: 0}
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
 
 // objects for storing state
 const geopackageLayers = {}
 
-function generateLayerOrderItemForSource (source, map) {
+function generateLayerOrderItemForSource (source) {
   return {
     title: source.displayName ? source.displayName : source.name,
     id: source.id,
     type: source.pane === 'vector' ? 'feature' : 'tile',
     zoomTo: debounce((e) => {
       e.stopPropagation()
-      let boundingBox = [[source.extent[1], source.extent[0]], [source.extent[3], source.extent[2]]]
-      let bounds = L.latLngBounds(boundingBox)
-      bounds = bounds.pad(0.05)
-      boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-      map.fitBounds(boundingBox, {maxZoom: 20})
+      zoomToSource(source)
     }, 100)
   }
 }
 
-function generateLayerOrderItemForGeoPackageTable (geopackage, tableName, isTile, map) {
+function generateLayerOrderItemForGeoPackageTable (geopackage, tableName, isTile) {
   return {
     id: geopackage.id + '_' + tableName,
     geopackageId: geopackage.id,
@@ -280,13 +283,7 @@ function generateLayerOrderItemForGeoPackageTable (geopackage, tableName, isTile
     type: isTile ? 'tile' : 'vector',
     zoomTo: debounce((e) => {
       e.stopPropagation()
-      window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-        let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-        let bounds = L.latLngBounds(boundingBox)
-        bounds = bounds.pad(0.05)
-        boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-        map.fitBounds(boundingBox, {maxZoom: 20})
-      })
+      zoomToGeoPackageTable(geopackage, tableName)
     }, 100)
   }
 }
@@ -320,14 +317,9 @@ export default {
             baseMap: baseMapConfig,
             name: baseMapConfig.name,
             missingRaster: window.mapcache.isRasterMissing(baseMapConfig.layerConfiguration),
-            zoomTo: debounce((e, map) => {
+            zoomTo: debounce((e) => {
               e.stopPropagation()
-              const extent = baseMapConfig.extent || [-180, -90, 180, 90]
-              let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-              let bounds = L.latLngBounds(boundingBox)
-              bounds = bounds.pad(0.05)
-              boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-              map.fitBounds(boundingBox, {maxZoom: 20})
+              zoomToBaseMap(baseMapConfig)
             }, 100)
           }
         })
@@ -355,10 +347,9 @@ export default {
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
       dataSourceMapLayers: {},
-      offlineBaseMapFilter: baseMap => baseMap.id !== getOfflineBaseMapId(),
+      notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       geopackageMapLayers: {},
       selectedBaseMapId: '0',
-      zoomToExtentKey: this.project && this.project.zoomToExtent ? this.project.zoomToExtent.key || 0 : 0,
       isDrawing: false,
       maxFeatures: undefined,
       NEW_GEOPACKAGE_OPTION,
@@ -379,7 +370,7 @@ export default {
       geoPackageFeatureLayerSelectionHasEditableFields: false,
       lastCreatedFeature: null,
       featureTableNameValid: false,
-      featureTableName: 'Feature Layer',
+      featureTableName: 'Feature layer',
       featureTableNameRules: [
         v => !!v || 'Layer name is required',
         v => /^[\w,\s-]+$/.test(v) || 'Layer name is not valid',
@@ -401,7 +392,8 @@ export default {
       layerOrder: [],
       mapBackground: '#ddd',
       displayNetworkError: false,
-      connectingToBaseMap: false
+      connectingToBaseMap: false,
+      manualBoundingBoxDialog: false
     }
   },
   methods: {
@@ -560,16 +552,7 @@ export default {
       })
     },
     zoomToFeature (path, table, featureId) {
-      const map = this.map
-      window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
-        if (extent) {
-          let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-          let bounds = L.latLngBounds(boundingBox)
-          bounds = bounds.pad(0.05)
-          boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-          map.fitBounds(boundingBox, {maxZoom: 20})
-        }
-      })
+      zoomToGeoPackageFeature(path, table, featureId)
     },
     addDataSource (sourceConfiguration, map) {
       const self = this
@@ -578,7 +561,7 @@ export default {
       self.dataSourceMapLayers[sourceId] = constructMapLayer({layer: source, maxFeatures: this.project.maxFeatures})
       // if it is visible, try to initialize it
       if (source.visible) {
-        this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
+        this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer()))
       }
     },
     removeDataSource (sourceId) {
@@ -734,7 +717,7 @@ export default {
       let mapLayer = constructMapLayer({layer: layer})
       if (geopackage.tables.tiles[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
-        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true, map))
+        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true))
       }
     },
     addGeoPackageFeatureTable (geopackage, map, tableName) {
@@ -753,18 +736,14 @@ export default {
       let mapLayer = constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
       if (geopackage.tables.features[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
-        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false, map))
+        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false))
       }
     },
     async zoomToContent () {
       let self = this
       self.getExtentForVisibleGeoPackagesAndLayers().then((extent) => {
         if (!isNil(extent)) {
-          let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-          let bounds = L.latLngBounds(boundingBox)
-          bounds = bounds.pad(0.05)
-          boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-          self.map.fitBounds(boundingBox, {maxZoom: 20})
+          zoomToExtent(extent)
         }
       })
     },
@@ -820,7 +799,7 @@ export default {
       return overallExtent
     },
     async queryForFeatures (e) {
-      if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing && !this.layerSelectionVisible && !this.showAddFeatureDialog && isNil(this.project.boundingBoxFilterEditing)) {
+      if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing && !this.layerSelectionVisible && !this.showAddFeatureDialog && isNil(this.drawBoundsId) && isNil(this.gridBoundsId)) {
         let tableFeatures = {
           geopackageTables: [],
           sourceTables: []
@@ -956,7 +935,7 @@ export default {
     setupEventHandlers () {
       const self = this
       const checkFeatureCount = throttle(async function (e) {
-        if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.project.boundingBoxFilterEditing)) {
+        if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.drawBoundsId) && isNil(self.gridBoundsId)) {
           let count = 0
           // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
           const geopackageValues = Object.values(this.geopackages)
@@ -1067,7 +1046,7 @@ export default {
           oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
         }
         // update the layer config stored for each base map
-        newBaseMaps.filter(self.offlineBaseMapFilter).forEach(baseMap => {
+        newBaseMaps.filter(self.notReadOnlyBaseMapFilter).forEach(baseMap => {
           if (self.baseMapLayers[baseMap.id]) {
             self.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
             self.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
@@ -1122,8 +1101,8 @@ export default {
             if (isNil(self.baseMapLayers[newBaseMapId])) {
               self.addBaseMap(newBaseMap, self.map)
             } else {
-              // do not update offline base map id
-              if (newBaseMapId !== self.offlineBaseMapId) {
+              // do not update read only base maps id
+              if (!newBaseMap.readonly) {
                 self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
               }
               self.map.addLayer(self.baseMapLayers[newBaseMapId])
@@ -1245,7 +1224,7 @@ export default {
               }
               if (valid && this.dataSourceMapLayers[sourceId].getLayer().visible) {
                 // enabling map layer, if this has been initialized, we are good to go
-                this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer(), map))
+                this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer()))
               }
             } else if (repaintRequired) {
               this.dataSourceMapLayers[sourceId].redraw()
@@ -1415,19 +1394,13 @@ export default {
           }
         }
         this.maxFeatures = updatedProject.maxFeatures
-        if (!isNil(updatedProject.zoomToExtent) && !isEqual(updatedProject.zoomToExtent.key, this.zoomToExtentKey)) {
-          this.zoomToExtentKey = updatedProject.zoomToExtent.key
-          let boundingBox = [[updatedProject.zoomToExtent.extent[1], updatedProject.zoomToExtent.extent[0]], [updatedProject.zoomToExtent.extent[3], updatedProject.zoomToExtent.extent[2]]]
-          let bounds = L.latLngBounds(boundingBox)
-          bounds = bounds.pad(0.05)
-          boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-          this.map.fitBounds(boundingBox, {maxZoom: 20})
-        }
-        if (isNil(updatedProject.boundingBoxFilterEditing)) {
+        if (isNil(updatedProject.boundingBoxFilterEditing) || updatedProject.boundingBoxFilterEditing !== 'manual') {
           this.drawingControl.enableDrawingLinks()
         } else {
           this.drawingControl.disableDrawingLinks()
         }
+
+        this.manualBoundingBoxDialog = !isNil(updatedProject.boundingBoxFilterEditing) && updatedProject.boundingBoxFilterEditing === 'manual'
 
         let clearEditing = true
         if (!isNil(updatedProject.editingFeature)) {
@@ -1458,13 +1431,20 @@ export default {
     window.mapcache.clearEditFeatureGeometry({projectId: this.project.id})
     EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
     EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
+    EventBus.$on(EventBus.EventTypes.ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
+      let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
+      let bounds = L.latLngBounds(boundingBox)
+      bounds = bounds.pad(0.05)
+      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom});
+      this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom});
+    })
     this.maxFeatures = this.project.maxFeatures
     this.registerResizeObserver()
     this.initializeMap()
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS])
+    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO])
   },
   beforeUpdate: function () {
     const self = this

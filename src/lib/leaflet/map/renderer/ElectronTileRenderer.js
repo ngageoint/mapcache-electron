@@ -1,11 +1,8 @@
-import { createUniqueID } from '../../../util/UniqueIDUtilities'
-
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
  */
 export default class ElectronTileRenderer {
   performBoundaryCheck = true
-  tileRequests = {}
   layer
   requestTile
   cancelTileRequest
@@ -52,20 +49,15 @@ export default class ElectronTileRenderer {
 
   /**
    * Cancels tile request
-   * @param coords
+   * @param requestId
    */
-  cancel (coords) {
-    const coordsString = coords.x + '_' + coords.y + '_' + coords.z
-    if (this.tileRequests[coordsString]) {
-      const requestId = this.tileRequests[coordsString].id
-      this.cancelTileRequest(requestId)
-      delete this.tileRequests[coordsString]
-    }
+  cancel (requestId) {
+    this.cancelTileRequest(requestId)
   }
 
-  getTileRequest (coords) {
+  getTileRequest (requestId, coords) {
     return {
-      id: createUniqueID(),
+      id: requestId,
       coords: coords,
       width: 256,
       height: 256
@@ -74,19 +66,17 @@ export default class ElectronTileRenderer {
 
   /**
    * Will make a request to a worker thread that will generate the tile data to keep the UI thread running smoooth.
+   * @param requestId
    * @param coords
    * @param callback
    * @returns {Promise<void>}
    * @override
    */
-  async renderTile (coords, callback) {
-    const coordsString = coords.x + '_' + coords.y + '_' + coords.z
+  async renderTile (requestId, coords, callback) {
     if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, this.layer.extent)) {
       callback(null, null)
     } else {
-      this.tileRequests[coordsString] = this.getTileRequest(coords)
-      this.requestTile(this.tileRequests[coordsString]).then((result) => {
-        delete this.tileRequests[coordsString]
+      this.requestTile(this.getTileRequest(requestId, coords)).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)

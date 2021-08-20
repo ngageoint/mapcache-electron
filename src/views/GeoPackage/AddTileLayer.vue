@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-toolbar-title>{{geopackage.name + ': Add Tile Layer'}}</v-toolbar-title>
+      <v-toolbar-title>{{geopackage.name + ': Add tile layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet v-if="processing" class="mapcache-sheet-content detail-bg">
       <v-card flat tile class="ma-0 pa-0">
@@ -58,7 +58,7 @@
                   autofocus
                   v-model="layerName"
                   :rules="layerNameRules"
-                  label="Layer Name"
+                  label="Layer name"
                   required
                 ></v-text-field>
               </v-form>
@@ -69,13 +69,13 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 2" step="2" color="primary">
-          Select Data Sources
+          Select data sources
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="2">
           <v-card flat tile>
             <v-card-subtitle>
-              Select imagery and features from <b>Data Sources</b> to populate the <b>{{layerName}}</b> tile layer.
+              Select imagery and features from <b>data sources</b> to populate the <b>{{layerName}}</b> tile layer.
             </v-card-subtitle>
             <v-card-text>
               <v-list dense>
@@ -88,10 +88,10 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon class="mr-4">
                           <v-btn icon @click.stop="item.zoomTo">
-                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -136,10 +136,10 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon>
                           <v-btn icon @click.stop="item.zoomTo">
-                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -170,7 +170,7 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 4" step="4" color="primary">
-          Layer rendering order
+          Order layers
           <small class="pt-1">{{selectedGeoPackageLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
         </v-stepper-step>
         <v-stepper-content step="4">
@@ -191,10 +191,10 @@
                   <li v-for="(item) in sortedLayers" :key="item.id" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
                     <v-list-item-icon>
                       <v-btn icon @click.stop="item.zoomTo">
-                        <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                        <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                       </v-btn>
                     </v-list-item-icon>
                     <v-list-item-content>
@@ -210,54 +210,16 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => (project.boundingBoxFilter || Number(step) < 6) && (!project.boundingBoxFilterEditing || (Number(step) === 5 && project.boundingBoxFilterEditingEnabled))]" color="primary">
-          Specify tile bounds
-          <small class="pt-1">{{project.boundingBoxFilterEditing ? 'Setting bounds' : (project.boundingBoxFilter ? 'Bounds set' : 'Bounds not set')}}</small>
+        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => (boundingBoxFilter || Number(step) < 6) && (!isEditingBoundingBox() || (Number(step) === 5))]" color="primary">
+          Specify bounding box
+          <small class="pt-1">{{isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box set' : 'Bounding box not set')}}</small>
         </v-stepper-step>
         <v-stepper-content step="5">
           <v-card flat tile>
             <v-card-subtitle>
-              Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
+              Provide a bounding box to restrict content from the selected data sources and GeoPackage feature layers
             </v-card-subtitle>
-            <v-card-text>
-              <v-row no-gutters justify="end">
-                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditing && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
-                  Clear
-                </v-btn>
-                <v-btn v-if="project.boundingBoxFilterEditing" outlined color="warning" @click.stop="stopEditingBoundingBox">
-                  Finish
-                </v-btn>
-                <v-menu
-                  v-else
-                  top
-                  close-on-click
-                >
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      color="primary"
-                      dark
-                      v-bind="attrs"
-                      v-on="on"
-                    >
-                      {{project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds'}}
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item-group>
-                      <v-list-item @click="() => editBoundingBox('manual')">
-                        <v-list-item-title>Manual</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="setBoundingBoxFilterToExtent">
-                        <v-list-item-title>Use Extent</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="() => editBoundingBox('grid')">
-                        <v-list-item-title>Use Grid</v-list-item-title>
-                      </v-list-item>
-                    </v-list-item-group>
-                  </v-list>
-                </v-menu>
-              </v-row>
-            </v-card-text>
+            <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project" :boundingBox="boundingBoxFilter" :update-bounding-box="updateBoundingBox"></bounding-box-editor>
           </v-card>
           <v-btn
             text
@@ -267,31 +229,20 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 6" step="6" color="primary" :rules="[() => areZoomsValid()]">
-          Zoom Levels and Tile Scaling
+          Specify zoom levels
         </v-stepper-step>
         <v-stepper-content step="6">
           <v-card flat tile>
             <v-card-subtitle>
-              Specify the zoom levels you wish to view your content at. Enable tile scaling to reduce the number of tiles generated.
+              Specify the minimum and maximum zoom levels.
             </v-card-subtitle>
             <v-card-text>
               <v-container>
                 <v-row no-gutters>
-                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Min Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Min zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
                 </v-row>
                 <v-row no-gutters>
-                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max Zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
-                </v-row>
-                <v-row no-gutters justify="start" align="center">
-                  <v-container class="ma-0 pa-0">
-                    <v-switch v-model="tileScaling"
-                              color="primary"
-                              class="v-input--reverse v-input--expand"
-                              hint="Tile scaling reduces the number of tiles by allowing geopackage to search for tiles at nearby zoom levels and scale them"
-                              persistent-hint
-                              label="Tile Scaling">
-                    </v-switch>
-                  </v-container>
+                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
                 </v-row>
               </v-container>
             </v-card-text>
@@ -303,20 +254,56 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable step="7" color="primary">
-          Summary
+        <v-stepper-step editable :complete="step > 7" step="7" color="primary">
+          Enable tile scaling
         </v-stepper-step>
         <v-stepper-content step="7">
           <v-card flat tile>
+            <v-card-subtitle>
+              Tile scaling reduces the number of tiles by searching for tiles at nearby zoom levels and scaling them. This in turn reduces the size of the tile layer, but is at the cost of tile quality.
+            </v-card-subtitle>
+            <v-card-subtitle v-if="geopackageLayers.filter(item => item.type === 'feature' && item.visible).length > 0" class="pt-0 mt-0" style="color:orange;">
+              Scaled feature layers may result in visual artifacts in your tile layer.
+            </v-card-subtitle>
             <v-card-text>
-              <v-card-subtitle>
-                <b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettyEstimatedTileCount}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
-              </v-card-subtitle>
-              <v-card-subtitle class="pt-0 mt-0" v-if="estimatedTileCount > tileWarningThreshold" color="warning">
-                {{'This configuration will generate a large number of tiles. Consider enabling tile scaling, reducing the bounding box, or decreasing the max zoom.'}}
-              </v-card-subtitle>
+              <v-container>
+                <v-row no-gutters justify="space-between" align="center">
+                  <v-col>
+                    <p>Enable tile scaling</p>
+                  </v-col>
+                  <v-col cols="2">
+                    <v-switch color="primary" v-model="scalingEnabled"></v-switch>
+                  </v-col>
+                </v-row>
+                <v-row no-gutters>
+                  <v-card-subtitle class="pa-0 ma-0">
+                    {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated.'}}
+                  </v-card-subtitle>
+                </v-row>
+              </v-container>
             </v-card-text>
           </v-card>
+          <v-btn
+              text
+              color="primary"
+              @click="step = 8">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable step="8" color="primary">
+          Summary
+        </v-stepper-step>
+        <v-stepper-content step="8">
+          <v-card-text class="ma-0 pa-0">
+            <p v-if="(dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0" class="warning-text">At least one layer is required for import.</p>
+            <p v-else-if="boundingBoxFilter == null" class="warning-text">A bounding box is required for import.</p>
+            <v-card-subtitle>
+              {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+            </v-card-subtitle>
+            <v-card-subtitle class="pt-0 mt-0 warning-text" v-if="estimatedTileCount > tileWarningThreshold">
+              {{'This configuration will generate a large number of tiles and may take several minutes to complete. To decrease the number of tiles, you can enable tile scaling, reduce the size of the bounding box, or decrease the maximum zoom level.'}}
+            </v-card-subtitle>
+          </v-card-text>
         </v-stepper-content>
       </v-stepper>
     </v-sheet>
@@ -332,7 +319,7 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="Number(step) === 7 && !done && !processing && project.boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
+          v-if="Number(step) === 8 && !done && !processing && boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
           color="primary"
           text
           @click.stop="addTileLayer">
@@ -353,6 +340,9 @@ import NumberPicker from '../Common/NumberPicker'
 import EventBus from '../../lib/vue/EventBus'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+import BoundingBoxEditor from '../Common/BoundingBoxEditor'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
+import {getTileCount} from '../../lib/util/TileUtilities'
 
 export default {
     props: {
@@ -361,6 +351,7 @@ export default {
       back: Function
     },
     components: {
+      BoundingBoxEditor,
       DataSourceTroubleshooting,
       SourceVisibilitySwitch,
       NumberPicker,
@@ -368,9 +359,10 @@ export default {
     },
     data () {
       return {
+        scalingEnabled: false,
         step: 1,
         layerNameValid: true,
-        layerName: 'New Tile Layer',
+        layerName: 'New tile layer',
         layerNameRules: [
           v => !!v || 'Layer name is required',
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
@@ -381,17 +373,24 @@ export default {
         },
         processing: false,
         done: false,
-        tileScaling: false,
         minZoom: 0,
         maxZoom: 10,
         tileWarningThreshold: 1000,
         configuration: null,
         cancelling: false,
         drag: false,
-        internalRenderingOrder: []
+        internalRenderingOrder: [],
+        boundingBoxFilter: null,
+        dragOptions: {
+          animation: 200,
+          group: 'layers'
+        }
       }
     },
     methods: {
+      prettify (value) {
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      },
       filterErroredLayers (layers) {
         this.selectedDataSourceLayers = layers.filter(layerId => isNil(this.project.sources[layerId].error))
       },
@@ -426,14 +425,18 @@ export default {
           path: this.geopackage.path,
           projectId: this.project.id,
           table: this.layerName,
-          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id]),
-          boundingBoxFilter: this.project.boundingBoxFilter,
+          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => {
+            const source = Object.assign({}, this.project.sources[item.id])
+            source.drawOverlap = item.drawOverlap
+            return source
+          }),
+          boundingBoxFilter: this.boundingBoxFilter,
           geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(item => {
-            return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type}
+            return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
           }),
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
-          tileScaling: this.tileScaling,
+          tileScalingEnabled: this.scalingEnabled,
           renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
         }
 
@@ -448,8 +451,8 @@ export default {
         })
       },
       cancel () {
-        if (!isNil(this.project.boundingBoxFilterEditing)) {
-          window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
+        if (this.isEditingBoundingBox()) {
+          this.$refs.boundingBoxEditor.stopEditing()
         }
         this.back()
       },
@@ -465,33 +468,35 @@ export default {
         }
         this.maxZoom = val
       },
-      setBoundingBoxFilterToExtent () {
-        // eslint-disable-next-line no-unused-vars
-        window.mapcache.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
-          // eslint-disable-next-line no-console
-          console.error('Failed to set bounding box filter to the extent of visible layers.')
-        })
+      isEditingBoundingBox () {
+        if (this.$refs.boundingBoxEditor) {
+          return this.$refs.boundingBoxEditor.isEditing()
+        }
+        return false
       },
-      resetBoundingBox () {
-        window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
-      },
-      editBoundingBox (mode) {
-        window.mapcache.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
-      },
-      stopEditingBoundingBox () {
-        window.mapcache.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+      updateBoundingBox (boundingBox) {
+        this.boundingBoxFilter = boundingBox
       },
       areZoomsValid () {
         return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
       },
-      getEstimatedTileCount () {
-        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.id])
+      getEstimatedTileCount() {
+        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => {
+          const dataSourceCopy = Object.assign({}, this.project.sources[item.id])
+          dataSourceCopy.drawOverlap = item.drawOverlap
+          return dataSourceCopy
+        })
         const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => {
-          return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type}
+          return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
         })
         let tiles = 0
         if (this.areZoomsValid()) {
-          tiles = window.mapcache.estimatedTileCount(this.project.boundingBoxFilter, dataSources, geopackageLayers, this.tileScaling, this.minZoom, this.maxZoom).estimatedNumberOfTiles
+          try {
+            tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom)
+          } catch (e) {
+            console.error(e)
+            tiles = 0
+          }
         }
         return tiles
       },
@@ -519,43 +524,49 @@ export default {
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    window.mapcache.zoomToExtent({projectId, extent})
-                  })
+                  zoomToGeoPackageTable(geopackage, tableName)
                 }, 100)
               })
             })
-            Object.keys(geopackage.tables.features).forEach(table => {
-              const tableName = table
-              const visible = geopackage.tables.features[table].visible
+            const featureTableKeys = Object.keys(geopackage.tables.features)
+            for (let i = 0; i < featureTableKeys.length; i++) {
+              const tableName = featureTableKeys[i]
+              const visible = geopackage.tables.features[tableName].visible
               const geopackageId = geopackage.id
               items.push({
                 id: geopackageId + '_' + tableName,
                 geopackageId: geopackageId,
                 tableName: tableName,
                 title: geopackage.name,
-                subtitle: table,
+                drawOverlap: await window.mapcache.getStyleDrawOverlap(geopackage.path, tableName),
+                subtitle: tableName,
                 visible,
                 type: 'feature',
                 changeVisibility: debounce(() => {
-                  window.mapcache.setGeoPackageFeatureTableVisible({projectId, geopackageId, tableName, visible: !visible})
+                  window.mapcache.setGeoPackageFeatureTableVisible({
+                    projectId,
+                    geopackageId,
+                    tableName,
+                    visible: !visible
+                  })
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    window.mapcache.zoomToExtent({projectId, extent})
-                  })
+                  zoomToGeoPackageTable(geopackage, tableName)
                 }, 100)
               })
-            })
+            }
           }
         }
         return items
       },
       async getDataSourceLayers () {
         const projectId = this.project.id
-        return Object.values(this.project.sources).map(source => {
-          return {
+        const sourceValues = Object.values(this.project.sources)
+        const dataSourceLayers = []
+        for (let i = 0; i < sourceValues.length; i++) {
+          const source = sourceValues[i]
+          const dataSourceLayer = {
             title: source.displayName ? source.displayName : source.name,
             source: source,
             error: source.error,
@@ -569,10 +580,17 @@ export default {
             }, 100),
             zoomTo: debounce((e) => {
               e.stopPropagation()
-              window.mapcache.zoomToExtent({projectId, extent: source.extent})
+              zoomToSource(source)
             }, 100)
           }
-        })
+
+          if (source.pane === 'vector') {
+            dataSourceLayer.drawOverlap = await window.mapcache.getStyleDrawOverlap(source.geopackageFilePath, source.sourceLayerName)
+          }
+
+          dataSourceLayers.push(dataSourceLayer)
+        }
+        return dataSourceLayers
       },
       fireReorderMapLayers: debounce((layers) => {
         EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
@@ -602,6 +620,13 @@ export default {
           return (await this.getDataSourceLayers()).filter(item => item.visible).map(item => item.id)
         },
         default: []
+      },
+      internalRenderingOrder: {
+        async get () {
+          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+          return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+        },
+        default: []
       }
     },
     computed: {
@@ -616,19 +641,8 @@ export default {
           return mapZoom
         }
       }),
-      prettyEstimatedTileCount () {
-        return this.getEstimatedTileCount().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-      },
       estimatedTileCount () {
         return this.getEstimatedTileCount()
-      },
-      boundingBoxText () {
-        let boundingBoxText = 'Not specified'
-        if (!isNil(this.project.boundingBoxFilter)) {
-          const bbox = this.project.boundingBoxFilter
-          boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
-        }
-        return boundingBoxText
       },
       sortedLayers: {
         get () {
@@ -642,12 +656,6 @@ export default {
             newMapRenderingOrder.push(item.id)
           })
           this.fireReorderMapLayers(newMapRenderingOrder)
-        }
-      },
-      dragOptions () {
-        return {
-          animation: 200,
-          group: 'layers'
         }
       }
     },
@@ -668,15 +676,9 @@ export default {
       this.$nextTick(() => {
         this.$refs.layerNameForm.validate()
       })
-      window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
       const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
       this.minZoom = Math.min(20, Math.max(0, mapZoom))
       this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
-      const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-      this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
-    },
-    beforeUnmount () {
-      window.mapcache.resetBoundingBox()
     }
   }
 </script>

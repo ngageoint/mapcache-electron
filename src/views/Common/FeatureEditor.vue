@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      {{isEditing ? 'Edit Feature' : 'New Feature'}}
+      {{isEditing ? 'Edit feature' : 'New feature'}}
     </v-card-title>
     <v-card-text style="max-height: 500px;">
       <v-card-subtitle class="pb-0 mb-0" v-if="editableColumns.length > 0">

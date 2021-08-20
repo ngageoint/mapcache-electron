@@ -32,10 +32,11 @@ export default class WMSLayer extends NetworkTileLayer {
   }
 
   /**
-   * Function for getting the tile request url for this service
+   * Gets tile request data
    * @param coords
+   * @return {{webMercatorBoundingBox: *, srs, bbox, url: string}}
    */
-  getTileUrl (coords) {
+  getTileRequestData (coords) {
     let {x, y, z} = coords
     let requestBoundingBox
     const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(x, y, z)

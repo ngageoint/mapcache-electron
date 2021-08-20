@@ -7,7 +7,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="hideStyleEditor"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title><b class="ml-2">{{tableName}}</b> Style Editor</v-toolbar-title>
+      <v-toolbar-title><v-icon large color="white" class="pr-2">{{mdiPalette}}</v-icon>{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-card flat tile>
@@ -183,7 +183,7 @@
         <v-card v-if="addFieldDialog">
           <v-card-title>
             <v-row no-gutters justify="start" align="center">
-              New Field
+              New field
             </v-row>
           </v-card-title>
           <v-card-text>
@@ -295,10 +295,10 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomToLayer" color="whitesmoke">
-              <img v-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-            <span style="vertical-align: middle;">Feature Layer</span>
+            <span style="vertical-align: middle;">Feature layer</span>
           </p>
         </v-col>
       </v-row>
@@ -476,6 +476,7 @@ import {
   mdiToggleSwitch,
   mdiTrashCan
 } from '@mdi/js'
+import {zoomToGeoPackageTable} from '../../lib/util/ZoomUtilities'
 
 export default {
     props: {
@@ -520,7 +521,7 @@ export default {
         featureLayerField: null,
         indexDialog: false,
         indexingDone: false,
-        indexMessage: 'Indexing Started',
+        indexMessage: 'Indexing started',
         loading: true,
         hasStyleExtension: false,
         deleteDialog: false,
@@ -681,14 +682,14 @@ export default {
       indexTable () {
         let _this = this
         this.indexingDone = false
-        this.indexMessage = 'Indexing Started'
+        this.indexMessage = 'Indexing started'
         this.indexDialog = true
         setTimeout(function () {
           _this.indexMessage = 'Indexing...'
           window.mapcache.indexFeatureTable(_this.geopackage.path, _this.tableName, true).then(function () {
             setTimeout(function () {
               _this.indexingDone = true
-              _this.indexMessage = 'Indexing Completed'
+              _this.indexMessage = 'Indexing completed'
               window.mapcache.updateFeatureTable({projectId: _this.projectId, geopackageId: _this.geopackage.id, tableName: _this.tableName})
             }, 2000)
           })
@@ -706,9 +707,8 @@ export default {
         this.featureColumnNames.splice(this.featureColumnNames.indexOf(this.featureLayerField.name), 1, name)
         this.featureLayerField.name = name
       },
-      async zoomToLayer () {
-        const extent = await window.mapcache.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        window.mapcache.zoomToExtent({projectId: this.projectId, extent})
+      zoomToLayer () {
+        zoomToGeoPackageTable(this.geopackage, this.tableName)
       },
       addField () {
         this.addFieldDialog = false

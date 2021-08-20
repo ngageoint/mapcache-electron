@@ -3,7 +3,7 @@
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{mdiAlertCircle}}</v-icon>{{initialDisplayName + ' Troubleshooting'}}
+          <v-icon color="warning" class="pr-2">{{mdiAlertCircle}}</v-icon>{{initialDisplayName + ' troubleshooting'}}
         </v-card-title>
         <v-card-text>
           {{troubleShootingMessage}}

@@ -47,12 +47,12 @@ export default class VectorLayer extends Layer {
     return ['count'].concat(super.getRepaintFields())
   }
 
-  async renderTile (coords, callback) {
-    return this.renderer.renderTile(coords, callback)
+  async renderTile (requestId, coords, callback) {
+    return this.renderer.renderTile(requestId, coords, callback)
   }
 
-  cancel (coords) {
-    this.renderer.cancel(coords)
+  cancel (requestId) {
+    this.renderer.cancel(requestId)
   }
 
   update (configuration = {}) {

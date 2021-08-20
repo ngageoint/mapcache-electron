@@ -5,23 +5,23 @@
       max-width="400"
       persistent
       @keydown.esc="showPointStyleEditor = false">
-      <m-b-style-editor title="Point Style" :geometryType="1" :styleObject="configuration.pointStyle" :save="updatePointStyle" :close="() => {showPointStyleEditor = false}"></m-b-style-editor>
+      <m-b-style-editor title="Point style" :geometryType="1" :styleObject="configuration.pointStyle" :save="updatePointStyle" :close="() => {showPointStyleEditor = false}"></m-b-style-editor>
     </v-dialog>
     <v-dialog
       v-model="showLineStringStyleEditor"
       max-width="400"
       persistent
       @keydown.esc="showLineStringStyleEditor = false">
-      <m-b-style-editor title="Line Style" :geometryType="2" :styleObject="configuration.lineStyle" :save="updateLineStringStyle" :close="() => {showLineStringStyleEditor = false}"></m-b-style-editor>
+      <m-b-style-editor title="Line style" :geometryType="2" :styleObject="configuration.lineStyle" :save="updateLineStringStyle" :close="() => {showLineStringStyleEditor = false}"></m-b-style-editor>
     </v-dialog>
     <v-dialog
       v-model="showPolygonStyleEditor"
       max-width="400"
       persistent
       @keydown.esc="showPolygonStyleEditor = false">
-      <m-b-style-editor title="Polygon Style" :geometryType="3" :styleObject="configuration.polygonStyle" :save="updatePolygonStyle" :close="() => {showPolygonStyleEditor = false}"></m-b-style-editor>
+      <m-b-style-editor title="Polygon style" :geometryType="3" :styleObject="configuration.polygonStyle" :save="updatePolygonStyle" :close="() => {showPolygonStyleEditor = false}"></m-b-style-editor>
     </v-dialog>
-    <v-subheader>Vector Styling</v-subheader>
+    <v-subheader>Vector styling</v-subheader>
     <v-list-item class="pt-2">
       <v-list-item-content>
         <v-row no-gutters justify="space-between" align="center">

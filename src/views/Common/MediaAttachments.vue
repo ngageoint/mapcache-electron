@@ -54,9 +54,9 @@
     </v-dialog>
     <v-card-title>
       <v-icon color="primary" class="pr-2">{{mdiPaperclip}}</v-icon>
-      Feature Media Attachments
+      Feature media attachments
       <v-spacer/>
-      <v-btn :loading="attaching" text color="primary" @click.stop="attach"><v-icon small >{{mdiPlus}}</v-icon> Attachment</v-btn>
+      <v-btn :loading="attaching" text color="primary" @click.stop="attach"><v-icon small >{{mdiPlus}}</v-icon> attachment</v-btn>
       <v-btn icon @click="toggleFullScreen"><v-icon>{{isFullScreen ? mdiFullscreenExit : mdiFullscreen}}</v-icon></v-btn>
     </v-card-title>
     <v-card-text class="pb-0" style="height: calc(100% - 114px)">
@@ -204,7 +204,7 @@ export default {
       },
       async downloadAttachment () {
         window.mapcache.showSaveDialog({
-          title: 'Save Attachment',
+          title: 'Save attachment',
           defaultPath: 'attachment'
         }).then(async ({canceled, filePath}) => {
           if (!canceled && !isNil(filePath)) {

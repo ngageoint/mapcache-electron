@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-toolbar-title>Add Data Source from URL</v-toolbar-title>
+      <v-toolbar-title>Add data source from url</v-toolbar-title>
     </v-toolbar>
     <v-dialog
       v-model="deleteUrlDialog"
@@ -16,10 +16,10 @@
       <v-card v-if="deleteUrlDialog">
         <v-card-title>
           <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
-          Delete URL
+          Delete url
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete {{urlToDelete}} from your saved URLs?
+          Are you sure you want to delete {{urlToDelete}} from your saved urls?
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -43,9 +43,9 @@
           Name the data source
           <small class="pt-1">{{dataSourceName}}</small>
         </v-stepper-step>
-        <v-stepper-content step="1">
+        <v-stepper-content step="1" class="mt-0 pt-0">
           <v-card flat tile>
-            <v-card-subtitle>
+            <v-card-subtitle class="mt-0 pt-0">
               Specify a name for the new data source.
             </v-card-subtitle>
             <v-card-text>
@@ -54,7 +54,7 @@
                   autofocus
                   v-model="dataSourceName"
                   :rules="dataSourceNameRules"
-                  label="Data Source Name"
+                  label="Data source name"
                   required
                 ></v-text-field>
               </v-form>
@@ -65,13 +65,13 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 2" step="2" :rules="[() => dataSourceUrlValid]" color="primary">
-          Specify URL
-          <small class="pt-1">{{dataSourceUrl}}</small>
+          Specify url
+          <small v-if="dataSourceUrlValid && connected" class="pt-1">{{dataSourceUrl + ' (' + getServiceTypeName(selectedServiceType) + ')'}}</small>
         </v-stepper-step>
-        <v-stepper-content step="2">
+        <v-stepper-content step="2" class="mt-0 pt-0">
           <v-card flat tile>
-            <v-card-subtitle>
-              Specify the data source's URL.
+            <v-card-subtitle class="mt-0 pt-0">
+              Specify the data source's url.
             </v-card-subtitle>
             <v-card-text>
               <v-form v-on:submit.prevent ref="urlForm" v-model="dataSourceUrlValid">
@@ -157,6 +157,44 @@
             color="primary"
           ></v-progress-circular>
         </v-stepper-content>
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 2" editable :complete="step > 3" step="3" color="primary">
+          {{'Specify zoom levels'}}
+        </v-stepper-step>
+        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 2" step="3">
+          <v-card flat tile>
+            <v-card-subtitle>
+              Specify the xyz tile service's minimum and maximum zoom levels.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-container>
+                <v-row no-gutters>
+                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Minimum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+                </v-row>
+                <v-row no-gutters>
+                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Maximum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+                </v-row>
+              </v-container>
+            </v-card-text>
+          </v-card>
+          <v-btn class="mb-2" text color="primary" @click="step = 4">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 2" editable :complete="step > 4" :rules="[() => !isEditingBoundingBox() || (Number(step) === 4)]" step="4" color="primary" >
+          Specify bounding box (optional)
+          <small class="pt-1">{{isEditingBoundingBox() ? 'Editing bounding box' : (xyzBoundingBox ? 'Bounding box applied' : 'No bounding box')}}</small>
+        </v-stepper-step>
+        <v-stepper-content v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && selectedServiceType === 2" step="4">
+          <v-card flat tile>
+            <v-card-subtitle>
+              Restrict your xyz tile requests to a specified area of the map.
+            </v-card-subtitle>
+            <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="xyzBoundingBox" :update-bounding-box="updateXYZBoundingBox"></bounding-box-editor>
+          </v-card>
+          <v-btn class="mb-2" text color="primary" @click="step = 5">
+            Continue
+          </v-btn>
+        </v-stepper-content>
         <v-stepper-step v-if="!loading && (serviceInfo !== null && serviceInfo !== undefined) && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 3" step="3" color="primary" :rules="[() => (selectedServiceType !== 0 || (selectedServiceType === 0 && serviceInfo.format !== undefined)) && serviceLayers.length > 0]">
           {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers'}}
           <small v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="pt-1">No supported image formats</small>
@@ -169,8 +207,8 @@
               <h4 class="primary--text">{{serviceInfo.title}}</h4>
               <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{serviceInfo.abstract}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.version">{{supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version}}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{'Contact Person: ' + serviceInfo.contactName}}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact Organization:' + serviceInfo.contactOrg}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{'Contact person: ' + serviceInfo.contactName}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact organization:' + serviceInfo.contactOrg}}</p>
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
             <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
@@ -248,8 +286,9 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :step="summaryStep" color="primary">
+        <v-stepper-step editable :step="summaryStep" color="primary" :rules="[() => connected || step !== summaryStep]">
           Summary
+          <small v-if="!connected && step === summaryStep" class="pt-1">Connection not verified.</small>
         </v-stepper-step>
         <v-stepper-content :step="summaryStep">
           <v-card flat tile>
@@ -263,9 +302,9 @@
               <p v-if="!loading && selectedServiceType === 3 && !error && selectedDataSourceLayers.length > 0">
                 <b>{{selectedDataSourceLayers.length}}</b> {{' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
               </p>
-              <p v-if="!loading && selectedServiceType === 2 && !error">{{'XYZ layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}</p>
+              <p v-if="!loading && selectedServiceType === 2 && !error && connected">{{'XYZ layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}</p>
               <h4 v-if="error" class="warning--text">{{error}}</h4>
-              <h4 v-if="!dataSourceUrlValid || (selectedDataSourceLayers.length === 0 && selectedServiceType !== 2)" class="warning--text">Nothing to import.</h4>
+              <h4 v-if="!dataSourceUrlValid || !connected || (selectedDataSourceLayers.length === 0 && selectedServiceType !== 2)" class="warning--text">Nothing to import.</h4>
             </v-card-text>
           </v-card>
         </v-stepper-content>
@@ -305,6 +344,8 @@
   import {SERVICE_TYPE, DEFAULT_TIMEOUT, getServiceName, isAuthenticationError, isServerError, isTimeoutError} from '../../lib/network/HttpUtilities'
   import { testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
   import reverse from 'lodash/reverse'
+  import NumberPicker from '../Common/NumberPicker'
+  import BoundingBoxEditor from '../Common/BoundingBoxEditor'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -331,7 +372,7 @@
         }
       },
       importReady () {
-        return this.step === this.summaryStep && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === SERVICE_TYPE.XYZ)
+        return this.step === this.summaryStep && this.connected && this.dataSourceNameValid && !this.isEditingBoundingBox() && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayers.length > 0) || this.selectedServiceType === SERVICE_TYPE.XYZ)
       },
       dragOptions () {
         return {
@@ -342,6 +383,7 @@
     },
     data () {
       return {
+        xyzBoundingBox: undefined,
         mdiTrashCan: mdiTrashCan,
         supportedImageFormats: window.mapcache.supportedImageFormats,
         step: 1,
@@ -384,10 +426,14 @@
         subdomainsValid: true,
         withCredentials: false,
         connected: false,
-        connectionId: null
+        connectionId: null,
+        minZoom: 0,
+        maxZoom: 20
       }
     },
     components: {
+      BoundingBoxEditor,
+      NumberPicker,
       draggable
     },
     methods: {
@@ -413,6 +459,27 @@
           })
         })
       },
+      updateMinZoom (val) {
+        if (val > this.maxZoom) {
+          this.maxZoom = val
+        }
+        this.minZoom = val
+        if (this.previewing) {
+          this.sendLayerPreview()
+        }
+      },
+      updateMaxZoom (val) {
+        if (val < this.minZoom) {
+          this.minZoom = val
+        }
+        this.maxZoom = val
+        if (this.previewing) {
+          this.sendLayerPreview()
+        }
+      },
+      getServiceTypeName (serviceType) {
+        return getServiceName(serviceType)
+      },
       processServiceInfo (serviceInfo, error, withCredentials, serviceType) {
         if (!isNil(error)) {
           this.authValid = false
@@ -431,13 +498,13 @@
           this.authValid = true
           this.accessDeniedOrForbidden = isAuthenticationError(error)
           if (!isNil(serviceInfo)) {
-            if (serviceType === SERVICE_TYPE.WMS) {
+            if (serviceType === SERVICE_TYPE.WMS || serviceType === SERVICE_TYPE.XYZ) {
               this.summaryStep = 5
             } else if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS) {
               this.summaryStep = 4
-            } else {
-              this.summaryStep = 3
             }
+          } else {
+            this.summaryStep = 3
           }
           this.connected = true
           this.serviceLayers = serviceInfo.serviceLayers || []
@@ -455,6 +522,9 @@
       close () {
         this.previewing = false
         window.mapcache.clearPreviewLayer(({projectId: this.project.id}))
+        if (this.isEditingBoundingBox()) {
+          this.$refs.boundingBoxEditor.stopEditing()
+        }
         this.$nextTick(() => {
           this.back()
         })
@@ -524,7 +594,10 @@
           separateLayers: false,
           subdomains: this.requiresSubdomains ? this.subdomainText.split(',') : undefined,
           name: this.dataSourceName,
-          withCredentials: this.withCredentials
+          withCredentials: this.withCredentials,
+          minZoom: this.minZoom,
+          maxZoom: this.maxZoom,
+          extent: this.xyzBoundingBox
         }
         this.resetURLValidation()
         this.close()
@@ -582,7 +655,7 @@
             const version = this.sortedLayers[0].version
             layer = new WMSLayer({id: window.mapcache.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format, withCredentials: this.withCredentials, srs})
           } else if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
-            layer = new XYZServerLayer({id: window.mapcache.createUniqueID(), filePath: window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false, withCredentials: this.withCredentials})
+            layer = new XYZServerLayer({id: window.mapcache.createUniqueID(), filePath: window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false, withCredentials: this.withCredentials, minZoom: this.minZoom, maxZoom: this.maxZoom, extent: this.xyzBoundingBox})
           }
         }
         if (!isNil(layer)) {
@@ -590,7 +663,19 @@
         } else {
           this.previewing = false
         }
-      }
+      },
+      isEditingBoundingBox () {
+        if (this.$refs.boundingBoxEditor) {
+          return this.$refs.boundingBoxEditor.isEditing()
+        }
+        return false
+      },
+      updateXYZBoundingBox (boundingBox) {
+        this.xyzBoundingBox = boundingBox
+        if (this.previewing) {
+          this.sendLayerPreview()
+        }
+      },
     },
     mounted () {
       this.resetURLValidation()
@@ -617,6 +702,7 @@
           this.loading = false
           this.error = null
           this.previewing = false
+          this.xyzBoundingBox = undefined
           this.sortedLayers = []
           this.sortedRenderingLayers = []
           this.serviceInfo = null

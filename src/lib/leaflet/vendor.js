@@ -11,9 +11,9 @@ import EventBus from '../vue/EventBus'
 import { getAxiosRequestScheduler, testServiceConnection } from '../network/ServiceConnectionUtils'
 import { DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, SERVICE_TYPE, isTimeoutError, TIMEOUT_STATUS, getAuthenticationMethod } from '../network/HttpUtilities'
 import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
-import { tileBboxCalculator } from '../util/XYZTileUtilities'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
+import { getIntersection } from '../util/XYZTileUtilities'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -32,49 +32,41 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     this.layer = options.layer
     this.id = options.layer.id
     this.maxFeatures = options.maxFeatures
-    this.unloadListener = (event) => {
-      this.layer.cancel(event.coords)
-      let ctx = event.tile.getContext('2d')
-      ctx.clearRect(0, 0, event.tile.width, event.tile.height)
-    }
-    this.on('tileunload', this.unloadListener)
     const renderer = constructRenderer(this.layer, false)
     if (renderer.updateMaxFeatures != null) {
       renderer.updateMaxFeatures(this.maxFeatures)
     }
     this.layer.setRenderer(renderer)
+    const unloadListener = (event) => {
+      event.tile.onload = null
+      event.tile.src = ''
+      if (!isNil(event.tile.requestId)) {
+        this.layer.cancel(event.tile.requestId)
+      }
+    }
+    this.on('tileunload', unloadListener)
   },
   createTile: function (coords, done) {
-    let tile = L.DomUtil.create('canvas', 'leaflet-tile')
-    let size = this.getTileSize()
-    tile.width = size.x
-    tile.height = size.y
-    try {
-      this.layer.renderTile(coords, (err, base64Image) => {
-        if (err) {
-          done(err, tile)
-        } else if (base64Image != null) {
-          let image = new Image()
-          image.onload = () => {
-            let ctx = tile.getContext('2d')
-            ctx.clearRect(0, 0, tile.width, tile.height)
-            ctx.drawImage(image, 0, 0)
-            done(null, tile)
-          }
-          image.onerror = (e) => {
-            done(e, tile)
-          }
-          image.src = base64Image
-        } else {
-          done(new Error('No tile data returned.'), tile)
+    const requestId = window.mapcache.createUniqueID()
+    const tile = document.createElement('img')
+    tile.requestId = requestId
+    tile.alt = ''
+    tile.setAttribute('role', 'presentation')
+    this.layer.renderTile(requestId, coords, (err, base64Image) => {
+      if (!isNil(err)) {
+        done(err, tile)
+      } else if (base64Image != null) {
+        tile.onload = () => {
+          done(null, tile)
         }
-      })
-      // eslint-disable-next-line no-unused-vars
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to render tile.')
-      done(e, tile)
-    }
+        tile.onerror = (e) => {
+          done(e, tile)
+        }
+        tile.src = base64Image
+      } else {
+        done(new Error('no data'), tile)
+      }
+    })
     return tile
   },
   updateMaxFeatures: function (maxFeatures) {
@@ -88,9 +80,6 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
   update: function (layer) {
     this.setOpacity(!isNil(layer.opacity) ? layer.opacity : 1.0)
     this.layer.update(layer)
-  },
-  close: function () {
-    this.off('tileunload', this.unloadListener)
   }
 })
 
@@ -100,6 +89,7 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
 L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   initialize: function (options) {
     L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
+    this.activeTileRequests = {}
     this.layer = options.layer
     this.id = options.layer.id
     this.isPreview = !isNil(options.isPreview) ? options.preview : false
@@ -109,12 +99,20 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     this.axiosRequestScheduler = getAxiosRequestScheduler(this.layer.rateLimit || DEFAULT_RATE_LIMIT)
     this.layer.setRenderer(constructRenderer(this.layer, false))
     this.requiresReprojection = !isNil(this.layer.srs) && !this.layer.srs.endsWith(':3857')
-  },
-  getLayer () {
-    return this.layer
-  },
-  hasError () {
-    return this.error !== null && this.error !== undefined
+    this.on('tileunload', (event) => {
+      event.tile.onload = null
+      event.tile.src = ''
+      if (!isNil(event.tile.requestId)) {
+        const tileRequest = this.activeTileRequests[event.tile.requestId]
+        if (!isNil(tileRequest)) {
+          tileRequest.cancel()
+        }
+        delete this.activeTileRequests[event.tile.requestId]
+        if (this.requiresReprojection) {
+          window.mapcache.cancelTileReprojectionRequest(event.tile.requestId)
+        }
+      }
+    })
   },
   async testConnection (ignoreTimeoutError = true) {
     const options = {
@@ -144,6 +142,12 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
     }
   },
+  getLayer () {
+    return this.layer
+  },
+  hasError () {
+    return this.error != null
+  },
   setError (error) {
     if (error.status === TIMEOUT_STATUS) {
       this.error = error
@@ -168,64 +172,192 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
     }
   },
-  createTile (coords, done) {
-    let img = document.createElement('img')
-    if (!this.hasError()) {
-      const cancellableTileRequest = new CancellableTileRequest()
-      const tileProjectionRequestId = window.mapcache.createUniqueID()
-      const unloadListener = (event) => {
-        if (coords.z === event.coords.z && coords.x === event.coords.x && coords.y === event.coords.y) {
-          cancellableTileRequest.cancel()
-          window.mapcache.cancelTileReprojectionReqeust(tileProjectionRequestId)
+  /**
+   * Applies the clipping region to the canvas context, prior to drawing the image
+   * @param ctx
+   * @param clippingRegion
+   */
+  clipContextToExtent (ctx, clippingRegion) {
+    const {
+      intersection,
+      tileBounds,
+      tileHeight,
+      tileWidth
+    } = clippingRegion
+
+    const getX = (lng, mathFunc) => {
+      return mathFunc(256.0 / tileWidth * (lng - tileBounds.minLongitude))
+    }
+    const getY = (lat, mathFunc) => {
+      return mathFunc(256.0 / tileHeight * (tileBounds.maxLatitude - lat))
+    }
+    const minX = Math.max(0, getX(intersection.minLongitude, Math.floor) - 1)
+    const maxX = Math.min(256, getX(intersection.maxLongitude, Math.ceil) + 1)
+    const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
+    const maxY = Math.min(256, getY(intersection.minLatitude, Math.floor) + 1)
+    ctx.beginPath()
+    ctx.rect(minX, minY, maxX - minX, maxY - minY)
+    ctx.clip()
+  },
+  /**
+   * Determines the layer's clipping region
+   * @param coords
+   * @return {{intersection: (null|{maxLongitude: number, minLatitude: number, minLongitude: number, maxLatitude: number}), tileWidth: number, tileBounds: {maxLongitude, minLatitude, minLongitude, maxLatitude}, tileHeight: number}}
+   */
+  getClippingRegion (coords) {
+    const bounds = this._tileCoordsToBounds(coords)
+    const tileBounds = {
+      minLongitude: bounds._southWest.lng,
+      maxLongitude: bounds._northEast.lng,
+      minLatitude: bounds._southWest.lat,
+      maxLatitude: bounds._northEast.lat,
+    }
+
+    const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
+    const tileHeight = tileBounds.maxLatitude - tileBounds.minLatitude
+
+    let layerBounds = {
+      minLongitude: this.layer.extent[0],
+      maxLongitude: this.layer.extent[2],
+      minLatitude: this.layer.extent[1],
+      maxLatitude: this.layer.extent[3],
+    }
+
+    // clips tile so that only the intersection of the tile and the user specified bounds are drawn
+    return {
+      intersection: getIntersection(tileBounds, layerBounds),
+      tileBounds,
+      tileWidth,
+      tileHeight
+    }
+  },
+  /**
+   * Clips an image if the tile is not fully enclosed in the layer's bounds
+   * @param dataUrl
+   * @param coords
+   * @return {Promise<unknown>}
+   */
+  clipImage (dataUrl, coords) {
+    return new Promise ((resolve, reject) => {
+      const clippingRegion = this.getClippingRegion(coords)
+      if (clippingRegion.intersection != null) {
+        const image = new Image()
+        const canvas = document.createElement('canvas')
+        const size = this.getTileSize()
+        canvas.width = size.x
+        canvas.height = size.y
+        image.onload = () => {
+          const ctx = canvas.getContext('2d')
+          ctx.clearRect(0, 0, size.x, size.y)
+          this.clipContextToExtent(ctx, clippingRegion)
+          ctx.drawImage(image, 0, 0)
+          resolve(canvas.toDataURL())
         }
+        image.onerror = (e) => {
+          reject(e)
+        }
+        image.src = dataUrl
+      } else {
+        resolve(dataUrl)
       }
-      this.on('tileunload', unloadListener)
-      const { url, bbox, srs, webMercatorBoundingBox } = this.layer.getTileUrl(coords)
+    })
+  },
+  /**
+   * Loads the dataUrl into the image.
+   * @param dataUrl
+   * @param coords
+   * @param tile
+   * @param done
+   */
+  loadImage (dataUrl, coords, tile, done) {
+    tile.onload = () => {
+      done(null, tile)
+    }
+    tile.onerror = (e) => {
+      done(e, tile)
+    }
+    tile.src = dataUrl
+  },
+  /**
+   * Handles reprojecting the tile into 3857,
+   * @param requestId
+   * @param dataUrl
+   * @param bbox
+   * @param srs
+   * @param size
+   * @param webMercatorBoundingBox
+   * @return {Promise<unknown>}
+   */
+  async reprojectTile (requestId, dataUrl, bbox, srs, size, webMercatorBoundingBox) {
+    return new Promise((resolve, reject) => {
+      if (this.requiresReprojection) {
+        window.mapcache.requestTileReprojection({
+          id: requestId,
+          sourceTile: dataUrl,
+          sourceBoundingBox: bbox,
+          sourceSrs: srs,
+          targetSrs: 'EPSG:3857',
+          targetWidth: size.x,
+          targetHeight: size.y,
+          targetBoundingBox: webMercatorBoundingBox
+        }).then(result => {
+          resolve(result.base64Image)
+        }).catch(e => {
+          reject(e)
+        })
+      } else {
+        resolve(dataUrl)
+      }
+    })
+  },
+  createTile (coords, done) {
+    // create the tile img
+    const requestId = window.mapcache.createUniqueID()
+    const tile = document.createElement('img')
+    tile.requestId = requestId
+    tile.alt = ''
+    tile.setAttribute('role', 'presentation')
+
+    // if this source is errored, do not allow tile requests
+    if (this.hasError()) {
+      done(null, null)
+    } else {
+      const size = this.getTileSize()
+      const cancellableTileRequest = new CancellableTileRequest()
+      this.activeTileRequests[requestId] = cancellableTileRequest
+      // get tile request data
+      const { url, bbox, srs, webMercatorBoundingBox } = this.layer.getTileRequestData(coords)
       cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeout, this.layer.withCredentials).then(({dataUrl, error}) => {
         if (!isNil(error) && !this.isPreview) {
           this.setError(error)
-        }
-        if (!isNil(dataUrl) && !dataUrl.startsWith('data:text/html')) {
-          if (this.requiresReprojection) {
-            window.mapcache.requestTileReprojection({
-              id: tileProjectionRequestId,
-              sourceTile: dataUrl,
-              sourceBoundingBox: bbox,
-              sourceSrs: srs,
-              targetSrs: 'EPSG:3857',
-              targetWidth: 256,
-              targetHeight: 256,
-              targetBoundingBox: webMercatorBoundingBox
-            }).then(result => {
-              this.off('tileunload', unloadListener)
-              img.onload = () => {
-                done(error, img)
-              }
-              img.src = result.base64Image
+          done(error, tile)
+        } else if (!isNil(dataUrl) && !dataUrl.startsWith('data:text/html')) {
+          this.reprojectTile(requestId, dataUrl, bbox, srs, size, webMercatorBoundingBox).then(reprojectedImage => {
+            this.clipImage(reprojectedImage, coords).then(clippedImage => {
+              this.loadImage(clippedImage, coords, tile, done)
             }).catch(e => {
-              this.off('tileunload', unloadListener)
-              done(e, img)
+              done(e, tile)
             })
-          } else {
-            this.off('tileunload', unloadListener)
-            img.onload = () => {
-              done(error, img)
-            }
-            img.src = dataUrl
-          }
+          }).catch(e => {
+            done(e, tile)
+          })
         } else {
-          error = new Error('no data')
-          this.off('tileunload', unloadListener)
-          done(error, img)
+          done(new Error('no data'), tile)
         }
+      }).catch(e => {
+        done(e, tile, done)
+      }).finally(() => {
+        delete this.activeTileRequests[requestId]
       })
     }
-    return img
+    return tile
   },
   update: function (layer) {
     const rateLimitChanged = layer.rateLimit !== this.layer.rateLimit
     const timeoutChanged = layer.timeoutMs !== this.layer.timeoutMs
     const retryChanged = layer.retryAttempts !== this.layer.retryAttempts
+    const minZoomChanged = layer.minZoom !== this.layer.minZoom
+    const maxZoomChanged = layer.maxZoom !== this.layer.maxZoom
     if (rateLimitChanged && !isNil(layer.rateLimit)) {
       if (!isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.destroy()
@@ -238,7 +370,22 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     if (timeoutChanged && !isNil(layer.timeoutMs)) {
       this.timeout = layer.timeoutMs
     }
-    this.setOpacity(!isNil(layer.opacity) ? layer.opacity : 1.0)
+    if (!isNil(this._map) && (minZoomChanged || maxZoomChanged)) {
+      this.options.minZoom = layer.minZoom
+      this.options.maxZoom = layer.maxZoom
+      this._map._removeZoomLimit(this)
+      this._map._addZoomLimit(this)
+      const currentZoom = this._map.getZoom()
+
+      if (currentZoom < layer.minZoom || currentZoom > layer.maxZoom) {
+        this._removeAllTiles()
+      } else {
+        this.redraw()
+      }
+    }
+    if (this.options.opacity !== layer.opacity) {
+      this.setOpacity(!isNil(layer.opacity) ? layer.opacity : 1.0)
+    }
     if (isNil(layer.error)) {
       this.error = null
     }
@@ -249,7 +396,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
 L.GridLayer.TileSelectionLayer = L.GridLayer.extend({
   initialize: function (options) {
     L.GridLayer.prototype.initialize.call(this, options)
-    this.projectId = options.projectId
+    this.currentId = options.id
   },
   createTile: function (coords) {
     const self = this
@@ -269,10 +416,9 @@ L.GridLayer.TileSelectionLayer = L.GridLayer.extend({
     L.DomEvent.on(tile, 'click', function (e) {
       e.preventDefault()
       e.stopPropagation()
-      let boundingBox = tileBboxCalculator(coords.x, coords.y, coords.z)
-      if (self.projectId !== null && self.projectId !== undefined) {
-        window.mapcache.setBoundingBoxFilter({projectId: self.projectId, boundingBoxFilter: [boundingBox.west, boundingBox.south, boundingBox.east, boundingBox.north]})
-        window.mapcache.setBoundingBoxFilterEditingDisabled({projectId: self.projectId})
+      const tileBounds = self._tileCoordsToBounds(coords)
+      if (self.currentId != null) {
+        EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(self.currentId), [tileBounds._southWest.lng, tileBounds._southWest.lat, tileBounds._northEast.lng, tileBounds._northEast.lat])
       }
     })
     L.DomEvent.on(tile, 'mousedown', function () {

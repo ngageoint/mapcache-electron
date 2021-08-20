@@ -14,8 +14,8 @@ export default class ElectronGeoPackageVectorRenderer extends ElectronTileRender
     this.maxFeatures = maxFeatures
   }
 
-  getTileRequest (coords) {
-    const request = super.getTileRequest(coords)
+  getTileRequest (requestId, coords) {
+    const request = super.getTileRequest(requestId, coords)
     return Object.assign(request, {
       tableName: this.layer.sourceLayerName,
       maxFeatures: this.maxFeatures,

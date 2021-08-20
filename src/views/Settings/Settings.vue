@@ -39,10 +39,10 @@
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
-      <edit-text-modal autofocus :icon="mdiPencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project Name" :on-save="saveProjectName"/>
+      <edit-text-modal autofocus :icon="mdiPencil" title="Rename project" :rules="projectNameRules" save-text="Rename" :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px" font-weight="bold" label="Project name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
-      <edit-number-modal autofocus :icon="mdiPencil" title="Edit Max Features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
+      <edit-number-modal autofocus :icon="mdiPencil" title="Edit max features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-dialog v-model="helpDialog" max-width="500">
       <help :close="() => {helpDialog = false}"></help>
@@ -94,14 +94,14 @@
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="savedUrlDialog = true">
           <v-list-item-content>
-            <v-list-item-title>Saved URLs</v-list-item-title>
-            <v-list-item-subtitle>Manage saved URLs</v-list-item-subtitle>
+            <v-list-item-title>Saved urls</v-list-item-title>
+            <v-list-item-subtitle>Manage saved urls</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="baseMapsDialog = true">
           <v-list-item-content>
-            <v-list-item-title>Base Maps</v-list-item-title>
-            <v-list-item-subtitle>Manage Base Maps</v-list-item-subtitle>
+            <v-list-item-title>Base maps</v-list-item-title>
+            <v-list-item-subtitle>Manage base maps</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
       </v-list>

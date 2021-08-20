@@ -29,7 +29,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-card-title>{{isNew ? 'Create Icon' : 'Edit Icon'}}</v-card-title>
+    <v-card-title>{{isNew ? 'Create icon' : 'Edit icon'}}</v-card-title>
     <v-card-text>
       <v-form v-on:submit.prevent v-model="formValid">
         <v-row no-gutters>
@@ -64,13 +64,13 @@
         </v-row>
         <v-row no-gutters align="center">
           <v-col cols="5">
-            <v-text-field v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number" label="width" :step="Number(1)" @keydown="handleKeyDown($event)"/>
+            <v-text-field v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number" label="Width (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
           <v-col cols="2">
             <v-btn icon @click="toggleAspectRatioLock" :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'"><v-icon>{{aspectRatioLock ? mdiLink : mdiLinkOff}}</v-icon></v-btn>
           </v-col>
           <v-col cols="5">
-            <v-text-field v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules"  type="number" label="height" :step="Number(1)" @keydown="handleKeyDown($event)"/>
+            <v-text-field v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules"  type="number" label="Height (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
         </v-row>
         <v-row no-gutters class="pt-2">
@@ -178,15 +178,15 @@ export default {
       },
       anchorLocations () {
         let anchorLocations = []
-        anchorLocations.push({text: 'Bottom Center', value: 0})
-        anchorLocations.push({text: 'Bottom Left', value: 1})
-        anchorLocations.push({text: 'Bottom Right', value: 2})
-        anchorLocations.push({text: 'Top Center', value: 3})
-        anchorLocations.push({text: 'Top Left', value: 4})
-        anchorLocations.push({text: 'Top Right', value: 5})
+        anchorLocations.push({text: 'Bottom center', value: 0})
+        anchorLocations.push({text: 'Bottom left', value: 1})
+        anchorLocations.push({text: 'Bottom right', value: 2})
+        anchorLocations.push({text: 'Top center', value: 3})
+        anchorLocations.push({text: 'Top left', value: 4})
+        anchorLocations.push({text: 'Top right', value: 5})
         anchorLocations.push({text: 'Center', value: 6})
-        anchorLocations.push({text: 'Center Left', value: 7})
-        anchorLocations.push({text: 'Center Right', value: 8})
+        anchorLocations.push({text: 'Center left', value: 7})
+        anchorLocations.push({text: 'Center right', value: 8})
         return anchorLocations
       }
     },
@@ -323,7 +323,7 @@ export default {
         window.mapcache.showOpenDialog({
           filters: [
             {
-              name: 'Image Files',
+              name: 'Image files',
               extensions: ['jpeg', 'jpg', 'png']
             }
           ],

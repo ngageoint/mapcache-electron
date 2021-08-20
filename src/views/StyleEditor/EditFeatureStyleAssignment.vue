@@ -1,6 +1,6 @@
 <template>
   <v-card v-if="assignment && assignment.hasStyleExtension && (assignment.styles.length + assignment.icons.length > 0)" style="max-height: 400px;">
-    <v-card-title>Feature Style Assignment</v-card-title>
+    <v-card-title>Feature style assignment</v-card-title>
     <v-card-subtitle class="mt-1">Select a style to assign. Deselect to remove assignment.</v-card-subtitle>
     <v-card-text>
       <v-list>
@@ -66,7 +66,7 @@
     </v-card-actions>
   </v-card>
   <v-card v-else style="max-height: 400px;">
-    <v-card-title>Feature Style Assignment Unavailable</v-card-title>
+    <v-card-title>Feature style assignment unavailable</v-card-title>
     <v-card-text>
       Ensure feature styling has been enabled for your feature layer and you have created styles and icons.
     </v-card-text>

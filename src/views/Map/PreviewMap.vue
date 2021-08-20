@@ -4,7 +4,7 @@
     </div>
     <v-card outlined v-if="showBaseMapSelection" class="preview-basemap-card">
       <v-card-title class="pb-2">
-        Base Maps
+        Base maps
       </v-card-title>
       <v-card-text class="pb-2">
         <v-card-subtitle class="pt-1 pb-1">
@@ -14,7 +14,7 @@
           <v-list-item-group v-model="selectedBaseMapId" mandatory>
             <v-list-item v-for="item of baseMapItems" :key="item.id + '-basemap'" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
-                <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e, map)">
+                <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e)">
                   <v-icon small>{{mdiMapOutline}}</v-icon>
                 </v-btn>
               </v-list-item-icon>
@@ -44,12 +44,20 @@ import { mdiMapOutline } from '@mdi/js'
 import { L } from '../../lib/leaflet/vendor'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { constructLayer } from '../../lib/layer/LayerFactory'
-import { getOfflineBaseMapId } from '../../lib/util/BaseMapUtilities'
+import {getOfflineBaseMapId} from '../../lib/util/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import DrawBounds from '../../lib/leaflet/map/controls/DrawBounds'
+import GridBounds from '../../lib/leaflet/map/controls/GridBounds'
+import EventBus from '../../lib/vue/EventBus'
+import {zoomToBaseMap, zoomToSource} from '../../lib/util/ZoomUtilities'
 
 export default {
+    mixins: [
+      DrawBounds,
+      GridBounds
+    ],
     components: {GeoTIFFTroubleshooting, BaseMapTroubleshooting},
     props: {
       project: Object,
@@ -68,7 +76,7 @@ export default {
         selectedBaseMapId: '0',
         baseMapLayers: {},
         offlineBaseMapId: getOfflineBaseMapId(),
-        offlineBaseMapFilter: baseMap => baseMap.id !== getOfflineBaseMapId(),
+        notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       }
     },
     computed: {
@@ -80,14 +88,9 @@ export default {
               baseMap: baseMapConfig,
               name: baseMapConfig.name,
               missingRaster: window.mapcache.isRasterMissing(baseMapConfig.layerConfiguration || {}),
-              zoomTo: debounce((e, map) => {
+              zoomTo: debounce((e) => {
                 e.stopPropagation()
-                const extent = baseMapConfig.extent || [-180, -90, 180, 90]
-                let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-                let bounds = L.latLngBounds(boundingBox)
-                bounds = bounds.pad(0.05)
-                boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-                map.fitBounds(boundingBox, {maxZoom: 20})
+                zoomToBaseMap(baseMapConfig, true)
               }, 100)
             }
           })
@@ -98,13 +101,6 @@ export default {
       })
     },
     methods: {
-      setBounds (boundingBox, pad = true) {
-        let bounds = boundingBox
-        if (pad) {
-          bounds = bounds.pad(0.05)
-        }
-        this.map.fitBounds([[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]], {maxZoom: 20})
-      },
       addBaseMap (baseMap, map) {
         let self = this
         const baseMapId = baseMap.id
@@ -151,6 +147,8 @@ export default {
         this.map.setView(defaultCenter, defaultZoom)
         this.map.createPane('baseMapPane')
         this.map.getPane('baseMapPane').style.zIndex = 200
+        this.map.createPane('gridSelectionPane')
+        this.map.getPane('gridSelectionPane').style.zIndex = 625
         this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
         if (!isNil(this.previewLayer)) {
@@ -173,14 +171,14 @@ export default {
         this.displayZoomControl = new LeafletZoomIndicator()
         this.map.addControl(this.displayZoomControl)
         this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
-          self.setBounds(L.latLngBounds([[self.previewLayer.extent[1], self.previewLayer.extent[0]], [self.previewLayer.extent[3], self.previewLayer.extent[2]]]))
+          zoomToSource(self.previewLayer, true)
         }, null, null)
         L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
       },
       setupPreviewLayer () {
         const layer = constructLayer(this.previewLayer)
-        this.previewMapLayer = constructMapLayer({layer: layer, mapPane: 'markerPane', isPreview: true, maxFeatures: this.project.maxFeatures})
+        this.previewMapLayer = constructMapLayer({layer: layer, mapPane: 'overlayPane', isPreview: true, maxFeatures: this.project.maxFeatures})
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
       },
@@ -202,7 +200,7 @@ export default {
             oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
           }
           // update the layer config stored for each base map
-          newBaseMaps.filter(self.offlineBaseMapFilter).forEach(baseMap => {
+          newBaseMaps.filter(self.notReadOnlyBaseMapFilter).forEach(baseMap => {
             if (self.baseMapLayers[baseMap.id]) {
               self.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
               self.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
@@ -333,8 +331,16 @@ export default {
     },
     mounted: function () {
       this.initializeMap()
+      EventBus.$on(EventBus.EventTypes.PREVIEW_ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
+        let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
+        let bounds = L.latLngBounds(boundingBox)
+        bounds = bounds.pad(0.05)
+        const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom});
+        this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom});
+      })
     },
     beforeDestroy: function () {
+      EventBus.$off(EventBus.EventTypes.PREVIEW_ZOOM_TO)
       if (!isNil(this.previewMapLayer)) {
         this.previewMapLayer.remove()
         this.previewMapLayer = null

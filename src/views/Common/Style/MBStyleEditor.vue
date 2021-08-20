@@ -10,18 +10,18 @@
     <v-card-text>
       <v-row no-gutters>
         <v-col cols="5">
-          <colorpicker :color="color" v-model="color" label="Point / Line Color" />
+          <colorpicker :color="color" v-model="color" label="Point / Line color" />
         </v-col>
         <v-col offset="1" cols="5">
-          <colorpicker :color="fillColor" v-model="fillColor" label="Fill Color" />
+          <colorpicker :color="fillColor" v-model="fillColor" label="Fill color" />
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col cols="5" class="align-center">
-          <numberpicker :number="opacity" label="Point / Line Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" />
+          <numberpicker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" />
         </v-col>
         <v-col offset="1" cols="5" class="align-center">
-          <numberpicker :number="fillOpacity" label="Fill Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" />
+          <numberpicker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" />
         </v-col>
       </v-row>
       <v-row no-gutters class="justify-space-between" align="center">

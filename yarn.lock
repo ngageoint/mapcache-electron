@@ -1139,10 +1139,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@ngageoint/geopackage@4.0.0-beta.34":
-  version "4.0.0-beta.34"
-  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.34.tgz#180b9648b32a1f17cb96845269556180bd69d259"
-  integrity sha512-UKtsLCSt6QS2oGXAhASUhHpd4UpZBL/GwqdUFAk/tPOITU+48WePRvHVLsr5fLu0mokkZjkLyrnSLSLXg0+5hA==
+"@ngageoint/geopackage@4.0.0-beta.36":
+  version "4.0.0-beta.36"
+  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.0.0-beta.36.tgz#84e01371353f6a05432f4d8d947215ecea55f30b"
+  integrity sha512-NDX5ebom25DzzAONPUCvBOoYXuY0zYEDRvTmmQKCFoNfjBxcuXISQEXrjIES+6OOrllfzPVOEcovXA93CUpOtA==
   dependencies:
     "@turf/bbox" "6.3.0"
     "@turf/boolean-clockwise" "6.3.0"
@@ -7743,10 +7743,10 @@ leaflet-editable@1.2.0:
   resolved "https://registry.yarnpkg.com/leaflet-editable/-/leaflet-editable-1.2.0.tgz#a3a01001764ba58ea923381ee6a1c814708a0b84"
   integrity sha512-wG11JwpL8zqIbypTop6xCRGagMuWw68ihYu4uqrqc5Ep0wnEJeyob7NB2Rt5t74Oih4rwJ3OfwaGbzdowOGfYQ==
 
-leaflet-geosearch@3.0.6:
-  version "3.0.6"
-  resolved "https://registry.yarnpkg.com/leaflet-geosearch/-/leaflet-geosearch-3.0.6.tgz#6f2dbb208140563017520b4e9b6c265a7a4c3432"
-  integrity sha512-G9ix2byaI3e/p+LsarBTju1F3y9PgWO3v7az3C8s023LZtFfJ++eeCqEq9CPvDn7xfhVAXDy0qufGYqaNLgrvg==
+leaflet-geosearch@3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/leaflet-geosearch/-/leaflet-geosearch-3.3.2.tgz#d1a8a35e4e6f29083d46978214d2de73f126f5c3"
+  integrity sha512-Kb3NCiG0xWxadRJ0FyNOhFlpN0VT33l1zSpBfWPob6fUfN9bCg6d3XyWTa6KBIQrVRjg30Sp0Cnn+jJWRiFPDA==
   optionalDependencies:
     leaflet "^1.6.0"
 

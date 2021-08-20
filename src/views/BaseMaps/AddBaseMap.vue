@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-toolbar-title>Add Base Map</v-toolbar-title>
+      <v-toolbar-title>Add base map</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content">
       <v-card>
@@ -27,7 +27,7 @@
                       autofocus
                       v-model="baseMapName"
                       :rules="baseMapNameRules"
-                      label="Layer Name"
+                      label="Layer name"
                       required
                     ></v-text-field>
                   </v-form>
@@ -55,10 +55,10 @@
                           :value="i">
                           <v-list-item-icon style="margin-top: 12px;">
                             <v-btn icon @click.stop="item.zoomTo">
-                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                             </v-btn>
                           </v-list-item-icon>
                           <v-list-item-content>
@@ -84,7 +84,7 @@
               </v-btn>
             </v-stepper-content>
             <v-stepper-step editable step="3" color="primary">
-              Tile Background
+              Tile background
             </v-stepper-step>
             <v-stepper-content step="3">
               <v-card flat tile>
@@ -92,7 +92,7 @@
                   Select a background color for your tile
                 </v-card-subtitle>
                 <v-card-text>
-                  <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile Background" />
+                  <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile background" />
                 </v-card-text>
               </v-card>
             </v-stepper-content>
@@ -125,6 +125,7 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import ColorPicker from '../Common/ColorPicker'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
 
 export default {
     components: {
@@ -153,7 +154,7 @@ export default {
               type: source.pane === 'vector' ? 'feature' : 'tile',
               zoomTo: debounce((e) => {
                 e.stopPropagation()
-                window.mapcache.zoomToExtent({projectId: this.project.id, extent: source.extent})
+                zoomToSource(source)
               }, 100)
             })
           }
@@ -175,9 +176,7 @@ export default {
                   isGeoPackage: true,
                   zoomTo: debounce((e) => {
                     e.stopPropagation()
-                    window.mapcache.getBoundingBoxForTable(geopackage.path, table).then(extent => {
-                      window.mapcache.zoomToExtent({projectId: this.project.id, extent})
-                    })
+                    zoomToGeoPackageTable(geopackage, table)
                   }, 100)
                 })
               }
@@ -195,9 +194,7 @@ export default {
                   isGeoPackage: true,
                   zoomTo: debounce((e) => {
                     e.stopPropagation()
-                    window.mapcache.getBoundingBoxForTable(geopackage.path, table).then(extent => {
-                      window.mapcache.zoomToExtent({projectId: this.project.id, extent})
-                    })
+                    zoomToGeoPackageTable(geopackage, table)
                   }, 100)
                 })
               }
@@ -212,7 +209,7 @@ export default {
       return {
         step: 1,
         baseMapNameValid: true,
-        baseMapName: 'New Base Map',
+        baseMapName: 'New base map',
         baseMapNameRules: [
           v => !!v || 'Base map name is required',
           v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'

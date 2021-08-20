@@ -1,5 +1,5 @@
 <template>
-  <div class="ma-0 pa-0">
+  <div class="ma-0 pa-0 mapcache-sheet">
     <data-source v-if="selectedDataSource !== null && selectedDataSource !== undefined"
       :key="selectedDataSource.id"
       class="sources"
@@ -16,7 +16,7 @@
         class="sticky-toolbar"
       >
         <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-        <v-toolbar-title>Data Sources</v-toolbar-title>
+        <v-toolbar-title>Data sources</v-toolbar-title>
       </v-toolbar>
       <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
         <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
@@ -43,7 +43,7 @@
             </v-row>
             <v-row class="pa-0" no-gutters>
               <v-col class="pa-0 align-center">
-                <h5 class="align-self-center primary--text">Get Started</h5>
+                <h5 class="align-self-center primary--text" @click="fab = true">Get started</h5>
               </v-col>
             </v-row>
           </v-col>
@@ -94,7 +94,7 @@
               <v-icon>{{mdiCloudDownloadOutline}}</v-icon>
             </v-btn>
           </template>
-          <span>Download from URL</span>
+          <span>Download from url</span>
         </v-tooltip>
       </v-speed-dial>
     </v-sheet>
@@ -112,7 +112,7 @@ import AddDataSourceUrl from './AddDataSourceUrl'
 import {mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus} from '@mdi/js'
 import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
 
-let selectedDataSource = null
+  let selectedDataSource = null
   let fab = false
 
   export default {
@@ -152,7 +152,7 @@ let selectedDataSource = null
         window.mapcache.showOpenDialog({
           filters: [
             {
-              name: 'All Files',
+              name: 'All files',
               extensions: SUPPORTED_FILE_EXTENSIONS
             }
           ],

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import { USER_CANCELLED_MESSAGE } from './HttpUtilities'
+import { USER_CANCELLED_MESSAGE, isNotFoundError } from './HttpUtilities'
 
 export default class CancellableTileRequest {
   cancelled = false
@@ -24,6 +24,7 @@ export default class CancellableTileRequest {
     }
   }
 
+
   /**
    * Returns the data url of the response, or an error
    * @param axiosRequestScheduler
@@ -34,9 +35,9 @@ export default class CancellableTileRequest {
    * @returns {Promise<{dataURL: undefined, error: *}>}
    */
   async requestTile (axiosRequestScheduler, url, retryAttempts, timeout, withCredentials = false) {
-    let dataUrl = undefined
+    let dataUrl = null
     let attempts = 0
-    let error
+    let error = null
 
     this.axiosRequestScheduler = axiosRequestScheduler
     while (!this.cancelled && isNil(dataUrl) && attempts <= retryAttempts) {
@@ -51,9 +52,10 @@ export default class CancellableTileRequest {
           withCredentials
         })
         dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
-        error = undefined
+        error = null
       } catch (err) {
         error = err
+
         // if it is an authentication error, stop retrying
         if (!isNil(err) && !isNil(err.response) && err.response.status === 401) {
           break
@@ -61,7 +63,11 @@ export default class CancellableTileRequest {
 
         // if it is a timeout or the user cancelled the request, remove the error
         if (axios.isCancel(err) || (err.message && err.message.toLowerCase().indexOf('timeout') !== -1)) {
-          error = undefined
+          error = null
+          // if it is a not found error, we will ignore it and return
+        } else if (isNotFoundError(err)) {
+          error = null
+          break
         }
       } finally {
         attempts++

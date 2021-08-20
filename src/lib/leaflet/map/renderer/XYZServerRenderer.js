@@ -11,12 +11,14 @@ export default class XYZServerRenderer extends NetworkTileRenderer {
     this.isElectron = isElectron
   }
 
-  async renderTile (coords, callback) {
-    if (!isNil(this.error)) {
+  async renderTile (requestId, coords, callback) {
+    if (coords.z < this.layer.minZoom || coords.z > this.layer.maxZoom) {
+      callback (null, null)
+    } else if (!isNil(this.error)) {
       callback(this.error, null)
     } else {
       const cancellableTileRequest = new CancellableTileRequest()
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileUrl(coords), this.retryAttempts, this.timeoutMs, this.layer.withCredentials).then(({dataUrl, error}) => {
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, this.layer.getTileRequestData(coords).url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials).then(({dataUrl, error}) => {
         if (!isNil(error)) {
           this.setError(error)
         }

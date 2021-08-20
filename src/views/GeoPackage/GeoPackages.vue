@@ -22,7 +22,7 @@
             </v-row>
             <v-row class="pa-0" no-gutters>
               <v-col class="pa-0 align-center">
-                <h5 class="align-self-center primary--text">Get Started</h5>
+                <h5 class="align-self-center primary--text" @click="fab = true">Get started</h5>
               </v-col>
             </v-row>
           </v-col>
@@ -39,7 +39,7 @@
         <v-card v-if="geopackageExistsDialog">
           <v-card-title>
             <v-icon color="orange" class="pr-2">{{mdiAlert}}</v-icon>
-            Create GeoPackage Warning
+            Create GeoPackage warning
           </v-card-title>
           <v-card-text>
             <v-card-subtitle>
@@ -169,7 +169,7 @@ export default {
         window.mapcache.showOpenDialog({
           filters: [
             {
-              name: 'GeoPackage Files',
+              name: 'GeoPackage files',
               extensions: ['gpkg', 'geopackage']
             }
           ],

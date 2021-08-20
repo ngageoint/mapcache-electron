@@ -30,7 +30,7 @@
       </v-card>
     </v-dialog>
     <v-card-title>
-      {{isNew ? 'Create Style' : 'Edit Style'}}
+      {{isNew ? 'Create style' : 'Edit style'}}
       <v-spacer/>
       <v-row no-gutters justify="end" align="center">
         <geometry-style-svg :geometry-type="1" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
@@ -51,18 +51,18 @@
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5">
-          <colorpicker :color="color" v-model="color" label="Point / Line Color" />
+          <colorpicker :color="color" v-model="color" label="Point / Line color" />
         </v-col>
         <v-col offset="1" cols="5">
-          <colorpicker :color="fillColor" v-model="fillColor" label="Fill Color" />
+          <colorpicker :color="fillColor" v-model="fillColor" label="Fill color" />
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="opacity" label="Point / Line Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
+          <numberpicker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
         </v-col>
         <v-col offset="1" cols="5" class="align-center">
-          <numberpicker :number="fillOpacity" label="Fill Opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid" />
+          <numberpicker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid" />
         </v-col>
       </v-row>
       <v-row no-gutters class="justify-space-between pl-4" align="center">

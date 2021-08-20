@@ -12,24 +12,24 @@
     </v-row>
     <v-row no-gutters>
       <v-col cols="12">
-        <p class="ma-0 pa-0">Feature Tables: {{details.featureTableCount}}</p>
+        <p class="ma-0 pa-0">Feature tables: {{details.featureTableCount}}</p>
       </v-col>
     </v-row>
     <v-row class="mb-2" no-gutters>
       <v-col cols="12">
-        <p class="ma-0 pa-0">Tile Tables: {{details.tileTableCount}}</p>
+        <p class="ma-0 pa-0">Tile tables: {{details.tileTableCount}}</p>
       </v-col>
     </v-row>
     <v-row class="mb-2" no-gutters>
       <v-col cols="12">
-        <p class="ma-0 pa-0">Spatial Reference Systems: {{details.srsCount}}</p>
+        <p class="ma-0 pa-0">Spatial reference systems: {{details.srsCount}}</p>
       </v-col>
     </v-row>
     <v-row class="mb-2" v-for="srs in details.spatialReferenceSystems" :key="srs.id" no-gutters>
       <v-col cols="12">
         <v-row no-gutters>
           <v-col cols="12">
-            <p class="ma-0 pa-0">SRS Name: {{srs.srs_name}}</p>
+            <p class="ma-0 pa-0">SRS name: {{srs.srs_name}}</p>
           </v-col>
         </v-row>
         <v-row no-gutters>

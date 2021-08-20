@@ -5,8 +5,8 @@ import ElectronTileRenderer from './ElectronTileRenderer'
  * GeoTIFF Renderer
  */
 export default class ElectronGeoPackageTileRenderer extends ElectronTileRenderer {
-  getTileRequest (coords) {
-    const request = super.getTileRequest(coords)
+  getTileRequest (requestId, coords) {
+    const request = super.getTileRequest(requestId, coords)
     return Object.assign(request, {
       tableName: this.layer.sourceLayerName,
       dbFile: this.layer.filePath,

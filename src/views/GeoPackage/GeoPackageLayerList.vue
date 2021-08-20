@@ -11,10 +11,10 @@
             color="whitesmoke"
             @click="item.zoomTo"
           >
-            <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-            <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-            <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile Layer" width="20px" height="20px"/>
-            <img v-else src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+            <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+            <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+            <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+            <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
           </v-btn>
         </v-list-item-icon>
         <v-list-item-content>
@@ -38,6 +38,8 @@
 </template>
 
 <script>
+  import {zoomToGeoPackageTable} from '../../lib/util/ZoomUtilities'
+
   export default {
     props: {
       geopackage: Object,
@@ -63,9 +65,7 @@
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              window.mapcache.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                window.mapcache.zoomToExtent({projectId: _this.projectId, extent})
-              })
+              zoomToGeoPackageTable(_this.geopackage, key)
               e.stopPropagation()
             },
             visible: tileLayer.visible
@@ -86,9 +86,7 @@
               e.stopPropagation()
             },
             zoomTo: function (e) {
-              window.mapcache.getBoundingBoxForTable(_this.geopackage.path, key).then(extent => {
-                window.mapcache.zoomToExtent({projectId: _this.projectId, extent})
-              })
+              zoomToGeoPackageTable(_this.geopackage, key)
               e.stopPropagation()
             },
             visible: featureLayer.visible

@@ -28,7 +28,7 @@
           text
           color="warning"
           @click="cancelProcessing">
-          Cancel Processing
+          Cancel processing
         </v-btn>
       </v-card-actions>
       <v-divider/>

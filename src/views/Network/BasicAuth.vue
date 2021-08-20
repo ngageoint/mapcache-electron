@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      Sign In
+      Sign in
     </v-card-title>
     <v-card-text class="pt-0">
       <v-card-subtitle class="pl-0 pt-0 pb-0">
@@ -38,7 +38,7 @@
         color="primary"
         text
         @click="callSignIn">
-        Sign In
+        Sign in
       </v-btn>
     </v-card-actions>
   </v-card>

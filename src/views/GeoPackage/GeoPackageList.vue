@@ -94,8 +94,8 @@ export default {
             items.push({
               id: geopackage.id,
               name: geopackage.name,
-              featureLayersText: 'Feature Layers: ' + Object.keys(geopackage.tables.features).length,
-              tileLayersText: 'Tile Layers: ' + Object.keys(geopackage.tables.tiles).length,
+              featureLayersText: 'Feature layers: ' + Object.keys(geopackage.tables.features).length,
+              tileLayersText: 'Tile layers: ' + Object.keys(geopackage.tables.tiles).length,
               health: await window.mapcache.checkGeoPackageHealth(geopackage),
               click: async function (item) {
                 item.health = await window.mapcache.checkGeoPackageHealth(geopackage)

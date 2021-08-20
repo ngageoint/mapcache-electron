@@ -16,7 +16,8 @@ import {
   isMapCacheUserCancellationError,
   USER_CANCELLED_MESSAGE,
   USER_CANCELLED_STATUS,
-  isUserCancellation
+  isUserCancellation,
+  isNotFoundError
 } from './HttpUtilities'
 import { parseStringPromise } from 'xml2js'
 
@@ -189,6 +190,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
 async function testXYZTileServiceConnection (serviceUrl, options) {
   return connectionWrapper(async () => {
     let serviceInfo
+    let limitedTileSet = false
     let error
     let requiredCredentials = false
 
@@ -200,19 +202,24 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
         const subdomains = options.subdomains
         for (let i = 0; i < subdomains.length; i++) {
           const subdomain = subdomains[i]
+          // this assumes that the 0/0/0 tile exists, if we get a 404, we can assume things are okay
+          const url = generateUrlForTile(serviceUrl, [subdomain], 0, 0, 0)
+          let cancellableServiceRequest = new CancellableServiceRequest()
+          cancellableServiceRequest.withCredentials = options.withCredentials || false
           try {
-            const url = generateUrlForTile(serviceUrl, [subdomain], 0, 0, 0)
-            let cancellableServiceRequest = new CancellableServiceRequest()
-            cancellableServiceRequest.withCredentials = options.withCredentials || false
             await cancellableServiceRequest.request(url)
-            requiredCredentials = cancellableServiceRequest.requiredCredentials()
           } catch (e) {
-            // 401 unauthorized, no need to keep checking
-            if (e.response && e.response.status === 401) {
-              throw e
+            if (isNotFoundError(e)) {
+              limitedTileSet = true
+            } else {
+              // 401 unauthorized, no need to keep checking
+              if (e.response && e.response.status === 401) {
+                throw e
+              }
+              invalidSubdomains.push(subdomain)
             }
-            invalidSubdomains.push(subdomain)
           }
+          requiredCredentials = cancellableServiceRequest.requiredCredentials()
         }
         if (invalidSubdomains.length > 0) {
           error = 'The following XYZ service url subdomains were invalid: ' + invalidSubdomains.join(',')
@@ -226,8 +233,18 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
       const url = generateUrlForTile(serviceUrl, [], 0, 0, 0)
       let cancellableServiceRequest = new CancellableServiceRequest()
       cancellableServiceRequest.withCredentials = options.withCredentials || false
-      await cancellableServiceRequest.request(url)
-      serviceInfo = {}
+      try {
+        await cancellableServiceRequest.request(url)
+      } catch (e) {
+        if (isNotFoundError(e)) {
+          limitedTileSet = true
+        } else {
+          throw e
+        }
+      }
+      serviceInfo = {
+        limitedTileSet
+      }
       requiredCredentials = cancellableServiceRequest.requiredCredentials()
     }
     return {serviceInfo, error, withCredentials: requiredCredentials}

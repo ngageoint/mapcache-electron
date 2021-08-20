@@ -6,7 +6,7 @@
       flat
       class="sticky-toolbar"
     >
-      <v-toolbar-title>{{geopackage.name + ': Add Feature Layer'}}</v-toolbar-title>
+      <v-toolbar-title>{{geopackage.name + ': Add feature layer'}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet v-if="processing" class="mapcache-sheet-content detail-bg">
       <v-card flat tile class="ma-0 pa-0">
@@ -56,7 +56,7 @@
                   autofocus
                   v-model="layerName"
                   :rules="layerNameRules"
-                  label="Layer Name"
+                  label="Layer name"
                   required
                 ></v-text-field>
               </v-form>
@@ -67,15 +67,18 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 2" step="2" color="primary">
-          Select Data Sources
+          Select data sources
           <small class="pt-1">{{selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
         <v-stepper-content step="2">
           <v-card flat tile>
-            <v-card-subtitle>
-              Select <b>Data Sources</b> to populate the <b>{{layerName}}</b> feature layer.
+            <v-card-subtitle v-if="dataSourceLayers.length > 0">
+              Select data sources to populate the <b>{{layerName}}</b> feature layer.
             </v-card-subtitle>
-            <v-card-text>
+            <v-card-subtitle v-else>
+              No data source layers.
+            </v-card-subtitle>
+            <v-card-text v-if="dataSourceLayers.length > 0">
               <v-list dense>
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
                   <template v-for="(item, i) in dataSourceLayers">
@@ -86,8 +89,8 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon>
                           <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -117,10 +120,13 @@
         </v-stepper-step>
         <v-stepper-content step="3">
           <v-card flat tile>
-            <v-card-subtitle>
-              Select existing <b>GeoPackage</b> feature layers to populate the <b>{{layerName}}</b> feature layer.
+            <v-card-subtitle v-if="geopackageFeatureLayers.length > 0">
+              Select existing GeoPackage feature layers to populate the <b>{{layerName}}</b> feature layer.
             </v-card-subtitle>
-            <v-card-text>
+            <v-card-subtitle v-else>
+              No existing GeoPackage feature layers.
+            </v-card-subtitle>
+            <v-card-text v-if="geopackageFeatureLayers.length > 0">
               <v-list dense>
                 <v-list-item-group multiple color="primary" v-model="selectedGeoPackageFeatureLayers">
                   <template v-for="(item, i) in geopackageFeatureLayers">
@@ -131,8 +137,8 @@
                       <template v-slot:default="{ active }">
                         <v-list-item-icon>
                           <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature Layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature Layer" width="20px" height="20px"/>
+                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -162,55 +168,16 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" :rules="[() => !project.boundingBoxFilterEditing || (Number(step) === 4 && project.boundingBoxFilterEditing)]" color="primary">
-          Apply bounding box filter
-          <small class="pt-1">{{project.boundingBoxFilterEditing ? 'Setting filter' : (project.boundingBoxFilter ? 'Filter applied' : 'No filter')}}</small>
+        <v-stepper-step editable :complete="step > 4" step="4" :rules="[() => !isEditingBoundingBox() || (Number(step) === 4)]" color="primary">
+          Specify bounding box filter (optional)
+          <small class="pt-1">{{isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box applied' : 'No bounding box')}}</small>
         </v-stepper-step>
         <v-stepper-content step="4">
           <v-card flat tile>
             <v-card-subtitle>
-              Provide a bounding box to restrict content from selected data sources and GeoPackage feature layers
+              Restrict features to a specified area of the map. If not provided, all features from your selected data source and GeoPackage layers will be added.
             </v-card-subtitle>
-            <v-card-text>
-              <v-row no-gutters justify="end">
-                <v-btn class="mr-2" outlined v-if="!project.boundingBoxFilterEditing && project.boundingBoxFilter" color="red" @click.stop="resetBoundingBox">
-                  Clear
-                </v-btn>
-                <v-btn v-if="project.boundingBoxFilterEditing" outlined color="warning" @click.stop="stopEditingBoundingBox">
-                  Finish
-                </v-btn>
-                <v-menu
-                  v-else
-                  top
-                  close-on-click
-                >
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      color="primary"
-                      dark
-                      v-bind="attrs"
-                      v-on="on"
-                    >
-                      {{project.boundingBoxFilter ? 'Edit bounds' : 'Set bounds'}}
-                    </v-btn>
-                  </template>
-
-                  <v-list>
-                    <v-list-item-group>
-                      <v-list-item @click="() => editBoundingBox('manual')">
-                        <v-list-item-title>Manually</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="setBoundingBoxFilterToExtent">
-                        <v-list-item-title>Use Extent</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="() => editBoundingBox('grid')">
-                        <v-list-item-title>Use Grid</v-list-item-title>
-                      </v-list-item>
-                    </v-list-item-group>
-                  </v-list>
-                </v-menu>
-              </v-row>
-            </v-card-text>
+            <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project" :boundingBox="boundingBoxFilter" :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
           </v-card>
           <v-btn
             text
@@ -225,7 +192,7 @@
         <v-stepper-content step="5">
           <v-card flat tile>
             <v-card-text>
-              <b>{{filteredFeatureCount}}</b>{{(project.boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' Data Source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layer' + (geopackageFeatureLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
+              <b>{{filteredFeatureCount}}</b>{{(boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layer' + (geopackageFeatureLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be added to the '}}<b>{{geopackage.name}}</b>{{' GeoPackage as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
             </v-card-text>
           </v-card>
         </v-stepper-content>
@@ -242,7 +209,7 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="Number(step) === 5 && !done && !processing && !project.boundingBoxFilterEditing && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageFeatureLayers.filter(item => item.visible).length) > 0)"
+          v-if="Number(step) === 5 && !done && !isEditingBoundingBox() && layerNameValid"
           color="primary"
           text
           @click.stop="addFeatureLayer">
@@ -258,9 +225,12 @@ import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+import BoundingBoxEditor from '../Common/BoundingBoxEditor'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
 
 export default {
     components: {
+      BoundingBoxEditor,
       SourceVisibilitySwitch
     },
     props: {
@@ -272,7 +242,7 @@ export default {
       return {
         step: 1,
         layerNameValid: true,
-        layerName: 'New Feature Layer',
+        layerName: 'New feature layer',
         layerNameRules: [
           v => !!v || 'Layer name is required',
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
@@ -286,7 +256,8 @@ export default {
         done: false,
         dataSourceLayers: this.getDataSourceLayers(),
         configuration: null,
-        cancelling: false
+        cancelling: false,
+        boundingBoxFilter: null
       }
     },
     methods: {
@@ -322,7 +293,7 @@ export default {
           projectId: this.project.id,
           table: this.layerName,
           sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value]),
-          boundingBoxFilter: this.project.boundingBoxFilter,
+          boundingBoxFilter: this.boundingBoxFilter,
           geopackageLayers: this.geopackageFeatureLayers.filter(item => item.visible).map(item => {
             return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName}
           })
@@ -339,34 +310,27 @@ export default {
         })
       },
       cancel () {
-        if (!isNil(this.project.boundingBoxFilterEditing)) {
-          window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
+        if (this.isEditingBoundingBox()) {
+          this.$refs.boundingBoxEditor.stopEditing()
         }
         this.back()
       },
-      setBoundingBoxFilterToExtent () {
-        // eslint-disable-next-line no-unused-vars
-        window.mapcache.setBoundingBoxFilterToExtent(this.project.id).catch((e) => {
-          // eslint-disable-next-line no-console
-          console.error('Failed to set bounding box filter to the extent of visible layers.')
-        })
+      isEditingBoundingBox () {
+        if (this.$refs.boundingBoxEditor) {
+          return this.$refs.boundingBoxEditor.isEditing()
+        }
+        return false
       },
-      resetBoundingBox () {
-        window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
-      },
-      editBoundingBox (mode) {
-        window.mapcache.setBoundingBoxFilterEditingEnabled({projectId: this.project.id, mode})
-      },
-      stopEditingBoundingBox () {
-        window.mapcache.setBoundingBoxFilterEditingDisabled({projectId: this.project.id})
+      updateBoundingBoxFilter (boundingBox) {
+        this.boundingBoxFilter = boundingBox
       },
       async getFilteredFeatures () {
         let numberOfFeatures = 0
         const sourceItems = this.getDataSourceLayers().filter(item => item.visible)
         for (let i = 0; i < sourceItems.length; i++) {
           const source = this.project.sources[sourceItems[i].id]
-          if (!isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.project.boundingBoxFilter)
+          if (!isNil(this.boundingBoxFilter)) {
+            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(source.geopackageFilePath, source.sourceLayerName, this.boundingBoxFilter)
           } else {
             numberOfFeatures += source.count
           }
@@ -376,8 +340,8 @@ export default {
           const item = geopackageItems[i]
           const tableName = item.tableName
           const geopackage = this.project.geopackages[item.geopackageId]
-          if (!isNil(this.project.boundingBoxFilter)) {
-            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(geopackage.path, tableName, this.project.boundingBoxFilter)
+          if (!isNil(this.boundingBoxFilter)) {
+            numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(geopackage.path, tableName, this.boundingBoxFilter)
           } else {
             numberOfFeatures += geopackage.tables.features[tableName].featureCount
           }
@@ -407,9 +371,7 @@ export default {
                 }, 100),
                 zoomTo: debounce((e) => {
                   e.stopPropagation()
-                  window.mapcache.getBoundingBoxForTable(geopackage.path, tableName).then(extent => {
-                    window.mapcache.zoomToExtent({projectId, extent})
-                  })
+                  zoomToGeoPackageTable(geopackage, tableName)
                 }, 100)
               })
             })
@@ -430,7 +392,7 @@ export default {
             }, 100),
             zoomTo: debounce((e) => {
               e.stopPropagation()
-              window.mapcache.zoomToExtent({projectId, extent: source.extent})
+              zoomToSource(source)
             }, 100)
           }
         })
@@ -462,16 +424,6 @@ export default {
         default: []
       }
     },
-    computed: {
-      boundingBoxText () {
-        let boundingBoxText = 'Not specified'
-        if (!isNil(this.project.boundingBoxFilter)) {
-          const bbox = this.project.boundingBoxFilter
-          boundingBoxText = '(' + bbox[1].toFixed(4) + ',' + bbox[0].toFixed(4) + '), (' + bbox[3].toFixed(4) + ',' + bbox[2].toFixed(4) + ')'
-        }
-        return boundingBoxText
-      }
-    },
     watch: {
       project: {
         async handler () {
@@ -489,10 +441,6 @@ export default {
           this.$refs.layerNameForm.validate()
         }
       })
-      window.mapcache.clearBoundingBoxFilter({projectId: this.project.id})
-    },
-    beforeUnmount () {
-      window.mapcache.resetBoundingBox()
     }
   }
 </script>

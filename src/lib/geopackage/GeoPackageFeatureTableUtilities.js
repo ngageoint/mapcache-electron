@@ -98,14 +98,15 @@ async function updateFeatureGeometry (filePath, tableName, featureGeoJson, updat
 /**
  * Adds a feature to a feature table and updates the extent listed in the contents, if necessary
  * @param gp
+ * @param featureDao
  * @param tableName
  * @param feature
  * @param updateBoundingBox
  * @param datesUpdated
  */
-function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = true, datesUpdated = false) {
+function _addFeatureToFeatureTable (gp, featureDao, tableName, feature, updateBoundingBox = true, datesUpdated = false) {
   if (!datesUpdated) {
-    gp.getFeatureDao(tableName).table.getUserColumns().getColumns().forEach(column => {
+    featureDao.table.getUserColumns().getColumns().forEach(column => {
       if (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME) {
         if (!isNil(feature.properties[column.getName()]) && !isEmpty(feature.properties[column.getName()])) {
           feature.properties[column.getName()] = moment.utc(feature.properties[column.getName()]).toDate()
@@ -115,7 +116,7 @@ function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = 
       }
     })
   }
-  const rowId = gp.addGeoJSONFeatureToGeoPackage(feature, tableName, true)
+  const rowId = gp.addGeoJSONFeatureToGeoPackageWithFeatureDaoAndSrs(feature, featureDao, featureDao.srs, true)
   if (updateBoundingBox) {
     _updateBoundingBoxForFeatureTable(gp, tableName)
   }
@@ -131,7 +132,8 @@ function _addFeatureToFeatureTable (gp, tableName, feature, updateBoundingBox = 
  */
 function addFeatureToFeatureTable (filePath, tableName, feature) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _addFeatureToFeatureTable(gp, tableName, feature)
+    const featureDao = gp.getFeatureDao(tableName)
+    return _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
   })
 }
 
@@ -221,9 +223,10 @@ async function _createFeatureTable (gp, tableName, featureCollection, addFeature
   let extent = bbox(featureCollection)
   let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
+  const featureDao = gp.getFeatureDao(tableName)
   if (addFeatures) {
     featureCollection.features.forEach(feature => {
-      _addFeatureToFeatureTable(gp, tableName, feature)
+      _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
     })
   }
   await _indexFeatureTable(gp, tableName)
@@ -1134,7 +1137,9 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
     let styleIdToStyleRowId = {}
     let iterator = featureCollection.features
 
-    let dateColumns = gp.getFeatureDao(tableName).table.getUserColumns().getColumns().filter(column => column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME).map(column => column.getName())
+    let featureDao = gp.getFeatureDao(tableName)
+
+    let dateColumns = featureDao.table.getUserColumns().getColumns().filter(column => column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME).map(column => column.getName())
 
     for (let feature of iterator) {
       if (feature.properties) {
@@ -1154,7 +1159,7 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
           }
         })
       }
-      let featureRowId = _addFeatureToFeatureTable (gp, tableName, feature, false, true)
+      let featureRowId = _addFeatureToFeatureTable (gp, featureDao, tableName, feature, false, true)
       if (!isNil(style) && !isNil(style.features[feature.id])) {
         const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
         if (!isNil(style.features[feature.id].icon)) {

@@ -6,7 +6,7 @@
       dark
       dense
     >
-      <v-toolbar-title>{{geopackageTables.length + sourceTables.length > 1 ? 'Feature Tables' : 'Feature Table' }}</v-toolbar-title>
+      <v-toolbar-title>{{geopackageTables.length + sourceTables.length > 1 ? 'Feature tables' : 'Feature table' }}</v-toolbar-title>
       <v-row class="mb-1" no-gutters justify="end">
         <v-btn small @click.stop.prevent="close" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
       </v-row>

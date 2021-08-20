@@ -13,7 +13,7 @@ export default class SourceFactory {
       } else if (sourceConfiguration.serviceType === 1) {
         source = new (require('./WFSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
       } else if (sourceConfiguration.serviceType === 2) {
-        source = new (require('./XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials)
+        source = new (require('./XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent)
       } else if (sourceConfiguration.serviceType === 3) {
         source = new (require('./ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
       }

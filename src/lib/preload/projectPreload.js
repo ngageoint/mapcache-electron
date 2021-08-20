@@ -69,12 +69,7 @@ import {
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
   clearActiveLayers,
-  zoomToExtent,
-  setBoundingBoxFilter,
-  setBoundingBoxFilterToExtent,
-  setBoundingBoxFilterEditingEnabled,
-  setBoundingBoxFilterEditingDisabled,
-  clearBoundingBoxFilter,
+  getExtentOfActiveLayers,
   synchronizeGeoPackage,
   synchronizeDataSource,
   setActiveGeoPackage,
@@ -101,7 +96,6 @@ import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, deleteGeoPackageTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
 import { getAllFeatureRows, getFeatureRow, updateFeatureRow, featureExists, countOfFeaturesAt, getFeatureCountInBoundingBox, getFeatureColumns, indexFeatureTable, _createFeatureTable, getAllFeaturesAsGeoJSON, getBoundingBoxForFeature } from '../geopackage/GeoPackageFeatureTableUtilities'
-import { estimatedTileCount } from '../geopackage/GeoPackageTileTableUtilities'
 import {
   getMediaAttachmentsCounts,
   deleteMediaAttachment,
@@ -109,7 +103,15 @@ import {
   getMediaRow,
   getMediaObjectUrl
 } from '../geopackage/GeoPackageMediaUtilities'
-import { getStyleItemsForFeature, getStyleAssignmentForFeatures, _getTableStyle, _getTableIcon, _getStyleRows, _getIconRows } from '../geopackage/GeoPackageStyleUtilities'
+import {
+  getStyleItemsForFeature,
+  getStyleAssignmentForFeatures,
+  _getTableStyle,
+  _getTableIcon,
+  _getStyleRows,
+  _getIconRows,
+  getStyleDrawOverlap
+} from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains } from '../util/URLUtilities'
 import { constructLayer } from '../layer/LayerFactory'
@@ -432,7 +434,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_TILE, request)
     })
   },
-  cancelTileReprojectionReqeust: (id) => {
+  cancelTileReprojectionRequest: (id) => {
     ipcRenderer.send(CANCEL_REPROJECT_TILE_REQUEST, {id: id})
     ipcRenderer.removeAllListeners(REQUEST_REPROJECT_TILE_COMPLETED(id))
   },
@@ -806,7 +808,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   normalizeLongitude,
   getExtentOfGeoPackageTables,
   checkGeoPackageHealth,
-  estimatedTileCount,
   exceedsFileSizeLimit,
   getMaxFileSizeString,
   getStyleItemsForFeature,
@@ -883,12 +884,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
   clearActiveLayers,
-  zoomToExtent,
-  setBoundingBoxFilter,
-  setBoundingBoxFilterToExtent,
-  setBoundingBoxFilterEditingEnabled,
-  setBoundingBoxFilterEditingDisabled,
-  clearBoundingBoxFilter,
+  getExtentOfActiveLayers,
   synchronizeGeoPackage,
   synchronizeDataSource,
   setActiveGeoPackage,
@@ -911,5 +907,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
   getBoundingBoxForFeature,
-  getMediaObjectUrl
+  getMediaObjectUrl,
+  getStyleDrawOverlap
 })

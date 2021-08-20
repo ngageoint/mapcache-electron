@@ -137,10 +137,10 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomToLayer" color="whitesmoke">
-              <img v-if="$vuetify.theme.dark" src="/images/white_layers.png" alt="Feature Layer" width="20px" height="20px"/>
-              <img v-else src="/images/colored_layers.png" alt="Feature Layer" width="20px" height="20px"/>
+              <img v-if="$vuetify.theme.dark" src="/images/white_layers.png" alt="Feature layer" width="20px" height="20px"/>
+              <img v-else src="/images/colored_layers.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-            <span style="vertical-align: middle;">Tile Layer</span>
+            <span style="vertical-align: middle;">Tile layer</span>
           </p>
         </v-col>
       </v-row>
@@ -221,7 +221,7 @@
           <v-row class="pb-2" no-gutters>
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Zoom Levels
+                Zoom levels
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{minZoom + ' - ' + maxZoom}}
@@ -247,6 +247,7 @@
 <script>
 import isNil from 'lodash/isNil'
 import {mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
+import {zoomToGeoPackageTable} from '../../lib/util/ZoomUtilities'
 
 export default {
     props: {
@@ -335,9 +336,8 @@ export default {
           this.$refs.copyForm.validate()
         })
       },
-      async zoomToLayer () {
-        const extent = await window.mapcache.getBoundingBoxForTable(this.geopackage.path, this.tableName)
-        window.mapcache.zoomToExtent({projectId: this.projectId, extent})
+      zoomToLayer () {
+        zoomToGeoPackageTable(this.geopackage, this.tableName)
       }
     }
   }

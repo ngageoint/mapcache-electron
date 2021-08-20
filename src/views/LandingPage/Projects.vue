@@ -52,10 +52,10 @@
       class="padding-top"
       width="400"
       @keydown.esc="cancelNewProject">
-      <edit-text-modal v-if="addProjectDialog" autofocus :icon="mdiPlus" title="Create Project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
+      <edit-text-modal v-if="addProjectDialog" autofocus :icon="mdiPlus" title="Create project" save-text="Create" :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px" font-weight="bold" label="Project name" :on-save="createNewProject"/>
     </v-dialog>
     <v-row class="mt-4 mb-2" no-gutters justify="end">
-      <v-btn dark text @click="onClickNewProject"><v-icon small>{{mdiPlus}}</v-icon> Create Project</v-btn>
+      <v-btn dark text @click="onClickNewProject"><v-icon small>{{mdiPlus}}</v-icon> Create project</v-btn>
     </v-row>
     <v-row no-gutters justify="center" class="flex-grow-1">
       <v-list dark class="semi-transparent project-list" v-if="Object.keys(projects).length > 0">
@@ -78,7 +78,7 @@
       </v-list>
       <v-card dark flat v-else class="semi-transparent project-list">
         <v-card-text>
-          No projects. Click the <b><v-icon small>{{mdiPlus}}</v-icon>Create Project</b> button to get started.
+          No projects. Click the <b><v-icon small>{{mdiPlus}}</v-icon>Create project</b> button to get started.
         </v-card-text>
       </v-card>
     </v-row>
