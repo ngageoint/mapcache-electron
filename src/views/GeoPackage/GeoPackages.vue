@@ -21,9 +21,7 @@
               </v-col>
             </v-row>
             <v-row class="pa-0" no-gutters>
-              <v-col class="pa-0 align-center">
-                <h5 class="align-self-center primary--text" @click="fab = true">Get started</h5>
-              </v-col>
+              <h5 class="align-self-center primary--text fake-link" @click="showFab">Get started</h5>
             </v-row>
           </v-col>
         </v-row>
@@ -145,6 +143,17 @@ export default {
       GeoPackage
     },
     methods: {
+      showFab (e) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!this.fab) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.fab = true
+            }, 100)
+          })
+        }
+      },
       createNewGeoPackage () {
         this.fab = false
         this.geopackageExistsDialog = false

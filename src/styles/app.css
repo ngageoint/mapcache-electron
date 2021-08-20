@@ -189,3 +189,13 @@
 .leaflet-popup-tip {
 	background: var(--v-background-base) !important;
 }
+.fake-link {
+	cursor: pointer !important;
+}
+.fake-link:hover {
+	text-decoration: underline !important;
+}
+.noselect {
+	user-select: none !important; /* standard syntax */
+	-webkit-user-select: none !important; /* webkit (safari, chrome) browsers */
+}
