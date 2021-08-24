@@ -29,7 +29,7 @@ export default class LeafletBaseMapTool extends L.Control {
 
     this.disable = () => {
       this._basemapLink.onclick = function () {}
-      L.DomUtil.addClass(this._reorderLink, 'leaflet-control-disabled')
+      L.DomUtil.addClass(this._basemapLink, 'leaflet-control-disabled')
     }
 
     this.enable = () => {

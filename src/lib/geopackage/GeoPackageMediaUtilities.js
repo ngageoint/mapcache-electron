@@ -2,6 +2,7 @@ import { MediaTable, IconTable } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import difference from 'lodash/difference'
 import jetpack from 'fs-jetpack'
+import request from 'request'
 import { getMediaObjectURL, getMediaTableName, getMimeType } from '../util/MediaUtilities'
 import { performSafeGeoPackageOperation, getDefaultValueForDataType } from './GeoPackageCommon'
 
@@ -168,6 +169,81 @@ async function addMediaAttachment (filePath, tableName, featureId, attachmentFil
 }
 
 /**
+ * Adds a media attachment from url
+ * @param gp
+ * @param tableName
+ * @param featureId
+ * @param url
+ * @returns {Promise<boolean>}
+ */
+async function _addMediaAttachmentFromUrl (gp, tableName, featureId, url) {
+  let success = false
+  try {
+    const featureDao = gp.getFeatureDao(tableName)
+    const featureRow = featureDao.queryForId(featureId)
+    if (!isNil(featureRow)) {
+      let {buffer, contentType} = await new Promise (resolve => {
+        request.get({ url, encoding: null }, function (err, res, body) {
+          if (!err) {
+            resolve({buffer: body, contentType: res.headers['content-type']})
+          } else {
+            resolve({buffer: null, contentType: null})
+          }
+        })
+      })
+      if (buffer != null) {
+        const mediaTableName = getMediaTableName()
+        const rte = gp.relatedTablesExtension
+        if (!gp.connection.isTableExists(mediaTableName)) {
+          const mediaTable = MediaTable.create(mediaTableName)
+          rte.createRelatedTable(mediaTable)
+        }
+        const mediaDao = rte.getMediaDao(mediaTableName)
+        if (contentType == null) {
+          contentType = 'application/octet-stream'
+        }
+
+        const mediaRow = mediaDao.newRow()
+
+        // check if table has required columns, other than id, data and content_type
+        const requiredColumns = difference(mediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
+        // iterate over those columns and set them to the default value for that data type, as we do not support
+        // additional columns currently in mapcache media attachments
+        requiredColumns.forEach(columnName => {
+          const type = mediaRow.getRowColumnTypeWithColumnName(columnName)
+          mediaRow.setValueWithColumnName(columnName, getDefaultValueForDataType(type))
+        })
+
+        mediaRow.data = buffer
+        mediaRow.contentType = contentType
+        mediaRow.id = mediaDao.create(mediaRow)
+        featureDao.linkMediaRow(featureRow, mediaRow)
+        success = true
+      }
+    }
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to add media attachment')
+  }
+  return success
+}
+
+/**
+ * Adds a media attachment
+ * @param filePath
+ * @param tableName
+ * @param featureId
+ * @param url
+ * @returns {Promise<any>}
+ */
+async function addMediaAttachmentFromUrl (filePath, tableName, featureId, url) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _addMediaAttachmentFromUrl(gp, tableName, featureId, url)
+  }, true)
+}
+
+/**
  * Gets the count of media attachments
  * @param gp
  * @param tableName
@@ -270,5 +346,7 @@ export {
   _getMediaAttachmentsCounts,
   getMediaAttachmentsCounts,
   _deleteMediaAttachment,
-  deleteMediaAttachment
+  deleteMediaAttachment,
+  _addMediaAttachmentFromUrl,
+  addMediaAttachmentFromUrl
 }

@@ -362,15 +362,18 @@ function removeStyleExtensionForTable ({projectId, id, tableName, isGeoPackage, 
   })
 }
 
-function addFeatureTableToGeoPackage ({projectId, geopackageId, tableName, featureCollection}) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const filePath = geopackage.path
-  createFeatureTable(filePath, tableName, featureCollection).then(function () {
-    getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-      geopackage.size = getGeoPackageFileSize(filePath)
-      geopackage.tables.features[tableName] = cloneDeep(tableInfo)
-      geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-      store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+async function addFeatureTableToGeoPackage ({projectId, geopackageId, tableName, featureCollection}) {
+  return new Promise((resolve) => {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+    const filePath = geopackage.path
+    createFeatureTable(filePath, tableName, featureCollection).then(function () {
+      getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+        geopackage.size = getGeoPackageFileSize(filePath)
+        geopackage.tables.features[tableName] = cloneDeep(tableInfo)
+        geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+        resolve()
+      })
     })
   })
 }
@@ -382,20 +385,23 @@ function updateFeatureGeometry ({projectId, id, isGeoPackage, tableName, feature
   })
 }
 
-function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature}) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-  addFeatureToFeatureTable(filePath, tableName, feature).then(function () {
-    getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-      geopackage.size = getGeoPackageFileSize(filePath)
-      existingTable.featureCount = tableInfo.featureCount
-      existingTable.extent = tableInfo.extent
-      existingTable.description = tableInfo.description
-      existingTable.styleKey = existingTable.styleKey + 1
-      existingTable.indexed = tableInfo.indexed
-      geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-      store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature}) {
+  return new Promise((resolve) => {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+    const existingTable = geopackage.tables.features[tableName]
+    const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
+    addFeatureToFeatureTable(filePath, tableName, feature).then(function (rowId) {
+      getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+        geopackage.size = getGeoPackageFileSize(filePath)
+        existingTable.featureCount = tableInfo.featureCount
+        existingTable.extent = tableInfo.extent
+        existingTable.description = tableInfo.description
+        existingTable.styleKey = existingTable.styleKey + 1
+        existingTable.indexed = tableInfo.indexed
+        geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+        resolve(rowId)
+      })
     })
   })
 }

@@ -152,7 +152,7 @@ import {
   GET_USER_DATA_DIRECTORY,
   IPC_EVENT_CONNECT,
   IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS,
+  IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL,
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
   PROCESS_SOURCE_STATUS,
@@ -517,6 +517,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     let url = 'data:image/' + extension + ';base64,' + fs.readFileSync(fileInfo.absolutePath).toString('base64')
     return {extension, url}
   },
+  openExternal: (link) => {
+    ipcRenderer.send(OPEN_EXTERNAL, link)
+  },
   getFileListInfo: (filePaths) => {
     const fileInfos = []
     for (const file of filePaths) {
@@ -739,21 +742,26 @@ contextBridge.exposeInMainWorld('mapcache', {
     }
     return hasStyle
   },
-  createGeoPackageWithFeatureTable: (projectId, filePath, featureTableName, featureCollection) =>{
-    getOrCreateGeoPackage(filePath).then(gp => {
-      _createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
-        addGeoPackage({projectId: projectId, filePath: filePath})
-      }).catch(() => {
-        console.error('Failed to create feature table.')
-      }).finally(() => {
-        try {
-          gp.close()
-          gp = undefined
-          // eslint-disable-next-line no-unused-vars
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to close geopackage.')
-        }
+  createGeoPackageWithFeatureTable: (projectId, filePath, featureTableName, featureCollection) => {
+    return new Promise ((resolve) => {
+      let success = false
+      getOrCreateGeoPackage(filePath).then(gp => {
+        _createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+          addGeoPackage({projectId: projectId, filePath: filePath})
+          success = true
+        }).catch(() => {
+          console.error('Failed to create feature table.')
+        }).finally(() => {
+          try {
+            gp.close()
+            gp = undefined
+            // eslint-disable-next-line no-unused-vars
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to close geopackage.')
+          }
+          resolve(success)
+        })
       })
     })
   },

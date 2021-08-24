@@ -44,54 +44,56 @@
               <v-list-item-subtitle>{{project.name}}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item-group v-model="item" activeClass="list-item-active">
+          <v-list-item-group v-model="tabId" activeClass="list-item-active">
             <v-list-item
               class="list-item"
-              v-for="(item, i) in items"
+              v-for="(tab, i) in tabs"
               :key="i"
-              :onclick="item.onclick"
+              :value="tab.tabId"
+              :onclick="tab.onclick"
               v-ripple="{ class: `main--text` }"
             >
               <v-list-item-icon>
                 <v-badge
-                  v-if="tabNotification[item.id]"
+                  v-if="tabNotification[tab.tabId]"
                   color="red"
                   dot
                   overlap
                 >
-                  <v-icon v-text="item.icon"></v-icon>
+                  <v-icon v-text="tab.icon"></v-icon>
                 </v-badge>
-                <v-icon v-else v-text="item.icon"></v-icon>
+                <v-icon v-else v-text="tab.icon"></v-icon>
               </v-list-item-icon>
               <v-list-item-content>
-                <v-list-item-title v-text="item.text"></v-list-item-title>
+                <v-list-item-title v-text="tab.text"></v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
         </v-list>
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
-        <v-col class="content-panel" v-show="item >= 0">
-          <geo-packages v-show="item === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
-          <data-sources ref="dataSourceRef" v-show="item === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
-          <settings v-show="item === 2" :back="back" :project="project" :dark="darkTheme"></settings>
+        <v-col class="content-panel" v-show="tabId >= 0">
+          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
+          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
+          <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme"></settings>
+          <nominatim-search-results v-show="tabId === 3" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
           <preview-map
-            :visible="previewLayer !== null && previewLayer !== undefined && item === 1"
+            :visible="previewLayer !== null && previewLayer !== undefined && tabId === 1"
             :project="project"
             :preview-layer="previewLayer"
-            :resizeListener="item"
+            :resizeListener="tabId"
             :get-map-center-and-zoom="getMapCenterAndZoom">
           </preview-map>
           <leaflet-map
             ref="map"
-            :visible="previewLayer === null || previewLayer === undefined || item !== 1"
+            :visible="previewLayer === null || previewLayer === undefined || tabId !== 1"
             :geopackages="project.geopackages"
             :sources="project.sources"
             :project-id="project.id"
             :project="project"
-            :resizeListener="item">
+            :resizeListener="tabId">
           </leaflet-map>
         </v-col>
       </v-row>
@@ -128,8 +130,9 @@ import GeoPackages from '../GeoPackage/GeoPackages'
 import DataSources from '../DataSources/DataSources'
 import BasicAuth from '../Network/BasicAuth'
 import CertAuth from '../Network/CertAuth'
-import {mdiCogOutline, mdiLayersOutline, mdiPackageVariant} from '@mdi/js'
+import {mdiCogOutline, mdiLayersOutline, mdiPackageVariant, mdiMagnify} from '@mdi/js'
 import {SUPPORTED_FILE_EXTENSIONS_WITH_DOT} from '../../lib/util/FileConstants'
+import NominatimSearchResults from '../Nominatim/NominatimSearchResults'
 
 export default {
     data () {
@@ -137,6 +140,7 @@ export default {
         mdiPackageVariant: mdiPackageVariant,
         mdiLayersOutline: mdiLayersOutline,
         mdiCogOutline: mdiCogOutline,
+        mdiMagnify: mdiMagnify,
         closingMessage: '',
         closingDialog: false,
         loading: true,
@@ -144,11 +148,11 @@ export default {
         titleColor: '#ffffff',
         addGeoPackageDialog: false,
         drawer: true,
-        item: 0,
-        items: [
-          { id: 0, text: 'GeoPackages', icon: mdiPackageVariant, notify: false },
-          { id: 1, text: 'Data sources', icon: mdiLayersOutline, notify: false },
-          { id: 2, text: 'Settings', icon: mdiCogOutline, notify: false }
+        tabId: 0,
+        tabs: [
+          { tabId: 0, text: 'GeoPackages', icon: mdiPackageVariant },
+          { tabId: 1, text: 'Data sources', icon: mdiLayersOutline },
+          { tabId: 2, text: 'Settings', icon: mdiCogOutline },
         ],
         showCertificateSelectionDialog: false,
         certificateList: [],
@@ -157,7 +161,8 @@ export default {
         showSignIn: false,
         requestEventUrl: '',
         requestAuthInfo: {},
-        requestDetails: {}
+        requestDetails: {},
+        nominatimSearchResults: {}
       }
     },
     computed: {
@@ -207,9 +212,9 @@ export default {
           if (!isNil(project)) {
             tabNotification = Object.assign({}, project.tabNotification || {0: false, 1: false, 2: false})
           }
-          if (!isNil(this.item) && this.item >= 0 && tabNotification[this.item]) {
-            tabNotification[this.item] = false
-            window.mapcache.clearNotification({projectId: this.project.id, tabId: this.item})
+          if (!isNil(this.tabId) && this.tabId >= 0 && tabNotification[this.tabId]) {
+            tabNotification[this.tabId] = false
+            window.mapcache.clearNotification({projectId: this.project.id, tabId: this.tabId})
           }
           return tabNotification
         },
@@ -230,6 +235,7 @@ export default {
       })
     },
     components: {
+      NominatimSearchResults,
       BasicAuth,
       DataSources,
       LeafletMap,
@@ -239,6 +245,22 @@ export default {
       CertAuth
     },
     methods: {
+      handleSearchResults (data) {
+        if (this.tabs.length === 3) {
+          this.tabs.splice( 2, 0, { tabId: 3, text: 'Search', icon: mdiMagnify })
+        }
+        this.nominatimSearchResults = data
+        this.tabId = 3
+      },
+      clearSearchResults () {
+        if (this.tabId === 3) {
+          this.tabId = 0
+        }
+        if (this.tabs.length === 4) {
+          this.tabs.splice(2, 1)
+        }
+        this.nominatimSearchResults = {}
+      },
       getMapCenterAndZoom () {
         let bounds
         try {
@@ -251,7 +273,7 @@ export default {
         window.mapcache.setProjectName({project: this.project, name: val})
       },
       back () {
-        this.item = undefined
+        this.tabId = undefined
       },
       setupDragAndDrop () {
         const project = document.getElementById('project')
@@ -387,11 +409,13 @@ export default {
       window.addEventListener('online', this.onLineListener)
       window.addEventListener('offline', this.offLineListener)
       EventBus.$on(EventBus.EventTypes.NETWORK_ERROR, this.offLineListener)
+      EventBus.$on(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, this.handleSearchResults)
+      EventBus.$on(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, this.clearSearchResults)
     },
     beforeDestroy() {
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
-      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR])
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS])
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()

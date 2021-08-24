@@ -1,12 +1,28 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify/lib'
 import 'vuetify/dist/vuetify.min.css'
+import MapFilterOnSvg from '../../../views/Nominatim/MapFilterOnSvg'
+import MapFilterOffSvg from '../../../views/Nominatim/MapFilterOffSvg'
 
 Vue.use(Vuetify)
 
 const opts = {
   icons: {
     iconfont: 'mdiSvg',
+    values: {
+      mapFilterOn: { // name of our custom icon
+        component: MapFilterOnSvg, // our custom component
+        props: { // pass props to your component if needed
+          name: 'mapFilterOn',
+        }
+      },
+      mapFilterOff: { // name of our custom icon
+        component: MapFilterOffSvg, // our custom component
+        props: { // pass props to your component if needed
+          name: 'mapFilterOff',
+        }
+      }
+    },
   },
   theme: {
     themes: {

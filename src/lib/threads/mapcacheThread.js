@@ -116,8 +116,12 @@ function getExpiringGeoPackageConnection (filePath) {
  * @returns {Promise<any>}
  */
 async function attachMedia (data) {
-  const { addMediaAttachment } = require('../geopackage/GeoPackageMediaUtilities')
-  return addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath)
+  const { addMediaAttachment, addMediaAttachmentFromUrl } = require('../geopackage/GeoPackageMediaUtilities')
+  if (data.filePath != null) {
+    return addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath)
+  } else if (data.url != null) {
+    return addMediaAttachmentFromUrl(data.geopackagePath, data.tableName, data.featureId, data.url)
+  }
 }
 
 /**

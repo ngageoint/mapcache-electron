@@ -135,6 +135,8 @@
 
 <script>
 import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
+import isObject from 'lodash/isObject'
 import cloneDeep from 'lodash/cloneDeep'
 import moment from 'moment'
 import {mdiCalendar, mdiClock} from '@mdi/js'
@@ -147,6 +149,7 @@ export default {
       tableName: String,
       columns: Object,
       feature: Object,
+      image: String,
       close: Function,
       isEditing: {
         type: Boolean,
@@ -230,8 +233,26 @@ export default {
               feature.properties[column.name] = value
             }
           })
+          keys(feature.properties).forEach(property => {
+            const value = feature.properties[property]
+            if (isObject(value)) {
+              feature.properties[property] = JSON.stringify(value)
+            }
+          })
           if (this.isGeoPackage) {
-            window.mapcache.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature})
+            window.mapcache.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature}).then((rowId) => {
+              if (this.image != null) {
+                window.mapcache.attachMediaToGeoPackage({
+                  projectId: this.projectId,
+                  id: window.mapcache.createUniqueID(),
+                  isGeoPackage: true,
+                  geopackagePath: this.geopackagePath,
+                  tableName: this.tableName,
+                  featureId: rowId,
+                  url: this.image
+                })
+              }
+            })
           } else {
             // not supported - adding feature to data source
           }

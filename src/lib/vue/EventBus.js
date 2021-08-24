@@ -16,7 +16,9 @@ const Events = {
   GRID_BOUNDING_BOX_STOP: 'pick-grid-stop',
   GRID_BOUNDING_BOX_CANCELLED: (id) => 'pick-grid-cancelled-' + id,
   BOUNDING_BOX_UPDATED: (id) => 'bounding-box-updated-' + id,
-
+  NOMINATIM_SEARCH_RESULTS: 'nominatim-search-results',
+  CLEAR_NOMINATIM_SEARCH_RESULTS: 'clear-nominatim-search-results',
+  SAVE_NOMINATIM_SEARCH_RESULT: 'save-nominatim-search-result',
 }
 
 EventBus.EventTypes = Events
