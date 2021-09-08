@@ -1,4 +1,6 @@
 import {L} from '../../vendor'
+import {DRAWING_MAP_PANE} from '../panes/MapPanes'
+import {getDefaultLeafletStyleForMapCache} from '../style/Style'
 
 export default class LeafletDraw extends L.Control {
   constructor (options) {
@@ -16,8 +18,8 @@ export default class LeafletDraw extends L.Control {
   }
 
   onAdd (map) {
-    map.createPane('drawingMapPane')
-    map.getPane('drawingMapPane').style.zIndex = 501
+    map.createPane(DRAWING_MAP_PANE.name)
+    map.getPane(DRAWING_MAP_PANE.name).style.zIndex = DRAWING_MAP_PANE.zIndex
 
     let container = L.DomUtil.create('div', 'leaflet-bar leaflet-touch leaflet-control')
     this._pointLink = L.DomUtil.create('a', '', container)
@@ -92,7 +94,7 @@ export default class LeafletDraw extends L.Control {
         this.cancelled = false
         this.drawingType = point
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startMarker(undefined, {pane: 'drawingMapPane'})
+        this.drawing = map.editTools.startMarker(undefined, {pane: DRAWING_MAP_PANE.name})
         this.isDrawing = true
         L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -102,7 +104,8 @@ export default class LeafletDraw extends L.Control {
         this.cancelled = false
         this.drawingType = polygon
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startPolygon(undefined, {pane: 'drawingMapPane'})
+        this.drawing = map.editTools.startPolygon(undefined, {pane: DRAWING_MAP_PANE.name})
+        this.drawing.setStyle(getDefaultLeafletStyleForMapCache())
         this.isDrawing = true
         L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -112,7 +115,8 @@ export default class LeafletDraw extends L.Control {
         this.cancelled = false
         this.drawingType = rectangle
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startRectangle(undefined, {pane: 'drawingMapPane'})
+        this.drawing = map.editTools.startRectangle(undefined, {pane: DRAWING_MAP_PANE.name})
+        this.drawing.setStyle(getDefaultLeafletStyleForMapCache())
         this.isDrawing = true
         L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()
@@ -122,7 +126,8 @@ export default class LeafletDraw extends L.Control {
         this.cancelled = false
         this.drawingType = linestring
         this.disableDrawingLinks()
-        this.drawing = map.editTools.startPolyline(undefined, {pane: 'drawingMapPane'})
+        this.drawing = map.editTools.startPolyline(undefined, {pane: DRAWING_MAP_PANE.name})
+        this.drawing.setStyle(getDefaultLeafletStyleForMapCache())
         this.isDrawing = true
         L.DomUtil.removeClass(this._cancelLink, 'hidden')
         e.stopPropagation()

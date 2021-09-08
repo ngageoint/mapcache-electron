@@ -151,7 +151,7 @@ function getZoomRange(db) {
     // eslint-disable-next-line no-console
     console.error('Failed to get zoom range for MBTiles file.')
   }
-  return zoomRange;
+  return zoomRange
 }
 
 export {

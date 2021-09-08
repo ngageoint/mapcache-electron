@@ -21,6 +21,7 @@
                       v-on="on"
                       class="mr-1"
                       icon
+                      :color="applyViewBox ? 'primary' : ''"
                       @click="toggleViewBoxFilter">
                     <v-icon>{{applyViewBox ? '$mapFilterOn' : '$mapFilterOff'}}</v-icon>
                   </v-btn>
@@ -44,9 +45,8 @@
 
 <script>
 import { mdiMagnify } from '@mdi/js'
-import keys from 'lodash/keys'
-import { OpenStreetMapProvider } from 'leaflet-geosearch'
 import EventBus from '../../lib/vue/EventBus'
+import {queryNominatim} from '../../lib/util/nominatim/NominatimUtilities'
 
 export default {
   name: 'NominatimSearch',
@@ -59,8 +59,7 @@ export default {
       applyViewBox: false,
       mdiMagnify: mdiMagnify,
       query: '',
-      searching: false,
-      provider: null,
+      searching: false
     }
   },
   methods: {
@@ -76,92 +75,21 @@ export default {
         EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
       } else {
         this.searching = true
-        this.searchGeoJson(this.query).then(featureCollection => {
+        this.searchGeoJson(this.query).then(result => {
           this.searching = false
-          featureCollection.query = this.query
-          EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, featureCollection)
+          EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
         })
       }
     },
     async searchGeoJson (value) {
-      const requestObject = {q: value, format: 'geojson', polygon_geojson: 1, addressdetails: 1, extratags: 1, namedetails: 1, limit: 10}
+      let bbox = null
       if (this.applyViewBox) {
-        requestObject.viewbox = this.mapBounds.join(',')
-        requestObject.bounded = 1
+        bbox = this.mapBounds
       }
-      const url = this.provider.getUrl(this.provider.searchUrl, requestObject)
-      const request = await fetch(url)
-      const featureCollection = await request.json()
-
-      for (let i = 0; i < featureCollection.features.length; i++) {
-        const feature = featureCollection.features[i]
-        feature.properties.attribution = featureCollection.licence
-        if (feature.properties && feature.properties.extratags) {
-          if (feature.properties.extratags.image == null && feature.properties.extratags.wikipedia != null) {
-            // try to pull wiki image
-            try {
-              const parts = feature.properties.extratags.wikipedia.split(':')
-              const wikiReq = await fetch('https://' + parts[0] + '.wikipedia.org/w/api.php?action=query&titles=' + parts[1] +  '&prop=pageimages&format=json&pithumbsize=500')
-              const wikiRes = await wikiReq.json()
-              const thumbnailKeys = keys(wikiRes.query.pages).filter(key => wikiRes.query.pages[key].thumbnail != null)
-              if (thumbnailKeys.length > 0) {
-                feature.properties.extratags.image = wikiRes.query.pages[thumbnailKeys[0]].thumbnail.source
-              }
-            } catch (e) {
-              console.error(e)
-            }
-          }
-        }
-        if (feature.properties.extratags) {
-          keys(feature.properties.extratags).forEach(tag => {
-            feature.properties[tag] = feature.properties.extratags[tag]
-          })
-          delete feature.properties['extratags']
-        } else {
-          feature.properties.image = null
-          feature.properties.wikipedia = null
-        }
-        if (feature.properties.namedetails) {
-          feature.properties.name = feature.properties.namedetails['name:en'] || feature.properties.namedetails['name'] || ''
-          delete feature.properties['namedetails']
-        } else {
-          feature.properties.name = ''
-        }
-        if (feature.properties.address) {
-          feature.properties.city = feature.properties.address.city || ''
-          feature.properties.country = feature.properties.address.country || ''
-          feature.properties.country_code = feature.properties.address.country_code || ''
-          feature.properties.county = feature.properties.address.county || ''
-          feature.properties.house_number = feature.properties.address.house_number || ''
-          feature.properties.leisure = feature.properties.address.leisure || ''
-          feature.properties.neighbourhood = feature.properties.address.neighbourhood || ''
-          feature.properties.postcode = feature.properties.address.postcode || ''
-          feature.properties.road = feature.properties.address.road || ''
-          feature.properties.state = feature.properties.address.state || ''
-          feature.properties.suburb = feature.properties.address.suburb || ''
-          delete feature.properties['address']
-        } else {
-          feature.properties.city = ''
-          feature.properties.country = ''
-          feature.properties.country_code = ''
-          feature.properties.county = ''
-          feature.properties.house_number = ''
-          feature.properties.leisure = ''
-          feature.properties.neighbourhood = ''
-          feature.properties.postcode = ''
-          feature.properties.road = ''
-          feature.properties.state = ''
-          feature.properties.suburb = ''
-        }
-      }
-      return featureCollection
+      return queryNominatim(value, bbox, [])
     }
   },
   mounted () {
-    const host = 'https://osm-nominatim.gs.mil'
-    const searchUrl = `${host}/search`
-    const reverseUrl = `${host}/reverse`
-    this.provider = new OpenStreetMapProvider({searchUrl, reverseUrl})
     EventBus.$on(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, () => {
       this.selectedResult = null
       this.searching = false

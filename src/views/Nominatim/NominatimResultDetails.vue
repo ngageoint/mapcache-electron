@@ -13,7 +13,7 @@
       <v-row no-gutters class="background">
         <v-img
             v-if="getImage() != null"
-            :alt="result.properties.name"
+            alt="Image"
             :src="getImage()"
             max-height="200px"
         ></v-img>
@@ -22,8 +22,21 @@
         <v-col>
           <v-row class="pb-2" no-gutters justify="space-between">
             <v-col>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{result.properties.display_name}}
+              </p>
+            </v-col>
+            <v-col cols="1">
+              <v-btn color="primary" icon @click="zoomTo"><v-icon>{{mdiMagnify}}</v-icon></v-btn>
+            </v-col>
+          </v-row>
+          <v-row v-if="result.properties.country_name != null" class="pb-2" no-gutters justify="space-between">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Regional name
+              </p>
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{result.properties.country_name}}
               </p>
             </v-col>
           </v-row>
@@ -32,7 +45,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Category
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{ prettyifyWords(result.properties.type, true) + ' • ' + prettyifyWords(result.properties.category, true) }}
               </p>
             </v-col>
@@ -42,8 +55,8 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Address
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{ prettifyAddress(result.properties) }}
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                {{ prettyifyAddress(result.properties) }}
               </p>
             </v-col>
           </v-row>
@@ -52,7 +65,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Website
               </p>
-              <p class="fake-link" :style="{color: 'blue',fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(result.properties.website)">
+              <p class="fake-link allowselect" :style="{color: 'blue',fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(result.properties.website)">
                 {{result.properties.website}}
               </p>
             </v-col>
@@ -62,7 +75,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Wikipedia
               </p>
-              <p class="fake-link" :style="{color: 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(getWikiUrl(result.properties.wikipedia))">
+              <p class="fake-link allowselect" :style="{color: 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(getWikiUrl(result.properties.wikipedia))">
                 {{result.properties.wikipedia}}
               </p>
             </v-col>
@@ -72,7 +85,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Attribution
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 {{result.properties.attribution}}
               </p>
             </v-col>
@@ -100,6 +113,7 @@
 <script>
 import {mdiChevronLeft, mdiContentSave, mdiMagnify} from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
+import {prettyifyWords, prettyifyAddress} from '../../lib/util/nominatim/NominatimUtilities'
 
 export default {
   props: {
@@ -116,6 +130,8 @@ export default {
       }
     },
     methods: {
+      prettyifyWords: prettyifyWords,
+      prettyifyAddress: prettyifyAddress,
       open (link) {
         window.mapcache.openExternal(link)
       },
@@ -123,65 +139,12 @@ export default {
         const parts = wiki.split(':')
         return 'https://' + parts[0] + '.wikipedia.com/wiki/' + parts[1]
       },
-      prettyifyWords (words, uppercase = false) {
-        let pretty = words.toLowerCase().replaceAll('_', ' ')
-        if (uppercase) {
-          pretty = pretty.replace(words.charAt(0), words.charAt(0).toUpperCase())
-        }
-        return pretty
-      },
-      prettifyAddress (properties) {
-        let prettyAddress = ''
-        if (properties.house_number != null) {
-          prettyAddress += properties.house_number + ' '
-        }
-        if (properties.road != null) {
-          prettyAddress += properties.road + ', '
-        }
-        if (properties.city != null) {
-          prettyAddress += properties.city + ', '
-        }
-        if (properties.state != null) {
-          prettyAddress += properties.state + ', '
-        }
-        if (properties.country != null) {
-          prettyAddress += properties.country
-        }
-        return prettyAddress
-      },
       getIcon () {
         let icon = null
         if (this.result.properties && this.result.properties.icon) {
           icon = this.result.properties.icon
         }
         return icon
-      },
-      getGeometryType () {
-        let type = 1
-        switch (this.result.geometry.type.toLowerCase()) {
-          case 'point':
-            type = 1
-            break;
-          case 'linestring':
-            type = 2
-            break;
-          case 'polygon':
-            type = 3
-            break;
-          case 'multipoint':
-            type = 4
-            break;
-          case 'multilinestring':
-            type = 5
-            break;
-          case 'multipolygon':
-            type = 6
-            break;
-          case 'geometrycollection':
-            type = 7
-            break;
-        }
-        return type
       },
       getImage () {
         let image = null

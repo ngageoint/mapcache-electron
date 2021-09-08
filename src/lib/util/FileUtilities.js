@@ -366,7 +366,7 @@ function readJSONFile (path) {
 }
 
 function readFile (path) {
-  return readFileSync(path);
+  return readFileSync(path)
 }
 
 /**

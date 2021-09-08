@@ -1,172 +1,36 @@
 import path from 'path'
 import fs from 'fs'
 import jetpack from 'fs-jetpack'
-import {clipboard, contextBridge, ipcRenderer, shell} from 'electron'
 import log from 'electron-log'
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
-import {
-  Context,
-  GeometryType,
-  GeoPackageAPI,
-  HtmlCanvasAdapter,
-  SqliteAdapter,
-  GeoPackageDataType,
-} from '@ngageoint/geopackage'
-import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/MediaUtilities'
-import {
-  createNextAvailableBaseMapDirectory,
-  createNextAvailableSourceDirectory,
-  getExtraResourcesDirectory,
-  readJSONFile
-} from '../util/FileUtilities'
 import CredentialsManagement from '../network/CredentialsManagement'
-import { randomStyle, getDefaultIcon } from '../util/VectorStyleUtilities'
-import {
-  setDataSource,
-  setProjectName,
-  showToolTips,
-  setDataSourceDisplayName,
-  addDataSources,
-  addGeoPackage,
-  setGeoPackageLayersVisible,
-  setGeoPackageFeatureTableVisible,
-  setGeoPackageTileTableVisible,
-  sleep,
-  renameGeoPackage,
-  removeGeoPackage,
-  renameGeoPackageTileTable,
-  copyGeoPackageTileTable,
-  deleteGeoPackageTileTable,
-  renameGeoPackageFeatureTable,
-  copyGeoPackageFeatureTable,
-  deleteGeoPackageFeatureTable,
-  renameGeoPackageFeatureTableColumn,
-  deleteGeoPackageFeatureTableColumn,
-  addGeoPackageFeatureTableColumn,
-  removeDataSource,
-  getGeoPackageFilePath,
-  setFeatureStyle,
-  setFeatureIcon,
-  setTableStyle,
-  setTableIcon,
-  createStyleRow,
-  createIconRow,
-  updateStyleRow,
-  updateIconRow,
-  deleteStyleRow,
-  deleteIconRow,
-  addStyleExtensionForTable,
-  removeStyleExtensionForTable,
-  addFeatureTableToGeoPackage,
-  updateFeatureGeometry,
-  addFeatureToGeoPackage,
-  updateFeatureTable,
-  removeFeatureFromGeopackage,
-  removeFeatureFromDataSource,
-  setProjectMaxFeatures,
-  setZoomControlEnabled,
-  setDisplayZoomEnabled,
-  setDisplayAddressSearchBar,
-  clearActiveLayers,
-  getExtentOfActiveLayers,
-  synchronizeGeoPackage,
-  synchronizeDataSource,
-  setActiveGeoPackage,
-  setActiveGeoPackageFeatureLayer,
-  updateStyleKey,
-  setDarkTheme,
-  notifyTab,
-  clearNotification,
-  clearNotifications,
-  setMapZoom,
-  editFeatureGeometry,
-  clearEditFeatureGeometry,
-  setMapRenderingOrder,
-  setPreviewLayer,
-  clearPreviewLayer,
-  addBaseMap,
-  editBaseMap,
-  removeBaseMap,
-  setSourceError,
-  saveConnectionSettings,
-  saveBaseMapConnectionSettings
-} from '../vue/vuex/ProjectActions'
+import Store from 'electron-store'
+import moment from 'moment'
+import orderBy from 'lodash/orderBy'
+import isEmpty from 'lodash/isEmpty'
+import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
+import { Context, GeometryType, GeoPackageAPI, HtmlCanvasAdapter, SqliteAdapter, GeoPackageDataType } from '@ngageoint/geopackage'
+import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/MediaUtilities'
+import { createNextAvailableBaseMapDirectory, createNextAvailableSourceDirectory, getExtraResourcesDirectory, readJSONFile } from '../util/FileUtilities'
+import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
+import { setDataSource, setProjectName, showToolTips, setDataSourceDisplayName, addDataSources, addGeoPackage, setGeoPackageLayersVisible, setGeoPackageFeatureTableVisible, setGeoPackageTileTableVisible, sleep, renameGeoPackage, removeGeoPackage, renameGeoPackageTileTable, copyGeoPackageTileTable, deleteGeoPackageTileTable, renameGeoPackageFeatureTable, copyGeoPackageFeatureTable, deleteGeoPackageFeatureTable, renameGeoPackageFeatureTableColumn, deleteGeoPackageFeatureTableColumn, addGeoPackageFeatureTableColumn, removeDataSource, getGeoPackageFilePath, setFeatureStyle, setFeatureIcon, setTableStyle, setTableIcon, createStyleRow, createIconRow, updateStyleRow, updateIconRow, deleteStyleRow, deleteIconRow, addStyleExtensionForTable, removeStyleExtensionForTable, addFeatureTableToGeoPackage, updateFeatureGeometry, addFeatureToGeoPackage, updateFeatureTable, removeFeatureFromGeopackage, removeFeatureFromDataSource, setProjectMaxFeatures, setZoomControlEnabled, setDisplayZoomEnabled, setDisplayAddressSearchBar, clearActiveLayers, getExtentOfActiveLayers, synchronizeGeoPackage, synchronizeDataSource, setActiveGeoPackage, setActiveGeoPackageFeatureLayer, updateStyleKey, setDarkTheme, notifyTab, clearNotification, clearNotifications, setMapZoom, editFeatureGeometry, clearEditFeatureGeometry, setMapRenderingOrder, setPreviewLayer, clearPreviewLayer, addBaseMap, editBaseMap, removeBaseMap, setSourceError, saveConnectionSettings, saveBaseMapConnectionSettings } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, deleteGeoPackageTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
 import { getAllFeatureRows, getFeatureRow, updateFeatureRow, featureExists, countOfFeaturesAt, getFeatureCountInBoundingBox, getFeatureColumns, indexFeatureTable, _createFeatureTable, getAllFeaturesAsGeoJSON, getBoundingBoxForFeature } from '../geopackage/GeoPackageFeatureTableUtilities'
-import {
-  getMediaAttachmentsCounts,
-  deleteMediaAttachment,
-  getMediaRelationships,
-  getMediaRow,
-  getMediaObjectUrl
-} from '../geopackage/GeoPackageMediaUtilities'
-import {
-  getStyleItemsForFeature,
-  getStyleAssignmentForFeatures,
-  _getTableStyle,
-  _getTableIcon,
-  _getStyleRows,
-  _getIconRows,
-  getStyleDrawOverlap
-} from '../geopackage/GeoPackageStyleUtilities'
+import { getMediaAttachmentsCounts, deleteMediaAttachment, getMediaRelationships, getMediaRow, getMediaObjectUrl } from '../geopackage/GeoPackageMediaUtilities'
+import { getStyleItemsForFeature, getStyleAssignmentForFeatures, _getTableStyle, _getTableIcon, _getStyleRows, _getIconRows, getStyleDrawOverlap } from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains } from '../util/URLUtilities'
 import { constructLayer } from '../layer/LayerFactory'
 import { fixXYZTileServerUrlForLeaflet } from '../util/XYZTileUtilities'
 import { getBaseURL, supportedImageFormats } from '../util/GeoServiceUtilities'
-import Store from 'electron-store'
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/TileBoundingBoxUtils'
-import moment from 'moment'
-import orderBy from 'lodash/orderBy'
-import isEmpty from 'lodash/isEmpty'
 import { getDef, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
-import {
-  ATTACH_MEDIA,
-  ATTACH_MEDIA_COMPLETED,
-  BUILD_FEATURE_LAYER,
-  BUILD_FEATURE_LAYER_COMPLETED,
-  BUILD_FEATURE_LAYER_STATUS,
-  BUILD_TILE_LAYER,
-  BUILD_TILE_LAYER_COMPLETED,
-  BUILD_TILE_LAYER_STATUS,
-  CANCEL_BUILD_FEATURE_LAYER,
-  CANCEL_BUILD_FEATURE_LAYER_COMPLETED,
-  CANCEL_BUILD_TILE_LAYER,
-  CANCEL_BUILD_TILE_LAYER_COMPLETED,
-  CANCEL_PROCESS_SOURCE,
-  CANCEL_PROCESS_SOURCE_COMPLETED,
-  CANCEL_REPROJECT_TILE_REQUEST,
-  CANCEL_SERVICE_REQUEST,
-  CANCEL_TILE_REQUEST,
-  CLIENT_CERTIFICATE_SELECTED,
-  CLIENT_CREDENTIALS_INPUT,
-  CLOSE_PROJECT,
-  CLOSING_PROJECT_WINDOW,
-  GENERATE_GEOTIFF_RASTER_FILE,
-  GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
-  GET_APP_DATA_DIRECTORY,
-  GET_USER_DATA_DIRECTORY,
-  IPC_EVENT_CONNECT,
-  IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL,
-  PROCESS_SOURCE,
-  PROCESS_SOURCE_COMPLETED,
-  PROCESS_SOURCE_STATUS,
-  REQUEST_CLIENT_CREDENTIALS,
-  REQUEST_REPROJECT_TILE,
-  REQUEST_REPROJECT_TILE_COMPLETED,
-  REQUEST_TILE,
-  REQUEST_TILE_COMPLETED,
-  SELECT_CLIENT_CERTIFICATE,
-  SHOW_OPEN_DIALOG,
-  SHOW_OPEN_DIALOG_COMPLETED,
-  SHOW_SAVE_DIALOG,
-  SHOW_SAVE_DIALOG_COMPLETED
-} from '../electron/ipc/MapCacheIPC'
+import { ATTACH_MEDIA, ATTACH_MEDIA_COMPLETED, BUILD_FEATURE_LAYER, BUILD_FEATURE_LAYER_COMPLETED, BUILD_FEATURE_LAYER_STATUS, BUILD_TILE_LAYER, BUILD_TILE_LAYER_COMPLETED, BUILD_TILE_LAYER_STATUS, CANCEL_BUILD_FEATURE_LAYER, CANCEL_BUILD_FEATURE_LAYER_COMPLETED, CANCEL_BUILD_TILE_LAYER, CANCEL_BUILD_TILE_LAYER_COMPLETED, CANCEL_PROCESS_SOURCE, CANCEL_PROCESS_SOURCE_COMPLETED, CANCEL_REPROJECT_TILE_REQUEST, CANCEL_SERVICE_REQUEST, CANCEL_TILE_REQUEST, CLIENT_CERTIFICATE_SELECTED, CLIENT_CREDENTIALS_INPUT, CLOSE_PROJECT, CLOSING_PROJECT_WINDOW, GENERATE_GEOTIFF_RASTER_FILE, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED, GET_APP_DATA_DIRECTORY, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, PROCESS_SOURCE, PROCESS_SOURCE_COMPLETED, PROCESS_SOURCE_STATUS, REQUEST_CLIENT_CREDENTIALS, REQUEST_REPROJECT_TILE, REQUEST_REPROJECT_TILE_COMPLETED, REQUEST_TILE, REQUEST_TILE_COMPLETED, SELECT_CLIENT_CERTIFICATE, SHOW_OPEN_DIALOG, SHOW_OPEN_DIALOG_COMPLETED, SHOW_SAVE_DIALOG, SHOW_SAVE_DIALOG_COMPLETED } from '../electron/ipc/MapCacheIPC'
+import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -674,7 +538,6 @@ contextBridge.exposeInMainWorld('mapcache', {
    return await updateFeatureRow(filePath, tableName, featureRow)
   },
   encryptPassword: CredentialsManagement.encrypt,
-  randomStyle: randomStyle,
   getDefaultIcon: getDefaultIcon,
   getGeoPackageFeatureTableStyleData: async (filePath, tableName) => {
     const result = {}
@@ -916,5 +779,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   saveBaseMapConnectionSettings,
   getBoundingBoxForFeature,
   getMediaObjectUrl,
-  getStyleDrawOverlap
+  getStyleDrawOverlap,
+  getOverpassQuery
 })

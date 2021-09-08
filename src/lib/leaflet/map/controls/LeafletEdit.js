@@ -3,6 +3,7 @@ import {L} from '../../vendor'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
+import {EDITING_PANE} from '../panes/MapPanes'
 
 export default class LeafletEdit extends L.Control {
   constructor (options) {
@@ -184,8 +185,8 @@ export default class LeafletEdit extends L.Control {
         }
 
         this.editingLayer = L.geoJSON(featureCollection, {
-          pane: 'editingPane',
-          zIndex: 501,
+          pane: EDITING_PANE.name,
+          zIndex: EDITING_PANE.zIndex,
           pointToLayer: function (geojson, latlng) {
             return new L.Marker(latlng, {draggable: true})
           },

@@ -274,8 +274,8 @@ async function buildTileLayer (configuration, statusCallback) {
           }
         }
         if (canvas.dispose) {
-          canvas.dispose();
-          canvas = null;
+          canvas.dispose()
+          canvas = null
         }
         tilesAdded += 1
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded

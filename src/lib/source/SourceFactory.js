@@ -16,6 +16,8 @@ export default class SourceFactory {
         source = new (require('./XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent)
       } else if (sourceConfiguration.serviceType === 3) {
         source = new (require('./ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
+      } else if (sourceConfiguration.serviceType === 4) {
+        source = new (require('./OverpassSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.name, sourceConfiguration.featureCollection)
       }
     } else {
       const filePath = sourceConfiguration.file.path

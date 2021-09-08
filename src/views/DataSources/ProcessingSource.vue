@@ -7,8 +7,8 @@
         </span>
       </v-card-title>
       <v-card-text>
-        <v-row no-gutters v-if="source.url" class="align-start left-margin"><p class="text-wrap full-width">Url: {{displayName}}</p></v-row>
-        <v-row no-gutters v-else class="align-start left-margin"><p class="text-wrap full-width">File name: {{displayName}}</p></v-row>
+        <v-row no-gutters v-if="source.url" class="align-start left-margin"><p class="text-wrap full-width">Url: {{source.url}}</p></v-row>
+        <v-row no-gutters v-else class="align-start left-margin"><p class="text-wrap full-width">File name: {{source.file.path}}</p></v-row>
         <div v-if="error">
           <v-row no-gutters class="align-start left-margin" v-if="error"><p class="warning-text text-wrap full-width">{{'Error: ' + error}}</p></v-row>
         </div>
@@ -67,7 +67,9 @@ export default {
     },
     computed: {
       displayName () {
-        if (this.source.url) {
+        if (this.source.name) {
+          return this.source.name
+        } else if (this.source.url) {
           return window.mapcache.getBaseUrlAndQueryParams(this.source.url).baseUrl
         } else {
           return window.mapcache.getBaseName(this.source.file.path)
@@ -134,7 +136,7 @@ export default {
 
       self.$nextTick(() => {
         // wfs and arcgis fs will require accessing features in browser, as opposed to trying that in node, given credentials
-        if (source.serviceType === SERVICE_TYPE.WFS || source.serviceType === SERVICE_TYPE.ARCGIS_FS) {
+        if (source.serviceType === SERVICE_TYPE.WFS || source.serviceType === SERVICE_TYPE.ARCGIS_FS || source.serviceType === SERVICE_TYPE.OVERPASS) {
           self.preprocessSource(source).then(updatedSource => {
             if (self.workflowState !== WORKFLOW_STATES.CANCELLING && self.workflowState !== WORKFLOW_STATES.CANCELLED) {
               self.sendSourceToProcess(updatedSource)

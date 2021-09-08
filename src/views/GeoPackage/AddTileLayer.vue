@@ -494,7 +494,6 @@ export default {
           try {
             tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom)
           } catch (e) {
-            console.error(e)
             tiles = 0
           }
         }

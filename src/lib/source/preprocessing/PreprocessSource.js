@@ -1,6 +1,7 @@
 import {SERVICE_TYPE} from '../../network/HttpUtilities'
 import ArcGISFeatureServicePreprocessor from './ArcGISFeatureServicePreprocessor'
 import WebFeatureServicePreProcessor from './WebFeatureServicePreProcessor'
+import OverpassPreProcessor from './OverpassPreProcessor'
 
 /**
  * Handles the preprocessing of a source
@@ -17,6 +18,8 @@ export default class PreprocessSource {
       this.preprocessor = new ArcGISFeatureServicePreprocessor(source)
     } else if (source.serviceType === SERVICE_TYPE.WFS) {
       this.preprocessor = new WebFeatureServicePreProcessor(source)
+    } else if (source.serviceType === SERVICE_TYPE.OVERPASS) {
+      this.preprocessor = new OverpassPreProcessor(source)
     }
   }
 

@@ -1,10 +1,9 @@
 // Keeps a history of any tile URLs that the user has added, accessible across all projects
 import Vue from 'vue'
-import { getDefaultBaseMaps } from '../../lib/util/BaseMapUtilities'
 
 const getDefaultState = () => {
   return {
-    baseMaps: getDefaultBaseMaps()
+    baseMaps: []
   }
 }
 

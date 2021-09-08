@@ -177,7 +177,7 @@
             <span>{{configuration.pane === 'vector' ? 'Feature' : 'Tile'}} base map</span>
           </p>
         </v-col>
-        <v-col cols="1" v-if="baseMap.error">
+        <v-col cols="1" v-if="baseMap.error && !baseMap.readonly">
           <base-map-troubleshooting :base-map="baseMap"></base-map-troubleshooting>
         </v-col>
         <v-col cols="1" v-if="rasterMissing">
@@ -294,7 +294,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters v-if="configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer'">
+          <v-row class="pb-2" no-gutters v-if="!baseMap.readonly && (configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Network settings

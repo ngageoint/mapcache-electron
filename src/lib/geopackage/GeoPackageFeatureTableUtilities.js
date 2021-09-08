@@ -19,8 +19,16 @@ import reproject from 'reproject'
 import wkx from 'wkx'
 import bbox from '@turf/bbox'
 import moment from 'moment'
-import { performSafeGeoPackageOperation, projectGeometryTo4326, getQueryBoundingBoxForCoordinateAndZoom } from './GeoPackageCommon'
-import { getDefaultIcon, randomStyle } from '../util/VectorStyleUtilities'
+import {
+  performSafeGeoPackageOperation,
+  projectGeometryTo4326,
+  getQueryBoundingBoxForCoordinateAndZoom,
+  _calculateTrueExtentForFeatureTable
+} from './GeoPackageCommon'
+import {_addMediaAttachment} from './GeoPackageMediaUtilities'
+import {
+  _addOrSetStyleForFeature
+} from './GeoPackageStyleUtilities'
 
 /**
  * Links a feature row to a media row
@@ -117,6 +125,7 @@ function _addFeatureToFeatureTable (gp, featureDao, tableName, feature, updateBo
     })
   }
   const rowId = gp.addGeoJSONFeatureToGeoPackageWithFeatureDaoAndSrs(feature, featureDao, featureDao.srs, true)
+  _addOrSetStyleForFeature(gp, feature, rowId, tableName)
   if (updateBoundingBox) {
     _updateBoundingBoxForFeatureTable(gp, tableName)
   }
@@ -225,9 +234,15 @@ async function _createFeatureTable (gp, tableName, featureCollection, addFeature
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
   const featureDao = gp.getFeatureDao(tableName)
   if (addFeatures) {
-    featureCollection.features.forEach(feature => {
-      _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
-    })
+    for (let i = 0; i < featureCollection.features.length; i++) {
+      const feature = featureCollection.features[i]
+      const attachment = feature.attachment
+      delete feature.attachment
+      const rowId = _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
+      if (attachment != null) {
+        await _addMediaAttachment(gp, tableName, rowId, attachment)
+      }
+    }
   }
   await _indexFeatureTable(gp, tableName)
 }
@@ -466,186 +481,6 @@ async function addGeoPackageFeatureTableColumn (filePath, tableName, columnName,
 }
 
 /**
- * Updates a style row
- * @param gp
- * @param tableName
- * @param styleRow
- */
-function _updateStyleRow (gp, tableName, styleRow) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  let styleDao = featureTableStyles.getStyleDao()
-  let updatedRow = styleDao.newRow()
-  updatedRow.id = styleRow.id
-  updatedRow.setName(styleRow.name)
-  updatedRow.setDescription(styleRow.description)
-  updatedRow.setColor(styleRow.color, styleRow.opacity)
-  updatedRow.setFillColor(styleRow.fillColor, styleRow.fillOpacity)
-  updatedRow.setWidth(styleRow.width)
-  styleDao.update(updatedRow)
-}
-
-/**
- * Updates a style row
- * @param filePath
- * @param tableName
- * @param styleRow
- * @returns {Promise<any>}
- */
-async function updateStyleRow (filePath, tableName, styleRow) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _updateStyleRow(gp, tableName, styleRow)
-  })
-}
-
-/**
- * Updates an icon row
- * @param gp
- * @param tableName
- * @param iconRow
- */
-function _updateIconRow (gp, tableName, iconRow) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  let iconDao = featureTableStyles.getIconDao()
-  let updatedRow = iconDao.newRow()
-  updatedRow.id = iconRow.id
-  updatedRow.name = iconRow.name
-  updatedRow.description = iconRow.description
-  updatedRow.contentType = iconRow.contentType
-  updatedRow.data = iconRow.data
-  updatedRow.width = iconRow.width
-  updatedRow.height = iconRow.height
-  updatedRow.anchorU = iconRow.anchorU
-  updatedRow.anchorV = iconRow.anchorV
-  iconDao.update(updatedRow)
-}
-
-/**
- * Updates an icon row
- * @param filePath
- * @param tableName
- * @param iconRow
- * @returns {Promise<any>}
- */
-async function updateIconRow (filePath, tableName, iconRow) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _updateIconRow(gp, tableName, iconRow)
-  })
-}
-
-/**
- * Creates a style row
- * @param gp
- * @param tableName
- * @param style
- */
-function _createStyleRow (gp, tableName, style = randomStyle()) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  let styleDao = featureTableStyles.getStyleDao()
-  let styleRow = styleDao.newRow()
-  styleRow.setColor(style.color, style.opacity)
-  styleRow.setFillColor(style.fillColor, style.fillOpacity)
-  styleRow.setWidth(style.width)
-  styleRow.setName(style.name)
-  styleRow.setDescription(style.description)
-  featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
-}
-
-/**
- * Creates a style row
- * @param filePath
- * @param tableName
- * @param style
- * @returns {Promise<any>}
- */
-async function createStyleRow (filePath, tableName, style) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _createStyleRow(gp, tableName, style)
-  })
-}
-
-/**
- * Creates an icon row
- * @param gp
- * @param tableName
- * @param icon
- */
-function _createIconRow (gp, tableName, icon = getDefaultIcon()) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  let iconDao = featureTableStyles.getIconDao()
-  let iconRow = iconDao.newRow()
-  iconRow.name = icon.name
-  iconRow.description = icon.description
-  iconRow.data = icon.data
-  iconRow.contentType = icon.contentType
-  iconRow.width = icon.width
-  iconRow.height = icon.height
-  iconRow.anchorU = icon.anchorU
-  iconRow.anchorV = icon.anchorV
-  featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
-}
-
-/**
- * Creates an icon row
- * @param filePath
- * @param tableName
- * @param icon
- * @returns {Promise<any>}
- */
-async function createIconRow (filePath, tableName, icon = getDefaultIcon()) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _createIconRow(gp, tableName, icon)
-  })
-}
-
-/**
- * Deletes a style row
- * @param gp
- * @param tableName
- * @param styleId
- */
-function _deleteStyleRow (gp, tableName, styleId) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  featureTableStyles.deleteStyleAndMappingsByStyleRowId(styleId)
-}
-
-/**
- * Deletes a style row
- * @param filePath
- * @param tableName
- * @param styleId
- * @returns {Promise<any>}
- */
-async function deleteStyleRow (filePath, tableName, styleId) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _deleteStyleRow(gp, tableName, styleId)
-  })
-}
-
-/**
- * Deletes an icon row
- * @param gp
- * @param tableName
- * @param iconId
- */
-function _deleteIconRow (gp, tableName, iconId) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
-}
-
-/**
- * Deletes an icon row
- * @param filePath
- * @param tableName
- * @param iconId
- * @returns {Promise<any>}
- */
-async function deleteIconRow (filePath, tableName, iconId) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _deleteIconRow(gp, tableName, iconId)
-  })
-}
-
-/**
  * Gets a feature style row
  * @param gp
  * @param tableName
@@ -745,26 +580,18 @@ async function getBoundingBoxForFeature (filePath, tableName, featureRowId) {
 function _updateBoundingBoxForFeatureTable (gp, tableName) {
   const contentsDao = gp.contentsDao
   const contents = contentsDao.queryForId(tableName)
-  const featureDao = gp.getFeatureDao(tableName)
-  const features = []
-  featureDao.queryForAll().forEach(result => {
-    const featureRow = featureDao.createObject(result)
-    const geometry = featureRow.geometry
-    features.push({
-      type: 'Feature',
-      properties: {},
-      geometry: geometry.geometry.toGeoJSON()
-    })
-  })
-  const featureCollection = {
-    type: 'FeatureCollection',
-    features: features
+  const extent = _calculateTrueExtentForFeatureTable(gp, tableName)
+  if (extent != null) {
+    contents.min_x = extent[0]
+    contents.min_y = extent[1]
+    contents.max_x = extent[2]
+    contents.max_y = extent[3]
+  } else {
+    contents.min_x = -180.0
+    contents.min_y = -90.0
+    contents.max_x = 180.0
+    contents.max_y = 90.0
   }
-  const extent = bbox(featureCollection)
-  contents.min_x = extent[0]
-  contents.min_y = extent[1]
-  contents.max_x = extent[2]
-  contents.max_y = extent[3]
   contentsDao.update(contents)
 }
 
@@ -1159,7 +986,7 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
           }
         })
       }
-      let featureRowId = _addFeatureToFeatureTable (gp, featureDao, tableName, feature, false, true)
+      let featureRowId = _addFeatureToFeatureTable (gp, featureDao, tableName, feature, null, false, true)
       if (!isNil(style) && !isNil(style.features[feature.id])) {
         const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
         if (!isNil(style.features[feature.id].icon)) {
@@ -1190,11 +1017,9 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
             let featureStyle = style.styleRowMap[styleId]
             featureStyleRow = featureTableStyles.getStyleDao().newRow()
             featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
+            featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
             featureStyleRow.setWidth(featureStyle.width)
             featureStyleRow.setName(featureStyle.name)
-            if (geometryType === GeometryType.POLYGON || geometryType === GeometryType.MULTIPOLYGON || geometryType === GeometryType.GEOMETRYCOLLECTION) {
-              featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
-            }
             let featureStyleRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
             delete style.styleRowMap[styleId]
             style.styleRowMap[featureStyleRowId] = featureStyle
@@ -1240,18 +1065,6 @@ export {
   deleteGeoPackageFeatureTableColumn,
   _addGeoPackageFeatureTableColumn,
   addGeoPackageFeatureTableColumn,
-  _updateStyleRow,
-  updateStyleRow,
-  _updateIconRow,
-  updateIconRow,
-  _createStyleRow,
-  createStyleRow,
-  _createIconRow,
-  createIconRow,
-  _deleteStyleRow,
-  deleteStyleRow,
-  _deleteIconRow,
-  deleteIconRow,
   _getFeatureStyleRow,
   _updateFeatureRow,
   updateFeatureRow,

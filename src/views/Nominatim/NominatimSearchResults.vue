@@ -1,29 +1,40 @@
 <template>
-  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult" :back="() => selectedResult = null"></nominatim-result-details>
-  <v-sheet v-else class="mapcache-sheet">
+  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult" :back="deselectResult"></nominatim-result-details>
+  <v-sheet v-else class="mapcache-sheet background">
     <v-toolbar
-      dark
-      color="main"
-      flat
-      class="sticky-toolbar"
+        dark
+        color="main"
+        flat
+        class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
       <v-toolbar-title>Search results</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn icon @click="clearResults"><v-icon>{{mdiClose}}</v-icon></v-btn>
     </v-toolbar>
-    <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
-      <v-list v-if="results != null && results.features != null && results.features.length > 0">
-        <template v-for="(item, i) in results.features">
+    <v-sheet class="mapcache-sheet-content detail-bg">
+      <v-virtual-scroll
+          v-if="results != null && results.featureCollection != null && results.featureCollection.features.length > 0"
+          :items="results.featureCollection.features.concat({type: 'END'})"
+          :bench="10"
+          item-height="105"
+          @scroll.native="scrolling"
+      >
+        <template v-slot:default="{ item }">
           <v-list-item
+              class="background"
+              style="height: 104px;"
+              v-if="item.type !== 'END'"
               three-line
-              :key="i"
               @click="(e) => selectResult(e, item)"
+              v-on:mouseover="() => highlightFeatureOnMap(item, true)"
+              v-on:mouseout="() => highlightFeatureOnMap(item, false)"
+              v-on:blur="() => highlightFeatureOnMap(item, false)"
           >
             <v-list-item-content>
               <v-list-item-title class="mb-2">{{ item.properties.name }}</v-list-item-title>
               <v-list-item-subtitle>{{ prettyifyWords(item.properties.type, true) + ' • ' + prettyifyWords(item.properties.category, true) }}</v-list-item-subtitle>
-              <v-list-item-subtitle>{{ prettifyAddress(item.properties) }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ prettyifyAddress(item.properties) }}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-avatar
                 right
@@ -37,140 +48,149 @@
               ></v-img>
             </v-list-item-avatar>
           </v-list-item>
+          <v-divider  v-if="item.type !== 'END'"></v-divider>
+          <div v-if="item.type === 'END'">
+            <div v-if="!noMoreResults && results.featureCollection.features.length % 10 === 0" style="background: white">
+              <search-result-skelton v-for="i in 10" :key="i + '_search_skeleton'"></search-result-skelton>
+            </div>
+            <v-list-item three-line v-else>
+              <v-list-item-content>
+                <v-row class="detail--text" no-gutters justify="center">{{'No more results...' }}</v-row>
+              </v-list-item-content>
+            </v-list-item>
+          </div>
         </template>
-      </v-list>
-      <v-list no-gutters v-else>
+      </v-virtual-scroll>
+      <v-list no-gutters class="pb-0" v-else-if="this.results != null">
         <v-list-item three-line>
           <v-list-item-content>
             <v-list-item-title>
-              <b>No results matching "<i>{{ this.results.query }}</i>".</b>
+              <b>No results matching "<i>{{ this.results.requestObject.q }}</i>".</b>
             </v-list-item-title>
             <v-list-item-subtitle class="pt-2">
               <p>Make sure your search is spelled correctly. Try removing or expanding the map filter.</p>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
+        <v-divider></v-divider>
       </v-list>
     </v-sheet>
   </v-sheet>
 </template>
 
 <script>
-import {mdiChevronLeft, mdiContentSave, mdiClose} from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
-// import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 import NominatimResultDetails from '../Nominatim/NominatimResultDetails'
+import {prettyifyAddress, prettyifyWords, queryWithRequestObject} from '../../lib/util/nominatim/NominatimUtilities'
+import throttle from 'lodash/throttle'
+import {mdiChevronLeft, mdiContentSave, mdiClose} from '@mdi/js'
+import SearchResultSkelton from './SearchResultSkelton'
 
 export default {
-  components: {NominatimResultDetails},
+  components: {SearchResultSkelton, NominatimResultDetails},
   props: {
-      project: Object,
-      results: Object,
-      back: Function
-    },
-    data () {
-      return {
-        selectedResult: null,
-        mdiChevronLeft: mdiChevronLeft,
-        mdiContentSave: mdiContentSave,
-        mdiClose: mdiClose,
-        fab: false,
-        selection: 0
-      }
-    },
-    watch: {
-      results: {
-        handler () {
-          this.selectedResult = null
-        }
-      }
-    },
-    methods: {
-      clearResults () {
-        EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
-      },
-      prettyifyWords (words, uppercase = false) {
-        let pretty = words.toLowerCase().replaceAll('_', ' ')
-        if (uppercase) {
-          pretty = pretty.replace(words.charAt(0), words.charAt(0).toUpperCase())
-        }
-        return pretty
-      },
-      prettifyAddress (properties) {
-        let prettyAddress = ''
-
-        if (properties.house_number != null) {
-          prettyAddress += properties.house_number + ' '
-        }
-        if (properties.road != null) {
-          prettyAddress += properties.road + ', '
-        }
-        if (properties.city != null) {
-          prettyAddress += properties.city + ', '
-        }
-        if (properties.state != null) {
-          prettyAddress += properties.state + ', '
-        }
-        if (properties.country != null) {
-          prettyAddress += properties.country
-        }
-        return prettyAddress
-      },
-      selectResult (e, item) {
-        this.selectedResult = item
-        this.zoomTo(e, item)
-      },
-      getIcon (item) {
-        let icon = null
-        if (item.properties && item.properties.icon) {
-          icon = item.properties.icon
-        }
-        return icon
-      },
-      getGeometryTypeForItem (item) {
-        let type = 1
-        switch (item.geometry.type.toLowerCase()) {
-          case 'point':
-            type = 1
-            break;
-          case 'linestring':
-            type = 2
-            break;
-          case 'polygon':
-            type = 3
-            break;
-          case 'multipoint':
-            type = 4
-            break;
-          case 'multilinestring':
-            type = 5
-            break;
-          case 'multipolygon':
-            type = 6
-            break;
-          case 'geometrycollection':
-            type = 7
-            break;
-        }
-        return type
-      },
-      getImage (item) {
-        let image = null
-        if (item.properties && item.properties.image != null) {
-          image = item.properties.image
-        }
-        return image
-      },
-      saveFeature (e, item) {
-        EventBus.$emit(EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT, item)
-        e.stopPropagation()
-      },
-      zoomTo (e, item) {
-        EventBus.$emit(EventBus.EventTypes.ZOOM_TO, item.bbox, 0, 18)
-        e.stopPropagation()
+    project: Object,
+    results: Object,
+    back: Function
+  },
+  data () {
+    return {
+      selectedResult: null,
+      mdiChevronLeft: mdiChevronLeft,
+      mdiContentSave: mdiContentSave,
+      mdiClose: mdiClose,
+      fab: false,
+      selection: 0,
+      noMoreResults: false,
+      scrolling: null
+    }
+  },
+  created () {
+    this.scrolling = throttle(this.scroll, 250)
+  },
+  mounted () {
+    EventBus.$on(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, (osm_id) => {
+      this.selectResult(null, this.results.featureCollection.features.find(feature => feature.properties.osm_id === osm_id))
+    })
+    EventBus.$on(EventBus.EventTypes.DESELECT_NOMINATIM_SEARCH_RESULT, () => {
+      this.deselectResult()
+    })
+  },
+  beforeDestroy() {
+    EventBus.$off([EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, EventBus.EventTypes.DESELECT_NOMINATIM_SEARCH_RESULT])
+  },
+  watch: {
+    results: {
+      handler () {
+        this.selectedResult = null
+        this.noMoreResults = false
       }
     }
+  },
+  methods: {
+    scroll (event) {
+      const margin = 104 * 10
+      const element = event.currentTarget || event.target
+      if (element && (element.scrollHeight - element.scrollTop - margin) <= element.clientHeight) {
+        if (!this.noMoreResults && !this.fetching) {
+          this.fetching = true
+          this.fetchMore().then(() => {
+            this.fetching = false
+          })
+        }
+      }
+    },
+    prettyifyWords,
+    prettyifyAddress,
+    highlightFeatureOnMap (item, highlight = true) {
+      EventBus.$emit(EventBus.EventTypes.HIGHLIGHT_NOMINATIM_SEARCH_RESULT_ON_MAP, item.properties.osm_id, highlight)
+    },
+    async fetchMore () {
+      // search for more by taking the current search ids out of the request
+      const osmIdsToIgnore = this.results.featureCollection.features.map(feature => feature.properties.place_id)
+      const queryObject = Object.assign({}, this.results.requestObject)
+      queryObject.exclude_place_ids = osmIdsToIgnore.join(',')
+      const result = await queryWithRequestObject(queryObject)
+      if (result.featureCollection.features.length > 0) {
+        result.featureCollection.features = this.results.featureCollection.features.concat(result.featureCollection.features)
+        EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
+      } else {
+        this.noMoreResults = true
+      }
+    },
+    deselectResult () {
+      if (this.selectedResult != null) {
+        this.highlightFeatureOnMap(this.selectedResult, false)
+      }
+      this.selectedResult = null
+    },
+    clearResults () {
+      EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
+      this.noMoreResults = false
+    },
+    selectResult (e, item) {
+      this.selectedResult = item
+      this.highlightFeatureOnMap(item)
+    },
+    getIcon (item) {
+      let icon = null
+      if (item.properties && item.properties.icon) {
+        icon = item.properties.icon
+      }
+      return icon
+    },
+    getImage (item) {
+      let image = null
+      if (item.properties && item.properties.image != null) {
+        image = item.properties.image
+      }
+      if (image != null && image.toLowerCase().startsWith('file')) {
+        image = null
+      }
+      return image
+    }
   }
+}
 </script>
 
 <style scoped>

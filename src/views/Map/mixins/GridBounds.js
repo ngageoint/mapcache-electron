@@ -1,5 +1,6 @@
-import {L} from '../../vendor'
-import EventBus from '../../../vue/EventBus'
+import {L} from '../../../lib/leaflet/vendor'
+import EventBus from '../../../lib/vue/EventBus'
+import {GRID_SELECTION_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
 
 export default {
   data () {
@@ -17,8 +18,8 @@ export default {
     enableGridSelection () {
       this.disableGridSelection()
       this.gridLayer = new L.GridLayer.TileSelectionLayer({
-        pane: 'gridSelectionPane',
-        zIndex: 625,
+        pane: GRID_SELECTION_PANE.name,
+        zIndex: GRID_SELECTION_PANE.zIndex,
         id: this.gridBoundsId
       })
       this.gridLayer.addTo(this.map)

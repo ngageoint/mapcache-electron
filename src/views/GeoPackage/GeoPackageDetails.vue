@@ -1,5 +1,5 @@
 <template>
-  <v-container class="detail--text ma-0 pa-0 mt-2">
+  <v-container class="detail--text ma-0 pa-0 mt-2 allowselect">
     <v-row no-gutters class="mb-2">
       <v-col cols="12">
         <p class="ma-0 pa-0">Size: {{details.size}}</p>
@@ -18,6 +18,11 @@
     <v-row class="mb-2" no-gutters>
       <v-col cols="12">
         <p class="ma-0 pa-0">Tile tables: {{details.tileTableCount}}</p>
+      </v-col>
+    </v-row>
+    <v-row class="mb-2" no-gutters>
+      <v-col cols="12">
+        <p class="ma-0 pa-0">Unsupported tables: {{geopackage.tables.unsupported.length}}</p>
       </v-col>
     </v-row>
     <v-row class="mb-2" no-gutters>

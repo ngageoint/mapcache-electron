@@ -107,16 +107,28 @@ async function getMediaRelationships (filePath, tableName, featureId) {
  * @param gp
  * @param tableName
  * @param featureId
- * @param attachmentFile
+ * @param attachment
  * @returns {Promise<boolean>}
  */
-async function _addMediaAttachment (gp, tableName, featureId, attachmentFile) {
+async function _addMediaAttachment (gp, tableName, featureId, attachment) {
   let success = false
   try {
     const featureDao = gp.getFeatureDao(tableName)
     const featureRow = featureDao.queryForId(featureId)
     if (!isNil(featureRow)) {
-      const buffer = await jetpack.readAsync(attachmentFile, 'buffer')
+      let buffer
+      let contentType
+      if (attachment.raw != null) {
+        buffer = Buffer.from(attachment.raw)
+        contentType = attachment.contentType
+      } else {
+        buffer = await jetpack.readAsync(attachment, 'buffer')
+        contentType = getMimeType(attachment)
+        if (contentType === false) {
+          contentType = 'application/octet-stream'
+        }
+      }
+
       const mediaTableName = getMediaTableName()
       const rte = gp.relatedTablesExtension
       if (!gp.connection.isTableExists(mediaTableName)) {
@@ -124,11 +136,6 @@ async function _addMediaAttachment (gp, tableName, featureId, attachmentFile) {
         rte.createRelatedTable(mediaTable)
       }
       const mediaDao = rte.getMediaDao(mediaTableName)
-      let contentType = getMimeType(attachmentFile)
-      if (contentType === false) {
-        contentType = 'application/octet-stream'
-      }
-
       const mediaRow = mediaDao.newRow()
 
       // check if table has required columns, other than id, data and content_type
@@ -159,12 +166,12 @@ async function _addMediaAttachment (gp, tableName, featureId, attachmentFile) {
  * @param filePath
  * @param tableName
  * @param featureId
- * @param attachmentFile
+ * @param attachment
  * @returns {Promise<any>}
  */
-async function addMediaAttachment (filePath, tableName, featureId, attachmentFile) {
+async function addMediaAttachment (filePath, tableName, featureId, attachment) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _addMediaAttachment(gp, tableName, featureId, attachmentFile)
+    return _addMediaAttachment(gp, tableName, featureId, attachment)
   }, true)
 }
 

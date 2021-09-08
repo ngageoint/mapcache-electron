@@ -66,6 +66,7 @@ import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {zoomToBaseMap} from '../../lib/util/ZoomUtilities'
+import {getDefaultBaseMaps} from '../../lib/util/basemaps/BaseMapUtilities'
 
 export default {
     components: {
@@ -81,10 +82,10 @@ export default {
     computed: {
       ...mapState({
         baseMaps: state => {
-          return state.BaseMaps.baseMaps || []
+          return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
         },
         baseMapItems: state => {
-          return (state.BaseMaps.baseMaps || []).map(baseMap => {
+          return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMap => {
             return {
               id: baseMap.id,
               baseMap: baseMap,

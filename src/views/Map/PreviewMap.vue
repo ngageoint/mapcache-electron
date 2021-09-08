@@ -44,14 +44,15 @@ import { mdiMapOutline } from '@mdi/js'
 import { L } from '../../lib/leaflet/vendor'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { constructLayer } from '../../lib/layer/LayerFactory'
-import {getOfflineBaseMapId} from '../../lib/util/BaseMapUtilities'
+import {getDefaultBaseMaps, getOfflineBaseMapId} from '../../lib/util/basemaps/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import DrawBounds from '../../lib/leaflet/map/controls/DrawBounds'
-import GridBounds from '../../lib/leaflet/map/controls/GridBounds'
+import DrawBounds from './mixins/DrawBounds'
+import GridBounds from './mixins/GridBounds'
 import EventBus from '../../lib/vue/EventBus'
 import {zoomToBaseMap, zoomToSource} from '../../lib/util/ZoomUtilities'
+import {BASE_MAP_PANE, GRID_SELECTION_PANE} from '../../lib/leaflet/map/panes/MapPanes'
 
 export default {
     mixins: [
@@ -76,13 +77,14 @@ export default {
         selectedBaseMapId: '0',
         baseMapLayers: {},
         offlineBaseMapId: getOfflineBaseMapId(),
+        defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
         notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       }
     },
     computed: {
       ...mapState({
         baseMapItems: state => {
-          return (state.BaseMaps.baseMaps || []).map(baseMapConfig => {
+          return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
             return {
               id: baseMapConfig.id,
               baseMap: baseMapConfig,
@@ -96,7 +98,7 @@ export default {
           })
         },
         baseMaps: state => {
-          return state.BaseMaps.baseMaps || []
+          return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
         }
       })
     },
@@ -104,9 +106,11 @@ export default {
       addBaseMap (baseMap, map) {
         let self = this
         const baseMapId = baseMap.id
-        if (baseMap.layerConfiguration.filePath === 'offline') {
+        const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
+        if (baseMapId === getOfflineBaseMapId()) {
           self.baseMapLayers[baseMapId] = L.geoJson(window.mapcache.getOfflineMap(), {
-            pane: 'baseMapPane',
+            pane: BASE_MAP_PANE.name,
+            zIndex: BASE_MAP_PANE.zIndex,
             style: function() {
               return {
                 color: '#000000',
@@ -119,6 +123,21 @@ export default {
           })
           if (this.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
+            this.setAttribution(baseMap.attribution)
+            self.baseMapLayers[baseMapId].bringToBack()
+          }
+        } else if (!isNil(defaultBaseMap)) {
+          self.baseMapLayers[baseMapId] = L.tileLayer(defaultBaseMap.layerConfiguration.url, {
+            pane: BASE_MAP_PANE.name,
+            zIndex: BASE_MAP_PANE.zIndex,
+            subdomains: defaultBaseMap.layerConfiguration.subdomains || [],
+            attribution: defaultBaseMap.layerConfiguration.attribution || '',
+            minZoom: 0,
+            maxZoom: 20
+          })
+          if (self.selectedBaseMapId === baseMapId) {
+            map.addLayer(self.baseMapLayers[baseMapId])
+            this.setAttribution(baseMap.attribution)
             self.baseMapLayers[baseMapId].bringToBack()
           }
         } else {
@@ -126,9 +145,24 @@ export default {
           self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
           if (self.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
+            this.setAttribution(baseMap.attribution)
             self.baseMapLayers[baseMapId].bringToBack()
           }
         }
+      },
+      setAttribution (attribution) {
+        if (this.attributionControl) {
+          this.map.removeControl(this.attributionControl)
+        }
+        this.attributionControl = L.control.attribution({
+          prefix: false,
+          position: 'bottomright',
+        })
+        this.attributionControl.addAttribution('<a onclick="window.mapcache.openExternal(\'https://leafletjs.com/\')" href="#">Leaflet</a>')
+        if (attribution != null) {
+          this.attributionControl.addAttribution(attribution)
+        }
+        this.map.addControl(this.attributionControl)
       },
       initializeMap () {
         const defaultCenter = [39.658748, -104.843165]
@@ -145,10 +179,10 @@ export default {
           this.showBaseMapSelection = false
         })
         this.map.setView(defaultCenter, defaultZoom)
-        this.map.createPane('baseMapPane')
-        this.map.getPane('baseMapPane').style.zIndex = 200
-        this.map.createPane('gridSelectionPane')
-        this.map.getPane('gridSelectionPane').style.zIndex = 625
+        this.map.createPane(BASE_MAP_PANE.name)
+        this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
+        this.map.createPane(GRID_SELECTION_PANE.name)
+        this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
         this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
         if (!isNil(this.previewLayer)) {
@@ -178,7 +212,7 @@ export default {
       },
       setupPreviewLayer () {
         const layer = constructLayer(this.previewLayer)
-        this.previewMapLayer = constructMapLayer({layer: layer, mapPane: 'overlayPane', isPreview: true, maxFeatures: this.project.maxFeatures})
+        this.previewMapLayer = constructMapLayer({layer: layer, isPreview: true})
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
       },
@@ -194,9 +228,10 @@ export default {
         handler (newBaseMaps) {
           const self = this
           const selectedBaseMapId = this.selectedBaseMapId
+          const isDefaultBaseMap = self.defaultBaseMapIds.indexOf(selectedBaseMapId) !== -1
 
           let oldConfig
-          if (!isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+          if (!isNil(self.baseMapLayers[selectedBaseMapId]) && !isDefaultBaseMap) {
             oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
           }
           // update the layer config stored for each base map
@@ -207,7 +242,7 @@ export default {
             }
           })
           const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
-          if (selectedBaseMapId !== self.offlineBaseMapId) {
+          if (!isDefaultBaseMap) {
             // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
             if (isNil(selectedBaseMap)) {
               if (newBaseMaps.length - 1 < this.baseMapIndex) {
@@ -239,7 +274,7 @@ export default {
             const newBaseMap = self.baseMaps[this.baseMapIndex]
 
             let success = true
-            if (!isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
+            if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
               success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             }
 
@@ -254,15 +289,17 @@ export default {
                 await self.addBaseMap(newBaseMap, self.map)
               } else {
                 // do not update offline base map id
-                if (newBaseMapId !== self.offlineBaseMapId) {
+                if (!newBaseMap.readonly) {
                   self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
                 }
                 self.map.addLayer(self.baseMapLayers[newBaseMapId])
+                this.setAttribution(newBaseMap.attribution)
                 self.baseMapLayers[newBaseMapId].bringToBack()
               }
               self.mapBackground = newBaseMap.background || '#ddd'
             } else {
               self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
+              this.setAttribution(newBaseMap.attribution)
               self.baseMapLayers[self.offlineBaseMapId].bringToBack()
               self.selectedBaseMapId = self.offlineBaseMapId
             }
@@ -314,7 +351,7 @@ export default {
           if (updatedProject.maxFeatures !== this.maxFeatures) {
             for (const baseMapId of keys(self.baseMapLayers)) {
               // if this is a vector layer, update it
-              if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
+              if (self.defaultBaseMapIds.indexOf(baseMapId) === -1 && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
                 // update max features
                 await self.baseMapLayers[baseMapId].updateMaxFeatures(updatedProject.maxFeatures)
                 // if visible, we need to toggle the layer
@@ -335,8 +372,8 @@ export default {
         let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
         let bounds = L.latLngBounds(boundingBox)
         bounds = bounds.pad(0.05)
-        const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom});
-        this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom});
+        const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
+        this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom})
       })
     },
     beforeDestroy: function () {

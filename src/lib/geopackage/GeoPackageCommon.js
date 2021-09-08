@@ -11,7 +11,7 @@ import path from 'path'
 import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/FileUtilities'
-
+import bbox from '@turf/bbox'
 /**
  * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
  * @param filePath
@@ -60,7 +60,7 @@ function _getBoundingBoxForTable (gp, tableName) {
   let srs
   let projection
   const contents = gp.getTableContents(tableName)
-  if (!isNil(contents)) {
+  if (!isNil(contents) && !isNil(contents.min_x) && !isNil(contents.min_y) && !isNil(contents.max_x) && !isNil(contents.max_y)) {
     bbox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y)
     srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
     projection = 'EPSG:' + contents.srs_id
@@ -81,24 +81,56 @@ function _getBoundingBoxForTable (gp, tableName) {
  * Gets the geopackage feature table information required by the app to ensure functionality in all vue components
  * @param gp
  * @param table
- * @returns {{visible: boolean, indexed: boolean, description: string, styleKey: number, featureCount: number, extent: array}}
+ * @returns {{visible: boolean, indexed: boolean, description: string, styleKey: number, featureCount: number, extent: array}|null}
  */
 function _getGeoPackageFeatureTableForApp (gp, table) {
-  const featureDao = gp.getFeatureDao(table)
-  const description = gp.getTableContents(table).description
-  const rtreeIndex = new RTreeIndex(gp, featureDao)
-  const rtreeIndexed = rtreeIndex.hasExtension(
-    rtreeIndex.extensionName,
-    rtreeIndex.tableName,
-    rtreeIndex.columnName
-  )
-  return {
-    visible: false,
-    featureCount: featureDao.count(),
-    description: isNil(description) || description.length === 0 ? 'None' : description,
-    indexed: rtreeIndexed,
-    extent: _getBoundingBoxForTable(gp, table),
-    styleKey: 0
+  try {
+    const featureDao = gp.getFeatureDao(table)
+    const description = gp.getTableContents(table).description
+    const rtreeIndex = new RTreeIndex(gp, featureDao)
+    const rtreeIndexed = rtreeIndex.hasExtension(
+      rtreeIndex.extensionName,
+      rtreeIndex.tableName,
+      rtreeIndex.columnName
+    )
+    let extent = _getBoundingBoxForTable(gp, table)
+    if (extent == null) {
+      extent = _calculateTrueExtentForFeatureTable(gp, table)
+    }
+    return {
+      visible: false,
+      featureCount: featureDao.count(),
+      description: isNil(description) || description.length === 0 ? 'None' : description,
+      indexed: rtreeIndexed,
+      extent: extent,
+      styleKey: 0
+    }
+  } catch (e) {
+    console.error('Unable to process feature table: ' + table)
+    return null
+  }
+}
+
+function _calculateTrueExtentForFeatureTable (gp, tableName) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const features = []
+  featureDao.queryForAll().forEach(result => {
+    const featureRow = featureDao.createObject(result)
+    const geometry = featureRow.geometry
+    features.push({
+      type: 'Feature',
+      properties: {},
+      geometry: geometry.geometry.toGeoJSON()
+    })
+  })
+  if (features.length > 0) {
+    const featureCollection = {
+      type: 'FeatureCollection',
+      features: features
+    }
+    return bbox(featureCollection)
+  } else {
+    return null
   }
 }
 
@@ -165,29 +197,40 @@ function projectGeometryTo4326 (geometry, srs) {
 /**
  * Determines internal table information for a geopackage
  * @param gp
- * @returns {{features: {}, tiles: {}}}
+ * @returns {{features: {}, tiles: {}, unsupported: []}}
  * @private
  */
 function _getInternalTableInformation (gp) {
   const tables = {
     features: {},
-    tiles: {}
+    tiles: {},
+    unsupported: []
   }
   const gpTables = gp.getTables()
   gpTables.features.forEach(table => {
-    tables.features[table] = _getGeoPackageFeatureTableForApp(gp, table)
+    const tableInformtion = _getGeoPackageFeatureTableForApp(gp, table)
+    if (tableInformtion !== null) {
+      tables.features[table] = tableInformtion
+    } else {
+      tables.unsupported.push(table)
+    }
   })
   gpTables.tiles.forEach(table => {
-    const tileDao = gp.getTileDao(table)
-    const count = tileDao.count()
-    tables.tiles[table] = {
-      visible: false,
-      tileCount: count,
-      minZoom: tileDao.minZoom,
-      maxZoom: tileDao.maxZoom,
-      extent: _calculateTrueExtentForTileTable(gp, table),
-      description: 'An image layer with ' + count + ' tiles',
-      styleKey: 0
+    try {
+      const tileDao = gp.getTileDao(table)
+      const count = tileDao.count()
+      tables.tiles[table] = {
+        visible: false,
+        tileCount: count,
+        minZoom: tileDao.minZoom,
+        maxZoom: tileDao.maxZoom,
+        extent: _calculateTrueExtentForTileTable(gp, table),
+        description: 'An image layer with ' + count + ' tiles',
+        styleKey: 0
+      }
+    } catch (e) {
+      console.error('Unable to process tile table: ' + table)
+      tables.unsupported.push(table)
     }
   })
   return tables
@@ -330,12 +373,16 @@ async function getGeoPackageFeatureTableForApp (filePath, table) {
       rtreeIndex.tableName,
       rtreeIndex.columnName
     )
+    let extent = _getBoundingBoxForTable(gp, table)
+    if (extent == null) {
+      extent = _calculateTrueExtentForFeatureTable(gp, table)
+    }
     return {
       visible: false,
       featureCount: featureDao.count(),
       description: isNil(description) || description.length === 0 ? 'None' : description,
       indexed: rtreeIndexed,
-      extent: _getBoundingBoxForTable(gp, table),
+      extent: extent,
       styleKey: 0
     }
   })
@@ -354,10 +401,10 @@ async function getInternalTableInformation (filePath) {
  */
 async function getOrCreateGeoPackageForApp (filePath) {
   let gp, geopackage
-  if (!exists(filePath)) {
-    gp = await GeoPackageAPI.create(filePath)
-  } else {
+  if (exists(filePath)) {
     gp = await GeoPackageAPI.open(filePath)
+  } else {
+    gp = await GeoPackageAPI.create(filePath)
   }
   try {
     const filename = path.basename(filePath)
@@ -646,5 +693,6 @@ export {
   isHealthy,
   getDefaultValueForDataType,
   getExtentOfGeoPackageTables,
-  projectGeometryTo4326
+  projectGeometryTo4326,
+  _calculateTrueExtentForFeatureTable
 }

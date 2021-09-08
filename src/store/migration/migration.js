@@ -8,7 +8,7 @@ import path from 'path'
 import { mkdirSync, readdirSync, existsSync } from 'fs'
 import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { mapcache } from '../../../package.json'
-import { getDefaultBaseMaps } from '../../lib/util/BaseMapUtilities'
+import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
 import { DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, NO_LIMIT } from '../../lib/network/HttpUtilities'
 import {CONTAINS_V4_REGEX, V4_REGEX} from '../../lib/util/UniqueIDUtilities'
 import {
@@ -265,11 +265,10 @@ export async function runMigration (forceReset = false) {
           }
         }
       }
+      // remove default base maps from vuex, these will be dynamic now
+      state.BaseMaps.baseMaps = state.BaseMaps.baseMaps.filter(baseMap => ['0', '1', '2', '3'].indexOf(baseMap.id) === -1)
       for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
         const baseMap = state.BaseMaps.baseMaps[i]
-        if (['0', '1', '2', '3'].indexOf(baseMap.id) !== -1) {
-          continue
-        }
         if (baseMap.layerConfiguration.layerType === WMS) {
           baseMap.layerConfiguration.srs = 'EPSG:3857'
         }

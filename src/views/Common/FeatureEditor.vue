@@ -149,7 +149,6 @@ export default {
       tableName: String,
       columns: Object,
       feature: Object,
-      image: String,
       close: Function,
       isEditing: {
         type: Boolean,
@@ -158,7 +157,8 @@ export default {
       isGeoPackage: {
         type: Boolean,
         default: true
-      }
+      },
+      saveNewFeature: Function
     },
     data () {
       return {
@@ -240,21 +240,7 @@ export default {
             }
           })
           if (this.isGeoPackage) {
-            window.mapcache.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.tableName, feature: feature}).then((rowId) => {
-              if (this.image != null) {
-                window.mapcache.attachMediaToGeoPackage({
-                  projectId: this.projectId,
-                  id: window.mapcache.createUniqueID(),
-                  isGeoPackage: true,
-                  geopackagePath: this.geopackagePath,
-                  tableName: this.tableName,
-                  featureId: rowId,
-                  url: this.image
-                })
-              }
-            })
-          } else {
-            // not supported - adding feature to data source
+            await this.saveNewFeature(this.projectId, this.id, this.tableName, feature)
           }
           this.close()
         }

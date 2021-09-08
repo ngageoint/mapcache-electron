@@ -199,3 +199,8 @@
 	user-select: none !important; /* standard syntax */
 	-webkit-user-select: none !important; /* webkit (safari, chrome) browsers */
 }
+
+.allowselect {
+	user-select: text !important; /* standard syntax */
+	-webkit-user-select: text !important; /* webkit (safari, chrome) browsers */
+}

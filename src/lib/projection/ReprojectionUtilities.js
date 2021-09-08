@@ -36,11 +36,11 @@ async function reproject (data, imageData) {
       let xPixel = srcWidth - Math.round((sourceBoundingBox.maxLon - projected[0]) / srcPixelSize.width)
       let yPixel = Math.round((sourceBoundingBox.maxLat - projected[1]) / srcPixelSize.height)
 
-      xPixel = Math.max(0, xPixel);
-      xPixel = Math.min(srcWidth - 1, xPixel);
+      xPixel = Math.max(0, xPixel)
+      xPixel = Math.min(srcWidth - 1, xPixel)
 
-      yPixel = Math.max(0, yPixel);
-      yPixel = Math.min(srcHeight - 1, yPixel);
+      yPixel = Math.max(0, yPixel)
+      yPixel = Math.min(srcHeight - 1, yPixel)
 
       const sliceStart = yPixel * srcWidth * 4 + xPixel * 4
       targetImageData.set(sourceImageData.slice(sliceStart, sliceStart + 4), row * targetWidth * 4 + column * 4)

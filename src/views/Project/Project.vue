@@ -76,7 +76,7 @@
           <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
           <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
           <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme"></settings>
-          <nominatim-search-results v-show="tabId === 3" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
+          <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
           <preview-map
@@ -162,7 +162,7 @@ export default {
         requestEventUrl: '',
         requestAuthInfo: {},
         requestDetails: {},
-        nominatimSearchResults: {}
+        nominatimSearchResults: null
       }
     },
     computed: {
@@ -259,7 +259,7 @@ export default {
         if (this.tabs.length === 4) {
           this.tabs.splice(2, 1)
         }
-        this.nominatimSearchResults = {}
+        this.nominatimSearchResults = null
       },
       getMapCenterAndZoom () {
         let bounds
@@ -372,7 +372,6 @@ export default {
       window.mapcache.clearNotifications({projectId: this.project.id})
       window.mapcache.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
-
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()

@@ -12,7 +12,8 @@ const SERVICE_TYPE = {
   WMS: 0,
   WFS: 1,
   XYZ: 2,
-  ARCGIS_FS: 3
+  ARCGIS_FS: 3,
+  OVERPASS: 4
 }
 const USER_CANCELLED_MESSAGE = 'Operation cancelled by user.'
 const TIMEOUT_MESSAGE = 'Operation timed out.'

@@ -21,16 +21,22 @@ function getDef (code) {
   return def
 }
 
-function defineProjection (name) {
+/**
+ * Define projection, if no definition is provided, will lookup in proj4.db
+ * @param name
+ * @param definition
+ */
+function defineProjection (name, definition = null) {
   const code = getCode(name)
   if (code !== -1) {
-    const def = getDef(code)
+    const def = definition == null ? getDef(code) : definition
     if (def) {
       proj4.defs(name, def)
       proj4.defs('urn:ogc:def:crs:EPSG::' + code, def)
     }
   }
 }
+
 
 /**
  * Converts an EPSG:3857 bounding box into the provided spatial reference system.

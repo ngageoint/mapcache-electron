@@ -1,6 +1,8 @@
-import {L} from '../../vendor'
+import {L} from '../../../lib/leaflet/vendor'
 import isNil from 'lodash/isNil'
-import EventBus from '../../../vue/EventBus'
+import EventBus from '../../../lib/vue/EventBus'
+import {getDefaultLeafletOverlayStyleForMapCache} from '../../../lib/leaflet/map/style/Style'
+
 
 export default {
   data () {
@@ -34,6 +36,7 @@ export default {
       }
 
       this.r = L.rectangle(bounds, {pane: 'markerPane'})
+      this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
       this.r.addTo(this.map)
       this.r.enableEdit()
 

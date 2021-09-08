@@ -27,10 +27,16 @@ function getZoomToOptionsForDataSource (dataSource) {
 async function getZoomToOptionsForGeoPackageTable (geopackage, table) {
   let minZoom = 0
   let maxZoom = 20
-  let extent = await window.mapcache.getBoundingBoxForTable(geopackage.path, table)
+  let extent
   if (geopackage.tables.tiles[table]) {
+    extent = geopackage.tables.tiles[table].extent
     minZoom = geopackage.tables.tiles[table].minZoom || 0
     maxZoom = geopackage.tables.tiles[table].maxZoom || 20
+  } else {
+    extent = geopackage.tables.features[table].extent
+  }
+  if (extent == null) {
+   extent =  await window.mapcache.getBoundingBoxForTable(geopackage.path, table)
   }
   return {
     extent,
@@ -40,10 +46,12 @@ async function getZoomToOptionsForGeoPackageTable (geopackage, table) {
 }
 
 function zoomToExtent (extent, minZoom = 0, maxZoom = 20, isPreview = false) {
-  if (isPreview) {
-    EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, extent, minZoom, maxZoom)
-  } else {
-    EventBus.$emit(EventBus.EventTypes.ZOOM_TO, extent, minZoom, maxZoom)
+  if (extent != null) {
+    if (isPreview) {
+      EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, extent, minZoom, maxZoom)
+    } else {
+      EventBus.$emit(EventBus.EventTypes.ZOOM_TO, extent, minZoom, maxZoom)
+    }
   }
 }
 
@@ -65,9 +73,7 @@ async function zoomToGeoPackageTable (geopackage, table, isPreview = false) {
 
 async function zoomToGeoPackageFeature (path, table, featureId, isPreview = false) {
   window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
-    if (extent) {
-      zoomToExtent(extent, 0, 20, isPreview)
-    }
+    zoomToExtent(extent, 0, 20, isPreview)
   })
 }
 

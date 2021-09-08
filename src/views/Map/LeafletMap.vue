@@ -40,10 +40,10 @@
         @keydown.esc="cancelDrawing">
         <v-card v-if="layerSelectionVisible">
           <v-card-title>
-            Add drawing
+            Add feature
           </v-card-title>
           <v-card-text>
-            Add drawing to the selected GeoPackage and feature layer.
+            Add feature to the selected GeoPackage and feature layer.
             <v-row no-gutters class="mt-4">
               <v-col cols="12">
                 <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="GeoPackage" dense>
@@ -95,34 +95,21 @@
         scrollable
         persistent
         @keydown.esc="cancelAddFeature">
-        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :image="this.geojsonImageToSave" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
+        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :save-new-feature="saveFeature" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
       </v-dialog>
     </div>
-    <div v-show="coordinatePopup !== null" id="leaflet-coordinate-popup" ref="leafletCoordinatePopup" style="width: 300px; height: 132px;">
-      <v-card flat>
-        <v-row class="mb-2" no-gutters justify="space-between">
-          <v-card-title class="pa-0 ma-0">
-            Coordinate
-          </v-card-title>
-          <v-btn class="mr-1" small @click.stop.prevent="closePopup" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
-        </v-row>
-        <v-card-text class="pa-0 ma-0">
-          <v-card-text class="pt-1 pb-1 pr-0">
-            <v-row no-gutters justify="space-between" align="center">
-              <v-col>
-                {{dialogCoordinate ? (dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6)) : ''}}
-              </v-col>
-              <v-btn icon color="primary" @click="() => {copyText(dialogCoordinate.lat.toFixed(6) + ', ' + dialogCoordinate.lng.toFixed(6))}"><v-icon>{{mdiContentCopy}}</v-icon></v-btn>
-            </v-row>
-            <v-row no-gutters  justify="space-between" align="center">
-              <v-col>
-                {{dialogCoordinate ? (convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true)) : ''}}
-              </v-col>
-              <v-btn icon color="primary" @click="() => {copyText(convertToDms(dialogCoordinate.lat, false) + ', ' + convertToDms(dialogCoordinate.lng, true))}"><v-icon>{{mdiContentCopy}}</v-icon></v-btn>
-            </v-row>
-          </v-card-text>
-        </v-card-text>
-      </v-card>
+    <div v-show="contextMenuPopup != null" id="context-menu-popup" ref="contextMenuPopup">
+      <v-list>
+        <v-list-item dense @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
+          {{contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''}}
+        </v-list-item>
+        <v-list-item dense @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
+          {{contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''}}
+        </v-list-item>
+        <v-list-item dense @click="performReverseQuery">
+          What's here?
+        </v-list-item>
+      </v-list>
     </div>
     <v-snackbar
       v-if="copiedToClipboard"
@@ -212,6 +199,9 @@
     <v-card v-if="project.displayAddressSearchBar" outlined class="nominatim-card ma-0 pa-0 transparent">
       <nominatim-search :project="project" :map-bounds="mapBounds"/>
     </v-card>
+    <div v-show="false">
+      <nominatim-result-map-popup ref="searchResultPopup" :result="hoveredSearchResult" :mouseover="cancelSearchResultPopupClose" :mouseleave="searchResultClose"></nominatim-result-map-popup>
+    </div>
   </div>
 </template>
 
@@ -229,8 +219,8 @@ import pick from 'lodash/pick'
 import throttle from 'lodash/throttle'
 import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
-import DrawBounds from '../../lib/leaflet/map/controls/DrawBounds'
-import GridBounds from '../../lib/leaflet/map/controls/GridBounds'
+import DrawBounds from './mixins/DrawBounds'
+import GridBounds from './mixins/GridBounds'
 import FeatureTable from './FeatureTable'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
 import LeafletEdit from '../../lib/leaflet/map/controls/LeafletEdit'
@@ -241,9 +231,16 @@ import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapToo
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { constructLayer } from '../../lib/layer/LayerFactory'
-import { getOfflineBaseMapId } from '../../lib/util/BaseMapUtilities'
+import { getDefaultBaseMaps, getOfflineBaseMapId } from '../../lib/util/basemaps/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
+import {
+  GRID_SELECTION_PANE,
+  BASE_MAP_PANE,
+  EDITING_PANE,
+  SEARCH_RESULTS_PANE,
+  SEARCH_RESULT_POINTS_ONLY_PANE
+} from '../../lib/leaflet/map/panes/MapPanes'
 import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline, mdiMagnify } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {
@@ -254,7 +251,11 @@ import {
   zoomToSource
 } from '../../lib/util/ZoomUtilities'
 import NominatimSearch from '../Nominatim/NominatimSearch'
-
+import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup'
+import SearchResult from './mixins/SearchResults'
+import { getDefaultIcon } from '../../lib/util/style/BrowserStyleUtilities'
+import { getDefaultMapCacheStyle } from '../../lib/util/style/CommonStyleUtilities'
+import { reverseQueryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
 
 const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
 const NEW_FEATURE_LAYER_OPTION = {text: 'New feature layer', value: 0}
@@ -294,7 +295,8 @@ function generateLayerOrderItemForGeoPackageTable (geopackage, tableName, isTile
 export default {
   mixins: [
     DrawBounds,
-    GridBounds
+    GridBounds,
+    SearchResult
   ],
   props: {
     sources: Object,
@@ -313,7 +315,7 @@ export default {
     },
     ...mapState({
       baseMapItems: state => {
-        return (state.BaseMaps.baseMaps || []).map(baseMapConfig => {
+        return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
           return {
             id: baseMapConfig.id,
             updateKey: 0,
@@ -328,11 +330,12 @@ export default {
         })
       },
       baseMaps: state => {
-        return state.BaseMaps.baseMaps || []
+        return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
       }
     })
   },
   components: {
+    NominatimResultMapPopup,
     NominatimSearch,
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
@@ -342,8 +345,6 @@ export default {
   },
   data () {
     return {
-      geojsonToSave: null,
-      geojsonImageToSave: null,
       mapBounds: [-180, -90, 180, 90],
       consecutiveClicks: 0,
       mdiAlert: mdiAlert,
@@ -354,6 +355,7 @@ export default {
       geoPackageMapLayers: {},
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
+      defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
       dataSourceMapLayers: {},
       notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       geopackageMapLayers: {},
@@ -370,7 +372,6 @@ export default {
         geopackageTables: [],
         sourceTables: []
       },
-      coordinatePopup: null,
       tableFeaturesLatLng: null,
       geoPackageFeatureLayerChoices: [NEW_FEATURE_LAYER_OPTION],
       geoPackageSelection: 0,
@@ -401,7 +402,11 @@ export default {
       mapBackground: '#ddd',
       displayNetworkError: false,
       connectingToBaseMap: false,
-      manualBoundingBoxDialog: false
+      manualBoundingBoxDialog: false,
+      nominatimReverseQueryResultsReturned: false,
+      contextMenuCoordinate: null,
+      contextMenuPopup: null,
+      performingReverseQuery: false
     }
   },
   methods: {
@@ -445,11 +450,12 @@ export default {
     },
     copyText (text) {
       window.mapcache.copyToClipboard(text)
+      this.closePopup()
       setTimeout(() => {
         this.copiedToClipboard = true
-      }, 250)
+      }, 100)
     },
-    confirmGeoPackageFeatureLayerSelection () {
+    async confirmGeoPackageFeatureLayerSelection () {
       this.geopackageExistsDialog = false
       this.featureToAdd = null
       this.featureToAddColumns = null
@@ -457,54 +463,70 @@ export default {
       this.featureToAddTableName = null
       let self = this
       let feature = null
-      let linkToImage = null
+      let additionalFeature = null
       if (this.createdLayer != null) {
         feature = this.createdLayer.toGeoJSON()
+        feature.id = window.mapcache.createUniqueID()
         if (!isNil(this.createdLayer._mRadius)) {
           feature.properties.radius = this.createdLayer._mRadius
         }
-      } else if (this.geojsonToSave != null) {
-        feature = this.geojsonToSave
-        linkToImage = this.geojsonImageToSave
-      }
-      this.geojsonToSave = null
-      feature.id = window.mapcache.createUniqueID()
-      switch (feature.geometry.type.toLowerCase()) {
-        case 'point': {
-          feature.geometry.coordinates[0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[0])
-          break
-        }
-        case 'linestring': {
-          for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-            feature.geometry.coordinates[i][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][0])
+        if (feature.geometry.type === 'Point') {
+          feature.style = {
+            icon: await getDefaultIcon('Default', 'Default icon for MapCache')
           }
-          break
+        } else {
+          feature.style = {
+            style: getDefaultMapCacheStyle()
+          }
         }
-        case 'polygon':
-        case 'multilinestring': {
-          for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-            for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
-              feature.geometry.coordinates[i][j][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][j][0])
+        // normalize longitudes for drawings
+        switch (feature.geometry.type.toLowerCase()) {
+          case 'point': {
+            feature.geometry.coordinates[0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[0])
+            break
+          }
+          case 'linestring': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              feature.geometry.coordinates[i][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][0])
             }
+            break
           }
-          break
-        }
-        case 'multipolygon': {
-          for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-            for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
-              for (let k = 0; k < feature.geometry.coordinates[i][j].length; k++) {
-                feature.geometry.coordinates[i][j][k][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][j][k][0])
+          case 'polygon':
+          case 'multilinestring': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
+                feature.geometry.coordinates[i][j][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][j][0])
               }
             }
+            break
           }
-          break
+          case 'multipolygon': {
+            for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+              for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
+                for (let k = 0; k < feature.geometry.coordinates[i][j].length; k++) {
+                  feature.geometry.coordinates[i][j][k][0] = window.mapcache.normalizeLongitude(feature.geometry.coordinates[i][j][k][0])
+                }
+              }
+            }
+            break
+          }
         }
+      } else if (this.searchResultToSave != null) {
+        feature = this.searchResultToSave.feature
+        feature.id = window.mapcache.createUniqueID()
+        additionalFeature = this.searchResultToSave.pointFeature
       }
+
       const featureTableName = this.featureTableName
       let featureCollection = {
         type: 'FeatureCollection',
         features: [feature]
       }
+      if (additionalFeature != null) {
+        additionalFeature.id = window.mapcache.createUniqueID()
+        featureCollection.features.push(additionalFeature)
+      }
+
       if (this.geoPackageSelection === 0) {
         window.mapcache.showSaveDialog({
           title: 'New GeoPackage'
@@ -519,17 +541,7 @@ export default {
               this.cancelDrawing()
               this.$nextTick(() => {
                 window.mapcache.createGeoPackageWithFeatureTable(self.projectId, filePath, featureTableName, featureCollection).then(() => {
-                  if (linkToImage != null) {
-                    window.mapcache.attachMediaToGeoPackage({
-                      projectId: this.projectId,
-                      id: window.mapcache.createUniqueID(),
-                      isGeoPackage: true,
-                      geopackagePath: filePath,
-                      tableName: featureTableName,
-                      featureId: 1,
-                      url: linkToImage
-                    })
-                  }
+                  window.mapcache.notifyTab({projectId: self.projectId, tabId: 0})
                 })
               })
             }
@@ -538,56 +550,44 @@ export default {
           }
         })
       } else {
+        const self = this
         const geopackage = this.geopackages[this.geoPackageSelection]
         if (this.geoPackageFeatureLayerSelection === 0) {
-          window.mapcache.addFeatureTableToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection}).then(() => {
-            if (linkToImage != null) {
-              window.mapcache.attachMediaToGeoPackage({
-                projectId: this.projectId,
-                id: window.mapcache.createUniqueID(),
-                isGeoPackage: true,
-                geopackagePath: geopackage.path,
-                tableName: featureTableName,
-                featureId: 1,
-                url: linkToImage
-              })
-            }
+          window.mapcache.addFeatureTableToGeoPackage({projectId: self.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection}).then(() => {
+            window.mapcache.notifyTab({projectId: self.projectId, tabId: 0})
           })
           this.cancelDrawing()
         } else {
-          const self = this
-          const featureTable = this.geoPackageFeatureLayerChoices[this.geoPackageFeatureLayerSelection].text
-          window.mapcache.getFeatureColumns(geopackage.path, featureTable).then(columns => {
-            if (!isNil(columns) && !isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
-              this.featureToAdd = feature
-              this.featureToAddGeoPackage = geopackage
-              this.featureToAddTableName = featureTable
-              self.featureToAddColumns = columns
-              this.$nextTick(() => {
-                this.showAddFeatureDialog = true
-                this.$nextTick(() => {
-                  this.cancelDrawing()
-                })
+          const featureTable = self.geoPackageFeatureLayerChoices[self.geoPackageFeatureLayerSelection].text
+          const columns = await window.mapcache.getFeatureColumns(geopackage.path, featureTable)
+          if (!isNil(columns) && !isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
+            self.featureToAdd = feature
+            self.additionalFeatureToAdd = additionalFeature
+            self.featureToAddGeoPackage = geopackage
+            self.featureToAddTableName = featureTable
+            self.featureToAddColumns = columns
+            self.$nextTick(() => {
+              self.showAddFeatureDialog = true
+              self.$nextTick(() => {
+                self.cancelDrawing()
               })
-            } else {
-              window.mapcache.addFeatureToGeoPackage({projectId: this.projectId, geopackageId: geopackage.id, tableName: featureTable, feature: feature}).then((rowId) => {
-                if (linkToImage != null) {
-                  window.mapcache.attachMediaToGeoPackage({
-                    projectId: this.projectId,
-                    id: window.mapcache.createUniqueID(),
-                    isGeoPackage: true,
-                    geopackagePath: geopackage.path,
-                    tableName: featureTable,
-                    featureId: rowId,
-                    url: linkToImage
-                  })
-                }
-              })
-              this.cancelDrawing()
-            }
-          })
+            })
+          } else {
+            self.additionalFeatureToAdd = additionalFeature
+            await self.saveFeature(self.project.id, geopackage.id, featureTable, feature)
+            self.cancelDrawing()
+          }
         }
       }
+    },
+    async saveFeature (projectId, geopackageId, tableName, feature) {
+      await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: feature})
+      if (this.additionalFeatureToAdd) {
+        this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
+        await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: this.additionalFeatureToAdd})
+        this.additionalFeatureToAdd = null
+      }
+      window.mapcache.notifyTab({projectId: projectId, tabId: 0})
     },
     cancelDrawing () {
       this.$nextTick(() => {
@@ -624,9 +624,11 @@ export default {
     addBaseMap (baseMap, map) {
       let self = this
       const baseMapId = baseMap.id
-      if (baseMap.layerConfiguration.filePath === 'offline') {
+      const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
+      if (baseMapId === getOfflineBaseMapId()) {
         self.baseMapLayers[baseMapId] = L.geoJSON(window.mapcache.getOfflineMap(), {
-          pane: 'baseMapPane',
+          pane: BASE_MAP_PANE.name,
+          zIndex: BASE_MAP_PANE.zIndex,
           style: function() {
             return {
               color: '#000000',
@@ -639,6 +641,21 @@ export default {
         })
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
+          this.setAttribution(baseMap.attribution)
+          self.baseMapLayers[baseMapId].bringToBack()
+        }
+      } else if (!isNil(defaultBaseMap)) {
+        self.baseMapLayers[baseMapId] = L.tileLayer(defaultBaseMap.layerConfiguration.url, {
+          pane: BASE_MAP_PANE.name,
+          zIndex: BASE_MAP_PANE.zIndex,
+          subdomains: defaultBaseMap.layerConfiguration.subdomains || [],
+          attribution: defaultBaseMap.layerConfiguration.attribution || '',
+          minZoom: 0,
+          maxZoom: 20
+        })
+        if (self.selectedBaseMapId === baseMapId) {
+          map.addLayer(self.baseMapLayers[baseMapId])
+          this.setAttribution(baseMap.attribution)
           self.baseMapLayers[baseMapId].bringToBack()
         }
       } else {
@@ -646,12 +663,13 @@ export default {
         self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
+          this.setAttribution(baseMap.attribution)
           self.baseMapLayers[baseMapId].bringToBack()
         }
       }
     },
     closePopup() {
-      this.map.removeLayer(this.coordinatePopup)
+      this.map.removeLayer(this.contextMenuPopup)
       this.$nextTick(() => {
         this.copiedToClipboard = false
       })
@@ -660,16 +678,16 @@ export default {
     convertToDms (dd, isLng) {
       const dir = dd < 0
         ? isLng ? 'W' : 'S'
-        : isLng ? 'E' : 'N';
+        : isLng ? 'E' : 'N'
 
-      const absDd = Math.abs(dd);
-      const deg = absDd | 0;
-      const frac = absDd - deg;
-      const min = (frac * 60) | 0;
-      let sec = frac * 3600 - min * 60;
+      const absDd = Math.abs(dd)
+      const deg = absDd | 0
+      const frac = absDd - deg
+      const min = (frac * 60) | 0
+      let sec = frac * 3600 - min * 60
       // Round it to 2 decimal points.
-      sec = Math.round(sec * 100) / 100;
-      return deg + "°" + min + "'" + sec + '"' + dir;
+      sec = Math.round(sec * 100) / 100
+      return deg + "°" + min + "'" + sec + '"' + dir
     },
     cancelAddFeature () {
       this.$nextTick(() => {
@@ -798,6 +816,25 @@ export default {
         }
       })
     },
+    updateExtent (overallExtent, layerExtent) {
+      if (isNil(overallExtent)) {
+        overallExtent = layerExtent.slice()
+      } else {
+        if (layerExtent[0] < overallExtent[0]) {
+          overallExtent[0] = layerExtent[0]
+        }
+        if (layerExtent[1] < overallExtent[1]) {
+          overallExtent[1] = layerExtent[1]
+        }
+        if (layerExtent[2] > overallExtent[2]) {
+          overallExtent[2] = layerExtent[2]
+        }
+        if (layerExtent[3] > overallExtent[3]) {
+          overallExtent[3] = layerExtent[3]
+        }
+      }
+      return overallExtent
+    },
     async getExtentForVisibleGeoPackagesAndLayers () {
       let overallExtent = null
       let geopackageKeys = keys(geopackageLayers)
@@ -807,46 +844,22 @@ export default {
         const tablesToZoomTo = keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
         const extentForGeoPackage = await window.mapcache.getExtentOfGeoPackageTables(geopackage.path, tablesToZoomTo)
         if (!isNil(extentForGeoPackage)) {
-          if (isNil(overallExtent)) {
-            overallExtent = extentForGeoPackage
-          } else {
-            if (extentForGeoPackage[0] < overallExtent[0]) {
-              overallExtent[0] = extentForGeoPackage[0]
-            }
-            if (extentForGeoPackage[1] < overallExtent[1]) {
-              overallExtent[1] = extentForGeoPackage[1]
-            }
-            if (extentForGeoPackage[2] > overallExtent[2]) {
-              overallExtent[2] = extentForGeoPackage[2]
-            }
-            if (extentForGeoPackage[3] > overallExtent[3]) {
-              overallExtent[3] = extentForGeoPackage[3]
-            }
-          }
+          overallExtent = this.updateExtent(overallExtent, extentForGeoPackage)
         }
       }
       const visibleSourceKeys = keys(this.dataSourceMapLayers).filter(key => this.dataSourceMapLayers[key].getLayer().visible)
       for (let i = 0; i < visibleSourceKeys.length; i++) {
         const layerExtent = this.dataSourceMapLayers[visibleSourceKeys[i]].getLayer().extent
         if (!isNil(layerExtent)) {
-          if (isNil(overallExtent)) {
-            overallExtent = layerExtent.slice()
-          } else {
-            if (layerExtent[0] < overallExtent[0]) {
-              overallExtent[0] = layerExtent[0]
-            }
-            if (layerExtent[1] < overallExtent[1]) {
-              overallExtent[1] = layerExtent[1]
-            }
-            if (layerExtent[2] > overallExtent[2]) {
-              overallExtent[2] = layerExtent[2]
-            }
-            if (layerExtent[3] > overallExtent[3]) {
-              overallExtent[3] = layerExtent[3]
-            }
-          }
+          overallExtent = this.updateExtent(overallExtent, layerExtent)
         }
       }
+
+      if (this.searchResultLayers != null) {
+        const bounds = this.searchResultLayers.pointFeatures.getBounds().extend(this.searchResultLayers.nonPointFeatures.getBounds()).pad(0.5)
+        overallExtent = this.updateExtent(overallExtent, [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()])
+      }
+
       return overallExtent
     },
     async queryForFeatures (e) {
@@ -903,39 +916,104 @@ export default {
       })
       this.observer.observe(document.getElementById('feature-table-ref'))
     },
+    setAttribution (attribution) {
+      if (this.attributionControl) {
+        this.map.removeControl(this.attributionControl)
+      }
+      this.attributionControl = L.control.attribution({
+        prefix: false,
+        position: 'bottomright',
+      })
+      this.attributionControl.addAttribution('<a onclick="window.mapcache.openExternal(\'https://leafletjs.com/\')" href="#">Leaflet</a>')
+      if (attribution != null) {
+        this.attributionControl.addAttribution(attribution)
+      }
+      this.map.addControl(this.attributionControl)
+    },
     initializeMap () {
       const defaultCenter = [39.658748, -104.843165]
       const defaultZoom = 3
       this.map = L.map('map', {
         editable: true,
+        attributionControl: false,
         editOptions: {
           zIndex: 502,
         },
-        attributionControl: false,
         center: defaultCenter,
         zoom: defaultZoom,
         minZoom: 2,
         maxZoom: 20
       })
       window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
-      this.map.createPane('gridSelectionPane')
-      this.map.getPane('gridSelectionPane').style.zIndex = 625
-      this.map.createPane('baseMapPane')
-      this.map.getPane('baseMapPane').style.zIndex = 200
-      this.map.createPane('editingPane')
-      this.map.getPane('editingPane').style.zIndex = 500
-      this.map.createPane('searchResultPane')
-      this.map.getPane('searchResultPane').style.zIndex = 700
+      this.map.createPane(GRID_SELECTION_PANE.name)
+      this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
+      this.map.createPane(BASE_MAP_PANE.name)
+      this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
+      this.map.createPane(EDITING_PANE.name)
+      this.map.getPane(EDITING_PANE.name).style.zIndex = EDITING_PANE.zIndex
+      this.map.createPane(SEARCH_RESULTS_PANE.name)
+      this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
+      this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
+      this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
 
       this.map.setView(defaultCenter, defaultZoom)
       this.setupControls()
       this.map.setView(defaultCenter, defaultZoom)
       this.setupEventHandlers()
     },
+    performReverseQuery () {
+      const self = this
+      const zoom = self.map.getZoom()
+      self.closePopup()
+      self.performingReverseQuery = true
+      document.getElementById('map').style.cursor = 'wait'
+      self.$nextTick(() => {
+        reverseQueryNominatim(self.contextMenuCoordinate.lat, self.contextMenuCoordinate.lng, zoom).then(result => {
+          result.fitMapToData = false
+          EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
+          self.$nextTick(() => {
+            if (result.featureCollection.features.length > 0) {
+              EventBus.$emit(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, result.featureCollection.features[0].properties.osm_id)
+            }
+          })
+        }).catch(() => {
+          console.error('Error retrieving nominatim reverse query results.')
+        }).finally(() => {
+          self.$nextTick(() => {
+            document.getElementById('map').style.cursor = ''
+            self.performingReverseQuery = false
+          })
+        })
+      })
+    },
     setupBaseMaps () {
       for (let i = 0; i < this.baseMaps.length; i++) {
         this.addBaseMap(this.baseMaps[i], this.map)
       }
+    },
+    setupAndDisplayGeoPackageSelection () {
+      this.$nextTick(() => {
+        const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
+        let layers = [NEW_GEOPACKAGE_OPTION]
+        Object.values(this.geopackages).forEach((geopackage) => {
+          layers.push({text: geopackage.name, value: geopackage.id})
+        })
+        this.geoPackageChoices = layers
+        if (!isNil(this.project.activeGeoPackage)) {
+          if (!isNil(this.project.activeGeoPackage.geopackageId)) {
+            const index = this.geoPackageChoices.findIndex(choice => choice.value === this.project.activeGeoPackage.geopackageId)
+            if (index > 0) {
+              this.geoPackageSelection = this.geoPackageChoices[index].value
+            }
+          }
+        }
+        this.layerSelectionVisible = true
+        this.$nextTick(() => {
+          if (!isNil(this.$refs.featureTableNameForm)) {
+            this.$refs.featureTableNameForm.validate()
+          }
+        })
+      })
     },
     setupControls () {
       const self = this
@@ -979,7 +1057,7 @@ export default {
     setupEventHandlers () {
       const self = this
       const checkFeatureCount = throttle(async function (e) {
-        if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.drawBoundsId) && isNil(self.gridBoundsId)) {
+        if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.drawBoundsId) && isNil(self.gridBoundsId) && !self.performingReverseQuery) {
           let count = 0
           // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
           const geopackageValues = Object.values(this.geopackages)
@@ -1008,8 +1086,14 @@ export default {
       this.map.on('click', (e) => {
         this.showLayerOrderingDialog = false
         this.showBaseMapSelection = false
-        this.consecutiveClicks++
-        this.debounceClickHandler(e)
+        if (!this.nominatimReverseQueryResultsReturned) {
+          this.consecutiveClicks++
+          if (this.searchResultLayers != null) {
+            EventBus.$emit(EventBus.EventTypes.DESELECT_NOMINATIM_SEARCH_RESULT)
+          }
+          this.debounceClickHandler(e)
+        }
+        this.nominatimReverseQueryResultsReturned = false
       })
       this.map.on('moveend', () => {
         if (this.map != null) {
@@ -1017,18 +1101,19 @@ export default {
           this.mapBounds = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
         }
       })
-      this.map.on('mousemove', checkFeatureCount)
+      this.map.on('mousemove', (e) => {
+        checkFeatureCount(e)
+      })
       this.map.on('contextmenu', e => {
         if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing) {
-          if (this.coordinatePopup && this.coordinatePopup.isOpen()) {
-            this.dialogCoordinate = e.latlng
-            this.coordinatePopup.setLatLng(e.latlng)
+          this.contextMenuCoordinate = e.latlng
+          if (this.contextMenuPopup && this.contextMenuPopup.isOpen()) {
+            this.contextMenuPopup.setLatLng(e.latlng)
           } else {
-            this.dialogCoordinate = e.latlng
             this.$nextTick(() => {
-              this.coordinatePopup = L.popup({minWidth: 300, closeButton: false, className: this.$vuetify.theme.dark ? 'theme--dark' : 'theme--light'})
+              this.contextMenuPopup = L.popup({minWidth: 226, maxWidth: 226, maxHeight: 137, closeButton: false, className: 'search-popup', offset: L.point(113, 157)})
                 .setLatLng(e.latlng)
-                .setContent(this.$refs['leafletCoordinatePopup'])
+                .setContent(this.$refs['contextMenuPopup'])
                 .openOn(this.map)
             })
           }
@@ -1037,26 +1122,7 @@ export default {
       this.map.on('editable:drawing:end', function (e) {
         if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
           e.layer.toggleEdit()
-          let layers = [NEW_GEOPACKAGE_OPTION]
-          Object.values(self.geopackages).forEach((geopackage) => {
-            layers.push({text: geopackage.name, value: geopackage.id})
-          })
-          self.createdLayer = e.layer
-          self.geoPackageChoices = layers
-          if (!isNil(self.project.activeGeoPackage)) {
-            if (!isNil(self.project.activeGeoPackage.geopackageId)) {
-              const index = self.geoPackageChoices.findIndex(choice => choice.value === self.project.activeGeoPackage.geopackageId)
-              if (index > 0) {
-                self.geoPackageSelection = self.geoPackageChoices[index].value
-              }
-            }
-          }
-          self.layerSelectionVisible = true
-          self.$nextTick(() => {
-            if (!isNil(self.$refs.featureTableNameForm)) {
-              self.$refs.featureTableNameForm.validate()
-            }
-          })
+          self.setupAndDisplayGeoPackageSelection()
         }
       })
       this.map.on('zoomend', () => {
@@ -1090,9 +1156,10 @@ export default {
       handler (newBaseMaps) {
         const self = this
         const selectedBaseMapId = this.selectedBaseMapId
+        const isDefaultBaseMap = self.defaultBaseMapIds.indexOf(selectedBaseMapId) !== -1
 
         let oldConfig
-        if (!isNil(self.baseMapLayers[selectedBaseMapId]) && selectedBaseMapId !== self.offlineBaseMapId) {
+        if (!isNil(self.baseMapLayers[selectedBaseMapId]) && !isDefaultBaseMap) {
           oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
         }
         // update the layer config stored for each base map
@@ -1103,7 +1170,7 @@ export default {
           }
         })
         const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
-        if (selectedBaseMapId !== self.offlineBaseMapId) {
+        if (!isDefaultBaseMap) {
           // if currently selected baseMapId is no longer available, be sure to remove it and close out the layer if possible
           if (isNil(selectedBaseMap)) {
             if (newBaseMaps.length - 1 < this.baseMapIndex) {
@@ -1130,12 +1197,13 @@ export default {
     selectedBaseMapId: {
       handler (newBaseMapId, oldBaseMapId) {
         const self = this
+        self.connectingToBaseMap = false
         self.$nextTick(async () => {
           this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
           const newBaseMap = self.baseMaps[self.baseMapIndex]
 
           let success = true
-          if (!isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
+          if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
             this.connectingToBaseMap = true
             success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             this.connectingToBaseMap = false
@@ -1156,11 +1224,13 @@ export default {
                 self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
               }
               self.map.addLayer(self.baseMapLayers[newBaseMapId])
+              this.setAttribution(newBaseMap.attribution)
               self.baseMapLayers[newBaseMapId].bringToBack()
             }
             self.mapBackground = newBaseMap.background || '#ddd'
           } else {
             self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
+            this.setAttribution(newBaseMap.attribution)
             self.baseMapLayers[self.offlineBaseMapId].bringToBack()
             self.selectedBaseMapId = self.offlineBaseMapId
           }
@@ -1215,8 +1285,8 @@ export default {
         })
         this.baseMapLayers[this.selectedBaseMapId].bringToBack()
         window.mapcache.setMapRenderingOrder({projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id)})
-        if (layers.length > 0) {
-          this.activeLayersControl.enable()
+        if (layers.length > 0 || this.searchResultLayers != null) {
+          this.activeLayersControl.enable(this.layerOrder.length)
         } else {
           this.activeLayersControl.disable()
           this.showLayerOrderingDialog = false
@@ -1432,7 +1502,7 @@ export default {
           }
           for (const baseMapId of keys(self.baseMapLayers)) {
             // if this is a vector layer, update it
-            if (baseMapId !== self.offlineBaseMapId && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
+            if (self.defaultBaseMapIds.indexOf(baseMapId) === -1 && self.baseMapLayers[baseMapId].getLayer().pane === 'vector') {
               // update max features
               self.baseMapLayers[baseMapId].updateMaxFeatures(updatedProject.maxFeatures)
               // if visible, we need to toggle the layer
@@ -1478,48 +1548,6 @@ export default {
   },
   mounted: function () {
     window.mapcache.clearEditFeatureGeometry({projectId: this.project.id})
-    EventBus.$on(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, () => {
-      if (this.searchResultLayer != null) {
-        this.map.removeLayer(this.searchResultLayer)
-      }
-    })
-    EventBus.$on(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, (data) => {
-      if (data != null && data.features != null && data.features.length > 0) {
-        if (this.searchResultLayer != null) {
-          this.map.removeLayer(this.searchResultLayer)
-        }
-        this.searchResultLayer = L.geoJSON(data, {
-          pane: 'searchResultPane'
-        })
-        this.map.addLayer(this.searchResultLayer)
-        this.map.fitBounds(this.searchResultLayer.getBounds().pad(0.05))
-      }
-    })
-    EventBus.$on(EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT, (geojson, image) => {
-      this.geojsonToSave = geojson
-      this.geojsonImageToSave = image
-      this.$nextTick(() => {
-        let layers = [NEW_GEOPACKAGE_OPTION]
-        Object.values(this.geopackages).forEach((geopackage) => {
-          layers.push({text: geopackage.name, value: geopackage.id})
-        })
-        this.geoPackageChoices = layers
-        if (!isNil(this.project.activeGeoPackage)) {
-          if (!isNil(this.project.activeGeoPackage.geopackageId)) {
-            const index = this.geoPackageChoices.findIndex(choice => choice.value === this.project.activeGeoPackage.geopackageId)
-            if (index > 0) {
-              this.geoPackageSelection = this.geoPackageChoices[index].value
-            }
-          }
-        }
-        this.layerSelectionVisible = true
-        this.$nextTick(() => {
-          if (!isNil(this.$refs.featureTableNameForm)) {
-            this.$refs.featureTableNameForm.validate()
-          }
-        })
-      })
-    })
     EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage))
     EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
     EventBus.$on(EventBus.EventTypes.ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
@@ -1535,7 +1563,7 @@ export default {
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT])
+    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO])
   },
   beforeUpdate: function () {
     const self = this
@@ -1604,8 +1632,8 @@ export default {
   }
   .nominatim-card {
     top: 10px;
-    min-width: 600px;
-    max-width: 600px !important;
+    min-width: 350px;
+    max-width: 350px !important;
     position: absolute !important;
     left: 10px !important;
     max-height: 350px !important;
@@ -1650,5 +1678,20 @@ export default {
     top: 8px;
     left: 16px;
     z-index: 10000;
+  }
+  .search-popup .leaflet-popup {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .search-popup .leaflet-popup-content-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .search-popup .leaflet-popup-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .search-popup .leaflet-popup-tip-container {
+    display: none !important;
   }
 </style>

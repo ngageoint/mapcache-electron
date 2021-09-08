@@ -1,8 +1,58 @@
 import {FeatureTableStyles, GeometryType, FeatureStyleExtension, FeatureTiles} from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
+import isEqual from 'lodash/isEqual'
 import values from 'lodash/values'
 import { performSafeGeoPackageOperation } from './GeoPackageCommon'
-import { randomStyle, getDefaultIcon } from '../util/VectorStyleUtilities'
+import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
+import { getDefaultMapCacheStyle } from '../util/style/CommonStyleUtilities'
+
+function _imageDataEqual (data1, data2) {
+  let equal = true
+  if (data1.length === data2.length) {
+    for (let i = 0; i < data1.length; i++) {
+      if (data1[i] !== data2[i]){
+        equal = false
+        break
+      }
+    }
+  } else {
+    equal = false
+  }
+  return equal
+}
+
+function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
+  if (!isNil(feature.style)) {
+    const featureTableStyles = _addStyleExtensionForTable(gp, tableName)
+    if (feature.style.icon) {
+      const newIcon = feature.style.icon
+      const existingIcons = featureTableStyles.getIconDao().queryForAll()
+      // if there is an icon matching my icons size, data, and anchor, use it, otherwise create a new icon and assign it to the feature
+      const existingIconId = existingIcons.findIndex(icon => {
+        return _imageDataEqual(icon.data, newIcon.data) && isEqual(icon.width, newIcon.width) && isEqual(icon.height, newIcon.height) && isEqual(icon.anchor_u, newIcon.anchorU) && isEqual(icon.anchor_v, newIcon.anchorV)
+      })
+      if (existingIconId !== -1) {
+        const existingIcon = existingIcons[existingIconId]
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, existingIcon.id, GeometryType.fromName(feature.geometry.type))
+      } else {
+        const iconId = _createIconRow(gp, tableName, newIcon)
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, iconId, GeometryType.fromName(feature.geometry.type))
+      }
+    } else if (feature.style.style) {
+      const newStyle = feature.style.style
+      const existingStyles = featureTableStyles.getStyleDao().queryForAll()
+      // if there is an existing style that matches the style i'm adding, use it, otherwise create a new style and assign it to the feature
+      const existingStyleId = existingStyles.findIndex(style => style.color === newStyle.color && style.opacity === newStyle.opacity && style.fill_color === newStyle.fillColor && style.fill_opacity === newStyle.fillOpacity && style.width === newStyle.width)
+      if (existingStyleId !== -1) {
+        const existingStyle = existingStyles[existingStyleId]
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName(feature.geometry.type))
+      } else {
+        const styleId = _createStyleRow(gp, tableName, newStyle)
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName(feature.geometry.type))
+      }
+    }
+  }
+}
 
 /**
  * Adds the style extension to a feature table
@@ -10,14 +60,23 @@ import { randomStyle, getDefaultIcon } from '../util/VectorStyleUtilities'
  * @param tableName
  */
 function _addStyleExtensionForTable(gp, tableName) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  const featureTableStyles = new FeatureTableStyles(gp, tableName)
   featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
   featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
   featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
-  featureTableStyles.createTableStyleRelationship()
-  featureTableStyles.createTableIconRelationship()
-  featureTableStyles.createStyleRelationship()
-  featureTableStyles.createIconRelationship()
+  if (!featureTableStyles.hasTableStyleRelationship()) {
+    featureTableStyles.createTableStyleRelationship()
+  }
+  if (!featureTableStyles.hasTableIconRelationship()) {
+    featureTableStyles.createTableIconRelationship()
+  }
+  if (!featureTableStyles.hasStyleRelationship()) {
+    featureTableStyles.createStyleRelationship()
+  }
+  if (!featureTableStyles.hasIconRelationship()) {
+    featureTableStyles.createIconRelationship()
+  }
+  return featureTableStyles
 }
 
 /**
@@ -514,7 +573,7 @@ async function updateIconRow(filePath, tableName, iconRow) {
  * @param tableName
  * @param style
  */
-function _createStyleRow(gp, tableName, style = randomStyle()) {
+function _createStyleRow(gp, tableName, style = getDefaultMapCacheStyle()) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let styleDao = featureTableStyles.getStyleDao()
   let styleRow = styleDao.newRow()
@@ -523,7 +582,7 @@ function _createStyleRow(gp, tableName, style = randomStyle()) {
   styleRow.setWidth(style.width)
   styleRow.setName(style.name)
   styleRow.setDescription(style.description)
-  featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
+  return featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
 }
 
 /**
@@ -557,7 +616,7 @@ function _createIconRow(gp, tableName, icon = getDefaultIcon()) {
   iconRow.height = icon.height
   iconRow.anchorU = icon.anchorU
   iconRow.anchorV = icon.anchorV
-  featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
+  return featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
 }
 
 /**
@@ -1021,5 +1080,6 @@ export {
   _getStyleRowObjects,
   _getIconRowObjects,
   getStyleDrawOverlap,
-  _getStyleDrawOverlap
+  _getStyleDrawOverlap,
+  _addOrSetStyleForFeature
 }

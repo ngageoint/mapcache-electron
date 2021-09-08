@@ -18,6 +18,9 @@ const Events = {
   BOUNDING_BOX_UPDATED: (id) => 'bounding-box-updated-' + id,
   NOMINATIM_SEARCH_RESULTS: 'nominatim-search-results',
   CLEAR_NOMINATIM_SEARCH_RESULTS: 'clear-nominatim-search-results',
+  SHOW_NOMINATIM_SEARCH_RESULT: 'show-nominatim-search-result',
+  HIGHLIGHT_NOMINATIM_SEARCH_RESULT_ON_MAP: 'highlight-nominatim-search-result-on-map',
+  DESELECT_NOMINATIM_SEARCH_RESULT: 'deselect-nominatim-search-result',
   SAVE_NOMINATIM_SEARCH_RESULT: 'save-nominatim-search-result',
 }
 

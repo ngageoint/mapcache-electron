@@ -346,6 +346,7 @@
   import reverse from 'lodash/reverse'
   import NumberPicker from '../Common/NumberPicker'
   import BoundingBoxEditor from '../Common/BoundingBoxEditor'
+  import {environment} from '../../lib/env/env'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -573,7 +574,8 @@
       },
       resetURLValidation () {
         this.serviceLayers = []
-        this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
+        this.dataSourceUrl = environment.defaultBaseMaps[0].url
+        this.subdomains = environment.defaultBaseMaps[0].subdomains
         this.selectedServiceType = 2
         this.selectedDataSourceLayers = []
         this.sortedLayers = []
@@ -680,7 +682,7 @@
     mounted () {
       this.resetURLValidation()
       this.previewing = false
-      this.dataSourceUrl = 'https://osm.gs.mil/tiles/default/{z}/{x}/{y}.png'
+      this.dataSourceUrl = environment.defaultBaseMaps[0].url
       this.urlIsValid = true
       this.$nextTick(() => {
         if (!isNil(this.$refs.dataSourceNameForm)) {

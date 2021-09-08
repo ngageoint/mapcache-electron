@@ -93,7 +93,7 @@ function requestTile (tileRequest) {
         }
         base64Image = canvas.toDataURL('image/png')
         if (canvas.dispose) {
-          canvas.dispose();
+          canvas.dispose()
         }
       } else {
         base64Image = getTile(db, coords.z, coords.x, coords.y, format)

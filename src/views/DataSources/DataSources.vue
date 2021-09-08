@@ -8,7 +8,8 @@
       :back="deselectDataSource">
     </data-source>
     <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
-    <v-sheet v-show="!urlSourceDialog && selectedDataSource == null" class="mapcache-sheet">
+    <overpass-data-source v-else-if="overpassDialog" :back="() => {overpassDialog = false}" :sources="sources" :project="project" :add-source="addSource"></overpass-data-source>
+    <v-sheet v-show="!urlSourceDialog && !overpassDialog && selectedDataSource == null" class="mapcache-sheet">
       <v-toolbar
         color="main"
         dark
@@ -94,6 +95,20 @@
           </template>
           <span>Download from url</span>
         </v-tooltip>
+        <v-tooltip right :disabled="!project.showToolTips">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+                fab
+                small
+                color="accent"
+                @click.stop.prevent="showOverpassDialog"
+                v-bind="attrs"
+                v-on="on">
+              <v-icon>{{mdiSteering}}</v-icon>
+            </v-btn>
+          </template>
+          <span>Download features with Overpass</span>
+        </v-tooltip>
       </v-speed-dial>
     </v-sheet>
   </div>
@@ -107,8 +122,9 @@ import ProcessingSource from './ProcessingSource'
 import DataSource from './DataSource'
 import DataSourceList from './DataSourceList'
 import AddDataSourceUrl from './AddDataSourceUrl'
-import {mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus} from '@mdi/js'
+import {mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus, mdiSteering} from '@mdi/js'
 import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
+import OverpassDataSource from '../Overpass/OverpassDataSource'
 
   let selectedDataSource = null
   let fab = false
@@ -132,13 +148,16 @@ import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
         mdiLayersPlus: mdiLayersPlus,
         mdiFileDocumentOutline: mdiFileDocumentOutline,
         mdiCloudDownloadOutline: mdiCloudDownloadOutline,
+        mdiSteering: mdiSteering,
         selectedDataSource,
         fab,
         urlSourceDialog: false,
+        overpassDialog: false,
         processingSourceList: []
       }
     },
     components: {
+      OverpassDataSource,
       AddDataSourceUrl,
       ProcessingSource,
       DataSource,
@@ -219,6 +238,10 @@ import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
       showUrlDialog () {
         this.fab = false
         this.urlSourceDialog = true
+      },
+      showOverpassDialog () {
+        this.fab = false
+        this.overpassDialog = true
       }
     },
     watch: {

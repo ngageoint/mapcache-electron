@@ -30,6 +30,7 @@ import {
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/FileConstants'
+import {addMediaAttachment} from '../../geopackage/GeoPackageMediaUtilities'
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   let filePath
@@ -390,7 +391,15 @@ async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feat
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
     const existingTable = geopackage.tables.features[tableName]
     const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-    addFeatureToFeatureTable(filePath, tableName, feature).then(function (rowId) {
+    addFeatureToFeatureTable(filePath, tableName, feature).then(rowId => {
+      if (feature.attachment != null) {
+        addMediaAttachment(filePath, tableName, rowId, feature.attachment).then(() => {
+          return Promise.resolve(rowId)
+        })
+      } else {
+        return Promise.resolve(rowId)
+      }
+    }).then((rowId) => {
       getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
         geopackage.size = getGeoPackageFileSize(filePath)
         existingTable.featureCount = tableInfo.featureCount

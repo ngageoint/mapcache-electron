@@ -235,31 +235,31 @@ async function renderTile (data) {
         }).catch(error => {
           reject(error)
         })
-        break;
+        break
       case MBTILES:
         requestMBTilesTile(data).then((result) => {
           resolve(result)
         }).catch(error => {
           reject(error)
         })
-        break;
+        break
       case VECTOR:
         requestGeoPackageVectorTile(data, resolve, reject)
-        break;
+        break
       case XYZ_FILE:
         requestXYZFileTile(data).then((result) => {
           resolve(result)
         }).catch(error => {
           reject(error)
         })
-        break;
+        break
       case GEOPACKAGE:
         requestGeoPackageTile(data, resolve, reject)
-        break;
+        break
       default:
         reject(new Error(data.layerType + ' not a supported layer type'))
     }
-  });
+  })
 }
 
 
@@ -326,8 +326,7 @@ function setupRequestListener () {
     } else if (message.type === REQUEST_TILE_REPROJECTION) {
       reprojectTile(message.data).then(result => {
         parentPort.postMessage({error: null, result: result})
-      }).catch(e => {
-        console.error(e)
+      }).catch(() => {
         parentPort.postMessage({error: 'Failed to project tile.', result: null})
       })
     }

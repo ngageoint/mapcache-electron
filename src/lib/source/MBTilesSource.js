@@ -2,7 +2,7 @@ import path from 'path'
 import jetpack from 'fs-jetpack'
 import Source from './Source'
 import MBTilesLayer from '../layer/tile/MBTilesLayer'
-import { leafletStyle } from '../util/VectorStyleUtilities'
+import { leafletStyle } from '../util/style/CommonStyleUtilities'
 import { getDb, getInfo, getZoomRange } from '../util/rendering/MBTilesUtilities'
 import { MBTILES } from '../layer/LayerTypes'
 

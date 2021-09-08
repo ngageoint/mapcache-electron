@@ -1,27 +1,15 @@
+import log from 'electron-log'
+import Store from 'electron-store'
+import path from 'path'
 import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
 import { buildFeatureLayer } from '../geopackage/GeoPackageFeatureTableBuilder'
 import { buildTileLayer } from '../geopackage/GeoPackageTileTableBuilder'
-import log from 'electron-log'
-import Store from 'electron-store'
 import { setSourceError } from '../vue/vuex/ProjectActions'
-import path from 'path'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/TileBoundingBoxUtils'
 import { reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
-import {
-  GET_USER_DATA_DIRECTORY,
-  IPC_EVENT_CONNECT,
-  IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS,
-  WORKER_BUILD_FEATURE_LAYER,
-  WORKER_BUILD_FEATURE_LAYER_COMPLETED,
-  WORKER_BUILD_FEATURE_LAYER_STATUS,
-  WORKER_BUILD_TILE_LAYER,
-  WORKER_BUILD_TILE_LAYER_COMPLETED,
-  WORKER_BUILD_TILE_LAYER_STATUS,
-  WORKER_READY
-} from '../electron/ipc/MapCacheIPC'
+import { GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, WORKER_BUILD_FEATURE_LAYER, WORKER_BUILD_FEATURE_LAYER_COMPLETED, WORKER_BUILD_FEATURE_LAYER_STATUS, WORKER_BUILD_TILE_LAYER, WORKER_BUILD_TILE_LAYER_COMPLETED, WORKER_BUILD_TILE_LAYER_STATUS, WORKER_READY } from '../electron/ipc/MapCacheIPC'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)

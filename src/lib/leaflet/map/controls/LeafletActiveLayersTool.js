@@ -62,7 +62,7 @@ export default class LeafletActiveLayersTools extends L.Control {
       }
     }
 
-    this.enable = () => {
+    this.enable = (layerCount) => {
       if (zoomEnabled) {
         this._zoomLink.onclick = function (e) {
           self.zoomToActiveLayers()
@@ -74,7 +74,7 @@ export default class LeafletActiveLayersTools extends L.Control {
         }
       }
 
-      if (clearEnabled) {
+      if (clearEnabled && layerCount > 0) {
         this._clearLink.onclick = function (e) {
           self.clearActiveLayers()
           e.stopPropagation()
@@ -85,7 +85,7 @@ export default class LeafletActiveLayersTools extends L.Control {
         }
       }
 
-      if (reorderEnabled) {
+      if (reorderEnabled && layerCount > 0) {
         this._reorderLink.onclick = function (e) {
           self.reorderLayers()
           e.stopPropagation()

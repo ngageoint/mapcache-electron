@@ -104,7 +104,7 @@ if (!gotTheLock) {
         }
       }
     } catch (e) {
-      app.quit();
+      app.quit()
     }
 
     const { setupInitialDirectories } = require('./lib/util/FileUtilities')

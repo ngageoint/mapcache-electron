@@ -51,15 +51,15 @@ async function convert4326ImageToGeoTIFF (filePath, geotiffFilePath, extent) {
 function rotateBoundingBox(boundingBox, rotation) {
   // Convert to geoJson polygon format which turf can read.
   // turf rotates and returns a geoJson polygon
-  const rotatedPoly = transformRotate(boundingBox.toGeoJSON().geometry, rotation);
+  const rotatedPoly = transformRotate(boundingBox.toGeoJSON().geometry, rotation)
   // Coverts the geoJson polygon to a geoJson bbox
-  const rotatedBBox = bbox(rotatedPoly);
+  const rotatedBBox = bbox(rotatedPoly)
   // Converts geoJson bbox into a Geopackage js bounding box.
-  const rotMinLongitude = rotatedBBox[0];
-  const rotMinLatitude = rotatedBBox[1];
-  const rotMaxLongitude = rotatedBBox[2];
-  const rotMaxLatitude = rotatedBBox[3];
-  return new BoundingBox(rotMinLongitude, rotMaxLongitude, rotMinLatitude, rotMaxLatitude);
+  const rotMinLongitude = rotatedBBox[0]
+  const rotMinLatitude = rotatedBBox[1]
+  const rotMaxLongitude = rotatedBBox[2]
+  const rotMaxLatitude = rotatedBBox[3]
+  return new BoundingBox(rotMinLongitude, rotMaxLongitude, rotMinLatitude, rotMaxLatitude)
 }
 
 /**

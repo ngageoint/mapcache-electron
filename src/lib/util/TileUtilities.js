@@ -266,7 +266,6 @@ function getZoomTileMatrixCount (matrices) {
   let count = 0
   keys(matrices).forEach(matrix => {
     matrices[matrix].forEach(tileSet => {
-      // console.log(tileSet.tileSet.toString() + ': [layers: ' + tileSet.layers.length + ', count: ' + tileSet.tileSet.tilesInSet() + ']')
       count += tileSet.tileSet.tilesInSet()
     })
   })
