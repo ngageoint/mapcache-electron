@@ -1,104 +1,45 @@
 <template>
   <v-card>
     <v-card-title>
-      {{isEditing ? 'Edit feature' : 'New feature'}}
+      {{isEditing ? 'Edit feature' : 'Save feature'}}
     </v-card-title>
     <v-card-text style="max-height: 500px;">
-      <v-card-subtitle class="pb-0 mb-0" v-if="editableColumns.length > 0">
-        {{isEditing ? 'Edit the feature\'s fields' : 'Set the new feature\'s fields'}}
+      <v-card-subtitle v-if="editableColumns.length > 0">
+        {{isEditing ? 'Edit the feature\'s fields' : 'Adjust the feature\'s fields.'}}
       </v-card-subtitle>
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
-          <v-list-item
-            :key="'editor-' + column.name"
-            v-for="(column, index) in editableColumns"
-          >
-            <v-list-item-content class="pa-4" style="margin: -16px;">
-              <v-text-field :autofocus="index === 0" :label="column.lowerCaseName" clearable v-if="column.dataType === TEXT" v-model="column.value" :rules="column.rules"></v-text-field>
-              <v-row no-gutters align="center" justify="space-between" v-else-if="column.dataType === BOOLEAN">
-                <v-col>
-                  <v-list-item-subtitle>{{column.lowerCaseName}}</v-list-item-subtitle>
-                </v-col>
-                <v-switch color="primary" v-model="column.value" class="pt-0" hide-details></v-switch>
-              </v-row>
-              <v-row no-gutters justify="space-between" v-else-if="column.dataType === DATE || column.dataType === DATETIME">
-                <v-col v-if="column.showDate">
-                  <v-menu
-                    v-model="column.dateMenu"
-                    :close-on-content-click="false"
-                    transition="scale-transition"
-                    offset-y
-                    min-width="290px"
-                  >
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-text-field
-                        v-model="column.dateValue"
-                        :label="column.name"
-                        :prepend-icon="mdiCalendar"
-                        readonly
-                        clearable
-                        v-bind="attrs"
-                        v-on="on"
-                      ></v-text-field>
-                    </template>
-                    <v-date-picker
-                      v-model="column.dateValue"
-                      no-title
-                      scrollable
-                    >
-                      <v-spacer></v-spacer>
-                      <v-btn
-                        text
-                        color="primary"
-                        @click="column.dateMenu = false"
-                      >
-                        OK
-                      </v-btn>
-                    </v-date-picker>
-                  </v-menu>
-                </v-col>
-                <v-col v-if="column.showTime">
-                  <v-menu
-                    v-model="column.timeMenu"
-                    :close-on-content-click="false"
-                    transition="scale-transition"
-                    offset-y
-                    min-width="290px"
-                  >
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-text-field
-                        v-model="column.timeValue"
-                        label="time"
-                        :prepend-icon="mdiClock"
-                        readonly
-                        clearable
-                        v-bind="attrs"
-                        v-on="on"
-                      ></v-text-field>
-                    </template>
-                    <v-time-picker
-                      v-model="column.timeValue"
-                      format="ampm"
-                      use-seconds
-                    >
-                      <v-spacer></v-spacer>
-                      <v-btn
-                        text
-                        color="primary"
-                        @click="column.timeMenu = false"
-                      >
-                        OK
-                      </v-btn>
-                    </v-time-picker>
-                  </v-menu>
-                </v-col>
-              </v-row>
-              <v-text-field :autofocus="index === 0" :label="column.lowerCaseName" clearable type="number" v-else v-model="column.value" :rules="column.rules"></v-text-field>
+          <v-list-item :key="'editor-' + column.name" v-for="(column, index) in editableColumns">
+            <v-list-item-content class="ma-0 pa-0">
+              <feature-editor-column :id="column.name + '_' + index" v-bind="column" :update-column-property="updateEditableColumn" :index="index"></feature-editor-column>
             </v-list-item-content>
           </v-list-item>
         </v-list>
+        <v-card-subtitle v-if="!isEditing && unrecognizedColumns.length > 0">
+          The following fields are not defined in the <b>{{tableName}}</b> feature layer. Selected fields will be added to the layer.
+        </v-card-subtitle>
+        <v-list v-if="!isEditing && unrecognizedColumns.length > 0" style="width: 100%">
+          <v-list-item>
+            <v-list-item-content class="ma-0 pa-0">
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-row no-gutters>
+                <p style="padding-right: 16px;">Select all</p>
+                <v-checkbox v-model="allColumnsSelected"></v-checkbox>
+              </v-row>
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item :key="'editor-' + column.name" v-for="(column, index) in unrecognizedColumns">
+            <v-list-item-content class="ma-0 pa-0">
+              <feature-editor-column :id="column.name + '_' + index" :index="index" v-bind="column" :update-column-property="updateUnrecognizedColumn"></feature-editor-column>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-checkbox v-model="columnsToAdd" :value="index"></v-checkbox>
+            </v-list-item-action>
+          </v-list-item>
+        </v-list>
       </v-form>
-      <v-card-subtitle v-if="editableColumns.length === 0">No fields to edit.</v-card-subtitle>
+      <v-card-subtitle v-if="editableColumns.length === 0 && unrecognizedColumns.length === 0">No fields to edit.</v-card-subtitle>
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
@@ -108,7 +49,7 @@
         {{editableColumns.length > 0 ? 'Cancel' : 'Close'}}
       </v-btn>
       <v-btn
-        v-if="formValid && editableColumns.length > 0"
+        v-if="formValid"
         color="primary"
         text
         @click="save">
@@ -140,9 +81,12 @@ import isObject from 'lodash/isObject'
 import cloneDeep from 'lodash/cloneDeep'
 import moment from 'moment'
 import {mdiCalendar, mdiClock} from '@mdi/js'
+import orderBy from 'lodash/orderBy'
+import FeatureEditorColumn from './FeatureEditorColumn'
 
 export default {
-    props: {
+  components: {FeatureEditorColumn},
+  props: {
       projectId: String,
       geopackagePath: String,
       id: String,
@@ -173,7 +117,8 @@ export default {
         date: null,
         formValid: false,
         failedToSaveErrorMessage: '',
-        failedToSaveSnackBar: false
+        failedToSaveSnackBar: false,
+        columnsToAdd: []
       }
     },
     asyncComputed: {
@@ -184,7 +129,36 @@ export default {
         default: []
       }
     },
+    computed: {
+      unrecognizedColumns () {
+        const featureColumns = window.mapcache.getLayerColumns({type: 'FeatureCollection', features: [this.feature]}).columns
+        const featureProperties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
+        return orderBy(featureColumns.filter(column => this.columns._columnNames.findIndex(name => name === column.name) === -1 && column.name !== '_feature_id').map(column => {
+          column.dataType = window.mapcache.GeoPackageDataType.fromName(column.dataType)
+          return window.mapcache.getEditableColumnObject(column, featureProperties)
+        }), ['lowerCaseName'], ['asc'])
+      },
+      allColumnsSelected: {
+        set(val) {
+          this.columnsToAdd = []
+          if (val) {
+            for(let i = 0; i < this.unrecognizedColumns.length; i++) {
+              this.columnsToAdd.push(i)
+            }
+          }
+        },
+        get() {
+          return this.columnsToAdd.length === this.unrecognizedColumns.length
+        }
+      }
+    },
     methods: {
+      updateUnrecognizedColumn (value, property, index) {
+        this.unrecognizedColumns[index][property] = value
+      },
+      updateEditableColumn (value, property, index) {
+        this.editableColumns[index][property] = value
+      },
       async save () {
         if (this.isEditing) {
           const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.feature, this.editableColumns)
@@ -239,8 +213,16 @@ export default {
               feature.properties[property] = JSON.stringify(value)
             }
           })
+          let columnsToAdd = this.unrecognizedColumns.filter((column, index) => this.columnsToAdd.indexOf(index) !== -1)
+          columnsToAdd.forEach(column => {
+            if (isObject(column.value)) {
+              feature.properties[column.name] = JSON.stringify(column.value)
+            } else {
+              feature.properties[column.name] = column.value
+            }
+          })
           if (this.isGeoPackage) {
-            await this.saveNewFeature(this.projectId, this.id, this.tableName, feature)
+            await this.saveNewFeature(this.projectId, this.id, this.tableName, feature, columnsToAdd)
           }
           this.close()
         }

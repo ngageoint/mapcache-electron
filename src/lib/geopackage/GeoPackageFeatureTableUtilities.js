@@ -27,7 +27,7 @@ import {
 } from './GeoPackageCommon'
 import {_addMediaAttachment} from './GeoPackageMediaUtilities'
 import {
-  _addOrSetStyleForFeature
+  _addOrSetStyleForFeature, _clearStylingForFeature
 } from './GeoPackageStyleUtilities'
 
 /**
@@ -481,6 +481,32 @@ async function addGeoPackageFeatureTableColumn (filePath, tableName, columnName,
 }
 
 /**
+ * Adds a table column to the geopackage
+ * @param gp
+ * @param tableName
+ * @param columns
+ */
+function _addGeoPackageFeatureTableColumns (gp, tableName, columns = []) {
+  const featureDao = gp.getFeatureDao(tableName)
+  columns.forEach(column => {
+    featureDao.addColumn(new FeatureColumn(featureDao.table.getUserColumns().columnCount(), column.name, column.dataType))
+  })
+}
+
+/**
+ * Adds a table column to the geopackage
+ * @param filePath
+ * @param tableName
+ * @param columns
+ * @returns {Promise<any>}
+ */
+async function addGeoPackageFeatureTableColumns (filePath, tableName, columns = []) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _addGeoPackageFeatureTableColumns(gp, tableName, columns)
+  })
+}
+
+/**
  * Gets a feature style row
  * @param gp
  * @param tableName
@@ -525,6 +551,12 @@ async function updateFeatureRow (filePath, tableName, featureRow) {
  */
 function _deleteFeatureRow (gp, tableName, featureRowId) {
   gp.getFeatureDao(tableName).deleteById(featureRowId)
+  try {
+    _clearStylingForFeature(gp, tableName, featureRowId)
+    // eslint-disable-next-line no-unused-vars
+  } catch (e) {
+    // eslint-disable-next-line no-empty
+  }
   _updateBoundingBoxForFeatureTable(gp, tableName)
 }
 
@@ -1093,5 +1125,6 @@ export {
   getFeatureColumns,
   _featureExists,
   featureExists,
-  buildGeoPackage
+  buildGeoPackage,
+  addGeoPackageFeatureTableColumns
 }

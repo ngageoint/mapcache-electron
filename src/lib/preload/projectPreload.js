@@ -14,13 +14,104 @@ import { Context, GeometryType, GeoPackageAPI, HtmlCanvasAdapter, SqliteAdapter,
 import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/MediaUtilities'
 import { createNextAvailableBaseMapDirectory, createNextAvailableSourceDirectory, getExtraResourcesDirectory, readJSONFile } from '../util/FileUtilities'
 import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
-import { setDataSource, setProjectName, showToolTips, setDataSourceDisplayName, addDataSources, addGeoPackage, setGeoPackageLayersVisible, setGeoPackageFeatureTableVisible, setGeoPackageTileTableVisible, sleep, renameGeoPackage, removeGeoPackage, renameGeoPackageTileTable, copyGeoPackageTileTable, deleteGeoPackageTileTable, renameGeoPackageFeatureTable, copyGeoPackageFeatureTable, deleteGeoPackageFeatureTable, renameGeoPackageFeatureTableColumn, deleteGeoPackageFeatureTableColumn, addGeoPackageFeatureTableColumn, removeDataSource, getGeoPackageFilePath, setFeatureStyle, setFeatureIcon, setTableStyle, setTableIcon, createStyleRow, createIconRow, updateStyleRow, updateIconRow, deleteStyleRow, deleteIconRow, addStyleExtensionForTable, removeStyleExtensionForTable, addFeatureTableToGeoPackage, updateFeatureGeometry, addFeatureToGeoPackage, updateFeatureTable, removeFeatureFromGeopackage, removeFeatureFromDataSource, setProjectMaxFeatures, setZoomControlEnabled, setDisplayZoomEnabled, setDisplayAddressSearchBar, clearActiveLayers, getExtentOfActiveLayers, synchronizeGeoPackage, synchronizeDataSource, setActiveGeoPackage, setActiveGeoPackageFeatureLayer, updateStyleKey, setDarkTheme, notifyTab, clearNotification, clearNotifications, setMapZoom, editFeatureGeometry, clearEditFeatureGeometry, setMapRenderingOrder, setPreviewLayer, clearPreviewLayer, addBaseMap, editBaseMap, removeBaseMap, setSourceError, saveConnectionSettings, saveBaseMapConnectionSettings } from '../vue/vuex/ProjectActions'
+import {
+  setDataSource,
+  setProjectName,
+  showToolTips,
+  setDataSourceDisplayName,
+  addDataSources,
+  addGeoPackage,
+  setGeoPackageLayersVisible,
+  setGeoPackageFeatureTableVisible,
+  setGeoPackageTileTableVisible,
+  sleep,
+  renameGeoPackage,
+  removeGeoPackage,
+  renameGeoPackageTileTable,
+  copyGeoPackageTileTable,
+  deleteGeoPackageTileTable,
+  renameGeoPackageFeatureTable,
+  copyGeoPackageFeatureTable,
+  deleteGeoPackageFeatureTable,
+  renameGeoPackageFeatureTableColumn,
+  deleteGeoPackageFeatureTableColumn,
+  addGeoPackageFeatureTableColumn,
+  removeDataSource,
+  getGeoPackageFilePath,
+  setFeatureStyle,
+  setFeatureIcon,
+  setTableStyle,
+  setTableIcon,
+  createStyleRow,
+  createIconRow,
+  updateStyleRow,
+  updateIconRow,
+  deleteStyleRow,
+  deleteIconRow,
+  addStyleExtensionForTable,
+  removeStyleExtensionForTable,
+  addFeatureTableToGeoPackage,
+  updateFeatureGeometry,
+  addFeatureToGeoPackage,
+  updateFeatureTable,
+  removeFeatureFromGeopackage,
+  removeFeatureFromDataSource,
+  setProjectMaxFeatures,
+  setZoomControlEnabled,
+  setDisplayZoomEnabled,
+  setDisplayAddressSearchBar,
+  clearActiveLayers,
+  getExtentOfActiveLayers,
+  synchronizeGeoPackage,
+  synchronizeDataSource,
+  setActiveGeoPackage,
+  setActiveGeoPackageFeatureLayer,
+  updateStyleKey,
+  setDarkTheme,
+  notifyTab,
+  clearNotification,
+  clearNotifications,
+  setMapZoom,
+  editFeatureGeometry,
+  clearEditFeatureGeometry,
+  setMapRenderingOrder,
+  setPreviewLayer,
+  clearPreviewLayer,
+  addBaseMap,
+  editBaseMap,
+  removeBaseMap,
+  setSourceError,
+  saveConnectionSettings,
+  saveBaseMapConnectionSettings,
+  clearStylingForFeature
+} from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, deleteGeoPackageTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
-import { getAllFeatureRows, getFeatureRow, updateFeatureRow, featureExists, countOfFeaturesAt, getFeatureCountInBoundingBox, getFeatureColumns, indexFeatureTable, _createFeatureTable, getAllFeaturesAsGeoJSON, getBoundingBoxForFeature } from '../geopackage/GeoPackageFeatureTableUtilities'
+import {
+  getAllFeatureRows,
+  getFeatureRow,
+  updateFeatureRow,
+  featureExists,
+  countOfFeaturesAt,
+  getFeatureCountInBoundingBox,
+  getFeatureColumns,
+  indexFeatureTable,
+  _createFeatureTable,
+  getAllFeaturesAsGeoJSON,
+  getBoundingBoxForFeature,
+  getLayerColumns
+} from '../geopackage/GeoPackageFeatureTableUtilities'
 import { getMediaAttachmentsCounts, deleteMediaAttachment, getMediaRelationships, getMediaRow, getMediaObjectUrl } from '../geopackage/GeoPackageMediaUtilities'
-import { getStyleItemsForFeature, getStyleAssignmentForFeatures, _getTableStyle, _getTableIcon, _getStyleRows, _getIconRows, getStyleDrawOverlap } from '../geopackage/GeoPackageStyleUtilities'
+import {
+  getStyleItemsForFeature,
+  getStyleAssignmentForFeatures,
+  _getTableStyle,
+  _getTableIcon,
+  _getStyleRows,
+  _getIconRows,
+  getStyleDrawOverlap
+} from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains } from '../util/URLUtilities'
 import { constructLayer } from '../layer/LayerFactory'
@@ -89,6 +180,71 @@ function determineAssignment (gp, tableName, geometryType) {
 
 function createBaseMapDirectory () {
   return createNextAvailableBaseMapDirectory(getUserDataDirectory())
+}
+
+function getEditableColumnObject (column, properties, features = []) {
+  const columnObject = {
+    name: column.name,
+    lowerCaseName: column.name.toLowerCase(),
+    dataType: column.dataType,
+    index: column.index
+  }
+  let value = properties[column.name]
+  if (value === undefined || value === null) {
+    value = column.defaultValue
+  }
+  if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
+    value = false
+  } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
+    value = properties[column.name] === 1 || properties[column.name] === true
+  }
+  if (column.dataType === GeoPackageDataType.DATETIME) {
+    columnObject.showDate = true
+    columnObject.showTime = true
+    columnObject.dateValue = null
+    columnObject.timeValue = null
+
+    if (!isNil(value)) {
+      try {
+        const dateVal = moment.utc(value)
+        value = new Date(value)
+        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
+        columnObject.timeValue = dateVal.format('hh:mm:ss')
+      } catch (e) {
+        value = null
+      }
+    }
+  }
+  if (column.dataType === GeoPackageDataType.DATE) {
+    columnObject.showDate = true
+    columnObject.dateValue = null
+    if (!isNil(value)) {
+      try {
+        const dateVal = moment.utc(value)
+        value = new Date(value)
+        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
+      } catch (e) {
+        value = null
+      }
+    }
+  }
+  columnObject.value = value === undefined ? null : value
+  if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+    columnObject.rules = []
+    if (column.notNull) {
+      columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
+    }
+    if (column.max) {
+      columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
+    }
+    if (column.min) {
+      columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
+    }
+    if (column.unique) {
+      columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
+    }
+  }
+  return columnObject
 }
 
 contextBridge.exposeInMainWorld('mapcache', {
@@ -434,71 +590,10 @@ contextBridge.exposeInMainWorld('mapcache', {
     if (isNil(columns) || isNil(columns._columns)) {
       return []
     }
-    const features = await getAllFeatureRows(filePath, tableName)
+    let features = await getAllFeatureRows(filePath, tableName)
     const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
-    const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id')
-      .map((column) => {
-      const columnObject = {
-        name: column.name,
-        lowerCaseName: column.name.toLowerCase(),
-        dataType: column.dataType,
-        index: column.index
-      }
-      let value = feature.properties[column.name]
-      if (value === undefined || value === null) {
-        value = column.defaultValue
-      }
-      if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
-        value = false
-      } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
-        value = properties[column.name] === 1 || properties[column.name] === true
-      }
-      if (column.dataType === GeoPackageDataType.DATETIME) {
-        columnObject.dateMenu = false
-        columnObject.showDate = true
-        columnObject.timeMenu = false
-        columnObject.showTime = true
-        if (!isNil(value)) {
-          try {
-            const dateVal = moment.utc(value)
-            value = new Date(value)
-            columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-            columnObject.timeValue = dateVal.format('hh:mm:ss')
-          } catch (e) {
-            value = null
-          }
-        }
-      }
-      if (column.dataType === GeoPackageDataType.DATE) {
-        columnObject.dateMenu = false
-        columnObject.showDate = true
-        if (!isNil(value)) {
-          try {
-            const dateVal = moment.utc(value)
-            value = new Date(value)
-            columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-          } catch (e) {
-            value = null
-          }
-        }
-      }
-      columnObject.value = value
-      if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-        columnObject.rules = []
-        if (column.notNull) {
-          columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
-        }
-        if (column.max) {
-          columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
-        }
-        if (column.min) {
-          columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
-        }
-        if (column.unique) {
-          columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
-        }
-      }
-      return columnObject
+    const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+      return getEditableColumnObject(column, properties, features)
     })
 
     return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
@@ -733,6 +828,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   removeDataSource,
   getGeoPackageFilePath,
   setFeatureStyle,
+  clearStylingForFeature,
   setFeatureIcon,
   setTableStyle,
   setTableIcon,
@@ -780,5 +876,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getBoundingBoxForFeature,
   getMediaObjectUrl,
   getStyleDrawOverlap,
-  getOverpassQuery
+  getOverpassQuery,
+  getLayerColumns,
+  getEditableColumnObject
 })

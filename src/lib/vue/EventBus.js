@@ -4,6 +4,7 @@ import Vue from 'vue'
 const EventBus = new Vue()
 
 const Events = {
+  ALERT_MESSAGE: 'alert-message',
   ZOOM_TO: 'zoom-to',
   PREVIEW_ZOOM_TO: 'preview-zoom-to',
   REORDER_MAP_LAYERS: 'reorder-map-layers',

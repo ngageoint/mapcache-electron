@@ -143,6 +143,7 @@ export default class LeafletDraw extends L.Control {
         this.drawing.remove()
         this.drawing = null
         this.drawingType = null
+        this.isDrawing = false
         this.enableDrawingLinks()
         L.DomUtil.addClass(this._cancelLink, 'hidden')
       }

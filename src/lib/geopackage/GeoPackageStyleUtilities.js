@@ -33,10 +33,10 @@ function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
       })
       if (existingIconId !== -1) {
         const existingIcon = existingIcons[existingIconId]
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, existingIcon.id, GeometryType.fromName(feature.geometry.type))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, existingIcon.id, GeometryType.fromName(feature.geometry.type.toUpperCase()))
       } else {
         const iconId = _createIconRow(gp, tableName, newIcon)
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, iconId, GeometryType.fromName(feature.geometry.type))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, iconId, GeometryType.fromName(feature.geometry.type.toUpperCase()))
       }
     } else if (feature.style.style) {
       const newStyle = feature.style.style
@@ -45,10 +45,10 @@ function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
       const existingStyleId = existingStyles.findIndex(style => style.color === newStyle.color && style.opacity === newStyle.opacity && style.fill_color === newStyle.fillColor && style.fill_opacity === newStyle.fillOpacity && style.width === newStyle.width)
       if (existingStyleId !== -1) {
         const existingStyle = existingStyles[existingStyleId]
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName(feature.geometry.type))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName(feature.geometry.type.toUpperCase()))
       } else {
         const styleId = _createStyleRow(gp, tableName, newStyle)
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName(feature.geometry.type))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName(feature.geometry.type.toUpperCase()))
       }
     }
   }
@@ -426,9 +426,9 @@ function _getStyleItemsForFeature(gp, tableName, rowId) {
       const iconRow = featureTableStyles.getFeatureStyleExtension().getIcon(tableName, rowId, isNil(feature) ? null : geometryType, false)
       if (!isNil(iconRow)) {
         result.icon = {
-          anchorU: iconRow.anchor_u,
-          anchorV: iconRow.anchor_v,
-          contentType: iconRow.content_type,
+          anchorU: iconRow.anchorU,
+          anchorV: iconRow.anchorV,
+          contentType: iconRow.contentType,
           data: iconRow.data,
           description: iconRow.description,
           height: iconRow.height,
@@ -819,6 +819,7 @@ function _setFeatureStyle(gp, tableName, featureId, styleId) {
     return featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, geometryType, null)
   } else {
     let style = featureTableStyles.getStyleDao().queryForId(styleId)
+    featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, geometryType, null)
     return featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, geometryType, style)
   }
 }
@@ -834,6 +835,42 @@ function _setFeatureStyle(gp, tableName, featureId, styleId) {
 async function setFeatureStyle(filePath, tableName, featureId, styleId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _setFeatureStyle(gp, tableName, featureId, styleId)
+  })
+}
+
+/**
+ * Sets a feature style
+ * @param gp
+ * @param tableName
+ * @param featureId
+ */
+function _clearStylingForFeature(gp, tableName, featureId) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const feature = featureDao.queryForId(featureId)
+  const featureTableStyles = new FeatureTableStyles(gp, tableName)
+  if (featureTableStyles.has()) {
+    const geometryType = GeometryType.fromName(feature.geometryType.toUpperCase())
+    if (featureTableStyles.hasStyleRelationship()) {
+      featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, geometryType, null)
+      featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, null, null)
+    }
+    if (featureTableStyles.hasIconRelationship()) {
+      featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, geometryType, null)
+      featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, null, null)
+    }
+  }
+}
+
+/**
+ * clears a feature's styling
+ * @param filePath
+ * @param tableName
+ * @param featureId
+ * @returns {Promise<any>}
+ */
+async function clearStylingForFeature(filePath, tableName, featureId) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _clearStylingForFeature(gp, tableName, featureId)
   })
 }
 
@@ -854,6 +891,7 @@ function _setFeatureIcon(gp, tableName, featureId, iconId) {
     return featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, geometryType, null)
   } else {
     let icon = featureTableStyles.getIconDao().queryForId(iconId)
+    featureTableStyles.getFeatureStyleExtension().setStyle(tableName, featureId, geometryType, null)
     return featureTableStyles.getFeatureStyleExtension().setIcon(tableName, featureId, geometryType, icon)
   }
 }
@@ -968,8 +1006,7 @@ function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
     if (!isNil(featureIcon)) {
       featureStyleMapping[feature.id].iconId = featureIcon
       featureStyleMapping[feature.id].styleId = null
-    }
-    if (!isNil(featureStyle)) {
+    } else if (!isNil(featureStyle)) {
       featureStyleMapping[feature.id].styleId = featureStyle
       featureStyleMapping[feature.id].iconId = null
     }
@@ -1081,5 +1118,7 @@ export {
   _getIconRowObjects,
   getStyleDrawOverlap,
   _getStyleDrawOverlap,
-  _addOrSetStyleForFeature
+  _addOrSetStyleForFeature,
+  clearStylingForFeature,
+  _clearStylingForFeature
 }

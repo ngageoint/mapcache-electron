@@ -4,6 +4,8 @@ import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
 import {EDITING_PANE} from '../panes/MapPanes'
+import {explodeFlattenedFeature, flattenFeature, isRectangle} from '../../../util/geojson/GeoJSONUtilities'
+import bbox from '@turf/bbox'
 
 export default class LeafletEdit extends L.Control {
   constructor (options) {
@@ -15,132 +17,6 @@ export default class LeafletEdit extends L.Control {
       ...options
     }
     super(mergedOptions)
-  }
-
-  /**
-   * Explodes a flattened feature using it's container structure
-   * @param container
-   * @param features
-   * @returns {{coordinates: *, type: *}|{geometries: *, type: *}}
-   */
-  static explodeFlattenedFeature (container, features) {
-    let geometry
-    if (container.isLeaf) {
-      const indexedFeature = features.find(feature => feature.properties.index === container.index)
-      if (!isNil(indexedFeature)) {
-        geometry = indexedFeature.geometry
-      }
-    } else {
-      if (container.type === 'GeometryCollection') {
-        let geometries = container.items.map(item => this.explodeFlattenedFeature(item, features))
-        if (geometries.length > 0) {
-          geometry = {
-            type: container.type,
-            geometries: geometries
-          }
-        }
-      } else if (container.type === 'Polygon') {
-        let coordinates = container.items.map(item => this.explodeFlattenedFeature(item, features))
-        geometry = {
-          type: 'Polygon',
-          coordinates: coordinates.map(coordinate => coordinate.coordinates[0])
-        }
-      } else {
-        let coordinates = container.items.map(item => this.explodeFlattenedFeature(item, features)).map(geometry => geometry.coordinates)
-        if (coordinates.length > 0) {
-          geometry = {
-            type: container.type,
-            coordinates: coordinates
-          }
-        }
-      }
-    }
-    return geometry
-  }
-
-  /**
-   * This will take a feature and flatten it. If it contains any multi features or geometry collections within it, they will be flattened as well
-   * @param feature
-   * @param indexObject
-   */
-  static flattenFeature (feature, indexObject = {index: 0}) {
-    let features = []
-    // each container represents a geometry in the feature
-    let container = {
-      type: feature.geometry.type,
-      isLeaf: false,
-      items: []
-    }
-    switch (window.mapcache.GeometryType.fromName(feature.geometry.type.toUpperCase())) {
-      case window.mapcache.GeometryType.MULTIPOINT:
-      case window.mapcache.GeometryType.MULTILINESTRING:
-      case window.mapcache.GeometryType.MULTIPOLYGON:
-        feature.geometry.coordinates.forEach(coordinates => {
-          let result = LeafletEdit.flattenFeature({
-            type: 'Feature',
-            geometry: {
-              type: feature.geometry.type.substring(5),
-              coordinates
-            },
-            properties: {}
-          }, indexObject)
-          result.features.forEach(feature => {
-            features.push(feature)
-          })
-          container.items.push(result.container)
-        })
-        break
-      case window.mapcache.GeometryType.GEOMETRYCOLLECTION:
-        feature.geometry.geometries.forEach(geometry => {
-          let result = LeafletEdit.flattenFeature({
-            type: 'Feature',
-            geometry: geometry,
-            properties: {}
-          }, indexObject)
-          result.features.forEach(feature => {
-            features.push(feature)
-          })
-          container.items.push(result.container)
-        })
-        break
-      case window.mapcache.GeometryType.POLYGON:
-        // polygon has an external ring and up to several holes.
-        // split these up some...
-        if (feature.geometry.coordinates.length > 1) {
-          feature.geometry.coordinates.forEach(coordinates => {
-            let result = LeafletEdit.flattenFeature({
-              type: 'Feature',
-              geometry: {
-                type: 'Polygon',
-                coordinates: [coordinates]
-              },
-              properties: {}
-            }, indexObject)
-            result.features.forEach(feature => {
-              features.push(feature)
-            })
-            container.items.push(result.container)
-          })
-        } else {
-          container.isLeaf = true
-          container.index = indexObject.index
-          feature.properties.index = indexObject.index
-          features.push(feature)
-          indexObject.index++
-        }
-        break
-      default:
-        container.isLeaf = true
-        container.index = indexObject.index
-        feature.properties.index = indexObject.index
-        features.push(feature)
-        indexObject.index++
-        break
-    }
-    return {
-      features,
-      container
-    }
   }
 
   isEditing () {
@@ -177,33 +53,42 @@ export default class LeafletEdit extends L.Control {
         this.feature = cloneDeep(editingFeature.featureToEdit)
         this.feature.type = 'Feature'
 
-        let flattenResults = LeafletEdit.flattenFeature(this.feature)
-        this.featureContainer = flattenResults.container
-        let featureCollection = {
-          type: 'FeatureCollection',
-          features: flattenResults.features
-        }
-
-        this.editingLayer = L.geoJSON(featureCollection, {
-          pane: EDITING_PANE.name,
-          zIndex: EDITING_PANE.zIndex,
-          pointToLayer: function (geojson, latlng) {
-            return new L.Marker(latlng, {draggable: true})
-          },
-          onEachFeature: function (featureData, layer) {
-            try {
-              if (layer._layers) {
-                const layerKeys = keys(layer._layers)
-                for (let i = 0; i < layerKeys.length; i++) {
-                  try {
-                    layer._layers[layerKeys[i]].editing.enable()
-                  } catch (e) {}
-                }
-              }
-              layer.editing.enable()
-            } catch (e) {}
+        if (isRectangle(this.feature.geometry)) {
+          const bounds = bbox(this.feature)
+          this.editingLayer = L.rectangle([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+          this.editingLayer.editing.enable()
+          this.editingLayer.addTo(map)
+          this.featureIsRectangle = true
+        } else {
+          this.featureIsRectangle = false
+          let flattenResults = flattenFeature(this.feature)
+          this.featureContainer = flattenResults.container
+          let featureCollection = {
+            type: 'FeatureCollection',
+            features: flattenResults.features
           }
-        }).addTo(map)
+
+          this.editingLayer = L.geoJSON(featureCollection, {
+            pane: EDITING_PANE.name,
+            zIndex: EDITING_PANE.zIndex,
+            pointToLayer: function (geojson, latlng) {
+              return new L.Marker(latlng, {draggable: true})
+            },
+            onEachFeature: function (featureData, layer) {
+              try {
+                if (layer._layers) {
+                  const layerKeys = keys(layer._layers)
+                  for (let i = 0; i < layerKeys.length; i++) {
+                    try {
+                      layer._layers[layerKeys[i]].editing.enable()
+                    } catch (e) {}
+                  }
+                }
+                layer.editing.enable()
+              } catch (e) {}
+            }
+          }).addTo(map)
+        }
       }
     }
 
@@ -219,20 +104,25 @@ export default class LeafletEdit extends L.Control {
       this.tableName = null
       this.feature = null
       this.featureContainer = null
+      this.featureIsRectangle = false
     }
 
     this._saveLink.onclick = function (e) {
       if (!isNil(this.editingLayer)) {
-        let layers = this.editingLayer.getLayers()
-        this.feature.geometry = LeafletEdit.explodeFlattenedFeature(this.featureContainer, layers.map(layer => {
-          let feature = cloneDeep(layer.feature)
-          if (window.mapcache.GeometryType.fromName(layer.feature.geometry.type.toUpperCase()) === window.mapcache.GeometryType.POINT) {
-            feature.geometry.coordinates = [layer._latlng.lng, layer._latlng.lat]
-          } else {
-            feature.geometry = layer.toGeoJSON(10).geometry
-          }
-          return feature
-        }))
+        if (this.featureIsRectangle) {
+          this.feature.geometry = this.editingLayer.toGeoJSON(10).geometry
+        } else {
+          let layers = this.editingLayer.getLayers()
+          this.feature.geometry = explodeFlattenedFeature(this.featureContainer, layers.map(layer => {
+            let feature = cloneDeep(layer.feature)
+            if (window.mapcache.GeometryType.fromName(layer.feature.geometry.type.toUpperCase()) === window.mapcache.GeometryType.POINT) {
+              feature.geometry.coordinates = [layer._latlng.lng, layer._latlng.lat]
+            } else {
+              feature.geometry = layer.toGeoJSON(10).geometry
+            }
+            return feature
+          }))
+        }
         window.mapcache.updateFeatureGeometry({projectId: this.projectId, id: this.id, isGeoPackage: this.isGeoPackage, tableName: this.tableName, featureGeoJson: this.feature})
       }
       this.cancelEdit()

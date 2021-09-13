@@ -151,7 +151,9 @@ export default {
       const queryObject = Object.assign({}, this.results.requestObject)
       queryObject.exclude_place_ids = osmIdsToIgnore.join(',')
       const result = await queryWithRequestObject(queryObject)
-      if (result.featureCollection.features.length > 0) {
+      if (result.error) {
+        EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, result.error)
+      } else if (result.featureCollection.features.length > 0) {
         result.featureCollection.features = this.results.featureCollection.features.concat(result.featureCollection.features)
         EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
       } else {

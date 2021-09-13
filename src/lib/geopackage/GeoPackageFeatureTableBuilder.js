@@ -171,7 +171,7 @@ async function buildFeatureLayer (configuration, statusCallback) {
       }
 
       const featureCount = featureCollection.features.length
-      let extent = bbox(featureCollection)
+      let extent = featureCount > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
       let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
 
       status.progress = 30.0

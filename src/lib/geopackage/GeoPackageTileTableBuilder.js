@@ -16,7 +16,7 @@ import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
 import { createCanvas, isBlank, hasTransparentPixels } from '../util/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
-import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix, SCALING_METHOD } from '../util/TileUtilities'
+import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix } from '../util/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 
 /**

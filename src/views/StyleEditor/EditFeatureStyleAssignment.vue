@@ -103,7 +103,7 @@ export default {
     },
     data () {
       return {
-        model: this.assignment.style ? this.assignment.styles.findIndex(style => style.id === this.assignment.style.id) : (this.assignment.icon ? this.assignment.icons.findIndex(icon => icon.id === this.assignment.icon.id) + this.assignment.styles.length : null)
+        model: this.assignment.icon ? this.assignment.icons.findIndex(icon => icon.id === this.assignment.icon.id) + this.assignment.styles.length : (this.assignment.style ? this.assignment.styles.findIndex(style => style.id === this.assignment.style.id) : null)
       }
     },
     methods: {
@@ -111,16 +111,14 @@ export default {
         if (this.model != null && this.model >= 0) {
           const items = this.assignment.styles.concat(this.assignment.icons)
           const selection = items[this.model]
-          if (this.model < this.assignment.styles.length) {
-            window.mapcache.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: selection.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            window.mapcache.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-          } else {
+          // they selected an icon
+          if (selection.contentType != null) {
             window.mapcache.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: selection.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-            window.mapcache.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          } else {
+            window.mapcache.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: selection.id, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
           }
         } else {
-          window.mapcache.setFeatureStyle({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, styleId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
-          window.mapcache.setFeatureIcon({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, iconId: -1, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
+          window.mapcache.clearStylingForFeature({projectId: this.projectId, id: this.id, tableName: this.tableName, featureId: this.assignment.featureId, isGeoPackage: this.isGeoPackage, isBaseMap: this.isBaseMap})
         }
         this.close()
       }

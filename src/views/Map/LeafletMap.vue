@@ -112,12 +112,12 @@
       </v-list>
     </div>
     <v-snackbar
-      v-if="copiedToClipboard"
-      v-model="copiedToClipboard"
-      timeout="1500"
-      absolute
+        v-if="showAlertMessage"
+        v-model="showAlertMessage"
+        timeout="1500"
+        absolute
     >
-      Copied to clipboard.
+      {{alertMessage}}
     </v-snackbar>
     <v-expand-transition>
       <v-card
@@ -393,7 +393,8 @@ export default {
       lastShowFeatureTableEvent: null,
       geopackageExistsDialog: false,
       dialogCoordinate: null,
-      copiedToClipboard: false,
+      showAlertMessage: false,
+      alertMessage: '',
       isEditing: false,
       showLayerOrderingDialog: false,
       showBaseMapSelection: false,
@@ -452,7 +453,8 @@ export default {
       window.mapcache.copyToClipboard(text)
       this.closePopup()
       setTimeout(() => {
-        this.copiedToClipboard = true
+        this.alertMessage = 'Copied to clipboard.'
+        this.showAlertMessage = true
       }, 100)
     },
     async confirmGeoPackageFeatureLayerSelection () {
@@ -560,7 +562,7 @@ export default {
         } else {
           const featureTable = self.geoPackageFeatureLayerChoices[self.geoPackageFeatureLayerSelection].text
           const columns = await window.mapcache.getFeatureColumns(geopackage.path, featureTable)
-          if (!isNil(columns) && !isNil(columns._columns) && columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0) {
+          if (!isNil(columns) && !isNil(columns._columns) && (keys(feature.properties).filter(key => key !== '_feature_id').length > 0 || columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0)) {
             self.featureToAdd = feature
             self.additionalFeatureToAdd = additionalFeature
             self.featureToAddGeoPackage = geopackage
@@ -580,8 +582,8 @@ export default {
         }
       }
     },
-    async saveFeature (projectId, geopackageId, tableName, feature) {
-      await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: feature})
+    async saveFeature (projectId, geopackageId, tableName, feature, columnsToAdd) {
+      await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: feature, columnsToAdd: columnsToAdd})
       if (this.additionalFeatureToAdd) {
         this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
         await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: this.additionalFeatureToAdd})
@@ -671,7 +673,7 @@ export default {
     closePopup() {
       this.map.removeLayer(this.contextMenuPopup)
       this.$nextTick(() => {
-        this.copiedToClipboard = false
+        this.showAlertMessage = false
       })
 
     },
@@ -969,13 +971,19 @@ export default {
       document.getElementById('map').style.cursor = 'wait'
       self.$nextTick(() => {
         reverseQueryNominatim(self.contextMenuCoordinate.lat, self.contextMenuCoordinate.lng, zoom).then(result => {
-          result.fitMapToData = false
-          EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
-          self.$nextTick(() => {
-            if (result.featureCollection.features.length > 0) {
-              EventBus.$emit(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, result.featureCollection.features[0].properties.osm_id)
-            }
-          })
+          if (result.error) {
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, result.error)
+          } else if (result.featureCollection.features.length === 0) {
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Nothing found.')
+          } else {
+            result.fitMapToData = false
+            EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
+            self.$nextTick(() => {
+              if (result.featureCollection.features.length > 0) {
+                EventBus.$emit(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, result.featureCollection.features[0].properties.osm_id)
+              }
+            })
+          }
         }).catch(() => {
           console.error('Error retrieving nominatim reverse query results.')
         }).finally(() => {
@@ -1122,6 +1130,7 @@ export default {
       this.map.on('editable:drawing:end', function (e) {
         if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
           e.layer.toggleEdit()
+          self.createdLayer = e.layer
           self.setupAndDisplayGeoPackageSelection()
         }
       })
@@ -1557,13 +1566,17 @@ export default {
       const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom});
       this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom});
     })
+    EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message) => {
+      this.alertMessage = message
+      this.showAlertMessage = true
+    })
     this.maxFeatures = this.project.maxFeatures
     this.registerResizeObserver()
     this.initializeMap()
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO])
+    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.ALERT_MESSAGE])
   },
   beforeUpdate: function () {
     const self = this

@@ -76,8 +76,12 @@ export default {
       } else {
         this.searching = true
         this.searchGeoJson(this.query).then(result => {
+          if (result.error) {
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, result.error)
+          } else {
+            EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
+          }
           this.searching = false
-          EventBus.$emit(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, result)
         })
       }
     },
@@ -97,7 +101,15 @@ export default {
       this.requestingFeatures = false
       this.query = null
     })
+    EventBus.$on(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, (data) => {
+      if (data.reverse && data.featureCollection.features.length > 0) {
+        this.query = data.featureCollection.features[0].properties.name
+      }
+    })
     EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
+  },
+  beforeDestroy() {
+    EventBus.$off([EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS])
   }
 }
 </script>

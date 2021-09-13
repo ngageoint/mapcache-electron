@@ -26,7 +26,7 @@ import {
   createFeatureTable,
   _deleteFeatureRow,
   deleteFeatureRow,
-  addFeatureToFeatureTable
+  addFeatureToFeatureTable, addGeoPackageFeatureTableColumns
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/FileConstants'
@@ -286,6 +286,13 @@ function setFeatureStyle ({projectId, id, tableName, featureId, styleId, isGeoPa
   })
 }
 
+function clearStylingForFeature ({projectId, id, tableName, featureId, isGeoPackage, isBaseMap}) {
+  const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
+  GeoPackageStyleUtilities.clearStylingForFeature(filePath, tableName, featureId).then(function () {
+    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+  })
+}
+
 function setFeatureIcon ({projectId, id, tableName, featureId, iconId, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
   GeoPackageStyleUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
@@ -386,30 +393,32 @@ function updateFeatureGeometry ({projectId, id, isGeoPackage, tableName, feature
   })
 }
 
-async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature}) {
+async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature, columnsToAdd = []}) {
   return new Promise((resolve) => {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
     const existingTable = geopackage.tables.features[tableName]
     const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-    addFeatureToFeatureTable(filePath, tableName, feature).then(rowId => {
-      if (feature.attachment != null) {
-        addMediaAttachment(filePath, tableName, rowId, feature.attachment).then(() => {
+    addGeoPackageFeatureTableColumns(filePath, tableName, columnsToAdd).then(() => {
+      addFeatureToFeatureTable(filePath, tableName, feature).then(rowId => {
+        if (feature.attachment != null) {
+          addMediaAttachment(filePath, tableName, rowId, feature.attachment).then(() => {
+            return Promise.resolve(rowId)
+          })
+        } else {
           return Promise.resolve(rowId)
+        }
+      }).then((rowId) => {
+        getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
+          geopackage.size = getGeoPackageFileSize(filePath)
+          existingTable.featureCount = tableInfo.featureCount
+          existingTable.extent = tableInfo.extent
+          existingTable.description = tableInfo.description
+          existingTable.styleKey = existingTable.styleKey + 1
+          existingTable.indexed = tableInfo.indexed
+          geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+          store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+          resolve(rowId)
         })
-      } else {
-        return Promise.resolve(rowId)
-      }
-    }).then((rowId) => {
-      getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-        geopackage.size = getGeoPackageFileSize(filePath)
-        existingTable.featureCount = tableInfo.featureCount
-        existingTable.extent = tableInfo.extent
-        existingTable.description = tableInfo.description
-        existingTable.styleKey = existingTable.styleKey + 1
-        existingTable.indexed = tableInfo.indexed
-        geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-        resolve(rowId)
       })
     })
   })
@@ -790,5 +799,6 @@ export {
   removeBaseMap,
   setSourceError,
   saveConnectionSettings,
-  saveBaseMapConnectionSettings
+  saveBaseMapConnectionSettings,
+  clearStylingForFeature
 }
