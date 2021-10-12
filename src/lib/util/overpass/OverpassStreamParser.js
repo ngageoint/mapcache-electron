@@ -715,9 +715,10 @@ function cleanup () {
  * @param featureCallback
  * @param elementsInFile
  * @param completionPercentageCallback
+ * @param adjustBatchSize (set the batch size for better processing speed)
  * @return {Promise<unknown>}
  */
-async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile, completionPercentageCallback) {
+async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile, completionPercentageCallback, adjustBatchSize) {
   const dbFile = path.join(path.dirname(filePath), 'osm.db')
   const db = getOrCreateDb(dbFile)
 
@@ -797,6 +798,7 @@ async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile,
 
     currentStep = 0.0
     const featuresToProcess = getFeaturesToProcessCount(db)
+    adjustBatchSize(featuresToProcess)
     setup()
     _convertToGeoJSON(db, (f) => {
       featureCallback(f)

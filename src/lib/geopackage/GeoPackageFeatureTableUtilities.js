@@ -30,6 +30,10 @@ import {
   _addOrSetStyleForFeature, _clearStylingForFeature, _getStyleAssignmentForFeatures
 } from './GeoPackageStyleUtilities'
 
+const MINIMUM_BATCH_SIZE = 10
+const DEFAULT_BATCH_SIZE = 1000
+const MAXIMUM_BATCH_SIZE = 10000
+
 /**
  * Links a feature row to a media row
  * @param gp
@@ -353,7 +357,7 @@ async function _createFeatureTable (gp, tableName, featureCollection, style, fie
  * Done also returns the number of features added and extent of the data in the table
  * @param gp
  * @param tableName
- * @return {Promise<{addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): *), addStyle: (function(*): number), done: (function(): {extent: [(number|*), (number|*), (number|*), (number|*)], count: *}), addIcon: (function(*): number)}>}
+ * @return {Promise<{adjustBatchSize: adjustBatchSize, addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): {extent: [(number|*), (number|*), (number|*), (number|*)], count: *}), addIcon: (function(*): number)}>}
  * @private
  */
 async function _createFeatureTableWithFeatureStream (gp, tableName) {
@@ -421,7 +425,19 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     }
   }
 
-  const BATCH_SIZE = 1000
+  let batchSize = DEFAULT_BATCH_SIZE
+
+  const adjustBatchSize = (featuresToInsert) => {
+    let n = 0
+    while (Math.pow(10, n) < featuresToInsert) {
+      n++
+    }
+    if (n > 0) {
+      n--
+    }
+    batchSize = Math.min(MAXIMUM_BATCH_SIZE, Math.max(MINIMUM_BATCH_SIZE, Math.pow(10, n) / 100))
+  }
+
   let batch = []
   let featureIndex = 1
 
@@ -561,7 +577,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     batch.push(feature)
 
     // reached batch limit, execute a batch insert
-    if (batch.length >= BATCH_SIZE) {
+    if (batch.length >= batchSize) {
       processBatch()
     }
 
@@ -581,7 +597,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     }
   }
 
-  return { addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, done }
+  return { adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, done }
 }
 
 /**
@@ -1486,15 +1502,16 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
  * done will signal to close the geopackage and return the stats from the streaming, extent of data in table and count of rows in table.
  * @param fileName
  * @param tableName
- * @return {Promise<{addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): *), addStyle: (function(*): number), done: (function(): *), addIcon: (function(*): number)}>}
+ * @return {Promise<{adjustBatchSize: adjustBatchSize, addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): *), addIcon: (function(*): number)}>}
  */
 async function streamingGeoPackageBuild (fileName, tableName) {
   // create the geopackage
   let gp = await GeoPackageAPI.create(fileName)
 
-  let {addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+  let {adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
 
   return {
+    adjustBatchSize: adjustBatchSize,
     addFeature: addFeature,
     addField: addField,
     addMediaAttachment: addMediaAttachment,

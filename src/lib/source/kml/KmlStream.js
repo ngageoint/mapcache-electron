@@ -607,7 +607,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
         fileStream.close()
         resolve()
       })
-      .pipe(saxStream)
+      fileStream.pipe(saxStream)
     } catch (e) {
       reject(e)
     }

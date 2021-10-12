@@ -310,7 +310,7 @@ export default {
             attachmentCount: page.mediaCounts[feature.id] || 0
           }
           keys(feature.properties).forEach(key => {
-            let value = feature.properties[key] || ''
+            let value = feature.properties[key] != null ? feature.properties[key] : ''
             try {
               const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
               const column = this.table.columns._columns[columnIndex]

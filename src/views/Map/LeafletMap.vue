@@ -716,7 +716,7 @@ export default {
                 tableName: tableName,
                 filePath: geopackage.path,
                 columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
-                featureCount: geopackage.tables.features[tableName].count,
+                featureCount: geopackage.tables.features[tableName].featureCount,
                 getPage: (page, pageSize) => window.mapcache.getFeatureTablePage(geopackage.path, tableName, page, pageSize)
               }],
               sourceTables: []

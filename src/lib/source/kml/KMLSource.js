@@ -108,7 +108,7 @@ export default class KMLSource extends Source {
     const { layerId, layerDirectory } = this.createLayerDirectory()
     let fileName = name + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    const {addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await streamingGeoPackageBuild(filePath, name)
+    const {adjustBatchSize, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await streamingGeoPackageBuild(filePath, name)
 
     statusCallback('Parsing and storing features', 0)
 
@@ -127,6 +127,8 @@ export default class KMLSource extends Source {
       styleMaps[styleMap.id] = styleMap
     })
 
+    adjustBatchSize(featureCount)
+
     // iterate over styles/icons and add them to the geopackage
     const styleIdMap = {}
     const iconIdMap = {}
@@ -144,9 +146,10 @@ export default class KMLSource extends Source {
       }
     }
 
-    const notifyStepSize = Math.ceil(featureCount / 15)
-
+    const notifyStepSize = 0.01
+    let currentStep = 0.0
     let featuresAdded = 0
+    const featureStatusMax = 100 - groundOverlays.length
     await streamKml(this.filePath, (feature) => {
       let styleRef = feature.styleId
       delete feature.styleId
@@ -169,15 +172,16 @@ export default class KMLSource extends Source {
         }
       }
 
-      if (((featuresAdded + 1) % notifyStepSize) === 0) {
-        statusCallback('Parsing and storing features', (5 * ((featuresAdded + 1) / notifyStepSize)))
+      if ((featuresAdded + 1) / featureCount > currentStep) {
+        statusCallback('Parsing and storing features', featureStatusMax * currentStep)
+        currentStep += notifyStepSize
       }
       featuresAdded++
     }, () => {}, () => {}, () => {})
 
     const { extent, count } = await done()
 
-    statusCallback('Processing ground overlays', 75)
+    statusCallback('Processing ground overlays', featureStatusMax)
 
     for (let i = 0; i < groundOverlays.length; i++) {
       const groundOverlay = groundOverlays[i]
@@ -190,7 +194,7 @@ export default class KMLSource extends Source {
       if (geotiffLayer != null) {
         layers.push(geotiffLayer)
       }
-      statusCallback('Processing ground overlays', (75 + 25 *  (i + 1 / groundOverlays.length)))
+      statusCallback('Processing ground overlays', (featureStatusMax + (100 - featureStatusMax) *  (i + 1 / groundOverlays.length)))
     }
 
     statusCallback('Cleaning up', 100)
