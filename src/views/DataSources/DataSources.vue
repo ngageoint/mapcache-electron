@@ -123,7 +123,7 @@ import DataSource from './DataSource'
 import DataSourceList from './DataSourceList'
 import AddDataSourceUrl from './AddDataSourceUrl'
 import {mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus, mdiSteering} from '@mdi/js'
-import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/FileConstants'
+import {SUPPORTED_FILE_EXTENSIONS} from '../../lib/util/file/FileConstants'
 import OverpassDataSource from '../Overpass/OverpassDataSource'
 
   let selectedDataSource = null

@@ -127,11 +127,4 @@ export default {
 </script>
 
 <style scoped>
-  .icon-box {
-    border: 1px solid #ffffff00;
-    border-radius: 4px;
-    width: 25px;
-    height: 25px;
-    object-fit: contain;
-  }
 </style>

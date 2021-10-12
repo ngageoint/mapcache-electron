@@ -27,7 +27,7 @@ export default class ElectronTileRenderer {
         ipcRenderer.removeAllListeners(REQUEST_TILE_COMPLETED(id))
       }
 
-      const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/TileBoundingBoxUtils')
+      const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')
       const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
       this.tileIntersects = (x, y, z, extent) => {
         let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)

@@ -128,7 +128,7 @@
         class="mx-auto"
         style="max-height: 385px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
         <v-card-text class="pa-0 ma-0 mb-2">
-          <feature-table :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-table>
+          <feature-tables :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable"></feature-tables>
         </v-card-text>
       </v-card>
     </v-expand-transition>
@@ -221,7 +221,7 @@ import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import DrawBounds from './mixins/DrawBounds'
 import GridBounds from './mixins/GridBounds'
-import FeatureTable from './FeatureTable'
+import FeatureTables from './FeatureTables'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
 import LeafletEdit from '../../lib/leaflet/map/controls/LeafletEdit'
 import LeafletDraw from '../../lib/leaflet/map/controls/LeafletDraw'
@@ -249,7 +249,7 @@ import {
   zoomToGeoPackageFeature,
   zoomToGeoPackageTable,
   zoomToSource
-} from '../../lib/util/ZoomUtilities'
+} from '../../lib/leaflet/map/ZoomUtilities'
 import NominatimSearch from '../Nominatim/NominatimSearch'
 import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup'
 import SearchResult from './mixins/SearchResults'
@@ -340,7 +340,7 @@ export default {
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
     FeatureEditor,
-    FeatureTable,
+    FeatureTables,
     draggable
   },
   data () {
@@ -708,34 +708,32 @@ export default {
           this.tableFeaturesLatLng = null
           if (isGeoPackage) {
             const geopackage = this.geopackages[id]
-            const features = await window.mapcache.getAllFeaturesAsGeoJSON(geopackage.path, tableName)
             this.tableFeatures = {
               geopackageTables: [{
                 id: geopackage.id + '_' + tableName,
                 tabName: geopackage.name + ': ' + tableName,
                 geopackageId: geopackage.id,
                 tableName: tableName,
+                filePath: geopackage.path,
                 columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
-                features: features,
-                featureStyleAssignments: await window.mapcache.getStyleAssignmentForFeatures(geopackage.path, tableName),
-                featureAttachmentCounts: await window.mapcache.getMediaAttachmentsCounts(geopackage.path, tableName)
+                featureCount: geopackage.tables.features[tableName].count,
+                getPage: (page, pageSize) => window.mapcache.getFeatureTablePage(geopackage.path, tableName, page, pageSize)
               }],
               sourceTables: []
             }
           } else {
             const sourceLayerConfig = this.sources[id]
-            const features = await window.mapcache.getAllFeaturesAsGeoJSON(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
             this.tableFeatures = {
               geopackageTables: [],
               sourceTables: [{
                 id: sourceLayerConfig.id,
                 tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
                 sourceId: sourceLayerConfig.id,
-                tableName: sourceLayerConfig.sourceLayerName,
                 columns: await window.mapcache.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                features: features,
-                featureStyleAssignments: await window.mapcache.getStyleAssignmentForFeatures(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                featureAttachmentCounts: await window.mapcache.getMediaAttachmentsCounts(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName)
+                filePath: sourceLayerConfig.geopackageFilePath,
+                tableName: sourceLayerConfig.sourceLayerName,
+                featureCount: sourceLayerConfig.count,
+                getPage: (page, pageSize) => window.mapcache.getFeatureTablePage(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, page, pageSize)
               }]
             }
           }
@@ -876,6 +874,11 @@ export default {
           const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
           if (tables.length > 0) {
             const geopackageTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(geopackage.name, geopackage.id, geopackage.path, tables, e.latlng, this.map.getZoom())
+            geopackageTables.forEach(table => {
+              table.getPage = (page, pageSize) => {
+                return window.mapcache.getFeatureTablePageAtLatLngZoom(table.path, table.tableName, page, pageSize, table.latlng, table.zoom)
+              }
+            })
             tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
           }
         }
@@ -884,6 +887,9 @@ export default {
           if (sourceLayer.visible) {
             if (!isNil(sourceLayer.geopackageFilePath)) {
               const sourceTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name, sourceLayer.id, sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom(), false)
+              sourceTables.forEach(table => {
+                table.getPage = (page, pageSize) => window.mapcache.getFeatureTablePageAtLatLngZoom(table.path, table.tableName, page, pageSize, table.latlng, table.zoom)
+              })
               tableFeatures.sourceTables = tableFeatures.sourceTables.concat(sourceTables)
             }
           }

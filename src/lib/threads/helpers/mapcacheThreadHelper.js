@@ -79,7 +79,7 @@ export default class MapcacheThreadHelper {
             result = {}
           }
           result.error = err
-          const { rmDirAsync } = require('../../util/FileUtilities')
+          const { rmDirAsync } = require('../../util/file/FileUtilities')
           rmDirAsync(directory).then((err) => {
             if (err) {
               console.error('Failed to delete source directory.')
@@ -89,7 +89,7 @@ export default class MapcacheThreadHelper {
         }
         resolve(result)
       }, () => {
-        const { rmDirAsync } = require('../../util/FileUtilities')
+        const { rmDirAsync } = require('../../util/file/FileUtilities')
         rmDirAsync(directory).then((err) => {
           if (err) {
             console.error('Failed to delete source directory.')

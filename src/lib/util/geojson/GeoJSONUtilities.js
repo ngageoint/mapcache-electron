@@ -1,4 +1,5 @@
 import isNil from 'lodash/isNil'
+import isNaN from 'lodash/isNaN'
 import uniq from 'lodash/uniq'
 
 function isRectangle (geometry) {
@@ -11,6 +12,94 @@ function isRectangle (geometry) {
     }
   }
   return isRect
+}
+
+function coordinatesEqual (c1, c2) {
+  let equal = false
+  try {
+    equal = c1.length === c2.length && c1[0] === c2[0] && c1[1] === c2[1]
+    if (equal && c1.length === 3) {
+      equal = equal && c1[2] === c2[2]
+    }
+  } catch (e) {
+    equal = false
+  }
+  return equal
+}
+
+function isCoordinateValid (coordinate) {
+  let valid
+  try {
+    if (coordinate.length === 2) {
+      valid = !isNaN(coordinate[0]) && !isNil(coordinate[0]) && !isNaN(coordinate[1]) && !isNil(coordinate[1])
+    } else if (coordinate.length === 3) {
+      valid = !isNaN(coordinate[0]) && !isNil(coordinate[0]) && !isNaN(coordinate[1]) && !isNil(coordinate[1]) && !isNaN(coordinate[2]) && !isNil(coordinate[2])
+    }
+  } catch (e) {
+    valid = false
+  }
+  return valid
+}
+
+/**
+ * Simple GeoJSON Validation, verifies all the coordinates are valid
+ * @param geometry
+ * @return {boolean}
+ */
+function isValid (geometry) {
+  let valid = true
+  try {
+    switch (geometry.type.toLowerCase()) {
+      case 'point':
+        valid = isCoordinateValid(geometry.coordinates)
+        break
+      case 'linestring':
+        valid = geometry.coordinates.length >= 2
+        for (let i = 0; i < geometry.coordinates.length && valid; i++) {
+          valid = valid && isCoordinateValid(geometry.coordinates[i])
+        }
+        break
+      case 'polygon':
+        for (let i = 0; i < geometry.coordinates.length && valid; i++) {
+          valid = geometry.coordinates[i].length >= 4 && coordinatesEqual(geometry.coordinates[i][0], geometry.coordinates[i][geometry.coordinates[0].length - 1])
+          for (let j = 0; j < geometry.coordinates[i].length && valid; j++) {
+            valid = valid && isCoordinateValid(geometry.coordinates[i][j])
+          }
+        }
+        break
+      case 'multipoint':
+        for (let i = 0; i < geometry.coordinates.length && valid; i++) {
+          valid = valid && isCoordinateValid(geometry.coordinates[i])
+        }
+        break
+      case 'multilinestring':
+        for (let i = 0; i < geometry.coordinates.length && valid; i++) {
+          valid = geometry.coordinates[i].length >= 2
+          for (let j = 0; j < geometry.coordinates[i].length && valid; j++) {
+            valid = valid && isCoordinateValid(geometry.coordinates[i][j])
+          }
+        }
+        break
+      case 'multipolygon':
+        for (let i = 0; i < geometry.coordinates.length && valid; i++) {
+          for (let j = 0; j < geometry.coordinates[i].length && valid; j++) {
+            valid = geometry.coordinates[i][j].length >= 4 && coordinatesEqual(geometry.coordinates[i][j][0], geometry.coordinates[i][j][geometry.coordinates[0].length - 1])
+            for (let k = 0; k < geometry.coordinates[i][j].length && valid; k++) {
+              valid = valid && isCoordinateValid(geometry.coordinates[i][j][k])
+            }
+          }
+        }
+        break
+      case 'geometrycollection':
+        for (let i = 0; i < geometry.geometries.length && valid; i++) {
+          valid = valid && isValid(geometry.geometries[i])
+        }
+        break
+    }
+  } catch (e) {
+    valid = false
+  }
+  return valid
 }
 
 /**
@@ -140,7 +229,10 @@ function flattenFeature (feature, indexObject = {index: 0}) {
 }
 
 export {
+  coordinatesEqual,
+  isCoordinateValid,
   isRectangle,
   flattenFeature,
-  explodeFlattenedFeature
+  explodeFlattenedFeature,
+  isValid
 }

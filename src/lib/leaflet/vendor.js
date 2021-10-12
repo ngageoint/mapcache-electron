@@ -15,7 +15,7 @@ import { DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, SERVICE_TY
 import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
-import { getIntersection } from '../util/XYZTileUtilities'
+import { getIntersection } from '../util/xyz/XYZTileUtilities'
 
 delete L.Icon.Default.prototype._getIconUrl
 

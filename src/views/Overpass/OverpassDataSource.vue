@@ -43,7 +43,7 @@
         <v-stepper-content step="2" class="mt-0 pt-0">
           <v-card flat tile>
             <v-card-subtitle class="mt-0 pt-0">
-              Specify the overpass search term and generate the overpass query.
+              Specify the overpass search term. Leave this field blank to retrieve all features that overlap with the bounding box.
             </v-card-subtitle>
             <v-card-subtitle class="pt-2 pl-4">
               Examples of valid search terms are:
@@ -86,6 +86,9 @@
               Restrict your Overpass query to a specified area on the map.
             </v-card-subtitle>
             <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="overpassBoundingBox" :update-bounding-box="updateOverpassBoundingBox"></bounding-box-editor>
+            <v-card-subtitle v-if="isBlank(overpassSearchTerm) && exceedsBoundingBoxAreaThreshold" class="hazard--text">
+              <b>Your bounding box has an area of approximately {{boundingBoxArea}} square miles. Requests with an area over 10 square miles may take up to several minutes to process.</b>
+            </v-card-subtitle>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 4">
             Continue
@@ -129,9 +132,15 @@
   import isNil from 'lodash/isNil'
   import {mdiTrashCan, mdiSteering} from '@mdi/js'
   import BoundingBoxEditor from '../Common/BoundingBoxEditor'
-  import {getOverpassQuery} from '../../lib/util/overpass/OverpassUtilities'
+  import {
+    getOverpassQuery,
+    bboxOnlyQuery,
+    OVERPASS_SQ_MI_LIMIT, bboxOnlyQueryCount, getOverpassCountQuery,
+  } from '../../lib/util/overpass/OverpassUtilities'
   import {SERVICE_TYPE} from '../../lib/network/HttpUtilities'
   import {environment} from '../../lib/env/env'
+  import bboxPolygon from '@turf/bbox-polygon'
+  import area from '@turf/area'
 
   export default {
     props: {
@@ -155,7 +164,7 @@
         }
       },
       importReady() {
-        return this.step === 4 && !this.isEditingBoundingBox() && this.overpassGeneratedQueryValid
+        return this.step === 4 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
       }
     },
     data() {
@@ -170,30 +179,37 @@
         overpassGeneratedQueryValid: true,
         dataSourceName: 'Data source',
         dataSourceNameRules: [v => !!v || 'Data source name is required'],
-        overpassSearchRules: [v => !!v || 'Search term is required', v => getOverpassQuery('"' + v + '"') !== false || 'Unable to determine overpass query. Please modify your search term.'],
+        overpassSearchRules: [v => (v != null && v.trim().length === 0) || getOverpassQuery(v) !== false || 'Unable to determine overpass query. Please modify your search term.'],
         valid: false,
         menuProps: {
           closeOnClick: true,
           closeOnContentClick: true
-        }
+        },
+        exceedsBoundingBoxAreaThreshold: false,
+        boundingBoxArea: null
       }
     },
     components: {
       BoundingBoxEditor
     },
     methods: {
+      isBlank (str) {
+        return str == null || str.trim().length === 0
+      },
       open (url) {
         window.mapcache.openExternal(url)
       },
       async addLayer() {
         const id = window.mapcache.createUniqueID()
-        let query = getOverpassQuery('"' + this.overpassSearchTerm + '"')
-        query = query.replace('{{bbox}}', [this.overpassBoundingBox[1], this.overpassBoundingBox[0], this.overpassBoundingBox[3], this.overpassBoundingBox[2]].join(','))
+        let query = this.overpassSearchTerm == null || this.overpassSearchTerm.trim().length === 0 ? bboxOnlyQuery : getOverpassQuery(this.overpassSearchTerm)
+        let queryCount = this.overpassSearchTerm == null || this.overpassSearchTerm.trim().length === 0 ? bboxOnlyQueryCount : getOverpassCountQuery(this.overpassSearchTerm)
         let sourceToProcess = {
           id: id,
           directory: window.mapcache.createSourceDirectory(this.project.directory),
           url: environment.overpassUrl,
           query: query,
+          queryCount: queryCount,
+          bbox: this.overpassBoundingBox,
           serviceType: SERVICE_TYPE.OVERPASS,
           name: this.dataSourceName
         }
@@ -235,6 +251,15 @@
         handler () {
           this.overpassQuery = null
         }
+      },
+      overpassBoundingBox: {
+        handler (value) {
+          if (value != null && value.length === 4) {
+            const a = area(bboxPolygon(value)) / 1000000.0 * 0.62137
+            this.boundingBoxArea = a.toFixed(0)
+            this.exceedsBoundingBoxAreaThreshold = a > OVERPASS_SQ_MI_LIMIT
+          }
+        }
       }
     }
   }
@@ -244,55 +269,7 @@
   small {
     word-break: break-all;
   }
-  .ghost {
-    opacity: 0.5 !important;
-    background-color: var(--v-primary-lighten2) !important;
-  }
-  .flip-list-move {
-    transition: transform 0.5s;
-  }
-  .no-move {
-    transition: transform 0s;
-  }
-  .v-input--reverse .v-input__slot {
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-  .v-input--selection-controls__input {
-    margin-left: 0;
-    margin-right: 8px;
-  }
-  }
-  .v-input--expand .v-input__slot {
-  .v-label {
-    display: block;
-    flex: 1;
-  }
-  }
-  ul {
-    list-style-type: none;
-  }
-  .no-clamp {
-    -webkit-line-clamp: unset !important;
-    word-wrap: normal !important;
-  }
-  .list-item {
-    min-height: 50px;
-    cursor: move !important;
-    background: var(--v-background-base);
-  }
-  .list-item i {
-    cursor: pointer !important;
-  }
-  .list-item-title {
-    font-size: .8125rem;
-    font-weight: 500;
-    line-height: 1rem;
-    color: var(--v-text-base)
-  }
-  .list-item-subtitle {
-    font-size: .8125rem;
-    font-weight: 400;
-    line-height: 1rem;
-    color: var(--v-detail-base)
+  .hazard--text {
+    color: darkorange !important;
   }
 </style>

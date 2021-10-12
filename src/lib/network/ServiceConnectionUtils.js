@@ -1,9 +1,9 @@
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
-import { getBaseUrlAndQueryParams } from '../util/URLUtilities'
-import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo, WMS_VERSIONS, WFS_VERSIONS } from '../util/GeoServiceUtilities'
-import { generateUrlForTile, fixXYZTileServerUrlForLeaflet } from '../util/XYZTileUtilities'
+import { getBaseUrlAndQueryParams } from './URLUtilities'
+import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo, WMS_VERSIONS, WFS_VERSIONS } from '../util/geoserver/GeoServiceUtilities'
+import { generateUrlForTile, fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
 import CancellableServiceRequest from './CancellableServiceRequest'
 import AxiosRequestScheduler from './AxiosRequestScheduler'
 import {

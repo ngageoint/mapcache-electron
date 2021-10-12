@@ -247,7 +247,7 @@
 <script>
 import isNil from 'lodash/isNil'
 import {mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
-import {zoomToGeoPackageTable} from '../../lib/util/ZoomUtilities'
+import {zoomToGeoPackageTable} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     props: {

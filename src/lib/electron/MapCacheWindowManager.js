@@ -177,8 +177,8 @@ class MapCacheWindowManager {
       if (isNil(headers['Access-Control-Allow-Origin'])) {
         headers['Access-Control-Allow-Origin'] = headers['access-control-allow-origin']
       }
-      if (isNil(headers['Access-Control-Allow-Origin']) || headers['Access-Control-Allow-Origin'] === [ '*' ] || headers['Access-Control-Allow-Origin'] === '*') {
-        headers['Access-Control-Allow-Origin'] = isProduction ? 'mapcache://.' : 'http://localhost:8081'
+      if (isNil(headers['Access-Control-Allow-Origin']) || (Array.isArray(headers['Access-Control-Allow-Origin']) && headers['Access-Control-Allow-Origin'][0] === '*') || headers['Access-Control-Allow-Origin'] === '*') {
+        headers['Access-Control-Allow-Origin'] = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
       }
       delete headers['access-control-allow-origin']
 

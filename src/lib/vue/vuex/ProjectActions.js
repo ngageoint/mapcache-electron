@@ -3,7 +3,7 @@ import jetpack from 'fs-jetpack'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
-import { getLastModifiedDate, rmDirAsync, isDirEmpty, exists } from '../../util/FileUtilities'
+import { getLastModifiedDate, rmDirAsync, isDirEmpty, exists } from '../../util/file/FileUtilities'
 import store from '../../../store'
 import Vue from 'vue'
 import { tryCollect } from '../../util/GarbageCollector'
@@ -29,7 +29,7 @@ import {
   addFeatureToFeatureTable, addGeoPackageFeatureTableColumns
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
-import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/FileConstants'
+import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
 import {addMediaAttachment} from '../../geopackage/GeoPackageMediaUtilities'
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
@@ -401,12 +401,9 @@ async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feat
     addGeoPackageFeatureTableColumns(filePath, tableName, columnsToAdd).then(() => {
       addFeatureToFeatureTable(filePath, tableName, feature).then(rowId => {
         if (feature.attachment != null) {
-          addMediaAttachment(filePath, tableName, rowId, feature.attachment).then(() => {
-            return Promise.resolve(rowId)
-          })
-        } else {
-          return Promise.resolve(rowId)
+          addMediaAttachment(filePath, tableName, rowId, feature.attachment)
         }
+        Promise.resolve(rowId)
       }).then((rowId) => {
         getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
           geopackage.size = getGeoPackageFileSize(filePath)
@@ -461,9 +458,9 @@ function removeFeatureFromDataSource ({projectId, sourceId, featureId}) {
   const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
   const filePath = sourceCopy.geopackageFilePath
   performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
+    const numberDeleted = _deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
     sourceCopy.extent = _getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
-    sourceCopy.count = gp.getFeatureDao(sourceCopy.sourceLayerName).count()
+    sourceCopy.count = sourceCopy.count - numberDeleted
     store.dispatch('Projects/setDataSource', {projectId, source: sourceCopy})
   })
 }

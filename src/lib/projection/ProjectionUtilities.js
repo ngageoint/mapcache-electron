@@ -2,7 +2,7 @@ import proj4 from 'proj4'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
-import { getExtraResourcesDirectory } from '../util/FileUtilities'
+import { getExtraResourcesDirectory } from '../util/file/FileUtilities'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)

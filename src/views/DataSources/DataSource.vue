@@ -443,7 +443,7 @@ import {
 import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import EditZoomRange from '../../views/Common/EditZoomRange'
-import {zoomToSource} from '../../lib/util/ZoomUtilities'
+import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     props: {

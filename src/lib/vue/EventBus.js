@@ -1,9 +1,12 @@
 // event-bus.js
 import Vue from 'vue'
+import {createUniqueID} from '../util/UniqueIDUtilities'
 
 const EventBus = new Vue()
 
 const Events = {
+  CONFIRMATION_MESSAGE: 'confirmation-message',
+  CONFIRMATION_MESSAGE_RESPONSE: (id) => 'confirmation-message-response-' + id,
   ALERT_MESSAGE: 'alert-message',
   ZOOM_TO: 'zoom-to',
   PREVIEW_ZOOM_TO: 'preview-zoom-to',
@@ -26,5 +29,22 @@ const Events = {
 }
 
 EventBus.EventTypes = Events
+
+/**
+ * Requests user confirmation and returns the repsonse using the EventBus
+ * @param title
+ * @param message
+ * @param icon
+ * @return {Promise<unknown>}
+ */
+EventBus.requestUserConfirmation = (title, message, icon) => {
+  return new Promise (resolve => {
+    const id = createUniqueID()
+    EventBus.$on(Events.CONFIRMATION_MESSAGE_RESPONSE(id), (approved) => {
+      resolve(approved)
+    })
+    EventBus.$emit(Events.CONFIRMATION_MESSAGE, id, title, message, icon)
+  })
+}
 
 export default EventBus

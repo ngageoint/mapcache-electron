@@ -65,7 +65,7 @@ import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import {zoomToBaseMap} from '../../lib/util/ZoomUtilities'
+import {zoomToBaseMap} from '../../lib/leaflet/map/ZoomUtilities'
 import {getDefaultBaseMaps} from '../../lib/util/basemaps/BaseMapUtilities'
 
 export default {

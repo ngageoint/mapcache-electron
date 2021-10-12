@@ -3,7 +3,7 @@ import isNil from 'lodash/isNil'
 import difference from 'lodash/difference'
 import jetpack from 'fs-jetpack'
 import request from 'request'
-import { getMediaObjectURL, getMediaTableName, getMimeType } from '../util/MediaUtilities'
+import { getMediaObjectURL, getMediaTableName, getMimeType } from '../util/media/MediaUtilities'
 import { performSafeGeoPackageOperation, getDefaultValueForDataType } from './GeoPackageCommon'
 
 function _getMediaObjectUrl (gp, mediaTable, mediaId) {
@@ -110,7 +110,7 @@ async function getMediaRelationships (filePath, tableName, featureId) {
  * @param attachment
  * @returns {Promise<boolean>}
  */
-async function _addMediaAttachment (gp, tableName, featureId, attachment) {
+function _addMediaAttachment (gp, tableName, featureId, attachment) {
   let success = false
   try {
     const featureDao = gp.getFeatureDao(tableName)
@@ -122,7 +122,7 @@ async function _addMediaAttachment (gp, tableName, featureId, attachment) {
         buffer = Buffer.from(attachment.raw)
         contentType = attachment.contentType
       } else {
-        buffer = await jetpack.readAsync(attachment, 'buffer')
+        buffer = jetpack.read(attachment, 'buffer')
         contentType = getMimeType(attachment)
         if (contentType === false) {
           contentType = 'application/octet-stream'
@@ -254,8 +254,9 @@ async function addMediaAttachmentFromUrl (filePath, tableName, featureId, url) {
  * Gets the count of media attachments
  * @param gp
  * @param tableName
+ * @param featureIds
  */
-function _getMediaAttachmentsCounts (gp, tableName) {
+function _getMediaAttachmentsCounts (gp, tableName, featureIds) {
   let counts = {}
   try {
     const featureDao = gp.getFeatureDao(tableName)
@@ -267,13 +268,23 @@ function _getMediaAttachmentsCounts (gp, tableName) {
           const mediaRelation = mediaRelations[i]
           if (mediaRelation.mapping_table_name !== IconTable.TABLE_NAME + '_' + tableName) {
             const userMappingDao = rte.getMappingDao(mediaRelation.mapping_table_name)
-            const mappings = userMappingDao.queryForAll()
-            mappings.forEach(mapping => {
-              if (isNil(counts[mapping.base_id])) {
-                counts[mapping.base_id] = 0
-              }
-              counts[mapping.base_id] = counts[mapping.base_id] + 1
-            })
+            let mappings = []
+            if (featureIds == null) {
+              mappings = userMappingDao.queryForAll()
+              mappings.forEach(mapping => {
+                if (isNil(counts[mapping.base_id])) {
+                  counts[mapping.base_id] = 0
+                }
+                counts[mapping.base_id]++
+              })
+            } else {
+              mappings = featureIds.map(featureId => {
+                const count = userMappingDao.queryByBaseId(featureId).length
+                if (count > 0) {
+                  counts[featureId] = count
+                }
+              })
+            }
           }
         }
       }
@@ -290,11 +301,12 @@ function _getMediaAttachmentsCounts (gp, tableName) {
  * Gets the count of media attachments
  * @param filePath
  * @param tableName
+ * @param featureIds
  * @returns {Promise<any>}
  */
-async function getMediaAttachmentsCounts (filePath, tableName) {
+async function getMediaAttachmentsCounts (filePath, tableName, featureIds) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getMediaAttachmentsCounts(gp, tableName)
+    return _getMediaAttachmentsCounts(gp, tableName, featureIds)
   })
 }
 

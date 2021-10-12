@@ -1,5 +1,5 @@
 import { getConverter } from './ProjectionUtilities'
-import { disposeImage, makeImage, readPixels } from '../util/CanvasUtilities'
+import { disposeImage, makeImage, readPixels } from '../util/canvas/CanvasUtilities'
 
 /**
  * Handles the reprojection of a source image into imageDta

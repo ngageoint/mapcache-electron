@@ -166,9 +166,8 @@ export default {
         this.map.addLayer(this.searchResultLayers.nonPointFeatures)
         this.map.addLayer(this.searchResultLayers.pointFeatures)
         if (data.fitMapToData) {
-          const currentBounds = this.map.getBounds()
           const dataBounds = this.searchResultLayers.nonPointFeatures.getBounds().extend(this.searchResultLayers.pointFeatures.getBounds()).pad(0.05)
-          this.map.fitBounds(currentBounds.extend(dataBounds))
+          this.map.fitBounds(dataBounds)
         }
         this.activeLayersControl.enable(this.layerOrder.length)
       } else if (this.searchResultLayers != null) {

@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
-import { getExtraResourcesDirectory } from '../FileUtilities'
+import { getExtraResourcesDirectory } from '../file/FileUtilities'
 import {hashCode} from './CommonStyleUtilities'
 
 function generateColor () {
@@ -80,18 +80,7 @@ function getOverpassDefaultStyle (featureCollection) {
   const nodeStyleHash = hashCode(nodeStyle)
   layerStyle.styleRowMap[nodeStyleHash] = nodeStyle
 
-  const wayLineStyle = {
-    width: 2,
-    color: '#0033ff',
-    opacity: 1.0,
-    fillColor: '#ff2222',
-    fillOpacity: 0.5,
-    name: 'Overpass Way'
-  }
-  const wayLineStyleHash = hashCode(wayLineStyle)
-  layerStyle.styleRowMap[wayLineStyleHash] = wayLineStyle
-
-  const wayPolyStyle = {
+  const wayStyle = {
     width: 2,
     color: '#0033ff',
     opacity: 1.0,
@@ -99,8 +88,8 @@ function getOverpassDefaultStyle (featureCollection) {
     fillOpacity: 0.5,
     name: 'Overpass Way'
   }
-  const wayPolyStyleHash = hashCode(wayPolyStyle)
-  layerStyle.styleRowMap[wayPolyStyleHash] = wayPolyStyle
+  const wayStyleHash = hashCode(wayStyle)
+  layerStyle.styleRowMap[wayStyleHash] = wayStyle
 
   const relationStyle = {
     width: 2,
@@ -128,12 +117,10 @@ function getOverpassDefaultStyle (featureCollection) {
         }
         break
       case 'way':
-        if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-          hashes.style = wayPolyStyleHash
-        } else if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-          hashes.style = wayLineStyleHash
-        } else {
+        if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') {
           hashes.icon = wayIconHash
+        } else {
+          hashes.style = wayStyleHash
         }
         break
       case 'relation':
@@ -148,7 +135,6 @@ function getOverpassDefaultStyle (featureCollection) {
     }
     return hashes
   }
-
 
   featureCollection.features.forEach(feature => {
     layerStyle.features[feature.id] = getHashesForFeature(feature)

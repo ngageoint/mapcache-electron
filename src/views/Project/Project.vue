@@ -23,6 +23,9 @@
     <v-dialog v-if="showSignIn" v-model="showSignIn" max-width="400" persistent>
       <basic-auth v-if="showSignIn" :event-url="requestEventUrl" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
     </v-dialog>
+    <v-dialog v-if="showConfirmation" v-model="showConfirmation" max-width="400" persistent>
+      <confirmation-card v-if="showConfirmation" :id="confirmationId" :title="confirmationTitle" :icon="confirmationIcon" :message="confirmationMessage" :close="closeConfirmationDialog"></confirmation-card>
+    </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
         color="main"
@@ -131,8 +134,9 @@ import DataSources from '../DataSources/DataSources'
 import BasicAuth from '../Network/BasicAuth'
 import CertAuth from '../Network/CertAuth'
 import {mdiCogOutline, mdiLayersOutline, mdiPackageVariant, mdiMagnify} from '@mdi/js'
-import {SUPPORTED_FILE_EXTENSIONS_WITH_DOT} from '../../lib/util/FileConstants'
+import {SUPPORTED_FILE_EXTENSIONS_WITH_DOT} from '../../lib/util/file/FileConstants'
 import NominatimSearchResults from '../Nominatim/NominatimSearchResults'
+import ConfirmationCard from '../Common/ConfirmationCard'
 
 export default {
     data () {
@@ -162,7 +166,12 @@ export default {
         requestEventUrl: '',
         requestAuthInfo: {},
         requestDetails: {},
-        nominatimSearchResults: null
+        nominatimSearchResults: null,
+        showConfirmation: false,
+        confirmationTitle: null,
+        confirmationMessage: null,
+        confirmationIcon: null,
+        confirmationId: null
       }
     },
     computed: {
@@ -235,6 +244,7 @@ export default {
       })
     },
     components: {
+      ConfirmationCard,
       NominatimSearchResults,
       BasicAuth,
       DataSources,
@@ -342,6 +352,20 @@ export default {
       selectCertificate (url, certificate) {
         window.mapcache.sendCertificateSelection(url, certificate)
         this.showCertificateSelectionDialog = false
+      },
+      showConfirmationDialog (id, title, message, icon) {
+        this.confirmationTitle = title
+        this.confirmationMessage = message
+        this.confirmationIcon = icon
+        this.confirmationId = id
+        this.showConfirmation = true
+      },
+      closeConfirmationDialog () {
+        this.showConfirmation = false
+        this.confirmationTitle = null
+        this.confirmationMessage = null
+        this.confirmationIcon = null
+        this.confirmationId = null
       }
     },
     watch: {
@@ -410,11 +434,12 @@ export default {
       EventBus.$on(EventBus.EventTypes.NETWORK_ERROR, this.offLineListener)
       EventBus.$on(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, this.handleSearchResults)
       EventBus.$on(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, this.clearSearchResults)
+      EventBus.$on(EventBus.EventTypes.CONFIRMATION_MESSAGE, this.showConfirmationDialog)
     },
     beforeDestroy() {
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
-      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS])
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE])
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()

@@ -8,7 +8,7 @@ import {
   disposeCanvas,
   setMakeImageFunction,
   setReadPixelsFunction
-} from '../util/CanvasUtilities'
+} from '../util/canvas/CanvasUtilities'
 import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
@@ -80,6 +80,7 @@ class ExpiringGeoPackageConnection {
       const geoPackageConnection = await this.accessConnection()
       this.featureTiles[tableName] = new FeatureTiles(geoPackageConnection.getFeatureDao(tableName), 256, 256)
       this.featureTiles[tableName].maxFeaturesPerTile = maxFeatures
+      this.featureTiles[tableName].simplifyTolerance = 1.0
       this.featureTiles[tableName].maxFeaturesTileDraw = new NumberFeaturesTile()
     } else {
       this.cancelExpiry()
@@ -134,10 +135,13 @@ async function processDataSource (data) {
   let source = data.source
   let dataSources = []
   let error = null
+  const statusCallback = (message, completionPercentage) => {
+    parentPort.postMessage({type: 'status', message, completionPercentage })
+  }
   try {
     let createdSource = await SourceFactory.constructSource(source)
     if (createdSource != null) {
-      let layers = await createdSource.retrieveLayers()
+      let layers = await createdSource.retrieveLayers(statusCallback)
       if (layers.length > 0) {
         for (let i = 0; i < layers.length; i++) {
           try {
@@ -270,7 +274,7 @@ async function renderTile (data) {
  */
 async function generateGeoTIFFRasterFile (data) {
   const { filePath } = data
-  const GeoTIFFSource = require('../source/GeoTIFFSource').default
+  const GeoTIFFSource = require('../source/geotiff/GeoTIFFSource').default
   const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
   const image = await GeoTIFFSource.getImage(geotiff)
   const rasterFile = path.join(path.dirname(filePath), 'data.bin')
@@ -340,7 +344,7 @@ function startThread () {
   const path = require('path')
   const CanvasKitInit = require('@ngageoint/geopackage/dist/canvaskit/canvaskit.js')
   CanvasKitInit({
-    locateFile: (file) => process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(path.dirname(__dirname), 'node_modules', '@ngageoint/geopackage', 'dist', 'canvaskit', file)
+    locateFile: (file) => process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(path.dirname(__dirname), 'node_modules', '@ngageoint', 'geopackage', 'dist', 'canvaskit', file)
   }).then((CanvasKit) => {
     CanvasKitCanvasAdapter.setCanvasKit(CanvasKit)
     setCreateCanvasFunction((width, height) => {

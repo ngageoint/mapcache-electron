@@ -1,4 +1,4 @@
-import { createCanvas, makeImage } from '../CanvasUtilities'
+import { createCanvas, makeImage } from '../canvas/CanvasUtilities'
 import blankMarker2x from '../../leaflet/map/markers/marker-icon-blank-2x.png'
 import markerIcon from '../../leaflet/map/markers/marker-icon.png'
 import { base64toUInt8Array } from '../Base64Utilities'

@@ -125,7 +125,7 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import ColorPicker from '../Common/ColorPicker'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
-import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     components: {

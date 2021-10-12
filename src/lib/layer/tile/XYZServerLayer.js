@@ -1,5 +1,5 @@
 import NetworkTileLayer from './NetworkTileLayer'
-import { generateUrlForTile } from '../../util/XYZTileUtilities'
+import { generateUrlForTile } from '../../util/xyz/XYZTileUtilities'
 import { XYZ_SERVER } from '../LayerTypes'
 
 export default class XYZServerLayer extends NetworkTileLayer {

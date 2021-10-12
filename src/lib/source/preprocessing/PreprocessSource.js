@@ -1,7 +1,7 @@
 import {SERVICE_TYPE} from '../../network/HttpUtilities'
-import ArcGISFeatureServicePreprocessor from './ArcGISFeatureServicePreprocessor'
-import WebFeatureServicePreProcessor from './WebFeatureServicePreProcessor'
-import OverpassPreProcessor from './OverpassPreProcessor'
+import ArcGISFeatureServicePreprocessor from '../arcgis/ArcGISFeatureServicePreprocessor'
+import WebFeatureServicePreProcessor from '../wfs/WebFeatureServicePreProcessor'
+import OverpassPreProcessor from '../overpass/OverpassPreProcessor'
 
 /**
  * Handles the preprocessing of a source
@@ -25,10 +25,11 @@ export default class PreprocessSource {
 
   /**
    * Begins execution and returns an updated source configuration
+   * @param statusCallback
    * @returns {*}
    */
-  async preprocess () {
-    return this.preprocessor.preprocess()
+  async preprocess (statusCallback) {
+    return this.preprocessor.preprocess(statusCallback)
   }
 
   /**

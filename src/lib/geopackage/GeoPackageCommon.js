@@ -10,8 +10,8 @@ import isNil from 'lodash/isNil'
 import path from 'path'
 import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
-import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/FileUtilities'
-import bbox from '@turf/bbox'
+import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/file/FileUtilities'
+
 /**
  * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
  * @param filePath
@@ -112,26 +112,57 @@ function _getGeoPackageFeatureTableForApp (gp, table) {
 }
 
 function _calculateTrueExtentForFeatureTable (gp, tableName) {
+  let extent = undefined
   const featureDao = gp.getFeatureDao(tableName)
-  const features = []
-  featureDao.queryForAll().forEach(result => {
-    const featureRow = featureDao.createObject(result)
-    const geometry = featureRow.geometry
-    features.push({
-      type: 'Feature',
-      properties: {},
-      geometry: geometry.geometry.toGeoJSON()
-    })
-  })
-  if (features.length > 0) {
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: features
+  if (featureDao.isIndexed()) {
+    if (featureDao.featureTableIndex.rtreeIndexDao != null) {
+      const iterator = featureDao.featureTableIndex.rtreeIndexDao.queryForEach()
+      let nextRow = iterator.next()
+      while (!nextRow.done) {
+        if (extent == null) {
+          extent = [nextRow.value.minx, nextRow.value.miny, nextRow.value.maxx, nextRow.value.maxy]
+        } else {
+          extent[0] = Math.min(extent[0], nextRow.value.minx)
+          extent[1] = Math.min(extent[1], nextRow.value.miny)
+          extent[2] = Math.max(extent[2], nextRow.value.maxx)
+          extent[3] = Math.max(extent[3], nextRow.value.maxy)
+        }
+        nextRow = iterator.next()
+      }
+    } else if (featureDao.featureTableIndex.geometryIndexDao != null) {
+      const iterator = featureDao.featureTableIndex.geometryIndexDao.queryForEach()
+      let nextRow = iterator.next()
+      while (!nextRow.done) {
+        if (extent == null) {
+          extent = [nextRow.value.min_x, nextRow.value.min_y, nextRow.value.max_x, nextRow.value.max_y]
+        } else {
+          extent[0] = Math.min(extent[0], nextRow.value.min_x)
+          extent[1] = Math.min(extent[1], nextRow.value.min_y)
+          extent[2] = Math.max(extent[2], nextRow.value.max_x)
+          extent[3] = Math.max(extent[3], nextRow.value.max_y)
+        }
+        nextRow = iterator.next()
+      }
     }
-    return bbox(featureCollection)
-  } else {
-    return null
   }
+
+  if (extent == null) {
+    const iterator = featureDao.queryForEach()
+    let nextRow = iterator.next()
+    while (!nextRow.done) {
+      const featureRow = featureDao.getRow(nextRow.value)
+      if (extent == null) {
+        extent = [featureRow.geometry.envelope.minX, featureRow.geometry.envelope.minY, featureRow.geometry.envelope.maxX, featureRow.geometry.envelope.maxY]
+      } else {
+        extent[0] = Math.min(extent[0], featureRow.geometry.envelope.minX)
+        extent[1] = Math.min(extent[1], featureRow.geometry.envelope.minY)
+        extent[2] = Math.max(extent[2], featureRow.geometry.envelope.maxX)
+        extent[3] = Math.max(extent[3], featureRow.geometry.envelope.maxY)
+      }
+      nextRow = iterator.next()
+    }
+  }
+  return extent
 }
 
 /**
@@ -583,13 +614,13 @@ function prettyPrintMs(milliseconds) {
   const seconds = Math.floor(msRemaining / 1000)
 
   if (days > 0) {
-    return days + ' days, ' + hours + ' hours'
+    return days + (days === 1 ? ' day, ' : ' days, ') + hours + (hours === 1 ? ' hour' : ' hours')
   } else if (hours > 0) {
-    return hours + ' hours, ' + minutes + ' minutes'
+    return hours + (hours === 1 ? ' hour, ' : ' hours, ') + minutes + (minutes === 1 ? ' minute' : ' minutes')
   } else if (minutes > 0) {
-    return minutes + ' minutes, ' + seconds + ' seconds'
+    return minutes + (minutes === 1 ? ' minute, ' : ' minutes, ') + seconds + (seconds === 1 ? ' second' : ' seconds')
   } else {
-    return seconds + " seconds"
+    return seconds + (seconds === 1 ? ' second' : ' seconds')
   }
 }
 

@@ -1,17 +1,65 @@
 <template>
   <v-sheet>
-    <v-card flat tile :loading="!error && workflowState !== 4">
+    <v-card flat tile>
       <v-card-title>
         <span class="processing-title">
-          {{((workflowState === 4 ? 'Cancelled ' : (error ? 'Failed ' : (status + ' ')))) + displayName}}
+          {{getTitle(workflowState) + ' ' + displayName}}
         </span>
       </v-card-title>
-      <v-card-text>
-        <v-row no-gutters v-if="source.url" class="align-start left-margin"><p class="text-wrap full-width">Url: {{source.url}}</p></v-row>
-        <v-row no-gutters v-else class="align-start left-margin"><p class="text-wrap full-width">File name: {{source.file.path}}</p></v-row>
-        <div v-if="error">
-          <v-row no-gutters class="align-start left-margin" v-if="error"><p class="warning-text text-wrap full-width">{{'Error: ' + error}}</p></v-row>
-        </div>
+      <v-card-text class="mb-0 pb-0">
+        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-if="source.url">
+          <v-col>
+            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              URL
+            </p>
+            <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              {{displayUrl}}
+            </p>
+          </v-col>
+        </v-row>
+        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-else>
+          <v-col>
+            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              File
+            </p>
+            <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              {{displayFile}}
+            </p>
+          </v-col>
+        </v-row>
+        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-if="workflowState !== 4">
+          <v-col>
+            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              Elapsed time
+            </p>
+            <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              {{prettyElapsedTime}}
+            </p>
+          </v-col>
+        </v-row>
+        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-if="error">
+          <v-col>
+            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              Error
+            </p>
+            <p class="warning-text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              {{error}}
+            </p>
+          </v-col>
+        </v-row>
+        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-else-if="workflowState !== 4">
+          <v-col>
+            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+              Status
+            </p>
+            <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              {{status + ': ' + completionPercentage + '%'}}
+            </p>
+            <p class="pt-2">
+              <v-progress-linear :value="completionPercentage"></v-progress-linear>
+            </p>
+          </v-col>
+        </v-row>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -40,15 +88,7 @@
 import isNil from 'lodash/isNil'
 import {isMapCacheUserCancellationError, SERVICE_TYPE} from '../../lib/network/HttpUtilities'
 import PreprocessSource from '../../lib/source/preprocessing/PreprocessSource'
-
-const WORKFLOW_STATES = {
-  PREPROCESSING: 0,
-  QUEUED: 1,
-  PROCESSING: 2,
-  CANCELLING: 3,
-  CANCELLED: 4,
-  COMPLETED: 5
-}
+import {PROCESSING_STATES, getTitleForProcessingState} from '../../lib/source/SourceProcessing'
 
 export default {
     props: {
@@ -60,9 +100,12 @@ export default {
     },
     data () {
       return {
-        status: 'Preprocesing',
+        status: '',
         error: null,
-        workflowState: WORKFLOW_STATES.PREPROCESSING
+        workflowState: PROCESSING_STATES.PREPROCESSING,
+        completionPercentage: 0,
+        startTimeMs: new Date().getTime(),
+        prettyElapsedTime: '00:00:00'
       }
     },
     computed: {
@@ -74,25 +117,49 @@ export default {
         } else {
           return window.mapcache.getBaseName(this.source.file.path)
         }
+      },
+      displayUrl () {
+        if (this.source.url) {
+          return window.mapcache.getBaseUrlAndQueryParams(this.source.url).baseUrl
+        } else {
+          return null
+        }
+      },
+      displayFile () {
+        if (this.source.file && this.source.file.path) {
+          return window.mapcache.getBaseName(this.source.file.path)
+        } else {
+          return null
+        }
       }
     },
     methods: {
-      async preprocessSource (sourceConfiguration) {
+      prettyPrintElapsedTime () {
+        if (this.workflowState < PROCESSING_STATES.CANCELLED && this.error == null) {
+          const milliseconds = new Date().getTime() - this.startTimeMs
+          this.prettyElapsedTime = new Date(milliseconds).toISOString().substr(11, 8)
+          setTimeout(this.prettyPrintElapsedTime, 500)
+        }
+      },
+      async preprocessSource (sourceConfiguration, statusCallback) {
         this.preprocessor = new PreprocessSource(sourceConfiguration)
-        return await this.preprocessor.preprocess()
+        return await this.preprocessor.preprocess(statusCallback)
+      },
+      getTitle (state) {
+        return getTitleForProcessingState(state)
       },
       sendSourceToProcess (source) {
         const self = this
         self.status = 'Queued'
         self.$nextTick(() => {
           window.mapcache.processSource({project: self.project, source: source})
-          self.workflowState = WORKFLOW_STATES.QUEUED
+          self.workflowState = PROCESSING_STATES.QUEUED
         })
       },
       reportCancelled () {
         const self = this
         setTimeout(() => {
-          self.workflowState = WORKFLOW_STATES.CANCELLED
+          self.workflowState = PROCESSING_STATES.CANCELLED
         }, 500)
       },
       cancelProcessing () {
@@ -101,14 +168,14 @@ export default {
           this.preprocessor.cancel()
         }
         // processing has not yet been sent to the server side to run
-        if (self.workflowState === WORKFLOW_STATES.QUEUED || self.workflowState === WORKFLOW_STATES.PROCESSING) {
+        if (self.workflowState === PROCESSING_STATES.QUEUED || self.workflowState === PROCESSING_STATES.PROCESSING) {
           self.onCancel().then(() => {
             self.reportCancelled()
           })
         } else {
           self.reportCancelled()
         }
-        self.workflowState = WORKFLOW_STATES.CANCELLING
+        self.workflowState = PROCESSING_STATES.CANCELLING
       },
       closeCard () {
         this.onClose()
@@ -134,11 +201,24 @@ export default {
         }
       })
 
+      const statusCallback = (status) => {
+        self.workflowState = status.type
+        self.status = status.message || self.status
+        if (status.completionPercentage != null) {
+          status.completionPercentage = status.completionPercentage.toFixed(1)
+        }
+        self.completionPercentage = status.completionPercentage || self.completionPercentage
+      }
+
+      window.mapcache.addTaskStatusListener(source.id, statusCallback)
+
+      setTimeout(this.prettyPrintElapsedTime, 500)
+
       self.$nextTick(() => {
         // wfs and arcgis fs will require accessing features in browser, as opposed to trying that in node, given credentials
         if (source.serviceType === SERVICE_TYPE.WFS || source.serviceType === SERVICE_TYPE.ARCGIS_FS || source.serviceType === SERVICE_TYPE.OVERPASS) {
-          self.preprocessSource(source).then(updatedSource => {
-            if (self.workflowState !== WORKFLOW_STATES.CANCELLING && self.workflowState !== WORKFLOW_STATES.CANCELLED) {
+          self.preprocessSource(source, statusCallback).then(updatedSource => {
+            if (self.workflowState !== PROCESSING_STATES.CANCELLING && self.workflowState !== PROCESSING_STATES.CANCELLED) {
               self.sendSourceToProcess(updatedSource)
             }
           }).catch((error) => {
@@ -148,16 +228,11 @@ export default {
                 self.error = error.message
               }
             }
+            window.mapcache.deleteSourceDirectory(source)
           })
         } else {
           self.sendSourceToProcess(source)
         }
-      })
-      window.mapcache.addTaskStatusListener(source.id, (status) => {
-        if (status === 'Processing') {
-          this.workflowState = WORKFLOW_STATES.PROCESSING
-        }
-        self.status = status
       })
     },
     beforeDestroy () {

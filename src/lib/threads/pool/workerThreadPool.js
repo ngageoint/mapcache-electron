@@ -1,3 +1,6 @@
+import {PROCESSING_STATES} from '../../source/SourceProcessing'
+import {PROCESS_SOURCE_STATUS} from '../../electron/ipc/MapCacheIPC'
+
 const { AsyncResource } = require('async_hooks')
 const { EventEmitter } = require('events')
 const path = require('path')
@@ -35,19 +38,25 @@ class WorkerPoolTaskInfo extends AsyncResource {
 
   emitQueued () {
     if (this.sender) {
-      this.sender.send('task-status-' + this.getTaskId(), 'Queued')
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.QUEUED, message: 'Queued'})
     }
   }
 
   emitProcessing () {
     if (this.sender) {
-      this.sender.send('task-status-' + this.getTaskId(), 'Processing')
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.PROCESSING, message: 'Processing'})
     }
   }
 
   emitCancelling () {
     if (this.sender) {
-      this.sender.send('task-status-' + this.getTaskId(), 'Cancelling')
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.CANCELLED, message: 'Cancelled'})
+    }
+  }
+
+  emitStatus (status, message, completionPercentage) {
+    if (this.sender) {
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: status, message, completionPercentage})
     }
   }
 }
@@ -95,13 +104,17 @@ export default class WorkerThreadPool extends EventEmitter {
         if (error != null) {
           reject(error)
         } else {
-          worker.on('message', ({error, result}) => {
-            if (worker[kTaskInfo]) {
-              worker[kTaskInfo].done(error, result)
-              delete worker[kTaskInfo]
+          worker.on('message', ({type, message, completionPercentage, error, result}) => {
+            if (type === 'status') {
+              worker[kTaskInfo].emitStatus(PROCESSING_STATES.PROCESSING, message, completionPercentage)
+            } else {
+              if (worker[kTaskInfo]) {
+                worker[kTaskInfo].done(error, result)
+                delete worker[kTaskInfo]
+              }
+              this.freeWorkers.push(worker)
+              this.emit(kWorkerFreedEvent)
             }
-            this.freeWorkers.push(worker)
-            this.emit(kWorkerFreedEvent)
           })
           worker.on('error', (err) => {
             if (worker[kTaskInfo]) {

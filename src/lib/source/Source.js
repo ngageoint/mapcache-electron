@@ -1,5 +1,5 @@
 import { createUniqueID } from '../util/UniqueIDUtilities'
-import { createNextAvailableLayerDirectory } from '../util/FileUtilities'
+import { createNextAvailableLayerDirectory } from '../util/file/FileUtilities'
 
 /**
  * A Source is a representation of a file or url (denoted in the filePath variable)
@@ -27,8 +27,14 @@ export default class Source {
 
   /**
    * Retrieves a list of Layer objects
+   * @param statusCallback
    */
-  retrieveLayers () {
+  // eslint-disable-next-line no-unused-vars
+  retrieveLayers (statusCallback) {
     throw new Error('Subclass must define the retrieveLayers function')
+  }
+
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 }

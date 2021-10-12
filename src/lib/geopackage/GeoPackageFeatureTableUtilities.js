@@ -8,7 +8,7 @@ import {
   GeometryType,
   GeoPackage,
   GeometryData,
-  MediaTable,
+  MediaTable, ProjectionConstants, SqliteQueryBuilder, FeatureTableReader,
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
@@ -25,9 +25,9 @@ import {
   getQueryBoundingBoxForCoordinateAndZoom,
   _calculateTrueExtentForFeatureTable
 } from './GeoPackageCommon'
-import {_addMediaAttachment} from './GeoPackageMediaUtilities'
+import {_addMediaAttachment, _getMediaAttachmentsCounts} from './GeoPackageMediaUtilities'
 import {
-  _addOrSetStyleForFeature, _clearStylingForFeature
+  _addOrSetStyleForFeature, _clearStylingForFeature, _getStyleAssignmentForFeatures
 } from './GeoPackageStyleUtilities'
 
 /**
@@ -111,8 +111,9 @@ async function updateFeatureGeometry (filePath, tableName, featureGeoJson, updat
  * @param feature
  * @param updateBoundingBox
  * @param datesUpdated
+ * @param updateStyle
  */
-function _addFeatureToFeatureTable (gp, featureDao, tableName, feature, updateBoundingBox = true, datesUpdated = false) {
+function _addFeatureToFeatureTable (gp, featureDao, tableName, feature, updateBoundingBox = true, datesUpdated = false, updateStyle = true) {
   if (!datesUpdated) {
     featureDao.table.getUserColumns().getColumns().forEach(column => {
       if (column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME) {
@@ -125,7 +126,9 @@ function _addFeatureToFeatureTable (gp, featureDao, tableName, feature, updateBo
     })
   }
   const rowId = gp.addGeoJSONFeatureToGeoPackageWithFeatureDaoAndSrs(feature, featureDao, featureDao.srs, true)
-  _addOrSetStyleForFeature(gp, feature, rowId, tableName)
+  if (updateStyle) {
+    _addOrSetStyleForFeature(gp, feature, rowId, tableName)
+  }
   if (updateBoundingBox) {
     _updateBoundingBoxForFeatureTable(gp, tableName)
   }
@@ -153,11 +156,9 @@ function addFeatureToFeatureTable (filePath, tableName, feature) {
  */
 function getLayerColumns (featureCollection) {
   let properties = {}
-  featureCollection.features.forEach(feature => {
-    addFeatureProperties(feature, properties)
-  })
+  featureCollection.features.forEach(feature => addFeatureProperties(feature, properties))
   let columns = []
-  Object.keys(properties).forEach(key => {
+  keys(properties).forEach(key => {
     let prop = properties[key]
     if (prop.name.toLowerCase() !== 'id') {
       let c = {
@@ -180,71 +181,407 @@ function getLayerColumns (featureCollection) {
   }
 }
 
+const ID_PROPERTY = '_feature_id'
+const GEOMETRY_PROPERTY = 'geometry_property'
+
 /**
- * Creates a feature table and adds the contents of the feature collection to that table
+ * Converts a GeoJSON FeatureCollection to a GeoPackage Feature Table
  * @param gp
  * @param tableName
  * @param featureCollection
- * @param addFeatures
- * @param fields
+ * @param style - styling to generate for the feature collection
+ * @param fields - preset column fields, any missing in properties will be added
  * @returns {Promise<void>}
  */
-async function _createFeatureTable (gp, tableName, featureCollection, addFeatures = false, fields = null) {
-  if (isNil(fields)) {
-    // iterate over the feature collection and cleanup any objects that are not dates, strings, numbers or booleans (these are our only supported types)
-    featureCollection.features.forEach(feature => {
-      Object.keys(feature.properties).forEach(key => {
-        let type = typeof feature.properties[key]
-        if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
-          if (type === 'object') {
-            if (!(feature.properties[key] instanceof Date)) {
-              feature.properties[key] = JSON.stringify(feature.properties[key])
-            }
-          }
-        }
-      })
-    })
-  }
-  let layerColumns = isNil(fields) ? getLayerColumns(featureCollection) : {
-    columns: fields,
-    geom: {
-      name: 'geometry'
-    },
-    id: {
-      name: 'id'
-    }
-  }
+async function _createFeatureTable (gp, tableName, featureCollection, style, fields) {
   let geometryColumns = new GeometryColumns()
   geometryColumns.table_name = tableName
-  geometryColumns.column_name = layerColumns.geom.name
+  geometryColumns.column_name = 'geometry'
   geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
   geometryColumns.z = 0
   geometryColumns.m = 0
-  let columns = []
-  columns.push(FeatureColumn.createPrimaryKeyColumn(0, layerColumns.id.name))
-  columns.push(FeatureColumn.createGeometryColumn(1, layerColumns.geom.name, GeometryType.GEOMETRY, false, null))
-  let columnCount = 2
-  for (const column of layerColumns.columns) {
-    if (column.name !== layerColumns.id.name && column.name !== layerColumns.geom.name) {
-      columns.push(FeatureColumn.createColumn(columnCount++, column.name, GeoPackageDataType.fromName(column.dataType), column.notNull, column.defaultValue))
-    }
+  const definedColumnNames = {
+    id: true,
+    geometry: true
   }
-  let extent = bbox(featureCollection)
-  let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
+  const columns = []
+  columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
+  columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
+  let columnCount = 2
+  if (fields != null) {
+    fields.filter(field => field.name !== 'id' && field.name !== 'geometry').forEach(field => {
+      definedColumnNames[field.name.toLowerCase()] = true
+      columns.push(FeatureColumn.createColumn(columnCount++, field.name, GeoPackageDataType.fromName(field.dataType), field.notNull, field.defaultValue))
+    })
+  }
+  const extent = bbox(featureCollection)
+  const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
   const featureDao = gp.getFeatureDao(tableName)
-  if (addFeatures) {
-    for (let i = 0; i < featureCollection.features.length; i++) {
-      const feature = featureCollection.features[i]
-      const attachment = feature.attachment
-      delete feature.attachment
-      const rowId = _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
-      if (attachment != null) {
-        await _addMediaAttachment(gp, tableName, rowId, attachment)
+
+  let featureTableStyles
+  let iconMappingDao
+  let styleMappingDao
+  let styleDao
+  let iconDao
+  let featureStyleExtension
+  let icons = {}
+  let styles = {}
+  let iconIdToIconRowId = {}
+  let styleIdToStyleRowId = {}
+
+  if (!isNil(style)) {
+    featureTableStyles = new FeatureTableStyles(gp, tableName)
+    featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
+    featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+    featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+    featureTableStyles.createTableStyleRelationship()
+    featureTableStyles.createTableIconRelationship()
+    featureTableStyles.createStyleRelationship()
+    featureTableStyles.createIconRelationship()
+    iconMappingDao = featureTableStyles.getIconMappingDao()
+    styleMappingDao = featureTableStyles.getStyleMappingDao()
+    styleDao = featureTableStyles.getStyleDao()
+    iconDao = featureTableStyles.getIconDao()
+    featureStyleExtension = featureTableStyles.getFeatureStyleExtension()
+  }
+
+  let iterator = featureCollection.features
+  for (let feature of iterator) {
+    // handle geometry property
+    if (feature.properties.geometry) {
+      if (!definedColumnNames[GEOMETRY_PROPERTY]) {
+        definedColumnNames[GEOMETRY_PROPERTY] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.properties.geometry)))
+      }
+      feature.properties.geometry_property = feature.properties.geometry
+      delete feature.properties.geometry
+    }
+
+    // handle id property
+    if (feature.id || feature.properties.id) {
+      if (!definedColumnNames[ID_PROPERTY]) {
+        definedColumnNames[ID_PROPERTY] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), ID_PROPERTY, GeoPackageDataType.TEXT))
+      }
+      feature.properties[ID_PROPERTY] = feature.id || feature.properties.id
+      delete feature.id
+      delete feature.properties.id
+    }
+
+    // iterate over feature's property and add any new ones
+    keys(feature.properties).forEach(key => {
+      // does the property exist
+      if (!definedColumnNames[key.toLowerCase()]) {
+        definedColumnNames[key.toLowerCase()] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
+      }
+
+      // date correction
+      if (featureDao.table.columns.getColumn(key).getDataType() === GeoPackageDataType.DATETIME) {
+        if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
+          feature.properties[key] = moment.utc(feature.properties[key]).toDate()
+        } else {
+          delete feature.properties[key]
+        }
+      }
+
+      // object correction
+      if (isObject(feature.properties[key])) {
+        feature.properties[key] = JSON.stringify(feature.properties[key])
+      }
+    })
+
+    const attachment = feature.attachment
+    delete feature.attachment
+    const featureRowId = gp.addGeoJSONFeatureToGeoPackageWithFeatureDaoAndSrs(feature, featureDao, featureDao.srs, true)
+
+    // handle media attachments for feature
+    if (attachment != null) {
+      await _addMediaAttachment(gp, tableName, featureRowId, attachment)
+    }
+
+    // handle styles for feature
+    if (!isNil(style) && !isNil(style.features[feature.id])) {
+      const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      if (!isNil(style.features[feature.id].icon)) {
+        let iconId = style.features[feature.id].icon
+        let featureIconRow = icons[iconId]
+        if (isNil(featureIconRow)) {
+          let featureIcon = style.iconRowMap[iconId]
+          featureIconRow = iconDao.newRow()
+          featureIconRow.data = featureIcon.data
+          featureIconRow.contentType = featureIcon.contentType
+          featureIconRow.width = featureIcon.width
+          featureIconRow.height = featureIcon.height
+          featureIconRow.anchorU = featureIcon.anchorU
+          featureIconRow.anchorV = featureIcon.anchorV
+          featureIconRow.name = featureIcon.name
+          let featureIconRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(featureIconRow)
+          delete style.iconRowMap[iconId]
+          style.iconRowMap[featureIconRowId] = featureIcon
+          iconIdToIconRowId[iconId] = featureIconRowId
+          icons[iconId] = featureIconRow
+        }
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(iconMappingDao, featureRowId, iconIdToIconRowId[iconId], geometryType)
+      } else if (!isNil(style.features[feature.id].style)) {
+        let styleId = style.features[feature.id].style
+        let featureStyleRow = styles[styleId]
+        if (isNil(featureStyleRow)) {
+          let featureStyle = style.styleRowMap[styleId]
+          featureStyleRow = styleDao.newRow()
+          featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
+          featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
+          featureStyleRow.setWidth(featureStyle.width)
+          featureStyleRow.setName(featureStyle.name)
+          let featureStyleRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
+          delete style.styleRowMap[styleId]
+          style.styleRowMap[featureStyleRowId] = featureStyle
+          styleIdToStyleRowId[styleId] = featureStyleRowId
+          styles[styleId] = featureStyleRow
+        }
+        featureStyleExtension.insertStyleMapping(styleMappingDao, featureRowId, styleIdToStyleRowId[styleId], geometryType)
       }
     }
   }
   await _indexFeatureTable(gp, tableName)
+}
+
+/**
+ * Create a feature table by streaming in features
+ * Returns two functions, addFeature and done. Use addFeature to pass each feature to be added to the table, call done when you are finished.
+ * Done also returns the number of features added and extent of the data in the table
+ * @param gp
+ * @param tableName
+ * @return {Promise<{addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): *), addStyle: (function(*): number), done: (function(): {extent: [(number|*), (number|*), (number|*), (number|*)], count: *}), addIcon: (function(*): number)}>}
+ * @private
+ */
+async function _createFeatureTableWithFeatureStream (gp, tableName) {
+  let geometryColumns = new GeometryColumns()
+  geometryColumns.table_name = tableName
+  geometryColumns.column_name = 'geometry'
+  geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
+  geometryColumns.z = 0
+  geometryColumns.m = 0
+  const definedColumnNames = {
+    id: true,
+    geometry: true
+  }
+  const columns = []
+  columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
+  columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
+  gp.createFeatureTable(tableName, geometryColumns, columns, undefined, 4326)
+  await _indexFeatureTable(gp, tableName)
+  const featureDao = gp.getFeatureDao(tableName)
+  const srs = featureDao.srs;
+  let iconMappingDao
+  let styleMappingDao
+  let styleDao
+  let iconDao
+  let featureStyleExtension
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
+  featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
+  featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
+  featureTableStyles.createTableStyleRelationship()
+  featureTableStyles.createTableIconRelationship()
+  featureTableStyles.createStyleRelationship()
+  featureTableStyles.createIconRelationship()
+  iconMappingDao = featureTableStyles.getIconMappingDao()
+  styleMappingDao = featureTableStyles.getStyleMappingDao()
+  styleDao = featureTableStyles.getStyleDao()
+  iconDao = featureTableStyles.getIconDao()
+  featureStyleExtension = featureTableStyles.getFeatureStyleExtension()
+
+  const addStyle = (style) => {
+    const featureStyleRow = styleDao.newRow()
+    featureStyleRow.setColor(style.color, style.opacity)
+    featureStyleRow.setFillColor(style.fillColor, style.fillOpacity)
+    featureStyleRow.setWidth(style.width)
+    featureStyleRow.setName(style.name)
+    return featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
+  }
+
+  const addIcon = (icon) => {
+    const featureIconRow = iconDao.newRow()
+    featureIconRow.data = icon.data
+    featureIconRow.contentType = icon.contentType
+    featureIconRow.width = icon.width
+    featureIconRow.height = icon.height
+    featureIconRow.anchorU = icon.anchorU
+    featureIconRow.anchorV = icon.anchorV
+    featureIconRow.name = icon.name
+    return featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(featureIconRow)
+  }
+
+  const addField = (field) => {
+    if (definedColumnNames[field.name.toLowerCase()] == null) {
+      definedColumnNames[field.name.toLowerCase()] = true
+      featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), field.name, GeoPackageDataType.fromName(field.dataType), undefined, field.notNull, field.defaultValue))
+    }
+  }
+
+  const BATCH_SIZE = 1000
+  let batch = []
+  let featureIndex = 1
+
+  let styleQueue = []
+  let iconQueue = []
+  let attachmentQueue = []
+  let featureRow = featureDao.newRow()
+  let geometryData = new GeometryData()
+  geometryData.setSrsId(srs.srs_id)
+
+  const handleQueuedStylesAndAttachments = () => {
+    while (styleQueue.length > 0) {
+      const args = styleQueue.shift()
+      featureStyleExtension.insertStyleMapping(styleMappingDao, args[0], args[1], GeometryType.fromName(args[2].toUpperCase()))
+    }
+    while (iconQueue.length > 0) {
+      const args = iconQueue.shift()
+      featureStyleExtension.insertStyleMapping(iconMappingDao, args[0], args[1], GeometryType.fromName(args[2].toUpperCase()))
+    }
+    while (attachmentQueue.length > 0) {
+      const args = attachmentQueue.shift()
+      _addMediaAttachment(gp, tableName, args[0], args[1])
+    }
+  }
+
+  const setFeatureStyle = (featureRowId, geometryType, styleRowId) => {
+    styleQueue.push([featureRowId, styleRowId, geometryType])
+  }
+
+  const setFeatureIcon = (featureRowId, geometryType, iconRowId) => {
+    iconQueue.push([featureRowId, iconRowId, geometryType])
+  }
+
+  const addMediaAttachment = (featureRowId, attachment) => {
+    attachmentQueue.push([featureRowId, attachment])
+  }
+
+  const processBatch = () => {
+    // batch insert features
+    const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
+    const reprojectionNeeded = !(srs.organization === ProjectionConstants.EPSG && srs.organization_coordsys_id === ProjectionConstants.EPSG_CODE_4326)
+    const insertSql = SqliteQueryBuilder.buildInsert("'" + featureDao.gpkgTableName + "'", featureRow)
+    featureRow = featureDao.newRow()
+    featureDao.connection.transaction(() => {
+      // builds the insert sql statement
+      const insertStatement = featureDao.connection.adapter.prepareStatement(insertSql)
+
+      // determine if indexing is needed
+      let fti = featureDao.featureTableIndex
+      let tableIndex = fti.tableIndex
+
+      while (batch.length > 0) {
+        let feature = batch.shift()
+        featureRow.resetId()
+        if (reprojectionNeeded) {
+          feature = reproject.reproject(feature, ProjectionConstants.EPSG_4326, featureDao.projection)
+        }
+        const featureGeometry = feature.geometry
+        geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
+        featureRow.geometry = geometryData
+        for (const propertyKey in feature.properties) {
+          if (Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
+            featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
+          }
+        }
+        // bind this feature's data to the insert statement and insert into the table
+        const id = featureDao.connection.adapter.bindAndInsert(insertStatement, SqliteQueryBuilder.buildUpdateOrInsertObject(featureRow))
+
+        // after inserting, unset the values
+        for (const propertyKey in feature.properties) {
+          if (Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
+            featureRow.values[propertyKey] = undefined;
+          }
+        }
+
+        // if table index exists, be sure to index the row (note, rtree will run using a trigger)
+        if (tableIndex != null) {
+          fti.indexRow(tableIndex, id, geometryData)
+        }
+      }
+      if (tableIndex != null) {
+        fti.updateLastIndexed(tableIndex)
+      }
+
+      // close the prepared statement
+      featureDao.connection.adapter.closeStatement(insertStatement)
+    })
+    handleQueuedStylesAndAttachments()
+  }
+
+  const addFeature = (feature) => {
+    // handle geometry property
+    if (feature.properties.geometry) {
+      if (!definedColumnNames[GEOMETRY_PROPERTY]) {
+        definedColumnNames[GEOMETRY_PROPERTY] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.properties.geometry)))
+      }
+      feature.properties.geometry_property = feature.properties.geometry
+      delete feature.properties.geometry
+    }
+
+    // handle id property
+    if (feature.id || feature.properties.id) {
+      if (!definedColumnNames[ID_PROPERTY]) {
+        definedColumnNames[ID_PROPERTY] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), ID_PROPERTY, GeoPackageDataType.TEXT))
+      }
+      feature.properties[ID_PROPERTY] = feature.id || feature.properties.id
+      delete feature.id
+      delete feature.properties.id
+    }
+
+    // iterate over feature's property and add any new ones
+    keys(feature.properties).forEach(key => {
+      // add missing fields
+      if (!definedColumnNames[key.toLowerCase()]) {
+        definedColumnNames[key.toLowerCase()] = true
+        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
+      }
+
+      // date correction
+      if (featureDao.table.columns.getColumn(key).getDataType() === GeoPackageDataType.DATETIME) {
+        if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
+          feature.properties[key] = moment.utc(feature.properties[key]).toDate()
+        } else {
+          delete feature.properties[key]
+        }
+      }
+
+      // object correction
+      if (isObject(feature.properties[key])) {
+        feature.properties[key] = JSON.stringify(feature.properties[key])
+      }
+    })
+
+    // push feature onto the batch
+    batch.push(feature)
+
+    // reached batch limit, execute a batch insert
+    if (batch.length >= BATCH_SIZE) {
+      processBatch()
+    }
+
+    return featureIndex++
+  }
+
+  const done = async () => {
+    if (batch.length > 0) {
+      processBatch()
+    }
+    // await _indexFeatureTable(gp, tableName)
+    const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
+    const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
+    return {
+      extent,
+      count: featureDao.count()
+    }
+  }
+
+  return { addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, done }
 }
 
 /**
@@ -256,7 +593,7 @@ async function _createFeatureTable (gp, tableName, featureCollection, addFeature
  */
 async function createFeatureTable (filePath, tableName, featureCollection) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _createFeatureTable(gp, tableName, featureCollection, true)
+    return _createFeatureTable(gp, tableName, featureCollection)
   }, true)
 }
 
@@ -265,13 +602,14 @@ async function createFeatureTable (filePath, tableName, featureCollection) {
  * @param gp
  * @param tableName
  * @param force
+ * @param progress
  * @returns {Promise<void>}
  */
-async function _indexFeatureTable (gp, tableName, force = false) {
+async function _indexFeatureTable (gp, tableName, force = false, progress) {
   const featureDao = gp.getFeatureDao(tableName)
   const fti = featureDao.featureTableIndex
   if (fti) {
-    await fti.indexWithForce(force)
+    await fti.indexWithForce(force, progress)
   }
 }
 
@@ -289,57 +627,77 @@ async function indexFeatureTable (filePath, tableName, force = false) {
 }
 
 /**
+ * Retruns the GeoPackageDataType
+ * @param value
+ * @return {GeoPackageDataType}
+ */
+function getDataTypeForValue (value) {
+  let type
+  switch (typeof value) {
+    case 'number':
+      type = GeoPackageDataType.DOUBLE
+      break
+    case 'boolean':
+      type = GeoPackageDataType.BOOLEAN
+      break
+    case 'object':
+      if (value != null && value instanceof Date) {
+        type = GeoPackageDataType.DATETIME
+      } else {
+        type = GeoPackageDataType.TEXT
+      }
+      break
+    default:
+      type = GeoPackageDataType.TEXT
+      break
+  }
+  return type
+}
+
+/**
  * Adds feature properties to a properties object
  * @param feature
  * @param currentProperties
  */
 function addFeatureProperties (feature, currentProperties) {
+  // geometry column is used for the feature's geometry, migrate this property
   if (feature.properties.geometry) {
     feature.properties.geometry_property = feature.properties.geometry
     delete feature.properties.geometry
   }
 
-  if (feature.id) {
-    if (!currentProperties['_feature_id']) {
-      currentProperties['_feature_id'] = currentProperties['_feature_id'] || {
-        name: '_feature_id',
-        type: GeoPackageDataType.nameFromType(GeoPackageDataType.INTEGER)
-      }
+  // save the feature's original id
+  if (feature.id && currentProperties['_feature_id'] == null) {
+    currentProperties['_feature_id'] = {
+      name: '_feature_id',
+      type: GeoPackageDataType.nameFromType(GeoPackageDataType.INTEGER)
     }
+    feature.properties['_feature_id'] = feature.id
   }
 
-  Object.keys(feature.properties).forEach(key => {
-    if (!currentProperties[key]) {
-      currentProperties[key] = currentProperties[key] || {
-        name: key
-      }
-      // TODO: do a better job of checking if property is date and also provide mechanism for converting into Date object before it goes to geopackage API
-      let type = typeof feature.properties[key]
-      if (feature.properties[key] !== undefined && feature.properties[key] !== null && type !== 'undefined') {
-        if (type === 'object') {
-          if (feature.properties[key] instanceof Date) {
-            type = 'Date'
-          }
+  keys(feature.properties).filter(key => currentProperties[key] == null).forEach(key => {
+    let type = typeof feature.properties[key]
+    switch (type) {
+      case 'number':
+        type = 'DOUBLE'
+        break
+      case 'boolean':
+        type = 'BOOLEAN'
+        break
+      case 'object':
+        if (feature.properties[key] != null && feature.properties[key] instanceof Date) {
+          type = 'DATETIME'
+        } else {
+          type = 'TEXT'
         }
-        switch (type) {
-          case 'Date':
-            type = 'DATETIME'
-            break
-          case 'number':
-            type = 'DOUBLE'
-            break
-          case 'string':
-            type = 'TEXT'
-            break
-          case 'boolean':
-            type = 'BOOLEAN'
-            break
-        }
-        currentProperties[key] = {
-          name: key,
-          type: type
-        }
-      }
+        break
+      default:
+        type = 'TEXT'
+        break
+    }
+    currentProperties[key] = {
+      name: key,
+      type: type
     }
   })
 }
@@ -548,9 +906,10 @@ async function updateFeatureRow (filePath, tableName, featureRow) {
  * @param gp
  * @param tableName
  * @param featureRowId
+ * @return number
  */
 function _deleteFeatureRow (gp, tableName, featureRowId) {
-  gp.getFeatureDao(tableName).deleteById(featureRowId)
+  const numberDeleted = gp.getFeatureDao(tableName).deleteById(featureRowId)
   try {
     _clearStylingForFeature(gp, tableName, featureRowId)
     // eslint-disable-next-line no-unused-vars
@@ -558,6 +917,7 @@ function _deleteFeatureRow (gp, tableName, featureRowId) {
     // eslint-disable-next-line no-empty
   }
   _updateBoundingBoxForFeatureTable(gp, tableName)
+  return numberDeleted
 }
 
 /**
@@ -625,6 +985,7 @@ function _updateBoundingBoxForFeatureTable (gp, tableName) {
     contents.max_y = 90.0
   }
   contentsDao.update(contents)
+  return contents
 }
 
 /**
@@ -651,6 +1012,16 @@ function _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
 }
 
 /**
+ * Gets the feature count
+ * @param gp
+ * @param tableName
+ * @returns {number}
+ */
+function _getFeatureCount (gp, tableName) {
+  return gp.getFeatureDao(tableName).count()
+}
+
+/**
  * Gets the feature count in a bounding box
  * @param filePath
  * @param tableName
@@ -660,6 +1031,124 @@ function _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
 async function getFeatureCountInBoundingBox (filePath, tableName, boundingBox) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureCountInBoundingBox(gp, tableName, boundingBox)
+  })
+}
+
+/**
+ * Gets the feature count
+ * @param filePath
+ * @param tableName
+ * @returns {Promise<any>}
+ */
+async function getFeatureCount (filePath, tableName) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getFeatureCount(gp, tableName)
+  })
+}
+
+/**
+ * Gets table page features
+ * @param gp
+ * @param tableName
+ * @param page
+ * @param pageSize
+ * @return {{features: *[], styleAssignments: {}, mediaCounts: {}}}
+ * @private
+ */
+function _getFeatureTablePage (gp, tableName, page, pageSize) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const srs = featureDao.srs
+  const offset = page * pageSize
+  const query = SqliteQueryBuilder.buildQuery(false, "'" + featureDao.gpkgTableName + "'", undefined, undefined, undefined, undefined, undefined, undefined, pageSize, offset)
+  let each = featureDao.connection.each(query)
+  const features = []
+  for (let row of each) {
+    if (!isNil(row)) {
+      const featureRow = featureDao.getRow(row)
+      const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+      feature.type = 'Feature'
+      feature.id = featureRow.id
+      features.push(feature)
+    }
+  }
+
+  const featureIds = features.map(f => f.id)
+  const featureIdAndGeometryTypes = features.map(f => {
+    return {id: f.id, geometryType: f.geometry.type}
+  })
+  const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
+  const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
+
+  return {features, styleAssignments, mediaCounts}
+}
+
+/**
+ *
+ * @param filePath
+ * @param tableName
+ * @param page
+ * @param pageSize
+ * @return {Promise<{{features: *[], styleAssignments: {}, mediaCounts: {}}}>}
+ */
+async function getFeatureTablePage (filePath, tableName, page, pageSize) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getFeatureTablePage(gp, tableName, page, pageSize)
+  })
+}
+
+/**
+ * Gets table page features with respect to features in the bounding box (latlng + zoom)
+ * @param gp
+ * @param tableName
+ * @param page
+ * @param pageSize
+ * @param latlng
+ * @param zoom
+ * @return {{features: *[], styleAssignments: {}, mediaCounts: {}}}
+ * @private
+ */
+function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng, zoom) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const srs = featureDao.srs
+  const offset = page * pageSize
+  const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
+  const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+  const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+  const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, undefined, pageSize, offset)
+  const each = featureDao.connection.each(query, geomEnvelope.whereArgs)
+  const features = []
+  for (let row of each) {
+    if (!isNil(row)) {
+      const featureRow = featureDao.getRow(row)
+      const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+      feature.type = 'Feature'
+      feature.id = featureRow.id
+      features.push(feature)
+    }
+  }
+  const featureIds = features.map(f => f.id)
+  const featureIdAndGeometryTypes = features.map(f => {
+    return {id: f.id, geometryType: f.geometry.type}
+  })
+  const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
+  const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
+
+  return {features, styleAssignments, mediaCounts}
+}
+
+/**
+ * Gets the feature page
+ * @param filePath
+ * @param tableName
+ * @param page
+ * @param pageSize
+ * @param latlng
+ * @param zoom
+ * @return {Promise<{{features: *[], styleAssignments: {}, mediaCounts: {}}}>}
+ */
+async function getFeatureTablePageAtLatLngZoom (filePath, tableName, page, pageSize, latlng, zoom) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getFeatureTablePageAtLatLngZoom(gp, tableName, page, pageSize, latlng, zoom)
   })
 }
 
@@ -679,6 +1168,7 @@ function _getAllFeaturesAsGeoJSON (gp, tableName) {
       const featureRow = featureDao.getRow(row)
       const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
       feature.type = 'Feature'
+      feature.id = featureRow.id
       features.push(feature)
     }
   }
@@ -918,7 +1408,7 @@ function mergeFeatureColumns (mergedColumns, featureColumns) {
 }
 
 function _getFeatureColumns (gp, tableName) {
-  return gp.getFeatureDao(tableName).table.getUserColumns()
+  return new FeatureTableReader(tableName).readFeatureTable(gp).getUserColumns()
 }
 
 /**
@@ -976,94 +1466,9 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
   let gp = await GeoPackageAPI.create(fileName)
   try {
     // setup the columns for the feature table
-    await _createFeatureTable(gp, tableName, featureCollection, false, fields)
-
-    let featureTableStyles
-    if (!isNil(style)) {
-      featureTableStyles = new FeatureTableStyles(gp, tableName)
-      featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
-      featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
-      featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
-      featureTableStyles.createTableStyleRelationship()
-      featureTableStyles.createTableIconRelationship()
-      featureTableStyles.createStyleRelationship()
-      featureTableStyles.createIconRelationship()
-    }
-
-    let icons = {}
-    let styles = {}
-    let iconIdToIconRowId = {}
-    let styleIdToStyleRowId = {}
-    let iterator = featureCollection.features
-
-    let featureDao = gp.getFeatureDao(tableName)
-
-    let dateColumns = featureDao.table.getUserColumns().getColumns().filter(column => column.dataType === GeoPackageDataType.DATE || column.dataType === GeoPackageDataType.DATETIME).map(column => column.getName())
-
-    for (let feature of iterator) {
-      if (feature.properties) {
-        feature.properties.id = undefined
-        keys(feature.properties).forEach(key => {
-          if (isObject(feature.properties[key])) {
-            delete feature.properties[key]
-          }
-
-          // date correction
-          if (dateColumns.indexOf(key) !== -1) {
-            if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
-              feature.properties[key] = moment.utc(feature.properties[key]).toDate()
-            } else {
-              delete feature.properties[key]
-            }
-          }
-        })
-      }
-      let featureRowId = _addFeatureToFeatureTable (gp, featureDao, tableName, feature, null, false, true)
-      if (!isNil(style) && !isNil(style.features[feature.id])) {
-        const geometryType = GeometryType.fromName(feature.geometry.type.toUpperCase())
-        if (!isNil(style.features[feature.id].icon)) {
-          let iconId = style.features[feature.id].icon
-          let featureIconRow = icons[iconId]
-          if (isNil(featureIconRow)) {
-            let featureIcon = style.iconRowMap[iconId]
-            featureIconRow = featureTableStyles.getIconDao().newRow()
-            featureIconRow.data = featureIcon.data
-            featureIconRow.contentType = featureIcon.contentType
-            featureIconRow.width = featureIcon.width
-            featureIconRow.height = featureIcon.height
-            featureIconRow.anchorU = featureIcon.anchorU
-            featureIconRow.anchorV = featureIcon.anchorV
-            featureIconRow.name = featureIcon.name
-            let featureIconRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(featureIconRow)
-            delete style.iconRowMap[iconId]
-            style.iconRowMap[featureIconRowId] = featureIcon
-            iconIdToIconRowId[iconId] = featureIconRowId
-            icons[iconId] = featureIconRow
-          }
-          style.features[feature.id].icon = iconIdToIconRowId[iconId]
-          featureTableStyles.setIcon(featureRowId, geometryType, featureIconRow)
-        } else if (!isNil(style.features[feature.id].style)) {
-          let styleId = style.features[feature.id].style
-          let featureStyleRow = styles[styleId]
-          if (isNil(featureStyleRow)) {
-            let featureStyle = style.styleRowMap[styleId]
-            featureStyleRow = featureTableStyles.getStyleDao().newRow()
-            featureStyleRow.setColor(featureStyle.color, featureStyle.opacity)
-            featureStyleRow.setFillColor(featureStyle.fillColor, featureStyle.fillOpacity)
-            featureStyleRow.setWidth(featureStyle.width)
-            featureStyleRow.setName(featureStyle.name)
-            let featureStyleRowId = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
-            delete style.styleRowMap[styleId]
-            style.styleRowMap[featureStyleRowId] = featureStyle
-            styleIdToStyleRowId[styleId] = featureStyleRowId
-            styles[styleId] = featureStyleRow
-          }
-          style.features[feature.id].style = styleIdToStyleRowId[styleId]
-          featureTableStyles.setStyle(featureRowId, geometryType, featureStyleRow)
-        }
-      }
-    }
-    await _indexFeatureTable(gp, tableName)
+    console.time('create feature table')
+    await _createFeatureTable(gp, tableName, featureCollection, style, fields)
+    console.timeEnd('create feature table')
   } finally {
     try {
       gp.close()
@@ -1071,6 +1476,42 @@ async function buildGeoPackage (fileName, tableName, featureCollection, style = 
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to close GeoPackage')
+    }
+  }
+}
+
+/**
+ * Allows for the streaming of features by returning functions for adding features and notifying completion.
+ * addFeature takes a GeoJSON feature and will add it to the table.
+ * done will signal to close the geopackage and return the stats from the streaming, extent of data in table and count of rows in table.
+ * @param fileName
+ * @param tableName
+ * @return {Promise<{addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): *), addStyle: (function(*): number), done: (function(): *), addIcon: (function(*): number)}>}
+ */
+async function streamingGeoPackageBuild (fileName, tableName) {
+  // create the geopackage
+  let gp = await GeoPackageAPI.create(fileName)
+
+  let {addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+
+  return {
+    addFeature: addFeature,
+    addField: addField,
+    addMediaAttachment: addMediaAttachment,
+    addStyle: addStyle,
+    addIcon: addIcon,
+    setFeatureStyle: setFeatureStyle,
+    setFeatureIcon: setFeatureIcon,
+    done: async () => {
+      const result = await done()
+      try {
+        gp.close()
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to close GeoPackage')
+      }
+      return result
     }
   }
 }
@@ -1126,5 +1567,9 @@ export {
   _featureExists,
   featureExists,
   buildGeoPackage,
-  addGeoPackageFeatureTableColumns
+  addGeoPackageFeatureTableColumns,
+  streamingGeoPackageBuild,
+  getFeatureCount,
+  getFeatureTablePage,
+  getFeatureTablePageAtLatLngZoom
 }

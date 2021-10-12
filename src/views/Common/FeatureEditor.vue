@@ -131,12 +131,16 @@ export default {
     },
     computed: {
       unrecognizedColumns () {
-        const featureColumns = window.mapcache.getLayerColumns({type: 'FeatureCollection', features: [this.feature]}).columns
-        const featureProperties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
-        return orderBy(featureColumns.filter(column => this.columns._columnNames.findIndex(name => name === column.name) === -1 && column.name !== '_feature_id').map(column => {
-          column.dataType = window.mapcache.GeoPackageDataType.fromName(column.dataType)
-          return window.mapcache.getEditableColumnObject(column, featureProperties)
-        }), ['lowerCaseName'], ['asc'])
+        if (this.isEditing) {
+          return []
+        } else {
+          const featureColumns = window.mapcache.getLayerColumns({type: 'FeatureCollection', features: [this.feature]}).columns
+          const featureProperties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
+          return orderBy(featureColumns.filter(column => this.columns._columnNames.findIndex(name => name === column.name) === -1 && column.name !== '_feature_id').map(column => {
+            column.dataType = window.mapcache.GeoPackageDataType.fromName(column.dataType)
+            return window.mapcache.getEditableColumnObject(column, featureProperties)
+          }), ['lowerCaseName'], ['asc'])
+        }
       },
       allColumnsSelected: {
         set(val) {

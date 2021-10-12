@@ -161,18 +161,24 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
       const titles = wikiImageMap[countryCode].map(title => title.title)
       controller = new AbortController()
       id = setTimeout(() => controller.abort(), timeout)
-      const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') +  '&prop=pageimages&format=json&pithumbsize=500', {signal: controller.signal})
-      const wikiRes = await wikiReq.json()
+      let wikiRes = null
+      try {
+        const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') +  '&prop=pageimages&format=json&pithumbsize=500', {signal: controller.signal})
+        wikiRes = await wikiReq.json()
+        // eslint-disable-next-line no-empty, no-unused-vars
+      } catch (e) {}
       clearTimeout(id)
-      keys(wikiRes.query.pages).filter(key => wikiRes.query.pages[key].thumbnail != null).forEach((page) => {
-        const titleObj = wikiImageMap[countryCode].find(t => t.title === wikiRes.query.pages[page].title)
-        if (titleObj) {
-          const feature = featureCollection.features.find(feature => feature.properties.osm_id === titleObj.osm_id)
-          if (feature != null) {
-            feature.properties.image = wikiRes.query.pages[page].thumbnail.source
+      if (wikiRes != null) {
+        keys(wikiRes.query.pages).filter(key => wikiRes.query.pages[key].thumbnail != null).forEach((page) => {
+          const titleObj = wikiImageMap[countryCode].find(t => t.title === wikiRes.query.pages[page].title)
+          if (titleObj) {
+            const feature = featureCollection.features.find(feature => feature.properties.osm_id === titleObj.osm_id)
+            if (feature != null) {
+              feature.properties.image = wikiRes.query.pages[page].thumbnail.source
+            }
           }
-        }
-      })
+        })
+      }
     }
 
     return {requestObject, featureCollection, fitMapToData: true, reverse: reverse}

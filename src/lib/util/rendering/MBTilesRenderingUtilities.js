@@ -1,5 +1,5 @@
 import { getDb, getTile, close, getVectorTileFeatures} from './MBTilesUtilities'
-import { createCanvas } from '../CanvasUtilities'
+import { createCanvas } from '../canvas/CanvasUtilities'
 
 function getColor (color, opacity) {
   let opacityText = '00'

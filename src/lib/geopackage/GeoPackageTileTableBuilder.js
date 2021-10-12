@@ -11,12 +11,12 @@ import {
   deleteGeoPackageTable
 } from './GeoPackageCommon'
 import { constructLayer } from '../layer/LayerFactory'
-import { trimExtentToFilter, trimExtentToWebMercatorMax } from '../util/XYZTileUtilities'
+import { trimExtentToFilter, trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
-import { createCanvas, isBlank, hasTransparentPixels } from '../util/CanvasUtilities'
+import { createCanvas, isBlank, hasTransparentPixels } from '../util/canvas/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
-import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix } from '../util/TileUtilities'
+import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix } from '../util/tile/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 
 /**

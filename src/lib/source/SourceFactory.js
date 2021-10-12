@@ -9,15 +9,15 @@ export default class SourceFactory {
     let source = null
     if (sourceConfiguration.serviceType !== null && sourceConfiguration.serviceType !== undefined) {
       if (sourceConfiguration.serviceType === 0) {
-        source = new (require('./WMSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format, sourceConfiguration.withCredentials)
+        source = new (require('./wms/WMSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.format, sourceConfiguration.withCredentials)
       } else if (sourceConfiguration.serviceType === 1) {
-        source = new (require('./WFSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
+        source = new (require('./wfs/WFSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 2) {
-        source = new (require('./XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent)
+        source = new (require('./xyz/XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent)
       } else if (sourceConfiguration.serviceType === 3) {
-        source = new (require('./ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name, sourceConfiguration.layerDatum)
+        source = new (require('./arcgis/ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 4) {
-        source = new (require('./OverpassSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.name, sourceConfiguration.featureCollection)
+        source = new (require('./overpass/OverpassSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.name, sourceConfiguration.fileData)
       }
     } else {
       const filePath = sourceConfiguration.file.path
@@ -25,28 +25,28 @@ export default class SourceFactory {
       try {
         switch (type) {
           case 'kml':
-            source = new (require('./KMLSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./kml/KMLSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'kmz':
-            source = new (require('./KMZSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./kml/KMZSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'zip':
-            source = new (require('./ZipSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./zip/ZipSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'shp':
-            source = new (require('./ShapeFileSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./shapefile/ShapeFileSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'mbtiles':
-            source = new (require('./MBTilesSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./mbtiles/MBTilesSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'json':
           case 'geojson':
-            source = new (require('./GeoJSONSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./geojson/GeoJSONSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           case 'geotiff':
           case 'tif':
           case 'tiff':
-            source = new (require('./GeoTIFFSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
+            source = new (require('./geotiff/GeoTIFFSource').default)(sourceConfiguration.id, sourceConfiguration.directory, filePath)
             break
           default:
             break

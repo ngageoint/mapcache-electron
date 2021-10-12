@@ -341,8 +341,8 @@ import EventBus from '../../lib/vue/EventBus'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
-import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
-import {getTileCount} from '../../lib/util/TileUtilities'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import {getTileCount} from '../../lib/util/tile/TileUtilities'
 
 export default {
     props: {

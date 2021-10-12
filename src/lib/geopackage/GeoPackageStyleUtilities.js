@@ -460,14 +460,15 @@ async function getStyleItemsForFeature(filePath, tableName, rowId) {
  * Gets the assignment types for each feature
  * @param gp
  * @param tableName
+ * @param featureIdAndGeometryTypes
  */
-function _getStyleAssignmentForFeatures(gp, tableName) {
+function _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes) {
   let styleAssignmentMap = {}
   const hasStyleExtension = gp.featureStyleExtension.has(tableName)
   if (hasStyleExtension) {
     const styles = _getStyleRows(gp, tableName)
     const icons = _getIconRows(gp, tableName)
-    const mappings = _getFeatureStyleMapping(gp, tableName, true)
+    const mappings = _getFeatureStyleMapping(gp, tableName, true, featureIdAndGeometryTypes)
     Object.keys(mappings).forEach(featureId => {
       let style
       let icon
@@ -492,11 +493,12 @@ function _getStyleAssignmentForFeatures(gp, tableName) {
  * Gets the assignment types for each feature
  * @param filePath
  * @param tableName
+ * @param featureIdAndGeometryTypes, null will search against all features
  * @returns {Promise<any>}
  */
-async function getStyleAssignmentForFeatures(filePath, tableName) {
+async function getStyleAssignmentForFeatures(filePath, tableName, featureIdAndGeometryTypes) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getStyleAssignmentForFeatures(gp, tableName)
+    return _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
   })
 }
 
@@ -943,16 +945,17 @@ function _getAllFeatureIdsAndGeometryTypes(gp, tableName) {
  * @param gp
  * @param tableName
  * @param checkForTableStyles
- *
+ * @param featureIdAndGeometryTypes - feature ids to filter with
  */
-function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
+function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true, featureIdAndGeometryTypes) {
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
-  const features = _getAllFeatureIdsAndGeometryTypes(gp, tableName)
+  const filter = featureIdAndGeometryTypes != null
+  const features = featureIdAndGeometryTypes || _getAllFeatureIdsAndGeometryTypes(gp, tableName)
   const featureStyleMapping = {}
   const styleMappingDao = featureTableStyles.getFeatureStyleExtension().getStyleMappingDao(tableName)
   let styleMappings = []
   if (!isNil(styleMappingDao)) {
-    styleMappings = styleMappingDao.queryForAll().map(record => {
+    styleMappings = (filter ? featureIdAndGeometryTypes.flatMap(f => styleMappingDao.queryByBaseId(f.id)).filter(mapping => mapping != null) : styleMappingDao.queryForAll()).map(record => {
       return {
         featureId: record.base_id,
         id: record.related_id
@@ -962,7 +965,7 @@ function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true) {
   const iconMappingDao = featureTableStyles.getFeatureStyleExtension().getIconMappingDao(tableName)
   let iconMappings = []
   if (!isNil(iconMappingDao)) {
-    iconMappings = iconMappingDao.queryForAll().map(record => {
+    iconMappings = (filter ? featureIdAndGeometryTypes.flatMap(f => iconMappingDao.queryByBaseId(f.id)).filter(mapping => mapping != null) : iconMappingDao.queryForAll()).map(record => {
       return {
         featureId: record.base_id,
         id: record.related_id

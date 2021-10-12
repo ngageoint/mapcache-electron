@@ -23,7 +23,7 @@ import {
 import { _getAllFeatureRowsIn4326, _getFeatureColumns, mergeFeatureColumns, _indexFeatureTable, _linkFeatureRowToMediaRow } from './GeoPackageFeatureTableUtilities'
 import { _getStyleRowObjects, _getIconRowObjects, _getFeatureStyleMapping, _getTableStyleMappings } from './GeoPackageStyleUtilities'
 import { getMediaRow } from './GeoPackageMediaUtilities'
-import { getMediaTableName } from '../util/MediaUtilities'
+import { getMediaTableName } from '../util/media/MediaUtilities'
 
 /**
  * GeoPackgeFeatureTableBuilder handles building a feature layer using other GeoPackage layers and data sources

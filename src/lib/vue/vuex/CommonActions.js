@@ -1,5 +1,5 @@
 import store from '../../../store'
-import { rmDirAsync } from '../../util/FileUtilities'
+import { rmDirAsync } from '../../util/file/FileUtilities'
 
 function setDataSourceVisible ({projectId, sourceId, visible}) {
   store.dispatch('Projects/setDataSourceVisible', {projectId, sourceId, visible})

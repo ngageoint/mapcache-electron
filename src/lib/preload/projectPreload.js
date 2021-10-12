@@ -11,8 +11,15 @@ import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
 import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
 import { Context, GeometryType, GeoPackageAPI, HtmlCanvasAdapter, SqliteAdapter, GeoPackageDataType } from '@ngageoint/geopackage'
-import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/MediaUtilities'
-import { createNextAvailableBaseMapDirectory, createNextAvailableSourceDirectory, getExtraResourcesDirectory, readJSONFile } from '../util/FileUtilities'
+import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/media/MediaUtilities'
+import {
+  createNextAvailableBaseMapDirectory,
+  createNextAvailableSourceDirectory,
+  getExtraResourcesDirectory,
+  readJSONFile,
+  exists,
+  rmDirAsync
+} from '../util/file/FileUtilities'
 import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
 import {
   setDataSource,
@@ -100,7 +107,10 @@ import {
   _createFeatureTable,
   getAllFeaturesAsGeoJSON,
   getBoundingBoxForFeature,
-  getLayerColumns
+  getLayerColumns,
+  getFeatureCount,
+  getFeatureTablePage,
+  getFeatureTablePageAtLatLngZoom,
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import { getMediaAttachmentsCounts, deleteMediaAttachment, getMediaRelationships, getMediaRow, getMediaObjectUrl } from '../geopackage/GeoPackageMediaUtilities'
 import {
@@ -113,11 +123,11 @@ import {
   getStyleDrawOverlap
 } from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
-import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains } from '../util/URLUtilities'
+import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains } from '../network/URLUtilities'
 import { constructLayer } from '../layer/LayerFactory'
-import { fixXYZTileServerUrlForLeaflet } from '../util/XYZTileUtilities'
-import { getBaseURL, supportedImageFormats } from '../util/GeoServiceUtilities'
-import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/TileBoundingBoxUtils'
+import { fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
+import { getBaseURL, supportedImageFormats } from '../util/geoserver/GeoServiceUtilities'
+import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
 import { getDef, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
 import { ATTACH_MEDIA, ATTACH_MEDIA_COMPLETED, BUILD_FEATURE_LAYER, BUILD_FEATURE_LAYER_COMPLETED, BUILD_FEATURE_LAYER_STATUS, BUILD_TILE_LAYER, BUILD_TILE_LAYER_COMPLETED, BUILD_TILE_LAYER_STATUS, CANCEL_BUILD_FEATURE_LAYER, CANCEL_BUILD_FEATURE_LAYER_COMPLETED, CANCEL_BUILD_TILE_LAYER, CANCEL_BUILD_TILE_LAYER_COMPLETED, CANCEL_PROCESS_SOURCE, CANCEL_PROCESS_SOURCE_COMPLETED, CANCEL_REPROJECT_TILE_REQUEST, CANCEL_SERVICE_REQUEST, CANCEL_TILE_REQUEST, CLIENT_CERTIFICATE_SELECTED, CLIENT_CREDENTIALS_INPUT, CLOSE_PROJECT, CLOSING_PROJECT_WINDOW, GENERATE_GEOTIFF_RASTER_FILE, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED, GET_APP_DATA_DIRECTORY, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, PROCESS_SOURCE, PROCESS_SOURCE_COMPLETED, PROCESS_SOURCE_STATUS, REQUEST_CLIENT_CREDENTIALS, REQUEST_REPROJECT_TILE, REQUEST_REPROJECT_TILE_COMPLETED, REQUEST_TILE, REQUEST_TILE_COMPLETED, SELECT_CLIENT_CERTIFICATE, SHOW_OPEN_DIALOG, SHOW_OPEN_DIALOG_COMPLETED, SHOW_SAVE_DIALOG, SHOW_SAVE_DIALOG_COMPLETED } from '../electron/ipc/MapCacheIPC'
@@ -138,6 +148,8 @@ ipcRenderer.on(CANCEL_SERVICE_REQUEST, (event, url) => {
     cancelRequestURLToCallbackMap[url]()
   }
 })
+
+let fileStreams = {}
 
 let storage
 
@@ -279,6 +291,29 @@ contextBridge.exposeInMainWorld('mapcache', {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   getUserDataDirectory,
+  openFileStream: (path) => {
+    const stream = fs.createWriteStream(path, {flags: 'a'})
+    const id = createUniqueID()
+    fileStreams[id] = stream
+    return id
+  },
+  appendToStream: async (streamId, data) => {
+    return new Promise(resolve => {
+      fileStreams[streamId].write(data, () => {
+        resolve()
+      })
+    })
+  },
+  closeFileStream: (streamId) => {
+    const stream = fileStreams[streamId]
+    if (stream != null) {
+      stream.end()
+      delete fileStreams[streamId]
+    }
+  },
+  generateJsonFilePath: (filePath, id) => {
+    return path.join(filePath, id + '.json')
+  },
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_APP_DATA_DIRECTORY)
   },
@@ -310,6 +345,15 @@ contextBridge.exposeInMainWorld('mapcache', {
   createBaseMapDirectory,
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
+  },
+  deleteSourceDirectory: async (source) => {
+    if (source.directory && exists(source.directory)) {
+      try {
+        await rmDirAsync(source.directory)
+      } catch (e) {
+        console.error('Unable to remove source directory')
+      }
+    }
   },
   closeProject: () => {
     ipcRenderer.send(CLOSE_PROJECT)
@@ -704,7 +748,7 @@ contextBridge.exposeInMainWorld('mapcache', {
     return new Promise ((resolve) => {
       let success = false
       getOrCreateGeoPackage(filePath).then(gp => {
-        _createFeatureTable(gp, featureTableName, featureCollection, true).then(() => {
+        _createFeatureTable(gp, featureTableName, featureCollection).then(() => {
           addGeoPackage({projectId: projectId, filePath: filePath})
           success = true
         }).catch(() => {
@@ -878,5 +922,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   getStyleDrawOverlap,
   getOverpassQuery,
   getLayerColumns,
-  getEditableColumnObject
+  getEditableColumnObject,
+  getFeatureCount,
+  getFeatureTablePage,
+  getFeatureTablePageAtLatLngZoom
 })

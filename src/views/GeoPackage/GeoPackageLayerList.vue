@@ -38,7 +38,7 @@
 </template>
 
 <script>
-  import {zoomToGeoPackageTable} from '../../lib/util/ZoomUtilities'
+  import {zoomToGeoPackageTable} from '../../lib/leaflet/map/ZoomUtilities'
 
   export default {
     props: {

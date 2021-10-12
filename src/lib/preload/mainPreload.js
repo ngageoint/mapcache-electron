@@ -4,7 +4,7 @@ import path from 'path'
 import {contextBridge, ipcRenderer} from 'electron'
 import { deleteProject } from '../vue/vuex/CommonActions'
 import { disableRemoteSources, newProject } from '../vue/vuex/LandingActions'
-import { createNextAvailableProjectDirectory } from '../util/FileUtilities'
+import { createNextAvailableProjectDirectory } from '../util/file/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { GET_APP_VERSION, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, SHOW_PROJECT } from '../electron/ipc/MapCacheIPC'
 

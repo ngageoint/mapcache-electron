@@ -329,7 +329,7 @@ import NumberPicker from '../Common/NumberPicker'
 import {mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
 import {DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import {zoomToBaseMap} from '../../lib/util/ZoomUtilities'
+import {zoomToBaseMap} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     props: {

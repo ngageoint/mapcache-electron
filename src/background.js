@@ -70,6 +70,7 @@ async function start() {
   setupEventHandlers()
   setupWebContentHandling()
 
+
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     require('./lib/protocol/protocol').default('mapcache')
   }
@@ -91,7 +92,7 @@ async function start() {
     app.quit()
   }
 
-  const { setupInitialDirectories } = require('./lib/util/FileUtilities')
+  const { setupInitialDirectories } = require('./lib/util/file/FileUtilities')
   setupInitialDirectories(app.getPath('userData'))
 
   MapCacheWindowManager.start()

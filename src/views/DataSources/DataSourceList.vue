@@ -42,7 +42,7 @@ import isNil from 'lodash/isNil'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import {zoomToSource} from '../../lib/util/ZoomUtilities'
+import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     components: {

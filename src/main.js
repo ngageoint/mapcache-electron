@@ -6,7 +6,7 @@ import vuetify from './lib/vue/vuetify/vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
 // import axios from 'axios'
-import { setCreateCanvasFunction } from './lib/util/CanvasUtilities'
+import { setCreateCanvasFunction } from './lib/util/canvas/CanvasUtilities'
 import createMapCachePersistedStateWrapper from './lib/vue/vuex/MapCachePersistedStateWrapper'
 import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedMutationsWrapper'
 import Vuex from 'vuex'

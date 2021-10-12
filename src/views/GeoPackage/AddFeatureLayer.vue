@@ -226,7 +226,7 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
-import {zoomToGeoPackageTable, zoomToSource} from '../../lib/util/ZoomUtilities'
+import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 
 export default {
     components: {

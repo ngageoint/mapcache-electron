@@ -51,7 +51,7 @@ import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import DrawBounds from './mixins/DrawBounds'
 import GridBounds from './mixins/GridBounds'
 import EventBus from '../../lib/vue/EventBus'
-import {zoomToBaseMap, zoomToSource} from '../../lib/util/ZoomUtilities'
+import {zoomToBaseMap, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 import {BASE_MAP_PANE, GRID_SELECTION_PANE} from '../../lib/leaflet/map/panes/MapPanes'
 
 export default {

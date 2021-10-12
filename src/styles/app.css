@@ -67,8 +67,14 @@
 .warning-text {
 	color: var(--v-warning-base) !important;
 }
+.hazard--text {
+	color: darkorange !important;
+}
 .detail--text {
 	color: var(--v-detail-base) !important;
+}
+.regular--text {
+	color: var(--v-text-base) !important;
 }
 .detail-bg {
 	background-color: var(--v-detailbg-base) !important;
@@ -203,4 +209,12 @@
 .allowselect {
 	user-select: text !important; /* standard syntax */
 	-webkit-user-select: text !important; /* webkit (safari, chrome) browsers */
+}
+
+.icon-box {
+	border: 1px solid #ffffff00 !important;
+	border-radius: 4px !important;
+	width: 24px !important;
+	height: 24px !important;
+	object-fit: contain !important;
 }

@@ -19,10 +19,10 @@ import {
   createNextAvailableProjectDirectory,
   removeUnusedFromUserDirectory,
   rmDirAsync
-} from '../../lib/util/FileUtilities'
+} from '../../lib/util/file/FileUtilities'
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
-import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/FileConstants'
-import GeoTIFFSource from '../../lib/source/GeoTIFFSource'
+import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/file/FileConstants'
+import GeoTIFFSource from '../../lib/source/geotiff/GeoTIFFSource'
 import {GEOTIFF, VECTOR, MBTILES, WMS, isRemote} from '../../lib/layer/LayerTypes'
 
 

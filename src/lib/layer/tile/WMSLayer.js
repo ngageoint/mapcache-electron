@@ -1,7 +1,7 @@
 import {
   getTileRequestURL,
   getBoundingBoxForWMSRequest
-} from '../../util/GeoServiceUtilities'
+} from '../../util/geoserver/GeoServiceUtilities'
 import NetworkTileLayer from './NetworkTileLayer'
 import { WMS } from '../LayerTypes'
 

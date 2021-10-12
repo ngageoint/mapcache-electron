@@ -2,7 +2,7 @@ import isNil from 'lodash/isNil'
 import {
   getTileRequestURL,
   getBoundingBoxForWMSRequest
-} from '../../../util/GeoServiceUtilities'
+} from '../../../util/geoserver/GeoServiceUtilities'
 import { getAxiosRequestScheduler } from '../../../network/ServiceConnectionUtils'
 import CancellableTileRequest from '../../../network/CancellableTileRequest'
 import NetworkTileRenderer from './NetworkTileRenderer'
@@ -26,7 +26,7 @@ export default class WMSRenderer extends NetworkTileRenderer {
     this.isElectron = isElectron
     if (isElectron) {
       this.createUniqueID = require('../../../util/UniqueIDUtilities').createUniqueID
-      const { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } = require('../../../util/TileBoundingBoxUtils')
+      const { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } = require('../../../util/tile/TileBoundingBoxUtils')
       this.getWebMercatorBoundingBoxFromXYZ = getWebMercatorBoundingBoxFromXYZ
       this.tileIntersectsXYZ = tileIntersectsXYZ
       this.reprojectWebMercatorBoundingBox = require('../../../projection/ProjectionUtilities').reprojectWebMercatorBoundingBox
