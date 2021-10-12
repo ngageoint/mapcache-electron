@@ -178,21 +178,22 @@ export default {
       }
     })
     EventBus.$on(EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT, async (geojson, image) => {
-      const centerPoint = geojson.center_point
-      delete geojson.center_point
+      const geojsonClone = Object.assign({}, geojson)
+      const centerPoint = geojsonClone.center_point
+      delete geojsonClone.center_point
       this.searchResultToSave = {
-        feature: geojson,
+        feature: geojsonClone,
         pointFeature: null
       }
       if (centerPoint != null) {
-        this.searchResultToSave.pointFeature = Object.assign({}, geojson)
+        this.searchResultToSave.pointFeature = Object.assign({}, geojsonClone)
         this.searchResultToSave.pointFeature.geometry = centerPoint
       }
       let icon
       const style = getDefaultMapCacheStyle()
-      const materialIcon = getMaterialDesignIcon(geojson.properties.type, geojson.properties.category)
+      const materialIcon = getMaterialDesignIcon(geojsonClone.properties.type, geojsonClone.properties.category)
       if (materialIcon != null) {
-        icon = await getSvgMarkerIconData(prettyifyWords(geojson.properties.type, true) + ' - ' + prettyifyWords(geojson.properties.category, true), materialIcon)
+        icon = await getSvgMarkerIconData(prettyifyWords(geojsonClone.properties.type, true) + ' - ' + prettyifyWords(geojsonClone.properties.category, true), materialIcon)
       } else {
         icon = await getDefaultIcon('Default', 'Default icon for MapCache')
       }

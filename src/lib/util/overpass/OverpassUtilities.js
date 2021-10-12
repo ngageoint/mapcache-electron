@@ -3,7 +3,9 @@ import {presets} from './iD_presets.json'
 
 function getOverpassQuery (search) {
   let result = false
+  // eslint-disable-next-line no-console
   let oldConsoleError = console.error
+  // eslint-disable-next-line no-console
   console.error = () => {}
   try {
     result = wizard(search, {
@@ -31,13 +33,16 @@ function getOverpassQuery (search) {
       })// eslint-disable-next-line no-unused-vars, no-empty
     } catch (e) {}
   }
+  // eslint-disable-next-line no-console
   console.error = oldConsoleError
   return result
 }
 
 function getOverpassCountQuery (search) {
   let result = false
+  // eslint-disable-next-line no-console
   let oldConsoleError = console.error
+  // eslint-disable-next-line no-console
   console.error = () => {}
   try {
     result = wizard(search, {
@@ -66,6 +71,7 @@ function getOverpassCountQuery (search) {
       // eslint-disable-next-line no-unused-vars, no-empty
     } catch (e) {}
   }
+  // eslint-disable-next-line no-console
   console.error = oldConsoleError
   return result
 }

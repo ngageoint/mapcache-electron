@@ -16,7 +16,7 @@ import {
   getGeoPackageFileSize,
   performSafeGeoPackageOperation,
   _getBoundingBoxForTable,
-  getExtentOfGeoPackageTables
+  getExtentOfGeoPackageTables, getOrCreateGeoPackage
 } from '../../geopackage/GeoPackageCommon'
 import {
   updateFeatureGeometry as updateFeatureGeo,
@@ -26,7 +26,7 @@ import {
   createFeatureTable,
   _deleteFeatureRow,
   deleteFeatureRow,
-  addFeatureToFeatureTable, addGeoPackageFeatureTableColumns
+  addFeatureToFeatureTable, addGeoPackageFeatureTableColumns, _createFeatureTable
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
@@ -381,6 +381,30 @@ async function addFeatureTableToGeoPackage ({projectId, geopackageId, tableName,
         geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
         store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
         resolve()
+      })
+    })
+  })
+}
+
+async function createGeoPackageWithFeatureTable (projectId, filePath, featureTableName, featureCollection) {
+  return new Promise ((resolve) => {
+    let success = false
+    getOrCreateGeoPackage(filePath).then(gp => {
+      _createFeatureTable(gp, featureTableName, featureCollection).then(() => {
+        addGeoPackage({projectId: projectId, filePath: filePath})
+        success = true
+      }).catch(() => {
+        console.error('Failed to create feature table.')
+      }).finally(() => {
+        try {
+          gp.close()
+          gp = undefined
+          // eslint-disable-next-line no-unused-vars
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to close geopackage.')
+        }
+        resolve(success)
       })
     })
   })
@@ -797,5 +821,6 @@ export {
   setSourceError,
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
-  clearStylingForFeature
+  clearStylingForFeature,
+  createGeoPackageWithFeatureTable
 }

@@ -526,6 +526,7 @@ export default {
       }
       if (additionalFeature != null) {
         additionalFeature.id = window.mapcache.createUniqueID()
+        additionalFeature.properties = Object.assign({}, feature.properties)
         featureCollection.features.push(additionalFeature)
       }
 
@@ -585,7 +586,7 @@ export default {
     async saveFeature (projectId, geopackageId, tableName, feature, columnsToAdd) {
       await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: feature, columnsToAdd: columnsToAdd})
       if (this.additionalFeatureToAdd) {
-        this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
+        // this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
         await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: this.additionalFeatureToAdd})
         this.additionalFeatureToAdd = null
       }
@@ -991,6 +992,7 @@ export default {
             })
           }
         }).catch(() => {
+          // eslint-disable-next-line no-console
           console.error('Error retrieving nominatim reverse query results.')
         }).finally(() => {
           self.$nextTick(() => {

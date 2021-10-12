@@ -90,7 +90,7 @@ import {
   setSourceError,
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
-  clearStylingForFeature
+  clearStylingForFeature, createGeoPackageWithFeatureTable
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, deleteGeoPackageTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
@@ -104,7 +104,6 @@ import {
   getFeatureCountInBoundingBox,
   getFeatureColumns,
   indexFeatureTable,
-  _createFeatureTable,
   getAllFeaturesAsGeoJSON,
   getBoundingBoxForFeature,
   getLayerColumns,
@@ -744,29 +743,6 @@ contextBridge.exposeInMainWorld('mapcache', {
     }
     return hasStyle
   },
-  createGeoPackageWithFeatureTable: (projectId, filePath, featureTableName, featureCollection) => {
-    return new Promise ((resolve) => {
-      let success = false
-      getOrCreateGeoPackage(filePath).then(gp => {
-        _createFeatureTable(gp, featureTableName, featureCollection).then(() => {
-          addGeoPackage({projectId: projectId, filePath: filePath})
-          success = true
-        }).catch(() => {
-          console.error('Failed to create feature table.')
-        }).finally(() => {
-          try {
-            gp.close()
-            gp = undefined
-            // eslint-disable-next-line no-unused-vars
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to close geopackage.')
-          }
-          resolve(success)
-        })
-      })
-    })
-  },
   reprojectWebMercatorBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -925,5 +901,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   getEditableColumnObject,
   getFeatureCount,
   getFeatureTablePage,
-  getFeatureTablePageAtLatLngZoom
+  getFeatureTablePageAtLatLngZoom,
+  createGeoPackageWithFeatureTable
 })
