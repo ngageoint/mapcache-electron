@@ -27,16 +27,6 @@
             </p>
           </v-col>
         </v-row>
-        <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-if="workflowState !== 4">
-          <v-col>
-            <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-              Elapsed time
-            </p>
-            <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
-              {{prettyElapsedTime}}
-            </p>
-          </v-col>
-        </v-row>
         <v-row class="pb-2 ml-2 mr-2 pl-2 pr-2" no-gutters justify="start" v-if="error">
           <v-col>
             <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
@@ -104,8 +94,6 @@ export default {
         error: null,
         workflowState: PROCESSING_STATES.PREPROCESSING,
         completionPercentage: 0,
-        startTimeMs: new Date().getTime(),
-        prettyElapsedTime: '00:00:00'
       }
     },
     computed: {
@@ -134,13 +122,6 @@ export default {
       }
     },
     methods: {
-      prettyPrintElapsedTime () {
-        if (this.workflowState < PROCESSING_STATES.CANCELLED && this.error == null) {
-          const milliseconds = new Date().getTime() - this.startTimeMs
-          this.prettyElapsedTime = new Date(milliseconds).toISOString().substr(11, 8)
-          setTimeout(this.prettyPrintElapsedTime, 500)
-        }
-      },
       async preprocessSource (sourceConfiguration, statusCallback) {
         this.preprocessor = new PreprocessSource(sourceConfiguration)
         return await this.preprocessor.preprocess(statusCallback)
@@ -211,8 +192,6 @@ export default {
       }
 
       window.mapcache.addTaskStatusListener(source.id, statusCallback)
-
-      setTimeout(this.prettyPrintElapsedTime, 500)
 
       self.$nextTick(() => {
         // wfs and arcgis fs will require accessing features in browser, as opposed to trying that in node, given credentials

@@ -21,7 +21,7 @@ export default class ShapeFileSource extends Source {
     await this.sleep(250)
 
     if (path.extname(this.filePath) === '.zip') {
-      featureCollection = shp.parseZip(jetpack.read(this.filePath, 'buffer'))
+      featureCollection = await shp.parseZip(jetpack.read(this.filePath, 'buffer'))
     } else {
       featureCollection.features = shp.parseShp(jetpack.read(this.filePath, 'buffer'))
     }
