@@ -166,7 +166,7 @@ function _calculateTrueExtentForFeatureTable (gp, tableName) {
 }
 
 /**
- * Calculates the actual extent of a table based on it's features or tiles
+ * Calculates the actual extent of a table based on it's tiles
  * @param gp
  * @param tableName
  * @private
@@ -176,7 +176,7 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
   const tileDao = gp.getTileDao(tableName)
   const minZoom = tileDao.minZoom
   const maxZoom = tileDao.maxZoom
-  for (let zoom = minZoom; zoom < maxZoom; zoom++) {
+  for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
     const bbox = tileDao.getBoundingBoxWithZoomLevel(zoom)
     if (!isNil(bbox)) {
       if (isNil(tableBounds)) {
@@ -186,14 +186,13 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
         tableBounds.maxLongitude = Math.max(tableBounds.maxLongitude, bbox.maxLongitude)
         tableBounds.minLatitude = Math.min(tableBounds.minLatitude, bbox.minLatitude)
         tableBounds.maxLatitude = Math.max(tableBounds.maxLatitude, bbox.maxLatitude)
-        tableBounds.width = tableBounds.maxLongitude - tableBounds.minLongitude
-        tableBounds.height = tableBounds.maxLatitude - tableBounds.minLatitude
       }
     }
   }
   if (isNil(tableBounds)) {
     tableBounds = _getBoundingBoxForTable(gp, tableName)
   } else {
+    // need to convert to 4326 if not already in 4326
     const contents = gp.getTableContents(tableName)
     const srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
     const projection = 'EPSG:' + contents.srs_id

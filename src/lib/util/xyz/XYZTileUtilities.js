@@ -73,19 +73,6 @@ function calculateYTileRangeForExtent (extent, z) {
   }
 }
 
-function trimExtentToFilter(extent, filter) {
-  if (extent) {
-    const copy = extent.slice()
-    copy[0] = Math.max(extent[0], filter[0])
-    copy[1] = Math.max(extent[1], filter[1])
-    copy[2] = Math.min(extent[2], filter[2])
-    copy[3] = Math.min(extent[3], filter[3])
-    return copy
-  } else {
-    return extent
-  }
-}
-
 function trimExtentToWebMercatorMax(extent) {
   if (extent) {
     const copy = extent.slice()
@@ -205,7 +192,6 @@ export {
   calculateXTileRangeForExtent,
   calculateYTileRangeForExtent,
   trimExtentToWebMercatorMax,
-  trimExtentToFilter,
   tileBboxCalculator,
   tileCountInExtent,
   tileCountInExtentForZoomLevels,

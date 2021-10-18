@@ -368,7 +368,7 @@ export default {
       remove () {
         if (!isNil(this.featureToRemove)) {
           if (this.isGeoPackage) {
-            window.mapcache.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.id, featureId: this.featureToRemove.id})
+            window.mapcache.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.id, tableName: this.table.tableName, featureId: this.featureToRemove.id})
           } else {
             window.mapcache.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.id, featureId: this.featureToRemove.id})
           }

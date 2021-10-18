@@ -257,6 +257,9 @@ class TileSet {
   }
 }
 
+// epsilon value for handling tile edges
+const epsilon = 0.00000001
+
 /**
  * Gets count of a tile matrix
  * @param matrices
@@ -272,6 +275,13 @@ function getZoomTileMatrixCount (matrices) {
   return count
 }
 
+/**
+ * Determines the TileSet for a given extent
+ * @param zoom
+ * @param extent
+ * @param drawOverlap
+ * @return {TileSet}
+ */
 function getTileSetForExtent (zoom, extent, drawOverlap = null) {
   // reduce the extent just in case it lies on a tile boundary
   const epsilon = 0.00000001
@@ -282,7 +292,6 @@ function getTileSetForExtent (zoom, extent, drawOverlap = null) {
   if (!isNil(drawOverlap)) {
     const lowerLeftBounds = tileBboxCalculator(x.min, y.min, zoom)
     const upperRightBounds = tileBboxCalculator(x.max, y.max, zoom)
-
     const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / 256.0
     const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / 256.0
     const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / 256.0
@@ -294,7 +303,32 @@ function getTileSetForExtent (zoom, extent, drawOverlap = null) {
     y = calculateYTileRangeForExtent(extent, zoom)
   }
   return new TileSet(x.min, x.max, y.min, y.max, zoom)
+}
 
+/**
+ * Determines the extent needed to support the draw overlap
+ * @param zoom
+ * @param extent
+ * @param drawOverlap
+ * @return {*}
+ */
+function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null) {
+  const expandedExtent = extent.slice()
+  const epsilonReducedExtent = [extent[0] + epsilon, extent[1] + epsilon, extent[2] - epsilon, extent[3] - epsilon]
+  let x = calculateXTileRangeForExtent(epsilonReducedExtent, zoom)
+  let y = calculateYTileRangeForExtent(epsilonReducedExtent, zoom)
+  if (!isNil(drawOverlap)) {
+    const lowerLeftBounds = tileBboxCalculator(x.min, y.min, zoom)
+    const upperRightBounds = tileBboxCalculator(x.max, y.max, zoom)
+    const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / 256.0
+    const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / 256.0
+    const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / 256.0
+    expandedExtent[0] = Math.max(-180.0, extent[0] - pixelWidthInDegrees * drawOverlap.width)
+    expandedExtent[1] = Math.max(-85.051128, extent[1] - lowerPixelHeightInDegrees * drawOverlap.height)
+    expandedExtent[2] = Math.min(180.0, extent[2] + pixelWidthInDegrees * drawOverlap.width)
+    expandedExtent[3] = Math.min(85.051128, extent[3] + upperPixelHeightInDegrees * drawOverlap.height)
+  }
+  return expandedExtent
 }
 
 /**
@@ -311,8 +345,8 @@ function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20) {
       matrices[z] = []
 
       // iterate over each layer
-      filteredExtents.filter(data => data.minZoom <= z && data.maxZoom >= z).forEach(layer => {
-        let entriesToCheck = [new LayerTileSet(getTileSetForExtent(z, layer.extent.slice(), layer.drawOverlap), [layer.id])]
+      filteredExtents.filter(layer => layer.minZoom <= z && layer.maxZoom >= z && layer.zoomExtentMap[z] != null).forEach(layer => {
+        let entriesToCheck = [new LayerTileSet(getTileSetForExtent(z, layer.zoomExtentMap[z].slice(), layer.drawOverlap), [layer.id])]
 
         for (let i = 0; i < entriesToCheck.length; i++) {
           let entryToCheck = entriesToCheck[i]
@@ -355,6 +389,7 @@ function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20) {
       })
     }
   }
+
   return matrices
 }
 
@@ -457,6 +492,27 @@ async function iterateTilesInMatrix (tileMatrix, tileCallback) {
 }
 
 /**
+ * Returns the zoom extent map
+ * @param minZoom
+ * @param maxZoom
+ * @param extent
+ * @param filter
+ * @param drawOverlap
+ * @return {{}}
+ */
+function getZoomExtentMap (minZoom, maxZoom, extent, filter, drawOverlap) {
+  const zoomExtentMap = {}
+  for (let i = minZoom; i <= maxZoom; i++) {
+    if (drawOverlap != null) {
+      zoomExtentMap[i] = extentIntersection(getExpandedExtentForDrawOverlap(i, extent, drawOverlap), filter)
+    } else {
+      zoomExtentMap[i] = extentIntersection(extent, filter)
+    }
+  }
+  return zoomExtentMap
+}
+
+/**
  * Gets the tile matrix for this configuration
  * @param boundingBoxFilter
  * @param dataSources
@@ -470,36 +526,42 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
   let zoomTileMatrix = {}
   if (!isNil(minZoom) && !isNil(maxZoom) && !isNil(boundingBoxFilter)) {
     const trimmedBoundingBoxFilter = trimExtentToWebMercatorMax(boundingBoxFilter)
+    // TODO: need to expand the extent based on the zoom? sigh this kinda sucks... need a different extent per zoom level
+    // TODO: why? to not skip out on layers that could intersect my tile range
     // filtered extents represents the bounding box
     let filteredExtents = dataSources.map(dataSource => {
+      const minZoom = dataSource.minZoom || 0
+      const maxZoom = dataSource.maxZoom || 20
       return {
         id: dataSource.id,
         drawOverlap: dataSource.drawOverlap,
-        extent: extentIntersection(dataSource.extent, trimmedBoundingBoxFilter),
-        minZoom: dataSource.minZoom || 0,
-        maxZoom: dataSource.maxZoom || 20
+        zoomExtentMap: getZoomExtentMap(minZoom, maxZoom, dataSource.extent, trimmedBoundingBoxFilter, dataSource.drawOverlap),
+        minZoom: minZoom,
+        maxZoom: maxZoom
       }
-    }).filter(data => data.extent != null)
+    })
     filteredExtents = filteredExtents.concat(geopackageLayers.map(geopackageLayer => {
       let data
       if (geopackageLayer.type === 'feature') {
         data = {
           id: geopackageLayer.geopackage.id + '_' + geopackageLayer.table,
           drawOverlap: geopackageLayer.drawOverlap,
-          extent: extentIntersection(geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter),
+          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter, geopackageLayer.drawOverlap),
           minZoom: 0,
           maxZoom: 20
         }
       } else {
+        const minZoom = geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].minZoom || 0
+        const maxZoom = geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].maxZoom || 20
         data = {
           id: geopackageLayer.geopackage.id + '_' + geopackageLayer.table,
-          extent: extentIntersection(geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent, trimmedBoundingBoxFilter),
-          minZoom: geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].minZoom || 0,
-          maxZoom: geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].maxZoom || 20
+          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter, null),
+          minZoom: minZoom,
+          maxZoom: maxZoom,
         }
       }
       return data
-    }).filter(data => data.extent != null))
+    }))
     zoomTileMatrix = getZoomTileMatrix(filteredExtents, minZoom, maxZoom)
     if (tileScalingEnabled) {
       applyTileScalingToZoomTileMatrix(zoomTileMatrix)
@@ -522,10 +584,27 @@ function getTileCount (boundingBoxFilter, dataSources, geopackageLayers, tileSca
   return getZoomTileMatrixCount(getTileMatrix(boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled, minZoom, maxZoom))
 }
 
+/**
+ * Returns the intersection of the extent and the filter. If they do not overlap, it will return a copy of the filter.
+ * @param extent
+ * @param filter
+ * @return {number[]|*}
+ */
+function trimExtentToFilter(extent, filter) {
+  if (extent) {
+    return extentIntersection(extent, filter) || filter.slice()
+  } else {
+    return extent
+  }
+}
+
 export {
   getZoomTileMatrixCount,
   getZoomTileMatrix,
   getTileCount,
   getTileMatrix,
-  iterateTilesInMatrix
+  iterateTilesInMatrix,
+  getExpandedExtentForDrawOverlap,
+  trimExtentToFilter,
+  extentIntersection
 }

@@ -7,22 +7,49 @@ import {
   performSafeGeoPackageOperation,
   wait,
   prettyPrintMs,
-  boundingBoxIntersection,
   deleteGeoPackageTable
 } from './GeoPackageCommon'
 import { constructLayer } from '../layer/LayerFactory'
-import { trimExtentToFilter, trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
+import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
 import { createCanvas, isBlank, hasTransparentPixels } from '../util/canvas/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
-import { getTileMatrix, getZoomTileMatrixCount, iterateTilesInMatrix } from '../util/tile/TileUtilities'
+import {
+  extentIntersection,
+  getExpandedExtentForDrawOverlap,
+  getTileMatrix,
+  getZoomTileMatrixCount,
+  iterateTilesInMatrix,
+  trimExtentToFilter
+} from '../util/tile/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
  * Note: this file only runs within an electron browser window (specifically, the worker window)
  */
+
+async function getImageBufferFromCanvas (canvas) {
+  if (!isBlank(canvas)) {
+    if (hasTransparentPixels(canvas)) {
+      try {
+        return await imagemin.buffer(Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64'), {
+          plugins: [imageminPngquant({speed: 8, quality: [0.5, 0.8]})]
+        })
+        // eslint-disable-next-line no-unused-vars
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to add tile')
+      }
+    } else {
+      return Buffer.from(canvas.toDataURL('image/jpeg', { quality: 0.7 }).split(',')[1], 'base64')
+    }
+  }
+  return null
+}
+
+
 /**
  * Builds a tile layer
  * @param configuration
@@ -32,6 +59,8 @@ import { createUniqueID } from '../util/UniqueIDUtilities'
 async function buildTileLayer (configuration, statusCallback) {
   return performSafeGeoPackageOperation(configuration.path, async (gp) => {
     const buildStart = new Date().getTime()
+
+    const tileSize = 256.0
 
     const status = {
       message: 'Starting...',
@@ -69,6 +98,7 @@ async function buildTileLayer (configuration, statusCallback) {
         throttleStatusCallback(status)
       }
 
+      // construct vector/tile data source layers for the geopackage layers
       for (let i = 0; i < configuration.geopackageLayers.length; i++) {
         const geopackageLayer = configuration.geopackageLayers[i]
         const geopackage = geopackageLayer.geopackage
@@ -115,31 +145,93 @@ async function buildTileLayer (configuration, statusCallback) {
         }
       }
 
+      // get the tile matrix and estimated number of tiles
       const tileMatrix = getTileMatrix(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScalingEnabled, configuration.minZoom, configuration.maxZoom)
       const estimatedNumberOfTiles = getZoomTileMatrixCount(tileMatrix)
 
+      // determine the zoom level extents for the data, tracking the overall extent
       let totalExtent
-      const extents = configuration.sourceLayers.map(layer => layer.extent).concat(configuration.geopackageLayers.map(geopackageLayer => geopackageLayer.type === 'feature' ? geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent : geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent))
-      extents.forEach(extent => {
-        if (totalExtent == null) {
-          totalExtent = extent.slice()
+      let layerZoomExtentMap = {}
+
+      // setup map
+      for (let z = minZoom; z <= maxZoom; z++) {
+        layerZoomExtentMap[z] = {}
+      }
+
+      const updateTotalExtent = (extent) => {
+        if (extent != null) {
+          if (totalExtent == null) {
+            totalExtent = extent.slice()
+          } else {
+            totalExtent[0] = Math.min(totalExtent[0], extent[0])
+            totalExtent[1] = Math.min(totalExtent[1], extent[1])
+            totalExtent[2] = Math.max(totalExtent[2], extent[2])
+            totalExtent[3] = Math.max(totalExtent[3], extent[3])
+          }
+        }
+      }
+
+      const convertToWebMercator = (extent) => {
+        let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
+        let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
+        return new BoundingBox(filterLowerLeft[0], filterUpperRight[0], filterLowerLeft[1], filterUpperRight[1])
+      }
+
+      // Determine the filtered extents for each layer at each zoom level. The drawing overlap width/height may increase this range.
+      configuration.sourceLayers.forEach(layer => {
+        updateTotalExtent(layer.extent)
+        const trimmedExtent = trimExtentToFilter(layer.extent, configuration.boundingBoxFilter)
+        if (layer.drawOverlap != null) {
+          for (let i = minZoom; i <= maxZoom; i++) {
+            const expandedExtent = getExpandedExtentForDrawOverlap(i, trimmedExtent, layer.drawOverlap)
+            layerZoomExtentMap[i][layer.id] = convertToWebMercator(expandedExtent)
+            if (i === maxZoom) {
+              updateTotalExtent(expandedExtent)
+            }
+          }
         } else {
-          totalExtent[0] = Math.min(totalExtent[0], extent[0])
-          totalExtent[1] = Math.min(totalExtent[1], extent[1])
-          totalExtent[2] = Math.max(totalExtent[2], extent[2])
-          totalExtent[3] = Math.max(totalExtent[3], extent[3])
+          const webMercatorExtent = convertToWebMercator(trimmedExtent)
+          for (let i = minZoom; i <= maxZoom; i++) {
+            layerZoomExtentMap[i][layer.id] = webMercatorExtent
+          }
         }
       })
-      totalExtent = trimExtentToWebMercatorMax(trimExtentToFilter(totalExtent, configuration.boundingBoxFilter))
+
+      configuration.geopackageLayers.forEach(layer => {
+        const layerId = layer.geopackage.id + '_' + layer.table
+        const extent = layer.geopackage.tables[layer.type === 'feature' ? 'features' : 'tiles'][layer.table].extent
+        updateTotalExtent(extent)
+        const trimmedExtent = trimExtentToFilter(extent, configuration.boundingBoxFilter)
+        if (layer.drawOverlap != null) {
+          for (let i = minZoom; i <= maxZoom; i++) {
+            const expandedExtent = getExpandedExtentForDrawOverlap([i], trimmedExtent, layer.drawOverlap)
+            layerZoomExtentMap[i][layerId] = convertToWebMercator(expandedExtent)
+            if (i === maxZoom) {
+              updateTotalExtent(expandedExtent)
+            }
+          }
+        } else {
+          const webMercatorExtent = convertToWebMercator(trimmedExtent)
+          for (let i = minZoom; i <= maxZoom; i++) {
+            layerZoomExtentMap[i][layerId] = webMercatorExtent
+          }
+        }
+      })
+
+      // total extent should just add up all the extents being considered and then filter them by the bounds
+      if (totalExtent == null) {
+        totalExtent = configuration.boundingBoxFilter
+      } else {
+        totalExtent = extentIntersection(totalExtent, configuration.boundingBoxFilter)
+      }
+
+      // set the contents bounds to the intersection of the filter and the merged extent of the data (i.e., if the merged extent is within the filter, minimize it to the intersection)
+      totalExtent = trimExtentToWebMercatorMax(totalExtent)
 
       const contentsBounds = new BoundingBox(totalExtent[0], totalExtent[2], totalExtent[1], totalExtent[3])
       const contentsSrsId = 4326
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
       const tileMatrixSetSrsId = 3857
-
-      let contentsLowerLeft = wgs84ToWebMercator.forward([contentsBounds.minLongitude, contentsBounds.minLatitude])
-      let contentsUpperRight = wgs84ToWebMercator.forward([contentsBounds.maxLongitude, contentsBounds.maxLatitude])
-      const contentsWebMercator = new BoundingBox(contentsLowerLeft[0], contentsUpperRight[0], contentsLowerLeft[1], contentsUpperRight[1])
 
       await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
 
@@ -161,65 +253,68 @@ async function buildTileLayer (configuration, statusCallback) {
       let tilesAdded = 0
       let timeStart = new Date().getTime()
 
-      await iterateTilesInMatrix(tileMatrix, async (z, x, y) => {
+      await iterateTilesInMatrix(tileMatrix, async (z, x, y, layers) => {
         // setup canvas that we will draw each layer into
-        let canvas = createCanvas(256, 256)
+        let canvas = createCanvas(tileSize, tileSize)
+        let buffer
         let ctx = canvas.getContext('2d')
+        const tileBounds = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        const tileWidth = tileBounds.width
+        const tileHeight = tileBounds.height
 
-        let tileBounds = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-        let tileBoundingBox = new BoundingBox(tileBounds.minLongitude, tileBounds.maxLongitude, tileBounds.minLatitude, tileBounds.maxLatitude)
-        const tileWidth = tileBoundingBox.maxLongitude - tileBoundingBox.minLongitude
-        const tileHeight = tileBoundingBox.maxLatitude - tileBoundingBox.minLatitude
-        // clips tile so that only the intersection of the tile and the user specified bounds are drawn
-        const intersection = boundingBoxIntersection(tileBoundingBox, contentsWebMercator)
-        let clippingRectangle
-        if (!isNil(intersection)) {
-          const getX = (lng, mathFunc) => {
-            return mathFunc(256.0 / tileWidth * (lng - tileBoundingBox.minLongitude))
-          }
-          const getY = (lat, mathFunc) => {
-            return mathFunc(256.0 / tileHeight * (tileBoundingBox.maxLatitude - lat))
-          }
-          const minX = Math.max(0, getX(intersection.minLongitude, Math.floor) - 1)
-          const maxX = Math.min(256, getX(intersection.maxLongitude, Math.ceil) + 1)
-          const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
-          const maxY = Math.min(256, getY(intersection.minLatitude, Math.floor) + 1)
-          clippingRectangle = [minX, minY, maxX - minX, maxY - minY]
+        const getX = (lng, mathFunc) => {
+          return mathFunc(tileSize / tileWidth * (lng - tileBounds.minLongitude))
+        }
+        const getY = (lat, mathFunc) => {
+          return mathFunc(tileSize / tileHeight * (tileBounds.maxLatitude - lat))
+        }
+
+        const clippingMap = {}
+        for (let i = 0; i < layers.length; i++) {
+          const filteredExtent = layerZoomExtentMap[z][layers[i]]
+          const minX = Math.min(tileSize, Math.max(0, getX(filteredExtent.minLongitude, Math.floor) - 1))
+          const maxX = Math.max(0, Math.min(tileSize, getX(filteredExtent.maxLongitude, Math.ceil) + 1))
+          const minY = Math.min(tileSize, Math.max(0, getY(filteredExtent.maxLatitude, Math.ceil) - 1))
+          const maxY = Math.max(0, Math.min(tileSize, getY(filteredExtent.minLatitude, Math.floor) + 1))
+          clippingMap[layers[i]] = [minX, minY, maxX - minX, maxY - minY]
         }
 
         await new Promise((resolve, reject) => {
           const tilePromises = []
+          // iterate over each layer and get full tile
           for (let i = 0; i < sortedLayers.length; i++) {
             const layer = sortedLayers[i]
-            tilePromises.push(new Promise((resolve, reject) => {
-              layer.renderTile(createUniqueID(), {x, y, z}, (err, result) => {
-                if (err) {
-                  reject(err)
-                } else if (!isNil(result)) {
-                  try {
-                    let img = new Image()
-                    img.onload = () => {
-                      resolve({
-                        image: img,
-                        opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
-                        drawOverlap: layer._configuration.drawOverlap
-                      })
-                    }
-                    img.onerror = (e) => {
+            if (layers.indexOf(layer.id) !== -1) {
+              tilePromises.push(new Promise((resolve, reject) => {
+                layer.renderTile(createUniqueID(), {x, y, z}, (err, result) => {
+                  if (err) {
+                    reject(err)
+                  } else if (!isNil(result)) {
+                    try {
+                      let img = new Image()
+                      img.onload = () => {
+                        resolve({
+                          image: img,
+                          opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
+                          layerId: layer.id
+                        })
+                      }
+                      img.onerror = (e) => {
+                        reject(e)
+                      }
+                      img.src = result
+                      // eslint-disable-next-line no-unused-vars
+                    } catch (e) {
                       reject(e)
                     }
-                    img.src = result
-                    // eslint-disable-next-line no-unused-vars
-                  } catch (e) {
-                    reject(e)
+                  } else {
+                    resolve({
+                      image: null
+                    })
                   }
-                } else {
-                  resolve({
-                    image: null
-                  })
-                }
-              })
-            }))
+                })
+              }))
+            }
           }
           // settle promises and draw onto the context
           Promise.allSettled(tilePromises).then(results => {
@@ -230,18 +325,9 @@ async function buildTileLayer (configuration, statusCallback) {
               } else if (!isNil(result.value) && !isNil(result.value.image)) {
                 ctx.save()
                 ctx.globalAlpha = result.value.opacity
-                if (!isNil(clippingRectangle)) {
-                  ctx.beginPath()
-                  if (!isNil(result.value.drawOverlap)) {
-                    ctx.rect(Math.max(0, clippingRectangle[0] - result.value.drawOverlap.width),
-                      Math.max(0, clippingRectangle[1] - result.value.drawOverlap.height),
-                      Math.min(256, clippingRectangle[2] + result.value.drawOverlap.width * 2),
-                      Math.min(256, clippingRectangle[3] + result.value.drawOverlap.height * 2))
-                  } else {
-                    ctx.rect(clippingRectangle[0], clippingRectangle[1], clippingRectangle[2], clippingRectangle[3])
-                  }
-                  ctx.clip()
-                }
+                ctx.beginPath()
+                ctx.rect(clippingMap[result.value.layerId][0], clippingMap[result.value.layerId][1], clippingMap[result.value.layerId][2], clippingMap[result.value.layerId][3])
+                ctx.clip()
                 ctx.drawImage(result.value.image, 0, 0)
                 ctx.globalAlpha = 1.0
                 ctx.restore()
@@ -250,28 +336,9 @@ async function buildTileLayer (configuration, statusCallback) {
             resolve()
           })
         })
-
-        // look at merged canvas
-        if (!isBlank(canvas)) {
-          if (hasTransparentPixels(canvas)) {
-            try {
-              const buffer = await imagemin.buffer(Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64'), {
-                plugins: [
-                  imageminPngquant({
-                    speed: 8,
-                    quality: [0.5, 0.8]
-                  })
-                ]
-              })
-              gp.addTile(buffer, tableName, z, y, x)
-              // eslint-disable-next-line no-unused-vars
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Failed to add tile')
-            }
-          } else {
-            gp.addTile(Buffer.from(canvas.toDataURL('image/jpeg', { quality: 0.7 }).split(',')[1], 'base64'), tableName, z, y, x)
-          }
+        buffer = await getImageBufferFromCanvas(canvas)
+        if (buffer != null) {
+          gp.addTile(buffer, tableName, z, y, x)
         }
         if (canvas.dispose) {
           canvas.dispose()
