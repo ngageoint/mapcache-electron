@@ -83,6 +83,7 @@ class ExpiringGeoPackageConnection {
       this.featureTiles[tableName].simplifyTolerance = 1.0
       this.featureTiles[tableName].maxFeaturesTileDraw = new NumberFeaturesTile()
     } else {
+      this.featureTiles[tableName].maxFeaturesPerTile = maxFeatures
       this.cancelExpiry()
     }
     return this.featureTiles[tableName]
