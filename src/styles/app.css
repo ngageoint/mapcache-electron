@@ -218,3 +218,8 @@
 	height: 24px !important;
 	object-fit: contain !important;
 }
+
+.leaflet-control-attribution {
+	color: var(--v-text-base) !important;
+	background: var(--v-background-base) !important;
+}
