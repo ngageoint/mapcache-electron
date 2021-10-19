@@ -55,7 +55,7 @@
       v-model="renameDialog"
       max-width="400"
       persistent
-      @keydown.esc="() => {if (!this.renaming) { this.renameDialog = false }}">
+      @keydown.esc="exitRenamingDialog">
       <v-card v-if="renameDialog">
         <v-card-title>
           <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
@@ -361,6 +361,7 @@ import {
   mdiPencil,
   mdiTrashCan
 } from '@mdi/js'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     props: {
@@ -457,6 +458,11 @@ export default {
       }
     },
     methods: {
+      exitRenamingDialog () {
+        if (!this.renaming) {
+          this.renameDialog = false
+        }
+      },
       rename () {
         this.renaming = true
         this.copiedGeoPackage = this.renamedGeoPackage + '_copy'
@@ -481,7 +487,12 @@ export default {
         const newPath = window.mapcache.pathJoin(window.mapcache.getDirectoryName(oldPath), this.copiedGeoPackage + '.gpkg')
         try {
           window.mapcache.copyFile(oldPath, newPath).then(() => {
-            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: newPath})
+            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: newPath}).then(added => {
+              if (!added) {
+                console.error('Failed to copy GeoPackage')
+                EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to copy GeoPackage')
+              }
+            })
             this.showCopiedAlert = true
           })
           // eslint-disable-next-line no-unused-vars

@@ -119,6 +119,7 @@ import isEmpty from 'lodash/isEmpty'
 import GeoPackage from './GeoPackage'
 import GeoPackageList from './GeoPackageList'
 import {mdiAlert, mdiChevronLeft, mdiFileDocumentOutline, mdiPlus} from '@mdi/js'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     props: {
@@ -167,7 +168,12 @@ export default {
             if (window.mapcache.fileExists(filePath)) {
               this.geopackageExistsDialog = true
             } else {
-              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath}).then(added => {
+                if (!added) {
+                  console.error('Failed to import GeoPackage')
+                  EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
+                }
+              })
             }
           }
         })
@@ -188,7 +194,12 @@ export default {
             let fileInfo = window.mapcache.getFileInfo(result.filePaths[0])
             const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
             if (!existsInApp) {
-              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath}).then(added => {
+                if (!added) {
+                  console.error('Failed to import GeoPackage')
+                  EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
+                }
+              })
             } else {
               // exists in app, show error
               this.addGeoPackageError = true

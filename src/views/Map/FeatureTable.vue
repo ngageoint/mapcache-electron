@@ -290,7 +290,7 @@ export default {
     methods: {
       setPage (pageIndex) {
         this.loading = true
-        this.table.getPage(pageIndex, this.options.itemsPerPage).then(page => {
+        this.table.getPage(pageIndex, this.options.itemsPerPage, this.filePath, this.table.tableName).then(page => {
           this.$nextTick(() => {
             this.tableEntries = this.getTableEntries(page)
             this.loading = false
@@ -378,7 +378,7 @@ export default {
             this.close()
           } else {
             this.loading = true
-            this.table.getPage(Math.min(this.pageCount, this.page) - 1, this.options.itemsPerPage).then(page => {
+            this.table.getPage(Math.min(this.pageCount, this.page) - 1, this.options.itemsPerPage, this.filePath, this.table.tableName).then(page => {
               this.tableEntries = this.getTableEntries(page)
               this.loading = false
             })

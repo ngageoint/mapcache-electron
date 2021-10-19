@@ -93,10 +93,17 @@ function addDataSources ({projectId, dataSources}) {
   store.dispatch('Projects/addDataSources', {projectId, dataSources})
 }
 
-function addGeoPackage ({projectId, filePath}) {
-  getOrCreateGeoPackageForApp(filePath).then(geopackage => {
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-    notifyTab({projectId, tabId: 0})
+async function addGeoPackage ({projectId, filePath}) {
+  return new Promise (resolve => {
+    getOrCreateGeoPackageForApp(filePath).then(geopackage => {
+      if (geopackage != null) {
+        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+        notifyTab({projectId, tabId: 0})
+        resolve(true)
+      } else {
+        resolve(false)
+      }
+    })
   })
 }
 

@@ -318,7 +318,12 @@ export default {
             const path = geopackagesToAdd[i]
             const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
             if (!existsInApp) {
-              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: path})
+              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: path}).then(added => {
+                if (!added) {
+                  console.error('Failed to import GeoPackage')
+                  EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
+                }
+              })
             }
           }
 

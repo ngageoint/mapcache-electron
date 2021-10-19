@@ -718,7 +718,7 @@ export default {
                 filePath: geopackage.path,
                 columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
                 featureCount: geopackage.tables.features[tableName].featureCount,
-                getPage: (page, pageSize) => window.mapcache.getFeatureTablePage(geopackage.path, tableName, page, pageSize)
+                getPage: (page, pageSize, path, tableName) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize)
               }],
               sourceTables: []
             }
@@ -734,7 +734,7 @@ export default {
                 filePath: sourceLayerConfig.geopackageFilePath,
                 tableName: sourceLayerConfig.sourceLayerName,
                 featureCount: sourceLayerConfig.count,
-                getPage: (page, pageSize) => window.mapcache.getFeatureTablePage(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName, page, pageSize)
+                getPage: (page, pageSize, path, tableName) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize)
               }]
             }
           }
@@ -876,8 +876,8 @@ export default {
           if (tables.length > 0) {
             const geopackageTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(geopackage.name, geopackage.id, geopackage.path, tables, e.latlng, this.map.getZoom())
             geopackageTables.forEach(table => {
-              table.getPage = (page, pageSize) => {
-                return window.mapcache.getFeatureTablePageAtLatLngZoom(table.path, table.tableName, page, pageSize, table.latlng, table.zoom)
+              table.getPage = (page, pageSize, path, tableName) => {
+                return window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom)
               }
             })
             tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
@@ -889,7 +889,7 @@ export default {
             if (!isNil(sourceLayer.geopackageFilePath)) {
               const sourceTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name, sourceLayer.id, sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom(), false)
               sourceTables.forEach(table => {
-                table.getPage = (page, pageSize) => window.mapcache.getFeatureTablePageAtLatLngZoom(table.path, table.tableName, page, pageSize, table.latlng, table.zoom)
+                table.getPage = (page, pageSize, path, tableName) => window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom)
               })
               tableFeatures.sourceTables = tableFeatures.sourceTables.concat(sourceTables)
             }

@@ -7,6 +7,7 @@ import {
 } from '@ngageoint/geopackage'
 import wkx from 'wkx'
 import isNil from 'lodash/isNil'
+import fs from 'fs'
 import path from 'path'
 import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
@@ -21,28 +22,34 @@ import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from
  */
 async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = false) {
   let result
-  let gp = await GeoPackageAPI.open(filePath)
-  if (!isNil(gp)) {
-    try {
-      if (isFuncAsync) {
-        result = await func(gp)
-      } else {
-        result = func(gp)
+  if (fs.existsSync(filePath)) {
+    let gp = await GeoPackageAPI.open(filePath)
+    if (!isNil(gp)) {
+      try {
+        if (isFuncAsync) {
+          result = await func(gp)
+        } else {
+          result = func(gp)
+        }
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        result = {error: error}
+        // eslint-disable-next-line no-console
+        console.error('Failed to perform GeoPackage operation')
       }
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      result = {error: error}
+      try {
+        gp.close()
+        gp = undefined
+        // eslint-disable-next-line no-unused-vars
+      } catch (e) {
+        result = {error: e}
+        // eslint-disable-next-line no-console
+        console.error('Failed to close GeoPackage')
+      }
+    } else {
+      result = {error: 'File does not exist'}
       // eslint-disable-next-line no-console
-      console.error('Failed to perform GeoPackage operation')
-    }
-    try {
-      gp.close()
-      gp = undefined
-      // eslint-disable-next-line no-unused-vars
-    } catch (e) {
-      result = {error: e}
-      // eslint-disable-next-line no-console
-      console.error('Failed to close GeoPackage.')
+      console.error('File does not exist')
     }
   }
   return result
@@ -427,10 +434,10 @@ async function getInternalTableInformation (filePath) {
 /**
  * Gets geopackage information required by the app to ensure functionality in all vue components
  * @param filePath
- * @returns {Promise<{path: *, tables: {features: {}, tiles: {}}, size: *, name: string, id: *}>}
+ * @return {Promise<null|{path, tables: {features: {}, tiles: {}, unsupported: []}, size: string, modifiedDate: String, name: string, id: (*|string)}>}
  */
 async function getOrCreateGeoPackageForApp (filePath) {
-  let gp, geopackage
+  let gp, geopackage = null
   if (exists(filePath)) {
     gp = await GeoPackageAPI.open(filePath)
   } else {
@@ -448,6 +455,7 @@ async function getOrCreateGeoPackageForApp (filePath) {
     }
   } catch (e) {
     console.error('Failed to getOrCreate GeoPackage.')
+    geopackage = null
   } finally {
     try {
       gp.close()
