@@ -475,8 +475,10 @@ export default {
           this.$nextTick(() => {
             this.renameDialog = false
             this.renaming = false
-            if (e.code === 'EBUSY') {
+            if (e.toString().toLowerCase().indexOf('ebusy') !== -1) {
               this.showErrorAlert = true
+            } else {
+              EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to rename GeoPackage')
             }
           })
         })
