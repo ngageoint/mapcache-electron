@@ -257,7 +257,8 @@ export default {
         dataSourceLayers: this.getDataSourceLayers(),
         configuration: null,
         cancelling: false,
-        boundingBoxFilter: null
+        boundingBoxFilter: null,
+        filteredFeatureCount: 0
       }
     },
     methods: {
@@ -399,12 +400,6 @@ export default {
       }
     },
     asyncComputed: {
-      filteredFeatureCount: {
-        async get () {
-          return this.getFilteredFeatures()
-        },
-        default: 0
-      },
       geopackageFeatureLayers: {
         async get () {
           return this.getGeoPackageFeatureLayerItems()
@@ -431,11 +426,20 @@ export default {
           this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.value)
           this.geopackageFeatureLayers = await this.getGeoPackageFeatureLayerItems()
           this.selectedGeoPackageFeatureLayers = this.geopackageFeatureLayers.filter(item => item.visible).map(item => item.value)
+          this.filteredFeatureCount = await this.getFilteredFeatures()
         },
         deep: true
+      },
+      boundingBoxFilter: {
+        async handler () {
+          this.filteredFeatureCount = await this.getFilteredFeatures()
+        }
       }
     },
     mounted () {
+      this.getFilteredFeatures().then(count => {
+        this.filteredFeatureCount = count
+      })
       this.$nextTick(() => {
         if (this.$refs.layerNameForm) {
           this.$refs.layerNameForm.validate()
