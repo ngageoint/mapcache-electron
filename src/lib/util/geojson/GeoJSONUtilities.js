@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq'
 
 function isRectangle (geometry) {
   let isRect = false
-  if (geometry.coordinates[0].length === 5) {
+  if (geometry.type === 'Polygon' && geometry.coordinates[0].length === 5) {
     const longitudes = uniq(geometry.coordinates[0].map(coordinate => coordinate[0]))
     const latitudes = uniq(geometry.coordinates[0].map(coordinate => coordinate[1]))
     if (longitudes.length === 2 && latitudes.length === 2) {
@@ -117,7 +117,7 @@ function explodeFlattenedFeature (container, features) {
     }
   } else {
     if (container.type === 'GeometryCollection') {
-      let geometries = container.items.map(item => this.explodeFlattenedFeature(item, features))
+      let geometries = container.items.map(item => explodeFlattenedFeature(item, features))
       if (geometries.length > 0) {
         geometry = {
           type: container.type,
@@ -125,13 +125,13 @@ function explodeFlattenedFeature (container, features) {
         }
       }
     } else if (container.type === 'Polygon') {
-      let coordinates = container.items.map(item => this.explodeFlattenedFeature(item, features))
+      let coordinates = container.items.map(item => explodeFlattenedFeature(item, features))
       geometry = {
         type: 'Polygon',
         coordinates: coordinates.map(coordinate => coordinate.coordinates[0])
       }
     } else {
-      let coordinates = container.items.map(item => this.explodeFlattenedFeature(item, features)).map(geometry => geometry.coordinates)
+      let coordinates = container.items.map(item => explodeFlattenedFeature(item, features)).map(geometry => geometry.coordinates)
       if (coordinates.length > 0) {
         geometry = {
           type: container.type,
