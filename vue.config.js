@@ -108,7 +108,8 @@ module.exports = {
           "**/node_modules/ajv-formats/**/*",
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
-          "**/mapcacheThread.js"
+          "**/mapcacheThread.js",
+          "**/*([0-9]).js"
         ],
         directories: {
           buildResources: "buildResources"
