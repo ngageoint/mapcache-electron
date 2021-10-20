@@ -333,7 +333,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
         if (!isNil(error) && !this.isPreview) {
           this.setError(error)
           done(error, tile)
-        } else if (!isNil(dataUrl) && !dataUrl.startsWith('data:text/html')) {
+        } else if (!isNil(dataUrl) && dataUrl.startsWith('data:image')) {
           this.reprojectTile(requestId, dataUrl, bbox, srs, size, webMercatorBoundingBox).then(reprojectedImage => {
             this.clipImage(reprojectedImage, coords).then(clippedImage => {
               this.loadImage(clippedImage, coords, tile, done)
