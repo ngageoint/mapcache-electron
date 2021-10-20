@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq'
 
 function isRectangle (geometry) {
   let isRect = false
-  if (geometry.type === 'Polygon' && geometry.coordinates[0].length === 5) {
+  if (geometry.type === 'Polygon' && geometry.coordinates.length === 1 && geometry.coordinates[0].length === 5) {
     const longitudes = uniq(geometry.coordinates[0].map(coordinate => coordinate[0]))
     const latitudes = uniq(geometry.coordinates[0].map(coordinate => coordinate[1]))
     if (longitudes.length === 2 && latitudes.length === 2) {
