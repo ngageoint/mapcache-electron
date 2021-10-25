@@ -298,9 +298,13 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   appendToStream: async (streamId, data) => {
     return new Promise(resolve => {
-      fileStreams[streamId].write(data, () => {
+      if (streamId != null && fileStreams[streamId] != null) {
+        fileStreams[streamId].write(data, () => {
+          resolve()
+        })
+      } else {
         resolve()
-      })
+      }
     })
   },
   closeFileStream: (streamId) => {
