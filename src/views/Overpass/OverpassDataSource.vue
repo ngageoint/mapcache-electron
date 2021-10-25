@@ -87,7 +87,7 @@
             </v-card-subtitle>
             <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="overpassBoundingBox" :update-bounding-box="updateOverpassBoundingBox"></bounding-box-editor>
             <v-card-subtitle v-if="isBlank(overpassSearchTerm) && exceedsBoundingBoxAreaThreshold" class="hazard--text">
-              <b>Your bounding box has an area of approximately {{boundingBoxArea}} square miles. Requests with an area over 10 square miles may take up to several minutes to process.</b>
+              <b>Your bounding box has an area of approximately {{boundingBoxArea}} square miles. Requests with an area over 10 square miles may take several minutes to process.</b>
             </v-card-subtitle>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 4">
@@ -100,7 +100,7 @@
         <v-stepper-content :step="4">
           <v-card flat tile>
             <v-card-text>
-              Data retrieved using the OSM Overpass API for the search term <b>{{this.overpassSearchTerm}}</b> will be imported as the <b>{{dataSourceName}}</b> data source.
+              Data retrieved using the OSM Overpass API <b>{{this.overpassSearchTerm !== '' ? ('for the search term ' + this.overpassSearchTerm) : ''}}</b> will be imported as the <b>{{dataSourceName}}</b> data source.
             </v-card-text>
           </v-card>
         </v-stepper-content>
@@ -256,7 +256,7 @@
         handler (value) {
           if (value != null && value.length === 4) {
             const a = area(bboxPolygon(value)) / 1000000.0 * 0.62137
-            this.boundingBoxArea = a.toFixed(0)
+            this.boundingBoxArea = a.toFixed(0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
             this.exceedsBoundingBoxAreaThreshold = a > OVERPASS_SQ_MI_LIMIT
           }
         }

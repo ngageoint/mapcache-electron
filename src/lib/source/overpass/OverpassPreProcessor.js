@@ -45,6 +45,7 @@ export default class OverpassPreProcessor extends Preprocessor {
     const controller = new AbortController()
     this.abortControllerMap[id] = controller
     let count = 0
+    let error = null
     try {
       const params = new URLSearchParams({ data: query })
       const response = await fetch(this.source.url, {
@@ -61,10 +62,27 @@ export default class OverpassPreProcessor extends Preprocessor {
           count += Number(result.elements[i].tags.total)
         }
       }
+      if (count === 0 && result.remark != null) {
+        error = result.remark
+      }
       // eslint-disable-next-line no-empty, no-unused-vars
     } catch (e) {
+      error = 'Failed to retrieve data.'
     } finally {
       delete this.abortControllerMap[id]
+    }
+    if (!this.cancelled) {
+      if (error != null) {
+        // check if error has to do with memory limit
+        if (error.indexOf('RAM') !== 0) {
+          throw new Error ('Request too large. Try reducing the area of your request.')
+        } else {
+          throw new Error(error)
+        }
+      }
+      if (count === 0) {
+        throw new Error('No features found matching request.')
+      }
     }
     return count
   }
@@ -137,7 +155,11 @@ export default class OverpassPreProcessor extends Preprocessor {
 
   async getAndSaveOverpassDataFile (statusCallback) {
     const queryObj = await this.getQueryBoundingBox(this.source.bbox, true)
-    return await this.getAndSaveOverpassDataToTemp(queryObj, statusCallback)
+    if (!this.cancelled && queryObj.count > 0) {
+      return await this.getAndSaveOverpassDataToTemp(queryObj, statusCallback)
+    } else {
+      return null
+    }
   }
 
   async getAndSaveOverpassDataToTemp (queryObj, statusCallback) {
