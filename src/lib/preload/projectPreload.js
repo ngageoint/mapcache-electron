@@ -136,6 +136,16 @@ function getUserDataDirectory () {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
+/**
+ * Handles writing data to a writable stream
+ * @param writable
+ * @param data
+ * @param callback
+ */
+function write (writable, data, callback) {
+  writable.write(data, callback)
+}
+
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
@@ -291,17 +301,14 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getUserDataDirectory,
   openFileStream: (path) => {
-    const stream = fs.createWriteStream(path, {flags: 'a'})
     const id = createUniqueID()
-    fileStreams[id] = stream
+    fileStreams[id] = fs.createWriteStream(path, {flags: 'a'})
     return id
   },
   appendToStream: async (streamId, data) => {
     return new Promise(resolve => {
       if (streamId != null && fileStreams[streamId] != null) {
-        fileStreams[streamId].write(data, () => {
-          resolve()
-        })
+        write(fileStreams[streamId], data, resolve)
       } else {
         resolve()
       }
