@@ -2,6 +2,7 @@ import Preprocessor from '../preprocessing/Preprocessor'
 import {PROCESSING_STATES} from '../SourceProcessing'
 import EventBus from '../../vue/EventBus'
 import {mdiSteering} from '@mdi/js'
+import {METHOD} from '../../network/HttpUtilities'
 /**
  * Handles the preprocessing of an Overpass request. This retrieves the feature data from the service before sending to
  * the server to be turned into a geopackage feature table.
@@ -50,7 +51,7 @@ export default class OverpassPreProcessor extends Preprocessor {
       const params = new URLSearchParams({ data: query })
       const response = await fetch(this.source.url, {
         signal: controller.signal,
-        method: 'POST',
+        method: METHOD.POST,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },
@@ -125,7 +126,7 @@ export default class OverpassPreProcessor extends Preprocessor {
       const params = new URLSearchParams({ data: query })
       const response = await fetch(this.source.url, {
         signal: controller.signal,
-        method: 'POST',
+        method: METHOD.POST,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },

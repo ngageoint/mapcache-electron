@@ -36,7 +36,6 @@ export default class WebFeatureServicePreProcessor extends Preprocessor {
 
       const response = await fetch(getFeatureRequestURL(url, layer.name, outputFormat, srs, layer.version), {
         signal: controller.signal,
-        method: 'GET',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },

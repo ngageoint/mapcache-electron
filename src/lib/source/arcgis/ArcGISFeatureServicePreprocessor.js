@@ -54,7 +54,6 @@ export default class ArcGISFeatureServicePreprocessor extends Preprocessor {
 
       const response = await fetch(url, {
         signal: controller.signal,
-        method: 'GET',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },

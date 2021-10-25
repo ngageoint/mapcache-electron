@@ -15,6 +15,10 @@ const SERVICE_TYPE = {
   ARCGIS_FS: 3,
   OVERPASS: 4
 }
+const METHOD = {
+  GET: 'GET',
+  POST: 'POST'
+}
 const USER_CANCELLED_MESSAGE = 'Operation cancelled by user.'
 const TIMEOUT_MESSAGE = 'Operation timed out.'
 const TIMEOUT_STATUS = -2
@@ -181,5 +185,6 @@ export {
   isMapCacheTimeoutError,
   isMapCacheUserCancellationError,
   isUserCancellation,
-  isNotFoundError
+  isNotFoundError,
+  METHOD
 }
