@@ -184,6 +184,7 @@ function getIntersection (bbox1, bbox2) {
 
 export {
   lat2tile,
+  long2tile,
   tile2lat,
   tile2lon,
   trimToWebMercatorMax,

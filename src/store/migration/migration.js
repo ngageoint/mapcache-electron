@@ -273,6 +273,15 @@ export async function runMigration (forceReset = false) {
           baseMap.layerConfiguration.srs = 'EPSG:3857'
         }
       }
+    },
+    9: async function (state) {
+      // remove any existing credentials
+      const projectKeys = keys(state.Projects)
+      for (let i = 0; i < projectKeys.length; i++) {
+        const projectId = projectKeys[i]
+        state.Projects[projectId].displayCoordinates = true
+        state.Projects[projectId].displayScale = true
+      }
     }
   }
 

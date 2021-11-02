@@ -258,6 +258,9 @@
             const a = area(bboxPolygon(value)) / 1000000.0 * 0.62137
             this.boundingBoxArea = a.toFixed(0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
             this.exceedsBoundingBoxAreaThreshold = a > OVERPASS_SQ_MI_LIMIT
+          } else {
+            this.boundingBoxArea = null
+            this.exceedsBoundingBoxAreaThreshold = false
           }
         }
       }

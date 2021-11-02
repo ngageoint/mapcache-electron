@@ -76,18 +76,24 @@
             {{ 'Edit' }}
           </v-btn>
         </template>
-        <v-list>
+        <v-list dense>
           <v-list-item-group>
-            <v-list-item @click="editingDirectly = true">
+            <v-list-item dense @click="editingDirectly = true">
               <v-list-item-title>Type in</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="drawBoundingBox">
+            <v-list-item dense @click="drawBoundingBox">
               <v-list-item-title>Draw on map</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="gridBoundingBox">
-              <v-list-item-title>Use grid</v-list-item-title>
+            <v-list-item dense @click="() => gridBoundingBox(0)">
+              <v-list-item-title>Use XYZ</v-list-item-title>
             </v-list-item>
-            <v-list-item v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
+            <v-list-item dense @click="() => gridBoundingBox(1)">
+              <v-list-item-title>Use GARS</v-list-item-title>
+            </v-list-item>
+            <v-list-item dense @click="() => gridBoundingBox(2)">
+              <v-list-item-title>Use MGRS</v-list-item-title>
+            </v-list-item>
+            <v-list-item dense v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
               <v-list-item-title>Use extent</v-list-item-title>
             </v-list-item>
           </v-list-item-group>
@@ -215,7 +221,7 @@ export default {
       EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX_STOP)
       EventBus.$off(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.id))
     },
-    gridBoundingBox () {
+    gridBoundingBox (type) {
       EventBus.$on(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.id), (boundingBox) => {
         this.updateBoundingBox(boundingBox)
       })
@@ -223,9 +229,10 @@ export default {
         EventBus.$off(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.id))
         this.pickingGrid = false
       })
-      EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX, this.id)
+      EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX, this.id, type)
       this.pickingGrid = true
     },
+
     updateBoundingBoxInput () {
       this.editingDirectly = false
       this.updateBoundingBox([this.minLongitude, this.minLatitude, this.maxLongitude, this.maxLatitude])

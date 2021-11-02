@@ -99,12 +99,18 @@
       </v-dialog>
     </div>
     <div v-show="contextMenuPopup != null" id="context-menu-popup" ref="contextMenuPopup">
-      <v-list>
+      <v-list dense>
         <v-list-item dense @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
           {{contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''}}
         </v-list-item>
         <v-list-item dense @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
           {{contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''}}
+        </v-list-item>
+        <v-list-item dense @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+          {{contextMenuCoordinate ? convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''}}
+        </v-list-item>
+        <v-list-item dense @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+          {{contextMenuCoordinate ? convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''}}
         </v-list-item>
         <v-list-item dense @click="performReverseQuery">
           What's here?
@@ -132,6 +138,25 @@
         </v-card-text>
       </v-card>
     </v-expand-transition>
+    <v-card outlined v-if="showGridSelection" class="grid-overlay-card">
+      <v-card-title>
+        Grid Overlay
+      </v-card-title>
+      <v-card-text>
+        <v-card-subtitle class="pt-1 pb-1">
+          Select grid overlay to view.
+        </v-card-subtitle>
+        <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
+          <v-list-item-group dense v-model="gridSelection">
+            <v-list-item dense v-for="(item) in gridOptions" :key="item.id" :value="item.id">
+              <v-list-item-content>
+                <v-list-item-title>{{item.title}}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+      </v-card-text>
+    </v-card>
     <v-card outlined v-if="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
       <v-card-title>
         Layer Order
@@ -256,6 +281,11 @@ import SearchResult from './mixins/SearchResults'
 import { getDefaultIcon } from '../../lib/util/style/BrowserStyleUtilities'
 import { getDefaultMapCacheStyle } from '../../lib/util/style/CommonStyleUtilities'
 import { reverseQueryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
+import LeafletGridOverlayTool from '../../lib/leaflet/map/controls/LeafletGridOverlayTool'
+import LeafletCoordinates from '../../lib/leaflet/map/controls/LeafletCoordinates'
+import {LatLng} from '../../lib/leaflet/map/grid/mgrs/wgs84/LatLng'
+import {MGRS} from '../../lib/leaflet/map/grid/mgrs/MGRS'
+import {latLng2GARS} from '../../lib/leaflet/map/grid/gars/GARS'
 
 const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
 const NEW_FEATURE_LAYER_OPTION = {text: 'New feature layer', value: 0}
@@ -398,6 +428,7 @@ export default {
       isEditing: false,
       showLayerOrderingDialog: false,
       showBaseMapSelection: false,
+      showGridSelection: false,
       drag: false,
       layerOrder: [],
       mapBackground: '#ddd',
@@ -407,10 +438,18 @@ export default {
       nominatimReverseQueryResultsReturned: false,
       contextMenuCoordinate: null,
       contextMenuPopup: null,
-      performingReverseQuery: false
+      performingReverseQuery: false,
+      gridOptions: [{id: 0, title: 'None'}, {id: 1, title: 'XYZ'}, {id: 2, title: 'GARS'}, {id: 3, title: 'MGRS'}],
+      gridSelection: 0
     }
   },
   methods: {
+    convertLatLng2GARS (lat, lng, label = false) {
+      return (label ? 'GARS - ' : '') + latLng2GARS(lat, lng)
+    },
+    convertLatLng2MGRS (lat, lng, label = false) {
+      return (label ? 'MGRS - ' : '') + MGRS.from(new LatLng(lat, lng)).toString()
+    },
     getMapCenterAndZoom () {
       return {center: this.map.getCenter(), zoom: this.map.getZoom()}
     },
@@ -964,6 +1003,23 @@ export default {
       this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
       this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
       this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
+      this.garsGridOverlay = L.garsGrid({
+        pane: GRID_SELECTION_PANE.name,
+        zIndex: GRID_SELECTION_PANE.zIndex
+      })
+
+      this.mgrsGridOverlay = L.mgrsGrid({
+        pane: GRID_SELECTION_PANE.name,
+        zIndex: GRID_SELECTION_PANE.zIndex
+      })
+
+      this.xyzGridOverlay = L.xyzGrid({
+        interactive: false,
+        pane: GRID_SELECTION_PANE.name,
+        zIndex: GRID_SELECTION_PANE.zIndex,
+        bgColor: '#00000000',
+        fgColor: '#000000ff'
+      })
 
       this.map.setView(defaultCenter, defaultZoom)
       this.setupControls()
@@ -1033,13 +1089,23 @@ export default {
     },
     setupControls () {
       const self = this
+
       this.basemapControl = new LeafletBaseMapTool({}, function () {
         self.showBaseMapSelection = !self.showBaseMapSelection
         if (self.showBaseMapSelection) {
           self.showLayerOrderingDialog = false
+          self.showGridSelection = false
         }
       })
       this.map.addControl(this.basemapControl)
+      this.gridOverlayControl = new LeafletGridOverlayTool({}, function () {
+        self.showGridSelection = !self.showGridSelection
+        if (self.showGridSelection) {
+          self.showLayerOrderingDialog = false
+          self.showBaseMapSelection = false
+        }
+      })
+      this.map.addControl(this.gridOverlayControl)
       this.setupBaseMaps()
       this.map.zoomControl.setPosition('topright')
       this.displayZoomControl = new LeafletZoomIndicator()
@@ -1052,10 +1118,14 @@ export default {
         self.showLayerOrderingDialog = !self.showLayerOrderingDialog
         if (self.showLayerOrderingDialog) {
           self.showBaseMapSelection = false
+          self.showGridSelection = false
         }
       })
 
-      L.control.scale().addTo(this.map)
+      this.scaleControl = L.control.scale()
+      this.scaleControl.addTo(this.map)
+      this.coordinateControl = new LeafletCoordinates()
+      this.map.addControl(this.coordinateControl)
       this.map.addControl(this.activeLayersControl)
       this.drawingControl = new LeafletDraw()
       this.editingControl = new LeafletEdit()
@@ -1063,6 +1133,9 @@ export default {
       this.map.addControl(this.editingControl)
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+      this.project.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
+      this.project.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
+
     },
     debounceClickHandler: debounce(function (e) {
       if (this.consecutiveClicks === 1) {
@@ -1101,6 +1174,7 @@ export default {
       }.bind(this), 100)
       this.map.on('click', (e) => {
         this.showLayerOrderingDialog = false
+        this.showGridSelection = false
         this.showBaseMapSelection = false
         if (!this.nominatimReverseQueryResultsReturned) {
           this.consecutiveClicks++
@@ -1127,7 +1201,7 @@ export default {
             this.contextMenuPopup.setLatLng(e.latlng)
           } else {
             this.$nextTick(() => {
-              this.contextMenuPopup = L.popup({minWidth: 226, maxWidth: 226, maxHeight: 137, closeButton: false, className: 'search-popup', offset: L.point(113, 157)})
+              this.contextMenuPopup = L.popup({minWidth: 226, maxWidth: 226, maxHeight: 227, closeButton: false, className: 'search-popup', offset: L.point(113, 235)})
                 .setLatLng(e.latlng)
                 .setContent(this.$refs['contextMenuPopup'])
                 .openOn(this.map)
@@ -1169,6 +1243,31 @@ export default {
     }
   },
   watch: {
+    gridSelection: {
+      handler (newValue) {
+        if (newValue === 0) {
+          this.garsGridOverlay.remove()
+          this.mgrsGridOverlay.remove()
+          this.xyzGridOverlay.remove()
+          this.coordinateControl.setCoordinateType('LatLng')
+        } else if (newValue === 1) {
+          this.garsGridOverlay.remove()
+          this.mgrsGridOverlay.remove()
+          this.xyzGridOverlay.addTo(this.map)
+          this.coordinateControl.setCoordinateType('XYZ')
+        } else if (newValue === 2) {
+          this.xyzGridOverlay.remove()
+          this.mgrsGridOverlay.remove()
+          this.garsGridOverlay.addTo(this.map)
+          this.coordinateControl.setCoordinateType('GARS')
+        } else if (newValue === 3) {
+          this.garsGridOverlay.remove()
+          this.xyzGridOverlay.remove()
+          this.mgrsGridOverlay.addTo(this.map)
+          this.coordinateControl.setCoordinateType('MGRS')
+        }
+      }
+    },
     baseMaps: {
       handler (newBaseMaps) {
         const self = this
@@ -1491,6 +1590,8 @@ export default {
         let self = this
         updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
         updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+        updatedProject.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
+        updatedProject.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
         // max features setting changed
         if (updatedProject.maxFeatures !== this.maxFeatures) {
           for (const gp of Object.values(updatedProject.geopackages)) {
@@ -1651,6 +1752,15 @@ export default {
     max-height: 350px !important;
     border: 2px solid rgba(0,0,0,0.2) !important;
   }
+  .grid-overlay-card {
+    top: 54px;
+    min-width: 250px;
+    max-width: 250px !important;
+    position: absolute !important;
+    right: 50px !important;
+    max-height: 350px !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
+  }
   .nominatim-card {
     top: 10px;
     min-width: 350px;
@@ -1714,5 +1824,22 @@ export default {
   }
   .search-popup .leaflet-popup-tip-container {
     display: none !important;
+  }
+  .centered-label {
+    display: flex !important;
+    justify-content: center !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    line-height: 256px !important;
+    width: 256px !important;
+  }
+  .mgrs-gzd-label {
+    border: #2e2e2e 1px solid !important;
+    background: #FFFFFFAA !important;
+  }
+  .mgrs-100km-label {
+    border: #2e2e2e 1px solid !important;
+    background: #FFFF00AA !important;
   }
 </style>

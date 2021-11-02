@@ -16,6 +16,9 @@ import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
 import { getIntersection } from '../util/xyz/XYZTileUtilities'
+import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
+import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
+import { setupXYZGrid } from './map/grid/xyz/xyz'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -93,6 +96,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
     this.activeTileRequests = {}
     this.layer = options.layer
+    this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
     this.id = options.layer.id
     this.isPreview = !isNil(options.isPreview) ? options.preview : false
     this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
@@ -178,8 +182,9 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
    * Applies the clipping region to the canvas context, prior to drawing the image
    * @param ctx
    * @param clippingRegion
+   * @param size
    */
-  clipContextToExtent (ctx, clippingRegion) {
+  clipContextToExtent (ctx, clippingRegion, size) {
     const {
       intersection,
       tileBounds,
@@ -188,15 +193,16 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     } = clippingRegion
 
     const getX = (lng, mathFunc) => {
-      return mathFunc(256.0 / tileWidth * (lng - tileBounds.minLongitude))
+      return mathFunc(size.x / tileWidth * (lng - tileBounds.minLongitude))
     }
     const getY = (lat, mathFunc) => {
-      return mathFunc(256.0 / tileHeight * (tileBounds.maxLatitude - lat))
+      return mathFunc(size.y / tileHeight * (tileBounds.maxLatitude - lat))
     }
+
     const minX = Math.max(0, getX(intersection.minLongitude, Math.floor) - 1)
-    const maxX = Math.min(256, getX(intersection.maxLongitude, Math.ceil) + 1)
+    const maxX = Math.min(size.x, getX(intersection.maxLongitude, Math.ceil) + 1)
     const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
-    const maxY = Math.min(256, getY(intersection.minLatitude, Math.floor) + 1)
+    const maxY = Math.min(size.y, getY(intersection.minLatitude, Math.floor) + 1)
     ctx.beginPath()
     ctx.rect(minX, minY, maxX - minX, maxY - minY)
     ctx.clip()
@@ -207,22 +213,22 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
    * @return {{intersection: (null|{maxLongitude: number, minLatitude: number, minLongitude: number, maxLatitude: number}), tileWidth: number, tileBounds: {maxLongitude, minLatitude, minLongitude, maxLatitude}, tileHeight: number}}
    */
   getClippingRegion (coords) {
-    const bounds = this._tileCoordsToBounds(coords)
+    let webMercatorBounds = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
     const tileBounds = {
-      minLongitude: bounds._southWest.lng,
-      maxLongitude: bounds._northEast.lng,
-      minLatitude: bounds._southWest.lat,
-      maxLatitude: bounds._northEast.lat,
+      minLongitude: webMercatorBounds.minLon,
+      maxLongitude: webMercatorBounds.maxLon,
+      minLatitude: webMercatorBounds.minLat,
+      maxLatitude: webMercatorBounds.maxLat,
     }
 
     const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
     const tileHeight = tileBounds.maxLatitude - tileBounds.minLatitude
 
     let layerBounds = {
-      minLongitude: this.layer.extent[0],
-      maxLongitude: this.layer.extent[2],
-      minLatitude: this.layer.extent[1],
-      maxLatitude: this.layer.extent[3],
+      minLongitude: this.webMercatorLayerBounds.minLon,
+      maxLongitude: this.webMercatorLayerBounds.maxLon,
+      minLatitude: this.webMercatorLayerBounds.minLat,
+      maxLatitude: this.webMercatorLayerBounds.maxLat,
     }
 
     // clips tile so that only the intersection of the tile and the user specified bounds are drawn
@@ -251,7 +257,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
         image.onload = () => {
           const ctx = canvas.getContext('2d')
           ctx.clearRect(0, 0, size.x, size.y)
-          this.clipContextToExtent(ctx, clippingRegion)
+          this.clipContextToExtent(ctx, clippingRegion, size)
           ctx.drawImage(image, 0, 0)
           resolve(canvas.toDataURL())
         }
@@ -395,43 +401,9 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   }
 })
 
-L.GridLayer.TileSelectionLayer = L.GridLayer.extend({
-  initialize: function (options) {
-    L.GridLayer.prototype.initialize.call(this, options)
-    this.currentId = options.id
-  },
-  createTile: function (coords) {
-    const self = this
-    // create a <canvas> element for drawing
-    const tile = L.DomUtil.create('button', 'leaflet-tile')
-
-    tile.style.pointerEvents = 'initial'
-    tile.style.background = '#4e9cca20'
-    tile.style.border = '1px solid #4e9cca'
-
-    L.DomEvent.on(tile, 'mouseover', function () {
-      tile.style.background = '#4e9cca66'
-    })
-    L.DomEvent.on(tile, 'mouseout', function () {
-      tile.style.background = '#4e9cca20'
-    })
-    L.DomEvent.on(tile, 'click', function (e) {
-      e.preventDefault()
-      e.stopPropagation()
-      const tileBounds = self._tileCoordsToBounds(coords)
-      if (self.currentId != null) {
-        EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(self.currentId), [tileBounds._southWest.lng, tileBounds._southWest.lat, tileBounds._northEast.lng, tileBounds._northEast.lat])
-      }
-    })
-    L.DomEvent.on(tile, 'mousedown', function () {
-      tile.style.background = '#4e9cca99'
-    })
-    L.DomEvent.on(tile, 'mouseup', function () {
-      tile.style.background = '#4e9cca66'
-    })
-    return tile
-  }
-})
+setupGARSGrid(L)
+setupMGRSGrid(L)
+setupXYZGrid(L)
 
 /**
  * Adapted from https://github.com/Leaflet/Leaflet.Icon.Glyph, which was originally written by ivan@sanchezortega.es

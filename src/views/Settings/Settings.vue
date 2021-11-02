@@ -159,6 +159,34 @@
               </v-list-item-action>
             </template>
           </v-list-item>
+          <v-list-item>
+            <template v-slot:default="{ active }">
+              <v-list-item-content>
+                <v-list-item-title>Display coordinates</v-list-item-title>
+                <v-list-item-subtitle>Show cursor coordinates</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch
+                    :input-value="active"
+                    color="primary"
+                ></v-switch>
+              </v-list-item-action>
+            </template>
+          </v-list-item>
+          <v-list-item>
+            <template v-slot:default="{ active }">
+              <v-list-item-content>
+                <v-list-item-title>Display scale</v-list-item-title>
+                <v-list-item-subtitle>Show map scale</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch
+                    :input-value="active"
+                    color="primary"
+                ></v-switch>
+              </v-list-item-action>
+            </template>
+          </v-list-item>
         </v-list-item-group>
       </v-list>
       <v-list
@@ -248,15 +276,25 @@ export default {
           if (this.project.displayAddressSearchBar || false) {
             settings.push(2)
           }
+          if (this.project.displayCoordinates || false) {
+            settings.push(3)
+          }
+          if (this.project.displayScale || false) {
+            settings.push(4)
+          }
           return settings
         },
         set (settings) {
           const zoomControlEnabled = this.project.zoomControlEnabled || false
           const displayZoomEnabled = this.project.displayZoomEnabled || false
           const displayAddressSearchBar = this.project.displayAddressSearchBar || false
+          const displayCoordinates = this.project.displayCoordinates || false
+          const displayScale = this.project.displayScale || false
           const zoomControlSettingFound = settings.findIndex(setting => setting === 0) >= 0
           const displayZoomSettingFound = settings.findIndex(setting => setting === 1) >= 0
           const displayAddressSearchBarFound = settings.findIndex(setting => setting === 2) >= 0
+          const displayCoordinatesFound = settings.findIndex(setting => setting === 3) >= 0
+          const displayScaleFound = settings.findIndex(setting => setting === 4) >= 0
 
           if (zoomControlEnabled !== zoomControlSettingFound) {
             window.mapcache.setZoomControlEnabled({projectId: this.project.id, enabled: zoomControlSettingFound})
@@ -266,6 +304,12 @@ export default {
           }
           if (displayAddressSearchBar !== displayAddressSearchBarFound) {
             window.mapcache.setDisplayAddressSearchBar({projectId: this.project.id, enabled: displayAddressSearchBarFound})
+          }
+          if (displayCoordinates !== displayCoordinatesFound) {
+            window.mapcache.setDisplayCoordinates({projectId: this.project.id, enabled: displayCoordinatesFound})
+          }
+          if (displayScale !== displayScaleFound) {
+            window.mapcache.setDisplayScale({projectId: this.project.id, enabled: displayScaleFound})
           }
         }
       }

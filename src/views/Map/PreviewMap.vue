@@ -39,6 +39,7 @@ import { mapState } from 'vuex'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
+import LeafletCoordinates from '../../lib/leaflet/map/controls/LeafletCoordinates'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { mdiMapOutline } from '@mdi/js'
 import { L } from '../../lib/leaflet/vendor'
@@ -207,8 +208,12 @@ export default {
         this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
           zoomToSource(self.previewLayer, true)
         }, null, null)
-        L.control.scale().addTo(this.map)
         this.map.addControl(this.activeLayersControl)
+        this.scaleControl = L.control.scale()
+        this.scaleControl.addTo(this.map)
+        this.coordinateControl = new LeafletCoordinates()
+        this.map.addControl(this.coordinateControl)
+
       },
       setupPreviewLayer () {
         const layer = constructLayer(this.previewLayer)

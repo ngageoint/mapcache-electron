@@ -10,7 +10,15 @@ import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import isEmpty from 'lodash/isEmpty'
 import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
-import { Context, GeometryType, GeoPackageAPI, HtmlCanvasAdapter, SqliteAdapter, GeoPackageDataType } from '@ngageoint/geopackage'
+import {
+  Context,
+  GeometryType,
+  GeoPackageAPI,
+  HtmlCanvasAdapter,
+  SqliteAdapter,
+  GeoPackageDataType,
+  BoundingBox
+} from '@ngageoint/geopackage'
 import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/media/MediaUtilities'
 import {
   createNextAvailableBaseMapDirectory,
@@ -67,6 +75,8 @@ import {
   setZoomControlEnabled,
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
+  setDisplayCoordinates,
+  setDisplayScale,
   clearActiveLayers,
   getExtentOfActiveLayers,
   synchronizeGeoPackage,
@@ -127,7 +137,7 @@ import { constructLayer } from '../layer/LayerFactory'
 import { fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
 import { getBaseURL, supportedImageFormats } from '../util/geoserver/GeoServiceUtilities'
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
-import { getDef, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
+import {getDef, reprojectWebMercatorBoundingBox, wgs84ToWebMercator} from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
 import { ATTACH_MEDIA, ATTACH_MEDIA_COMPLETED, BUILD_FEATURE_LAYER, BUILD_FEATURE_LAYER_COMPLETED, BUILD_FEATURE_LAYER_STATUS, BUILD_TILE_LAYER, BUILD_TILE_LAYER_COMPLETED, BUILD_TILE_LAYER_STATUS, CANCEL_BUILD_FEATURE_LAYER, CANCEL_BUILD_FEATURE_LAYER_COMPLETED, CANCEL_BUILD_TILE_LAYER, CANCEL_BUILD_TILE_LAYER_COMPLETED, CANCEL_PROCESS_SOURCE, CANCEL_PROCESS_SOURCE_COMPLETED, CANCEL_REPROJECT_TILE_REQUEST, CANCEL_SERVICE_REQUEST, CANCEL_TILE_REQUEST, CLIENT_CERTIFICATE_SELECTED, CLIENT_CREDENTIALS_INPUT, CLOSE_PROJECT, CLOSING_PROJECT_WINDOW, GENERATE_GEOTIFF_RASTER_FILE, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED, GET_APP_DATA_DIRECTORY, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, PROCESS_SOURCE, PROCESS_SOURCE_COMPLETED, PROCESS_SOURCE_STATUS, REQUEST_CLIENT_CREDENTIALS, REQUEST_REPROJECT_TILE, REQUEST_REPROJECT_TILE_COMPLETED, REQUEST_TILE, REQUEST_TILE_COMPLETED, SELECT_CLIENT_CERTIFICATE, SHOW_OPEN_DIALOG, SHOW_OPEN_DIALOG_COMPLETED, SHOW_SAVE_DIALOG, SHOW_SAVE_DIALOG_COMPLETED } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
@@ -754,6 +764,11 @@ contextBridge.exposeInMainWorld('mapcache', {
     }
     return hasStyle
   },
+  convertToWebMercator: (extent) => {
+    let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
+    let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
+    return {minLon: filterLowerLeft[0], maxLon: filterUpperRight[0], minLat: filterLowerLeft[1], maxLat: filterUpperRight[1]}
+  },
   reprojectWebMercatorBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -881,6 +896,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   setZoomControlEnabled,
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
+  setDisplayCoordinates,
+  setDisplayScale,
   clearActiveLayers,
   getExtentOfActiveLayers,
   synchronizeGeoPackage,

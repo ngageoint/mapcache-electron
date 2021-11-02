@@ -512,6 +512,14 @@ function setDisplayAddressSearchBar ({projectId, enabled}) {
   store.dispatch('Projects/setDisplayAddressSearchBar', {projectId, enabled})
 }
 
+function setDisplayCoordinates ({projectId, enabled}) {
+  store.dispatch('Projects/setDisplayCoordinates', {projectId, enabled})
+}
+
+function setDisplayScale ({projectId, enabled}) {
+  store.dispatch('Projects/setDisplayScale', {projectId, enabled})
+}
+
 function clearActiveLayers ({projectId}) {
   store.dispatch('Projects/clearActiveLayers', {projectId})
 }
@@ -805,6 +813,8 @@ export {
   setZoomControlEnabled,
   setDisplayZoomEnabled,
   setDisplayAddressSearchBar,
+  setDisplayCoordinates,
+  setDisplayScale,
   clearActiveLayers,
   getExtentOfActiveLayers,
   synchronizeGeoPackage,

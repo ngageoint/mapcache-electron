@@ -80,6 +80,16 @@ const mutations = {
       Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
     }
   },
+  setDisplayCoordinates (state, {projectId, enabled}) {
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'displayCoordinates', enabled)
+    }
+  },
+  setDisplayScale (state, {projectId, enabled}) {
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'displayScale', enabled)
+    }
+  },
   clearActiveLayers (state, {projectId}) {
     if (state[projectId]) {
       const projectCopy = Object.assign({}, state[projectId])
@@ -166,6 +176,8 @@ const actions = {
       geopackages: {},
       zoomControlEnabled: true,
       displayZoomEnabled: true,
+      displayCoordinates: true,
+      displayScale: true,
       maxFeatures: 1000,
       showToolTips: true,
       displayAddressSearchBar: true,
@@ -215,6 +227,12 @@ const actions = {
   },
   setDisplayAddressSearchBar ({ commit }, {projectId, enabled}) {
     commit('setDisplayAddressSearchBar', {projectId, enabled})
+  },
+  setDisplayCoordinates ({ commit }, {projectId, enabled}) {
+    commit('setDisplayCoordinates', {projectId, enabled})
+  },
+  setDisplayScale ({ commit }, {projectId, enabled}) {
+    commit('setDisplayScale', {projectId, enabled})
   },
   clearActiveLayers ({ commit }, {projectId}) {
     commit('clearActiveLayers', {projectId})

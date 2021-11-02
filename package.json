@@ -112,7 +112,7 @@
   "license": "MIT",
   "mapcache": {
     "store": {
-      "version": "8"
+      "version": "9"
     }
   },
   "repository": {

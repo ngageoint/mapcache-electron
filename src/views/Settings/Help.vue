@@ -186,6 +186,14 @@ export default {
               content: 'The address search bar allows a user to search for addresses/coordinates on the map. If disabled, the address search bar will not be shown. If you would like to hide the address search bar, navigate to \'Settings > Map > Address search\' and disable it.'
             },
             {
+              title: 'Display coordinates',
+              content: 'Enabling this setting will display the coordinates of the cursor map. If a grid is displayed, the coordinates will display the coordinates in that format. If disabled, the coordinates will not be shown. If you would like to hide the coordinates, navigate to \'Settings > Map > Display coordinates\' and disable it.'
+            },
+            {
+              title: 'Display scale',
+              content: 'Displaying the scale will show an imperial/metric scale on the map. If disabled, the scale will not be shown. If you would like to hide the scale, navigate to \'Settings > Map > Display scale\' and disable it.'
+            },
+            {
               title: 'Max features',
               content: 'The max features is an advanced setting used to tell the GeoPackage API how many features it is allowed to render in a given tile. If the number of tiles exceeds the value set, the placeholder tile will be generated showing how many features are in that tile. If you would like to adjust the maximum number of features navigate to \'Settings > Map > Max features\' and click on it.'
             }

@@ -223,3 +223,22 @@
 	color: var(--v-text-base) !important;
 	background: var(--v-background-base) !important;
 }
+
+.leaflet-coordinates {
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	font-size: 11px;
+	white-space: nowrap;
+	overflow: hidden;
+	box-sizing: border-box;
+	background: #fff;
+	background: rgba(255, 255, 255, 0.5);
+	color: #2e2e2e;
+}
+.leaflet-coordinates-control {
+	position: absolute !important;
+	left: 104px !important;
+	bottom: 0 !important;
+	margin-bottom: 3px !important;
+	min-width: 200px;
+}
