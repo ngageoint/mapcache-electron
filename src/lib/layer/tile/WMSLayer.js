@@ -33,26 +33,24 @@ export default class WMSLayer extends NetworkTileLayer {
 
   /**
    * Gets tile request data
+   * @param webMercatorBoundingBox
    * @param coords
-   * @return {{webMercatorBoundingBox: *, srs, bbox, url: string}}
+   * @param size
+   * @param projectedBoundingBox
+   * @return {{webMercatorBoundingBox: *, srs, bbox, webRequests: [{url: string}]}}
    */
-  getTileRequestData (coords) {
-    let {x, y, z} = coords
-    let requestBoundingBox
-    const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-
-    if (this.requiresReprojection) {
-      requestBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(webMercatorBoundingBox.minLon, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLat, this.srs)
-    } else {
-      requestBoundingBox = webMercatorBoundingBox
-    }
-    const bbox = getBoundingBoxForWMSRequest(requestBoundingBox, this.version, this.srs)
+  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBox) {
+    const bbox = getBoundingBoxForWMSRequest(projectedBoundingBox, this.version, this.srs)
 
     return {
-      url: getTileRequestURL(this.filePath, this.layers, 256, 256, bbox, this.srs, this.version, this.format),
-      bbox: requestBoundingBox,
+      bbox: projectedBoundingBox,
       srs: this.srs,
-      webMercatorBoundingBox: webMercatorBoundingBox
+      webRequests: [{
+        url: getTileRequestURL(this.filePath, this.layers, size.x, size.y, bbox, this.srs, this.version, this.format),
+        width: size.x,
+        height: size.y,
+        tileBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat]
+      }]
     }
   }
 }

@@ -19,6 +19,7 @@ import { getIntersection } from '../util/xyz/XYZTileUtilities'
 import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
 import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
 import { setupXYZGrid } from './map/grid/xyz/xyz'
+import {clipImage, stitchTileData} from '../../lib/util/tile/TileUtilities'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -57,7 +58,8 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     tile.requestId = requestId
     tile.alt = ''
     tile.setAttribute('role', 'presentation')
-    this.layer.renderTile(requestId, coords, (err, base64Image) => {
+    const size = this.getTileSize()
+    this.layer.renderTile(requestId, coords, size, (err, base64Image) => {
       if (!isNil(err)) {
         done(err, tile)
       } else if (base64Image != null) {
@@ -178,47 +180,19 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
     }
   },
-  /**
-   * Applies the clipping region to the canvas context, prior to drawing the image
-   * @param ctx
-   * @param clippingRegion
-   * @param size
-   */
-  clipContextToExtent (ctx, clippingRegion, size) {
-    const {
-      intersection,
-      tileBounds,
-      tileHeight,
-      tileWidth
-    } = clippingRegion
 
-    const getX = (lng, mathFunc) => {
-      return mathFunc(size.x / tileWidth * (lng - tileBounds.minLongitude))
-    }
-    const getY = (lat, mathFunc) => {
-      return mathFunc(size.y / tileHeight * (tileBounds.maxLatitude - lat))
-    }
-
-    const minX = Math.max(0, getX(intersection.minLongitude, Math.floor) - 1)
-    const maxX = Math.min(size.x, getX(intersection.maxLongitude, Math.ceil) + 1)
-    const minY = Math.max(0, getY(intersection.maxLatitude, Math.ceil) - 1)
-    const maxY = Math.min(size.y, getY(intersection.minLatitude, Math.floor) + 1)
-    ctx.beginPath()
-    ctx.rect(minX, minY, maxX - minX, maxY - minY)
-    ctx.clip()
-  },
   /**
    * Determines the layer's clipping region
    * @param coords
+   * @param webMercatorBoundingBox
    * @return {{intersection: (null|{maxLongitude: number, minLatitude: number, minLongitude: number, maxLatitude: number}), tileWidth: number, tileBounds: {maxLongitude, minLatitude, minLongitude, maxLatitude}, tileHeight: number}}
    */
-  getClippingRegion (coords) {
-    let webMercatorBounds = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+  getClippingRegion (coords, webMercatorBoundingBox) {
     const tileBounds = {
-      minLongitude: webMercatorBounds.minLon,
-      maxLongitude: webMercatorBounds.maxLon,
-      minLatitude: webMercatorBounds.minLat,
-      maxLatitude: webMercatorBounds.maxLat,
+      minLongitude: webMercatorBoundingBox.minLon,
+      maxLongitude: webMercatorBoundingBox.maxLon,
+      minLatitude: webMercatorBoundingBox.minLat,
+      maxLatitude: webMercatorBoundingBox.maxLat,
     }
 
     const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
@@ -239,37 +213,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       tileHeight
     }
   },
-  /**
-   * Clips an image if the tile is not fully enclosed in the layer's bounds
-   * @param dataUrl
-   * @param coords
-   * @return {Promise<unknown>}
-   */
-  clipImage (dataUrl, coords) {
-    return new Promise ((resolve, reject) => {
-      const clippingRegion = this.getClippingRegion(coords)
-      if (clippingRegion.intersection != null) {
-        const image = new Image()
-        const canvas = document.createElement('canvas')
-        const size = this.getTileSize()
-        canvas.width = size.x
-        canvas.height = size.y
-        image.onload = () => {
-          const ctx = canvas.getContext('2d')
-          ctx.clearRect(0, 0, size.x, size.y)
-          this.clipContextToExtent(ctx, clippingRegion, size)
-          ctx.drawImage(image, 0, 0)
-          resolve(canvas.toDataURL())
-        }
-        image.onerror = (e) => {
-          reject(e)
-        }
-        image.src = dataUrl
-      } else {
-        resolve(dataUrl)
-      }
-    })
-  },
+
   /**
    * Loads the dataUrl into the image.
    * @param dataUrl
@@ -286,6 +230,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     }
     tile.src = dataUrl
   },
+
   /**
    * Handles reprojecting the tile into 3857,
    * @param requestId
@@ -318,6 +263,15 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
     })
   },
+  dataUrlValid (dataUrl) {
+    return !isNil(dataUrl) && dataUrl.startsWith('data:image')
+  },
+  /**
+   * Creates the tile for the given xyz coordinates
+   * @param coords
+   * @param done
+   * @return {HTMLImageElement}
+   */
   createTile (coords, done) {
     // create the tile img
     const requestId = window.mapcache.createUniqueID()
@@ -325,7 +279,6 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     tile.requestId = requestId
     tile.alt = ''
     tile.setAttribute('role', 'presentation')
-
     // if this source is errored, do not allow tile requests
     if (this.hasError()) {
       done(null, null)
@@ -334,29 +287,67 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       const cancellableTileRequest = new CancellableTileRequest()
       this.activeTileRequests[requestId] = cancellableTileRequest
       // get tile request data
-      const { url, bbox, srs, webMercatorBoundingBox } = this.layer.getTileRequestData(coords)
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeout, this.layer.withCredentials).then(({dataUrl, error}) => {
-        if (!isNil(error) && !this.isPreview) {
-          this.setError(error)
-          done(error, tile)
-        } else if (!isNil(dataUrl) && dataUrl.startsWith('data:image')) {
-          this.reprojectTile(requestId, dataUrl, bbox, srs, size, webMercatorBoundingBox).then(reprojectedImage => {
-            this.clipImage(reprojectedImage, coords).then(clippedImage => {
-              this.loadImage(clippedImage, coords, tile, done)
+      const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+      let projectedBoundingBox
+      if (this.requiresReprojection) {
+        projectedBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(webMercatorBoundingBox.minLon, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLat, this.layer.srs)
+      } else {
+        projectedBoundingBox = webMercatorBoundingBox
+      }
+      let requestData = this.layer.getTileRequestData(webMercatorBoundingBox, coords, size, projectedBoundingBox)
+      if (requestData != null && requestData.webRequests.length > 0) {
+        // iterate over each web request and attempt to perform
+        const promises = []
+        requestData.webRequests.forEach(request => {
+          promises.push(new Promise(resolve => {
+            cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({dataUrl, error}) => {
+              resolve({dataUrl, error, request})
             }).catch(e => {
-              done(e, tile)
+              console.error(e)
             })
-          }).catch(e => {
-            done(e, tile)
+          }))
+        })
+        Promise.allSettled(promises).then(results => {
+          delete this.activeTileRequests[requestId]
+          const tiles = []
+          // handle results
+          results.forEach(result => {
+            if (result.status === 'fulfilled') {
+              const {dataUrl, error, request} = result.value
+              if (!error && this.dataUrlValid(dataUrl)) {
+                tiles.push({
+                  bounds: request.tileBounds,
+                  width: request.width,
+                  height: request.height,
+                  dataUrl: dataUrl
+                })
+              }
+            }
           })
-        } else {
-          done(new Error('no data'), tile)
-        }
-      }).catch(e => {
-        done(e, tile, done)
-      }).finally(() => {
+          if (tiles.length > 0) {
+            // stitch together the web requests
+            const canvas = document.createElement('canvas')
+            canvas.width = size.x
+            canvas.height = size.y
+            stitchTileData(canvas, tiles, size, requestData.bbox).then(dataUrl => {
+              this.reprojectTile(requestId, dataUrl, requestData.bbox, requestData.srs, size, webMercatorBoundingBox).then(reprojectedImage => {
+                clipImage(canvas, reprojectedImage, this.getClippingRegion(coords, webMercatorBoundingBox), size).then(clippedImage => {
+                  this.loadImage(clippedImage, coords, tile, done)
+                }).catch(e => {
+                  done(e, tile)
+                })
+              }).catch(e => {
+                done(e, tile)
+              })
+            })
+          } else {
+            done(new Error('No data retrieved.'), tile)
+          }
+        })
+      } else {
+        done(null, null)
         delete this.activeTileRequests[requestId]
-      })
+      }
     }
     return tile
   },

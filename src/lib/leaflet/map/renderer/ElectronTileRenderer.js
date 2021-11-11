@@ -55,12 +55,12 @@ export default class ElectronTileRenderer {
     this.cancelTileRequest(requestId)
   }
 
-  getTileRequest (requestId, coords) {
+  getTileRequest (requestId, coords, size) {
     return {
       id: requestId,
       coords: coords,
-      width: 256,
-      height: 256
+      width: size.x,
+      height: size.y
     }
   }
 
@@ -68,15 +68,16 @@ export default class ElectronTileRenderer {
    * Will make a request to a worker thread that will generate the tile data to keep the UI thread running smoooth.
    * @param requestId
    * @param coords
+   * @param size
    * @param callback
    * @returns {Promise<void>}
    * @override
    */
-  async renderTile (requestId, coords, callback) {
+  async renderTile (requestId, coords, size, callback) {
     if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, this.layer.extent)) {
       callback(null, null)
     } else {
-      this.requestTile(this.getTileRequest(requestId, coords)).then((result) => {
+      this.requestTile(this.getTileRequest(requestId, coords, size)).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)

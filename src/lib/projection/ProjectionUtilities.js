@@ -9,6 +9,32 @@ function getCode (name) {
   return matches.length > 0 ? Number.parseInt(matches[0]) : -1
 }
 
+function getMetersPerUnit (name) {
+  let metersPerUnit = null
+  const def = getDef(getCode(name))
+  if (def != null) {
+    metersPerUnit = def.to_meter
+  }
+  return metersPerUnit
+}
+function getUnits (name) {
+  let units = null
+  const def = getDef(getCode(name))
+  if (def != null) {
+    units = def.units
+  }
+  if (def != null && units == null) {
+    if (getCode(name) === 4326) {
+      units = 'degrees'
+    } else if (getCode(name) === 3857) {
+      units = 'meters'
+    } else if (def.projName === 'longlat') {
+      units = 'degrees'
+    }
+  }
+  return units
+}
+
 function getDef (code) {
   let def
   const db = new Database(path.join(getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
@@ -108,11 +134,20 @@ function getConverter (from, to) {
 const wgs84ToWebMercator = getConverter('EPSG:4326', 'EPSG:3857')
 proj4.defs('CRS:84', getDef(4326))
 
+function convertToWebMercator (extent) {
+  let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
+  let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
+  return {minLon: filterLowerLeft[0], maxLon: filterUpperRight[0], minLat: filterLowerLeft[1], maxLat: filterUpperRight[1]}
+}
+
 export {
   getCode,
   getDef,
+  getUnits,
   defineProjection,
   getConverter,
   wgs84ToWebMercator,
-  reprojectWebMercatorBoundingBox
+  reprojectWebMercatorBoundingBox,
+  getMetersPerUnit,
+  convertToWebMercator
 }

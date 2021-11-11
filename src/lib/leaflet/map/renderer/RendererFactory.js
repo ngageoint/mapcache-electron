@@ -6,8 +6,9 @@ import ElectronGeoPackageTileRenderer from './ElectronGeoPackageTileRenderer'
 import ElectronGeoPackageVectorRenderer from './ElectronGeoPackageVectorRenderer'
 // remote url request renderers
 import WMSRenderer from './WMSRenderer'
+import WMTSRenderer from './WMTSRenderer'
 import XYZServerRenderer from './XYZServerRenderer'
-import { GEOTIFF, MBTILES, XYZ_FILE, XYZ_SERVER, WMS, GEOPACKAGE, VECTOR } from '../../../layer/LayerTypes'
+import { GEOTIFF, MBTILES, XYZ_FILE, XYZ_SERVER, WMS, GEOPACKAGE, VECTOR, WMTS } from '../../../layer/LayerTypes'
 
 /**
  * Constructs a layer's renderer
@@ -27,6 +28,8 @@ function constructRenderer (layer, isElectron = false) {
       return new ElectronXYZFileRenderer(layer, isElectron)
     case WMS:
       return new WMSRenderer(layer, isElectron)
+    case WMTS:
+      return new WMTSRenderer(layer, isElectron)
     case GEOPACKAGE:
       return new ElectronGeoPackageTileRenderer(layer, isElectron)
     case VECTOR:

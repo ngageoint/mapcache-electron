@@ -3,9 +3,10 @@ import GeoPackageTileLayer from './tile/GeoPackageTileLayer'
 import XYZServerLayer from './tile/XYZServerLayer'
 import MBTilesLayer from './tile/MBTilesLayer'
 import WMSLayer from './tile/WMSLayer'
+import WMTSLayer from './tile/WMTSLayer'
 import VectorLayer from './vector/VectorLayer'
 import XYZFileLayer from './tile/XYZFileLayer'
-import { GEOTIFF, MBTILES, XYZ_FILE, XYZ_SERVER, WMS, GEOPACKAGE, VECTOR } from './LayerTypes'
+import { GEOTIFF, MBTILES, XYZ_FILE, XYZ_SERVER, WMS, GEOPACKAGE, VECTOR, WMTS } from './LayerTypes'
 
 /**
  * Simple factory for constructing a layer based on it's type
@@ -22,6 +23,8 @@ function constructLayer (configuration) {
       return new XYZFileLayer(configuration)
     case WMS:
       return new WMSLayer(configuration)
+    case WMTS:
+      return new WMTSLayer(configuration)
     case GEOPACKAGE:
       return new GeoPackageTileLayer(configuration)
     case VECTOR:

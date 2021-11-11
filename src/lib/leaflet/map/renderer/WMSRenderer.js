@@ -39,7 +39,7 @@ export default class WMSRenderer extends NetworkTileRenderer {
     }
   }
 
-  async renderTile (requestId, coords, callback) {
+  async renderTile (requestId, coords, size, callback) {
     if (!isNil(this.error)) {
       callback(this.error, null)
     } else {
@@ -57,10 +57,10 @@ export default class WMSRenderer extends NetworkTileRenderer {
         tileBbox = this.reprojectWebMercatorBoundingBox(tileBbox.minLon, tileBbox.maxLon, tileBbox.minLat, tileBbox.maxLat, this.layer.srs)
         bbox = getBoundingBoxForWMSRequest(tileBbox, this.layer.version, this.layer.srs)
       }
-      const url = getTileRequestURL(this.layer.filePath, this.layer.layers, 256, 256, bbox, this.layer.srs, this.layer.version, this.layer.format)
+      const url = getTileRequestURL(this.layer.filePath, this.layer.layers, size.x, size.y, bbox, this.layer.srs, this.layer.version, this.layer.format)
 
-      const cancellableTileRequest = new CancellableTileRequest()
-      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials).then(({dataUrl, error}) => {
+      const cancellableTileRequest = new CancellableTileRequest(this.isElectron)
+      cancellableTileRequest.requestTile(this.axiosRequestScheduler, url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials, size).then(({dataUrl, error}) => {
         if (!isNil(error)) {
           this.setError(error)
         }
@@ -73,8 +73,8 @@ export default class WMSRenderer extends NetworkTileRenderer {
             sourceBoundingBox: tileBbox,
             sourceSrs: this.layer.srs,
             targetSrs: 'EPSG:3857',
-            targetWidth: 256,
-            targetHeight: 256,
+            targetWidth: size.x,
+            targetHeight: size.y,
             targetBoundingBox: webMercatorBoundingBox
           }
           if (this.isElectron) {

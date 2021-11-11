@@ -268,7 +268,7 @@
             </v-card>
           </template>
         </v-hover>
-        <v-hover v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer'">
+        <v-hover v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer' || source.layerType === 'WMTS'">
           <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
@@ -336,13 +336,23 @@
               </v-row>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'XYZServer')">
+          <v-row class="pb-2" no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMS' || source.layerType === 'WMTS' || source.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 URL
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
                 {{source.filePath}}
+              </p>
+            </v-col>
+          </v-row>
+          <v-row class="pb-2" no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMTS')">
+            <v-col>
+              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                Layer
+              </p>
+              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+                {{source.layer.identifier}}
               </p>
             </v-col>
           </v-row>
@@ -386,7 +396,7 @@
               </v-row>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS'">
+          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'WMTS'">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Spatial reference system
@@ -396,7 +406,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'XYZServer'">
+          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'WMTS' || source.layerType === 'XYZServer'">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Network settings

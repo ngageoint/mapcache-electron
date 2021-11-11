@@ -3,6 +3,7 @@ import vt from 'vector-tile'
 import pako from 'pako'
 import Protobuf from 'pbf'
 import keys from 'lodash/keys'
+import {createCanvas} from '../canvas/CanvasUtilities'
 
 /**
  * If format needs to be determined, it will either be jpg or png, just need to determine which one
@@ -102,7 +103,95 @@ function getTile(db, z, x, y, format) {
   return tileData
 }
 
-function getVectorTileFeatures(db, z, x, y) {
+function getColor (color, opacity) {
+  let opacityText = '00'
+  if (opacity > 0) {
+    opacityText = Math.round(255 * opacity).toString(16).toUpperCase()
+    if (opacityText.length === 1) {
+      opacityText = '0' + opacityText
+    }
+  }
+  return color + opacityText
+}
+
+function _drawPoint (ctx, coordsArray, style, divisor) {
+  const radius = style.radius
+  ctx.save()
+  ctx.beginPath()
+  ctx.fillStyle = getColor(style.color, style.opacity)
+  ctx.arc(coordsArray[0][0].x / divisor, coordsArray[0][0].y / divisor, radius, 0, Math.PI * 2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
+function _drawLineString (ctx, coordsArray, style, divisor) {
+  ctx.save()
+  ctx.strokeStyle = getColor(style.color, style.opacity)
+  ctx.lineWidth = style.width
+  ctx.beginPath()
+  for (let gidx in coordsArray) {
+    let coords = coordsArray[gidx]
+    coords.forEach((coord, i) => {
+      const method = i === 0 ? 'moveTo' : 'lineTo'
+      ctx[method](coord.x / divisor, coord.y / divisor)
+    })
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
+function _drawPolygon (ctx, coordsArray, style, divisor) {
+  ctx.save()
+  ctx.fillStyle = getColor(style.fillColor, style.fillOpacity)
+  ctx.strokeStyle = getColor(style.color, style.opacity)
+  ctx.lineWidth = style.width
+  ctx.beginPath()
+  for (let gidx = 0, len = coordsArray.length; gidx < len; gidx++) {
+    let coords = coordsArray[gidx]
+    coords.forEach((coord, i) => {
+      const method = i === 0 ? 'moveTo' : 'lineTo'
+      ctx[method](coord.x / divisor, coord.y / divisor)
+    })
+  }
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
+}
+function convertPbfToDataUrl (data, width, height) {
+  const style = {color: '#000', opacity: 1.0, width: 3.0, fillColor: '#000', fillOpacity: 0.2}
+  return drawVectorFeaturesInCanvas(getVectorTileFeatures(data), style, style, style, Math.min(width, height))
+}
+
+function drawVectorFeaturesInCanvas (vectorTileFeatures, pointStyle, lineStyle, polygonStyle, divisor = 256.0) {
+  const canvas = createCanvas(divisor, divisor)
+  const ctx = canvas.getContext('2d')
+
+  const drawingMap = {
+    1: (ctx, coords, divisor) => {
+      _drawPoint(ctx, coords, pointStyle, divisor)
+    },
+    2: (ctx, coords, divisor) => {
+      _drawLineString(ctx, coords, lineStyle, divisor)
+    },
+    3: (ctx, coords, divisor) => {
+      _drawPolygon(ctx, coords, polygonStyle, divisor)
+    }
+  }
+
+  for (let i = 0; i < vectorTileFeatures.length; i++) {
+    const feature = vectorTileFeatures[i]
+    drawingMap[feature.type](ctx, feature.loadGeometry(), feature.extent / divisor)
+  }
+  const base64Image = canvas.toDataURL()
+  if (canvas.dispose) {
+    canvas.dispose()
+  }
+  return base64Image
+}
+
+function getVectorTileFeaturesFromDb (db, z, x, y) {
   // Flip Y coordinate because MBTiles files are TMS.
   y = (1 << z) - 1 - y
 
@@ -112,20 +201,32 @@ function getVectorTileFeatures(db, z, x, y) {
     const row = stmt.get(z, x, y)
     if (row && row.tile_data) {
       const decompressedData = pako.inflate(row.tile_data)
-      const tile = new vt.VectorTile(new Protobuf(decompressedData))
-      let layers = keys(tile.layers)
-      if (!Array.isArray(layers)) {
-        layers = [layers]
-      }
-      layers.forEach((layerID) => {
-        const layer = tile.layers[layerID]
-        if (layer) {
-          for (let i = 0; i < layer.length; i++) {
-            vectorTileFeatures.push(layer.feature(i))
-          }
-        }
-      })
+      vectorTileFeatures = getVectorTileFeatures(decompressedData)
     }
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to get MBTiles vector features.')
+  }
+  return vectorTileFeatures
+}
+
+function getVectorTileFeatures (data) {
+  let vectorTileFeatures = []
+  try {
+    const tile = new vt.VectorTile(new Protobuf(Buffer.from(data)))
+    let layers = keys(tile.layers)
+    if (!Array.isArray(layers)) {
+      layers = [layers]
+    }
+    layers.forEach((layerID) => {
+      const layer = tile.layers[layerID]
+      if (layer) {
+        for (let i = 0; i < layer.length; i++) {
+          vectorTileFeatures.push(layer.feature(i))
+        }
+      }
+    })
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -161,5 +262,8 @@ export {
   close,
   getTile,
   getVectorTileFeatures,
-  getZoomRange
+  getZoomRange,
+  getVectorTileFeaturesFromDb,
+  drawVectorFeaturesInCanvas,
+  convertPbfToDataUrl
 }

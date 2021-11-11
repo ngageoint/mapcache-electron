@@ -140,7 +140,7 @@
     </v-expand-transition>
     <v-card outlined v-if="showGridSelection" class="grid-overlay-card">
       <v-card-title>
-        Grid Overlay
+        Grid overlay
       </v-card-title>
       <v-card-text>
         <v-card-subtitle class="pt-1 pb-1">
@@ -1672,8 +1672,10 @@ export default {
       let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
       let bounds = L.latLngBounds(boundingBox)
       bounds = bounds.pad(0.05)
-      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom});
-      this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom});
+      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
+      const currentMapCenter = this.map.getCenter()
+      const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
+      this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: 3.0 * distanceFactor})
     })
     EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message) => {
       this.alertMessage = message

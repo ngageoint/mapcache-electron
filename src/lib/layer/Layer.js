@@ -3,7 +3,7 @@ import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 
 /**
- * Layer is a class holding information regarding data source layers
+ * Layer is a class for holding information for a processed source. This information will be used by a renderer to display content on the map.
  */
 export default class Layer {
   _configuration
@@ -48,9 +48,9 @@ export default class Layer {
     this.renderer = renderer
   }
 
-  async renderTile (requestId, coords, callback) {
+  async renderTile (requestId, coords, size, callback) {
     if (this.renderer) {
-      this.renderer.renderTile(requestId, coords, callback)
+      this.renderer.renderTile(requestId, coords, size, callback)
     } else {
       callback('Renderer not set...', null)
     }

@@ -82,7 +82,7 @@ async function rotateImage (filePath, rotation) {
   context.rotate(rotation * Math.PI / 180.0)
   context.drawImage(image, width / -2,height / -2)
   context.restore()
-  const data = base64toUInt8Array(canvas.toDataURL('image/png'))
+  const data = base64toUInt8Array(canvas.toDataURL())
   disposeImage(image)
   disposeCanvas(canvas)
   let pngFilePath = filePath

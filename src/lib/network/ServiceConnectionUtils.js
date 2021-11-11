@@ -20,6 +20,7 @@ import {
   isNotFoundError
 } from './HttpUtilities'
 import { parseStringPromise } from 'xml2js'
+import {getWMTSCapabilitiesURL, getWMTSInfo} from '../util/wmts/WMTSUtilities'
 
 /**
  * These functions handles connections to supported GIS services
@@ -78,6 +79,62 @@ async function connectionWrapper (connFunc) {
 }
 
 /**
+ * Tests a WMTS connection
+ * @param serviceUrl
+ * @param options
+ * @returns {Promise<Object>}
+ */
+async function testWebMapTileServiceConnection (serviceUrl, options) {
+  let serviceInfo
+  let error = undefined
+  let withCredentials = false
+  let result = await connectionWrapper(async () => {
+    let serviceInfo
+    let error = undefined
+    const url = getWMTSCapabilitiesURL(serviceUrl)
+    let cancellableServiceRequest = new CancellableServiceRequest()
+    cancellableServiceRequest.withCredentials = options.withCredentials || false
+    let response = await cancellableServiceRequest.request(url)
+    withCredentials = cancellableServiceRequest.requiredCredentials()
+    if (response) {
+      let result = await parseStringPromise(response.data)
+      let wmtsInfo = getWMTSInfo(result, url.indexOf('https') !== -1)
+      serviceInfo = {
+        title: 'WMTS Service',
+        abstract: undefined,
+        version: '1.0.0',
+        serviceLayers: wmtsInfo.layers,
+        wmtsInfo: wmtsInfo
+      }
+      if (wmtsInfo.serviceIdentification != null) {
+       if (wmtsInfo.serviceIdentification.title != null) {
+         serviceInfo.title = wmtsInfo.serviceIdentification.title
+       }
+        if (wmtsInfo.serviceIdentification.abstract != null) {
+          serviceInfo.abstract = wmtsInfo.serviceIdentification.abstract
+        }
+      }
+      if (wmtsInfo.serviceProvider != null) {
+        serviceInfo.contactOrg = wmtsInfo.serviceProvider.providerName
+        if (wmtsInfo.serviceProvider.serviceContact != null) {
+          serviceInfo.contactName = wmtsInfo.serviceProvider.serviceContact.contactName
+        }
+      }
+    } else {
+      error = 'No response.'
+    }
+    return {serviceInfo, error, withCredentials}
+  })
+
+  serviceInfo = result.serviceInfo
+  if (!isNil(serviceInfo)) {
+    error = undefined
+  } else if (isNil(error) || error.status < 0) {
+    error = result.error
+  }
+  return {serviceInfo, error, withCredentials}
+}
+/**
  * Tests a WMS connection
  * @param serviceUrl
  * @param options
@@ -109,7 +166,6 @@ async function testWebMapServiceConnection (serviceUrl, options) {
           contactName: wmsInfo.contactName,
           contactOrg: wmsInfo.contactOrg,
           serviceLayers: wmsInfo.layers,
-          unsupportedServiceLayers: wmsInfo.unsupportedLayers,
           format: wmsInfo.format
         }
       } else {
@@ -180,6 +236,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
   }
   return {serviceInfo, error, withCredentials}
 }
+
 
 /**
  * Tests a XYZ connection
@@ -311,11 +368,14 @@ async function testServiceConnection (serviceUrl, serviceType, options) {
         case SERVICE_TYPE.XYZ:
           result = testXYZTileServiceConnection(fixXYZTileServerUrlForLeaflet(serviceUrl), options)
           break
-        case SERVICE_TYPE.ARCGIS_FS:
+        case SERVICE_TYPE.WMTS:
+          result = testWebMapTileServiceConnection(serviceUrl, options)
+          break
+       case SERVICE_TYPE.ARCGIS_FS:
           result = testArcGISFeatureServiceConnection(serviceUrl, options)
           break
         default:
-          result = {serviceInfo: undefined, error: {status: -1, statusText: 'Service not supported. Supported services include WMS, WFS, XYZ and ArcGIS FS'}}
+          result = {serviceInfo: undefined, error: {status: -1, statusText: 'Service not supported. Supported services include WMS, WFS, XYZ, WMTS and ArcGIS FS'}}
           break
       }
     }

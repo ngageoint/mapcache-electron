@@ -30,11 +30,27 @@ export default class XYZServerLayer extends NetworkTileLayer {
     this.maxZoom = configuration.maxZoom || 20
   }
 
+  getTileUrl (coords) {
+    return generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)
+  }
+
   /**
    * Gets the tile url for this service
+   * @param webMercatorBoundingBox
    * @param coords
+   * @param size
    */
-  getTileRequestData (coords) {
-    return { url: generateUrlForTile(this.filePath, this.subdomains || [], coords.x, coords.y, coords.z)}
+  getTileRequestData (webMercatorBoundingBox, coords, size) {
+    return {
+      srs: 'EPSG:3857',
+      requiresReprojection: false,
+      bbox: webMercatorBoundingBox,
+      webRequests: [{
+        url: this.getTileUrl(coords),
+        width: size.x,
+        height: size.y,
+        tileBounds: [webMercatorBoundingBox.minLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.maxLat]
+      }],
+    }
   }
 }

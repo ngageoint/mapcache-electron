@@ -2,7 +2,8 @@ import { createUniqueID } from '../util/UniqueIDUtilities'
 import { createNextAvailableLayerDirectory } from '../util/file/FileUtilities'
 
 /**
- * A Source is a representation of a file or url (denoted in the filePath variable)
+ * A Source is a representation of a file or url (denoted in the filePath variable). The result of processing a source is
+ * a collection of layers that have the information required to setup renderers.
  */
 export default class Source {
   /**

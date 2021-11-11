@@ -13,8 +13,8 @@ export default class ElectronGeoTiffRenderer extends ElectronTileRenderer {
     this.layer = layer
   }
 
-  getTileRequest (requestId, coords) {
-    const request = super.getTileRequest(requestId, coords)
+  getTileRequest (requestId, coords, size) {
+    const request = super.getTileRequest(requestId, coords, size)
     return Object.assign(request, {
       enableGlobalNoDataValue: this.layer.enableGlobalNoDataValue,
       samplesPerPixel: this.layer.samplesPerPixel,

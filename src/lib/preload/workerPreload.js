@@ -8,9 +8,11 @@ import { buildTileLayer } from '../geopackage/GeoPackageTileTableBuilder'
 import { setSourceError } from '../vue/vuex/ProjectActions'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
-import { reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
+import { convertToWebMercator, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
 import { GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, WORKER_BUILD_FEATURE_LAYER, WORKER_BUILD_FEATURE_LAYER_COMPLETED, WORKER_BUILD_FEATURE_LAYER_STATUS, WORKER_BUILD_TILE_LAYER, WORKER_BUILD_TILE_LAYER_COMPLETED, WORKER_BUILD_TILE_LAYER_STATUS, WORKER_READY } from '../electron/ipc/MapCacheIPC'
-
+import {
+  convertPbfToDataUrl,
+} from '../util/rendering/MBTilesUtilities'
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
@@ -85,5 +87,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getWebMercatorBoundingBoxFromXYZ,
   tileIntersectsXYZ,
   reprojectWebMercatorBoundingBox,
-  setSourceError
+  setSourceError,
+  convertToWebMercator,
+  convertPbfToDataUrl
 })

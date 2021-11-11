@@ -8,6 +8,16 @@ export default class CancellableTileRequest {
   axiosRequestScheduler
   requestTimeoutFunction
   responseReceived = false
+  convertPbfToDataUrl
+
+  constructor (isElectron = false) {
+    if (isElectron) {
+      const { convertPbfToDataUrl } = require('../util/rendering/MBTilesUtilities')
+      this.convertPbfToDataUrl = convertPbfToDataUrl
+    } else {
+      this.convertPbfToDataUrl = window.mapcache.convertPbfToDataUrl
+    }
+  }
 
   /**
    * If a request is currently active, call cancelToken function
@@ -32,9 +42,10 @@ export default class CancellableTileRequest {
    * @param retryAttempts
    * @param timeout
    * @param withCredentials
+   * @param size
    * @returns {Promise<{dataURL: undefined, error: *}>}
    */
-  async requestTile (axiosRequestScheduler, url, retryAttempts, timeout, withCredentials = false) {
+  async requestTile (axiosRequestScheduler, url, retryAttempts, timeout, withCredentials = false, size) {
     let dataUrl = null
     let attempts = 0
     let error = null
@@ -51,7 +62,12 @@ export default class CancellableTileRequest {
           timeout: timeout,
           withCredentials
         })
-        dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + Buffer.from(response.data).toString('base64')
+        const dataBuffer = Buffer.from(response.data)
+        if (response.headers['content-type'] === 'image/pbf' || response.headers['content-type'] === 'application/x-protobuf') {
+          dataUrl = this.convertPbfToDataUrl(dataBuffer, size.x, size.y)
+        } else {
+          dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + dataBuffer.toString('base64')
+        }
         error = null
       } catch (err) {
         error = err

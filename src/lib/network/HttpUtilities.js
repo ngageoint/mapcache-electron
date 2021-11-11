@@ -13,7 +13,8 @@ const SERVICE_TYPE = {
   WFS: 1,
   XYZ: 2,
   ARCGIS_FS: 3,
-  OVERPASS: 4
+  OVERPASS: 4,
+  WMTS: 5
 }
 const METHOD = {
   GET: 'GET',
@@ -55,6 +56,9 @@ function getServiceName(serviceType) {
     case SERVICE_TYPE.ARCGIS_FS:
       serviceName = 'ArcGIS FS'
       break
+    case SERVICE_TYPE.WMTS:
+      serviceName = 'WMTS'
+      break
     default:
       serviceName = 'Unknown'
       break
@@ -70,7 +74,9 @@ function getServiceType(serviceName) {
     serviceType = SERVICE_TYPE.WFS
   } else if (serviceName === 'XYZ' || serviceName === 'XYZServer') {
     serviceType = SERVICE_TYPE.XYZ
-  } else if (serviceName === 'ArcGIS FS') {
+  } else if (serviceName === 'WMTS') {
+    serviceType = SERVICE_TYPE.WMTS
+  }  else if (serviceName === 'ArcGIS FS') {
     serviceType = SERVICE_TYPE.ARCGIS_FS
   }
   return serviceType

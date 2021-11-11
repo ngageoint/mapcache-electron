@@ -18,6 +18,8 @@ export default class SourceFactory {
         source = new (require('./arcgis/ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 4) {
         source = new (require('./overpass/OverpassSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.name, sourceConfiguration.fileData)
+      } else if (sourceConfiguration.serviceType === 5) {
+        source = new (require('./wmts/WMTSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layer, sourceConfiguration.wmtsInfo, sourceConfiguration.name, sourceConfiguration.withCredentials)
       }
     } else {
       const filePath = sourceConfiguration.file.path

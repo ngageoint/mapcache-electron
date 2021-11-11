@@ -11,8 +11,8 @@ export default class ElectronMBTilesRenderer extends ElectronTileRenderer {
     this.polygonStyle = polygonStyle
   }
 
-  getTileRequest (requestId, coords) {
-    const request = super.getTileRequest(requestId, coords)
+  getTileRequest (requestId, coords, size) {
+    const request = super.getTileRequest(requestId, coords, size)
     return Object.assign(request, {
       dbFile: this.layer.filePath,
       format: this.layer.format,

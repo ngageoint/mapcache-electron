@@ -12,7 +12,7 @@ import {
 import { constructLayer } from '../layer/LayerFactory'
 import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
-import { createCanvas, isBlank, hasTransparentPixels } from '../util/canvas/CanvasUtilities'
+import {createCanvas, isBlank, hasTransparentPixels, disposeCanvas} from '../util/canvas/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
 import {
@@ -34,7 +34,7 @@ async function getImageBufferFromCanvas (canvas) {
   if (!isBlank(canvas)) {
     if (hasTransparentPixels(canvas)) {
       try {
-        return await imagemin.buffer(Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64'), {
+        return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
           plugins: [imageminPngquant({speed: 8, quality: [0.5, 0.8]})]
         })
         // eslint-disable-next-line no-unused-vars
@@ -286,7 +286,7 @@ async function buildTileLayer (configuration, statusCallback) {
             const layer = sortedLayers[i]
             if (layers.indexOf(layer.id) !== -1) {
               tilePromises.push(new Promise((resolve, reject) => {
-                layer.renderTile(createUniqueID(), {x, y, z}, (err, result) => {
+                layer.renderTile(createUniqueID(), {x, y, z}, {x: tileSize, y: tileSize}, (err, result) => {
                   if (err) {
                     reject(err)
                   } else if (!isNil(result)) {
@@ -340,10 +340,7 @@ async function buildTileLayer (configuration, statusCallback) {
         if (buffer != null) {
           gp.addTile(buffer, tableName, z, y, x)
         }
-        if (canvas.dispose) {
-          canvas.dispose()
-          canvas = null
-        }
+        disposeCanvas(canvas)
         tilesAdded += 1
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
         status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nApprox. time remaining: ' + prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))

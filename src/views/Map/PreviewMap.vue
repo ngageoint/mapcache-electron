@@ -220,6 +220,9 @@ export default {
         this.previewMapLayer = constructMapLayer({layer: layer, isPreview: true})
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
+        this.$nextTick(() => {
+          EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, layer.extent, layer.minZoom || 2, layer.maxZoom)
+        })
       },
       removePreviewLayer () {
         if (!isNil(this.previewMapLayer)) {
@@ -378,7 +381,9 @@ export default {
         let bounds = L.latLngBounds(boundingBox)
         bounds = bounds.pad(0.05)
         const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
-        this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom})
+        const currentMapCenter = this.map.getCenter()
+        const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
+        this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: 3.0 * distanceFactor})
       })
     },
     beforeDestroy: function () {

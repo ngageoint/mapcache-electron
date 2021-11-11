@@ -40,13 +40,17 @@ function isXYZ (url) {
   const zIndex = url.toLowerCase().indexOf('{z}')
   return zIndex > -1 && zIndex < xIndex && xIndex < yIndex
 }
-
 function requiresSubdomains (url) {
   return url.toLowerCase().indexOf('{s}') > -1
 }
 
 function isWMS (url) {
   return url.toLowerCase().indexOf('wms') > -1
+}
+
+
+function isWMTS (url) {
+  return url.toLowerCase().indexOf('wmts') > -1
 }
 
 function isWFS (url) {
@@ -75,6 +79,7 @@ export {
   requiresSubdomains,
   isWMS,
   isWFS,
+  isWMTS,
   isArcGISFeatureService,
   isUrlValid
 }

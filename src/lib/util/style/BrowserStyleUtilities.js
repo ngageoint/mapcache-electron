@@ -32,7 +32,7 @@ async function getDefaultIcon (iconName = 'New Icon', description = '') {
     description: description,
     contentType: 'image/png',
     // eslint-disable-next-line no-undef
-    data: base64toUInt8Array(canvas.toDataURL('image/png'))
+    data: base64toUInt8Array(canvas.toDataURL())
   }
 }
 
@@ -49,7 +49,7 @@ async function getSvgMarkerIconData (iconName, svgPath) {
     name: iconName,
     description: '',
     contentType: 'image/png',
-    data: base64toUInt8Array(canvas.toDataURL('image/png'))
+    data: base64toUInt8Array(canvas.toDataURL())
   }
 }
 
