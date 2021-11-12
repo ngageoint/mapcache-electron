@@ -27,7 +27,7 @@ export default class KMZSource extends Source {
     const kmlFilePath = path.join(unzippedDirectory, kmlFile)
     const newKmlFileName = kmzFileName + '.kml'
     const newKmlFilePath = path.join(unzippedDirectory, newKmlFileName)
-    await jetpack.renameAsync(kmlFilePath, newKmlFileName)
+    await jetpack.copyAsync(kmlFilePath, newKmlFilePath)
 
     // now that kml and resources are established, pass along to a kml source to process
     const kmlSource = new KMLSource(this.id, this.directory, newKmlFilePath)
