@@ -389,7 +389,7 @@ export default {
       dataSourceMapLayers: {},
       notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       geopackageMapLayers: {},
-      selectedBaseMapId: '0',
+      selectedBaseMapId: navigator.onLine ? '0' : '3',
       isDrawing: false,
       maxFeatures: undefined,
       NEW_GEOPACKAGE_OPTION,
@@ -431,7 +431,7 @@ export default {
       showGridSelection: false,
       drag: false,
       layerOrder: [],
-      mapBackground: '#ddd',
+      mapBackground: navigator.onLine ? '#ddd' : '#C0D9E4',
       displayNetworkError: false,
       connectingToBaseMap: false,
       manualBoundingBoxDialog: false,
@@ -1675,7 +1675,7 @@ export default {
       const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
       const currentMapCenter = this.map.getCenter()
       const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
-      this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: 3.0 * distanceFactor})
+      this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
     })
     EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message) => {
       this.alertMessage = message

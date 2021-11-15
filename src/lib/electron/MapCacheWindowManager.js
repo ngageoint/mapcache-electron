@@ -51,7 +51,13 @@ import {
   WORKER_BUILD_FEATURE_LAYER,
   WORKER_BUILD_FEATURE_LAYER_STATUS,
   WORKER_BUILD_FEATURE_LAYER_COMPLETED,
-  CANCEL_BUILD_FEATURE_LAYER_COMPLETED
+  CANCEL_BUILD_FEATURE_LAYER_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_RENAME,
+  REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_DELETE,
+  REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_COPY,
+  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED
 } from './ipc/MapCacheIPC'
 
 const isMac = process.platform === 'darwin'
@@ -302,6 +308,45 @@ class MapCacheWindowManager {
           })
         }).catch(e => {
           event.sender.send(REQUEST_REPROJECT_TILE_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(REQUEST_GEOPACKAGE_TABLE_RENAME, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.renameGeoPackageTable(payload).then(response => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
+            result: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(REQUEST_GEOPACKAGE_TABLE_DELETE, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.deleteGeoPackageTable(payload).then(response => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
+            result: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(REQUEST_GEOPACKAGE_TABLE_COPY, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.copyGeoPackageTable(payload).then(response => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
+            result: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
             error: e
           })
         })

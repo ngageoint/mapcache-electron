@@ -4,7 +4,7 @@ import {
   REQUEST_PROCESS_SOURCE,
   REQUEST_ATTACH_MEDIA,
   REQUEST_GEOTIFF_RASTER,
-  REQUEST_TILE_REPROJECTION
+  REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY
 } from '../mapcacheThreadRequestTypes'
 
 /**
@@ -27,7 +27,7 @@ export default class MapcacheThreadHelper {
     // perform any task
     for (let i = 1; i < workerCount; i++) {
       config.push({
-        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION]
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY]
       })
     }
 
@@ -140,6 +140,54 @@ export default class MapcacheThreadHelper {
   reprojectTile (data) {
     return new Promise((resolve, reject) => {
       this.threadPool.addTask({id: data.id, type: REQUEST_TILE_REPROJECTION, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Renames a geopackage table
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  renameGeoPackageTable (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_RENAME, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Deletes a geopackage table
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  deleteGeoPackageTable (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_DELETE, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Copies a geopackage table
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  copyGeoPackageTable (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_COPY, data: data}, null, (err, result) => {
         if (err) {
           reject(err)
         }

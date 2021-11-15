@@ -9,7 +9,6 @@ import Vue from 'vue'
 import { tryCollect } from '../../util/GarbageCollector'
 import {
   getOrCreateGeoPackageForApp,
-  renameGeoPackageTable,
   copyGeoPackageTable,
   deleteGeoPackageTable,
   getGeoPackageFeatureTableForApp,
@@ -30,7 +29,7 @@ import {
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
-import {addMediaAttachment} from '../../geopackage/GeoPackageMediaUtilities'
+import { addMediaAttachment } from '../../geopackage/GeoPackageMediaUtilities'
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   let filePath
@@ -183,64 +182,31 @@ function removeGeoPackage ({projectId, geopackageId}) {
   store.dispatch('Projects/removeGeoPackage', {projectId, geopackageId})
 }
 
-function renameGeoPackageTileTable ({projectId, geopackageId, oldTableName, newTableName}) {
-  renameGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    let table = geopackage.tables.tiles[oldTableName]
-    delete geopackage.tables.tiles[oldTableName]
-    geopackage.tables.tiles[newTableName] = table
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
+function addCopiedGeoPackageTileTable ({projectId, geopackageId, tableName, copyTableName, type = 'feature'}) {
+  let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+  tableList[copyTableName] = cloneDeep(tableList[tableName])
+  tableList[copyTableName].visible = false
+  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+  store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
 }
 
-function copyGeoPackageTileTable ({projectId, geopackageId, tableName, copyTableName}) {
-  copyGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    geopackage.tables.tiles[copyTableName] = cloneDeep(geopackage.tables.tiles[tableName])
-    geopackage.tables.tiles[copyTableName].visible = false
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
+function updateDeletedGeoPackageTileTable ({projectId, geopackageId, tableName, type = 'feature'}) {
+  let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+  delete tableList[tableName]
+  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+  store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
 }
 
-function deleteGeoPackageTileTable ({projectId, geopackageId, tableName}) {
-  deleteGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, tableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    delete geopackage.tables.tiles[tableName]
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
-}
-
-function renameGeoPackageFeatureTable ({projectId, geopackageId, oldTableName, newTableName}) {
-  renameGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, oldTableName, newTableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    let table = geopackage.tables.features[oldTableName]
-    delete geopackage.tables.features[oldTableName]
-    geopackage.tables.features[newTableName] = table
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
-}
-
-function copyGeoPackageFeatureTable ({projectId, geopackageId, tableName, copyTableName}) {
-  copyGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, tableName, copyTableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    geopackage.tables.features[copyTableName] = cloneDeep(geopackage.tables.features[tableName])
-    geopackage.tables.features[copyTableName].visible = false
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
-}
-
-function deleteGeoPackageFeatureTable ({projectId, geopackageId, tableName}) {
-  deleteGeoPackageTable(store.state.Projects[projectId].geopackages[geopackageId].path, tableName).then(() => {
-    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    delete geopackage.tables.features[tableName]
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-  })
+function updateRenamedGeoPackageTable ({projectId, geopackageId, tableName, newTableName, type = 'feature'}) {
+  let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+  let table = tableList[tableName]
+  delete tableList[tableName]
+  tableList[newTableName] = table
+  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+  store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
 }
 
 function renameGeoPackageFeatureTableColumn ({projectId, geopackageId, tableName, oldColumnName, newColumnName}) {
@@ -780,12 +746,9 @@ export {
   sleep,
   renameGeoPackage,
   removeGeoPackage,
-  renameGeoPackageTileTable,
-  copyGeoPackageTileTable,
-  deleteGeoPackageTileTable,
-  renameGeoPackageFeatureTable,
-  copyGeoPackageFeatureTable,
-  deleteGeoPackageFeatureTable,
+  updateRenamedGeoPackageTable,
+  updateDeletedGeoPackageTileTable,
+  addCopiedGeoPackageTileTable,
   renameGeoPackageFeatureTableColumn,
   deleteGeoPackageFeatureTableColumn,
   addGeoPackageFeatureTableColumn,

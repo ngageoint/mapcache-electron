@@ -41,12 +41,6 @@ import {
   sleep,
   renameGeoPackage,
   removeGeoPackage,
-  renameGeoPackageTileTable,
-  copyGeoPackageTileTable,
-  deleteGeoPackageTileTable,
-  renameGeoPackageFeatureTable,
-  copyGeoPackageFeatureTable,
-  deleteGeoPackageFeatureTable,
   renameGeoPackageFeatureTableColumn,
   deleteGeoPackageFeatureTableColumn,
   addGeoPackageFeatureTableColumn,
@@ -99,10 +93,13 @@ import {
   setSourceError,
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
-  clearStylingForFeature, createGeoPackageWithFeatureTable
+  clearStylingForFeature,
+  createGeoPackageWithFeatureTable,
+  updateRenamedGeoPackageTable,
+  updateDeletedGeoPackageTileTable, addCopiedGeoPackageTileTable
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
-import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, deleteGeoPackageTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
+import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
 import {
   getAllFeatureRows,
@@ -153,7 +150,54 @@ import {
   convertToWebMercator
 } from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
-import { ATTACH_MEDIA, ATTACH_MEDIA_COMPLETED, BUILD_FEATURE_LAYER, BUILD_FEATURE_LAYER_COMPLETED, BUILD_FEATURE_LAYER_STATUS, BUILD_TILE_LAYER, BUILD_TILE_LAYER_COMPLETED, BUILD_TILE_LAYER_STATUS, CANCEL_BUILD_FEATURE_LAYER, CANCEL_BUILD_FEATURE_LAYER_COMPLETED, CANCEL_BUILD_TILE_LAYER, CANCEL_BUILD_TILE_LAYER_COMPLETED, CANCEL_PROCESS_SOURCE, CANCEL_PROCESS_SOURCE_COMPLETED, CANCEL_REPROJECT_TILE_REQUEST, CANCEL_SERVICE_REQUEST, CANCEL_TILE_REQUEST, CLIENT_CERTIFICATE_SELECTED, CLIENT_CREDENTIALS_INPUT, CLOSE_PROJECT, CLOSING_PROJECT_WINDOW, GENERATE_GEOTIFF_RASTER_FILE, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED, GET_APP_DATA_DIRECTORY, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, PROCESS_SOURCE, PROCESS_SOURCE_COMPLETED, PROCESS_SOURCE_STATUS, REQUEST_CLIENT_CREDENTIALS, REQUEST_REPROJECT_TILE, REQUEST_REPROJECT_TILE_COMPLETED, REQUEST_TILE, REQUEST_TILE_COMPLETED, SELECT_CLIENT_CERTIFICATE, SHOW_OPEN_DIALOG, SHOW_OPEN_DIALOG_COMPLETED, SHOW_SAVE_DIALOG, SHOW_SAVE_DIALOG_COMPLETED } from '../electron/ipc/MapCacheIPC'
+import {
+  ATTACH_MEDIA,
+  ATTACH_MEDIA_COMPLETED,
+  BUILD_FEATURE_LAYER,
+  BUILD_FEATURE_LAYER_COMPLETED,
+  BUILD_FEATURE_LAYER_STATUS,
+  BUILD_TILE_LAYER,
+  BUILD_TILE_LAYER_COMPLETED,
+  BUILD_TILE_LAYER_STATUS,
+  CANCEL_BUILD_FEATURE_LAYER,
+  CANCEL_BUILD_FEATURE_LAYER_COMPLETED,
+  CANCEL_BUILD_TILE_LAYER,
+  CANCEL_BUILD_TILE_LAYER_COMPLETED,
+  CANCEL_PROCESS_SOURCE,
+  CANCEL_PROCESS_SOURCE_COMPLETED,
+  CANCEL_REPROJECT_TILE_REQUEST,
+  CANCEL_SERVICE_REQUEST,
+  CANCEL_TILE_REQUEST,
+  CLIENT_CERTIFICATE_SELECTED,
+  CLIENT_CREDENTIALS_INPUT,
+  CLOSE_PROJECT,
+  CLOSING_PROJECT_WINDOW,
+  GENERATE_GEOTIFF_RASTER_FILE,
+  GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
+  GET_APP_DATA_DIRECTORY,
+  GET_USER_DATA_DIRECTORY,
+  IPC_EVENT_CONNECT,
+  IPC_EVENT_NOTIFY_MAIN,
+  IPC_EVENT_NOTIFY_RENDERERS,
+  OPEN_EXTERNAL,
+  PROCESS_SOURCE,
+  PROCESS_SOURCE_COMPLETED,
+  PROCESS_SOURCE_STATUS,
+  REQUEST_CLIENT_CREDENTIALS, REQUEST_GEOPACKAGE_TABLE_COPY, REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_DELETE,
+  REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_RENAME,
+  REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED,
+  REQUEST_REPROJECT_TILE,
+  REQUEST_REPROJECT_TILE_COMPLETED,
+  REQUEST_TILE,
+  REQUEST_TILE_COMPLETED,
+  SELECT_CLIENT_CERTIFICATE,
+  SHOW_OPEN_DIALOG,
+  SHOW_OPEN_DIALOG_COMPLETED,
+  SHOW_SAVE_DIALOG,
+  SHOW_SAVE_DIALOG_COMPLETED
+} from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
   convertPbfToDataUrl,
@@ -549,6 +593,42 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_REPROJECT_TILE, request)
     })
   },
+  renameGeoPackageTable: ({projectId, geopackageId, filePath, tableName, newTableName, type = 'feature'}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(requestId), (event, result) => {
+        if (result) {
+          updateRenamedGeoPackageTable({projectId, geopackageId, tableName, newTableName, type})
+        }
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_RENAME, {id: requestId, filePath, tableName: tableName, newTableName})
+    })
+  },
+  deleteGeoPackageTable: ({projectId, geopackageId, filePath, tableName, type = 'feature', silent = false}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(requestId), (event, result) => {
+        if (result && !silent) {
+          updateDeletedGeoPackageTileTable({projectId, geopackageId, tableName, type})
+        }
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_DELETE, {id: requestId, filePath, tableName})
+    })
+  },
+  copyGeoPackageTable: ({projectId, geopackageId, filePath, tableName, copyTableName, type = 'feature'}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(requestId), (event, result) => {
+        if (result.result) {
+          addCopiedGeoPackageTileTable({projectId, geopackageId, tableName, copyTableName, type})
+        }
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, {id: requestId, filePath, tableName, copyTableName})
+    })
+  },
   registerServiceRequestCancelListener: (url, callback) => {
     cancelRequestURLToCallbackMap[url] = callback
   },
@@ -827,7 +907,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   getOrCreateGeoPackage,
   getGeoPackageExtent,
   getBoundingBoxForTable,
-  deleteGeoPackageTable,
   getTables,
   getGeoPackageFileSize,
   getDetails,
@@ -878,12 +957,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   sleep,
   renameGeoPackage,
   removeGeoPackage,
-  renameGeoPackageTileTable,
-  copyGeoPackageTileTable,
-  deleteGeoPackageTileTable,
-  renameGeoPackageFeatureTable,
-  copyGeoPackageFeatureTable,
-  deleteGeoPackageFeatureTable,
   renameGeoPackageFeatureTableColumn,
   deleteGeoPackageFeatureTableColumn,
   addGeoPackageFeatureTableColumn,

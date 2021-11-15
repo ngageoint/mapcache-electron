@@ -222,7 +222,7 @@
                     <v-virtual-scroll
                         class="pt-4 pl-2 pr-2 ma-0 mt-8"
                         :items="serviceLayers"
-                        :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 300 ? 300 : null"
+                        :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
                         :item-height="getHeightFromServiceLayers(serviceLayers)"
                     >
                       <template v-slot:default="{ item, i }">

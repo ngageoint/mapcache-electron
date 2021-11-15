@@ -267,7 +267,7 @@ export default {
         this.cancelling = true
         window.mapcache.cancelAddFeatureLayer(this.configuration).then(() => {
           setTimeout(() => {
-            window.mapcache.deleteGeoPackageTable(self.geopackage.path, self.configuration.table).then(() => {
+            window.mapcache.deleteGeoPackageTable({filePath: self.geopackage.path, tableName: self.configuration.table, silent: true}).then(() => {
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'

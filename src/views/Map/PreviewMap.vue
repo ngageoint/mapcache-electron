@@ -73,9 +73,9 @@ export default {
         mdiMapOutline: mdiMapOutline,
         previewMapLayer: null,
         observer: null,
-        mapBackground: '#ddd',
+        mapBackground: navigator.onLine ? '#ddd' : '#C0D9E4',
         showBaseMapSelection: false,
-        selectedBaseMapId: '0',
+        selectedBaseMapId: navigator.onLine ? '0' : '3',
         baseMapLayers: {},
         offlineBaseMapId: getOfflineBaseMapId(),
         defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
@@ -383,7 +383,7 @@ export default {
         const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
         const currentMapCenter = this.map.getCenter()
         const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
-        this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: 3.0 * distanceFactor})
+        this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
       })
     },
     beforeDestroy: function () {

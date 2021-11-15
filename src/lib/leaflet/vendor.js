@@ -302,8 +302,6 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
           promises.push(new Promise(resolve => {
             cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({dataUrl, error}) => {
               resolve({dataUrl, error, request})
-            }).catch(e => {
-              console.error(e)
             })
           }))
         })

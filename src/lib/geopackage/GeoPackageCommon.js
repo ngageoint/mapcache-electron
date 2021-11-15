@@ -543,11 +543,11 @@ async function getGeoPackageExtent (filePath, tableName) {
  * @param filePath
  * @param tableName
  * @param newTableName
- * @returns {Promise<any>}
  */
 async function renameGeoPackageTable (filePath, tableName, newTableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return gp.renameTable(tableName, newTableName)
+    gp.renameTable(tableName, newTableName)
+    gp.connection.run('VACUUM')
   })
 }
 
@@ -576,7 +576,9 @@ async function tableExists (gp, tableName) {
  */
 async function deleteGeoPackageTable (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return gp.deleteTable(tableName)
+    gp.deleteTable(tableName)
+    gp.connection.run('VACUUM')
+
   })
 }
 

@@ -114,6 +114,7 @@ module.exports = {
         directories: {
           buildResources: "buildResources"
         },
+        buildDependenciesFromSource: true,
         dmg: {
           contents: [
             {

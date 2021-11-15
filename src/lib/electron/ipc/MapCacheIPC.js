@@ -39,6 +39,18 @@ const REQUEST_REPROJECT_TILE = 'request-reproject-tile'
 function REQUEST_REPROJECT_TILE_COMPLETED (id) {
   return 'request-reproject-tile-completed-' + id
 }
+const REQUEST_GEOPACKAGE_TABLE_RENAME = 'request-geopackage-table-rename'
+function REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED (id) {
+  return 'request-geopackage-table-rename-completed-' + id
+}
+const REQUEST_GEOPACKAGE_TABLE_COPY = 'request-geopackage-table-copy'
+function REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED (id) {
+  return 'request-geopackage-table-copy-completed-' + id
+}
+const REQUEST_GEOPACKAGE_TABLE_DELETE = 'request-geopackage-table-delete'
+function REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED (id) {
+  return 'request-geopackage-table-delete-completed-' + id
+}
 const CANCEL_REPROJECT_TILE_REQUEST = 'cancel-reproject-tile-request'
 const WORKER_READY = 'worker-ready'
 const CANCEL_SERVICE_REQUEST = 'cancel-service-request'
@@ -168,4 +180,10 @@ export {
   SELECT_CLIENT_CERTIFICATE,
   CLIENT_CERTIFICATE_SELECTED,
   PROCESS_SOURCE_STATUS,
+  REQUEST_GEOPACKAGE_TABLE_DELETE,
+  REQUEST_GEOPACKAGE_TABLE_RENAME,
+  REQUEST_GEOPACKAGE_TABLE_COPY,
+  REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED
 }

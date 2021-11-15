@@ -20,7 +20,7 @@
         v-model="renameDialog"
         max-width="400"
         persistent
-        @keydown.esc="renameDialog = false">
+        @keydown.esc="closeRenameDialog">
         <v-card v-if="renameDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
@@ -46,11 +46,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
+              :disabled="renaming"
               text
               @click="renameDialog = false">
               Cancel
             </v-btn>
             <v-btn
+              :loading="renaming"
               v-if="renameValid"
               color="primary"
               text
@@ -64,7 +66,7 @@
         v-model="copyDialog"
         max-width="400"
         persistent
-        @keydown.esc="copyDialog = false">
+        @keydown.esc="closeCopyDialog">
         <v-card v-if="copyDialog">
           <v-card-title>
             <v-icon color="primary" class="pr-2">{{mdiContentCopy}}</v-icon>
@@ -90,11 +92,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
+              :disabled="copying"
               text
               @click="copyDialog = false">
               Cancel
             </v-btn>
             <v-btn
+              :loading="copying"
               v-if="copyValid"
               color="primary"
               text
@@ -108,7 +112,7 @@
         v-model="deleteDialog"
         max-width="400"
         persistent
-        @keydown.esc="deleteDialog = false">
+        @keydown.esc="closeDeleteDialog">
         <v-card v-if="deleteDialog">
           <v-card-title>
             <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
@@ -120,11 +124,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
+              :disabled="deleting"
               text
               @click="deleteDialog = false">
               Cancel
             </v-btn>
             <v-btn
+              :loading="deleting"
               color="warning"
               text
               @click="deleteTable">
@@ -268,6 +274,9 @@ export default {
         showCopiedAlert: false,
         renameValid: false,
         renameDialog: false,
+        renaming: false,
+        deleting: false,
+        copying: false,
         renamedTable: this.tableName,
         renamedTableRules: [
           v => !!v || 'Layer name is required',
@@ -305,22 +314,50 @@ export default {
       }
     },
     methods: {
+      closeRenameDialog () {
+        if (!this.renaming) {
+          this.renameDialog = false
+        }
+      },
+      closeDeleteDialog () {
+        if (!this.deleting) {
+          this.deleteDialog = false
+        }
+      },
+      closeCopyDialog () {
+        if (!this.copying) {
+          this.copyDialog = false
+        }
+      },
       rename () {
         this.renamed(this.renamedTable)
         this.copiedTable = this.renamedTable + '_copy'
-        window.mapcache.renameGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, oldTableName: this.tableName, newTableName: this.renamedTable})
-        this.$nextTick(() => {
-          this.renameDialog = false
+        this.renaming = true
+        window.mapcache.renameGeoPackageTable({projectId: this.projectId, geopackageId: this.geopackage.id, filePath: this.geopackage.path, tableName: this.tableName, newTableName: this.renamedTable, type: 'tile'}).then(() => {
+          this.renaming = false
+          this.$nextTick(() => {
+            this.renameDialog = false
+          })
         })
       },
       copy () {
-        this.copyDialog = false
-        window.mapcache.copyGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, copyTableName: this.copiedTable})
-        this.showCopiedAlert = true
+        this.copying = true
+        window.mapcache.copyGeoPackageTable({projectId: this.projectId, geopackageId: this.geopackage.id, filePath: this.geopackage.path, tableName: this.tableName, copyTableName: this.copiedTable, type: 'tile'}).then(() => {
+          this.copying = false
+          this.$nextTick(() => {
+            this.showCopiedAlert = true
+            this.copyDialog = false
+          })
+        })
       },
       deleteTable () {
-        this.deleteDialog = false
-        window.mapcache.deleteGeoPackageTileTable({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName})
+        this.deleting = true
+        window.mapcache.deleteGeoPackageTable({projectId: this.projectId, geopackageId: this.geopackage.id, filePath: this.geopackage.path, tableName: this.tableName, type: 'tile'}).then(() => {
+          this.deleting = false
+          this.$nextTick(() => {
+            this.deleteDialog = false
+          })
+        })
       },
       showRenameDialog () {
         this.renameValid = false

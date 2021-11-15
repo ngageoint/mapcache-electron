@@ -13,10 +13,20 @@ import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRend
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
 import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
-import { REQUEST_ATTACH_MEDIA, REQUEST_PROCESS_SOURCE, REQUEST_RENDER, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION } from './mapcacheThreadRequestTypes'
+import {
+  REQUEST_ATTACH_MEDIA,
+  REQUEST_PROCESS_SOURCE,
+  REQUEST_RENDER,
+  REQUEST_GEOTIFF_RASTER,
+  REQUEST_TILE_REPROJECTION,
+  GEOPACKAGE_TABLE_RENAME,
+  GEOPACKAGE_TABLE_DELETE,
+  GEOPACKAGE_TABLE_COPY
+} from './mapcacheThreadRequestTypes'
 import path from 'path'
 import { reproject } from '../projection/ReprojectionUtilities'
 import { base64toUInt8Array } from '../util/Base64Utilities'
+import { copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable } from '../geopackage/GeoPackageCommon'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -299,6 +309,18 @@ async function reprojectTile (data) {
   return result
 }
 
+function renameTable (data) {
+  return renameGeoPackageTable(data.filePath, data.tableName, data.newTableName)
+}
+
+function deleteTable (data) {
+  return deleteGeoPackageTable(data.filePath, data.tableName)
+}
+
+function copyTable (data) {
+  return copyGeoPackageTable(data.filePath, data.tableName, data.copyTableName)
+}
+
 /**
  * Handles incoming requests from the parent port
  */
@@ -333,6 +355,24 @@ function setupRequestListener () {
         parentPort.postMessage({error: null, result: result})
       }).catch(() => {
         parentPort.postMessage({error: 'Failed to project tile.', result: null})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_RENAME) {
+      renameTable(message.data).then(() => {
+        parentPort.postMessage({error: null, result: true})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to rename table.', result: false})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_DELETE) {
+      deleteTable(message.data).then(() => {
+        parentPort.postMessage({error: null, result: true})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to delete table.', result: false})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_COPY) {
+      copyTable(message.data).then(() => {
+        parentPort.postMessage({error: null, result: true})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to copy table.', result: false})
       })
     }
   })
