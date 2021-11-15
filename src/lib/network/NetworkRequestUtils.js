@@ -30,7 +30,6 @@ async function getRemoteImage (url, filePath) {
         })
       })
       .catch(() => {
-        fs.unlinkSync(filePath)
         // eslint-disable-next-line no-console
         console.error('Failed to retrieve remote icon file')
         resolve()
