@@ -130,8 +130,8 @@ export default {
       }
     },
     methods: {
-      prettyifyWords: prettyifyWords,
-      prettyifyAddress: prettyifyAddress,
+      prettyifyWords,
+      prettyifyAddress,
       open (link) {
         window.mapcache.openExternal(link)
       },

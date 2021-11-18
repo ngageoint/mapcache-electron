@@ -49,6 +49,9 @@ function prettyifyAddress (properties) {
   if (properties.road != null) {
     prettyAddress += properties.road + ', '
   }
+  if (properties.suburb != null) {
+    prettyAddress += properties.suburb + ', '
+  }
   if (properties.city != null) {
     prettyAddress += properties.city + ', '
   }
@@ -140,7 +143,7 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
         delete feature.properties.namedetails
       }
       if (feature.properties.address) {
-        keys(feature.properties.namedetails).forEach(key => feature.properties[key] = feature.properties.namedetails[key])
+        keys(feature.properties.address).forEach(key => feature.properties[key] = feature.properties.address[key])
         delete feature.properties.address
       }
       if (feature.geometry.type !== 'Point') {
