@@ -33,6 +33,7 @@ import { getMediaTableName } from '../util/media/MediaUtilities'
  * currently this just merges features
  * TODO: support extensions
  * TODO: support non-media related tables
+ * TODO: support DataColumns
  * @param configuration
  * @param statusCallback
  * @returns {Promise<any>}

@@ -56,6 +56,7 @@
     <v-data-table
       v-model="selected"
       dense
+      :height="tableHeight"
       calculate-widths
       :headers="headers"
       :items="tableEntries"
@@ -65,6 +66,8 @@
       :loading="loading"
       :page.sync="page"
       :options="options"
+      v-on:update:sort-by="handleSortUpdate"
+      v-on:update:sort-desc="handleDescendingSortUpdate"
       class="elevation-1"
       @click:row="handleClick"
     >
@@ -119,7 +122,7 @@
         </v-btn>
       </template>
       <template v-slot:[`item.style`]="{ item }">
-        <v-btn icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
+        <v-btn  style="width: 25px; height: 25px;" icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
               e.stopPropagation()
               e.preventDefault()
               showStyleAssignment(item)
@@ -153,13 +156,18 @@
         </v-row>
       </template>
     </v-data-table>
-    <div class="text-center pt-2">
-      <v-pagination
-        v-model="page"
-        :length="pageCount"
-        :total-visible="7"
-      ></v-pagination>
-    </div>
+    <v-row no-gutters>
+      <v-col class="mt-2">
+        <v-pagination
+            v-model="page"
+            :length="pageCount"
+            :total-visible="7"
+        ></v-pagination>
+      </v-col>
+      <div v-if="showItemsPerPage" class="pr-4 items-per-page-select">
+        <v-select v-model="options.itemsPerPage" :items="itemsPerPageOptions" label="items per page"></v-select>
+      </div>
+    </v-row>
     <v-dialog
       v-model="editDialog"
       max-width="500"
@@ -193,7 +201,8 @@ export default {
       table: Object,
       zoomToFeature: Function,
       close: Function,
-      isGeoPackage: Boolean
+      isGeoPackage: Boolean,
+      showItemsPerPage: Boolean
     },
     components: {
       GeometryStyleSvg,
@@ -221,12 +230,26 @@ export default {
         mediaFeatureId: -1,
         attachmentDialogFullScreen: false,
         loading: false,
-        options: {hideDefaultFooter: true, itemsPerPage: 5},
+        options: {hideDefaultFooter: false, itemsPerPage: 5},
         tableEntries: [],
-        features: []
+        features: [],
+        itemsPerPageOptions: [5, 10, 15, 20, 25, 50],
+        windowHeight: window.innerHeight,
+        previousItemsPerPage: 5,
+        itemHeight: 32,
+        headerHeight: 32,
+        scrollBarHeight: 16,
+        sortField: null,
+        descending: false,
+        headerColumnNameMapping: {}
       }
     },
     computed: {
+      tableHeight () {
+        const tableOnly = Math.min(this.tableEntries.length, this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
+        const windowAreaAvailable = this.windowHeight - 166
+        return Math.min(tableOnly, windowAreaAvailable)
+      },
       pageCount () {
         return Math.ceil(this.table.featureCount / this.options.itemsPerPage)
       },
@@ -235,11 +258,13 @@ export default {
           { text: 'Actions', value: 'actions', sortable: false, width: 140 },
           { text: 'Attachments', value: 'attachments', width: 140 },
           { text: 'Style', value: 'style', sortable: false, width: 140 },
-          { text: 'Geometry type', value: 'geometryType', width: 140 }
+          { text: 'Geometry type', value: 'geometryType', sortable: false, width: 140 }
         ]
+
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
           if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+            this.headerColumnNameMapping[column.name.toLowerCase() + '_table'] = column.name.toLowerCase()
             tableHeaders.push({
               text: column.name.toLowerCase(),
               value: column.name.toLowerCase() + '_table',
@@ -252,10 +277,29 @@ export default {
     },
     mounted () {
       this.setPage(0)
+      const self = this
+      window.addEventListener('resize', () => {
+        self.windowHeight = window.innerHeight
+      })
     },
     watch: {
       dialog (val) {
         val || this.close()
+      },
+      options: {
+        handler (newOptions) {
+          const newVal = newOptions.itemsPerPage
+          const oldVal = this.previousItemsPerPage
+          const itemStart = (this.page - 1) * oldVal
+          const newPage = Math.floor(itemStart / newVal)
+          this.previousItemsPerPage = newVal
+          if (this.page === (newPage + 1)) {
+            this.setPage(this.page - 1)
+          } else {
+            this.page = newPage + 1
+          }
+        },
+        deep: true
       },
       source: {
         handler (newValue) {
@@ -288,9 +332,18 @@ export default {
       }
     },
     methods: {
+      handleSortUpdate (args) {
+        this.sortField = this.headerColumnNameMapping[args[0]]
+        this.setPage(this.page - 1)
+
+      },
+      handleDescendingSortUpdate (args) {
+        this.descending = args[0]
+        this.setPage(this.page - 1)
+      },
       setPage (pageIndex) {
         this.loading = true
-        this.table.getPage(pageIndex, this.options.itemsPerPage, this.filePath, this.table.tableName).then(page => {
+        this.table.getPage(pageIndex, this.options.itemsPerPage, this.filePath, this.table.tableName, this.sortField, this.descending).then(page => {
           this.$nextTick(() => {
             this.tableEntries = this.getTableEntries(page)
             this.loading = false
@@ -415,5 +468,10 @@ export default {
 </script>
 
 <style scoped>
-
+.items-per-page-select {
+  position: absolute;
+  right: 0;
+  max-width: 100px;
+  min-width: 100px;
+}
 </style>

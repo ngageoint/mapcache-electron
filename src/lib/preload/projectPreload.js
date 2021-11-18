@@ -6,19 +6,15 @@ import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import CredentialsManagement from '../network/CredentialsManagement'
 import Store from 'electron-store'
-import moment from 'moment'
-import orderBy from 'lodash/orderBy'
-import isEmpty from 'lodash/isEmpty'
 import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
 import {
   Context,
   GeometryType,
-  GeoPackageAPI,
   HtmlCanvasAdapter,
   SqliteAdapter,
   GeoPackageDataType,
 } from '@ngageoint/geopackage'
-import { exceedsFileSizeLimit, getMaxFileSizeString, getExtension } from '../util/media/MediaUtilities'
+import { exceedsFileSizeLimit, getMaxFileSizeString } from '../util/media/MediaUtilities'
 import {
   createNextAvailableBaseMapDirectory,
   createNextAvailableSourceDirectory,
@@ -56,7 +52,6 @@ import {
   updateIconRow,
   deleteStyleRow,
   deleteIconRow,
-  addStyleExtensionForTable,
   removeStyleExtensionForTable,
   addFeatureTableToGeoPackage,
   updateFeatureGeometry,
@@ -96,15 +91,15 @@ import {
   clearStylingForFeature,
   createGeoPackageWithFeatureTable,
   updateRenamedGeoPackageTable,
-  updateDeletedGeoPackageTileTable, addCopiedGeoPackageTileTable
+  updateDeletedGeoPackageTileTable,
+  addCopiedGeoPackageTileTable,
+  addStyleExtensionForTable
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
 import {
-  getAllFeatureRows,
   getFeatureRow,
-  updateFeatureRow,
   featureExists,
   countOfFeaturesAt,
   getFeatureCountInBoundingBox,
@@ -116,16 +111,23 @@ import {
   getFeatureCount,
   getFeatureTablePage,
   getFeatureTablePageAtLatLngZoom,
+  getGeoPackageEditableColumnsForFeature,
+  saveGeoPackageEditedFeature,
+  getEditableColumnObject,
 } from '../geopackage/GeoPackageFeatureTableUtilities'
-import { getMediaAttachmentsCounts, deleteMediaAttachment, getMediaRelationships, getMediaRow, getMediaObjectUrl } from '../geopackage/GeoPackageMediaUtilities'
+import {
+  getMediaAttachmentsCounts,
+  deleteMediaAttachment,
+  getMediaRelationships,
+  getMediaObjectUrl,
+} from '../geopackage/GeoPackageMediaUtilities'
 import {
   getStyleItemsForFeature,
   getStyleAssignmentForFeatures,
-  _getTableStyle,
-  _getTableIcon,
-  _getStyleRows,
-  _getIconRows,
-  getStyleDrawOverlap
+  getStyleDrawOverlap,
+  hasStyleExtension,
+  getGeoPackageFeatureTableStyleData,
+  getIconImageData
 } from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
@@ -171,11 +173,11 @@ import {
   CLIENT_CERTIFICATE_SELECTED,
   CLIENT_CREDENTIALS_INPUT,
   CLOSE_PROJECT,
-  CLOSING_PROJECT_WINDOW,
+  CLOSING_PROJECT_WINDOW, FEATURE_TABLE_ACTION, FEATURE_TABLE_EVENT,
   GENERATE_GEOTIFF_RASTER_FILE,
   GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
   GET_APP_DATA_DIRECTORY,
-  GET_USER_DATA_DIRECTORY,
+  GET_USER_DATA_DIRECTORY, HIDE_FEATURE_TABLE_WINDOW,
   IPC_EVENT_CONNECT,
   IPC_EVENT_NOTIFY_MAIN,
   IPC_EVENT_NOTIFY_RENDERERS,
@@ -183,7 +185,8 @@ import {
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
   PROCESS_SOURCE_STATUS,
-  REQUEST_CLIENT_CREDENTIALS, REQUEST_GEOPACKAGE_TABLE_COPY, REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
+  REQUEST_CLIENT_CREDENTIALS, REQUEST_GEOPACKAGE_TABLE_COPY,
+  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_DELETE,
   REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_RENAME,
@@ -193,10 +196,7 @@ import {
   REQUEST_TILE,
   REQUEST_TILE_COMPLETED,
   SELECT_CLIENT_CERTIFICATE,
-  SHOW_OPEN_DIALOG,
-  SHOW_OPEN_DIALOG_COMPLETED,
-  SHOW_SAVE_DIALOG,
-  SHOW_SAVE_DIALOG_COMPLETED
+  SHOW_FEATURE_TABLE_WINDOW,
 } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
@@ -204,6 +204,7 @@ import {
   drawVectorFeaturesInCanvas,
   getVectorTileFeatures
 } from '../util/rendering/MBTilesUtilities'
+import {showOpenDialog, showSaveDialog} from '../electron/dialog/DialogUtilities'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -235,110 +236,8 @@ let fileStreams = {}
 
 let storage
 
-function determineAssignment (gp, tableName, geometryType) {
-  const assignment = {
-    icon: undefined,
-    iconUrl: undefined,
-    style: undefined
-  }
-  let style = _getTableStyle(gp, tableName, geometryType)
-  let icon = _getTableIcon(gp, tableName, geometryType)
-  if (!isNil(style)) {
-    assignment.style = {
-      id: style.id,
-      name: style.getName(),
-      description: style.getDescription(),
-      color: style.getHexColor(),
-      opacity: style.getOpacity(),
-      fillColor: style.getFillHexColor(),
-      fillOpacity: style.getFillOpacity(),
-      width: style.getWidth()
-    }
-  }
-  if (!isNil(icon)) {
-    assignment.icon = {
-      anchorU: icon.anchorU,
-      anchorV: icon.anchorV,
-      contentType: icon.contentType,
-      data: icon.data,
-      description: icon.description,
-      height: icon.height,
-      id: icon.id,
-      name: icon.name,
-      width: icon.description,
-      url: 'data:' + icon.contentType + ';base64,' + Buffer.from(icon.data).toString('base64')
-    }
-  }
-  return assignment
-}
-
 function createBaseMapDirectory () {
   return createNextAvailableBaseMapDirectory(getUserDataDirectory())
-}
-
-function getEditableColumnObject (column, properties, features = []) {
-  const columnObject = {
-    name: column.name,
-    lowerCaseName: column.name.toLowerCase(),
-    dataType: column.dataType,
-    index: column.index
-  }
-  let value = properties[column.name]
-  if (value === undefined || value === null) {
-    value = column.defaultValue
-  }
-  if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
-    value = false
-  } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
-    value = properties[column.name] === 1 || properties[column.name] === true
-  }
-  if (column.dataType === GeoPackageDataType.DATETIME) {
-    columnObject.showDate = true
-    columnObject.showTime = true
-    columnObject.dateValue = null
-    columnObject.timeValue = null
-
-    if (!isNil(value)) {
-      try {
-        const dateVal = moment.utc(value)
-        value = new Date(value)
-        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-        columnObject.timeValue = dateVal.format('hh:mm:ss')
-      } catch (e) {
-        value = null
-      }
-    }
-  }
-  if (column.dataType === GeoPackageDataType.DATE) {
-    columnObject.showDate = true
-    columnObject.dateValue = null
-    if (!isNil(value)) {
-      try {
-        const dateVal = moment.utc(value)
-        value = new Date(value)
-        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
-      } catch (e) {
-        value = null
-      }
-    }
-  }
-  columnObject.value = value === undefined ? null : value
-  if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-    columnObject.rules = []
-    if (column.notNull) {
-      columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
-    }
-    if (column.max) {
-      columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
-    }
-    if (column.min) {
-      columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
-    }
-    if (column.unique) {
-      columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
-    }
-  }
-  return columnObject
 }
 
 contextBridge.exposeInMainWorld('mapcache', {
@@ -400,22 +299,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_APP_DATA_DIRECTORY)
   },
-  showOpenDialog: (options) => {
-    return new Promise (resolve => {
-      ipcRenderer.once(SHOW_OPEN_DIALOG_COMPLETED, (event, result) => {
-        resolve(result)
-      })
-      ipcRenderer.send(SHOW_OPEN_DIALOG, options)
-    })
-  },
-  showSaveDialog: (options) => {
-    return new Promise (resolve => {
-      ipcRenderer.once(SHOW_SAVE_DIALOG_COMPLETED, (event, result) => {
-        resolve(result)
-      })
-      ipcRenderer.send(SHOW_SAVE_DIALOG, options)
-    })
-  },
+  showOpenDialog,
+  showSaveDialog,
   copyToClipboard: (text) => {
     clipboard.writeText(text)
   },
@@ -458,15 +343,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   removeMediaCompletedListener: (id) => {
     ipcRenderer.removeAllListeners(ATTACH_MEDIA_COMPLETED(id))
-  },
-  downloadAttachment: async (filePath, geopackagePath, relatedTable, relatedId) => {
-    const mediaRow = await getMediaRow(geopackagePath, relatedTable, relatedId)
-    const extension = getExtension(mediaRow.contentType)
-    let file = filePath
-    if (extension !== false) {
-      file = filePath + '.' + extension
-    }
-    await jetpack.writeAsync(file, mediaRow.data)
   },
   sendClientCredentials: (eventUrl, credentials) => {
     ipcRenderer.send(CLIENT_CREDENTIALS_INPUT, eventUrl, credentials)
@@ -691,15 +567,6 @@ contextBridge.exposeInMainWorld('mapcache', {
       extent: extent
     }
   },
-  getIconImageData: (file) => {
-    const fileInfo = jetpack.inspect(file, {times: true, absolutePath: true})
-    let extension = path.extname(fileInfo.absolutePath).slice(1)
-    if (extension === 'jpg') {
-      extension = 'jpeg'
-    }
-    let url = 'data:image/' + extension + ';base64,' + fs.readFileSync(fileInfo.absolutePath).toString('base64')
-    return {extension, url}
-  },
   openExternal: (link) => {
     ipcRenderer.send(OPEN_EXTERNAL, link)
   },
@@ -749,120 +616,25 @@ contextBridge.exposeInMainWorld('mapcache', {
       fs.copyFile(filePath, toFilePath, resolve)
     })
   },
-  getGeoPackageEditableColumnsForFeature: async (filePath, tableName, feature, columns) => {
-    if (isNil(columns) || isNil(columns._columns)) {
-      return []
-    }
-    let features = await getAllFeatureRows(filePath, tableName)
-    const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
-    const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
-      return getEditableColumnObject(column, properties, features)
-    })
-
-    return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
+  getGeoPackageEditableColumnsForFeature,
+  saveGeoPackageEditedFeature,
+  showFeatureTableWindow: (forcePopupWindowToFront = false) => {
+    ipcRenderer.send(SHOW_FEATURE_TABLE_WINDOW, {force: forcePopupWindowToFront})
   },
-  saveGeoPackageEditedFeature: async (filePath, tableName, feature, editableColumns) => {
-    const featureRow = await getFeatureRow(filePath, tableName, feature.id)
-    editableColumns.forEach(column => {
-      let value = column.value
-      if (column.dataType === GeoPackageDataType.BOOLEAN) {
-        value = (value === 1 || value === true || value === 'true' || value === '1') ? 1 : 0
-      }
-      if (column.dataType === GeoPackageDataType.DATE) {
-        try {
-          if (!isEmpty(column.dateValue)) {
-            value = new Date(column.dateValue).toISOString().substring(0, 10)
-          } else {
-            value = null
-          }
-        } catch (e) {
-          value = null
-        }
-      }
-      if (column.dataType === GeoPackageDataType.DATETIME) {
-        try {
-          const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
-          if (!isEmpty(dateString)) {
-            value = moment.utc(dateString).toISOString()
-          } else {
-            value = null
-          }
-        } catch (e) {
-          value = null
-        }
-      }
-      featureRow.setValueNoValidationWithIndex(column.index, value)
-    })
-   return await updateFeatureRow(filePath, tableName, featureRow)
+  hideFeatureTableWindow: () => {
+    ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW)
+  },
+  registerHideFeatureTableWindowListener: (listener) => {
+    ipcRenderer.on(HIDE_FEATURE_TABLE_WINDOW, listener)
+  },
+  sendFeatureTableEvent: (event) => {
+    ipcRenderer.send(FEATURE_TABLE_EVENT, event)
+  },
+  registerFeatureTableActionListener: (listener) => {
+    ipcRenderer.on(FEATURE_TABLE_ACTION, listener)
   },
   encryptPassword: CredentialsManagement.encrypt,
-  getDefaultIcon: getDefaultIcon,
-  getGeoPackageFeatureTableStyleData: async (filePath, tableName) => {
-    const result = {}
-    result.styleRows = []
-    result.iconRows = []
-    result.pointAssignment = null
-    result.lineAssignment = null
-    result.polygonAssignment = null
-    result.multipointAssignment = null
-    result.multilineAssignment = null
-    result.multipolygonAssignment = null
-    result.geometryCollectionAssignment = null
-    result.hasStyleExtension = false
-    let gp
-    try {
-      gp = await GeoPackageAPI.open(filePath)
-      result.hasStyleExtension = gp.featureStyleExtension.has(tableName)
-      if (result.hasStyleExtension) {
-        result.styleRows = Object.values(_getStyleRows(gp, tableName))
-        result.iconRows = Object.values(_getIconRows(gp, tableName))
-        if (result.styleRows.length + result.iconRows.length > 0) {
-          result.pointAssignment = determineAssignment(gp, tableName, GeometryType.POINT)
-          result.lineAssignment = determineAssignment(gp, tableName, GeometryType.LINESTRING)
-          result.polygonAssignment = determineAssignment(gp, tableName, GeometryType.POLYGON)
-          result.multipointAssignment = determineAssignment(gp, tableName, GeometryType.MULTIPOINT)
-          result.multilineAssignment = determineAssignment(gp, tableName, GeometryType.MULTILINESTRING)
-          result.multipolygonAssignment = determineAssignment(gp, tableName, GeometryType.MULTIPOLYGON)
-          result.geometryCollectionAssignment = determineAssignment(gp, tableName, GeometryType.GEOMETRYCOLLECTION)
-        }
-      }
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to get GeoPackage style.')
-    } finally {
-      try {
-        gp.close()
-        gp = undefined
-        // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to close GeoPackage.')
-      }
-    }
-    return result
-  },
-  hasStyleExtension: async (path, tableName) => {
-    let hasStyle = false
-    let gp
-    try {
-      gp = await GeoPackageAPI.open(path)
-      hasStyle = gp.featureStyleExtension.has(tableName)
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to determine if style extension is enabled.')
-    }
-    try {
-      gp.close()
-      gp = undefined
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to close geopackage.')
-    }
-    return hasStyle
-  },
+  getDefaultIcon,
   reprojectWebMercatorBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -973,7 +745,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   updateIconRow,
   deleteStyleRow,
   deleteIconRow,
-  addStyleExtensionForTable,
+  hasStyleExtension,
+  getGeoPackageFeatureTableStyleData,
   removeStyleExtensionForTable,
   addFeatureTableToGeoPackage,
   updateFeatureGeometry,
@@ -1025,5 +798,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getDef,
   drawVectorFeaturesInCanvas,
   getVectorTileFeatures,
-  convertToWebMercator
+  convertToWebMercator,
+  getIconImageData,
+  addStyleExtensionForTable
 })

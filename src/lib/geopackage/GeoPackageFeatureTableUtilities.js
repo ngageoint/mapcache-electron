@@ -8,7 +8,10 @@ import {
   GeometryType,
   GeoPackage,
   GeometryData,
-  MediaTable, ProjectionConstants, SqliteQueryBuilder, FeatureTableReader,
+  MediaTable,
+  ProjectionConstants,
+  SqliteQueryBuilder,
+  FeatureTableReader,
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
@@ -29,6 +32,7 @@ import {_addMediaAttachment, _getMediaAttachmentsCounts} from './GeoPackageMedia
 import {
   _addOrSetStyleForFeature, _clearStylingForFeature, _getStyleAssignmentForFeatures
 } from './GeoPackageStyleUtilities'
+import orderBy from 'lodash/orderBy'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
@@ -997,14 +1001,16 @@ async function getFeatureCount (filePath, tableName) {
  * @param tableName
  * @param page
  * @param pageSize
+ * @param sortBy
+ * @param desc
  * @return {{features: *[], styleAssignments: {}, mediaCounts: {}}}
  * @private
  */
-function _getFeatureTablePage (gp, tableName, page, pageSize) {
+function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined, desc = false) {
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs
   const offset = page * pageSize
-  const query = SqliteQueryBuilder.buildQuery(false, "'" + featureDao.gpkgTableName + "'", undefined, undefined, undefined, undefined, undefined, undefined, pageSize, offset)
+  const query = SqliteQueryBuilder.buildQuery(false, "'" + featureDao.gpkgTableName + "'", undefined, undefined, undefined, undefined, undefined, sortBy ? '"' + sortBy + '"' + (desc ? ' DESC NULLS LAST' : ' ASC NULLS LAST') : undefined, pageSize, offset)
   let each = featureDao.connection.each(query)
   const features = []
   for (let row of each) {
@@ -1033,11 +1039,13 @@ function _getFeatureTablePage (gp, tableName, page, pageSize) {
  * @param tableName
  * @param page
  * @param pageSize
+ * @param sortBy
+ * @param desc
  * @return {Promise<{{features: *[], styleAssignments: {}, mediaCounts: {}}}>}
  */
-async function getFeatureTablePage (filePath, tableName, page, pageSize) {
+async function getFeatureTablePage (filePath, tableName, page, pageSize, sortBy, desc) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getFeatureTablePage(gp, tableName, page, pageSize)
+    return _getFeatureTablePage(gp, tableName, page, pageSize, sortBy, desc)
   })
 }
 
@@ -1049,17 +1057,19 @@ async function getFeatureTablePage (filePath, tableName, page, pageSize) {
  * @param pageSize
  * @param latlng
  * @param zoom
+ * @param sortBy
+ * @param desc
  * @return {{features: *[], styleAssignments: {}, mediaCounts: {}}}
  * @private
  */
-function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng, zoom) {
+function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng, zoom, sortBy, desc) {
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs
   const offset = page * pageSize
   const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
   const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
   const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
-  const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, undefined, pageSize, offset)
+  const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, sortBy ? '"' + sortBy + '"' + (desc ? ' DESC NULLS LAST' : ' ASC NULLS LAST') : undefined, pageSize, offset)
   const each = featureDao.connection.each(query, geomEnvelope.whereArgs)
   const features = []
   for (let row of each) {
@@ -1089,11 +1099,13 @@ function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng
  * @param pageSize
  * @param latlng
  * @param zoom
+ * @param sortBy
+ * @param desc
  * @return {Promise<{{features: *[], styleAssignments: {}, mediaCounts: {}}}>}
  */
-async function getFeatureTablePageAtLatLngZoom (filePath, tableName, page, pageSize, latlng, zoom) {
+async function getFeatureTablePageAtLatLngZoom (filePath, tableName, page, pageSize, latlng, zoom, sortBy, desc) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getFeatureTablePageAtLatLngZoom(gp, tableName, page, pageSize, latlng, zoom)
+    return _getFeatureTablePageAtLatLngZoom(gp, tableName, page, pageSize, latlng, zoom, sortBy, desc)
   })
 }
 
@@ -1396,6 +1408,118 @@ async function featureExists (filePath, tableName, featureId) {
   })
 }
 
+function getEditableColumnObject (column, properties, features = []) {
+  const columnObject = {
+    name: column.name,
+    lowerCaseName: column.name.toLowerCase(),
+    dataType: column.dataType,
+    index: column.index
+  }
+  let value = properties[column.name]
+  if (value === undefined || value === null) {
+    value = column.defaultValue
+  }
+  if (isNil(properties[column.name]) && column.dataType === GeoPackageDataType.BOOLEAN) {
+    value = false
+  } else if (column.dataType === GeoPackageDataType.BOOLEAN) {
+    value = properties[column.name] === 1 || properties[column.name] === true
+  }
+  if (column.dataType === GeoPackageDataType.DATETIME) {
+    columnObject.showDate = true
+    columnObject.showTime = true
+    columnObject.dateValue = null
+    columnObject.timeValue = null
+
+    if (!isNil(value)) {
+      try {
+        const dateVal = moment.utc(value)
+        value = new Date(value)
+        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
+        columnObject.timeValue = dateVal.format('hh:mm:ss')
+      } catch (e) {
+        value = null
+      }
+    }
+  }
+  if (column.dataType === GeoPackageDataType.DATE) {
+    columnObject.showDate = true
+    columnObject.dateValue = null
+    if (!isNil(value)) {
+      try {
+        const dateVal = moment.utc(value)
+        value = new Date(value)
+        columnObject.dateValue = dateVal.format('YYYY-MM-DD')
+      } catch (e) {
+        value = null
+      }
+    }
+  }
+  columnObject.value = value === undefined ? null : value
+  if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+    columnObject.rules = []
+    if (column.notNull) {
+      columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
+    }
+    if (column.max) {
+      columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
+    }
+    if (column.min) {
+      columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
+    }
+    if (column.unique) {
+      columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
+    }
+  }
+  return columnObject
+}
+
+async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feature, columns) {
+  if (isNil(columns) || isNil(columns._columns)) {
+    return []
+  }
+  let features = await getAllFeatureRows(filePath, tableName)
+  const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
+  const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+    return getEditableColumnObject(column, properties, features)
+  })
+
+  return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
+}
+async function saveGeoPackageEditedFeature (filePath, tableName, feature, editableColumns) {
+  const featureRow = await getFeatureRow(filePath, tableName, feature.id)
+  editableColumns.forEach(column => {
+    let value = column.value
+    if (column.dataType === GeoPackageDataType.BOOLEAN) {
+      value = (value === 1 || value === true || value === 'true' || value === '1') ? 1 : 0
+    }
+    if (column.dataType === GeoPackageDataType.DATE) {
+      try {
+        if (!isEmpty(column.dateValue)) {
+          value = new Date(column.dateValue).toISOString().substring(0, 10)
+        } else {
+          value = null
+        }
+      } catch (e) {
+        value = null
+      }
+    }
+    if (column.dataType === GeoPackageDataType.DATETIME) {
+      try {
+        const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
+        if (!isEmpty(dateString)) {
+          value = moment.utc(dateString).toISOString()
+        } else {
+          value = null
+        }
+      } catch (e) {
+        value = null
+      }
+    }
+    featureRow.setValueNoValidationWithIndex(column.index, value)
+  })
+  return await updateFeatureRow(filePath, tableName, featureRow)
+}
+
 /**
  * Allows for the streaming of features by returning functions for adding features and notifying completion.
  * addFeature takes a GeoJSON feature and will add it to the table.
@@ -1487,5 +1611,8 @@ export {
   streamingGeoPackageBuild,
   getFeatureCount,
   getFeatureTablePage,
-  getFeatureTablePageAtLatLngZoom
+  getFeatureTablePageAtLatLngZoom,
+  getGeoPackageEditableColumnsForFeature,
+  saveGeoPackageEditedFeature,
+  getEditableColumnObject
 }

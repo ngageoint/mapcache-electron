@@ -527,8 +527,6 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
   let zoomTileMatrix = {}
   if (!isNil(minZoom) && !isNil(maxZoom) && !isNil(boundingBoxFilter)) {
     const trimmedBoundingBoxFilter = trimExtentToWebMercatorMax(boundingBoxFilter)
-    // TODO: need to expand the extent based on the zoom? sigh this kinda sucks... need a different extent per zoom level
-    // TODO: why? to not skip out on layers that could intersect my tile range
     // filtered extents represents the bounding box
     let filteredExtents = dataSources.map(dataSource => {
       const minZoom = dataSource.minZoom || 0

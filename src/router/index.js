@@ -4,6 +4,7 @@ import VueRouter from 'vue-router'
 const LandingPageLoader = () => import('../views/LandingPage/LandingPage.vue')
 const ProjectLoader = () => import('../views/Project/Project.vue')
 const WorkerLoader = () => import('../views/Worker/Worker.vue')
+const FeatureTableLoader = () => import('../views/FeatureTable/FeatureTableWindow.vue')
 
 Vue.use(VueRouter)
 
@@ -25,6 +26,11 @@ const router = new VueRouter({
       path: '/',
       name: 'LandingPage',
       component: LandingPageLoader,
+    },
+    {
+      path: '/feature_table/:id',
+      name: 'FeatureTable',
+      component: FeatureTableLoader,
     }
   ]
 })

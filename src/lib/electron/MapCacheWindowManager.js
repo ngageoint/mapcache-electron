@@ -57,7 +57,11 @@ import {
   REQUEST_GEOPACKAGE_TABLE_DELETE,
   REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_COPY,
-  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED
+  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
+  SHOW_FEATURE_TABLE_WINDOW,
+  HIDE_FEATURE_TABLE_WINDOW,
+  FEATURE_TABLE_ACTION,
+  FEATURE_TABLE_EVENT
 } from './ipc/MapCacheIPC'
 
 const isMac = process.platform === 'darwin'
@@ -72,6 +76,7 @@ class MapCacheWindowManager {
   projectWindow
   loadingWindow
   workerWindow
+  featureTableWindow
   isShuttingDown = false
   quitFromParent = false
   forceClose = false
@@ -244,6 +249,10 @@ class MapCacheWindowManager {
     })
   }
 
+  /**
+   * Registers the worker threads
+   * @return {Promise<void>}
+   */
   async registerWorkerThreads () {
     if (this.mapcacheThreadHelper == null) {
       MapCacheWindowManager.clearWorkerThreadEventHandlers()
@@ -403,6 +412,24 @@ class MapCacheWindowManager {
       this.showProject(payload)
     })
 
+    // setup feature table / map interaction
+    ipcMain.on(SHOW_FEATURE_TABLE_WINDOW, (event, args) => {
+      this.showHideFeatureTableWindow(true, args.force)
+    })
+
+    ipcMain.on(HIDE_FEATURE_TABLE_WINDOW, (event, args) => {
+      this.showHideFeatureTableWindow(false)
+      this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW, args)
+    })
+
+    ipcMain.on(FEATURE_TABLE_ACTION, (event, args) => {
+      this.projectWindow.webContents.send(FEATURE_TABLE_ACTION, args)
+    })
+
+    ipcMain.on(FEATURE_TABLE_EVENT, (event, args) => {
+      this.featureTableWindow.webContents.send(FEATURE_TABLE_EVENT, args)
+    })
+
     ipcMain.on(CLOSE_PROJECT, () => {
       this.forceClose = true
       this.closeProject(true)
@@ -518,6 +545,13 @@ class MapCacheWindowManager {
       // eslint-disable-next-line no-empty
     } catch (e) {}
     try {
+      if (!isNil(this.featureTableWindow)) {
+        this.featureTableWindow.destroy()
+        this.featureTableWindow = null
+      }
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+    try {
       if (!isNil(this.projectWindow)) {
         this.projectWindow.destroy()
         this.projectWindow = null
@@ -576,6 +610,9 @@ class MapCacheWindowManager {
     this.loadContent(this.workerWindow, workerURL, () => {})
   }
 
+  /**
+   * Shows the landing page window
+   */
   showMainWindow () {
     this.mainWindow.show()
     if (!isNil(this.loadingWindow)) {
@@ -705,6 +742,56 @@ class MapCacheWindowManager {
   }
 
   /**
+   * shows or hides the feature table window
+   * @param show
+   * @param force
+   */
+  showHideFeatureTableWindow (show, force = false) {
+    if (this.featureTableWindow) {
+      if (show) {
+        if (force || !this.featureTableWindow.isVisible()) {
+          this.featureTableWindow.show()
+        }
+      } else {
+        this.featureTableWindow.hide()
+      }
+    }
+  }
+
+  /**
+   * Launches the feature table window
+   * @param projectId
+   */
+  launchFeatureTableWindow (projectId) {
+    const windowHeight = 385 + (isWin ? 20 : 0)
+    this.featureTableWindow = new BrowserWindow({
+      title: 'MapCache feature table',
+      webPreferences: {
+        preload: path.join(__dirname, 'featureTablePreload.js')
+      },
+      show: false,
+      width: 650,
+      height: windowHeight,
+      minHeight: windowHeight,
+      minWidth: 650,
+      useContentSize: true
+    })
+    this.featureTableWindow.on('close', (event) => {
+      if (this.closingProjectWindow) {
+        this.closingProjectWindow = false
+        this.featureTableWindow = null
+      } else {
+        this.showHideFeatureTableWindow(false)
+        event.preventDefault()
+      }
+    })
+    const winURL = process.env.WEBPACK_DEV_SERVER_URL
+      ? `${process.env.WEBPACK_DEV_SERVER_URL}#/feature_table/${projectId}`
+      : `mapcache://./index.html/#/feature_table/${projectId}`
+    this.loadContent(this.featureTableWindow, winURL, () => {})
+  }
+
+  /**
    * Downloads a specified file
    * @param url
    * @returns {Promise<void>}
@@ -726,6 +813,11 @@ class MapCacheWindowManager {
    */
   closeProject (isDeleting = false) {
     MapCacheWindowManager.disableCertificateAuth()
+    if (this.featureTableWindow) {
+      this.closingProjectWindow = true
+      this.featureTableWindow.hide()
+      this.featureTableWindow.destroy()
+    }
     if (this.projectWindow) {
       this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, {isDeleting})
       this.launchMainWindow().then(() => {
@@ -741,6 +833,7 @@ class MapCacheWindowManager {
   showProject (projectId) {
     try {
       this.launchProjectWindow()
+      this.launchFeatureTableWindow(projectId)
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
         : `mapcache://./index.html/#/project/${projectId}`
@@ -900,6 +993,9 @@ class MapCacheWindowManager {
     }
     if (this.workerWindow) {
       this.workerWindow.webContents.openDevTools()
+    }
+    if (this.featureTableWindow) {
+      this.featureTableWindow.webContents.openDevTools()
     }
   }
 

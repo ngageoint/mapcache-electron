@@ -17,7 +17,8 @@ module.exports = {
       preload: {
         mainPreload: 'src/lib/preload/mainPreload.js',
         projectPreload: 'src/lib/preload/projectPreload.js',
-        workerPreload: 'src/lib/preload/workerPreload.js'
+        workerPreload: 'src/lib/preload/workerPreload.js',
+        featureTablePreload: 'src/lib/preload/featureTablePreload.js'
       },
       chainWebpackMainProcess: config => {
         // config.plugin('analyse').use(

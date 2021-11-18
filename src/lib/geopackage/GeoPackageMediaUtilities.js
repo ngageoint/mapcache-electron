@@ -3,8 +3,18 @@ import isNil from 'lodash/isNil'
 import difference from 'lodash/difference'
 import jetpack from 'fs-jetpack'
 import request from 'request'
-import { getMediaObjectURL, getMediaTableName, getMimeType } from '../util/media/MediaUtilities'
+import {getExtension, getMediaObjectURL, getMediaTableName, getMimeType} from '../util/media/MediaUtilities'
 import { performSafeGeoPackageOperation, getDefaultValueForDataType } from './GeoPackageCommon'
+
+async function downloadAttachment (filePath, geopackagePath, relatedTable, relatedId) {
+  const mediaRow = await getMediaRow(geopackagePath, relatedTable, relatedId)
+  const extension = getExtension(mediaRow.contentType)
+  let file = filePath
+  if (extension !== false) {
+    file = filePath + '.' + extension
+  }
+  await jetpack.writeAsync(file, mediaRow.data)
+}
 
 function _getMediaObjectUrl (gp, mediaTable, mediaId) {
   const rte = gp.relatedTablesExtension
@@ -367,5 +377,6 @@ export {
   _deleteMediaAttachment,
   deleteMediaAttachment,
   _addMediaAttachmentFromUrl,
-  addMediaAttachmentFromUrl
+  addMediaAttachmentFromUrl,
+  downloadAttachment
 }

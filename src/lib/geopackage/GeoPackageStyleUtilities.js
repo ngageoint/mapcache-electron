@@ -1,10 +1,19 @@
-import {FeatureTableStyles, GeometryType, FeatureStyleExtension, FeatureTiles} from '@ngageoint/geopackage'
+import {
+  FeatureTableStyles,
+  GeometryType,
+  FeatureStyleExtension,
+  FeatureTiles,
+  GeoPackageAPI
+} from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEqual from 'lodash/isEqual'
 import values from 'lodash/values'
 import { performSafeGeoPackageOperation } from './GeoPackageCommon'
 import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
 import { getDefaultMapCacheStyle } from '../util/style/CommonStyleUtilities'
+import jetpack from "fs-jetpack";
+import path from "path";
+import fs from "fs";
 
 function _imageDataEqual (data1, data2) {
   let equal = true
@@ -1062,6 +1071,120 @@ function getStyleDrawOverlap (filePath, tableName) {
   })
 }
 
+function getIconImageData (file) {
+  const fileInfo = jetpack.inspect(file, {times: true, absolutePath: true})
+  let extension = path.extname(fileInfo.absolutePath).slice(1)
+  if (extension === 'jpg') {
+    extension = 'jpeg'
+  }
+  let url = 'data:image/' + extension + ';base64,' + fs.readFileSync(fileInfo.absolutePath).toString('base64')
+  return {extension, url}
+}
+
+function determineAssignment (gp, tableName, geometryType) {
+  const assignment = {
+    icon: undefined,
+    iconUrl: undefined,
+    style: undefined
+  }
+  let style = _getTableStyle(gp, tableName, geometryType)
+  let icon = _getTableIcon(gp, tableName, geometryType)
+  if (!isNil(style)) {
+    assignment.style = {
+      id: style.id,
+      name: style.getName(),
+      description: style.getDescription(),
+      color: style.getHexColor(),
+      opacity: style.getOpacity(),
+      fillColor: style.getFillHexColor(),
+      fillOpacity: style.getFillOpacity(),
+      width: style.getWidth()
+    }
+  }
+  if (!isNil(icon)) {
+    assignment.icon = {
+      anchorU: icon.anchorU,
+      anchorV: icon.anchorV,
+      contentType: icon.contentType,
+      data: icon.data,
+      description: icon.description,
+      height: icon.height,
+      id: icon.id,
+      name: icon.name,
+      width: icon.description,
+      url: 'data:' + icon.contentType + ';base64,' + Buffer.from(icon.data).toString('base64')
+    }
+  }
+  return assignment
+}
+
+async function getGeoPackageFeatureTableStyleData (filePath, tableName) {
+  const result = {}
+  result.styleRows = []
+  result.iconRows = []
+  result.pointAssignment = null
+  result.lineAssignment = null
+  result.polygonAssignment = null
+  result.multipointAssignment = null
+  result.multilineAssignment = null
+  result.multipolygonAssignment = null
+  result.geometryCollectionAssignment = null
+  result.hasStyleExtension = false
+  let gp
+  try {
+    gp = await GeoPackageAPI.open(filePath)
+    result.hasStyleExtension = gp.featureStyleExtension.has(tableName)
+    if (result.hasStyleExtension) {
+      result.styleRows = Object.values(_getStyleRows(gp, tableName))
+      result.iconRows = Object.values(_getIconRows(gp, tableName))
+      if (result.styleRows.length + result.iconRows.length > 0) {
+        result.pointAssignment = determineAssignment(gp, tableName, GeometryType.POINT)
+        result.lineAssignment = determineAssignment(gp, tableName, GeometryType.LINESTRING)
+        result.polygonAssignment = determineAssignment(gp, tableName, GeometryType.POLYGON)
+        result.multipointAssignment = determineAssignment(gp, tableName, GeometryType.MULTIPOINT)
+        result.multilineAssignment = determineAssignment(gp, tableName, GeometryType.MULTILINESTRING)
+        result.multipolygonAssignment = determineAssignment(gp, tableName, GeometryType.MULTIPOLYGON)
+        result.geometryCollectionAssignment = determineAssignment(gp, tableName, GeometryType.GEOMETRYCOLLECTION)
+      }
+    }
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to get GeoPackage style.')
+  } finally {
+    try {
+      gp.close()
+      gp = undefined
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to close GeoPackage.')
+    }
+  }
+  return result
+}
+async function hasStyleExtension (path, tableName) {
+  let hasStyle = false
+  let gp
+  try {
+    gp = await GeoPackageAPI.open(path)
+    hasStyle = gp.featureStyleExtension.has(tableName)
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to determine if style extension is enabled.')
+  }
+  try {
+    gp.close()
+    gp = undefined
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to close geopackage.')
+  }
+  return hasStyle
+}
+
 /**
  * GeoPackage Style Utilities is a utility class to support utilizing the NGA Style Extension for GeoPackage feature tables.
  */
@@ -1123,5 +1246,8 @@ export {
   _getStyleDrawOverlap,
   _addOrSetStyleForFeature,
   clearStylingForFeature,
-  _clearStylingForFeature
+  _clearStylingForFeature,
+  hasStyleExtension,
+  getGeoPackageFeatureTableStyleData,
+  getIconImageData
 }
