@@ -556,7 +556,7 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
         const maxZoom = geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].maxZoom || 20
         data = {
           id: geopackageLayer.geopackage.id + '_' + geopackageLayer.table,
-          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter, null),
+          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent, trimmedBoundingBoxFilter, null),
           minZoom: minZoom,
           maxZoom: maxZoom,
         }
