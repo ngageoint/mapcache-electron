@@ -282,7 +282,9 @@ class MapCacheWindowManager {
 
       ipcMain.on(CANCEL_TILE_REQUEST, async (event, payload) => {
         const taskId = payload.id
-        await this.mapcacheThreadHelper.cancelPendingTask(taskId)
+        event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
+          error: 'Cancelled by user.'
+        })
       })
 
       ipcMain.on(REQUEST_TILE, async (event, payload) => {

@@ -24,7 +24,6 @@ export default class ElectronTileRenderer {
 
       this.cancelTileRequest = (id) => {
         ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
-        ipcRenderer.removeAllListeners(REQUEST_TILE_COMPLETED(id))
       }
 
       const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')
@@ -87,6 +86,8 @@ export default class ElectronTileRenderer {
         } catch (e) {
           callback(e, null)
         }
+      }).catch(e => {
+        callback(e, null)
       })
     }
   }

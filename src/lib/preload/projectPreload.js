@@ -447,7 +447,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   cancelTileRequest: (id) => {
     ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
-    ipcRenderer.removeAllListeners(REQUEST_TILE_COMPLETED(id))
   },
   requestTile: (request) => {
     return new Promise(resolve => {

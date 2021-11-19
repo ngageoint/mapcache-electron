@@ -112,6 +112,8 @@ export default class MapcacheThreadHelper {
           result = { error: err }
         }
         resolve(result)
+      }, () => {
+        resolve({ error: 'Cancelled by user'})
       })
     })
   }

@@ -159,7 +159,6 @@ export default class WorkerThreadPool extends EventEmitter {
     if (this.freeWorkers.length === 0 || this.queue.length === 0) {
       return
     }
-    // iterate over queue looking for next task that can be executed
     for (let i = 0; i < this.queue.length && this.freeWorkers.length > 0; i++) {
       const worker = this.freeWorkers.find(worker => worker.config.types.indexOf(this.queue[i].task.type) !== -1)
       if (worker) {
@@ -197,7 +196,7 @@ export default class WorkerThreadPool extends EventEmitter {
     const taskInfoIndex = this.queue.findIndex(taskInfo => taskInfo.getTaskId() === taskId)
     if (taskInfoIndex !== -1) {
       const task = this.queue[taskInfoIndex]
-      this.queue = this.queue.splice(taskInfoIndex, 1)
+      this.queue.splice(taskInfoIndex, 1)
       task.done('Cancelled.')
       cancelled = true
     }

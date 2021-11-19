@@ -19,7 +19,7 @@ import { getIntersection } from '../util/xyz/XYZTileUtilities'
 import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
 import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
 import { setupXYZGrid } from './map/grid/xyz/xyz'
-import {clipImage, stitchTileData} from '../../lib/util/tile/TileUtilities'
+import { clipImage, stitchTileData } from '../../lib/util/tile/TileUtilities'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -38,6 +38,9 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     this.layer = options.layer
     this.id = options.layer.id
     this.maxFeatures = options.maxFeatures
+
+    this.outstandingTileRequests = {}
+
     const renderer = constructRenderer(this.layer, false)
     if (renderer.updateMaxFeatures != null) {
       renderer.updateMaxFeatures(this.maxFeatures)
@@ -45,15 +48,29 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     this.layer.setRenderer(renderer)
     const unloadListener = (event) => {
       event.tile.onload = null
-      event.tile.src = ''
-      if (!isNil(event.tile.requestId)) {
+      if (event.tile.requestId != null && this.outstandingTileRequests[event.tile.requestId] != null) {
+        this.outstandingTileRequests[event.tile.requestId].cancelled = true
+        this.outstandingTileRequests[event.tile.requestId].done('Cancelled', event.tile)
         this.layer.cancel(event.tile.requestId)
+        delete this.outstandingTileRequests[event.tile.requestId]
       }
     }
     this.on('tileunload', unloadListener)
   },
   createTile: function (coords, done) {
     const requestId = window.mapcache.createUniqueID()
+    this.outstandingTileRequests[requestId] = {
+      done,
+      cancelled: false
+    }
+
+    const doneWrapper = (e, t) => {
+      if (this.outstandingTileRequests[requestId] && !this.outstandingTileRequests[requestId].cancelled) {
+        done(e, t)
+      }
+      delete this.outstandingTileRequests[requestId]
+    }
+
     const tile = document.createElement('img')
     tile.requestId = requestId
     tile.alt = ''
@@ -61,17 +78,18 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     const size = this.getTileSize()
     this.layer.renderTile(requestId, coords, size, (err, base64Image) => {
       if (!isNil(err)) {
-        done(err, tile)
+        doneWrapper(err, tile)
       } else if (base64Image != null) {
+        tile.done = done
         tile.onload = () => {
-          done(null, tile)
+          doneWrapper(null, tile)
         }
         tile.onerror = (e) => {
-          done(e, tile)
+          doneWrapper(e, tile)
         }
         tile.src = base64Image
       } else {
-        done(new Error('no data'), tile)
+        doneWrapper(new Error('no data'), tile)
       }
     })
     return tile
@@ -96,7 +114,7 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
 L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   initialize: function (options) {
     L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
-    this.activeTileRequests = {}
+    this.outstandingTileRequests = {}
     this.layer = options.layer
     this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
     this.id = options.layer.id
@@ -110,15 +128,13 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     this.on('tileunload', (event) => {
       event.tile.onload = null
       event.tile.src = ''
-      if (!isNil(event.tile.requestId)) {
-        const tileRequest = this.activeTileRequests[event.tile.requestId]
-        if (!isNil(tileRequest)) {
-          tileRequest.cancel()
+      if (event.tile.requestId != null && this.outstandingTileRequests[event.tile.requestId] != null) {
+        this.outstandingTileRequests[event.tile.requestId].cancelled = true
+        this.outstandingTileRequests[event.tile.requestId].done('Cancelled', event.tile)
+        if (this.outstandingTileRequests[event.tile.requestId].activeTileRequest != null) {
+          this.outstandingTileRequests[event.tile.requestId].activeTileRequest.cancel()
         }
-        delete this.activeTileRequests[event.tile.requestId]
-        if (this.requiresReprojection) {
-          window.mapcache.cancelTileReprojectionRequest(event.tile.requestId)
-        }
+        delete this.outstandingTileRequests[event.tile.requestId]
       }
     })
   },
@@ -275,6 +291,18 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   createTile (coords, done) {
     // create the tile img
     const requestId = window.mapcache.createUniqueID()
+    this.outstandingTileRequests[requestId] = {
+      done,
+      cancelled: false
+    }
+
+    const doneWrapper = (e, t) => {
+      if (this.outstandingTileRequests[requestId] && !this.outstandingTileRequests[requestId].cancelled) {
+        done(e, t)
+      }
+      delete this.outstandingTileRequests[requestId]
+    }
+
     const tile = document.createElement('img')
     tile.requestId = requestId
     tile.alt = ''
@@ -285,7 +313,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     } else {
       const size = this.getTileSize()
       const cancellableTileRequest = new CancellableTileRequest()
-      this.activeTileRequests[requestId] = cancellableTileRequest
+      this.outstandingTileRequests[requestId].activeTileRequest = cancellableTileRequest
       // get tile request data
       const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
       let projectedBoundingBox
@@ -306,7 +334,6 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
           }))
         })
         Promise.allSettled(promises).then(results => {
-          delete this.activeTileRequests[requestId]
           const tiles = []
           // handle results
           results.forEach(result => {
@@ -332,19 +359,18 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
                 clipImage(canvas, reprojectedImage, this.getClippingRegion(coords, webMercatorBoundingBox), size).then(clippedImage => {
                   this.loadImage(clippedImage, coords, tile, done)
                 }).catch(e => {
-                  done(e, tile)
+                  doneWrapper(e, tile)
                 })
               }).catch(e => {
-                done(e, tile)
+                doneWrapper(e, tile)
               })
             })
           } else {
-            done(new Error('No data retrieved.'), tile)
+            doneWrapper(new Error('No data retrieved.'), tile)
           }
         })
       } else {
-        done(null, null)
-        delete this.activeTileRequests[requestId]
+        doneWrapper(null, null)
       }
     }
     return tile
