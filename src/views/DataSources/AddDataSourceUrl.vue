@@ -136,7 +136,7 @@
                 </div>
                 <v-row no-gutters>
                   <v-spacer/>
-                  <v-btn v-if="!connected" color="primary" :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)" @click.stop="connect" text>
+                  <v-btn :loading="dataSourceUrlValid && loading" v-if="!connected" color="primary" :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)" @click.stop="connect" text>
                     {{loading ? 'Connecting...' : 'Connect'}}
                   </v-btn>
                   <span v-else style="color: #00C851;">
@@ -147,15 +147,9 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 3" v-if="dataSourceUrlValid && (serviceInfo != null || accessDeniedOrForbidden)">
+          <v-btn class="mb-2" text color="primary" @click="step = 3" :disabled="!connected">
             Continue
           </v-btn>
-          <v-progress-circular
-            class="mb-2"
-            v-else-if="dataSourceUrlValid && loading"
-            indeterminate
-            color="primary"
-          ></v-progress-circular>
         </v-stepper-content>
         <v-stepper-step v-if="!loading && serviceInfo != null && (selectedServiceType === 2)" editable :complete="step > 3" step="3" color="primary">
           {{'Specify zoom levels'}}
@@ -295,7 +289,7 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :step="summaryStep" color="primary" :rules="[() => connected || step !== summaryStep]">
+        <v-stepper-step :editable="connected" :step="summaryStep" color="primary" :rules="[() => connected || step !== summaryStep]">
           Summary
           <small v-if="!connected && step === summaryStep" class="pt-1">Connection not verified.</small>
         </v-stepper-step>
