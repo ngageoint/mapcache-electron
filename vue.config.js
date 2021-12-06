@@ -154,6 +154,14 @@ module.exports = {
         },
         mas: {
           category: "public.app-category.productivity",
+          fileAssociations: [
+            {
+              ext: 'gpkg',
+              name: 'GeoPackage File',
+              role: 'Editor',
+              icon: 'gpkg_doc.icns'
+            }
+          ],
           target: [
             "dmg",
             "pkg"
