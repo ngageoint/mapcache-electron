@@ -853,7 +853,7 @@ class MapCacheWindowManager {
    * Launches the project window and displays a project
    * @param projectId - project id to show in the project window
    * @param geopackageIds - ids of geopackages to display
-   * @param filePaths - filepaths of the geopackages to load and display
+   * @param filePaths - filePaths of the geopackages to load and display
    */
   showProject (projectId, geopackageIds, filePaths) {
     try {

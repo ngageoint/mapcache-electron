@@ -244,11 +244,12 @@ export default {
         const id = window.mapcache.createUniqueID()
         const directory = window.mapcache.createProjectDirectory()
         await window.mapcache.newProject({id: id, name: projectName, directory: directory})
+        let geopackageIds = []
         while (this.geoPackageFiles.length > 0) {
-          await window.mapcache.addGeoPackage({projectId: id, filePath: this.geoPackageFiles.pop()})
+          geopackageIds.push(await window.mapcache.addGeoPackage({projectId: id, filePath: this.geoPackageFiles.pop()}))
         }
         this.$nextTick(() => {
-          window.mapcache.showProject(id)
+          window.mapcache.showProject(id, geopackageIds)
           this.reset()
         })
       },
