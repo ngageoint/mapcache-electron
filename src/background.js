@@ -7,12 +7,17 @@ const gotTheLock = app.requestSingleInstanceLock()
 // used to indicate the .gpkg file path that was used to launch MapCache
 let gpkgFilePaths = []
 let openFileTimeout = null
-if (process.platform === 'win32') {
-  for (let i = 0; i < process.argv.length; i++) {
-    if (process.argv[i].endsWith('.gpkg')) {
-      gpkgFilePaths.push(process.argv[i])
+
+function processArguments (argv) {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].endsWith('.gpkg')) {
+      gpkgFilePaths.push(argv[i])
     }
   }
+}
+
+if (process.platform === 'win32') {
+  processArguments(process.argv)
 }
 
 async function setupVueDevTools () {
@@ -194,6 +199,13 @@ if (!gotTheLock) {
     // dock icon is clicked and there are no other windows open.
     if (!MapCacheWindowManager.isAppRunning()) {
       start()
+    }
+  })
+
+  app.on('second-instance', (event, argv) => {
+    if (process.platform === 'win32') {
+      processArguments(argv)
+      startOpenFileTimeout()
     }
   })
 
