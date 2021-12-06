@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>
+    <v-card-title v-if="title != null">
       <v-icon color="primary" class="pr-2">{{icon}}</v-icon>
       {{title}}
     </v-card-title>
@@ -16,6 +16,12 @@
       </v-form>
     </v-card-text>
     <v-card-actions>
+      <v-btn
+          v-if="onBack != null"
+          text
+          @click="back">
+        {{backText}}
+      </v-btn>
       <v-spacer></v-spacer>
       <v-btn
         text
@@ -23,7 +29,7 @@
         {{cancelText}}
       </v-btn>
       <v-btn
-        v-if="valid"
+        :disabled="!valid"
         color="primary"
         text
         @click="save">
@@ -52,8 +58,13 @@
         type: String,
         default: 'Cancel'
       },
+      backText: {
+        type: String,
+        default: 'Back'
+      },
       onSave: Function,
       onCancel: Function,
+      onBack: Function,
       fontSize: {
         type: String,
         default: '16px'
@@ -92,6 +103,11 @@
     methods: {
       save (e) {
         this.onSave(this.editedValue)
+        e.stopPropagation()
+      },
+      back (e) {
+        this.onBack()
+        this.editedValue = this.value
         e.stopPropagation()
       },
       cancel (e) {

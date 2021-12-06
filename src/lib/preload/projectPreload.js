@@ -173,7 +173,9 @@ import {
   CLIENT_CERTIFICATE_SELECTED,
   CLIENT_CREDENTIALS_INPUT,
   CLOSE_PROJECT,
-  CLOSING_PROJECT_WINDOW, FEATURE_TABLE_ACTION, FEATURE_TABLE_EVENT,
+  CLOSING_PROJECT_WINDOW,
+  FEATURE_TABLE_ACTION,
+  FEATURE_TABLE_EVENT,
   GENERATE_GEOTIFF_RASTER_FILE,
   GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
   GET_APP_DATA_DIRECTORY,
@@ -181,6 +183,7 @@ import {
   IPC_EVENT_CONNECT,
   IPC_EVENT_NOTIFY_MAIN,
   IPC_EVENT_NOTIFY_RENDERERS,
+  LOAD_OR_DISPLAY_GEOPACKAGES,
   OPEN_EXTERNAL,
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
@@ -359,6 +362,9 @@ contextBridge.exposeInMainWorld('mapcache', {
   removeRequestClientCredentialsListener: () => {
     ipcRenderer.removeAllListeners(REQUEST_CLIENT_CREDENTIALS)
   },
+  removeLoadOrDisplayGeoPackageListener: () => {
+    ipcRenderer.removeAllListeners(LOAD_OR_DISPLAY_GEOPACKAGES)
+  },
   addTaskStatusListener: (id, callback) => {
     ipcRenderer.on(PROCESS_SOURCE_STATUS(id), (event, args) => {
       callback(args)
@@ -366,6 +372,11 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   removeTaskStatusListener: (id) => {
     ipcRenderer.removeAllListeners(PROCESS_SOURCE_STATUS(id))
+  },
+  addLoadOrDisplayGeoPackageListener: (callback) => {
+    ipcRenderer.on(LOAD_OR_DISPLAY_GEOPACKAGES, (event, geopackageIds, filePaths) => {
+      callback(geopackageIds, filePaths)
+    })
   },
   addClosingProjectWindowListener: (callback) => {
     ipcRenderer.on(CLOSING_PROJECT_WINDOW, (event, args) => {

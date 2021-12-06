@@ -4,6 +4,25 @@ import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
 const gotTheLock = app.requestSingleInstanceLock()
 
+// used to indicate the .gpkg file path that was used to launch MapCache
+let gpkgFilePaths = []
+let openFileTimeout = null
+if (process.platform === 'win32') {
+  // gpkgFilePath = process.argv[0]
+  console.log(process.argv)
+}
+
+async function setupVueDevTools () {
+  try {
+    const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer')
+    await installExtension(VUEJS_DEVTOOLS)
+    // eslint-disable-next-line no-unused-vars
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Vue Devtools failed to install')
+  }
+}
+
 /**
  * Sets up the electron-log library. This will write logs to a file.
  */
@@ -11,6 +30,24 @@ function setupElectronLog () {
   const log = require('electron-log')
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'mapcache.log')
   Object.assign(console, log.functions)
+}
+
+/**
+ * Start the open-file timeout.
+ */
+function startOpenFileTimeout () {
+  if (openFileTimeout != null) {
+    clearTimeout(openFileTimeout)
+  }
+  openFileTimeout = setTimeout(() => {
+    const handled = MapCacheWindowManager.processGeoPackageFiles(gpkgFilePaths.slice())
+    if (handled) {
+      gpkgFilePaths = []
+      openFileTimeout = null
+    } else {
+      startOpenFileTimeout()
+    }
+  }, 250)
 }
 
 /**
@@ -63,13 +100,11 @@ function setupWebContentHandling () {
 /**
  * Will run migration, setup directory structure, event handlers, electron log, create the app protocol and then launch the
  * landing page.
- * @returns {Promise<void>}
  */
 async function start() {
   setupElectronLog()
   setupEventHandlers()
   setupWebContentHandling()
-
 
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
     require('./lib/protocol/protocol').default('mapcache')
@@ -95,7 +130,8 @@ async function start() {
   const { setupInitialDirectories } = require('./lib/util/file/FileUtilities')
   setupInitialDirectories(app.getPath('userData'))
 
-  MapCacheWindowManager.start()
+  await MapCacheWindowManager.start()
+  startOpenFileTimeout()
 }
 
 if (!gotTheLock) {
@@ -114,6 +150,15 @@ if (!gotTheLock) {
   let readyToQuit = false
 
   /**
+   * Handle open file requests (i.e. users click on files to open MapCache)
+   */
+  app.on('open-file', (event, path) => {
+    gpkgFilePaths.push(path)
+    startOpenFileTimeout()
+    event.preventDefault()
+  })
+
+  /**
    * once window-all-closed is fired, quit the application (this implies that the landing page window has been exited.
    */
   app.once('window-all-closed', () => {
@@ -129,9 +174,14 @@ if (!gotTheLock) {
       MapCacheWindowManager.quit().then(() => {
         readyToQuit = true
         app.quit()
+      }).catch(e => {
+        console.error(e)
+        readyToQuit = true
+        app.quit()
       })
     }
   }))
+
 
   /**
    * when activate is fired, if the app is not already running, start it.
@@ -147,17 +197,13 @@ if (!gotTheLock) {
   /**
    * once ready is fired, start the application, if not in production, install the vue dev tools
    */
-  app.once('ready', async () => {
+  app.once('ready', () => {
     if (!isProduction) {
-      try {
-        const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer')
-        await installExtension(VUEJS_DEVTOOLS)
-        // eslint-disable-next-line no-unused-vars
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Vue Devtools failed to install')
-      }
+      setupVueDevTools().then(() => {
+        start()
+      })
+    } else {
+      start()
     }
-    start()
   })
 }

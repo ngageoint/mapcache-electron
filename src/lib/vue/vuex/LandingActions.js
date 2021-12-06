@@ -2,9 +2,10 @@ import store from '../../../store'
 import values from 'lodash/values'
 import { setDataSourceVisible } from './CommonActions'
 import { isRemote } from '../../layer/LayerTypes'
+import { getOrCreateGeoPackageForApp } from '../../geopackage/GeoPackageCommon'
 
-function newProject({id, name, directory}) {
-  store.dispatch('Projects/newProject', {id, name, directory})
+async function newProject({id, name, directory}) {
+  return store.dispatch('Projects/newProject', {id, name, directory})
 }
 
 /**
@@ -17,7 +18,23 @@ function disableRemoteSources (projectId) {
   })
 }
 
+async function addGeoPackage ({projectId, filePath}) {
+  const geopackage = await getOrCreateGeoPackageForApp(filePath)
+  if (geopackage != null) {
+    await store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+    return geopackage.id
+  } else {
+    return null
+  }
+}
+
+function setProjectAccessed (projectId) {
+  store.dispatch('Projects/setProjectAccessed', {projectId})
+}
+
 export {
   newProject,
-  disableRemoteSources
+  disableRemoteSources,
+  addGeoPackage,
+  setProjectAccessed
 }

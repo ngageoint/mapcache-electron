@@ -61,7 +61,9 @@ import {
   SHOW_FEATURE_TABLE_WINDOW,
   HIDE_FEATURE_TABLE_WINDOW,
   FEATURE_TABLE_ACTION,
-  FEATURE_TABLE_EVENT
+  FEATURE_TABLE_EVENT,
+  LAUNCH_WITH_GEOPACKAGE_FILES,
+  LOAD_OR_DISPLAY_GEOPACKAGES
 } from './ipc/MapCacheIPC'
 
 const isMac = process.platform === 'darwin'
@@ -228,15 +230,33 @@ class MapCacheWindowManager {
     })
   }
 
+  processGeoPackageFiles (filePaths) {
+    if (filePaths.length > 0) {
+      console.log(filePaths)
+      if (this.mainWindow != null && this.mainWindow.isVisible()) {
+        this.mainWindow.webContents.send(LAUNCH_WITH_GEOPACKAGE_FILES, filePaths)
+      } else if (this.projectWindow != null && this.projectWindow.isVisible()) {
+        this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, null, filePaths)
+      } else {
+        return false
+      }
+    }
+    return true
+  }
+
   /**
-   * Starts the app
+   * Starts the app and returns once the main window has loaded
+   * @return {Promise<unknown>}
    */
   start () {
-    this.setupGlobalShortcuts()
-    this.setupWebRequestWorkflow()
-    this.registerEventHandlers()
-    Promise.all([this.registerWorkerThreads(), this.launchMainWindow()]).then(() => {
-      this.showMainWindow()
+    return new Promise(resolve => {
+      this.setupGlobalShortcuts()
+      this.setupWebRequestWorkflow()
+      this.registerEventHandlers()
+      Promise.all([this.registerWorkerThreads(), this.launchMainWindow()]).then(() => {
+        this.showMainWindow()
+        resolve()
+      })
     })
   }
 
@@ -410,8 +430,8 @@ class MapCacheWindowManager {
       dialog.showOpenDialog(this.projectWindow, options).then(result => event.sender.send(SHOW_OPEN_DIALOG_COMPLETED, result))
     })
 
-    ipcMain.on(SHOW_PROJECT, (event, payload) => {
-      this.showProject(payload)
+    ipcMain.on(SHOW_PROJECT, (event, projectId, geopackageIds, filePaths) => {
+      this.showProject(projectId, geopackageIds, filePaths)
     })
 
     // setup feature table / map interaction
@@ -819,6 +839,7 @@ class MapCacheWindowManager {
       this.closingProjectWindow = true
       this.featureTableWindow.hide()
       this.featureTableWindow.destroy()
+      this.featureTableWindow = null
     }
     if (this.projectWindow) {
       this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, {isDeleting})
@@ -830,9 +851,11 @@ class MapCacheWindowManager {
 
   /**
    * Launches the project window and displays a project
-   * @param projectId
+   * @param projectId - project id to show in the project window
+   * @param geopackageIds - ids of geopackages to display
+   * @param filePaths - filepaths of the geopackages to load and display
    */
-  showProject (projectId) {
+  showProject (projectId, geopackageIds, filePaths) {
     try {
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
@@ -840,6 +863,9 @@ class MapCacheWindowManager {
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
         : `mapcache://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
+        if (geopackageIds != null || filePaths != null) {
+          this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
+        }
         this.projectWindow.show()
         this.setupCertificateAuth()
         setTimeout(() => {
@@ -1013,6 +1039,9 @@ class MapCacheWindowManager {
     }
     if (this.workerWindow) {
       this.workerWindow.webContents.closeDevTools()
+    }
+    if (this.featureTableWindow) {
+      this.featureTableWindow.webContents.closeDevTools()
     }
   }
 }

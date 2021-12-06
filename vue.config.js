@@ -88,15 +88,15 @@ module.exports = {
         appId: "mil.nga.mapcache",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
-        extraResources: ['./extraResources/**', {
-          from: './node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm',
-          to: 'canvaskit/canvaskit.wasm',
+        extraResources: ["./extraResources/**", {
+          from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
+          to: "canvaskit/canvaskit.wasm",
         }],
         protocols: [
           {
-            name: 'MapCache',
-            role: 'Viewer',
-            schemes: ['mapcache']
+            name: "MapCache",
+            role: "Editor",
+            schemes: ["mapcache"]
           }
         ],
         asarUnpack: [
@@ -110,7 +110,7 @@ module.exports = {
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
           "**/mapcacheThread.js",
-          "**/*([0-9]).js"
+          "**/[0-9]+.js"
         ],
         directories: {
           buildResources: "buildResources"
@@ -134,6 +134,14 @@ module.exports = {
         },
         mac: {
           category: "public.app-category.productivity",
+          fileAssociations: [
+            {
+              ext: 'gpkg',
+              name: 'GeoPackage File',
+              role: 'Editor',
+              icon: 'gpkg_doc.icns'
+            }
+          ],
           target: [
             "dmg",
             "pkg"
@@ -157,6 +165,13 @@ module.exports = {
           entitlementsInherit: "buildResources/entitlements.mas.plist"
         },
         win: {
+          fileAssociations: [
+            {
+              ext: 'gpkg',
+              name: 'GeoPackage File',
+              icon: 'gpkg_doc.ico'
+            }
+          ],
           target: [
             "portable",
             "nsis"

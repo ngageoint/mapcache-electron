@@ -20,6 +20,11 @@ const mutations = {
       Vue.set(state[project.id], 'name', name)
     }
   },
+  setProjectAccessed (state, {projectId}) {
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'lastAccessedDateTime', new Date().getTime())
+    }
+  },
   setDataSourceDisplayName (state, {projectId, sourceId, displayName}) {
     if (state[projectId]) {
       Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
@@ -167,27 +172,34 @@ const mutations = {
 }
 
 const actions = {
-  newProject ({ commit }, { id, name, directory }) {
-    let project = {
-      id: id,
-      name: name || 'New Project',
-      directory: directory,
-      sources: {},
-      geopackages: {},
-      zoomControlEnabled: true,
-      displayZoomEnabled: true,
-      displayCoordinates: true,
-      displayScale: true,
-      maxFeatures: 1000,
-      showToolTips: true,
-      displayAddressSearchBar: true,
-      activeGeoPackage: {
-        geopackageId: undefined,
-        tableName: undefined
+  async newProject ({ commit }, { id, name, directory }) {
+    return new Promise (resolve => {
+      let project = {
+        id: id,
+        name: name || 'New Project',
+        directory: directory,
+        sources: {},
+        geopackages: {},
+        zoomControlEnabled: true,
+        displayZoomEnabled: true,
+        displayCoordinates: true,
+        displayScale: true,
+        maxFeatures: 1000,
+        showToolTips: true,
+        displayAddressSearchBar: true,
+        activeGeoPackage: {
+          geopackageId: undefined,
+          tableName: undefined
+        },
+        lastAccessedDateTime: new Date().getTime()
       }
-    }
-    commit('UIState/addProjectState', {projectId: project.id}, { root: true })
-    commit('pushProjectToProjects', project)
+      commit('UIState/addProjectState', {projectId: project.id}, { root: true })
+      commit('pushProjectToProjects', project)
+      resolve()
+    })
+  },
+  setProjectAccessed ({ commit }, {projectId}) {
+    commit('setProjectAccessed', {projectId})
   },
   setProjectName ({ commit }, {project, name}) {
     commit('setProjectName', {project, name})
@@ -243,8 +255,11 @@ const actions = {
   setActiveGeoPackageFeatureLayer ({ commit }, {projectId, geopackageId, tableName}) {
     commit('setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
   },
-  setGeoPackage ({ commit }, {projectId, geopackage}) {
-    commit('setGeoPackage', {projectId, geopackage})
+  async setGeoPackage ({ commit }, {projectId, geopackage}) {
+    return new Promise (resolve => {
+      commit('setGeoPackage', {projectId, geopackage})
+      resolve()
+    })
   },
   setDataSource ({ commit }, {projectId, source}) {
     commit('setDataSource', {projectId, source})

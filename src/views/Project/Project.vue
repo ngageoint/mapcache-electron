@@ -285,12 +285,23 @@ export default {
       back () {
         this.tabId = undefined
       },
+      addGeoPackageToApp (path) {
+        return new Promise(resolve => {
+          const existsInApp = Object.values(this.project.geopackages).find(geopackage => geopackage.path === path)
+          if (!existsInApp) {
+            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: path}).then(geopackageId => {
+              resolve(geopackageId)
+            })
+          } else {
+            resolve(existsInApp.id)
+          }
+        })
+      },
       setupDragAndDrop () {
         const project = document.getElementById('project')
         project.ondragover = () => {
           return false
         }
-
         project.ondragleave = () => {
           return false
         }
@@ -298,7 +309,6 @@ export default {
         project.ondragend = () => {
           return false
         }
-
         project.ondrop = (e) => {
           e.preventDefault()
           let geopackagesToAdd = []
@@ -316,17 +326,13 @@ export default {
 
           for (let i = 0; i < geopackagesToAdd.length; i++) {
             const path = geopackagesToAdd[i]
-            const existsInApp = Object.values(this.project.geopackages).findIndex(geopackage => geopackage.path === path) !== -1
-            if (!existsInApp) {
-              window.mapcache.addGeoPackage({projectId: this.project.id, filePath: path}).then(added => {
-                if (!added) {
-                  console.error('Failed to import GeoPackage')
-                  EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
-                }
-              })
-            }
+            this.addGeoPackageToApp(path).then(geopackageId => {
+              if (geopackageId == null) {
+                console.error('Failed to import GeoPackage')
+                EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
+              }
+            })
           }
-
           let fileInfos = []
           for (let i = 0; i < dataSourcesToAdd.length; i++) {
             const file = dataSourcesToAdd[i]
@@ -398,6 +404,24 @@ export default {
         window.mapcache.addProjectState({projectId: this.project.id})
       }
       window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
+      window.mapcache.addLoadOrDisplayGeoPackageListener(async (geopackageIds = [], filePaths = []) => {
+        if (filePaths.length > 0) {
+          let geopackageId = null
+          for (let i = 0; i < filePaths.length; i++) {
+            geopackageId = await this.addGeoPackageToApp(filePaths[i])
+          }
+          if (filePaths.length === 1) {
+            window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
+          }
+        } else {
+          if (geopackageIds.length === 1) {
+            window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageIds[0]})
+          }
+        }
+        this.$nextTick(() => {
+          this.tabId = 0
+        })
+      })
       window.mapcache.clearNotifications({projectId: this.project.id})
       window.mapcache.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
@@ -448,6 +472,7 @@ export default {
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()
+      window.mapcache.removeLoadOrDisplayGeoPackageListener()
     }
   }
 </script>

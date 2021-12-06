@@ -102,6 +102,9 @@ const HIDE_FEATURE_TABLE_WINDOW = 'hide-feature-table-window'
 const FEATURE_TABLE_EVENT = 'feature-table-event'
 const FEATURE_TABLE_ACTION = 'feature-table-action'
 
+const LAUNCH_WITH_GEOPACKAGE_FILES = 'launch-with-geopackage-files'
+const LOAD_OR_DISPLAY_GEOPACKAGES = 'load-or-display-geopackages'
+
 const MAIN_CHANNELS = [
   GET_APP_VERSION,
   GET_USER_DATA_DIRECTORY,
@@ -201,5 +204,7 @@ export {
   SHOW_FEATURE_TABLE_WINDOW,
   HIDE_FEATURE_TABLE_WINDOW,
   FEATURE_TABLE_EVENT,
-  FEATURE_TABLE_ACTION
+  FEATURE_TABLE_ACTION,
+  LAUNCH_WITH_GEOPACKAGE_FILES,
+  LOAD_OR_DISPLAY_GEOPACKAGES
 }

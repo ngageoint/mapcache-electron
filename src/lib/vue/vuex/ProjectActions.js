@@ -9,8 +9,6 @@ import Vue from 'vue'
 import { tryCollect } from '../../util/GarbageCollector'
 import {
   getOrCreateGeoPackageForApp,
-  copyGeoPackageTable,
-  deleteGeoPackageTable,
   getGeoPackageFeatureTableForApp,
   getGeoPackageFileSize,
   performSafeGeoPackageOperation,
@@ -47,7 +45,7 @@ function notifyTab ({projectId, tabId}) {
   store.dispatch('UIState/notifyTab', {projectId, tabId})
 }
 
-async function sleep(ms) {
+async function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
@@ -93,17 +91,13 @@ function addDataSources ({projectId, dataSources}) {
 }
 
 async function addGeoPackage ({projectId, filePath}) {
-  return new Promise (resolve => {
-    getOrCreateGeoPackageForApp(filePath).then(geopackage => {
-      if (geopackage != null) {
-        store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-        notifyTab({projectId, tabId: 0})
-        resolve(true)
-      } else {
-        resolve(false)
-      }
-    })
-  })
+  const geopackage = await getOrCreateGeoPackageForApp(filePath)
+  if (geopackage != null) {
+    await store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+    return geopackage.id
+  } else {
+    return null
+  }
 }
 
 function setGeoPackageLayersVisible ({projectId, geopackageId, visible}) {

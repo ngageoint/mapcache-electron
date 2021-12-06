@@ -224,6 +224,16 @@ export default {
           }
         },
         deep: true
+      },
+      project: {
+        handler (newProject) {
+          if (newProject.activeGeoPackage != null) {
+            if (this.selectedGeoPackage == null || this.selectedGeoPackage.id !== newProject.activeGeoPackage.geopackageId) {
+              this.selectedGeoPackage = newProject.geopackages[newProject.activeGeoPackage.geopackageId]
+            }
+          }
+        },
+        deep: true
       }
     }
   }

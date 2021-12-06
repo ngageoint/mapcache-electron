@@ -1,12 +1,22 @@
 import log from 'electron-log'
 import Store from 'electron-store'
 import path from 'path'
-import {contextBridge, ipcRenderer} from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { deleteProject } from '../vue/vuex/CommonActions'
-import { disableRemoteSources, newProject } from '../vue/vuex/LandingActions'
+import {addGeoPackage, disableRemoteSources, newProject, setProjectAccessed} from '../vue/vuex/LandingActions'
 import { createNextAvailableProjectDirectory } from '../util/file/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
-import { GET_APP_VERSION, GET_USER_DATA_DIRECTORY, IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS, OPEN_EXTERNAL, SHOW_PROJECT } from '../electron/ipc/MapCacheIPC'
+import {
+  GET_APP_VERSION,
+  GET_USER_DATA_DIRECTORY,
+  IPC_EVENT_CONNECT,
+  IPC_EVENT_NOTIFY_MAIN,
+  IPC_EVENT_NOTIFY_RENDERERS,
+  LAUNCH_WITH_GEOPACKAGE_FILES,
+  OPEN_EXTERNAL,
+  SHOW_PROJECT
+} from '../electron/ipc/MapCacheIPC'
+import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -60,14 +70,28 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(OPEN_EXTERNAL, link)
     }
   },
-  showProject: (id) => {
-    ipcRenderer.send(SHOW_PROJECT, id)
+  setupGeoPackgeContext: () => {
+    Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
+  },
+  showProject: (projectId, geopackageIds, filePaths) => {
+    setProjectAccessed(projectId)
+    ipcRenderer.send(SHOW_PROJECT, projectId, geopackageIds, filePaths)
+  },
+  registerGeoPackageFileHandler: (callback) => {
+    ipcRenderer.on(LAUNCH_WITH_GEOPACKAGE_FILES, (e, filePaths) => callback(filePaths))
+  },
+  unregisterGeoPackageFileHandler: () => {
+    ipcRenderer.removeAllListeners(LAUNCH_WITH_GEOPACKAGE_FILES)
   },
   createProjectDirectory: () => {
     return createNextAvailableProjectDirectory(getUserDataDirectory())
   },
+  getBaseName: (filePath) => {
+    return path.basename(filePath)
+  },
   disableRemoteSources,
   newProject,
   deleteProject,
-  createUniqueID
+  createUniqueID,
+  addGeoPackage,
 })
