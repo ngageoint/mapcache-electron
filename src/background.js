@@ -8,8 +8,11 @@ const gotTheLock = app.requestSingleInstanceLock()
 let gpkgFilePaths = []
 let openFileTimeout = null
 if (process.platform === 'win32') {
-  // gpkgFilePath = process.argv[0]
-  console.log(process.argv)
+  for (let i = 0; i < process.argv.length; i++) {
+    if (process.argv[i].endsWith('.gpkg')) {
+      gpkgFilePaths.push(process.argv[i])
+    }
+  }
 }
 
 async function setupVueDevTools () {

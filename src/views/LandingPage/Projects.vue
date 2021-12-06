@@ -308,13 +308,6 @@ export default {
     overflow-x: hidden;
     border: solid lightgray 1px;
   }
-  .card-button {
-    width: 120px !important;
-    padding: 14px 4px !important;
-  }
-  .flat {
-    box-shadow: unset !important;
-  }
   .import-dialog {
     max-height: 400px !important;
   }
