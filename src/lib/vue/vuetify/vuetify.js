@@ -3,6 +3,8 @@ import Vuetify from 'vuetify/lib'
 import 'vuetify/dist/vuetify.min.css'
 import MapFilterOnSvg from '../../../views/Nominatim/MapFilterOnSvg'
 import MapFilterOffSvg from '../../../views/Nominatim/MapFilterOffSvg'
+import GeoPackageSvg from '../../../views/Common/Svg/GeoPackageSvg'
+import GeoPackagePlusSvg from '../../../views/Common/Svg/GeoPackagePlusSvg'
 
 Vue.use(Vuetify)
 
@@ -20,6 +22,18 @@ const opts = {
         component: MapFilterOffSvg, // our custom component
         props: { // pass props to your component if needed
           name: 'mapFilterOff',
+        }
+      },
+      geoPackage: { // name of our custom icon
+        component: GeoPackageSvg, // our custom component
+        props: { // pass props to your component if needed
+          name: 'geoPackage',
+        }
+      },
+      geoPackagePlus: { // name of our custom icon
+        component: GeoPackagePlusSvg, // our custom component
+        props: { // pass props to your component if needed
+          name: 'geoPackagePlus',
         }
       }
     },

@@ -154,7 +154,7 @@ export default {
         drawer: true,
         tabId: 0,
         tabs: [
-          { tabId: 0, text: 'GeoPackages', icon: mdiPackageVariant },
+          { tabId: 0, text: 'GeoPackages', icon: '$geoPackage' },
           { tabId: 1, text: 'Data sources', icon: mdiLayersOutline },
           { tabId: 2, text: 'Settings', icon: mdiCogOutline },
         ],
