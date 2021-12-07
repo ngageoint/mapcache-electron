@@ -123,7 +123,7 @@ function rangesOverlap (range1, range2) {
 function determineBoundingBoxesInRange (bbox) {
   const bboxes = []
   const minLon = fixLongitude(bbox[0])
-  const maxLon = fixLongitude(bbox[1])
+  const maxLon = fixLongitude(bbox[2])
   // cross antimeridian and needs to be split
   if (minLon > maxLon) {
     bboxes.push(maxLon, bbox[1], 180.0, bbox[3])

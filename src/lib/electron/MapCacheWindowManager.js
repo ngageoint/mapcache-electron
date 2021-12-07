@@ -4,7 +4,6 @@ import isNil from 'lodash/isNil'
 import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
 import { getUserCertForUrl } from './auth/CertAuth'
 import { getClientCredentials } from './auth/BasicAuth'
-
 import {
   MAIN_CHANNELS,
   WORKER_CHANNELS,
@@ -65,6 +64,7 @@ import {
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES
 } from './ipc/MapCacheIPC'
+import windowStateKeeper from 'electron-window-state'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -79,6 +79,10 @@ class MapCacheWindowManager {
   loadingWindow
   workerWindow
   featureTableWindow
+  mainWindowState
+  projectWindowState
+  featureTableWindowState
+  closingProjectWindow = false
   isShuttingDown = false
   quitFromParent = false
   forceClose = false
@@ -423,11 +427,11 @@ class MapCacheWindowManager {
     })
 
     ipcMain.on(SHOW_SAVE_DIALOG, (event, options) => {
-      dialog.showSaveDialog(this.projectWindow, options).then(result => event.sender.send(SHOW_SAVE_DIALOG_COMPLETED, result))
+      dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => event.sender.send(SHOW_SAVE_DIALOG_COMPLETED, result))
     })
 
     ipcMain.on(SHOW_OPEN_DIALOG, (event, options) => {
-      dialog.showOpenDialog(this.projectWindow, options).then(result => event.sender.send(SHOW_OPEN_DIALOG_COMPLETED, result))
+      dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => event.sender.send(SHOW_OPEN_DIALOG_COMPLETED, result))
     })
 
     ipcMain.on(SHOW_PROJECT, (event, projectId, geopackageIds, filePaths) => {
@@ -661,20 +665,32 @@ class MapCacheWindowManager {
 
       const windowHeight = 620 + (isWin ? 20 : 0)
 
+      this.mainWindowState = windowStateKeeper({
+        defaultWidth: 790,
+        defaultHeight: windowHeight,
+        file: 'landing-page.json',
+        path: path.join(app.getPath('userData'), 'window_state')
+      })
+
       this.mainWindow = new BrowserWindow({
         title: 'MapCache',
         webPreferences: {
           preload: path.join(__dirname, 'mainPreload.js')
         },
         show: false,
-        width: 790,
-        height: windowHeight,
+        x: this.mainWindowState.x,
+        y: this.mainWindowState.y,
+        width: this.mainWindowState.width,
+        height: this.mainWindowState.height,
         minHeight: windowHeight,
         minWidth: 790,
         fullscreenable: false,
         resizable: false,
         maximizable: false
       })
+
+      this.mainWindowState.manage(this.mainWindow)
+
       this.mainWindow.setMenu(menu)
       this.loadContent(this.mainWindow, winURL, () => {
         resolve()
@@ -718,18 +734,31 @@ class MapCacheWindowManager {
   launchProjectWindow () {
     const windowHeight = 700 + (isWin ? 20 : 0)
 
+    this.projectWindowState = windowStateKeeper({
+      defaultWidth: 1200,
+      defaultHeight: windowHeight,
+      file: 'project-page.json',
+      path: path.join(app.getPath('userData'), 'window_state')
+    })
+
     this.projectWindow = new BrowserWindow({
       title: 'MapCache',
       webPreferences: {
         preload: path.join(__dirname, 'projectPreload.js')
       },
       show: false,
-      width: 1200,
-      height: windowHeight,
+      x: this.projectWindowState.x,
+      y: this.projectWindowState.y,
+      width: this.projectWindowState.width,
+      height: this.projectWindowState.height,
       minHeight: windowHeight,
-      minWidth: 1000,
-      useContentSize: true
+      minWidth: 1000
     })
+
+    this.projectWindowState.manage(this.projectWindow)
+
+    this.closingProjectWindow = false
+
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {
         let leave = true
@@ -786,18 +815,26 @@ class MapCacheWindowManager {
    */
   launchFeatureTableWindow (projectId) {
     const windowHeight = 385 + (isWin ? 20 : 0)
+    this.featureTableWindowState = windowStateKeeper({
+      defaultWidth: 650,
+      defaultHeight: windowHeight,
+      file: 'feature-table-page.json',
+      path: path.join(app.getPath('userData'), 'window_state')
+    })
     this.featureTableWindow = new BrowserWindow({
       title: 'MapCache feature table',
       webPreferences: {
         preload: path.join(__dirname, 'featureTablePreload.js')
       },
       show: false,
-      width: 650,
-      height: windowHeight,
+      x: this.featureTableWindowState.x,
+      y: this.featureTableWindowState.y,
+      width: this.featureTableWindowState.width,
+      height: this.featureTableWindowState.height,
       minHeight: windowHeight,
-      minWidth: 650,
-      useContentSize: true
+      minWidth: 650
     })
+    this.featureTableWindowState.manage(this.featureTableWindow)
     this.featureTableWindow.on('close', (event) => {
       if (this.closingProjectWindow) {
         this.closingProjectWindow = false

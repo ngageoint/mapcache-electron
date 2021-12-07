@@ -256,7 +256,7 @@ export default {
       headers () {
         const headers = [
           { text: 'Actions', value: 'actions', sortable: false, width: 140 },
-          { text: 'Attachments', value: 'attachments', width: 140 },
+          { text: 'Attachments', value: 'attachments', sortable: false, width: 140 },
           { text: 'Style', value: 'style', sortable: false, width: 140 },
           { text: 'Geometry type', value: 'geometryType', sortable: false, width: 140 }
         ]

@@ -36,6 +36,7 @@
     "electron-dl": "3.2.1",
     "electron-log": "4.4.1",
     "electron-store": "8.0.1",
+    "electron-window-state": "^5.0.3",
     "file-url": "4.0.0",
     "fs-jetpack": "4.2.0",
     "geotiff": "1.0.8",
