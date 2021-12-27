@@ -11,9 +11,9 @@ import values from 'lodash/values'
 import { performSafeGeoPackageOperation } from './GeoPackageCommon'
 import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
 import { getDefaultMapCacheStyle } from '../util/style/CommonStyleUtilities'
-import jetpack from "fs-jetpack";
-import path from "path";
-import fs from "fs";
+import jetpack from 'fs-jetpack'
+import path from 'path'
+import fs from 'fs'
 
 function _imageDataEqual (data1, data2) {
   let equal = true

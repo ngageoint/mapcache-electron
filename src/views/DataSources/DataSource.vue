@@ -455,7 +455,7 @@ import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../..
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import EditZoomRange from '../../views/Common/EditZoomRange'
 import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
-import FeatureView from "@/views/Common/FeatureView";
+import FeatureView from '../Common/FeatureView'
 
 export default {
     props: {
