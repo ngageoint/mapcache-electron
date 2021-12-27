@@ -1,5 +1,5 @@
 <template>
-  <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project" :geopackage="selectedGeoPackage" :back="deselectGeoPackage"></geo-package>
+  <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project" :geopackage="selectedGeoPackage" :display-feature="displayFeature" :back="deselectGeoPackage"></geo-package>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       dark
@@ -74,7 +74,7 @@
               color="primary"
               v-bind="attrs"
               v-on="on">
-              <v-icon>{{'$geoPackagePlus'}}</v-icon>
+              <img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px">
             </v-btn>
           </template>
           <span>Add GeoPackage</span>
@@ -125,7 +125,8 @@ export default {
     props: {
       geopackages: Object,
       project: Object,
-      back: Function
+      back: Function,
+      displayFeature: Object
     },
     data () {
       return {
@@ -230,6 +231,16 @@ export default {
           if (newProject.activeGeoPackage != null) {
             if (this.selectedGeoPackage == null || this.selectedGeoPackage.id !== newProject.activeGeoPackage.geopackageId) {
               this.selectedGeoPackage = newProject.geopackages[newProject.activeGeoPackage.geopackageId]
+            }
+          }
+        },
+        deep: true
+      },
+      displayFeature: {
+        handler (newDisplayFeature) {
+          if (newDisplayFeature != null && newDisplayFeature.isGeoPackage) {
+            if (this.selectedGeoPackage == null || (newDisplayFeature.id != null && newDisplayFeature.id !== this.selectedGeoPackage.id)) {
+              this.geopackageSelected(newDisplayFeature.id)
             }
           }
         },

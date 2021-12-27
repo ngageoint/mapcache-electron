@@ -13,7 +13,9 @@ import {
   getGeoPackageFileSize,
   performSafeGeoPackageOperation,
   _getBoundingBoxForTable,
-  getExtentOfGeoPackageTables, getOrCreateGeoPackage
+  getExtentOfGeoPackageTables,
+  getOrCreateGeoPackage,
+  _getGeoPackageFeatureTableForApp
 } from '../../geopackage/GeoPackageCommon'
 import {
   updateFeatureGeometry as updateFeatureGeo,
@@ -22,8 +24,10 @@ import {
   addGeoPackageFeatureTableColumn as addGeoPackageFeatureColumn,
   createFeatureTable,
   _deleteFeatureRow,
-  deleteFeatureRow,
-  addFeatureToFeatureTable, addGeoPackageFeatureTableColumns, _createFeatureTable
+  addFeatureToFeatureTable,
+  addGeoPackageFeatureTableColumns,
+  _createFeatureTable,
+  _deleteFeatureRows
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
@@ -428,20 +432,48 @@ function updateFeatureTable ({projectId, geopackageId, tableName}) {
   })
 }
 
+function deleteFeatureIdsFromGeoPackage ({projectId, geopackageId, tableName, featureIds}) {
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const existingTable = geopackage.tables.features[tableName]
+  const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
+  performSafeGeoPackageOperation(filePath, (gp) => {
+    _deleteFeatureRows(gp, tableName, featureIds)
+    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+    geopackage.size = getGeoPackageFileSize(filePath)
+    existingTable.featureCount = tableInfo.featureCount
+    existingTable.extent = tableInfo.extent
+    existingTable.description = tableInfo.description
+    existingTable.styleKey = existingTable.styleKey + 1
+    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+  })
+}
+
 function removeFeatureFromGeopackage ({projectId, geopackageId, tableName, featureId}) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
   const existingTable = geopackage.tables.features[tableName]
   const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-  deleteFeatureRow(filePath, tableName, featureId).then(function () {
-    getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-      geopackage.size = getGeoPackageFileSize(filePath)
-      existingTable.featureCount = tableInfo.featureCount
-      existingTable.extent = tableInfo.extent
-      existingTable.description = tableInfo.description
-      existingTable.styleKey = existingTable.styleKey + 1
-      geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-      store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-    })
+  performSafeGeoPackageOperation(filePath, (gp) => {
+    _deleteFeatureRow(gp, tableName, featureId)
+    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+    geopackage.size = getGeoPackageFileSize(filePath)
+    existingTable.featureCount = tableInfo.featureCount
+    existingTable.extent = tableInfo.extent
+    existingTable.description = tableInfo.description
+    existingTable.styleKey = existingTable.styleKey + 1
+    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+  })
+}
+
+function deleteFeatureIdsFromDataSource ({projectId, sourceId, featureIds}) {
+  const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+  const filePath = sourceCopy.geopackageFilePath
+  performSafeGeoPackageOperation(filePath, (gp) => {
+    const numberDeleted = _deleteFeatureRows(gp, sourceCopy.sourceLayerName, featureIds)
+    sourceCopy.extent = _getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
+    sourceCopy.count = sourceCopy.count - numberDeleted
+    store.dispatch('Projects/setDataSource', {projectId, source: sourceCopy})
   })
 }
 
@@ -607,31 +639,6 @@ function setMapZoom ({projectId, mapZoom}) {
 }
 
 /**
- * Edits a feature's geometry on the map
- * @param projectId
- * @param id
- * @param isGeoPackage
- * @param tableName
- * @param featureToEdit
- */
-function editFeatureGeometry ({projectId, id, isGeoPackage, tableName, featureToEdit}) {
-  if (!isNil(projectId)) {
-    store.dispatch('Projects/editFeatureGeometry', {projectId, id, isGeoPackage, tableName, featureToEdit})
-  }
-}
-
-/**
- * Will cancel the editing of that feature
- * This should only be called if the feature is successfully edited, deleted or if it's source is deleted.
- * @param projectId
- */
-function clearEditFeatureGeometry ({projectId}) {
-  if (!isNil(projectId)) {
-    store.dispatch('Projects/clearEditFeatureGeometry', {projectId})
-  }
-}
-
-/**
  * Sets the rendering order of the map
  * @param projectId
  * @param renderingOrder
@@ -784,8 +791,6 @@ export {
   clearNotification,
   clearNotifications,
   setMapZoom,
-  editFeatureGeometry,
-  clearEditFeatureGeometry,
   setMapRenderingOrder,
   setPreviewLayer,
   clearPreviewLayer,
@@ -796,5 +801,7 @@ export {
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
   clearStylingForFeature,
-  createGeoPackageWithFeatureTable
+  createGeoPackageWithFeatureTable,
+  deleteFeatureIdsFromGeoPackage,
+  deleteFeatureIdsFromDataSource
 }

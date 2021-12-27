@@ -30,7 +30,9 @@ import {
 } from './GeoPackageCommon'
 import {_addMediaAttachment, _getMediaAttachmentsCounts} from './GeoPackageMediaUtilities'
 import {
-  _addOrSetStyleForFeature, _clearStylingForFeature, _getStyleAssignmentForFeatures
+  _addOrSetStyleForFeature,
+  _clearStylingForFeature,
+  _getStyleAssignmentForFeatures,
 } from './GeoPackageStyleUtilities'
 import orderBy from 'lodash/orderBy'
 
@@ -854,6 +856,34 @@ async function updateFeatureRow (filePath, tableName, featureRow) {
  * Deletes a feature row
  * @param gp
  * @param tableName
+ * @param featureRowIds
+ * @return number
+ */
+function _deleteFeatureRows (gp, tableName, featureRowIds) {
+  let numberDeleted = 0
+  for (let i = 0; i < featureRowIds.length; i++) {
+    const featureRowId = featureRowIds[i]
+    try {
+      _clearStylingForFeature(gp, tableName, featureRowId)
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      // eslint-disable-next-line no-empty
+    }
+    try {
+      numberDeleted += gp.getFeatureDao(tableName).deleteById(featureRowId)
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      // eslint-disable-next-line no-empty
+    }
+  }
+  _updateBoundingBoxForFeatureTable(gp, tableName)
+  return numberDeleted
+}
+
+/**
+ * Deletes a feature row
+ * @param gp
+ * @param tableName
  * @param featureRowId
  * @return number
  */
@@ -879,6 +909,18 @@ function _deleteFeatureRow (gp, tableName, featureRowId) {
 async function deleteFeatureRow (filePath, tableName, featureRowId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _deleteFeatureRow(gp, tableName, featureRowId)
+  })
+}
+/**
+ * Deletes feature rows
+ * @param filePath
+ * @param tableName
+ * @param featureRowIds
+ * @returns {Promise<any>}
+ */
+async function deleteFeatureRows (filePath, tableName, featureRowIds) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _deleteFeatureRows(gp, tableName, featureRowIds)
   })
 }
 
@@ -1049,6 +1091,119 @@ async function getFeatureTablePage (filePath, tableName, page, pageSize, sortBy,
   })
 }
 
+function _getFeatureViewData (gp, tableName, featureId) {
+  let featureData = {
+    feature: null,
+    attachments: [],
+    style: {},
+    columns: null
+  }
+  const featureDao = gp.getFeatureDao(tableName)
+  const srs = featureDao.srs
+  const featureRow = featureDao.queryForId(featureId)
+  const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+  feature.type = 'Feature'
+  feature.id = featureRow.id
+  featureData.feature = feature
+  const featureStyleExtension = new FeatureTableStyles(gp, tableName).getFeatureStyleExtension()
+  const icon = featureStyleExtension.getIcon(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
+  const style = featureStyleExtension.getStyle(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
+  if (style != null) {
+    featureData.style.style = {
+      id: style.id,
+      name: style.getName(),
+      description: style.getDescription(),
+      color: style.getHexColor(),
+      opacity: style.getOpacity(),
+      fillColor: style.getFillHexColor(),
+      fillOpacity: style.getFillOpacityOrDefault(),
+      width: style.getWidth()
+    }
+  } else if (icon != null) {
+    featureData.style.icon = {
+      url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+    }
+  } else {
+    featureData.style.style = {
+      id: Number.MAX_SAFE_INTEGER,
+      name: 'Default',
+      description: null,
+      color: '#000000',
+      opacity: 1.0,
+      fillColor: '#000000',
+      fillOpacity: 0.3,
+      width: 3.0
+    }
+  }
+
+  featureData.geometryTypeCode = GeometryType.fromName(feature.geometry.type.toUpperCase())
+  featureData.columns = _getFeatureColumns(gp, tableName)._columns
+  const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
+  const columnObjects = featureData.columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+    return getEditableColumnObject(column, properties)
+  })
+  featureData.editableColumns = orderBy(columnObjects, ['lowerCaseName'], ['asc'])
+  return featureData
+}
+
+async function getFeatureViewData (filePath, tableName, featureId) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getFeatureViewData(gp, tableName, featureId)
+  })
+}
+
+/**
+ * Checks if a value would be unique
+ * @param gp
+ * @param tableName
+ * @param column
+ * @param value
+ * @return {boolean}
+ * @private
+ */
+function _checkUnique (gp, tableName, column, value) {
+  const featureDao = gp.getFeatureDao(tableName)
+  const results = featureDao.queryForAllEq(column, value)
+  return results == null || results.length === 0
+}
+
+async function checkUnique (filePath, tableName, column, value) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _checkUnique(gp, tableName, column, value)
+  })
+}
+
+/**
+ * Get the feature on top
+ * @param gp
+ * @param tableName
+ * @param latlng
+ * @param zoom
+ * @return {Promise<null>}
+ */
+async function _getTopFeature (gp, tableName, latlng, zoom) {
+  let feature = null
+  const featureDao = gp.getFeatureDao(tableName)
+  const srs = featureDao.srs
+  const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
+  const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+  const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+  const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC')
+  const row = featureDao.connection.get(query, geomEnvelope.whereArgs)
+  if (!isNil(row)) {
+    feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureDao.getRow(row), srs)
+    feature.type = 'Feature'
+    feature.id = row.id
+  }
+  return feature
+}
+
+async function getTopFeature (filePath, tableName, latlng, zoom) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getTopFeature(gp, tableName, latlng, zoom)
+  })
+}
+
 /**
  * Gets table page features with respect to features in the bounding box (latlng + zoom)
  * @param gp
@@ -1087,7 +1242,6 @@ function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng
   })
   const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
   const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
-
   return {features, styleAssignments, mediaCounts}
 }
 
@@ -1408,12 +1562,13 @@ async function featureExists (filePath, tableName, featureId) {
   })
 }
 
-function getEditableColumnObject (column, properties, features = []) {
+function getEditableColumnObject (column, properties) {
   const columnObject = {
     name: column.name,
     lowerCaseName: column.name.toLowerCase(),
     dataType: column.dataType,
-    index: column.index
+    index: column.index,
+    isUnique: column.unique
   }
   let value = properties[column.name]
   if (value === undefined || value === null) {
@@ -1466,9 +1621,12 @@ function getEditableColumnObject (column, properties, features = []) {
     if (column.min) {
       columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
     }
-    if (column.unique) {
-      columnObject.rules.push(v => features.map(featureRow => featureRow.getValueWithIndex(column.index)).indexOf(v) !== -1 || column.name + ' must be unique')
-    }
+
+    // TODO update this to perform a database check for uniqueness
+    // issue, this check is dumb
+    // if (column.unique) {
+    //   columnObject.rules.push(v => window.mapcache.checkUnique(filePath, tableName, column.name, v) || column.name + ' must be a unique value')
+    // }
   }
   return columnObject
 }
@@ -1477,47 +1635,80 @@ async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feat
   if (isNil(columns) || isNil(columns._columns)) {
     return []
   }
-  let features = await getAllFeatureRows(filePath, tableName)
   const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
   const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
-    return getEditableColumnObject(column, properties, features)
+    return getEditableColumnObject(column, properties)
   })
 
   return orderBy(columnObjects, ['lowerCaseName'], ['asc'])
 }
-async function saveGeoPackageEditedFeature (filePath, tableName, feature, editableColumns) {
-  const featureRow = await getFeatureRow(filePath, tableName, feature.id)
-  editableColumns.forEach(column => {
-    let value = column.value
-    if (column.dataType === GeoPackageDataType.BOOLEAN) {
-      value = (value === 1 || value === true || value === 'true' || value === '1') ? 1 : 0
-    }
-    if (column.dataType === GeoPackageDataType.DATE) {
-      try {
-        if (!isEmpty(column.dateValue)) {
-          value = new Date(column.dateValue).toISOString().substring(0, 10)
-        } else {
+
+/**
+ * Save feature's edits and geometry changes
+ * @param filePath
+ * @param tableName
+ * @param featureId
+ * @param editableColumns
+ * @param updatedGeometry
+ * @return {Promise<*>}
+ */
+async function saveGeoPackageEditedFeature (filePath, tableName, featureId, editableColumns, updatedGeometry) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    const featureDao = gp.getFeatureDao(tableName)
+    const srs = featureDao.srs
+    const featureRow = featureDao.queryForId(featureId)
+    editableColumns.forEach(column => {
+      let value = column.value
+      if (column.dataType === GeoPackageDataType.BOOLEAN) {
+        value = (value === 1 || value === true || value === 'true' || value === '1') ? 1 : 0
+      }
+      if (column.dataType === GeoPackageDataType.DATE) {
+        try {
+          if (!isEmpty(column.dateValue)) {
+            value = new Date(column.dateValue).toISOString().substring(0, 10)
+          } else {
+            value = null
+          }
+        } catch (e) {
           value = null
         }
-      } catch (e) {
-        value = null
       }
-    }
-    if (column.dataType === GeoPackageDataType.DATETIME) {
-      try {
-        const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
-        if (!isEmpty(dateString)) {
-          value = moment.utc(dateString).toISOString()
-        } else {
+      if (column.dataType === GeoPackageDataType.DATETIME) {
+        try {
+          const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
+          if (!isEmpty(dateString)) {
+            value = moment.utc(dateString).toISOString()
+          } else {
+            value = null
+          }
+        } catch (e) {
           value = null
         }
-      } catch (e) {
-        value = null
       }
+      featureRow.setValueNoValidationWithIndex(column.index, value)
+    })
+
+    if (updatedGeometry != null) {
+      const geometryData = new GeometryData()
+      geometryData.setSrsId(srs.srs_id)
+      let feature = {type: 'Feature', properties: {}, geometry: updatedGeometry}
+      if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
+        feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+      }
+      const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
+      if (featureGeometry !== null) {
+        const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+        geometryData.setGeometry(geometry)
+      } else {
+        const temp = wkx.Geometry.parse('POINT EMPTY')
+        geometryData.setGeometry(temp)
+      }
+      featureRow.geometry = geometryData
     }
-    featureRow.setValueNoValidationWithIndex(column.index, value)
+    let result = featureDao.update(featureRow)
+    _updateBoundingBoxForFeatureTable(gp, tableName)
+    return result
   })
-  return await updateFeatureRow(filePath, tableName, featureRow)
 }
 
 /**
@@ -1584,6 +1775,8 @@ export {
   updateFeatureRow,
   _deleteFeatureRow,
   deleteFeatureRow,
+  _deleteFeatureRows,
+  deleteFeatureRows,
   _getBoundingBoxForFeature,
   getBoundingBoxForFeature,
   _updateBoundingBoxForFeatureTable,
@@ -1614,5 +1807,8 @@ export {
   getFeatureTablePageAtLatLngZoom,
   getGeoPackageEditableColumnsForFeature,
   saveGeoPackageEditedFeature,
-  getEditableColumnObject
+  getEditableColumnObject,
+  getTopFeature,
+  getFeatureViewData,
+  checkUnique
 }

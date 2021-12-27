@@ -46,6 +46,7 @@ import {
   mdiFolderOutline,
   mdiHelpCircleOutline,
   mdiLayersOutline,
+  mdiPackageVariant
 } from '@mdi/js'
 
 export default {
@@ -74,7 +75,7 @@ export default {
           active: true
         },
         {
-          action: '$geoPackage',
+          action: mdiPackageVariant,
           items: [
             {
               title: '',

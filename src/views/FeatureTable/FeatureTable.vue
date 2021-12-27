@@ -6,13 +6,13 @@
       max-width="400"
       persistent
       @keydown.esc="removeDialog = false">
-      <v-card v-if="removeDialog && featureToRemove !== null">
+      <v-card v-if="removeDialog && selected !== null && selected.length > 0">
         <v-card-title>
           <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
           Delete feature
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete feature <b>{{featureToRemove.id}}</b> from the {{name}} {{isGeoPackage ? 'feature layer' : 'data source'}}? This action can't be undone.
+          Are you sure you want to delete the {{selected.length}} selected features? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -24,43 +24,19 @@
           <v-btn
             color="warning"
             text
-            @click="remove">
+            @click="deleteSelected">
             Delete
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="assignStyleDialog" max-width="400" persistent scrollable @keydown.esc="closeStyleAssignment">
-      <edit-feature-style-assignment
-        v-if="styleAssignment"
-        :assignment="styleAssignment"
-        :table-name="table.tableName"
-        :project-id="projectId"
-        :id="id"
-        :is-geo-package="isGeoPackage"
-        :close="closeStyleAssignment"/>
-    </v-dialog>
-    <v-dialog v-model="showFeatureMediaAttachments" max-width="600" persistent @keydown.esc="closeFeatureMediaAttachments" :fullscreen="attachmentDialogFullScreen" style="overflow-y: hidden;">
-      <media-attachments
-        v-if="showFeatureMediaAttachments"
-        :tableName="table.tableName"
-        :project-id="projectId"
-        :geopackage-path="filePath"
-        :id="id"
-        :feature-id="mediaFeatureId"
-        :is-geo-package="isGeoPackage"
-        :back="closeFeatureMediaAttachments"
-        :toggle-full-screen="toggleAttachmentDialogFullScreen"
-        :is-full-screen="attachmentDialogFullScreen"/>
-    </v-dialog>
     <v-data-table
       v-model="selected"
-      dense
       :height="tableHeight"
       calculate-widths
       :headers="headers"
       :items="tableEntries"
-      item-key="key"
+      item-key="id"
       hide-default-footer
       :server-items-length="table.featureCount"
       :loading="loading"
@@ -69,91 +45,31 @@
       v-on:update:sort-by="handleSortUpdate"
       v-on:update:sort-desc="handleDescendingSortUpdate"
       class="elevation-1"
-      @click:row="handleClick"
+      show-select
     >
-      <template v-slot:[`item.actions`]="{ item }">
-        <v-btn
-          icon
-          small
-          @click="(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            editItem(item)
-          }">
-          <v-icon
-            small
-            title="Edit feature"
-          >
-            {{mdiPencil}}
-          </v-icon>
-        </v-btn>
-        <v-btn
-          v-if="item.geometry != null"
-          icon
-          small
-          @click="(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            editDrawing(item)
-          }">
-          <v-icon
-            small
-            title="Edit feature geometry"
-          >
-            {{mdiVectorSquare}}
-          </v-icon>
-        </v-btn>
-        <v-btn
-          icon
-          color="warning"
-          small
-          @click="(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            showDeleteConfirmation(item)
-          }">
-          <v-icon
-            small
-            color="warning"
-            title="Delete feature"
-          >
-            {{mdiTrashCan}}
-          </v-icon>
-        </v-btn>
-      </template>
-      <template v-slot:[`item.style`]="{ item }">
-        <v-btn  style="width: 25px; height: 25px;" icon v-if="item.style && (item.style.style || item.style.icon)" @click.stop.prevent="(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              showStyleAssignment(item)
-            }"
-               title="Assign style">
-          <geometry-style-svg v-if="item.style.style" :color="item.style.style.color" :fill-color="item.style.style.fillColor" :fill-opacity="item.style.style.fillOpacity" :geometry-type="item.geometryTypeCode"/>
-          <img v-else-if="item.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="item.style.icon.url"/>
-        </v-btn>
-        <v-row v-else justify="start" align="center" no-gutters>
-          <v-btn small icon @click.stop.prevent="(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              showStyleAssignment(item)
-            }"
-                 title="Assign style">
-            <v-icon small>{{mdiPalette}}</v-icon>
-          </v-btn>
-          None
+      <template v-slot:top>
+        <v-row no-gutters justify="end">
+          <v-btn :disabled="selected.length === 0" text color="red" @click="showDeleteConfirmation"><v-icon>{{mdiTrashCan}}</v-icon>Delete</v-btn>
         </v-row>
       </template>
-      <template v-slot:[`item.attachments`]="{ item }">
-        <v-row justify="start" align="center" no-gutters>
-          <v-btn title="Edit attachments" small icon @click.stop.prevent="(e) => {
+      <template v-slot:[`header.attachments`]="{ }">
+        <v-icon style="margin-left: -4px !important;" small>{{mdiPaperclip}}</v-icon>
+      </template>
+      <template v-slot:item="{ item, headers, index, isSelected, select }">
+        <tr class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)" @mouseover="() => handleHover(item)" @mouseleave="() => handleMouseLeave(item)">
+          <td class="text-start">
+            <v-simple-checkbox v-ripple @click="e => {
+              select(!isSelected)
               e.stopPropagation()
-              e.preventDefault()
-              editFeatureMediaAttachments(item)
-            }">
-            <v-icon small>{{mdiPaperclip}}</v-icon>
-          </v-btn>
-          {{item.attachmentCount}}
-        </v-row>
+            }" :value="isSelected"></v-simple-checkbox>
+          </td>
+          <td class="text-start">
+            {{item.attachments > 0 ? item.attachments : null}}
+          </td>
+          <td class="text-start"  v-for="header in headers.slice(2)" :key="index + '_' + header.value">
+            {{item[header.value]}}
+          </td>
+        </tr>
       </template>
     </v-data-table>
     <v-row no-gutters>
@@ -168,14 +84,6 @@
         <v-select v-model="options.itemsPerPage" :items="itemsPerPageOptions" label="items per page"></v-select>
       </div>
     </v-row>
-    <v-dialog
-      v-model="editDialog"
-      max-width="500"
-      scrollable
-      persistent
-      @keydown.esc="closeEditor">
-      <feature-editor v-if="editDialog" :projectId="projectId" :is-geo-package="isGeoPackage" :geopackage-path="filePath" :id="id" :tableName="table.tableName" :columns="editFeatureColumns" :feature="editFeature" :close="closeEditor" :is-editing="true"></feature-editor>
-    </v-dialog>
   </v-sheet>
 </template>
 
@@ -184,11 +92,7 @@ import keys from 'lodash/keys'
 import orderBy from 'lodash/orderBy'
 import isNil from 'lodash/isNil'
 import moment from 'moment/moment'
-import FeatureEditor from '../Common/FeatureEditor'
-import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
-import MediaAttachments from '../Common/MediaAttachments'
-import GeometryStyleSvg from '../Common/GeometryStyleSvg'
-import {mdiPalette, mdiPaperclip, mdiPencil, mdiTrashCan, mdiVectorSquare} from '@mdi/js'
+import {mdiPaperclip, mdiTrashCan} from '@mdi/js'
 
 export default {
     props: {
@@ -199,45 +103,29 @@ export default {
       source: Object,
       geopackage: Object,
       table: Object,
+      showFeature: Function,
       zoomToFeature: Function,
+      highlightFeature: Function,
       close: Function,
       isGeoPackage: Boolean,
       showItemsPerPage: Boolean
     },
-    components: {
-      GeometryStyleSvg,
-      MediaAttachments,
-      FeatureEditor,
-      EditFeatureStyleAssignment
-    },
     data () {
       return {
-        mdiPencil: mdiPencil,
-        mdiVectorSquare: mdiVectorSquare,
         mdiTrashCan: mdiTrashCan,
-        mdiPalette: mdiPalette,
         mdiPaperclip: mdiPaperclip,
-        editDialog: false,
         removeDialog: false,
-        featureToRemove: null,
         selected: [],
-        editFeature: null,
-        editFeatureColumns: {},
-        assignStyleDialog: false,
-        styleAssignment: null,
         page: 1,
-        showFeatureMediaAttachments: false,
-        mediaFeatureId: -1,
-        attachmentDialogFullScreen: false,
         loading: false,
         options: {hideDefaultFooter: false, itemsPerPage: 5},
         tableEntries: [],
         features: [],
-        itemsPerPageOptions: [5, 10, 15, 20, 25, 50],
+        itemsPerPageOptions: [5, 10, 15, 20, 25, 50, 100],
         windowHeight: window.innerHeight,
         previousItemsPerPage: 5,
-        itemHeight: 32,
-        headerHeight: 32,
+        itemHeight: 48,
+        headerHeight: 48,
         scrollBarHeight: 16,
         sortField: null,
         descending: false,
@@ -247,7 +135,7 @@ export default {
     computed: {
       tableHeight () {
         const tableOnly = Math.min(this.tableEntries.length, this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
-        const windowAreaAvailable = this.windowHeight - 166
+        const windowAreaAvailable = this.windowHeight - 154
         return Math.min(tableOnly, windowAreaAvailable)
       },
       pageCount () {
@@ -255,20 +143,15 @@ export default {
       },
       headers () {
         const headers = [
-          { text: 'Actions', value: 'actions', sortable: false, width: 140 },
-          { text: 'Attachments', value: 'attachments', sortable: false, width: 140 },
-          { text: 'Style', value: 'style', sortable: false, width: 140 },
-          { text: 'Geometry type', value: 'geometryType', sortable: false, width: 140 }
+          { text: 'attachments', value: 'attachments', sortable: false }
         ]
-
         const tableHeaders = []
         this.table.columns._columns.forEach(column => {
           if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
             this.headerColumnNameMapping[column.name.toLowerCase() + '_table'] = column.name.toLowerCase()
             tableHeaders.push({
               text: column.name.toLowerCase(),
-              value: column.name.toLowerCase() + '_table',
-              width: 200
+              value: column.name.toLowerCase() + '_table'
             })
           }
         })
@@ -278,8 +161,10 @@ export default {
     mounted () {
       this.setPage(0)
       const self = this
+      this.determinePageSize()
       window.addEventListener('resize', () => {
         self.windowHeight = window.innerHeight
+        this.determinePageSize()
       })
     },
     watch: {
@@ -332,10 +217,41 @@ export default {
       }
     },
     methods: {
+      getWidthFromColumnType (type) {
+        let width = 200
+
+        if (type === window.mapcache.GeoPackageDataType.INT ||
+            type === window.mapcache.GeoPackageDataType.BOOLEAN ||
+            type === window.mapcache.GeoPackageDataType.TINYINT ||
+            type === window.mapcache.GeoPackageDataType.SMALLINT ||
+            type === window.mapcache.GeoPackageDataType.MEDIUMINT ||
+            type === window.mapcache.GeoPackageDataType.INT ||
+            type === window.mapcache.GeoPackageDataType.INTEGER ||
+            type === window.mapcache.GeoPackageDataType.FLOAT ||
+            type === window.mapcache.GeoPackageDataType.DOUBLE ||
+            type === window.mapcache.GeoPackageDataType.REAL) {
+          width = 100
+        } else if (type === window.mapcache.GeoPackageDataType.DATE) {
+          width = 150
+        }
+
+        return width
+      },
+      determinePageSize () {
+        if (this.showItemsPerPage) {
+          const maxItems = Math.floor((window.innerHeight - 168) / this.itemHeight)
+          let pageSizeIndex = 0
+          for (let i = 0; i < this.itemsPerPageOptions.length; i++) {
+            if (maxItems > this.itemsPerPageOptions[i]) {
+              pageSizeIndex = i + 1
+            }
+          }
+          this.options.itemsPerPage = this.itemsPerPageOptions[Math.min(pageSizeIndex, this.itemsPerPageOptions.length - 1)]
+        }
+      },
       handleSortUpdate (args) {
         this.sortField = this.headerColumnNameMapping[args[0]]
         this.setPage(this.page - 1)
-
       },
       handleDescendingSortUpdate (args) {
         this.descending = args[0]
@@ -351,117 +267,87 @@ export default {
         })
       },
       getTableEntries (page) {
-        return page.features.map(feature => {
-          const item = {
-            key: feature.id + '_' + this.id,
-            id: feature.id,
-            feature: feature,
-            geometry: feature.geometry,
-            geometryType: isNil(feature.geometry) ? null : feature.geometry.type,
-            geometryTypeCode: isNil(feature.geometry) ? -1 : window.mapcache.GeometryType.fromName(feature.geometry.type.toUpperCase()),
-            style: page.styleAssignments[feature.id],
-            attachmentCount: page.mediaCounts[feature.id] || 0
-          }
-          keys(feature.properties).forEach(key => {
-            let value = feature.properties[key] != null ? feature.properties[key] : ''
-            try {
-              const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
-              const column = this.table.columns._columns[columnIndex]
-              if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
-                value = value === 1 || value === true
-              }
-              if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
-                value = moment.utc(value).format('MM/DD/YYYY')
-              }
-              if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
-                value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
-              }
-              if (column.dataType === window.mapcache.GeoPackageDataType.TEXT && value.length > 15) {
-                value = value.substring(0, 15) + '...'
-              }
-              // eslint-disable-next-line no-unused-vars
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Failed to set value for property ' + key)
+        if (page && page.features) {
+          return page.features.map(feature => {
+            const item = {
+              key: feature.id + '_' + this.id,
+              id: feature.id,
+              attachments: page.mediaCounts[feature.id] || 0,
+              feature: feature
             }
-            item[key.toLowerCase() + '_table'] = value
+            keys(feature.properties).forEach(key => {
+              let value = feature.properties[key] != null ? feature.properties[key] : ''
+              try {
+                const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
+                const column = this.table.columns._columns[columnIndex]
+                if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
+                  value = value === 1 || value === true
+                }
+                if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
+                  value = moment.utc(value).format('MM/DD/YYYY')
+                }
+                if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
+                  value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
+                }
+                if (column.dataType === window.mapcache.GeoPackageDataType.TEXT && value.length > 15) {
+                  value = value.substring(0, 15) + '...'
+                }
+                // eslint-disable-next-line no-unused-vars
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('Failed to set value for property ' + key)
+              }
+              item[key.toLowerCase() + '_table'] = value
+            })
+            return item
           })
-          return item
-        })
+        } else {
+          return []
+        }
       },
-      toggleAttachmentDialogFullScreen () {
-        this.attachmentDialogFullScreen = !this.attachmentDialogFullScreen
-      },
-      closeFeatureMediaAttachments () {
-        this.showFeatureMediaAttachments = false
-        this.$nextTick(() => {
-          this.attachmentDialogFullScreen = false
-        })
-      },
-      editFeatureMediaAttachments (item) {
-        this.mediaFeatureId = item.id
-        this.showFeatureMediaAttachments = true
-      },
-      editItem (item) {
-        const self = this
-        this.editFeature = item.feature
-        window.mapcache.getFeatureColumns(this.filePath, this.table.tableName).then(columns => {
-          self.editFeatureColumns = columns
-          self.editDialog = true
-        })
-      },
-      showDeleteConfirmation (item) {
-        this.featureToRemove = item.feature
+      showDeleteConfirmation () {
         this.removeDialog = true
       },
       cancelRemove () {
         this.removeDialog = false
-        this.featureToRemove = null
       },
-      remove () {
-        if (!isNil(this.featureToRemove)) {
+      deleteSelected () {
+        if (!isNil(this.selected) && this.selected.length > 0) {
+          const ids = this.selected.map(feature => feature.id)
           if (this.isGeoPackage) {
-            window.mapcache.removeFeatureFromGeopackage({projectId: this.projectId, geopackageId: this.id, tableName: this.table.tableName, featureId: this.featureToRemove.id})
+            window.mapcache.deleteFeatureIdsFromGeoPackage({projectId: this.projectId, geopackageId: this.id, tableName: this.table.tableName, featureIds: ids})
           } else {
-            window.mapcache.removeFeatureFromDataSource({projectId: this.projectId, sourceId: this.id, featureId: this.featureToRemove.id})
+            window.mapcache.deleteFeatureIdsFromDataSource({projectId: this.projectId, sourceId: this.id, featureIds: ids})
           }
           // eslint-disable-next-line vue/no-mutating-props
-          this.table.featureCount--
+          this.table.featureCount -= ids.length
+          const newPageCount = Math.ceil(this.table.featureCount / this.options.itemsPerPage)
           if (this.table.featureCount === 0) {
             this.close()
           } else {
-            this.loading = true
-            this.table.getPage(Math.min(this.pageCount, this.page) - 1, this.options.itemsPerPage, this.filePath, this.table.tableName).then(page => {
-              this.tableEntries = this.getTableEntries(page)
-              this.loading = false
-            })
+            this.page = Math.min(newPageCount, this.page)
           }
           this.removeDialog = false
-          this.featureToRemove = null
+          this.selected = []
         }
       },
-      async showStyleAssignment (item) {
-        this.styleAssignment = await window.mapcache.getStyleItemsForFeature(this.filePath, this.table.tableName, item.id)
-        this.assignStyleDialog = true
-      },
-      async editDrawing (item) {
-        window.mapcache.editFeatureGeometry({projectId: this.projectId, id: this.id, isGeoPackage: this.isGeoPackage, tableName: this.table.tableName, featureToEdit: item.feature})
-      },
-      closeStyleAssignment () {
-        this.assignStyleDialog = false
-        this.styleAssignment = null
-      },
-      closeEditor () {
-        this.editDialog = false
-        this.$nextTick(() => {
-          this.editFeature = null
-          this.editFeatureColumns = {}
-        })
+      handleHover (value) {
+        if (this.table.visible) {
+          this.highlightFeature(this.filePath, this.table.tableName, value.feature)
+        }
       },
       handleClick (value) {
         if (!this.removeDialog) {
+          this.showFeature(this.id, this.isGeoPackage, this.table.tableName, value.id)
+        }
+      },
+      zoomTo (value) {
+        if (!this.removeDialog) {
           this.zoomToFeature(this.filePath, this.table.tableName, value.id)
         }
+      },
+      handleMouseLeave () {
+        this.highlightFeature()
       }
     }
   }
@@ -473,5 +359,8 @@ export default {
   right: 0;
   max-width: 100px;
   min-width: 100px;
+}
+.v-data-table-header th {
+  white-space: nowrap !important;
 }
 </style>

@@ -165,7 +165,7 @@ export default {
       },
       async save () {
         if (this.isEditing) {
-          const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.feature, this.editableColumns)
+          const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.feature.id, this.editableColumns)
           if (result.changes > 0) {
             if (this.isGeoPackage) {
               window.mapcache.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})

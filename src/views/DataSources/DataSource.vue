@@ -1,5 +1,6 @@
 <template>
-  <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
+  <feature-view v-if="displayFeature && !displayFeature.isGeoPackage" :name="initialDisplayName" :project="project" :projectId="project.id" :geopackage-path="source.geopackageFilePath" :id="source.id" :tableName="source.sourceLayerName" :feature-id="displayFeature.featureId" :object="source" :back="hideFeature"/>
+  <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -454,6 +455,7 @@ import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../..
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import EditZoomRange from '../../views/Common/EditZoomRange'
 import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import FeatureView from "@/views/Common/FeatureView";
 
 export default {
     props: {
@@ -466,9 +468,11 @@ export default {
         }
       },
       project: Object,
-      back: Function
+      back: Function,
+      displayFeature: Object
     },
     components: {
+      FeatureView,
       EditZoomRange,
       GeoTIFFTroubleshooting,
       NumberPicker,
@@ -526,6 +530,9 @@ export default {
       }
     },
     methods: {
+      hideFeature () {
+        EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
+      },
       hasSubdomains () {
         return !isEmpty(this.source.subdomains) && window.mapcache.requiresSubdomains(this.source.filePath)
       },

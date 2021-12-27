@@ -236,7 +236,6 @@ class MapCacheWindowManager {
 
   processGeoPackageFiles (filePaths) {
     if (filePaths.length > 0) {
-      console.log(filePaths)
       if (this.mainWindow != null && this.mainWindow.isVisible()) {
         this.mainWindow.webContents.send(LAUNCH_WITH_GEOPACKAGE_FILES, filePaths)
       } else if (this.projectWindow != null && this.projectWindow.isVisible()) {

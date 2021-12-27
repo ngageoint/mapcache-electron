@@ -5,6 +5,7 @@
       class="sources"
       :source="selectedDataSource"
       :project="project"
+      :display-feature="displayFeature"
       :back="deselectDataSource">
     </data-source>
     <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
@@ -133,7 +134,8 @@ import OverpassDataSource from '../Overpass/OverpassDataSource'
     props: {
       sources: Object,
       project: Object,
-      back: Function
+      back: Function,
+      displayFeature: Object
     },
     computed: {
       ...mapState({
@@ -249,6 +251,16 @@ import OverpassDataSource from '../Overpass/OverpassDataSource'
         handler (newSources) {
           if (!isNil(this.selectedDataSource)) {
             this.selectedDataSource = newSources[this.selectedDataSource.id]
+          }
+        },
+        deep: true
+      },
+      displayFeature: {
+        handler (newDisplayFeature) {
+          if (newDisplayFeature != null && !newDisplayFeature.isGeoPackage) {
+            if (this.selectedDataSource == null || newDisplayFeature.id !== this.selectedDataSource.id) {
+              this.selectedDataSource = this.project.sources[newDisplayFeature.id]
+            }
           }
         },
         deep: true

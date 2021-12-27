@@ -1,12 +1,12 @@
 <template>
-  <v-sheet v-if="tableFeatures">
+  <v-sheet v-if="table">
     <v-toolbar
       flat
       color="main"
       dark
       dense
     >
-      <v-toolbar-title>{{geopackageTables.length + sourceTables.length > 1 ? 'Feature tables' : 'Feature table' }}</v-toolbar-title>
+      <v-toolbar-title>{{ table.tabName }}</v-toolbar-title>
       <v-row no-gutters justify="end">
         <v-tooltip  v-if="popOut != null" left :disabled="!project.showToolTips">
           <template v-slot:activator="{ on, attrs }">
@@ -29,39 +29,8 @@
         <v-btn small @click.stop.prevent="close" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
       </v-row>
     </v-toolbar>
-    <v-tabs
-      v-model="tab"
-      grow
-      color="primary"
-    >
-      <v-tab
-        v-for="table in geopackageTables"
-        :key="table.id"
-      >
-        {{ table.tabName }}
-      </v-tab>
-      <v-tab
-        v-for="table in sourceTables"
-        :key="table.id"
-      >
-        {{ table.tabName }}
-      </v-tab>
-    </v-tabs>
-
-    <v-tabs-items v-model="tab">
-      <v-tab-item
-        v-for="table in geopackageTables"
-        :key="table.id"
-      >
-        <feature-table :show-items-per-page="showItemsPerPage" :geopackage="geopackages[table.geopackageId]" :is-geo-package="true" :project-id="projectId" :id="table.geopackageId" :name="table.tableName" :file-path="geopackages[table.geopackageId].path" :table="table" :close="() => removeGeoPackageTab(table.id)" :zoom-to-feature="zoomToFeature"></feature-table>
-      </v-tab-item>
-      <v-tab-item
-        v-for="table in sourceTables"
-        :key="table.id"
-      >
-        <feature-table :show-items-per-page="showItemsPerPage" :source="sources[table.sourceId]" :is-geo-package="false" :project-id="projectId" :id="table.sourceId" :name="sources[table.sourceId].displayName ? sources[table.sourceId].displayName : sources[table.sourceId].name" :file-path="sources[table.sourceId].geopackageFilePath" :table="table" :close="() => removeSourceTab(table.id)" :zoom-to-feature="zoomToFeature"></feature-table>
-      </v-tab-item>
-    </v-tabs-items>
+    <feature-table v-if="table.isGeoPackage" :show-items-per-page="showItemsPerPage" :geopackage="geopackages[table.geopackageId]" :is-geo-package="true" :project-id="projectId" :id="table.geopackageId" :name="table.tableName" :file-path="geopackages[table.geopackageId].path" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
+    <feature-table v-else :show-items-per-page="showItemsPerPage" :source="sources[table.sourceId]" :is-geo-package="false" :project-id="projectId" :id="table.sourceId" :name="sources[table.sourceId].displayName ? sources[table.sourceId].displayName : sources[table.sourceId].name" :file-path="sources[table.sourceId].geopackageFilePath" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
   </v-sheet>
 </template>
 
@@ -78,8 +47,10 @@ export default {
       projectId: String,
       geopackages: Object,
       sources: Object,
-      tableFeatures: Object,
+      table: Object,
       zoomToFeature: Function,
+      showFeature: Function,
+      highlightFeature: Function,
       close: Function,
       popOut: Function,
       popIn: Function,
@@ -92,36 +63,7 @@ export default {
         tab: null
       }
     },
-    computed: {
-      geopackageTables: {
-        get () {
-          return this.tableFeatures.geopackageTables.slice()
-        },
-        set (val) {
-          if (val.length === 0 && this.sourceTables.length === 0) {
-            this.close()
-          }
-        }
-      },
-      sourceTables: {
-        get () {
-          return this.tableFeatures.sourceTables.slice()
-        },
-        set (val) {
-          if (val.length === 0 && this.geopackageTables.length === 0) {
-            this.close()
-          }
-        }
-      }
-    },
-    methods: {
-      removeGeoPackageTab (id) {
-        this.geopackageTables = this.geopackageTables.filter(table => table.id !== id)
-      },
-      removeSourceTab (id) {
-        this.sourceTables = this.sourceTables.filter(table => table.id !== id)
-      }
-    }
+
   }
 </script>
 

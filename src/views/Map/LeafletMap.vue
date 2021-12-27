@@ -132,9 +132,9 @@
         ref="featureTableRef"
         v-show="showFeatureTable && !isFeatureTablePoppedOut"
         class="mx-auto"
-        style="max-height: 385px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
+        style="max-height: 448px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
         <v-card-text class="pa-0 ma-0 mb-2">
-          <feature-tables :project="project" :projectId="projectId" :geopackages="geopackages" :sources="sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="hideFeatureTable" :pop-out="popOutFeatureTable"></feature-tables>
+          <feature-tables :project="project" :projectId="projectId" :geopackages="geopackages" :sources="sources" :table="table" :zoomToFeature="zoomToFeature" :show-feature="showFeature" :close="hideFeatureTable" :pop-out="popOutFeatureTable" :highlight-feature="highlightGeoPackageFeature"></feature-tables>
         </v-card-text>
       </v-card>
     </v-expand-transition>
@@ -246,6 +246,7 @@ import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import DrawBounds from './mixins/DrawBounds'
 import GridBounds from './mixins/GridBounds'
+import HighlightFeature from './mixins/HighlightFeature'
 import FeatureTables from '../FeatureTable/FeatureTables'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
 import LeafletEdit from '../../lib/leaflet/map/controls/LeafletEdit'
@@ -301,7 +302,7 @@ function generateLayerOrderItemForSource (source) {
   return {
     title: source.displayName ? source.displayName : source.name,
     id: source.id,
-    type: source.pane === 'vector' ? 'feature' : 'tile',
+    type: source.pane === 'vector' ? 'vector' : 'tile',
     zoomTo: debounce((e) => {
       e.stopPropagation()
       zoomToSource(source)
@@ -328,7 +329,8 @@ export default {
   mixins: [
     DrawBounds,
     GridBounds,
-    SearchResult
+    SearchResult,
+    HighlightFeature
   ],
   props: {
     sources: Object,
@@ -402,11 +404,7 @@ export default {
       showFeatureTable: false,
       isFeatureTablePoppedOut: false,
       featureTableDialogWidth: 500,
-      tableFeatures: {
-        geopackageTables: [],
-        sourceTables: []
-      },
-      tableFeaturesLatLng: null,
+      table: null,
       geoPackageFeatureLayerChoices: [NEW_FEATURE_LAYER_OPTION],
       geoPackageSelection: 0,
       geoPackageFeatureLayerSelection: 0,
@@ -448,6 +446,9 @@ export default {
     }
   },
   methods: {
+    showFeature (id, isGeoPackage, table, featureId) {
+      EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, table, featureId)
+    },
     popOutFeatureTable (forcePopupWindowToFront) {
       this.isFeatureTablePoppedOut = true
       window.mapcache.showFeatureTableWindow(forcePopupWindowToFront)
@@ -455,10 +456,7 @@ export default {
     hideFeatureTable () {
       window.mapcache.hideFeatureTableWindow()
       this.showFeatureTable = false
-      this.tableFeatures = {
-        geopackageTables: [],
-        sourceTables: []
-      }
+      this.table = null
     },
     displayFeatureTable () {
       this.$nextTick(() => {
@@ -484,36 +482,33 @@ export default {
             tableName,
             isGeoPackage
           }
-          this.tableFeaturesLatLng = null
           if (isGeoPackage) {
             const geopackage = this.geopackages[id]
-            this.tableFeatures = {
-              geopackageTables: [{
-                id: geopackage.id + '_' + tableName,
-                tabName: geopackage.name + ': ' + tableName,
-                geopackageId: geopackage.id,
-                tableName: tableName,
-                filePath: geopackage.path,
-                columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
-                featureCount: geopackage.tables.features[tableName].featureCount,
-                getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
-              }],
-              sourceTables: []
+            this.table = {
+              id: geopackage.id + '_' + tableName,
+              tabName: geopackage.name + ' - ' + tableName,
+              geopackageId: geopackage.id,
+              isGeoPackage: true,
+              tableName: tableName,
+              filePath: geopackage.path,
+              visible: geopackage.tables.features[tableName].visible,
+              columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
+              featureCount: geopackage.tables.features[tableName].featureCount,
+              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
             }
           } else {
             const sourceLayerConfig = this.sources[id]
-            this.tableFeatures = {
-              geopackageTables: [],
-              sourceTables: [{
-                id: sourceLayerConfig.id,
-                tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
-                sourceId: sourceLayerConfig.id,
-                columns: await window.mapcache.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                filePath: sourceLayerConfig.geopackageFilePath,
-                tableName: sourceLayerConfig.sourceLayerName,
-                featureCount: sourceLayerConfig.count,
-                getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
-              }]
+            this.table = {
+              isGeoPackage: false,
+              id: sourceLayerConfig.id,
+              tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
+              sourceId: sourceLayerConfig.id,
+              visible: sourceLayerConfig.visible,
+              columns: await window.mapcache.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+              filePath: sourceLayerConfig.geopackageFilePath,
+              tableName: sourceLayerConfig.sourceLayerName,
+              featureCount: sourceLayerConfig.count,
+              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
             }
           }
           this.displayFeatureTable()
@@ -527,66 +522,36 @@ export default {
         this.hideFeatureTable()
       }
     },
-    async queryForFeatures (e, forcePopupWindowToFront = false) {
+    async queryForFeatures (e, isUserClick = false, forcePopupWindowToFront = false) {
       if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing && !this.layerSelectionVisible && !this.showAddFeatureDialog && isNil(this.drawBoundsId) && isNil(this.gridBoundsId)) {
-        let tableFeatures = {
-          geopackageTables: [],
-          sourceTables: []
-        }
         if (this.isFeatureTablePoppedOut) {
           this.popOutFeatureTable(forcePopupWindowToFront)
         }
-        window.mapcache.sendFeatureTableEvent({
-          event: FEATURE_TABLE_WINDOW_EVENTS.LAT_LON_FEATURE_QUERY,
-          args: {
-            lat: e.latlng.lat,
-            lng: e.latlng.lng,
-            zoom: this.map.getZoom()
-          }
-        })
-        const geopackageValues = Object.values(this.geopackages)
-        for (let i = 0; i < geopackageValues.length; i++) {
-          const geopackage = geopackageValues[i]
-          const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
-          if (tables.length > 0) {
-            const geopackageTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(geopackage.name, geopackage.id, geopackage.path, tables, e.latlng, this.map.getZoom())
-            geopackageTables.forEach(table => {
-              table.getPage = (page, pageSize, path, tableName, sortBy, desc) => {
-                return window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom, sortBy, desc)
+        if (isUserClick) {
+          let feature = null
+          for (let i = 0; i < this.layerOrder.length && feature == null; i++) {
+            const layer = this.layerOrder[i]
+            if (layer.type === 'vector') {
+              if (layer.geopackageId) {
+                const geopackage = this.geopackages[layer.geopackageId]
+                feature = await window.mapcache.getTopFeature(geopackage.path, layer.tableName, e.latlng, this.map.getZoom())
+                if (feature != null) {
+                  this.showFeature(layer.geopackageId, true, layer.tableName, feature.id)
+                }
+              } else {
+                const source = this.sources[layer.id]
+                feature = await window.mapcache.getTopFeature(source.geopackageFilePath, source.sourceLayerName, e.latlng, this.map.getZoom())
+                if (feature != null) {
+                  this.showFeature(layer.id, false, source.sourceLayerName, feature.id)
+                }
               }
-            })
-            tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
-          }
-        }
-        for (let sourceId in this.dataSourceMapLayers) {
-          const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()._configuration
-          if (sourceLayer.visible) {
-            if (!isNil(sourceLayer.geopackageFilePath)) {
-              const sourceTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name, sourceLayer.id, sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom(), false)
-              sourceTables.forEach(table => {
-                table.getPage = (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom, sortBy, desc)
-              })
-              tableFeatures.sourceTables = tableFeatures.sourceTables.concat(sourceTables)
             }
           }
-        }
-        if (tableFeatures.geopackageTables.length > 0 || tableFeatures.sourceTables.length > 0) {
-          this.lastShowFeatureTableEvent = null
-          this.tableFeaturesLatLng = e.latlng
-          this.tableFeatures = tableFeatures
-          this.displayFeatureTable()
-        } else {
-          this.hideFeatureTable()
         }
       }
     },
     refreshFeatureTable () {
-      // geopackages changed, so let's ensure the content in the table is updated
-      if (this.showFeatureTable && !isNil(this.tableFeaturesLatLng)) {
-        this.queryForFeatures({latlng: this.tableFeaturesLatLng})
-        // the feature table is showing because a user clicked the view features button in the feature layer view
-        // this requires the active geopackage to be set with a valid geopackageId and tableName
-      } else if (this.showFeatureTable && !isNil(this.lastShowFeatureTableEvent)) {
+      if (this.showFeatureTable && !isNil(this.lastShowFeatureTableEvent)) {
         this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
       } else {
         // clear out any feature tables
@@ -1183,7 +1148,7 @@ export default {
     },
     debounceClickHandler: debounce(function (e) {
       if (this.consecutiveClicks === 1) {
-        this.queryForFeatures(e, true)
+        this.queryForFeatures(e, true, true)
       }
       this.consecutiveClicks = 0
     }, DOUBLE_CLICK_THRESHOLD),
@@ -1191,25 +1156,27 @@ export default {
       const self = this
       const checkFeatureCount = throttle(async function (e) {
         if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.drawBoundsId) && isNil(self.gridBoundsId) && !self.performingReverseQuery) {
-          let count = 0
-          // TODO: add support for querying tiles if a feature tile link exists (may need to implement feature tile link in geopackage-js first!
-          const geopackageValues = Object.values(this.geopackages)
-          for (let i = 0; i < geopackageValues.length; i++) {
-            const geopackage = geopackageValues[i]
-            const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
-            if (tables.length > 0) {
-              count += await window.mapcache.countOfFeaturesAt(geopackage.path, tables, e.latlng, this.map.getZoom())
-            }
-          }
-          for (let sourceId in this.dataSourceMapLayers) {
-            const sourceLayer = this.dataSourceMapLayers[sourceId].getLayer()
-            if (sourceLayer.visible) {
-              if (!isNil(sourceLayer.geopackageFilePath)) {
-                count += await window.mapcache.countOfFeaturesAt(sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], e.latlng, this.map.getZoom())
+          this.removeGeoPackageFeatureHighlight()
+          let feature = null
+          for (let i = 0; i < this.layerOrder.length && feature == null; i++) {
+            const layer = this.layerOrder[i]
+            if (layer.type === 'vector') {
+              if (layer.geopackageId) {
+                const geopackage = this.geopackages[layer.geopackageId]
+                feature = await window.mapcache.getTopFeature(geopackage.path, layer.tableName, e.latlng, this.map.getZoom())
+                if (feature != null) {
+                  await this.highlightGeoPackageFeature(geopackage.path, layer.tableName, feature)
+                }
+              } else {
+                const source = this.sources[layer.id]
+                feature = await window.mapcache.getTopFeature(source.geopackageFilePath, source.sourceLayerName, e.latlng, this.map.getZoom())
+                if (feature != null) {
+                  await this.highlightGeoPackageFeature(source.geopackageFilePath, source.sourceLayerName, feature)
+                }
               }
             }
           }
-          if (count > 0) {
+          if (feature != null) {
             document.getElementById('map').style.cursor = 'pointer'
           } else {
             document.getElementById('map').style.cursor = ''
@@ -1271,7 +1238,7 @@ export default {
       for (const geopackageId in this.geopackages) {
         this.addGeoPackageToMap(this.geopackages[geopackageId], this.map)
       }
-    },
+    }
   },
   watch: {
     gridSelection: {
@@ -1669,34 +1636,11 @@ export default {
         }
 
         this.manualBoundingBoxDialog = !isNil(updatedProject.boundingBoxFilterEditing) && updatedProject.boundingBoxFilterEditing === 'manual'
-
-        let clearEditing = true
-        if (!isNil(updatedProject.editingFeature)) {
-          let id = updatedProject.editingFeature.id
-          let isGeoPackage = updatedProject.editingFeature.isGeoPackage
-          let tableName = updatedProject.editingFeature.tableName
-          let featureId = updatedProject.editingFeature.featureToEdit.id
-          let geoPackageObject = isGeoPackage ? updatedProject.geopackages[id] : updatedProject.sources[id]
-          // did geopackage or data source get deleted
-          if (!isNil(geoPackageObject)) {
-            let exists = await window.mapcache.featureExists(isGeoPackage ? geoPackageObject.path : geoPackageObject.geopackageFilePath, tableName, featureId)
-            if (exists) {
-              clearEditing = false
-              this.editingControl.editFeature(this.map, updatedProject.id, updatedProject.editingFeature)
-              this.isEditing = true
-            }
-          }
-        }
-        if (clearEditing) {
-          this.editingControl.cancelEdit()
-          this.isEditing = false
-        }
       },
       deep: true
     }
   },
   mounted: function () {
-    window.mapcache.clearEditFeatureGeometry({projectId: this.project.id})
     EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage, true))
     EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
     EventBus.$on(EventBus.EventTypes.ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
@@ -1712,8 +1656,16 @@ export default {
       this.alertMessage = message
       this.showAlertMessage = true
     })
+    EventBus.$on(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, (feature) => {
+      this.editingControl.editFeature(this.map, feature)
+      this.isEditing = true
+      EventBus.$once(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, () => {
+        const editedFeature = this.editingControl.completeEditing()
+        EventBus.$emit(EventBus.EventTypes.EDITED_FEATURE_GEOMETRY, editedFeature)
+        this.isEditing = false
+      })
+    })
     this.maxFeatures = this.project.maxFeatures
-
     window.mapcache.registerHideFeatureTableWindowListener((event, args) => {
       if (args != null && args.popIn) {
         this.isFeatureTablePoppedOut = false
@@ -1722,10 +1674,13 @@ export default {
         this.isFeatureTablePoppedOut = false
       }
     })
-
-    window.mapcache.registerFeatureTableActionListener((event, {action, path, table, featureId}) => {
+    window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
         this.zoomToFeature(path, table, featureId)
+      } else if (action === FEATURE_TABLE_ACTIONS.HIGHLIGHT_FEATURE) {
+        this.highlightGeoPackageFeature(path, table, feature)
+      } else if (action === FEATURE_TABLE_ACTIONS.SHOW_FEATURE) {
+        this.showFeature(id, isGeoPackage, table, featureId)
       }
     })
 

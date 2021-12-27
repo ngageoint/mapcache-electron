@@ -231,6 +231,110 @@ async function getTableIconId(filePath, tableName, geometryType) {
   })
 }
 
+
+
+/**
+ * Gets the feature's style or icon
+ * @param gp
+ * @param tableName
+ * @param rowId
+ * @returns {any}
+ */
+function _getFeatureStyleOrIcon(gp, tableName, rowId) {
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  let featureDao = gp.getFeatureDao(tableName)
+  let feature = featureDao.queryForId(rowId)
+  const result = {
+    style: null,
+    icon: null
+  }
+
+  const icon = featureTableStyles.getFeatureStyleExtension().getIcon(tableName, rowId, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()), false)
+  if (icon != null) {
+    result.icon = {
+      anchorU: icon.anchorU,
+      anchorV: icon.anchorV,
+      contentType: icon.contentType,
+      data: icon.data,
+      description: icon.description,
+      height: icon.height,
+      name: icon.name,
+      width: icon.width,
+      url: 'data:' + icon.contentType + ';base64,' + Buffer.from(icon.data).toString('base64')
+    }
+  } else {
+    const style = featureTableStyles.getFeatureStyleExtension().getStyle(tableName, rowId, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()), false)
+    if (style != null) {
+      result.style = {
+        color: style.getHexColor(),
+        opacity: style.getOpacity(),
+        fillColor: style.getFillHexColor(),
+        fillOpacity: style.getFillOpacity(),
+        width: style.getWidth(),
+        name: style.getName(),
+        description: style.getDescription()
+      }
+    }
+  }
+
+  // style/icon not assigned for feature, try table style/icon
+  if (result.style == null && result.icon == null) {
+    const tableIcon = featureTableStyles.getFeatureStyleExtension().getTableIcon(tableName, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()))
+    if (tableIcon != null) {
+      result.icon = {
+        anchorU: tableIcon.anchorU,
+        anchorV: tableIcon.anchorV,
+        contentType: tableIcon.contentType,
+        data: tableIcon.data,
+        description: tableIcon.description,
+        height: tableIcon.height,
+        name: tableIcon.name,
+        width: tableIcon.width,
+        url: 'data:' + tableIcon.contentType + ';base64,' + Buffer.from(tableIcon.data).toString('base64')
+      }
+    } else {
+      const tableStyle = featureTableStyles.getFeatureStyleExtension().getTableStyle(tableName, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()))
+      if (tableStyle != null) {
+        result.style = {
+          color: tableStyle.getHexColor(),
+          opacity: tableStyle.getOpacity(),
+          fillColor: tableStyle.getFillHexColor(),
+          fillOpacity: tableStyle.getFillOpacity(),
+          width: tableStyle.getWidth(),
+          name: tableStyle.getName(),
+          description: tableStyle.getDescription()
+        }
+      } else {
+        // use default
+        result.style = {
+          color: '#000000',
+          opacity: 1.0,
+          fillColor: '#000000',
+          fillOpacity: 0.2,
+          width: 8.0,
+          name: '',
+          description: ''
+        }
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Gets the feature style
+ * @param filePath
+ * @param tableName
+ * @param rowId
+ * @returns {Promise<any>}
+ */
+async function getFeatureStyleOrIcon(filePath, tableName, rowId) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getFeatureStyleOrIcon(gp, tableName, rowId)
+  })
+}
+
 /**
  * Gets the feature style
  * @param gp
@@ -1249,5 +1353,6 @@ export {
   _clearStylingForFeature,
   hasStyleExtension,
   getGeoPackageFeatureTableStyleData,
-  getIconImageData
+  getIconImageData,
+  getFeatureStyleOrIcon
 }

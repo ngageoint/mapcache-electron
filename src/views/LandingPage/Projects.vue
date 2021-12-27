@@ -9,7 +9,7 @@
         @keydown.esc="cancelRemove">
       <v-card flat tile v-if="geoPackageFileImportDialog" class="overflow-hidden">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{'$geoPackage'}}</v-icon>
+          <v-icon color="primary" class="pr-2">{{mdiPackageVariant}}</v-icon>
           Open {{geoPackageFiles.length }} GeoPackage {{geoPackageFiles.length === 1 ? 'file' : 'files'}}
         </v-card-title>
         <v-card-text class="pb-0">

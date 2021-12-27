@@ -76,8 +76,8 @@
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="tabId >= 0">
-          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"></geo-packages>
-          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources"></data-sources>
+          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages" :display-feature="displayFeature"></geo-packages>
+          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources" :display-feature="displayFeature"></data-sources>
           <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme"></settings>
           <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
         </v-col>
@@ -154,7 +154,7 @@ export default {
         drawer: true,
         tabId: 0,
         tabs: [
-          { tabId: 0, text: 'GeoPackages', icon: '$geoPackage' },
+          { tabId: 0, text: 'GeoPackages', icon: mdiPackageVariant },
           { tabId: 1, text: 'Data sources', icon: mdiLayersOutline },
           { tabId: 2, text: 'Settings', icon: mdiCogOutline },
         ],
@@ -171,7 +171,8 @@ export default {
         confirmationTitle: null,
         confirmationMessage: null,
         confirmationIcon: null,
-        confirmationId: null
+        confirmationId: null,
+        displayFeature: null
       }
     },
     computed: {
@@ -313,13 +314,12 @@ export default {
           e.preventDefault()
           let geopackagesToAdd = []
           let dataSourcesToAdd = []
-          const supportedExtensions = SUPPORTED_FILE_EXTENSIONS_WITH_DOT
           for (let f of e.dataTransfer.files) {
             const extension = window.mapcache.getExtensionName(f.path)
             // try to add a geopackage to the project
             if (extension === '.gpkg') {
               geopackagesToAdd.push(f.path)
-            } else if (supportedExtensions.findIndex(e => e === extension) !== -1) {
+            } else if (SUPPORTED_FILE_EXTENSIONS_WITH_DOT.findIndex(e => e === extension) !== -1) {
               dataSourcesToAdd.push(f.path)
             }
           }
@@ -405,7 +405,7 @@ export default {
       }
       window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: null})
       window.mapcache.addLoadOrDisplayGeoPackageListener(async (geopackageIds = [], filePaths = []) => {
-        if (filePaths.length > 0) {
+        if (filePaths != null && filePaths.length > 0) {
           let geopackageId = null
           for (let i = 0; i < filePaths.length; i++) {
             geopackageId = await this.addGeoPackageToApp(filePaths[i])
@@ -414,7 +414,7 @@ export default {
             window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageId})
           }
         } else {
-          if (geopackageIds.length === 1) {
+          if (geopackageIds != null && geopackageIds.length === 1) {
             window.mapcache.setActiveGeoPackage({projectId: this.project.id, geopackageId: geopackageIds[0]})
           }
         }
@@ -464,11 +464,25 @@ export default {
       EventBus.$on(EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, this.handleSearchResults)
       EventBus.$on(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, this.clearSearchResults)
       EventBus.$on(EventBus.EventTypes.CONFIRMATION_MESSAGE, this.showConfirmationDialog)
+      EventBus.$on(EventBus.EventTypes.SHOW_FEATURE, (id, isGeoPackage, tableName, featureId) => {
+        if (featureId == null) {
+          this.displayFeature = null
+        } else {
+          this.displayFeature = {
+            id, isGeoPackage, tableName, featureId
+          }
+          if (isGeoPackage) {
+            this.tabId = 0
+          } else {
+            this.tabId = 1
+          }
+        }
+      })
     },
     beforeDestroy() {
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
-      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE])
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE])
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()

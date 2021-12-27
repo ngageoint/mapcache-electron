@@ -1,11 +1,11 @@
 <template>
-  <div class="pl-2 pr-2">
+  <div>
     <v-text-field :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue" :rules="rules"></v-text-field>
-    <v-row style="height: 50px !important;" no-gutters align="center" justify="space-between" v-else-if="dataType === BOOLEAN">
+    <v-row style="height: 50px !important; margin-right: 6px !important;" class="align-center" no-gutters align="center" justify="space-between" v-else-if="dataType === BOOLEAN">
       <v-col>
         <v-list-item-subtitle>{{lowerCaseName}}</v-list-item-subtitle>
       </v-col>
-      <v-col class="mr-2" cols="1"><v-switch class="mt-0" color="primary" v-model="editedValue" hide-details></v-switch></v-col>
+      <v-switch class="pa-0" color="primary" v-model="editedValue" hide-details></v-switch>
     </v-row>
     <v-row no-gutters justify="space-between" v-else-if="dataType === DATE || dataType === DATETIME">
       <v-col v-if="showDate">

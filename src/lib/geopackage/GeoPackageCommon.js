@@ -402,26 +402,7 @@ async function getOrCreateGeoPackage (filePath) {
  */
 async function getGeoPackageFeatureTableForApp (filePath, table) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    const featureDao = gp.getFeatureDao(table)
-    const description = gp.getTableContents(table).description
-    const rtreeIndex = new RTreeIndex(gp, featureDao)
-    const rtreeIndexed = rtreeIndex.hasExtension(
-      rtreeIndex.extensionName,
-      rtreeIndex.tableName,
-      rtreeIndex.columnName
-    )
-    let extent = _getBoundingBoxForTable(gp, table)
-    if (extent == null) {
-      extent = _calculateTrueExtentForFeatureTable(gp, table)
-    }
-    return {
-      visible: false,
-      featureCount: featureDao.count(),
-      description: isNil(description) || description.length === 0 ? 'None' : description,
-      indexed: rtreeIndexed,
-      extent: extent,
-      styleKey: 0
-    }
+    return _getGeoPackageFeatureTableForApp(gp, table)
   })
 }
 
@@ -734,5 +715,6 @@ export {
   getDefaultValueForDataType,
   getExtentOfGeoPackageTables,
   projectGeometryTo4326,
-  _calculateTrueExtentForFeatureTable
+  _calculateTrueExtentForFeatureTable,
+  _getGeoPackageFeatureTableForApp
 }

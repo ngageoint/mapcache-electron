@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 14.16.0
+* Install Node 16.9.1
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64
@@ -19,7 +19,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 14.16.0
+  * nvm install 16.9.1
 * Install Yarn
   * npm install yarn -g
 
@@ -29,7 +29,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 14.16.0
+  * nvm install 16.9.1
 * Install Yarn
   * npm install yarn -g
   

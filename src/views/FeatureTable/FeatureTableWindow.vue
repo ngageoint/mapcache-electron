@@ -1,5 +1,5 @@
 <template>
-  <feature-tables id="feature-table-view" show-items-per-page :project="project" :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :tableFeatures="tableFeatures" :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn"></feature-tables>
+  <feature-tables id="feature-table-view" show-items-per-page :project="project" :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :table="table" :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-tables>
 </template>
 
 <script>
@@ -33,10 +33,7 @@ export default {
   },
   data () {
     return {
-      tableFeatures: {
-        geopackageTables: [],
-        sourceTables: []
-      },
+      table: null,
       lastShowFeatureTableEvent: null
     }
   },
@@ -55,33 +52,31 @@ export default {
           this.tableFeaturesLatLng = null
           if (isGeoPackage) {
             const geopackage = this.project.geopackages[id]
-            this.tableFeatures = {
-              geopackageTables: [{
-                id: geopackage.id + '_' + tableName,
-                tabName: geopackage.name + ': ' + tableName,
-                geopackageId: geopackage.id,
-                tableName: tableName,
-                filePath: geopackage.path,
-                columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
-                featureCount: geopackage.tables.features[tableName].featureCount,
-                getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
-              }],
-              sourceTables: []
+            this.table = {
+              id: geopackage.id + '_' + tableName,
+              isGeoPackage: true,
+              visible: geopackage.tables.features[tableName].visible,
+              tabName: geopackage.name + ' - ' + tableName,
+              geopackageId: geopackage.id,
+              tableName: tableName,
+              filePath: geopackage.path,
+              columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
+              featureCount: geopackage.tables.features[tableName].featureCount,
+              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
             }
           } else {
             const sourceLayerConfig = this.project.sources[id]
-            this.tableFeatures = {
-              geopackageTables: [],
-              sourceTables: [{
-                id: sourceLayerConfig.id,
-                tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
-                sourceId: sourceLayerConfig.id,
-                columns: await window.mapcache.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
-                filePath: sourceLayerConfig.geopackageFilePath,
-                tableName: sourceLayerConfig.sourceLayerName,
-                featureCount: sourceLayerConfig.count,
-                getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
-              }]
+            this.table = {
+              id: sourceLayerConfig.id,
+              isGeoPackage: false,
+              tabName: sourceLayerConfig.displayName ? sourceLayerConfig.displayName : sourceLayerConfig.name,
+              sourceId: sourceLayerConfig.id,
+              columns: await window.mapcache.getFeatureColumns(sourceLayerConfig.geopackageFilePath, sourceLayerConfig.sourceLayerName),
+              filePath: sourceLayerConfig.geopackageFilePath,
+              tableName: sourceLayerConfig.sourceLayerName,
+              featureCount: sourceLayerConfig.count,
+              visible: sourceLayerConfig.visible,
+              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
             }
           }
           // eslint-disable-next-line no-unused-vars
@@ -92,48 +87,6 @@ export default {
         }
       }
     },
-    async queryForFeatures (lat, lng, zoom) {
-      const latlng = {
-        lat: lat,
-        lng: lng
-      }
-      const tableFeatures = {
-        geopackageTables: [],
-        sourceTables: []
-      }
-      const geopackageValues = Object.values(this.project.geopackages)
-      for (let i = 0; i < geopackageValues.length; i++) {
-        const geopackage = geopackageValues[i]
-        const tables = Object.keys(geopackage.tables.features).filter(tableName => geopackage.tables.features[tableName].visible)
-        if (tables.length > 0) {
-          const geopackageTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(geopackage.name, geopackage.id, geopackage.path, tables, latlng, zoom)
-          geopackageTables.forEach(table => {
-            table.getPage = (page, pageSize, path, tableName, sortBy, desc) => {
-              return window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom, sortBy, desc)
-            }
-          })
-          tableFeatures.geopackageTables = tableFeatures.geopackageTables.concat(geopackageTables)
-        }
-      }
-      for (let sourceId in this.project.sources) {
-        const sourceLayer = this.project.sources[sourceId]
-        if (sourceLayer.visible) {
-          if (!isNil(sourceLayer.geopackageFilePath)) {
-            const sourceTables = await window.mapcache.getFeaturesForTablesAtLatLngZoom(sourceLayer.displayName ? sourceLayer.displayName : sourceLayer.name, sourceLayer.id, sourceLayer.geopackageFilePath, [sourceLayer.sourceLayerName], latlng, zoom, false)
-            sourceTables.forEach(table => {
-              table.getPage = (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePageAtLatLngZoom(path, tableName, page, pageSize, table.latlng, table.zoom, sortBy, desc)
-            })
-            tableFeatures.sourceTables = tableFeatures.sourceTables.concat(sourceTables)
-          }
-        }
-      }
-      if (tableFeatures.geopackageTables.length > 0 || tableFeatures.sourceTables.length > 0) {
-        this.lastShowFeatureTableEvent = null
-        this.tableFeaturesLatLng = latlng
-        this.tableFeatures = tableFeatures
-      }
-      this.tableFeatures = tableFeatures
-    },
     popIn () {
       window.mapcache.hideFeatureTableWindow(true)
     },
@@ -143,6 +96,23 @@ export default {
         path,
         table,
         featureId
+      })
+    },
+    showFeature (id, isGeoPackage, table, featureId) {
+      window.mapcache.sendFeatureTableAction({
+        action: FEATURE_TABLE_ACTIONS.SHOW_FEATURE,
+        id,
+        isGeoPackage,
+        table,
+        featureId
+      })
+    },
+    highlightFeature (path, table, feature) {
+      window.mapcache.sendFeatureTableAction({
+        action: FEATURE_TABLE_ACTIONS.HIGHLIGHT_FEATURE,
+        path,
+        table,
+        feature
       })
     }
   },
@@ -159,8 +129,6 @@ export default {
     window.mapcache.registerFeatureTableEventListener((e, {event, args}) => {
       if (event === FEATURE_TABLE_WINDOW_EVENTS.DISPLAY_ALL_TABLE_FEATURES) {
         this.displayFeaturesForTable(args.id, args.tableName, args.isGeoPackage)
-      } else if (event === FEATURE_TABLE_WINDOW_EVENTS.LAT_LON_FEATURE_QUERY) {
-        this.queryForFeatures(args.lat, args.lng, args.zoom)
       }
     })
   },

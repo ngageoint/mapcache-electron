@@ -30,6 +30,21 @@ const supportedContentTypes = [
   'text/plain',
   'text/html'
 ]
+
+const supportedImageTypes = [
+  'image/png',
+  'image/jpg',
+  'image/jpeg',
+  'image/gif',
+  'image/bmp',
+  'image/webp',
+  'image/svg+xml',
+]
+const supportedVideoTypes = [
+  'video/mp4',
+  'video/ogg',
+  'video/webm'
+]
 const FILE_SIZE_LIMIT = 1024 * 1024 * 500
 const FILE_SIZE_LIMIT_HR = '500 MB'
 const MEDIA_TABLE_NAME = 'gpkg_media'
@@ -49,20 +64,26 @@ function getExtension (mimeType) {
 /**
  * Returns a data url containing the media's data and content type, if unsupported, an html document is returned letting the user know that preview is unavailable
  * @param media
- * @returns {string}
+ * @return {{type: string, src: null}}
  */
 function getMediaObjectURL (media) {
+  let result = {
+    src: null,
+    type: 'text/html'
+  }
   let blob
   if (media) {
     if (isChromeMimeSupported(media.contentType)) {
       blob = new Blob([media.data], {type: media.contentType})
+      result.type = media.contentType
     }
   }
 
   if (isNil(blob)) {
     blob = new Blob(["<html lang='en'><body><div style='height: 100%; display: flex;'><div style='width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0;'><p><h2>Preview unavailable.</h2></p></div></div></body></html>"], {type: 'text/html'})
   }
-  return URL.createObjectURL(blob)
+  result.src = URL.createObjectURL(blob)
+  return result
 }
 
 function exceedsFileSizeLimit (filePath) {
@@ -80,6 +101,8 @@ function getMediaTableName () {
 
 export {
   supportedContentTypes,
+  supportedImageTypes,
+  supportedVideoTypes,
   FILE_SIZE_LIMIT,
   FILE_SIZE_LIMIT_HR,
   MEDIA_TABLE_NAME,

@@ -7,7 +7,8 @@
     :projectId="project.id"
     :project="project"
     :back="deselectLayer"
-    :renamed="selectedLayerRenamed"/>
+    :renamed="selectedLayerRenamed"
+    :display-feature="displayFeature"/>
   <tile-layer
     v-else-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.tiles[selectedLayer]"
     :key="geopackage.id + '_' + selectedLayer"
@@ -367,7 +368,8 @@ export default {
     props: {
       geopackage: Object,
       project: Object,
-      back: Function
+      back: Function,
+      displayFeature: Object
     },
     components: {
       AddFeatureLayer,
@@ -542,6 +544,11 @@ export default {
         window.mapcache.showItemInFolder(this.geopackage.path)
       }
     },
+    mounted() {
+      if (this.displayFeature != null) {
+        this.layerSelected(this.displayFeature.tableName)
+      }
+    },
     watch: {
       geopackage: {
         handler (newGeoPackage) {
@@ -554,6 +561,18 @@ export default {
                 this.deselectLayer()
               }
             })
+          }
+        },
+        deep: true
+      },
+      displayFeature: {
+        handler (newDisplayFeature) {
+          if (newDisplayFeature != null && newDisplayFeature.isGeoPackage) {
+            if (this.geopackage == null || newDisplayFeature.id === this.geopackage.id) {
+              this.$nextTick(() => {
+                this.layerSelected(newDisplayFeature.tableName)
+              })
+            }
           }
         },
         deep: true

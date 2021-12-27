@@ -5,48 +5,14 @@ import { ipcRenderer, contextBridge } from 'electron'
 import {SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType} from '@ngageoint/geopackage'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
-  getEditableColumnObject,
   getFeatureColumns,
-  getFeatureTablePage,
-  getFeatureTablePageAtLatLngZoom,
-  getGeoPackageEditableColumnsForFeature,
-  getLayerColumns,
-  saveGeoPackageEditedFeature
+  getFeatureTablePage
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import {
-  deleteMediaAttachment,
-  downloadAttachment,
-  getMediaObjectUrl,
-  getMediaRelationships,
-} from '../geopackage/GeoPackageMediaUtilities'
-import {
-  addStyleExtensionForTable,
-  clearStylingForFeature,
-  createIconRow,
-  createStyleRow,
-  deleteIconRow,
-  deleteStyleRow,
-  editFeatureGeometry,
-  removeFeatureFromDataSource,
-  removeFeatureFromGeopackage,
-  removeStyleExtensionForTable,
-  setFeatureIcon,
-  setFeatureStyle,
-  setTableIcon,
-  setTableStyle,
-  synchronizeGeoPackage,
-  updateIconRow,
-  updateStyleKey,
-  updateStyleRow
+  deleteFeatureIdsFromDataSource,
+  deleteFeatureIdsFromGeoPackage
 } from '../vue/vuex/ProjectActions'
 import {
-  getGeoPackageFeatureTableStyleData,
-  getIconImageData,
-  getStyleItemsForFeature
-} from '../geopackage/GeoPackageStyleUtilities'
-import {
-  ATTACH_MEDIA,
-  ATTACH_MEDIA_COMPLETED,
   FEATURE_TABLE_ACTION,
   FEATURE_TABLE_EVENT,
   GET_USER_DATA_DIRECTORY,
@@ -55,10 +21,6 @@ import {
   IPC_EVENT_NOTIFY_MAIN,
   IPC_EVENT_NOTIFY_RENDERERS
 } from '../electron/ipc/MapCacheIPC'
-import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
-import {exceedsFileSizeLimit, getMaxFileSizeString} from '../util/media/MediaUtilities'
-import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
-import { showOpenDialog, showSaveDialog } from '../electron/dialog/DialogUtilities'
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
@@ -155,55 +117,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   // functions needed for feature table
   getFeatureColumns,
-  removeFeatureFromGeopackage,
-  removeFeatureFromDataSource,
-  getStyleItemsForFeature,
-  editFeatureGeometry,
   getFeatureTablePage,
-  getFeaturesForTablesAtLatLngZoom,
-  getFeatureTablePageAtLatLngZoom,
-  // functions needed for style editor
-  deleteIconRow,
-  updateIconRow,
-  createIconRow,
-  deleteStyleRow,
-  updateStyleRow,
-  createStyleRow,
-  setFeatureIcon,
-  setFeatureStyle,
-  clearStylingForFeature,
-  setTableStyle,
-  setTableIcon,
-  getDefaultIcon,
-  getGeoPackageFeatureTableStyleData,
-  addStyleExtensionForTable,
-  removeStyleExtensionForTable,
-  // functions needed for feature editor
-  getGeoPackageEditableColumnsForFeature,
-  getLayerColumns,
-  saveGeoPackageEditedFeature,
-  synchronizeGeoPackage,
-  getEditableColumnObject,
   // functions needed for media attachments
-  getMediaObjectUrl,
-  deleteMediaAttachment,
-  updateStyleKey,
-  showOpenDialog,
-  showSaveDialog,
-  downloadAttachment,
-  exceedsFileSizeLimit,
-  getMediaRelationships,
-  getMaxFileSizeString,
-  attachMediaToGeoPackage: (data) => {
-    return new Promise(resolve => {
-      ipcRenderer.once(ATTACH_MEDIA_COMPLETED(data.id), (event, success) => {
-        resolve(success)
-      })
-      ipcRenderer.send(ATTACH_MEDIA, data)
-    })
-  },
-  removeMediaCompletedListener: (id) => {
-    ipcRenderer.removeAllListeners(ATTACH_MEDIA_COMPLETED(id))
-  },
-  getIconImageData
+  deleteFeatureIdsFromGeoPackage,
+  deleteFeatureIdsFromDataSource
 })

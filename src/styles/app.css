@@ -27,6 +27,9 @@
 .card-button:hover {
 	background-color: var(--v-hover-base)
 }
+.card-button:disabled {
+	background-color: var(--v-hover-base)
+}
 .content-panel {
 	-moz-box-shadow: 0 0 8px #000000;
 	-webkit-box-shadow: 0 0 8px #000000;

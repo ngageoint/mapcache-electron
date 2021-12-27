@@ -59,6 +59,8 @@ import {
   updateFeatureTable,
   removeFeatureFromGeopackage,
   removeFeatureFromDataSource,
+  deleteFeatureIdsFromGeoPackage,
+  deleteFeatureIdsFromDataSource,
   setProjectMaxFeatures,
   setZoomControlEnabled,
   setDisplayZoomEnabled,
@@ -77,8 +79,6 @@ import {
   clearNotification,
   clearNotifications,
   setMapZoom,
-  editFeatureGeometry,
-  clearEditFeatureGeometry,
   setMapRenderingOrder,
   setPreviewLayer,
   clearPreviewLayer,
@@ -114,12 +114,17 @@ import {
   getGeoPackageEditableColumnsForFeature,
   saveGeoPackageEditedFeature,
   getEditableColumnObject,
+  getTopFeature,
+  getFeatureViewData,
+  checkUnique,
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import {
   getMediaAttachmentsCounts,
   deleteMediaAttachment,
   getMediaRelationships,
   getMediaObjectUrl,
+  getFeatureImageObjectUrl,
+  getAllAttachments, getImageAttachments, getVideoAttachments,
 } from '../geopackage/GeoPackageMediaUtilities'
 import {
   getStyleItemsForFeature,
@@ -127,7 +132,8 @@ import {
   getStyleDrawOverlap,
   hasStyleExtension,
   getGeoPackageFeatureTableStyleData,
-  getIconImageData
+  getIconImageData,
+  getFeatureStyleOrIcon
 } from '../geopackage/GeoPackageStyleUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
@@ -627,6 +633,8 @@ contextBridge.exposeInMainWorld('mapcache', {
     })
   },
   getGeoPackageEditableColumnsForFeature,
+  getFeatureViewData,
+  checkUnique,
   saveGeoPackageEditedFeature,
   showFeatureTableWindow: (forcePopupWindowToFront = false) => {
     ipcRenderer.send(SHOW_FEATURE_TABLE_WINDOW, {force: forcePopupWindowToFront})
@@ -782,8 +790,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   clearNotification,
   clearNotifications,
   setMapZoom,
-  editFeatureGeometry,
-  clearEditFeatureGeometry,
   setMapRenderingOrder,
   setPreviewLayer,
   clearPreviewLayer,
@@ -810,5 +816,13 @@ contextBridge.exposeInMainWorld('mapcache', {
   getVectorTileFeatures,
   convertToWebMercator,
   getIconImageData,
-  addStyleExtensionForTable
+  addStyleExtensionForTable,
+  getTopFeature,
+  getFeatureImageObjectUrl,
+  getImageAttachments,
+  getVideoAttachments,
+  getAllAttachments,
+  deleteFeatureIdsFromGeoPackage,
+  deleteFeatureIdsFromDataSource,
+  getFeatureStyleOrIcon
 })

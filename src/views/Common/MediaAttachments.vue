@@ -54,7 +54,7 @@
     </v-dialog>
     <v-card-title>
       <v-icon color="primary" class="pr-2">{{mdiPaperclip}}</v-icon>
-      Feature media attachments
+      Feature attachments
       <v-spacer/>
       <v-btn :loading="attaching" text color="primary" @click.stop="attach"><v-icon small >{{mdiPlus}}</v-icon> attachment</v-btn>
       <v-btn icon @click="toggleFullScreen"><v-icon>{{isFullScreen ? mdiFullscreenExit : mdiFullscreen}}</v-icon></v-btn>
@@ -93,7 +93,7 @@
           </v-card>
         </v-carousel-item>
       </v-carousel>
-      <v-card-subtitle v-else>This feature has no media attachments.</v-card-subtitle>
+      <v-card-subtitle v-else>This feature has no attachments.</v-card-subtitle>
       <v-snackbar
         v-if="downloaded"
         v-model="downloaded"
@@ -154,7 +154,7 @@ export default {
         mdiChevronLeft: mdiChevronLeft,
         mdiChevronRight: mdiChevronRight,
         attaching: false,
-        model: -1,
+        model: null,
         attachments: [],
         deleteDialog: false,
         loadingContent: false,
@@ -168,7 +168,7 @@ export default {
     methods: {
       async loadContent (mediaToLoad) {
         this.loadingContent = true
-        this.contentSrc = await window.mapcache.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)
+        this.contentSrc = (await window.mapcache.getMediaObjectUrl(this.geopackagePath, mediaToLoad.relatedTable, mediaToLoad.relatedId)).src
         this.$nextTick(() => {
           this.loadingContent = false
         })

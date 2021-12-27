@@ -26,6 +26,10 @@ const Events = {
   HIGHLIGHT_NOMINATIM_SEARCH_RESULT_ON_MAP: 'highlight-nominatim-search-result-on-map',
   DESELECT_NOMINATIM_SEARCH_RESULT: 'deselect-nominatim-search-result',
   SAVE_NOMINATIM_SEARCH_RESULT: 'save-nominatim-search-result',
+  SHOW_FEATURE: 'show-feature',
+  EDIT_FEATURE_GEOMETRY: 'edit-feature-geometry',
+  EDITED_FEATURE_GEOMETRY: 'edited-feature-geometry',
+  STOP_EDITING_FEATURE_GEOMETRY: 'stop-editing-feature-geometry',
 }
 
 EventBus.EventTypes = Events

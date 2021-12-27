@@ -1,5 +1,6 @@
 <template>
-  <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
+  <feature-view v-if="displayFeature && displayFeature.isGeoPackage" :name="geopackage.name" :project="project" :projectId="projectId" is-geo-package :geopackage-path="geopackage.path" :id="geopackage.id" :tableName="tableName" :feature-id="displayFeature.featureId" :object="geopackage" :back="hideFeature"/>
+  <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
       color="main"
       dark
@@ -483,6 +484,7 @@ import {
   mdiTrashCan
 } from '@mdi/js'
 import {zoomToGeoPackageTable} from '../../lib/leaflet/map/ZoomUtilities'
+import FeatureView from '../Common/FeatureView'
 
 export default {
     props: {
@@ -491,11 +493,13 @@ export default {
       geopackage: Object,
       tableName: String,
       back: Function,
-      renamed: Function
+      renamed: Function,
+      displayFeature: Object
     },
     components: {
       StyleEditor,
-      FeatureLayerField
+      FeatureLayerField,
+      FeatureView
     },
     created () {
       let _this = this
@@ -560,7 +564,9 @@ export default {
         DATE: window.mapcache.GeoPackageDataType.DATE,
         renaming: false,
         deleting: false,
-        copying: false
+        copying: false,
+        shownFeatureData: null,
+        featureColumns: []
       }
     },
     computed: {
@@ -617,6 +623,9 @@ export default {
       }
     },
     methods: {
+      hideFeature () {
+        EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
+      },
       getSimplifiedType (dataType) {
         let simplifiedType = 'Number'
         switch (dataType) {
@@ -771,12 +780,9 @@ export default {
       styleKey: {
         async handler (styleKey, oldValue) {
           if (styleKey !== oldValue) {
-            let _this = this
-            _this.loading = true
-            window.mapcache.hasStyleExtension(this.geopackage.path, this.tableName).then(function (hasStyleExtension) {
-              _this.hasStyleExtension = hasStyleExtension
-              _this.loading = false
-            })
+            this.loading = true
+            this.hasStyleExtension = await window.mapcache.hasStyleExtension(this.geopackage.path, this.tableName)
+            this.loading = false
           }
         },
         deep: true
