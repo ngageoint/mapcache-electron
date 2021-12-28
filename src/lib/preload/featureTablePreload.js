@@ -5,12 +5,13 @@ import { ipcRenderer, contextBridge } from 'electron'
 import {SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType} from '@ngageoint/geopackage'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
-  getFeatureColumns,
+  getFeatureColumns, getFeatureCount,
   getFeatureTablePage
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import {
   deleteFeatureIdsFromDataSource,
-  deleteFeatureIdsFromGeoPackage
+  deleteFeatureIdsFromGeoPackage,
+  popOutFeatureTable
 } from '../vue/vuex/ProjectActions'
 import {
   FEATURE_TABLE_ACTION,
@@ -19,7 +20,11 @@ import {
   HIDE_FEATURE_TABLE_WINDOW,
   IPC_EVENT_CONNECT,
   IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS
+  IPC_EVENT_NOTIFY_RENDERERS,
+  REQUEST_GEOPACKAGE_TABLE_COUNT,
+  REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED
 } from '../electron/ipc/MapCacheIPC'
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -66,14 +71,32 @@ contextBridge.exposeInMainWorld('mapcache', {
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
   },
-  hideFeatureTableWindow: (popIn = false) => {
-    ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW, {popIn: popIn})
+  hideFeatureTableWindow: () => {
+    ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW)
   },
   registerFeatureTableEventListener: (listener) => {
     ipcRenderer.on(FEATURE_TABLE_EVENT, listener)
   },
   sendFeatureTableAction: (action) => {
     ipcRenderer.send(FEATURE_TABLE_ACTION, action)
+  },
+  countGeoPackageTable: ({filePath, tableName, search}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, result) => {
+        resolve(result.result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, {id: requestId, filePath, tableName, search})
+    })
+  },
+  searchGeoPackageTable: ({filePath, tableName, page, pageSize, sortBy, desc, search}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, result) => {
+        resolve(result.result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {id: requestId, filePath, tableName, page, pageSize, sortBy, desc, search})
+    })
   },
   createUniqueID,
   GeometryType: {
@@ -120,5 +143,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getFeatureTablePage,
   // functions needed for media attachments
   deleteFeatureIdsFromGeoPackage,
-  deleteFeatureIdsFromDataSource
+  deleteFeatureIdsFromDataSource,
+  getFeatureCount,
+  popOutFeatureTable
 })

@@ -61,8 +61,7 @@ export default {
               tableName: tableName,
               filePath: geopackage.path,
               columns: await window.mapcache.getFeatureColumns(geopackage.path, tableName),
-              featureCount: geopackage.tables.features[tableName].featureCount,
-              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
+              featureCount: geopackage.tables.features[tableName].featureCount
             }
           } else {
             const sourceLayerConfig = this.project.sources[id]
@@ -75,8 +74,7 @@ export default {
               filePath: sourceLayerConfig.geopackageFilePath,
               tableName: sourceLayerConfig.sourceLayerName,
               featureCount: sourceLayerConfig.count,
-              visible: sourceLayerConfig.visible,
-              getPage: (page, pageSize, path, tableName, sortBy, desc) => window.mapcache.getFeatureTablePage(path, tableName, page, pageSize, sortBy, desc)
+              visible: sourceLayerConfig.visible
             }
           }
           // eslint-disable-next-line no-unused-vars
@@ -88,7 +86,8 @@ export default {
       }
     },
     popIn () {
-      window.mapcache.hideFeatureTableWindow(true)
+      window.mapcache.popOutFeatureTable({projectId: this.project.id, popOut: false})
+      window.mapcache.hideFeatureTableWindow()
     },
     zoomToFeature (path, table, featureId) {
       window.mapcache.sendFeatureTableAction({
@@ -133,7 +132,7 @@ export default {
     })
   },
   beforeDestroy() {
-    window.mapcache.hideFeatureTableWindow(false)
+    window.mapcache.hideFeatureTableWindow()
   }
 }
 </script>

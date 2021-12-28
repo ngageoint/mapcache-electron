@@ -412,7 +412,7 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <v-btn class="btn-background" @click.stop="showFeatureTable">
+                <v-btn class="btn-background" @click.stop="showFeatureTable" :disabled="featureCount === 0">
                   <v-icon left>
                     {{mdiTableEye}}
                   </v-icon>View features
@@ -786,6 +786,14 @@ export default {
           }
         },
         deep: true
+      },
+      displayFeature: {
+        handler (newVal) {
+          if (newVal != null) {
+            this.styleEditorVisible = false
+            this.showFeatureLayerField = false
+          }
+        }
       }
     }
   }

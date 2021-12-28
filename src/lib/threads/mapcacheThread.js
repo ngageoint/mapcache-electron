@@ -21,12 +21,15 @@ import {
   REQUEST_TILE_REPROJECTION,
   GEOPACKAGE_TABLE_RENAME,
   GEOPACKAGE_TABLE_DELETE,
-  GEOPACKAGE_TABLE_COPY
+  GEOPACKAGE_TABLE_COPY,
+  GEOPACKAGE_TABLE_COUNT,
+  GEOPACKAGE_TABLE_SEARCH
 } from './mapcacheThreadRequestTypes'
 import path from 'path'
 import { reproject } from '../projection/ReprojectionUtilities'
 import { base64toUInt8Array } from '../util/Base64Utilities'
 import { copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable } from '../geopackage/GeoPackageCommon'
+import {getFeatureCount, getFeatureTablePage} from '../geopackage/GeoPackageFeatureTableUtilities'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -321,6 +324,14 @@ function copyTable (data) {
   return copyGeoPackageTable(data.filePath, data.tableName, data.copyTableName)
 }
 
+function countTable (data) {
+  return getFeatureCount(data.filePath, data.tableName, data.search)
+}
+
+function searchTable (data) {
+  return getFeatureTablePage(data.filePath, data.tableName, data.page, data.pageSize, data.sortBy, data.desc, data.search)
+}
+
 /**
  * Handles incoming requests from the parent port
  */
@@ -373,6 +384,18 @@ function setupRequestListener () {
         parentPort.postMessage({error: null, result: true})
       }).catch(() => {
         parentPort.postMessage({error: 'Failed to copy table.', result: false})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_COUNT) {
+      countTable(message.data).then((count) => {
+        parentPort.postMessage({error: null, result: count})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to get table count.', result: false})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_SEARCH) {
+      searchTable(message.data).then((results) => {
+        parentPort.postMessage({error: null, result: results})
+      }).catch(() => {
+        parentPort.postMessage({error: 'Failed to search table.', result: false})
       })
     }
   })

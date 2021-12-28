@@ -281,6 +281,16 @@ export default {
           this.columnsToAdd = []
           this.editing = false
         }
+      },
+      object: {
+        handler () {
+          window.mapcache.featureExists(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId).then(exists => {
+            if (!exists) {
+              EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
+            }
+          })
+        },
+        deep: true
       }
     },
     methods: {

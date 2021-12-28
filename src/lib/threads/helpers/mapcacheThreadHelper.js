@@ -4,7 +4,12 @@ import {
   REQUEST_PROCESS_SOURCE,
   REQUEST_ATTACH_MEDIA,
   REQUEST_GEOTIFF_RASTER,
-  REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY
+  REQUEST_TILE_REPROJECTION,
+  GEOPACKAGE_TABLE_RENAME,
+  GEOPACKAGE_TABLE_DELETE,
+  GEOPACKAGE_TABLE_COPY,
+  GEOPACKAGE_TABLE_COUNT,
+  GEOPACKAGE_TABLE_SEARCH
 } from '../mapcacheThreadRequestTypes'
 
 /**
@@ -27,7 +32,7 @@ export default class MapcacheThreadHelper {
     // perform any task
     for (let i = 1; i < workerCount; i++) {
       config.push({
-        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY]
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY, GEOPACKAGE_TABLE_COUNT, GEOPACKAGE_TABLE_SEARCH]
       })
     }
 
@@ -190,6 +195,38 @@ export default class MapcacheThreadHelper {
   copyGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
       this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_COPY, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Counts features of a geopackage table
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  countGeoPackageTable (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_COUNT, data: data}, null, (err, result) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(result)
+      })
+    })
+  }
+
+  /**
+   * Searches a geopackage table
+   * @param data
+   * @returns {Promise<unknown>}
+   */
+  searchGeoPackageTable (data) {
+    return new Promise((resolve, reject) => {
+      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_SEARCH, data: data}, null, (err, result) => {
         if (err) {
           reject(err)
         }

@@ -57,6 +57,10 @@ import {
   REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_COPY,
   REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_COUNT,
+  REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED,
   SHOW_FEATURE_TABLE_WINDOW,
   HIDE_FEATURE_TABLE_WINDOW,
   FEATURE_TABLE_ACTION,
@@ -381,6 +385,32 @@ class MapCacheWindowManager {
           })
         }).catch(e => {
           event.sender.send(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(REQUEST_GEOPACKAGE_TABLE_COUNT, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.countGeoPackageTable(payload).then(response => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
+            result: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
+            error: e
+          })
+        })
+      })
+
+      ipcMain.on(REQUEST_GEOPACKAGE_TABLE_SEARCH, async (event, payload) => {
+        const taskId = payload.id
+        this.mapcacheThreadHelper.searchGeoPackageTable(payload).then(response => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
+            result: response
+          })
+        }).catch(e => {
+          event.sender.send(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
             error: e
           })
         })

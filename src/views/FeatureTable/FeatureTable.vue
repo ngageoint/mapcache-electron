@@ -12,7 +12,7 @@
           Delete feature
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete the {{selected.length}} selected features? This action can't be undone.
+          Are you sure you want to delete the selected {{selected.length === 1 ? 'feature' : 'features'}}? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -48,8 +48,17 @@
       show-select
     >
       <template v-slot:top>
-        <v-row no-gutters justify="end">
-          <v-btn :disabled="selected.length === 0" text color="red" @click="showDeleteConfirmation"><v-icon>{{mdiTrashCan}}</v-icon>Delete</v-btn>
+        <v-row no-gutters justify="space-between" class="ma-2">
+          <v-text-field
+              class="ml-2 pt-0"
+              v-model="search"
+              :append-icon="mdiMagnify"
+              label="Search"
+              single-line
+              hide-details
+              clearable
+          ></v-text-field>
+          <v-btn :disabled="selected.length === 0" icon color="red" @click="showDeleteConfirmation"><v-icon>{{mdiTrashCan}}</v-icon></v-btn>
         </v-row>
       </template>
       <template v-slot:[`header.attachments`]="{ }">
@@ -66,7 +75,7 @@
           <td class="text-start">
             {{item.attachments > 0 ? item.attachments : null}}
           </td>
-          <td class="text-start"  v-for="header in headers.slice(2)" :key="index + '_' + header.value">
+          <td class="text-start truncate"  v-for="header in headers.slice(2)" :key="index + '_' + header.value">
             {{item[header.value]}}
           </td>
         </tr>
@@ -89,10 +98,11 @@
 
 <script>
 import keys from 'lodash/keys'
+import debounce from 'lodash/debounce'
 import orderBy from 'lodash/orderBy'
 import isNil from 'lodash/isNil'
 import moment from 'moment/moment'
-import {mdiPaperclip, mdiTrashCan} from '@mdi/js'
+import {mdiPaperclip, mdiTrashCan, mdiMagnify} from '@mdi/js'
 
 export default {
     props: {
@@ -112,6 +122,7 @@ export default {
     },
     data () {
       return {
+        mdiMagnify: mdiMagnify,
         mdiTrashCan: mdiTrashCan,
         mdiPaperclip: mdiPaperclip,
         removeDialog: false,
@@ -121,7 +132,7 @@ export default {
         options: {hideDefaultFooter: false, itemsPerPage: 5},
         tableEntries: [],
         features: [],
-        itemsPerPageOptions: [5, 10, 15, 20, 25, 50, 100],
+        itemsPerPageOptions: [5, 10, 15, 20, 25, 50],
         windowHeight: window.innerHeight,
         previousItemsPerPage: 5,
         itemHeight: 48,
@@ -129,17 +140,19 @@ export default {
         scrollBarHeight: 16,
         sortField: null,
         descending: false,
-        headerColumnNameMapping: {}
+        headerColumnNameMapping: {},
+        search: '',
+        searchCount: 0
       }
     },
     computed: {
+      pageCount () {
+        return Math.ceil(this.searchCount / this.options.itemsPerPage)
+      },
       tableHeight () {
         const tableOnly = Math.min(this.tableEntries.length, this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
-        const windowAreaAvailable = this.windowHeight - 154
+        const windowAreaAvailable = this.windowHeight - 168
         return Math.min(tableOnly, windowAreaAvailable)
-      },
-      pageCount () {
-        return Math.ceil(this.table.featureCount / this.options.itemsPerPage)
       },
       headers () {
         const headers = [
@@ -151,23 +164,36 @@ export default {
             this.headerColumnNameMapping[column.name.toLowerCase() + '_table'] = column.name.toLowerCase()
             tableHeaders.push({
               text: column.name.toLowerCase(),
-              value: column.name.toLowerCase() + '_table'
+              value: column.name.toLowerCase() + '_table',
+              width: 150
             })
           }
         })
         return headers.concat(orderBy(tableHeaders, ['text'], ['asc']))
       }
     },
-    mounted () {
-      this.setPage(0)
-      const self = this
+    beforeMount () {
+      this.determineSearchCount(this.search)
       this.determinePageSize()
+      this.setPage(0)
+    },
+    mounted () {
+      const self = this
+      this.debounceSearch = debounce(async (search) => {
+        await this.determineSearchCount(search)
+        this.setPage(0)
+      }, 500)
       window.addEventListener('resize', () => {
         self.windowHeight = window.innerHeight
         this.determinePageSize()
       })
     },
     watch: {
+      pageCount (newValue) {
+        if (newValue < this.page) {
+          this.page = newValue
+        }
+      },
       dialog (val) {
         val || this.close()
       },
@@ -185,6 +211,12 @@ export default {
           }
         },
         deep: true
+      },
+      search: {
+        async handler (newSearch) {
+          this.loading = true
+          this.debounceSearch(newSearch)
+        }
       },
       source: {
         handler (newValue) {
@@ -205,6 +237,7 @@ export default {
       table: {
         handler (newValue) {
           if (newValue != null) {
+            this.determineSearchCount(this.search)
             this.setPage(this.page - 1)
           }
         },
@@ -217,29 +250,15 @@ export default {
       }
     },
     methods: {
-      getWidthFromColumnType (type) {
-        let width = 200
-
-        if (type === window.mapcache.GeoPackageDataType.INT ||
-            type === window.mapcache.GeoPackageDataType.BOOLEAN ||
-            type === window.mapcache.GeoPackageDataType.TINYINT ||
-            type === window.mapcache.GeoPackageDataType.SMALLINT ||
-            type === window.mapcache.GeoPackageDataType.MEDIUMINT ||
-            type === window.mapcache.GeoPackageDataType.INT ||
-            type === window.mapcache.GeoPackageDataType.INTEGER ||
-            type === window.mapcache.GeoPackageDataType.FLOAT ||
-            type === window.mapcache.GeoPackageDataType.DOUBLE ||
-            type === window.mapcache.GeoPackageDataType.REAL) {
-          width = 100
-        } else if (type === window.mapcache.GeoPackageDataType.DATE) {
-          width = 150
-        }
-
-        return width
+      async getSearchCount (search) {
+        return await window.mapcache.countGeoPackageTable({filePath: this.filePath, tableName: this.table.tableName, search: search})
+      },
+      async determineSearchCount (search) {
+        this.searchCount = await this.getSearchCount(search)
       },
       determinePageSize () {
         if (this.showItemsPerPage) {
-          const maxItems = Math.floor((window.innerHeight - 168) / this.itemHeight)
+          const maxItems = Math.floor((window.innerHeight - 186) / this.itemHeight)
           let pageSizeIndex = 0
           for (let i = 0; i < this.itemsPerPageOptions.length; i++) {
             if (maxItems > this.itemsPerPageOptions[i]) {
@@ -259,11 +278,17 @@ export default {
       },
       setPage (pageIndex) {
         this.loading = true
-        this.table.getPage(pageIndex, this.options.itemsPerPage, this.filePath, this.table.tableName, this.sortField, this.descending).then(page => {
-          this.$nextTick(() => {
-            this.tableEntries = this.getTableEntries(page)
-            this.loading = false
-          })
+        window.mapcache.searchGeoPackageTable({
+          filePath: this.filePath,
+          tableName: this.table.tableName,
+          page: pageIndex,
+          pageSize: this.options.itemsPerPage,
+          sortBy: this.sortField,
+          desc: this.descending,
+          search: this.search
+        }).then(page => {
+          this.tableEntries = this.getTableEntries(page)
+          this.loading = false
         })
       },
       getTableEntries (page) {
@@ -281,7 +306,9 @@ export default {
                 const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
                 const column = this.table.columns._columns[columnIndex]
                 if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
-                  value = value === 1 || value === true
+                  if (value !== '') {
+                    value = value === 1 || value === true
+                  }
                 }
                 if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
                   value = moment.utc(value).format('MM/DD/YYYY')
@@ -311,7 +338,8 @@ export default {
       cancelRemove () {
         this.removeDialog = false
       },
-      deleteSelected () {
+      async deleteSelected () {
+        this.loading = true
         if (!isNil(this.selected) && this.selected.length > 0) {
           const ids = this.selected.map(feature => feature.id)
           if (this.isGeoPackage) {
@@ -319,13 +347,11 @@ export default {
           } else {
             window.mapcache.deleteFeatureIdsFromDataSource({projectId: this.projectId, sourceId: this.id, featureIds: ids})
           }
-          // eslint-disable-next-line vue/no-mutating-props
-          this.table.featureCount -= ids.length
-          const newPageCount = Math.ceil(this.table.featureCount / this.options.itemsPerPage)
-          if (this.table.featureCount === 0) {
+          const totalFeatureCount = await this.getSearchCount()
+          if (totalFeatureCount === 0) {
             this.close()
           } else {
-            this.page = Math.min(newPageCount, this.page)
+            await this.determineSearchCount(this.search)
           }
           this.removeDialog = false
           this.selected = []
@@ -362,5 +388,11 @@ export default {
 }
 .v-data-table-header th {
   white-space: nowrap !important;
+}
+.truncate {
+  max-width: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

@@ -20,7 +20,8 @@ const mutations = {
       boundsBeingDrawn: {},
       activeCount: 0,
       dark: false,
-      previewLayer: null
+      previewLayer: null,
+      popOutFeatureTable: false
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -59,6 +60,9 @@ const mutations = {
   },
   clearPreviewLayer (state, {projectId}) {
     Vue.delete(state[projectId], 'previewLayer')
+  },
+  popOutFeatureTable (state, {projectId, popOut}) {
+    Vue.set(state[projectId], 'featureTablePoppedOut', popOut)
   },
   migrateState (state, {migratedState}) {
     Object.keys(state).forEach(key => {
@@ -101,6 +105,9 @@ const actions = {
   },
   clearPreviewLayer ({ commit }, {projectId}) {
     commit('clearPreviewLayer', {projectId})
+  },
+  popOutFeatureTable ({ commit }, {projectId, popOut}) {
+    commit('popOutFeatureTable', {projectId, popOut})
   },
   migrateState ({commit}, {migratedState}) {
     commit('migrateState', {migratedState})

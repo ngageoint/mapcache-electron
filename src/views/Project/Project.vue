@@ -96,7 +96,8 @@
             :sources="project.sources"
             :project-id="project.id"
             :project="project"
-            :resizeListener="tabId">
+            :resizeListener="tabId"
+            :feature-table-popped-out="featureTablePoppedOut">
           </leaflet-map>
         </v-col>
       </v-row>
@@ -214,6 +215,15 @@ export default {
           }
           this.$vuetify.theme.dark = isDark
           return isDark
+        },
+        featureTablePoppedOut (state) {
+          let popOut = false
+          const projectId = this.$route.params.id
+          let project = state.UIState[projectId]
+          if (!isNil(project)) {
+            popOut = project.featureTablePoppedOut
+          }
+          return popOut
         },
         tabNotification (state) {
           let tabNotification = {}

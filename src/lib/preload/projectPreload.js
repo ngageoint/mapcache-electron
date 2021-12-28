@@ -93,7 +93,8 @@ import {
   updateRenamedGeoPackageTable,
   updateDeletedGeoPackageTileTable,
   addCopiedGeoPackageTileTable,
-  addStyleExtensionForTable
+  addStyleExtensionForTable,
+  popOutFeatureTable
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
@@ -194,8 +195,13 @@ import {
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
   PROCESS_SOURCE_STATUS,
-  REQUEST_CLIENT_CREDENTIALS, REQUEST_GEOPACKAGE_TABLE_COPY,
+  REQUEST_CLIENT_CREDENTIALS,
+  REQUEST_GEOPACKAGE_TABLE_COPY,
   REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_COUNT,
+  REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH,
+  REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_DELETE,
   REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_RENAME,
@@ -521,6 +527,24 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, {id: requestId, filePath, tableName, copyTableName})
     })
   },
+  countGeoPackageTable: ({filePath, tableName, search}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, {result}) => {
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, {id: requestId, filePath, tableName, search})
+    })
+  },
+  searchGeoPackageTable: ({filePath, tableName, page, pageSize, sortBy, desc, search}) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, {result}) => {
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {id: requestId, filePath, tableName, page, pageSize, sortBy, desc, search})
+    })
+  },
   registerServiceRequestCancelListener: (url, callback) => {
     cancelRequestURLToCallbackMap[url] = callback
   },
@@ -824,5 +848,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   getAllAttachments,
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,
-  getFeatureStyleOrIcon
+  getFeatureStyleOrIcon,
+  popOutFeatureTable
 })

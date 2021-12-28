@@ -659,6 +659,15 @@ function setPreviewLayer ({projectId, previewLayer}) {
 /**
  * Sets the preview layer when adding URL data source
  * @param projectId
+ * @param popOut
+ */
+function popOutFeatureTable ({projectId, popOut}) {
+  store.dispatch('UIState/popOutFeatureTable', {projectId, popOut})
+}
+
+/**
+ * Sets the preview layer when adding URL data source
+ * @param projectId
  */
 function clearPreviewLayer ({projectId}) {
   store.dispatch('UIState/clearPreviewLayer', {projectId})
@@ -803,5 +812,6 @@ export {
   clearStylingForFeature,
   createGeoPackageWithFeatureTable,
   deleteFeatureIdsFromGeoPackage,
-  deleteFeatureIdsFromDataSource
+  deleteFeatureIdsFromDataSource,
+  popOutFeatureTable
 }

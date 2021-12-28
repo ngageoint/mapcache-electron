@@ -29,8 +29,8 @@
         <v-btn small @click.stop.prevent="close" icon><v-icon>{{mdiClose}}</v-icon></v-btn>
       </v-row>
     </v-toolbar>
-    <feature-table v-if="table.isGeoPackage" :show-items-per-page="showItemsPerPage" :geopackage="geopackages[table.geopackageId]" :is-geo-package="true" :project-id="projectId" :id="table.geopackageId" :name="table.tableName" :file-path="geopackages[table.geopackageId].path" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
-    <feature-table v-else :show-items-per-page="showItemsPerPage" :source="sources[table.sourceId]" :is-geo-package="false" :project-id="projectId" :id="table.sourceId" :name="sources[table.sourceId].displayName ? sources[table.sourceId].displayName : sources[table.sourceId].name" :file-path="sources[table.sourceId].geopackageFilePath" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
+    <feature-table v-if="table && table.isGeoPackage && geopackages[table.geopackageId] != null" :show-items-per-page="showItemsPerPage" :geopackage="geopackages[table.geopackageId]" :is-geo-package="true" :project-id="projectId" :id="table.geopackageId" :name="table.tableName" :file-path="geopackages[table.geopackageId].path" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
+    <feature-table v-else-if="table && !table.isGeoPackage && sources[table.sourceId] != null" :show-items-per-page="showItemsPerPage" :source="sources[table.sourceId]" :is-geo-package="false" :project-id="projectId" :id="table.sourceId" :name="sources[table.sourceId].displayName ? sources[table.sourceId].displayName : sources[table.sourceId].name" :file-path="sources[table.sourceId].geopackageFilePath" :table="table" :close="close" :zoom-to-feature="zoomToFeature" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-table>
   </v-sheet>
 </template>
 
@@ -62,8 +62,7 @@ export default {
         mdiOpenInNew: mdiOpenInNew,
         tab: null
       }
-    },
-
+    }
   }
 </script>
 

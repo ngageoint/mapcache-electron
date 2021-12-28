@@ -1002,14 +1002,63 @@ function _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
   return gp.getFeatureDao(tableName).countInBoundingBox(new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]), 'EPSG:4326')
 }
 
+function _getWhereClause(featureDao, search) {
+  let whereClause
+  if (search != null && search.length > 0) {
+    const columnNames = featureDao._table.getUserColumns()._columnNames
+    whereClause = ''
+    for (let i = 0; i < columnNames.length; i++) {
+      const column = featureDao._table.getColumnWithColumnName(columnNames[i])
+      if (column.isPrimaryKey() || featureDao._table.getGeometryColumnName() === columnNames[i]) {
+        continue
+      }
+      const columnType = column.getDataType()
+      if (columnType === GeoPackageDataType.TEXT) {
+        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` LIKE \'%' + search + '%\'')
+      } else if (columnType === GeoPackageDataType.BOOLEAN) {
+        if (search.toLowerCase().trim() === '1' || search.toLowerCase().trim() === 't' || search.toLowerCase().trim() === 'tr' || search.toLowerCase().trim() === 'tru' || search.toLowerCase().trim() === 'true') {
+          whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = 1')
+        } else if (search.toLowerCase().trim() === '0' || search.toLowerCase().trim() === 'f' || search.toLowerCase().trim() === 'fa' || search.toLowerCase().trim() === 'fal' || search.toLowerCase().trim() === 'fals' || search.toLowerCase().trim() === 'false') {
+          whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = 0')
+        }
+      } else if (!isNaN(search.trim()) &&
+        (columnType === GeoPackageDataType.REAL ||
+          columnType === GeoPackageDataType.FLOAT ||
+          columnType === GeoPackageDataType.DOUBLE)) {
+        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = ' + Number.parseFloat(search.trim()))
+      } else if (!isNaN(search.trim()) && search.indexOf('.') === -1 &&
+        (columnType === GeoPackageDataType.MEDIUMINT ||
+          columnType === GeoPackageDataType.SMALLINT ||
+          columnType === GeoPackageDataType.INTEGER ||
+          columnType === GeoPackageDataType.INT ||
+          columnType === GeoPackageDataType.TINYINT)) {
+        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = ' + Number.parseInt(search.trim()))
+      }
+    }
+  }
+  return whereClause
+}
+
 /**
  * Gets the feature count
  * @param gp
  * @param tableName
+ * @param search
  * @returns {number}
  */
-function _getFeatureCount (gp, tableName) {
-  return gp.getFeatureDao(tableName).count()
+function _getFeatureCount (gp, tableName, search) {
+  let count = 0
+  if (gp.connection.tableExists(tableName)) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const whereClause = _getWhereClause(featureDao, search)
+    if (whereClause != null) {
+      const query = SqliteQueryBuilder.buildCount("'" + tableName + "'", whereClause)
+      count = featureDao.connection.get(query).count
+    } else {
+      count = featureDao.count()
+    }
+  }
+  return count
 }
 
 /**
@@ -1029,11 +1078,12 @@ async function getFeatureCountInBoundingBox (filePath, tableName, boundingBox) {
  * Gets the feature count
  * @param filePath
  * @param tableName
+ * @param search
  * @returns {Promise<any>}
  */
-async function getFeatureCount (filePath, tableName) {
+async function getFeatureCount (filePath, tableName, search) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getFeatureCount(gp, tableName)
+    return _getFeatureCount(gp, tableName, search)
   })
 }
 
@@ -1045,34 +1095,44 @@ async function getFeatureCount (filePath, tableName) {
  * @param pageSize
  * @param sortBy
  * @param desc
+ * @param search
  * @return {{features: *[], styleAssignments: {}, mediaCounts: {}}}
  * @private
  */
-function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined, desc = false) {
-  const featureDao = gp.getFeatureDao(tableName)
-  const srs = featureDao.srs
-  const offset = page * pageSize
-  const query = SqliteQueryBuilder.buildQuery(false, "'" + featureDao.gpkgTableName + "'", undefined, undefined, undefined, undefined, undefined, sortBy ? '"' + sortBy + '"' + (desc ? ' DESC NULLS LAST' : ' ASC NULLS LAST') : undefined, pageSize, offset)
-  let each = featureDao.connection.each(query)
-  const features = []
-  for (let row of each) {
-    if (!isNil(row)) {
-      const featureRow = featureDao.getRow(row)
-      const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
-      feature.type = 'Feature'
-      feature.id = featureRow.id
-      features.push(feature)
+function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined, desc = false, search = '') {
+  let result = {
+    features: null, styleAssignments: null, mediaCounts: null
+  }
+  if (gp.connection.tableExists(tableName)) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const srs = featureDao.srs
+    const offset = page * pageSize
+    let whereClause = _getWhereClause(featureDao, search)
+
+    const query = SqliteQueryBuilder.buildQuery(false, "'" + featureDao.gpkgTableName + "'", undefined, whereClause, undefined, undefined, undefined, sortBy ? '"' + sortBy + '"' + (desc ? ' DESC NULLS LAST' : ' ASC NULLS LAST') : undefined, pageSize, offset)
+    let each = featureDao.connection.each(query)
+    const features = []
+    for (let row of each) {
+      if (!isNil(row)) {
+        const featureRow = featureDao.getRow(row)
+        const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+        feature.type = 'Feature'
+        feature.id = featureRow.id
+        features.push(feature)
+      }
     }
+
+    const featureIds = features.map(f => f.id)
+    const featureIdAndGeometryTypes = features.map(f => {
+      return {id: f.id, geometryType: f.geometry.type}
+    })
+    const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
+    const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
+    result = {features, styleAssignments, mediaCounts}
   }
 
-  const featureIds = features.map(f => f.id)
-  const featureIdAndGeometryTypes = features.map(f => {
-    return {id: f.id, geometryType: f.geometry.type}
-  })
-  const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
-  const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
 
-  return {features, styleAssignments, mediaCounts}
+  return result
 }
 
 /**
@@ -1083,11 +1143,12 @@ function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined
  * @param pageSize
  * @param sortBy
  * @param desc
+ * @param search
  * @return {Promise<{{features: *[], styleAssignments: {}, mediaCounts: {}}}>}
  */
-async function getFeatureTablePage (filePath, tableName, page, pageSize, sortBy, desc) {
+async function getFeatureTablePage (filePath, tableName, page, pageSize, sortBy, desc, search) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getFeatureTablePage(gp, tableName, page, pageSize, sortBy, desc)
+    return _getFeatureTablePage(gp, tableName, page, pageSize, sortBy, desc, search)
   })
 }
 
@@ -1098,51 +1159,55 @@ function _getFeatureViewData (gp, tableName, featureId) {
     style: {},
     columns: null
   }
-  const featureDao = gp.getFeatureDao(tableName)
-  const srs = featureDao.srs
-  const featureRow = featureDao.queryForId(featureId)
-  const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
-  feature.type = 'Feature'
-  feature.id = featureRow.id
-  featureData.feature = feature
-  const featureStyleExtension = new FeatureTableStyles(gp, tableName).getFeatureStyleExtension()
-  const icon = featureStyleExtension.getIcon(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
-  const style = featureStyleExtension.getStyle(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
-  if (style != null) {
-    featureData.style.style = {
-      id: style.id,
-      name: style.getName(),
-      description: style.getDescription(),
-      color: style.getHexColor(),
-      opacity: style.getOpacity(),
-      fillColor: style.getFillHexColor(),
-      fillOpacity: style.getFillOpacityOrDefault(),
-      width: style.getWidth()
-    }
-  } else if (icon != null) {
-    featureData.style.icon = {
-      url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
-    }
-  } else {
-    featureData.style.style = {
-      id: Number.MAX_SAFE_INTEGER,
-      name: 'Default',
-      description: null,
-      color: '#000000',
-      opacity: 1.0,
-      fillColor: '#000000',
-      fillOpacity: 0.3,
-      width: 3.0
+  if (gp.connection.tableExists(tableName)) {
+    const featureDao = gp.getFeatureDao(tableName)
+    const srs = featureDao.srs
+    const featureRow = featureDao.queryForId(featureId)
+    if (featureRow != null) {
+      const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+      feature.type = 'Feature'
+      feature.id = featureRow.id
+      featureData.feature = feature
+      const featureStyleExtension = new FeatureTableStyles(gp, tableName).getFeatureStyleExtension()
+      const icon = featureStyleExtension.getIcon(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
+      const style = featureStyleExtension.getStyle(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
+      if (style != null) {
+        featureData.style.style = {
+          id: style.id,
+          name: style.getName(),
+          description: style.getDescription(),
+          color: style.getHexColor(),
+          opacity: style.getOpacity(),
+          fillColor: style.getFillHexColor(),
+          fillOpacity: style.getFillOpacityOrDefault(),
+          width: style.getWidth()
+        }
+      } else if (icon != null) {
+        featureData.style.icon = {
+          url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+        }
+      } else {
+        featureData.style.style = {
+          id: Number.MAX_SAFE_INTEGER,
+          name: 'Default',
+          description: null,
+          color: '#000000',
+          opacity: 1.0,
+          fillColor: '#000000',
+          fillOpacity: 0.3,
+          width: 3.0
+        }
+      }
+
+      featureData.geometryTypeCode = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      featureData.columns = _getFeatureColumns(gp, tableName)._columns
+      const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
+      const columnObjects = featureData.columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+        return getEditableColumnObject(column, properties)
+      })
+      featureData.editableColumns = orderBy(columnObjects, ['lowerCaseName'], ['asc'])
     }
   }
-
-  featureData.geometryTypeCode = GeometryType.fromName(feature.geometry.type.toUpperCase())
-  featureData.columns = _getFeatureColumns(gp, tableName)._columns
-  const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
-  const columnObjects = featureData.columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
-    return getEditableColumnObject(column, properties)
-  })
-  featureData.editableColumns = orderBy(columnObjects, ['lowerCaseName'], ['asc'])
   return featureData
 }
 
