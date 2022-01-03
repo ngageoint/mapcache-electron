@@ -162,34 +162,36 @@
         Layer Order
       </v-card-title>
       <v-card-text>
-        <v-card-subtitle class="pt-1 pb-1">
+        <v-card-subtitle class="pt-0 pb-1">
           Drag layers to specify the map rendering order.
         </v-card-subtitle>
-        <draggable
-          v-model="layerOrder"
-          class="list-group pl-0 card-content"
-          ghost-class="ghost"
-          tag="ul"
-          v-bind="dragOptions"
-          @start="drag = true"
-          @end="drag = false">
-          <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
-            <li v-for="(item) in layerOrder" :key="item.id" :class="`layer-order-list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
-              <v-list-item-icon>
-                <v-btn icon @click.stop="item.zoomTo">
-                  <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                  <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                </v-btn>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title v-text="item.title"></v-list-item-title>
-                <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
-              </v-list-item-content>
-            </li>
-          </transition-group>
-        </draggable>
+        <v-list
+            id="sortable-list"
+            style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
+            v-sortable-list="{onEnd:updateLayerOrder}"
+            dense>
+          <v-list-item
+              v-for="item in layerOrder"
+              class="sortable-list-item mb-2"
+              :key="item.id"
+              dense>
+            <v-list-item-icon class="mt-1">
+              <v-btn icon @click.stop="item.zoomTo">
+                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              </v-btn>
+            </v-list-item-icon>
+            <v-list-item-content class="pa-0 ma-0">
+              <v-list-item-title v-text="item.title"></v-list-item-title>
+              <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
+              <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list>
       </v-card-text>
     </v-card>
     <v-card outlined v-if="showBaseMapSelection" class="basemap-card">
@@ -252,7 +254,6 @@ import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndi
 import LeafletEdit from '../../lib/leaflet/map/controls/LeafletEdit'
 import LeafletDraw from '../../lib/leaflet/map/controls/LeafletDraw'
 import FeatureEditor from '../Common/FeatureEditor'
-import draggable from 'vuedraggable'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
@@ -267,7 +268,7 @@ import {
   SEARCH_RESULTS_PANE,
   SEARCH_RESULT_POINTS_ONLY_PANE
 } from '../../lib/leaflet/map/panes/MapPanes'
-import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline, mdiMagnify } from '@mdi/js'
+import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline, mdiMagnify, mdiDragHorizontalVariant } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {
   zoomToBaseMap,
@@ -289,6 +290,7 @@ import {MGRS} from '../../lib/leaflet/map/grid/mgrs/MGRS'
 import {latLng2GARS} from '../../lib/leaflet/map/grid/gars/GARS'
 import {FEATURE_TABLE_WINDOW_EVENTS} from '../FeatureTable/FeatureTableEvents'
 import {FEATURE_TABLE_ACTIONS} from '../FeatureTable/FeatureTableActions'
+import Sortable from 'sortablejs'
 
 const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
 const NEW_FEATURE_LAYER_OPTION = {text: 'New feature layer', value: 0}
@@ -341,13 +343,19 @@ export default {
     visible: Boolean,
     featureTablePoppedOut: Boolean
   },
-  computed: {
-    dragOptions () {
-      return {
-        animation: 200,
-        group: 'layers'
-      }
+  directives: {
+    'sortable-list': {
+      inserted: (el, binding) => {
+        Sortable.create(el, binding.value ? { ...binding.value, handle: '.sortHandle', ghostClass: 'ghost', dragClass: 'detail-bg',
+          forceFallback : true,
+          onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+          onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+          onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+        } : {})
+      },
     },
+  },
+  computed: {
     ...mapState({
       baseMapItems: state => {
         return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
@@ -375,8 +383,7 @@ export default {
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
     FeatureEditor,
-    FeatureTables,
-    draggable
+    FeatureTables
   },
   data () {
     return {
@@ -387,6 +394,7 @@ export default {
       mdiMagnify: mdiMagnify,
       mdiContentCopy: mdiContentCopy,
       mdiMapOutline: mdiMapOutline,
+      mdiDragHorizontalVariant: mdiDragHorizontalVariant,
       geoPackageMapLayers: {},
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
@@ -432,7 +440,6 @@ export default {
       showLayerOrderingDialog: false,
       showBaseMapSelection: false,
       showGridSelection: false,
-      drag: false,
       layerOrder: [],
       mapBackground: navigator.onLine ? '#ddd' : '#C0D9E4',
       displayNetworkError: false,
@@ -553,7 +560,7 @@ export default {
       return {center: this.map.getCenter(), zoom: this.map.getZoom()}
     },
     getReorderCardOffset () {
-      let yOffset = 234
+      let yOffset = 278
       if (!this.project.zoomControlEnabled) {
         yOffset -= 74
       }
@@ -937,6 +944,20 @@ export default {
       }
 
       return overallExtent
+    },
+    updateLayerOrder (evt) {
+      document.body.style.cursor = 'default'
+      const layerOrderTmp = this.layerOrder.slice()
+      const oldIndex = evt.oldIndex
+      let newIndex = Math.max(0, evt.newIndex)
+      if (newIndex >= layerOrderTmp.length) {
+        let k = newIndex - layerOrderTmp.length + 1
+        while (k--) {
+          layerOrderTmp.push(undefined)
+        }
+      }
+      layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
+      this.layerOrder = layerOrderTmp
     },
     reorderMapLayers (sortedLayers) {
       let newLayerOrder = []

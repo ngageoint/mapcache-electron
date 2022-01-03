@@ -160,6 +160,9 @@
                       </p>
                     </v-col>
                   </v-row>
+                  <v-row v-if="!featureViewData.hasSetFields" no-gutters>
+                    No fields set.
+                  </v-row>
                 </div>
                 <v-form v-else v-on:submit.prevent v-model="formValid">
                   <v-list style="width: 100%">
@@ -250,7 +253,20 @@ export default {
     asyncComputed: {
       featureViewData: {
         async get () {
-          return window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
+          const featureViewData = await window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
+          featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => featureViewData.feature.properties[column.name] != null).length > 0 : false
+          if (this.isGeoPackage &&
+              this.object.tables.features[this.tableName] != null &&
+              this.object.tables.features[this.tableName].columnOrder != null &&
+              featureViewData.editableColumns != null &&
+              featureViewData.editableColumns.length > 0) {
+            const columnOrder = this.object.tables.features[this.tableName].columnOrder
+            featureViewData.editableColumns.sort((a, b) => {
+              return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+            })
+          }
+
+          return featureViewData
         },
         default: {
           editableColumns: [],
@@ -280,6 +296,7 @@ export default {
           this.failedToSaveSnackBar = false
           this.columnsToAdd = []
           this.editing = false
+          this.disableEdit()
         }
       },
       object: {
@@ -340,6 +357,7 @@ export default {
         this.$nextTick(() => {
           this.editing = true
           EventBus.$emit(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, this.featureViewData.feature)
+          this.zoomTo()
         })
       },
       disableEdit () {

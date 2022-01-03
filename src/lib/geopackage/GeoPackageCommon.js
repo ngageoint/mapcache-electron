@@ -104,13 +104,18 @@ function _getGeoPackageFeatureTableForApp (gp, table) {
     if (extent == null) {
       extent = _calculateTrueExtentForFeatureTable(gp, table)
     }
+
+    // only track column order for columns that are not the primary key, special _feature_id, and blobs (which includes the geometry column)
+    const columnOrder = featureDao._table.getUserColumns()._columns.filter(column => !column.primaryKey && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map(column => column.name.toLowerCase())
+
     return {
       visible: false,
       featureCount: featureDao.count(),
       description: isNil(description) || description.length === 0 ? 'None' : description,
       indexed: rtreeIndexed,
       extent: extent,
-      styleKey: 0
+      styleKey: 0,
+      columnOrder: columnOrder
     }
   } catch (e) {
     console.error('Unable to process feature table: ' + table)

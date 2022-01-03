@@ -266,23 +266,25 @@
               Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
             </v-card-subtitle>
             <v-card-text>
-              <draggable
-                v-model="sortedLayers"
-                class="list-group pl-0"
-                ghost-class="ghost"
-                tag="ul"
-                v-bind="dragOptions"
-                @start="drag = true"
-                @end="drag = false">
-                <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
-                  <li v-for="(item) in sortedLayers" :key="item.name + '-sorted-layer'" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
-                    <v-list-item-content>
-                      <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                      <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-sorted-layer-title'" v-html="title"></div></div>
-                    </v-list-item-content>
-                  </li>
-                </transition-group>
-              </draggable>
+              <v-list
+                  id="sortable-list"
+                  style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
+                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
+                  dense>
+                <v-list-item
+                    v-for="item in sortedLayers"
+                    class="sortable-list-item mb-2"
+                    :key="item.id"
+                    dense>
+                  <v-list-item-content class="pa-0 ma-0">
+                    <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
+                    <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-sorted-layer-title'" v-html="title"></div></div>
+                  </v-list-item-content>
+                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
+                    <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+                  </v-list-item-icon>
+                </v-list-item>
+              </v-list>
             </v-card-text>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 5">
@@ -337,12 +339,11 @@
 </template>
 
 <script>
-  import draggable from 'vuedraggable'
   import {mapActions, mapState} from 'vuex'
   import isNil from 'lodash/isNil'
   import difference from 'lodash/difference'
   import isEmpty from 'lodash/isEmpty'
-  import { mdiTrashCan } from '@mdi/js'
+  import { mdiTrashCan, mdiDragHorizontalVariant} from '@mdi/js'
   import WMSLayer from '../../lib/layer/tile/WMSLayer'
   import XYZServerLayer from '../../lib/layer/tile/XYZServerLayer'
   import WMTSLayer from '../../lib/layer/tile/WMTSLayer'
@@ -354,6 +355,7 @@
   import { environment } from '../../lib/env/env'
   import { WMTS } from '../../lib/layer/LayerTypes'
   import { getRecommendedEpsg, getRecommendedSrs } from '../../lib/util/wmts/WMTSUtilities'
+  import Sortable from "sortablejs";
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -364,6 +366,22 @@
       project: Object,
       back: Function,
       addSource: Function
+    },
+    directives: {
+      'sortable-list': {
+        inserted: (el, binding) => {
+          Sortable.create(el, binding.value ? {
+            ...binding.value,
+            dragClass: 'detail-bg',
+            handle: '.sortHandle',
+            ghostClass: 'ghost',
+            forceFallback : true,
+            onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+          } : {})
+        },
+      },
     },
     computed: {
       ...mapState({
@@ -381,21 +399,15 @@
       },
       importReady () {
         return this.step === this.summaryStep && this.connected && this.dataSourceNameValid && !this.isEditingBoundingBox() && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS || this.selectedServiceType === SERVICE_TYPE.WMTS) && this.selectedDataSourceLayersValid()) || this.selectedServiceType === SERVICE_TYPE.XYZ)
-      },
-      dragOptions () {
-        return {
-          animation: 200,
-          group: 'layers'
-        }
       }
     },
     data () {
       return {
         boundingBoxFilter: undefined,
         mdiTrashCan: mdiTrashCan,
+        mdiDragHorizontalVariant: mdiDragHorizontalVariant,
         supportedImageFormats: window.mapcache.supportedImageFormats,
         step: 1,
-        drag: false,
         summaryStep: 3,
         urlToDelete: null,
         deleteUrlDialog: false,
@@ -441,14 +453,27 @@
     },
     components: {
       BoundingBoxEditor,
-      NumberPicker,
-      draggable
+      NumberPicker
     },
     methods: {
       ...mapActions({
         addUrl: 'URLs/addUrl',
         removeUrl: 'URLs/removeUrl'
       }),
+      updateSortedLayerOrder (evt) {
+        document.body.style.cursor = 'default'
+        const layerOrderTmp = this.sortedLayers.slice()
+        const oldIndex = evt.oldIndex
+        let newIndex = Math.max(0, evt.newIndex)
+        if (newIndex >= layerOrderTmp.length) {
+          let k = newIndex - layerOrderTmp.length + 1
+          while (k--) {
+            layerOrderTmp.push(undefined)
+          }
+        }
+        layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
+        this.sortedLayers = layerOrderTmp
+      },
       cancelConnect () {
         this.connectionId = null
         this.connected = false

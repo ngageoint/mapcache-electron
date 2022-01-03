@@ -32,6 +32,7 @@
     </v-dialog>
     <v-data-table
       v-model="selected"
+      fixed-header
       :height="tableHeight"
       calculate-widths
       :headers="headers"
@@ -46,6 +47,8 @@
       v-on:update:sort-desc="handleDescendingSortUpdate"
       class="elevation-1"
       show-select
+      v-sortable-table="{onEnd:updateColumnOrder}"
+      :key="tableKey"
     >
       <template v-slot:top>
         <v-row no-gutters justify="space-between" class="ma-2">
@@ -61,22 +64,22 @@
           <v-btn :disabled="selected.length === 0" icon color="red" @click="showDeleteConfirmation"><v-icon>{{mdiTrashCan}}</v-icon></v-btn>
         </v-row>
       </template>
-      <template v-slot:[`header.attachments`]="{ }">
-        <v-icon style="margin-left: -4px !important;" small>{{mdiPaperclip}}</v-icon>
+      <template v-slot:[`header.attachments`]="{}">
+        <v-icon style="margin-left: -4px !important; margin-top: -4px !important;" small>{{mdiPaperclip}}</v-icon>
       </template>
       <template v-slot:item="{ item, headers, index, isSelected, select }">
         <tr class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)" @mouseover="() => handleHover(item)" @mouseleave="() => handleMouseLeave(item)">
-          <td class="text-start">
-            <v-simple-checkbox v-ripple @click="e => {
+          <td class="text-start text-truncate" :style="{minWidth: (header.value === 'attachments' || header.value === 'data-table-select') ? '16px' : ((getTextWidth(item.text, '12pt Roboto') + 48) + 'px')}"  v-for="header of headers" :key="index + '_' + header.value">
+            <div v-if="header.value === 'attachments'">
+              {{item.attachments > 0 ? item.attachments : null}}
+            </div>
+            <v-simple-checkbox v-else-if="header.value === 'data-table-select'" v-ripple @click="e => {
               select(!isSelected)
               e.stopPropagation()
             }" :value="isSelected"></v-simple-checkbox>
-          </td>
-          <td class="text-start">
-            {{item.attachments > 0 ? item.attachments : null}}
-          </td>
-          <td class="text-start truncate"  v-for="header in headers.slice(2)" :key="index + '_' + header.value">
-            {{item[header.value]}}
+            <div v-else>
+              {{item[header.value]}}
+            </div>
           </td>
         </tr>
       </template>
@@ -99,10 +102,12 @@
 <script>
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
-import orderBy from 'lodash/orderBy'
 import isNil from 'lodash/isNil'
 import moment from 'moment/moment'
 import {mdiPaperclip, mdiTrashCan, mdiMagnify} from '@mdi/js'
+import Sortable from 'sortablejs'
+
+const measureTextCanvas = document.createElement('canvas')
 
 export default {
     props: {
@@ -119,6 +124,21 @@ export default {
       close: Function,
       isGeoPackage: Boolean,
       showItemsPerPage: Boolean
+    },
+    directives: {
+      'sortable-table': {
+        inserted: (el, binding) => {
+          Sortable.create(el.querySelector('tr'), binding.value ? {
+            ...binding.value,
+            handle: '.sortHandle',
+            ghostClass: 'ghost',
+            forceFallback : true,
+            onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+          } : {})
+        },
+      },
     },
     data () {
       return {
@@ -142,34 +162,42 @@ export default {
         descending: false,
         headerColumnNameMapping: {},
         search: '',
-        searchCount: 0
+        searchCount: 0,
+        tableKey: 1
       }
     },
     computed: {
-      pageCount () {
+      pageCount() {
         return Math.ceil(this.searchCount / this.options.itemsPerPage)
       },
-      tableHeight () {
+      tableHeight() {
         const tableOnly = Math.min(this.tableEntries.length, this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
         const windowAreaAvailable = this.windowHeight - 168
         return Math.min(tableOnly, windowAreaAvailable)
       },
-      headers () {
-        const headers = [
-          { text: 'attachments', value: 'attachments', sortable: false }
+      headers() {
+        let headers = [
+          {text: 'attachments', value: 'attachments', sortable: false, class: 'ignore-elements'}
         ]
+        let columnOrder = null
+        if (this.isGeoPackage && this.geopackage.tables.features[this.table.tableName] != null && this.geopackage.tables.features[this.table.tableName].columnOrder != null) {
+          columnOrder = this.geopackage.tables.features[this.table.tableName].columnOrder
+        } else if (!this.isGeoPackage && this.source && this.source.columnOrder != null) {
+          columnOrder = this.source.columnOrder
+        } else {
+          columnOrder = this.table.columns._columns.filter(column => !column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').map(column => column.name.toLowerCase())
+        }
         const tableHeaders = []
-        this.table.columns._columns.forEach(column => {
-          if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-            this.headerColumnNameMapping[column.name.toLowerCase() + '_table'] = column.name.toLowerCase()
-            tableHeaders.push({
-              text: column.name.toLowerCase(),
-              value: column.name.toLowerCase() + '_table',
-              width: 150
-            })
-          }
+        columnOrder.forEach(column => {
+          this.headerColumnNameMapping[column.toLowerCase() + '_table'] = column.toLowerCase()
+          tableHeaders.push({
+            text: column.toLowerCase(),
+            value: column.toLowerCase() + '_table',
+            class: 'sortHandle'
+          })
         })
-        return headers.concat(orderBy(tableHeaders, ['text'], ['asc']))
+        headers = headers.concat(tableHeaders)
+        return headers
       }
     },
     beforeMount () {
@@ -250,6 +278,27 @@ export default {
       }
     },
     methods: {
+      getTextWidth (text, font) {
+        const context = measureTextCanvas.getContext('2d')
+        context.font = font
+        return context.measureText(text).width
+      },
+      updateColumnOrder (evt) {
+        document.body.style.cursor = 'default'
+        const headersTmp = this.headers.map(header => header.text)
+        headersTmp.unshift('checkbox-placeholder')
+        const oldIndex = evt.oldIndex
+        let newIndex = Math.min(Math.max(2, evt.newIndex), headersTmp.length - 1)
+        headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
+        // remove the checkbox and attachments
+        headersTmp.splice(0, 2)
+        if (this.isGeoPackage) {
+          window.mapcache.updateGeoPackageFeatureTableColumnOrder({projectId: this.projectId, geopackageId: this.id, tableName: this.table.tableName, columnOrder: headersTmp})
+        } else {
+          window.mapcache.updateDataSourceColumnOrder({projectId: this.projectId, sourceId: this.id, columnOrder: headersTmp})
+        }
+        this.tableKey++
+      },
       async getSearchCount (search) {
         return await window.mapcache.countGeoPackageTable({filePath: this.filePath, tableName: this.table.tableName, search: search})
       },
@@ -305,19 +354,18 @@ export default {
               try {
                 const columnIndex = this.table.columns._columnNames.findIndex(columnName => columnName.toUpperCase() === key.toUpperCase())
                 const column = this.table.columns._columns[columnIndex]
-                if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
-                  if (value !== '') {
-                    value = value === 1 || value === true
+                if (column != null) {
+                  if (column.dataType === window.mapcache.GeoPackageDataType.BOOLEAN) {
+                    if (value !== '') {
+                      value = value === 1 || value === true
+                    }
                   }
-                }
-                if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
-                  value = moment.utc(value).format('MM/DD/YYYY')
-                }
-                if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
-                  value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
-                }
-                if (column.dataType === window.mapcache.GeoPackageDataType.TEXT && value.length > 15) {
-                  value = value.substring(0, 15) + '...'
+                  if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATE) {
+                    value = moment.utc(value).format('MM/DD/YYYY')
+                  }
+                  if (value !== '' && column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
+                    value = moment.utc(value).format('MM/DD/YYYY h:mm:ss a')
+                  }
                 }
                 // eslint-disable-next-line no-unused-vars
               } catch (e) {
@@ -389,10 +437,7 @@ export default {
 .v-data-table-header th {
   white-space: nowrap !important;
 }
-.truncate {
-  max-width: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.v-data-table-header__icon {
+  cursor: pointer !important;
 }
 </style>

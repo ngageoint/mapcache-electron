@@ -5,13 +5,16 @@ import { ipcRenderer, contextBridge } from 'electron'
 import {SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType} from '@ngageoint/geopackage'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
-  getFeatureColumns, getFeatureCount,
+  getFeatureColumns,
+  getFeatureCount,
   getFeatureTablePage
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import {
   deleteFeatureIdsFromDataSource,
   deleteFeatureIdsFromGeoPackage,
-  popOutFeatureTable
+  popOutFeatureTable,
+  updateDataSourceColumnOrder,
+  updateGeoPackageFeatureTableColumnOrder
 } from '../vue/vuex/ProjectActions'
 import {
   FEATURE_TABLE_ACTION,
@@ -98,6 +101,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {id: requestId, filePath, tableName, page, pageSize, sortBy, desc, search})
     })
   },
+  updateGeoPackageFeatureTableColumnOrder,
   createUniqueID,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -141,6 +145,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   // functions needed for feature table
   getFeatureColumns,
   getFeatureTablePage,
+  updateDataSourceColumnOrder,
   // functions needed for media attachments
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,

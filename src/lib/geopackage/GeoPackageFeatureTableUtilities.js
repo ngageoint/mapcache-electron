@@ -1014,25 +1014,25 @@ function _getWhereClause(featureDao, search) {
       }
       const columnType = column.getDataType()
       if (columnType === GeoPackageDataType.TEXT) {
-        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` LIKE \'%' + search + '%\'')
+        whereClause += ((whereClause.length > 0 ? ' or `' : ' `') + columnNames[i] + '` LIKE \'%' + search + '%\'')
       } else if (columnType === GeoPackageDataType.BOOLEAN) {
         if (search.toLowerCase().trim() === '1' || search.toLowerCase().trim() === 't' || search.toLowerCase().trim() === 'tr' || search.toLowerCase().trim() === 'tru' || search.toLowerCase().trim() === 'true') {
-          whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = 1')
+          whereClause += ((whereClause.length > 0 ? ' or `' : ' `') + columnNames[i] + '` = 1')
         } else if (search.toLowerCase().trim() === '0' || search.toLowerCase().trim() === 'f' || search.toLowerCase().trim() === 'fa' || search.toLowerCase().trim() === 'fal' || search.toLowerCase().trim() === 'fals' || search.toLowerCase().trim() === 'false') {
-          whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = 0')
+          whereClause += ((whereClause.length > 0 ? ' or `' : ' `') + columnNames[i] + '` = 0')
         }
       } else if (!isNaN(search.trim()) &&
         (columnType === GeoPackageDataType.REAL ||
           columnType === GeoPackageDataType.FLOAT ||
           columnType === GeoPackageDataType.DOUBLE)) {
-        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = ' + Number.parseFloat(search.trim()))
+        whereClause += ((whereClause.length > 0 ? ' or `' : ' `') + columnNames[i] + '` = ' + Number.parseFloat(search.trim()))
       } else if (!isNaN(search.trim()) && search.indexOf('.') === -1 &&
         (columnType === GeoPackageDataType.MEDIUMINT ||
           columnType === GeoPackageDataType.SMALLINT ||
           columnType === GeoPackageDataType.INTEGER ||
           columnType === GeoPackageDataType.INT ||
           columnType === GeoPackageDataType.TINYINT)) {
-        whereClause += ((whereClause.length > 0 ? ' or \`' : ' \`') + columnNames[i] + '\` = ' + Number.parseInt(search.trim()))
+        whereClause += ((whereClause.length > 0 ? ' or `' : ' `') + columnNames[i] + '` = ' + Number.parseInt(search.trim()))
       }
     }
   }

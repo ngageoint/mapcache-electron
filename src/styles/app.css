@@ -245,3 +245,23 @@
 	margin-bottom: 3px !important;
 	min-width: 200px;
 }
+.flip-list-move {
+	transition: transform 0.5s;
+}
+.no-move {
+	transition: transform 0s;
+}
+.ghost {
+	opacity: 0.5 !important;
+	background-color: var(--v-primary-lighten2) !important;
+	cursor: grabbing !important;
+	cursor: -webkit-grabbing !important;
+	pointer-events: none !important;
+}
+.sortHandle {
+	cursor: grab !important;
+}
+.sortHandle:active {
+	cursor: grabbing !important;
+}
+

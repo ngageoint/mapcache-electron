@@ -27,12 +27,12 @@
       </v-card>
     </v-sheet>
   </v-sheet>
-  <feature-layer-field v-else-if="showFeatureLayerField"
+  <feature-layer-field v-else-if="showFeatureLayerField && columnOrder != null"
     :tableName="tableName"
     :projectId="projectId"
     :geopackage="geopackage"
     :column="featureLayerField"
-    :columnNames="featureColumnNames"
+    :columnNames="columnOrder"
     :back="hideFeatureLayerField"
     :renamed="featureLayerFieldRenamed"/>
   <v-sheet v-else class="mapcache-sheet">
@@ -441,20 +441,27 @@
             <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
           </v-row>
           <v-row no-gutters class="mt-4 detail-bg">
-            <v-list style="width: 100%" class="detail-bg ma-0 pa-0">
+            <v-list
+                v-if="tableFields != null && columnOrder != null"
+                id="sortable-list"
+                style="width: 100%"
+                class="detail-bg ma-0 pa-0"
+                v-sortable-list="{onEnd:updateColumnOrder}">
               <v-list-item
-                v-for="item in tableFields"
-                class="detail-bg"
-                :key="item.id"
-                @click="item.click"
-              >
+                v-for="column in columnOrder"
+                class="detail-bg sortable-list-item"
+                :key="tableFields[column].name"
+                @click="tableFields[column].click">
                 <v-list-item-icon>
-                  <v-icon>{{item.icon}}</v-icon>
+                  <v-icon>{{tableFields[column].icon}}</v-icon>
                 </v-list-item-icon>
                 <v-list-item-content>
-                  <v-list-item-title :title="item.name" v-html="item.name"></v-list-item-title>
-                  <v-list-item-subtitle :title="item.type" v-html="item.type"></v-list-item-subtitle>
+                  <v-list-item-title :title="tableFields[column].name" v-html="tableFields[column].name"></v-list-item-title>
+                  <v-list-item-subtitle :title="tableFields[column].type" v-html="tableFields[column].type"></v-list-item-subtitle>
                 </v-list-item-content>
+                <v-list-item-icon class="sortHandle">
+                  <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+                </v-list-item-icon>
               </v-list-item>
             </v-list>
           </v-row>
@@ -465,7 +472,6 @@
 </template>
 
 <script>
-import orderBy from 'lodash/orderBy'
 import StyleEditor from '../StyleEditor/StyleEditor'
 import FeatureLayerField from './FeatureLayerField'
 import EventBus from '../../lib/vue/EventBus'
@@ -481,10 +487,12 @@ import {
   mdiSpeedometer,
   mdiTableEye,
   mdiToggleSwitch,
-  mdiTrashCan
+  mdiTrashCan,
+  mdiDragHorizontalVariant
 } from '@mdi/js'
 import {zoomToGeoPackageTable} from '../../lib/leaflet/map/ZoomUtilities'
 import FeatureView from '../Common/FeatureView'
+import Sortable from 'sortablejs'
 
 export default {
     props: {
@@ -500,6 +508,21 @@ export default {
       StyleEditor,
       FeatureLayerField,
       FeatureView
+    },
+    directives: {
+      'sortable-list': {
+        inserted: (el, binding) => {
+          Sortable.create(el, binding.value ? {
+            ...binding.value,
+            handle: '.sortHandle',
+            ghostClass: 'ghost',
+            forceFallback : true,
+            onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+          } : {})
+        },
+      },
     },
     created () {
       let _this = this
@@ -523,11 +546,10 @@ export default {
         mdiTableEye: mdiTableEye,
         mdiTrashCan: mdiTrashCan,
         mdiPalette: mdiPalette,
-        columnNames: [],
+        mdiDragHorizontalVariant: mdiDragHorizontalVariant,
         showCopiedAlert: false,
         styleEditorVisible: false,
         showFeatureLayerField: false,
-        featureColumnNames: [],
         featureLayerField: null,
         indexDialog: false,
         indexingDone: false,
@@ -554,7 +576,7 @@ export default {
         addFieldValue: '',
         addFieldRules: [
           v => !!v || 'Field name is required',
-          v => this.columnNames.map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Field name already exists'
+          v => this.columnOrder.map(name => name).indexOf(v.toLowerCase()) === -1 || 'Field name already exists'
         ],
         addFieldType: window.mapcache.GeoPackageDataType.TEXT,
         TEXT: window.mapcache.GeoPackageDataType.TEXT,
@@ -595,11 +617,11 @@ export default {
       tableFields: {
         get () {
           return window.mapcache.getFeatureColumns(this.geopackage.path, this.tableName).then(columns => {
-            const tableFields = []
-            this.columnNames = columns._columns.map(c => c.name)
+            const tableFields = {}
             columns._columns.forEach((column, index) => {
+              // excluding primary key column, blob columns, and _feature_id columns
               if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-                tableFields.push({
+                tableFields[column.name.toLowerCase()] = {
                   id: column.name + '_' + index,
                   name: column.name.toLowerCase(),
                   type: this.getSimplifiedType(column.dataType),
@@ -610,14 +632,19 @@ export default {
                       icon: this.getSimplifiedTypeIcon(column.dataType),
                       type: this.getSimplifiedType(column.dataType)
                     }
-                    this.featureColumnNames = this.columnNames
                     this.showFeatureLayerField = true
                   }
-                })
+                }
               }
             })
-            return orderBy(tableFields, ['name'], ['asc'])
+            return tableFields
           })
+        },
+        default: null
+      },
+      columnOrder: {
+        get () {
+          return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].columnOrder.slice() : []
         },
         default: []
       }
@@ -747,10 +774,8 @@ export default {
       hideFeatureLayerField () {
         this.showFeatureLayerField = false
         this.featureLayerField = null
-        this.featureColumnNames = []
       },
       featureLayerFieldRenamed (name) {
-        this.featureColumnNames.splice(this.featureColumnNames.indexOf(this.featureLayerField.name), 1, name)
         this.featureLayerField.name = name
       },
       zoomToLayer () {
@@ -774,7 +799,21 @@ export default {
           isGeoPackage: true
         }
         EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload)
-      }
+      },
+      updateColumnOrder (evt) {
+        document.body.style.cursor = 'default'
+        const headersTmp = this.columnOrder.slice()
+        const oldIndex = evt.oldIndex
+        let newIndex = Math.max(0, evt.newIndex)
+        if (newIndex >= headersTmp.length) {
+          let k = newIndex - headersTmp.length + 1
+          while (k--) {
+            headersTmp.push(undefined)
+          }
+        }
+        headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
+        window.mapcache.updateGeoPackageFeatureTableColumnOrder({projectId: this.projectId, geopackageId: this.geopackage.id, tableName: this.tableName, columnOrder: headersTmp})
+      },
     },
     watch: {
       styleKey: {

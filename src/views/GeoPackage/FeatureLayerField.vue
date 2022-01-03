@@ -7,7 +7,7 @@
       class="sticky-toolbar"
     >
       <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
-      <v-toolbar-title :title="column.name">{{column.name}}</v-toolbar-title>
+      <v-toolbar-title :title="column.name">{{column.name.toLowerCase()}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-dialog

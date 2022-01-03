@@ -94,7 +94,9 @@ import {
   updateDeletedGeoPackageTileTable,
   addCopiedGeoPackageTileTable,
   addStyleExtensionForTable,
-  popOutFeatureTable
+  popOutFeatureTable,
+  updateGeoPackageFeatureTableColumnOrder,
+  updateDataSourceColumnOrder
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
@@ -125,7 +127,9 @@ import {
   getMediaRelationships,
   getMediaObjectUrl,
   getFeatureImageObjectUrl,
-  getAllAttachments, getImageAttachments, getVideoAttachments,
+  getAllAttachments,
+  getImageAttachments,
+  getVideoAttachments,
 } from '../geopackage/GeoPackageMediaUtilities'
 import {
   getStyleItemsForFeature,
@@ -186,7 +190,8 @@ import {
   GENERATE_GEOTIFF_RASTER_FILE,
   GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
   GET_APP_DATA_DIRECTORY,
-  GET_USER_DATA_DIRECTORY, HIDE_FEATURE_TABLE_WINDOW,
+  GET_USER_DATA_DIRECTORY,
+  HIDE_FEATURE_TABLE_WINDOW,
   IPC_EVENT_CONNECT,
   IPC_EVENT_NOTIFY_MAIN,
   IPC_EVENT_NOTIFY_RENDERERS,
@@ -657,6 +662,8 @@ contextBridge.exposeInMainWorld('mapcache', {
     })
   },
   getGeoPackageEditableColumnsForFeature,
+  updateGeoPackageFeatureTableColumnOrder,
+  updateDataSourceColumnOrder,
   getFeatureViewData,
   checkUnique,
   saveGeoPackageEditedFeature,

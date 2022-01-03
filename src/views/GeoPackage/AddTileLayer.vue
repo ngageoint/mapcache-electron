@@ -179,31 +179,33 @@
               Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
             </v-card-subtitle>
             <v-card-text>
-              <draggable
-                v-model="sortedLayers"
-                class="list-group pl-0"
-                ghost-class="ghost"
-                tag="ul"
-                v-bind="dragOptions"
-                @start="drag = true"
-                @end="drag = false">
-                <transition-group type="transition" :name="!drag ? 'flip-list' : null" :class="`v-list v-sheet ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'} v-list--dense`">
-                  <li v-for="(item) in sortedLayers" :key="item.id" :class="`list-item v-list-item ${drag ? '' : 'v-item--active v-list-item--link'} ${$vuetify.theme.dark ? 'theme--dark' : 'theme--light'}`">
-                    <v-list-item-icon>
-                      <v-btn icon @click.stop="item.zoomTo">
-                        <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                        <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                      </v-btn>
-                    </v-list-item-icon>
-                    <v-list-item-content>
-                      <v-list-item-title v-text="item.title"></v-list-item-title>
-                      <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
-                    </v-list-item-content>
-                  </li>
-                </transition-group>
-              </draggable>
+              <v-list
+                  id="sortable-list"
+                  style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
+                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
+                  dense>
+                <v-list-item
+                    v-for="item in sortedLayers"
+                    class="sortable-list-item mb-2"
+                    :key="item.id"
+                    dense>
+                  <v-list-item-icon class="mt-1">
+                    <v-btn icon @click.stop="item.zoomTo">
+                      <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                      <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                      <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                    </v-btn>
+                  </v-list-item-icon>
+                  <v-list-item-content class="pa-0 ma-0">
+                    <v-list-item-title v-text="item.title"></v-list-item-title>
+                    <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
+                    <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+                  </v-list-item-icon>
+                </v-list-item>
+              </v-list>
             </v-card-text>
           </v-card>
           <v-btn text color="primary" @click="step = 5">
@@ -335,7 +337,6 @@ import {mapState} from 'vuex'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
-import draggable from 'vuedraggable'
 import NumberPicker from '../Common/NumberPicker'
 import EventBus from '../../lib/vue/EventBus'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
@@ -343,343 +344,370 @@ import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
 import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 import {getTileCount} from '../../lib/util/tile/TileUtilities'
+import Sortable from 'sortablejs'
+import { mdiDragHorizontalVariant } from '@mdi/js'
 
 export default {
-    props: {
-      project: Object,
-      geopackage: Object,
-      back: Function
+  props: {
+    project: Object,
+    geopackage: Object,
+    back: Function
+  },
+  directives: {
+    'sortable-list': {
+      inserted: (el, binding) => {
+        Sortable.create(el, binding.value ? {
+          ...binding.value,
+          handle: '.sortHandle',
+          ghostClass: 'ghost',
+          dragClass: 'detail-bg',
+          forceFallback : true,
+          onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+          onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+          onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+        } : {})
+      },
     },
-    components: {
-      BoundingBoxEditor,
-      DataSourceTroubleshooting,
-      SourceVisibilitySwitch,
-      NumberPicker,
-      draggable
-    },
-    data () {
-      return {
-        scalingEnabled: false,
-        step: 1,
-        layerNameValid: true,
-        layerName: 'New tile layer',
-        layerNameRules: [
-          v => !!v || 'Layer name is required',
-          v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
-        ],
-        status: {
-          message: 'Starting...',
-          progress: 0.0
-        },
-        processing: false,
-        done: false,
-        minZoom: 0,
-        maxZoom: 10,
-        tileWarningThreshold: 1000,
-        configuration: null,
-        cancelling: false,
-        drag: false,
-        internalRenderingOrder: [],
-        boundingBoxFilter: null,
-        dragOptions: {
-          animation: 200,
-          group: 'layers'
-        }
-      }
-    },
-    methods: {
-      prettify (value) {
-        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  },
+  components: {
+    BoundingBoxEditor,
+    DataSourceTroubleshooting,
+    SourceVisibilitySwitch,
+    NumberPicker
+  },
+  data () {
+    return {
+      mdiDragHorizontalVariant: mdiDragHorizontalVariant,
+      scalingEnabled: false,
+      step: 1,
+      layerNameValid: true,
+      layerName: 'New tile layer',
+      layerNameRules: [
+        v => !!v || 'Layer name is required',
+        v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
+      ],
+      status: {
+        message: 'Starting...',
+        progress: 0.0
       },
-      filterErroredLayers (layers) {
-        this.selectedDataSourceLayers = layers.filter(layerId => isNil(this.project.sources[layerId].error))
-      },
-      async cancelAddTileLayer () {
-        const self = this
-        this.cancelling = true
-        window.mapcache.cancelAddTileLayer(this.configuration).then(() => {
-          setTimeout(() => {
-            window.mapcache.deleteGeoPackageTable({filePath: self.geopackage.path, tableName: self.configuration.table, silent: true}).then(() => {
-              self.done = true
-              self.cancelling = false
-              self.status.message = 'Cancelled'
-              self.status.progress = 100
-              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-            }).catch(() => {
-              // table may not have been created yet
-              self.done = true
-              self.cancelling = false
-              self.status.message = 'Cancelled'
-              self.status.progress = 100
-              window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-            })
-          }, 500)
-        })
-        this.status.message = 'Cancelling...'
-        this.status.progress = -1
-      },
-      async addTileLayer () {
-        this.processing = true
-        this.configuration = {
-          id: window.mapcache.createUniqueID(),
-          path: this.geopackage.path,
-          projectId: this.project.id,
-          table: this.layerName,
-          sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => {
-            const source = Object.assign({}, this.project.sources[item.id])
-            source.drawOverlap = item.drawOverlap
-            return source
-          }),
-          boundingBoxFilter: this.boundingBoxFilter,
-          geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(item => {
-            return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
-          }),
-          minZoom: this.minZoom,
-          maxZoom: this.maxZoom,
-          tileScalingEnabled: this.scalingEnabled,
-          renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
-        }
-
-        window.mapcache.addTileLayer(this.configuration, (status) => {
-          if (!this.done) {
-            this.status = status
-          }
-        }).then(() => {
-          this.done = true
-          window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
-        })
-      },
-      cancel () {
-        if (this.isEditingBoundingBox()) {
-          this.$refs.boundingBoxEditor.stopEditing()
-        }
-        this.back()
-      },
-      updateMinZoom (val) {
-        if (val > this.maxZoom) {
-          this.maxZoom = val
-        }
-        this.minZoom = val
-      },
-      updateMaxZoom (val) {
-        if (val < this.minZoom) {
-          this.minZoom = val
-        }
-        this.maxZoom = val
-      },
-      isEditingBoundingBox () {
-        if (this.$refs.boundingBoxEditor) {
-          return this.$refs.boundingBoxEditor.isEditing()
-        }
-        return false
-      },
-      updateBoundingBox (boundingBox) {
-        this.boundingBoxFilter = boundingBox
-      },
-      areZoomsValid () {
-        return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
-      },
-      getEstimatedTileCount() {
-        const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => {
-          const dataSourceCopy = Object.assign({}, this.project.sources[item.id])
-          dataSourceCopy.drawOverlap = item.drawOverlap
-          return dataSourceCopy
-        })
-        const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => {
-          return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
-        })
-        let tiles = 0
-        if (this.areZoomsValid()) {
-          try {
-            tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom)
-          } catch (e) {
-            tiles = 0
-          }
-        }
-        return tiles
-      },
-      async getGeoPackageLayerItems () {
-        const projectId = this.project.id
-        const items = []
-        const geopackageKeys = keys(this.project.geopackages)
-        for (let i = 0; i < geopackageKeys.length; i++) {
-          const geopackage = this.project.geopackages[geopackageKeys[i]]
-          if (await window.mapcache.isHealthy(geopackage)) {
-            Object.keys(geopackage.tables.tiles).forEach(table => {
-              const tableName = table
-              const visible = geopackage.tables.tiles[table].visible
-              const geopackageId = geopackage.id
-              items.push({
-                id: geopackageId + '_' + tableName,
-                geopackageId: geopackageId,
-                tableName: tableName,
-                title: geopackage.name,
-                subtitle: table,
-                visible,
-                type: 'tile',
-                changeVisibility: debounce(() => {
-                  window.mapcache.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
-                }, 100),
-                zoomTo: debounce((e) => {
-                  e.stopPropagation()
-                  zoomToGeoPackageTable(geopackage, tableName)
-                }, 100)
-              })
-            })
-            const featureTableKeys = Object.keys(geopackage.tables.features)
-            for (let i = 0; i < featureTableKeys.length; i++) {
-              const tableName = featureTableKeys[i]
-              const visible = geopackage.tables.features[tableName].visible
-              const geopackageId = geopackage.id
-              items.push({
-                id: geopackageId + '_' + tableName,
-                geopackageId: geopackageId,
-                tableName: tableName,
-                title: geopackage.name,
-                drawOverlap: await window.mapcache.getStyleDrawOverlap(geopackage.path, tableName),
-                subtitle: tableName,
-                visible,
-                type: 'feature',
-                changeVisibility: debounce(() => {
-                  window.mapcache.setGeoPackageFeatureTableVisible({
-                    projectId,
-                    geopackageId,
-                    tableName,
-                    visible: !visible
-                  })
-                }, 100),
-                zoomTo: debounce((e) => {
-                  e.stopPropagation()
-                  zoomToGeoPackageTable(geopackage, tableName)
-                }, 100)
-              })
-            }
-          }
-        }
-        return items
-      },
-      async getDataSourceLayers () {
-        const projectId = this.project.id
-        const sourceValues = Object.values(this.project.sources)
-        const dataSourceLayers = []
-        for (let i = 0; i < sourceValues.length; i++) {
-          const source = sourceValues[i]
-          const dataSourceLayer = {
-            title: source.displayName ? source.displayName : source.name,
-            source: source,
-            error: source.error,
-            id: source.id,
-            visible: source.visible,
-            type: source.pane === 'vector' ? 'feature' : 'tile',
-            changeVisibility: debounce(() => {
-              if (isNil(source.error)) {
-                window.mapcache.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
-              }
-            }, 100),
-            zoomTo: debounce((e) => {
-              e.stopPropagation()
-              zoomToSource(source)
-            }, 100)
-          }
-
-          if (source.pane === 'vector') {
-            dataSourceLayer.drawOverlap = await window.mapcache.getStyleDrawOverlap(source.geopackageFilePath, source.sourceLayerName)
-          }
-
-          dataSourceLayers.push(dataSourceLayer)
-        }
-        return dataSourceLayers
-      },
-      fireReorderMapLayers: debounce((layers) => {
-        EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
-      }, 100)
-    },
-    asyncComputed: {
-      geopackageLayers: {
-        async get () {
-          return this.getGeoPackageLayerItems()
-        },
-        default: []
-      },
-      dataSourceLayers: {
-        async get () {
-          return this.getDataSourceLayers()
-        },
-        default: []
-      },
-      selectedGeoPackageLayers: {
-        async get () {
-          return (await this.getGeoPackageLayerItems()).filter(item => item.visible).map(item => item.id)
-        },
-        default: []
-      },
-      selectedDataSourceLayers: {
-        async get () {
-          return (await this.getDataSourceLayers()).filter(item => item.visible).map(item => item.id)
-        },
-        default: []
-      },
-      internalRenderingOrder: {
-        async get () {
-          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-          return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
-        },
-        default: []
-      }
-    },
-    computed: {
-      ...mapState({
-        mapZoom (state) {
-          let mapZoom = 3
-          const projectId = this.$route.params.id
-          let project = state.UIState[projectId]
-          if (!isNil(project)) {
-            mapZoom = project.mapZoom
-          }
-          return mapZoom
-        }
-      }),
-      estimatedTileCount () {
-        return this.getEstimatedTileCount()
-      },
-      sortedLayers: {
-        get () {
-          return this.internalRenderingOrder
-
-        },
-        set (layers) {
-          this.internalRenderingOrder = layers
-          const newMapRenderingOrder = []
-          layers.forEach(item => {
-            newMapRenderingOrder.push(item.id)
-          })
-          this.fireReorderMapLayers(newMapRenderingOrder)
-        }
-      }
-    },
-    watch: {
-      project: {
-        async handler () {
-          this.dataSourceLayers = await this.getDataSourceLayers()
-          this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
-          this.geopackageLayers = await this.getGeoPackageLayerItems()
-          this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
-          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-          this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
-        },
-        deep: true
-      }
-    },
-    mounted () {
-      this.$nextTick(() => {
-        this.$refs.layerNameForm.validate()
-      })
-      const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
-      this.minZoom = Math.min(20, Math.max(0, mapZoom))
-      this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
+      processing: false,
+      done: false,
+      minZoom: 0,
+      maxZoom: 10,
+      tileWarningThreshold: 1000,
+      configuration: null,
+      cancelling: false,
+      internalRenderingOrder: [],
+      boundingBoxFilter: null,
     }
+  },
+  methods: {
+    updateSortedLayerOrder (evt) {
+      document.body.style.cursor = 'default'
+      const layerOrderTmp = this.sortedLayers.slice()
+      const oldIndex = evt.oldIndex
+      let newIndex = Math.max(0, evt.newIndex)
+      if (newIndex >= layerOrderTmp.length) {
+        let k = newIndex - layerOrderTmp.length + 1
+        while (k--) {
+          layerOrderTmp.push(undefined)
+        }
+      }
+      layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
+      this.sortedLayers = layerOrderTmp
+    },
+    prettify (value) {
+      return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
+    filterErroredLayers (layers) {
+      this.selectedDataSourceLayers = layers.filter(layerId => isNil(this.project.sources[layerId].error))
+    },
+    async cancelAddTileLayer () {
+      const self = this
+      this.cancelling = true
+      window.mapcache.cancelAddTileLayer(this.configuration).then(() => {
+        setTimeout(() => {
+          window.mapcache.deleteGeoPackageTable({filePath: self.geopackage.path, tableName: self.configuration.table, silent: true}).then(() => {
+            self.done = true
+            self.cancelling = false
+            self.status.message = 'Cancelled'
+            self.status.progress = 100
+            window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          }).catch(() => {
+            // table may not have been created yet
+            self.done = true
+            self.cancelling = false
+            self.status.message = 'Cancelled'
+            self.status.progress = 100
+            window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+          })
+        }, 500)
+      })
+      this.status.message = 'Cancelling...'
+      this.status.progress = -1
+    },
+    async addTileLayer () {
+      this.processing = true
+      this.configuration = {
+        id: window.mapcache.createUniqueID(),
+        path: this.geopackage.path,
+        projectId: this.project.id,
+        table: this.layerName,
+        sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => {
+          const source = Object.assign({}, this.project.sources[item.id])
+          source.drawOverlap = item.drawOverlap
+          return source
+        }),
+        boundingBoxFilter: this.boundingBoxFilter,
+        geopackageLayers: this.geopackageLayers.filter(item => item.visible).map(item => {
+          return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
+        }),
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom,
+        tileScalingEnabled: this.scalingEnabled,
+        renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
+      }
+
+      window.mapcache.addTileLayer(this.configuration, (status) => {
+        if (!this.done) {
+          this.status = status
+        }
+      }).then(() => {
+        this.done = true
+        window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+        window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+      })
+    },
+    cancel () {
+      if (this.isEditingBoundingBox()) {
+        this.$refs.boundingBoxEditor.stopEditing()
+      }
+      this.back()
+    },
+    updateMinZoom (val) {
+      if (val > this.maxZoom) {
+        this.maxZoom = val
+      }
+      this.minZoom = val
+    },
+    updateMaxZoom (val) {
+      if (val < this.minZoom) {
+        this.minZoom = val
+      }
+      this.maxZoom = val
+    },
+    isEditingBoundingBox () {
+      if (this.$refs.boundingBoxEditor) {
+        return this.$refs.boundingBoxEditor.isEditing()
+      }
+      return false
+    },
+    updateBoundingBox (boundingBox) {
+      this.boundingBoxFilter = boundingBox
+    },
+    areZoomsValid () {
+      return (this.$refs.minZoom === null || this.$refs.minZoom === undefined || this.$refs.minZoom.isValid()) && (this.$refs.maxZoom === null || this.$refs.maxZoom === undefined || this.$refs.maxZoom.isValid())
+    },
+    getEstimatedTileCount() {
+      const dataSources = this.dataSourceLayers.filter(item => item.visible).map(item => {
+        const dataSourceCopy = Object.assign({}, this.project.sources[item.id])
+        dataSourceCopy.drawOverlap = item.drawOverlap
+        return dataSourceCopy
+      })
+      const geopackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => {
+        return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName, type: item.type, drawOverlap: item.drawOverlap}
+      })
+      let tiles = 0
+      if (this.areZoomsValid()) {
+        try {
+          tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom)
+        } catch (e) {
+          tiles = 0
+        }
+      }
+      return tiles
+    },
+    async getGeoPackageLayerItems () {
+      const projectId = this.project.id
+      const items = []
+      const geopackageKeys = keys(this.project.geopackages)
+      for (let i = 0; i < geopackageKeys.length; i++) {
+        const geopackage = this.project.geopackages[geopackageKeys[i]]
+        if (await window.mapcache.isHealthy(geopackage)) {
+          Object.keys(geopackage.tables.tiles).forEach(table => {
+            const tableName = table
+            const visible = geopackage.tables.tiles[table].visible
+            const geopackageId = geopackage.id
+            items.push({
+              id: geopackageId + '_' + tableName,
+              geopackageId: geopackageId,
+              tableName: tableName,
+              title: geopackage.name,
+              subtitle: table,
+              visible,
+              type: 'tile',
+              changeVisibility: debounce(() => {
+                window.mapcache.setGeoPackageTileTableVisible({projectId, geopackageId, tableName, visible: !visible})
+              }, 100),
+              zoomTo: debounce((e) => {
+                e.stopPropagation()
+                zoomToGeoPackageTable(geopackage, tableName)
+              }, 100)
+            })
+          })
+          const featureTableKeys = Object.keys(geopackage.tables.features)
+          for (let i = 0; i < featureTableKeys.length; i++) {
+            const tableName = featureTableKeys[i]
+            const visible = geopackage.tables.features[tableName].visible
+            const geopackageId = geopackage.id
+            items.push({
+              id: geopackageId + '_' + tableName,
+              geopackageId: geopackageId,
+              tableName: tableName,
+              title: geopackage.name,
+              drawOverlap: await window.mapcache.getStyleDrawOverlap(geopackage.path, tableName),
+              subtitle: tableName,
+              visible,
+              type: 'feature',
+              changeVisibility: debounce(() => {
+                window.mapcache.setGeoPackageFeatureTableVisible({
+                  projectId,
+                  geopackageId,
+                  tableName,
+                  visible: !visible
+                })
+              }, 100),
+              zoomTo: debounce((e) => {
+                e.stopPropagation()
+                zoomToGeoPackageTable(geopackage, tableName)
+              }, 100)
+            })
+          }
+        }
+      }
+      return items
+    },
+    async getDataSourceLayers () {
+      const projectId = this.project.id
+      const sourceValues = Object.values(this.project.sources)
+      const dataSourceLayers = []
+      for (let i = 0; i < sourceValues.length; i++) {
+        const source = sourceValues[i]
+        const dataSourceLayer = {
+          title: source.displayName ? source.displayName : source.name,
+          source: source,
+          error: source.error,
+          id: source.id,
+          visible: source.visible,
+          type: source.pane === 'vector' ? 'feature' : 'tile',
+          changeVisibility: debounce(() => {
+            if (isNil(source.error)) {
+              window.mapcache.setDataSourceVisible({projectId, sourceId: source.id, visible: !source.visible})
+            }
+          }, 100),
+          zoomTo: debounce((e) => {
+            e.stopPropagation()
+            zoomToSource(source)
+          }, 100)
+        }
+
+        if (source.pane === 'vector') {
+          dataSourceLayer.drawOverlap = await window.mapcache.getStyleDrawOverlap(source.geopackageFilePath, source.sourceLayerName)
+        }
+
+        dataSourceLayers.push(dataSourceLayer)
+      }
+      return dataSourceLayers
+    },
+    fireReorderMapLayers: debounce((layers) => {
+      EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
+    }, 100)
+  },
+  asyncComputed: {
+    geopackageLayers: {
+      async get () {
+        return this.getGeoPackageLayerItems()
+      },
+      default: []
+    },
+    dataSourceLayers: {
+      async get () {
+        return this.getDataSourceLayers()
+      },
+      default: []
+    },
+    selectedGeoPackageLayers: {
+      async get () {
+        return (await this.getGeoPackageLayerItems()).filter(item => item.visible).map(item => item.id)
+      },
+      default: []
+    },
+    selectedDataSourceLayers: {
+      async get () {
+        return (await this.getDataSourceLayers()).filter(item => item.visible).map(item => item.id)
+      },
+      default: []
+    },
+    internalRenderingOrder: {
+      async get () {
+        const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+        return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+      },
+      default: []
+    }
+  },
+  computed: {
+    ...mapState({
+      mapZoom (state) {
+        let mapZoom = 3
+        const projectId = this.$route.params.id
+        let project = state.UIState[projectId]
+        if (!isNil(project)) {
+          mapZoom = project.mapZoom
+        }
+        return mapZoom
+      }
+    }),
+    estimatedTileCount () {
+      return this.getEstimatedTileCount()
+    },
+    sortedLayers: {
+      get () {
+        return this.internalRenderingOrder
+
+      },
+      set (layers) {
+        this.internalRenderingOrder = layers
+        const newMapRenderingOrder = []
+        layers.forEach(item => {
+          newMapRenderingOrder.push(item.id)
+        })
+        this.fireReorderMapLayers(newMapRenderingOrder)
+      }
+    }
+  },
+  watch: {
+    project: {
+      async handler () {
+        this.dataSourceLayers = await this.getDataSourceLayers()
+        this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
+        this.geopackageLayers = await this.getGeoPackageLayerItems()
+        this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
+        const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+        this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+      },
+      deep: true
+    }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.$refs.layerNameForm.validate()
+    })
+    const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
+    this.minZoom = Math.min(20, Math.max(0, mapZoom))
+    this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
   }
+}
 </script>
 
 <style scoped>
