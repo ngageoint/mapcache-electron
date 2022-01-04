@@ -69,7 +69,7 @@
       </template>
       <template v-slot:item="{ item, headers, index, isSelected, select }">
         <tr class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)" @mouseover="() => handleHover(item)" @mouseleave="() => handleMouseLeave(item)">
-          <td class="text-start text-truncate" :style="{minWidth: (header.value === 'attachments' || header.value === 'data-table-select') ? '16px' : ((getTextWidth(item.text, '12pt Roboto') + 48) + 'px')}"  v-for="header of headers" :key="index + '_' + header.value">
+          <td class="text-start text-truncate" :style="{maxWidth: '150px', minWidth: (header.value === 'attachments' || header.value === 'data-table-select') ? '16px' : ((getTextWidth(item.text, '12pt Roboto') + 48) + 'px')}"  v-for="header of headers" :key="index + '_' + header.value">
             <div v-if="header.value === 'attachments'">
               {{item.attachments > 0 ? item.attachments : null}}
             </div>
@@ -77,7 +77,7 @@
               select(!isSelected)
               e.stopPropagation()
             }" :value="isSelected"></v-simple-checkbox>
-            <div v-else>
+            <div class="text-truncate" v-else>
               {{item[header.value]}}
             </div>
           </td>
