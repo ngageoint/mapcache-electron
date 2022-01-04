@@ -128,6 +128,10 @@ export default {
               content: 'Data sources consist of files in a variety of supported geospatial formats (KML/KMZ, GeoJSON, Shapefile, MBTiles, XYZ tile zip, and GeoTIFF) or online services such as WMS, WFS, XYZ, and ArcGIS Feature Service. The contents of a data source can either be features or imagery.'
             },
             {
+              title: 'Import data using Overpass API',
+              content: 'The Overpass API is a service that provides read only access to OpenStreetMap data. MapCache allows users to import data using a search query and bounding box filter. Users can make use of the Overpass API by navigating to the \'data source\' tab and clicking on the \'Add data source\' button at the bottom of the page. Click the \'Download features with Overpass\' button'
+            },
+            {
               title: 'Import data source from file',
               content: 'A data source can be imported by navigating to the \'data source\' tab and clicking on the \'Add data source\' button at the bottom of the page. Click the \'Import from file\' button and navigate to the file you wish to import. Supported file formats include GeoJSON, KMZ/KML, SHP (.zip or .shp), and GeoTIFF.'
             },
