@@ -122,7 +122,7 @@ export default {
           this.$vuetify.theme.dark = newValue
         })
       }
-    },
+    }
   },
   mounted () {
     window.mapcache.registerFeatureTableEventListener((e, {event, args}) => {

@@ -933,13 +933,15 @@ async function deleteFeatureRows (filePath, tableName, featureRowIds) {
  */
 function _getBoundingBoxForFeature (gp, tableName, featureRowId) {
   let extent = null
+  let type = null
   const featureDao = gp.getFeatureDao(tableName)
   const featureRow = featureDao.queryForId(featureRowId)
   if (featureRow) {
     const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, featureDao.srs)
     extent = bbox(feature)
+    type = feature.geometry.type
   }
-  return extent
+  return {extent, type}
 }
 
 /**
@@ -1875,5 +1877,6 @@ export {
   getEditableColumnObject,
   getTopFeature,
   getFeatureViewData,
-  checkUnique
+  checkUnique,
+  _addGeoPackageFeatureTableColumns
 }

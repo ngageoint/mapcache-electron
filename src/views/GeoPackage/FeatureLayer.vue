@@ -447,22 +447,23 @@
                 style="width: 100%"
                 class="detail-bg ma-0 pa-0"
                 v-sortable-list="{onEnd:updateColumnOrder}">
-              <v-list-item
-                v-for="column in columnOrder"
-                class="detail-bg sortable-list-item"
-                :key="tableFields[column].name"
-                @click="tableFields[column].click">
-                <v-list-item-icon>
-                  <v-icon>{{tableFields[column].icon}}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title :title="tableFields[column].name" v-html="tableFields[column].name"></v-list-item-title>
-                  <v-list-item-subtitle :title="tableFields[column].type" v-html="tableFields[column].type"></v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-icon class="sortHandle">
-                  <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
-                </v-list-item-icon>
-              </v-list-item>
+              <div v-for="column in columnOrder" :key="column">
+                <v-list-item
+                    v-if="tableFields[column] != null"
+                    class="detail-bg sortable-list-item"
+                    @click="tableFields[column].click">
+                  <v-list-item-icon>
+                    <v-icon>{{tableFields[column].icon}}</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title :title="tableFields[column].name" v-html="tableFields[column].name"></v-list-item-title>
+                    <v-list-item-subtitle :title="tableFields[column].type" v-html="tableFields[column].type"></v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-icon class="sortHandle">
+                    <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+                  </v-list-item-icon>
+                </v-list-item>
+              </div>
             </v-list>
           </v-row>
         </v-container>

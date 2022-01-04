@@ -21,17 +21,17 @@ import {
   updateFeatureGeometry as updateFeatureGeo,
   createFeatureTable,
   _deleteFeatureRow,
-  addFeatureToFeatureTable,
-  addGeoPackageFeatureTableColumns,
   _createFeatureTable,
   _deleteFeatureRows,
   _renameGeoPackageFeatureTableColumn,
   _deleteGeoPackageFeatureTableColumn,
-  _addGeoPackageFeatureTableColumn
+  _addGeoPackageFeatureTableColumn,
+  _addFeatureToFeatureTable,
+  _addGeoPackageFeatureTableColumns
 } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
 import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
-import { addMediaAttachment } from '../../geopackage/GeoPackageMediaUtilities'
+import { _addMediaAttachment } from '../../geopackage/GeoPackageMediaUtilities'
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   let filePath
@@ -430,25 +430,20 @@ function updateExistingTable (table, tableInfo, updateStyleKey = true, updateCol
 }
 
 async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feature, columnsToAdd = []}) {
-  return new Promise((resolve) => {
-    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    const existingTable = geopackage.tables.features[tableName]
-    const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-    addGeoPackageFeatureTableColumns(filePath, tableName, columnsToAdd).then(() => {
-      addFeatureToFeatureTable(filePath, tableName, feature).then(rowId => {
-        if (feature.attachment != null) {
-          addMediaAttachment(filePath, tableName, rowId, feature.attachment)
-        }
-        Promise.resolve(rowId)
-      }).then((rowId) => {
-        getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-          updateGeoPackageFileInfo (geopackage)
-          updateExistingTable(existingTable, tableInfo)
-          store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
-          resolve(rowId)
-        })
-      })
-    })
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const existingTable = geopackage.tables.features[tableName]
+  const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    _addGeoPackageFeatureTableColumns(gp, tableName, columnsToAdd)
+    const featureDao = gp.getFeatureDao(tableName)
+    const rowId = _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
+    if (feature.attachment != null) {
+      _addMediaAttachment(gp, tableName, rowId, feature.attachment)
+    }
+    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+    updateGeoPackageFileInfo(geopackage)
+    updateExistingTable(existingTable, tableInfo, true, true)
+    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
   })
 }
 

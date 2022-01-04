@@ -72,8 +72,8 @@ async function zoomToGeoPackageTable (geopackage, table, isPreview = false) {
 }
 
 async function zoomToGeoPackageFeature (path, table, featureId, isPreview = false) {
-  window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function (extent) {
-    zoomToExtent(extent, 0, 14, isPreview)
+  window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function ({extent, type}) {
+    zoomToExtent(extent, 0, type === 'Point' ? 14 : 20, isPreview)
   })
 }
 

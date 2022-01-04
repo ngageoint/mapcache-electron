@@ -1528,6 +1528,9 @@ export default {
               this.removeGeoPackageTable(geoPackageId, tableName)
               this.addGeoPackageFeatureTable(updatedGeoPackage, map, tableName)
             })
+            if (this.lastShowFeatureTableEvent != null && this.lastShowFeatureTableEvent.isGeoPackage && this.lastShowFeatureTableEvent.id === geoPackageId) {
+              this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
+            }
           } else if (!isEqual(updatedGeoPackage.tables, oldGeoPackage.tables)) {
             const oldVisibleFeatureTables = keys(oldGeoPackage.tables.features).filter(table => oldGeoPackage.tables.features[table].visible)
             const oldVisibleTileTables = keys(oldGeoPackage.tables.tiles).filter(table => oldGeoPackage.tables.tiles[table].visible)
@@ -1538,10 +1541,16 @@ export default {
             const featureTablesRemoved = difference(keys(oldGeoPackage.tables.features), keys(updatedGeoPackage.tables.features))
             const tileTablesRemoved = difference(keys(oldGeoPackage.tables.tiles), keys(updatedGeoPackage.tables.tiles))
 
-            // hide feature table when a geopackage table has been removed
+            // hide feature table when a geopackage table has been removed (though check if it was renamed, i.e. table added, table removed)
             if (this.lastShowFeatureTableEvent != null && this.lastShowFeatureTableEvent.isGeoPackage && this.lastShowFeatureTableEvent.id === geoPackageId && featureTablesRemoved.indexOf(this.lastShowFeatureTableEvent.tableName) !== -1) {
-              this.lastShowFeatureTableEvent = null
-              this.hideFeatureTable()
+              const tablesAdded = difference(keys(updatedGeoPackage.tables.features), keys(oldGeoPackage.tables.features))
+              if (featureTablesRemoved.length === 1 && tablesAdded.length === 1) {
+                this.lastShowFeatureTableEvent.tableName = tablesAdded[0]
+                this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
+              } else {
+                this.lastShowFeatureTableEvent = null
+                this.hideFeatureTable()
+              }
             }
 
             // tables turned on
@@ -1680,7 +1689,7 @@ export default {
       let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
       let bounds = L.latLngBounds(boundingBox)
       bounds = bounds.pad(0.05)
-      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
+      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: Math.max(maxZoom, this.map.getZoom())})
       const currentMapCenter = this.map.getCenter()
       const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
       this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
