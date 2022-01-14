@@ -110,7 +110,16 @@ module.exports = {
           "**/node_modules/bindings/**/*",
           "**/node_modules/file-uri-to-path/**/*",
           "**/mapcacheThread.js",
-          "**/[0-9]+.js"
+          "**/0.js",
+          "**/3.js",
+          "**/4.js",
+          "**/5.js",
+          "**/6.js",
+          "**/7.js",
+          "**/8.js",
+          "**/9.js",
+          "**/10+.js",
+          "**/11.js"
         ],
         directories: {
           buildResources: "buildResources"

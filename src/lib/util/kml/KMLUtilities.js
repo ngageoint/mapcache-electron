@@ -70,17 +70,30 @@ function rotateBoundingBox(boundingBox, rotation) {
   return new BoundingBox(rotMinLongitude, rotMaxLongitude, rotMinLatitude, rotMaxLatitude)
 }
 
+/**
+ * Rotates a rectangle and determines the new width and height
+ * @param width
+ * @param height
+ * @param rotation in degrees
+ */
+function getRotatedDimensions (width, height, rotation) {
+  const radians = rotation * Math.PI / 180
+  return {
+    height: Math.round(Math.abs(width * Math.sin(radians)) + Math.abs(height * Math.cos(radians))),
+    width: Math.round(Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians)))
+  }
+}
+
 async function rotateImage (filePath, rotation) {
   const dataUrl = 'data:image/' + path.extname(filePath).substring(1) + ';base64,' + fs.readFileSync(filePath).toString('base64')
   const image = await makeImage(dataUrl)
-  const width = image.width()
-  const height = image.height()
+  const {width, height} = getRotatedDimensions(image.width(), image.height(), rotation)
   const canvas = createCanvas(width, height)
   const context = canvas.getContext('2d')
   context.save()
-  context.translate(width / 2,height / 2)
+  context.translate(width / 2, height / 2)
   context.rotate(rotation * Math.PI / 180.0)
-  context.drawImage(image, width / -2,height / -2)
+  context.drawImage(image, image.width() / -2, image.height() / -2)
   context.restore()
   const data = base64toUInt8Array(canvas.toDataURL())
   disposeImage(image)
@@ -122,6 +135,7 @@ async function convertGroundOverlayToGeotiffLayer (groundOverlay, kmlDirectory, 
     let west = groundOverlay.west
     let south = groundOverlay.south
     let rotation = groundOverlay.rotation
+
     while (west > 180.0) {
       west -= 360.0
     }
@@ -134,6 +148,7 @@ async function convertGroundOverlayToGeotiffLayer (groundOverlay, kmlDirectory, 
     while (south > 90.0) {
       south -= 180.0
     }
+
     let boundingBox = new BoundingBox(
       parseFloat(west), // minLongitude
       parseFloat(east), // maxLongitude
@@ -141,9 +156,8 @@ async function convertGroundOverlayToGeotiffLayer (groundOverlay, kmlDirectory, 
       parseFloat(north) // maxLatitude
     )
 
-    // if image needs to be rotated, it will need to be converted to png, if not already and then rotation buffer will be written to that file
     if (!isNil(rotation)) {
-      rotation = parseFloat(rotation)
+      rotation = parseFloat(rotation) * -1.0
       fullFile = await rotateImage(fullFile, rotation)
       boundingBox = rotateBoundingBox(boundingBox, rotation)
     }

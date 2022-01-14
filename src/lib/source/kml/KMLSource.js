@@ -105,10 +105,6 @@ export default class KMLSource extends Source {
     const kmlDirectory = path.dirname(this.filePath)
     const name = path.basename(this.filePath, path.extname(this.filePath))
 
-    const { layerId, layerDirectory } = this.createLayerDirectory()
-    let fileName = name + '.gpkg'
-    let filePath = path.join(layerDirectory, fileName)
-    const {adjustBatchSize, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await streamingGeoPackageBuild(filePath, name)
 
     statusCallback('Parsing and storing features', 0)
 
@@ -117,69 +113,99 @@ export default class KMLSource extends Source {
     const styleMaps = {}
     let featureCount = 0
 
-    await streamKml(this.filePath, () => {
-      featureCount++
-    }, groundOverlay => {
-      groundOverlays.push(groundOverlay)
-    }, style => {
-      styles[style.id] = style
-    }, styleMap => {
-      styleMaps[styleMap.id] = styleMap
-    })
+   try {
+     await streamKml(this.filePath, () => {
+       featureCount++
+     }, groundOverlay => {
+       groundOverlays.push(groundOverlay)
+     }, style => {
+       styles[style.id] = style
+     }, styleMap => {
+       styleMaps[styleMap.id] = styleMap
+     })
+   } catch (e) {
+      console.error(e)
+   }
 
-    adjustBatchSize(featureCount)
+    const featureStatusMax = 100 - groundOverlays.length
 
-    // iterate over styles/icons and add them to the geopackage
-    const styleIdMap = {}
-    const iconIdMap = {}
-    const styleIds = Object.keys(styles)
-    let iconFileNameCount = 1
-    for (let i = 0; i < styleIds.length; i++) {
-      const styleId = styleIds[i]
-      const style = styles[styleId]
-      if (style.href != null) {
-        iconIdMap[styleId] = addIcon(await this.generateIconFromKmlIconStyle(style, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount))
-        iconFileNameCount++
-      } else {
-        style.name = style.id
-        styleIdMap[styleId] = addStyle(style)
+    if (featureCount > 0) {
+      const { layerId, layerDirectory } = this.createLayerDirectory()
+      let fileName = name + '.gpkg'
+      let filePath = path.join(layerDirectory, fileName)
+      const {adjustBatchSize, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await streamingGeoPackageBuild(filePath, name)
+
+      adjustBatchSize(featureCount)
+
+      // iterate over styles/icons and add them to the geopackage
+      const styleIdMap = {}
+      const iconIdMap = {}
+      const styleIds = Object.keys(styles)
+      let iconFileNameCount = 1
+      for (let i = 0; i < styleIds.length; i++) {
+        const styleId = styleIds[i]
+        const style = styles[styleId]
+        if (style.href != null) {
+          try {
+            const icon = await this.generateIconFromKmlIconStyle(style, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount)
+            if (icon != null) {
+              iconIdMap[styleId] = addIcon(icon)
+              iconFileNameCount++
+            }
+          } catch (e) {
+            console.error(e)
+          }
+        } else {
+          style.name = style.id
+          styleIdMap[styleId] = addStyle(style)
+        }
       }
+
+      const notifyStepSize = 0.01
+      let currentStep = 0.0
+      let featuresAdded = 0
+      await streamKml(this.filePath, (feature) => {
+        let styleRef = feature.styleId
+        delete feature.styleId
+        const featureRowId = addFeature(feature)
+        if (styleRef != null) {
+          // if ref is for a map, select the normal style reference
+          if (styleMaps[styleRef] != null) {
+            styleRef = styleMaps[styleRef].normal
+          }
+          // check if it is a style or icon
+          if (styleIdMap[styleRef] != null) {
+            const styleRowId = styleIdMap[styleRef]
+            setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
+
+          } else if (iconIdMap[styleRef] != null) {
+            const iconRowId = iconIdMap[styleRef]
+            setFeatureIcon(featureRowId, feature.geometry.type, iconRowId)
+          }
+        }
+
+        if ((featuresAdded + 1) / featureCount > currentStep) {
+          statusCallback('Parsing and storing features', featureStatusMax * currentStep)
+          currentStep += notifyStepSize
+        }
+        featuresAdded++
+      }, () => {}, () => {}, () => {})
+
+      const { extent, count } = await done()
+
+      layers.push(new VectorLayer({
+        id: layerId,
+        layerType: VECTOR,
+        directory: layerDirectory,
+        sourceDirectory: this.directory,
+        geopackageFilePath: filePath,
+        sourceLayerName: name,
+        sourceType: 'KML',
+        count: count,
+        extent: extent
+      }))
     }
 
-    const notifyStepSize = 0.01
-    let currentStep = 0.0
-    let featuresAdded = 0
-    const featureStatusMax = 100 - groundOverlays.length
-    await streamKml(this.filePath, (feature) => {
-      let styleRef = feature.styleId
-      delete feature.styleId
-      const featureRowId = addFeature(feature)
-      if (styleRef != null) {
-        // if ref is for a map, select the normal style reference
-        if (styleMaps[styleRef] != null) {
-          styleRef = styleMaps[styleRef].normal
-
-        }
-
-        // check if it is a style or icon
-        if (styleIdMap[styleRef] != null) {
-          const styleRowId = styleIdMap[styleRef]
-          setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
-
-        } else if (iconIdMap[styleRef] != null) {
-          const iconRowId = iconIdMap[styleRef]
-          setFeatureIcon(featureRowId, feature.geometry.type, iconRowId)
-        }
-      }
-
-      if ((featuresAdded + 1) / featureCount > currentStep) {
-        statusCallback('Parsing and storing features', featureStatusMax * currentStep)
-        currentStep += notifyStepSize
-      }
-      featuresAdded++
-    }, () => {}, () => {}, () => {})
-
-    const { extent, count } = await done()
 
     statusCallback('Processing ground overlays', featureStatusMax)
 
@@ -194,23 +220,11 @@ export default class KMLSource extends Source {
       if (geotiffLayer != null) {
         layers.push(geotiffLayer)
       }
-      statusCallback('Processing ground overlays', (featureStatusMax + (100 - featureStatusMax) *  (i + 1 / groundOverlays.length)))
+      statusCallback('Processing ground overlays', (featureStatusMax + i + 1))
     }
 
     statusCallback('Cleaning up', 100)
     await this.sleep(250)
-
-    layers.push(new VectorLayer({
-      id: layerId,
-      layerType: VECTOR,
-      directory: layerDirectory,
-      sourceDirectory: this.directory,
-      geopackageFilePath: filePath,
-      sourceLayerName: name,
-      sourceType: 'KML',
-      count: count,
-      extent: extent
-    }))
 
     await rmDirAsync(tmpDir)
 

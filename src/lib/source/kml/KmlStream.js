@@ -100,13 +100,19 @@ function getMultiType(geoms) {
   return type
 }
 
-function handleData(key, value, props, headers) {
-  if (!props || !value || !headers) return
+function handleData (key, value, props, headers) {
+  if (props == null || value == null || headers == null) {
+    return
+  }
   const field = headers[key]
-  if (!field) return
+  if (field == null) {
+    return
+  }
 
   const type = field.type
-  if (!type) return
+  if (type == null) {
+    return
+  }
 
   let parsedValue
   switch (type) {
@@ -300,7 +306,9 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             }
             return
           case 'color':
-            if (style != null) {
+            if (groundOverlay != null) {
+              groundOverlay.alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
+            } else if (style != null) {
               const alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
               const blue = data.substring(2, 4)
               const green = data.substring(4, 6)
@@ -354,7 +362,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             return
           case 'rotation':
             if (groundOverlay != null) {
-              groundOverlay.rotation = data
+              groundOverlay.rotation = parseFloat(data)
             }
             return
           case 'north':
@@ -503,12 +511,14 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
               out.styleId = styleId.trim()
               styleId = null
             }
-            if (geom.type) {
+            if (geom && geom.type) {
               out.geometry = Object.assign({}, geom)
             }
             geom = null
             props = null
-            onFeature(out)
+            if (out.geometry) {
+              onFeature(out)
+            }
             return
           case 'schemadata':
           case 'schema':
