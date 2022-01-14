@@ -318,7 +318,7 @@
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
-        <v-switch v-model="previewing" class="pl-2 mt-0" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && (selectedDataSourceLayersValid() || selectedServiceType === 2)" label="Preview"></v-switch>
+        <v-switch v-model="previewing" class="pl-2 mt-0" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && selectedServiceType !== 3 && (selectedDataSourceLayersValid() || selectedServiceType === 2)" label="Preview"></v-switch>
         <v-spacer></v-spacer>
         <v-btn
           text
@@ -610,7 +610,7 @@
             sourceToProcess.layer = this.selectedDataSourceLayers
             sourceToProcess.wmtsInfo = this.serviceInfo.wmtsInfo
           } else {
-            sourceToProcess.layers = this.selectedServiceType === SERVICE_TYPE.WFS ? this.selectedDataSourceLayers.slice() : reverse(this.sortedLayers.slice())
+            sourceToProcess.layers = (this.selectedServiceType === SERVICE_TYPE.WFS || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) ? this.selectedDataSourceLayers.slice() : reverse(this.sortedLayers.slice())
             sourceToProcess.format = this.serviceInfo.format
           }
           this.addUrlToHistory(this.dataSourceUrl)
