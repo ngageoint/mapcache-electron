@@ -157,7 +157,7 @@
         </v-list>
       </v-card-text>
     </v-card>
-    <v-card outlined v-if="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
+    <v-card outlined v-show="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
       <v-card-title>
         Layer Order
       </v-card-title>
@@ -172,7 +172,7 @@
             dense>
           <v-list-item
               v-for="item in layerOrder"
-              class="sortable-list-item mb-2"
+              class="sortable-list-item"
               :key="item.id"
               dense>
             <v-list-item-icon class="mt-1">

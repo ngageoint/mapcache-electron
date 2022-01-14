@@ -273,9 +273,8 @@
                   dense>
                 <v-list-item
                     v-for="item in sortedLayers"
-                    class="sortable-list-item mb-2"
-                    :key="item.id"
-                    dense>
+                    class="sortable-list-item"
+                    :key="item.id">
                   <v-list-item-content class="pa-0 ma-0">
                     <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
                     <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-sorted-layer-title'" v-html="title"></div></div>

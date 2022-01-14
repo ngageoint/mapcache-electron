@@ -186,9 +186,8 @@
                   dense>
                 <v-list-item
                     v-for="item in sortedLayers"
-                    class="sortable-list-item mb-2"
-                    :key="item.id"
-                    dense>
+                    class="sortable-list-item"
+                    :key="item.id">
                   <v-list-item-icon class="mt-1">
                     <v-btn icon @click.stop="item.zoomTo">
                       <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
