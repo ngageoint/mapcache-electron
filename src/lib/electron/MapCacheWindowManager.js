@@ -692,10 +692,11 @@ class MapCacheWindowManager {
       const menu = Menu.buildFromTemplate(this.getMenuTemplate())
       Menu.setApplicationMenu(menu)
 
-      const windowHeight = 620 + (isWin ? 20 : 0)
+      const windowHeight = 614 + (isWin ? 72 : 0)
+      const windowWidth = 790
 
       this.mainWindowState = windowStateKeeper({
-        defaultWidth: 790,
+        defaultWidth: windowWidth,
         defaultHeight: windowHeight,
         file: 'landing-page.json',
         path: path.join(app.getPath('userData'), 'window_state')
@@ -709,10 +710,12 @@ class MapCacheWindowManager {
         show: false,
         x: this.mainWindowState.x,
         y: this.mainWindowState.y,
-        width: this.mainWindowState.width,
-        height: this.mainWindowState.height,
+        width: windowWidth,
+        minWidth: windowWidth,
+        maxWidth: windowWidth,
+        height: windowHeight,
         minHeight: windowHeight,
-        minWidth: 790,
+        maxHeight: windowHeight,
         fullscreenable: false,
         resizable: false,
         maximizable: false

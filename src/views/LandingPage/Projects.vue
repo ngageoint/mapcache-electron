@@ -296,8 +296,8 @@ export default {
     border-color: #00000040 !important;
   }
   .project-list {
-    height: 458px;
-    max-height: 458px;
+    height: 450px;
+    max-height: 450px;
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
