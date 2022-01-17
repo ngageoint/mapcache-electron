@@ -692,7 +692,7 @@ class MapCacheWindowManager {
       const menu = Menu.buildFromTemplate(this.getMenuTemplate())
       Menu.setApplicationMenu(menu)
 
-      const windowHeight = 614 + (isWin ? 72 : 0)
+      const windowHeight = 614 + (isWin ? 64 : 0)
       const windowWidth = 790
 
       this.mainWindowState = windowStateKeeper({
