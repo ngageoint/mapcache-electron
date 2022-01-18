@@ -192,7 +192,7 @@
         <v-stepper-content step="5">
           <v-card flat tile>
             <v-card-text>
-              <b>{{filteredFeatureCount}}</b>{{(boundingBoxFilter ? ' filtered' : '') + ' features from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageFeatureLayers.filter(item => item.visible).length + ' GeoPackage feature layer' + (geopackageFeatureLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be added to the '}}<b>{{geopackage.name}}</b>{{' GeoPackage as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
+              <b>{{filteredFeatureCount}}</b>{{(boundingBoxFilter ? ' filtered' : '') + ' features will be added to the '}}<b>{{geopackage.name}}</b>{{' GeoPackage as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
             </v-card-text>
           </v-card>
         </v-stepper-content>

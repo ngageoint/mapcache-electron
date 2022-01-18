@@ -278,7 +278,7 @@
                 </v-row>
                 <v-row no-gutters>
                   <v-card-subtitle class="pa-0 ma-0">
-                    {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated.'}}
+                    {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles will be generated using the selected layers.'}}
                   </v-card-subtitle>
                 </v-row>
               </v-container>
@@ -299,7 +299,7 @@
             <p v-if="(dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0" class="warning-text">At least one layer is required for import.</p>
             <p v-else-if="boundingBoxFilter == null" class="warning-text">A bounding box is required for import.</p>
             <v-card-subtitle>
-              {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles from ' + dataSourceLayers.filter(item => item.visible).length + ' data source' + (dataSourceLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' and ' + geopackageLayers.filter(item => item.visible).length + ' GeoPackage layer' + (geopackageLayers.filter(item => item.visible).length !== 1 ? 's' : '') + ' will be generated and added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
+              {{'Approx. '}}<b :class="estimatedTileCount > tileWarningThreshold ? 'warning-text' : ''">{{prettify(estimatedTileCount)}}</b>{{' tiles will be added to the '}}<b>{{geopackage.name + ' GeoPackage'}}</b>{{' as the '}}<b>{{layerName}}</b>{{' tile layer.'}}
             </v-card-subtitle>
             <v-card-subtitle class="pt-0 mt-0 warning-text" v-if="estimatedTileCount > tileWarningThreshold">
               {{'This configuration will generate a large number of tiles and may take several minutes to complete. To decrease the number of tiles, you can enable tile scaling, reduce the size of the bounding box, or decrease the maximum zoom level.'}}
