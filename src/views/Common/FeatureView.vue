@@ -190,6 +190,7 @@
 
 <script>
 import {mdiCalendar, mdiClock, mdiChevronLeft, mdiChevronRight, mdiTrashCan, mdiPencil, mdiMagnify, mdiCancel, mdiContentSave, mdiPaperclip, mdiPalette, mdiContentCopy} from '@mdi/js'
+import cloneDeep from 'lodash/cloneDeep'
 import FeatureEditorColumn from './FeatureEditorColumn'
 import GeometryStyleSvg from './GeometryStyleSvg'
 import {zoomToGeoPackageFeature} from '../../lib/leaflet/map/ZoomUtilities'
@@ -356,7 +357,8 @@ export default {
       enableEdit () {
         this.$nextTick(() => {
           this.editing = true
-          EventBus.$emit(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, this.featureViewData.feature)
+          const feature = cloneDeep(this.featureViewData.feature)
+          EventBus.$emit(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, feature)
           this.zoomTo()
         })
       },
