@@ -62,7 +62,7 @@
             :toggle-full-screen="toggleAttachmentDialogFullScreen"
             :is-full-screen="attachmentDialogFullScreen"/>
       </v-dialog>
-      <v-card flat tile :class="editing ? 'ma-0 pa-0 d-flex flex-column fill-height' : 'ma-0 pa-0 d-flex flex-column'">
+      <v-card flat tile :class="editing ? 'ma-0 pa-0 fill-height' : 'ma-0 pa-0 d-flex flex-column'" style="overflow-y: auto">
         <v-card-text class="ma-0 pa-0">
           <v-row class="pb-2"  v-if="featureImageObjectUrl" no-gutters>
             <v-img class="clickable" @click="showFeatureMediaAttachments = true" :src="featureImageObjectUrl" height="200" max-height="200"/>
