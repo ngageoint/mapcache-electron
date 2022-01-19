@@ -191,7 +191,6 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
       let inPlacemark = false
       let inStyle = false
       let hasStyleUrl = false
-      let placemarkHeading = null
       const saxStream = sax.createStream(false, {
         lowercase: true
       })
@@ -352,9 +351,6 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             }
             return
           case 'heading':
-            if (inPlacemark) {
-              placemarkHeading = data
-            }
             if (icon != null) {
               icon.heading = data
             }
@@ -467,6 +463,10 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
                 onStyle(style)
                 style = null
               }
+            } else {
+              // TODO: handle merged style
+              style = null
+              icon = null
             }
             return
           case 'stylemap':
@@ -518,10 +518,6 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
               } : props,
               geometry: null
             }
-            if (placemarkHeading != null) {
-              out.properties.icon_heading = placemarkHeading
-            }
-            placemarkHeading = null
             if (styleId != null) {
               out.styleId = styleId.trim()
               styleId = null
