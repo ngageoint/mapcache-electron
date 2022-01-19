@@ -62,7 +62,7 @@
             :toggle-full-screen="toggleAttachmentDialogFullScreen"
             :is-full-screen="attachmentDialogFullScreen"/>
       </v-dialog>
-      <v-card class="ma-0 pa-0 d-flex flex-column">
+      <v-card flat tile :class="editing ? 'ma-0 pa-0 d-flex flex-column fill-height' : 'ma-0 pa-0 d-flex flex-column'">
         <v-card-text class="ma-0 pa-0">
           <v-row class="pb-2"  v-if="featureImageObjectUrl" no-gutters>
             <v-img class="clickable" @click="showFeatureMediaAttachments = true" :src="featureImageObjectUrl" height="200" max-height="200"/>
@@ -145,46 +145,53 @@
                   </template>
                 </v-hover>
               </v-row>
-              <v-container>
-                <div v-if="!editing">
-                  <v-row no-gutters :key="'editor-' + column.name" v-for="(column) in featureViewData.editableColumns">
-                    <v-col v-if="featureViewData.feature.properties[column.name] != null" class="pb-2">
-                      <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                        {{ column.name }}
-                      </p>
-                      <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                        <span v-if="column.dataType === TEXT">{{featureViewData.feature.properties[column.name]}}</span>
-                        <span v-else-if="column.dataType === BOOLEAN">{{featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false'}}</span>
-                        <span v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{getHumanReadableDate(featureViewData.feature.properties[column.name])}}</span>
-                        <span v-else>{{featureViewData.feature.properties[column.name]}}</span>
-                      </p>
-                    </v-col>
-                  </v-row>
-                  <v-row v-if="!featureViewData.hasSetFields" no-gutters>
-                    No fields set.
-                  </v-row>
-                </div>
-                <v-form v-else v-on:submit.prevent v-model="formValid">
-                  <v-list style="width: 100%">
-                    <v-list-item :key="'editor-' + column.name" v-for="(column, index) in featureViewData.editableColumns" class="ma-0 pa-0">
-                      <v-list-item-content class="ma-0 pa-0">
-                        <feature-editor-column :id="column.name + '_' + index" v-bind="column" :update-column-property="updateEditableColumn" :index="index"></feature-editor-column>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </v-list>
-                </v-form>
-              </v-container>
+            </v-col>
+          </v-row>
+          <v-row v-if="!editing" no-gutters class="pl-4 pr-4 pt-2 detail-bg">
+            <v-col>
+              <v-row no-gutters :key="'editor-' + column.name" v-for="(column) in featureViewData.editableColumns">
+                <v-col v-if="featureViewData.feature.properties[column.name] != null" class="pb-2">
+                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                    {{ column.name }}
+                  </p>
+                  <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                    <span v-if="column.dataType === TEXT">{{featureViewData.feature.properties[column.name]}}</span>
+                    <span v-else-if="column.dataType === BOOLEAN">{{featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false'}}</span>
+                    <span v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{getHumanReadableDate(featureViewData.feature.properties[column.name])}}</span>
+                    <span v-else>{{featureViewData.feature.properties[column.name]}}</span>
+                  </p>
+                </v-col>
+              </v-row>
+              <v-row v-if="!featureViewData.hasSetFields" no-gutters>
+                No fields set.
+              </v-row>
+            </v-col>
+          </v-row>
+          <v-row v-else no-gutters class="pl-4 pr-4 pt-2">
+            <v-col>
+              <span v-if="featureViewData.editableColumns.length === 0">
+                  No fields to edit.
+                </span>
+              <v-form v-on:submit.prevent v-model="formValid">
+                <v-list style="width: 100%">
+                  <v-list-item :key="'editor-' + column.name" v-for="(column, index) in featureViewData.editableColumns" class="ma-0 pa-0">
+                    <v-list-item-content class="ma-0 pa-0">
+                      <feature-editor-column :id="column.name + '_' + index" v-bind="column" :update-column-property="updateEditableColumn" :index="index"></feature-editor-column>
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-form>
             </v-col>
           </v-row>
         </v-card-text>
-        <v-spacer></v-spacer>
-        <v-card-actions>
-          <v-spacer/>
-          <v-btn v-if="editing" @click="disableEdit" text>Cancel</v-btn>
-          <v-btn v-if="editing" @click="saveChanges" text color="primary">Save</v-btn>
-        </v-card-actions>
       </v-card>
     </v-sheet>
+    <v-divider v-if="editing"/>
+    <v-footer class="background" v-if="editing">
+      <v-spacer/>
+      <v-btn v-if="editing" @click="disableEdit" text>Cancel</v-btn>
+      <v-btn v-if="editing" @click="saveChanges" text color="primary">Save</v-btn>
+    </v-footer>
   </v-sheet>
 </template>
 
