@@ -189,6 +189,9 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
       let styleMap = null
       let pair = null
       let inPlacemark = false
+      let inStyle = false
+      let hasStyleUrl = false
+      let placemarkHeading = null
       const saxStream = sax.createStream(false, {
         lowercase: true
       })
@@ -197,6 +200,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
         currentTag = tag
         switch (tag.name) {
           case 'style':
+            inStyle = true
             style = {}
             if (tag.attributes.id != null) {
               style.id = '#' + tag.attributes.id
@@ -348,6 +352,9 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             }
             return
           case 'heading':
+            if (inPlacemark) {
+              placemarkHeading = data
+            }
             if (icon != null) {
               icon.heading = data
             }
@@ -404,6 +411,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             coordsText += data
             return
           case 'styleurl':
+            hasStyleUrl = true
             if (pair != null) {
               pair.styleUrl = data
             } else {
@@ -431,31 +439,34 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             pair = null
             return
           case 'style':
-            if (icon != null) {
-              if (pair != null) {
-                pair.style = icon
-              } else if (inPlacemark) {
-                styleId = icon.id
+            inStyle = false
+            if (!hasStyleUrl) {
+              if (icon != null) {
+                if (pair != null) {
+                  pair.style = icon
+                } else if (inPlacemark) {
+                  styleId = icon.id
+                }
+                onStyle(icon)
+                icon = null
+              } else if (style != null) {
+                if (fillStyle === 0 && style.fillOpacity != null) {
+                  style.fillOpacity = 0.0
+                }
+                if (outlineStyle === 0 && style.opacity != null) {
+                  style.opacity = 0.0
+                }
+                if (style.width == null) {
+                  style.width = 2.0
+                }
+                if (pair != null) {
+                  pair.style = style
+                } if (inPlacemark) {
+                  styleId = style.id
+                }
+                onStyle(style)
+                style = null
               }
-              onStyle(icon)
-              icon = null
-            } else if (style != null) {
-              if (fillStyle === 0 && style.fillOpacity != null) {
-                style.fillOpacity = 0.0
-              }
-              if (outlineStyle === 0 && style.opacity != null) {
-                style.opacity = 0.0
-              }
-              if (style.width == null) {
-                style.width = 2.0
-              }
-              if (pair != null) {
-                pair.style = style
-              } if (inPlacemark) {
-                styleId = style.id
-              }
-              onStyle(style)
-              style = null
             }
             return
           case 'stylemap':
@@ -507,6 +518,10 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
               } : props,
               geometry: null
             }
+            if (placemarkHeading != null) {
+              out.properties.icon_heading = placemarkHeading
+            }
+            placemarkHeading = null
             if (styleId != null) {
               out.styleId = styleId.trim()
               styleId = null
@@ -519,6 +534,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             if (out.geometry) {
               onFeature(out)
             }
+            hasStyleUrl = false
             return
           case 'schemadata':
           case 'schema':
