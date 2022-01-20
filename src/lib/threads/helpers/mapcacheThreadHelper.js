@@ -23,7 +23,8 @@ export default class MapcacheThreadHelper {
     file = file.replace('app.asar', 'app.asar.unpacked')
     const os = require('os')
     const WorkerThreadPool = require('../pool/workerThreadPool').default
-    const workerCount = Math.max(2, Math.min(4, os.cpus().length))
+    console.log(os.cpus().length)
+    const workerCount = Math.max(2, os.cpus().length)
     const config = []
     // perform tile rendering only
     config.push({
