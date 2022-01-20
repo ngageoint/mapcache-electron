@@ -999,7 +999,7 @@ class MapCacheWindowManager {
             label: 'Documentation',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.1.1/README.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.2.0/README.md`
               )
             }
           },
@@ -1007,7 +1007,7 @@ class MapCacheWindowManager {
             label: 'What\'s New...',
             click () {
               shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.1.1/changelog/v1.1.1.md`
+                `https://github.com/ngageoint/mapcache-electron/blob/v1.2.0/changelog/v1.1.1.md`
               )
             }
           }
