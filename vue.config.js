@@ -155,15 +155,13 @@ module.exports = {
             {
               target: "dmg",
               arch: [
-                "x64",
-                "arm64"
+                "universal"
               ]
             },
             {
               target: "pkg",
               arch: [
-                "x64",
-                "arm64"
+                "universal"
               ]
             }
           ],
@@ -187,15 +185,13 @@ module.exports = {
             {
               target: "dmg",
               arch: [
-                "x64",
-                "arm64"
+                "universal"
               ]
             },
             {
               target: "pkg",
               arch: [
-                "x64",
-                "arm64"
+                "universal"
               ]
             }
           ],
