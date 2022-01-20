@@ -22,25 +22,31 @@ export default class LeafletCoordinates extends L.Control {
 
   setCoordinateType (type) {
     this.coordinateType = type
-    this.updateText(this.coordinate, type)
+    this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, type, this.zoom))
   }
 
-  updateText (coordinate, coordinateType) {
+  updateCoordinateText (text) {
+    this._link.innerHTML = text
+  }
+
+  static getCoordinateText (coordinate, coordinateType, zoom) {
+    let text = ''
     if (coordinate != null && coordinateType != null) {
       if (coordinateType === 'LatLng') {
-        this._link.innerHTML = 'Lat, Lng: ' + coordinate.lat.toFixed(6) + ', ' + coordinate.lng.toFixed(6)
+        text = 'Lat, Lng: ' + coordinate.lat.toFixed(6) + ', ' + coordinate.lng.toFixed(6)
       } else if (coordinateType === 'MGRS') {
         const mgrs = MGRS.from(new LatLng(coordinate.lat, coordinate.lng))
-        this._link.innerHTML = 'MGRS: ' + mgrs.toString()
+        text = 'MGRS: ' + mgrs.toString()
       } else if (coordinateType === 'GARS') {
         const gars = latLng2GARS(coordinate.lat, coordinate.lng)
-        this._link.innerHTML = 'GARS: ' + gars
+        text = 'GARS: ' + gars
       } else if (coordinateType === 'XYZ') {
-        const x = long2tile(coordinate.lng, this.zoom)
-        const y = lat2tile(coordinate.lat, this.zoom)
-        this._link.innerHTML = 'x: ' + x + ', y: ' + y + ', z: ' + this.zoom
+        const x = long2tile(coordinate.lng, zoom)
+        const y = lat2tile(coordinate.lat, zoom)
+        text = 'x: ' + x + ', y: ' + y + ', z: ' + zoom
       }
     }
+    return text
   }
 
   onAdd (map) {
@@ -49,17 +55,17 @@ export default class LeafletCoordinates extends L.Control {
     this.coordinate = map.getCenter()
     this.zoom = map.getZoom()
 
-    map.on('mousemove', (event) => {
+    map.on('mousemove', function (event) {
       this.coordinate = event.latlng
-      this.updateText(event.latlng, this.coordinateType)
-    })
+      this.updateCoordinateText(LeafletCoordinates.getCoordinateText(event.latlng, this.coordinateType, this.zoom))
+    }.bind(this))
 
-    map.on('zoomend', () => {
+    map.on('zoomend', function () {
       this.zoom = map.getZoom()
-      this.updateText(this.coordinate, this.coordinateType)
-    }, this)
+      this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, this.coordinateType, map.getZoom()))
+    }.bind(this))
 
-    this.updateText()
+    this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, this.coordinateType, this.zoom))
 
     return container
   }
