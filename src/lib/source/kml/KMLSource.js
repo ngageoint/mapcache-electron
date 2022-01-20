@@ -113,19 +113,15 @@ export default class KMLSource extends Source {
     const styleMaps = {}
     let featureCount = 0
 
-   try {
-     await streamKml(this.filePath, () => {
-       featureCount++
-     }, groundOverlay => {
-       groundOverlays.push(groundOverlay)
-     }, style => {
-       styles[style.id] = style
-     }, styleMap => {
-       styleMaps[styleMap.id] = styleMap
-     })
-   } catch (e) {
-      console.error(e)
-   }
+    await streamKml(this.filePath, () => {
+      featureCount++
+    }, groundOverlay => {
+      groundOverlays.push(groundOverlay)
+    }, style => {
+      styles[style.id] = style
+    }, styleMap => {
+      styleMaps[styleMap.id] = styleMap
+    })
 
     const featureStatusMax = 100 - groundOverlays.length
 
@@ -153,7 +149,8 @@ export default class KMLSource extends Source {
               iconFileNameCount++
             }
           } catch (e) {
-            console.error(e)
+            // eslint-disable-next-line no-console
+            console.error('Failed to generate icon.')
           }
         } else {
           style.name = style.id

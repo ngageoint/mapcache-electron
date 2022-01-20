@@ -64,6 +64,7 @@ function getClientCredentials (details, authInfo, callback, webContents) {
     // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
     // refreshed, we want Electron to try selecting a cert again when the app loads.
     const reason = err && err.message || 'Unspecified reason.'
+    // eslint-disable-next-line no-console
     console.error(`Client credentials input failed: ${reason}`)
     callback()
   })

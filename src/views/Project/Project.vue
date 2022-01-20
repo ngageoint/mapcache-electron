@@ -338,6 +338,7 @@ export default {
             const path = geopackagesToAdd[i]
             this.addGeoPackageToApp(path).then(geopackageId => {
               if (geopackageId == null) {
+                // eslint-disable-next-line no-console
                 console.error('Failed to import GeoPackage')
                 EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
               }

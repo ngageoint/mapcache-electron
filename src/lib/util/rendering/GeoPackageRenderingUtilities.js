@@ -36,6 +36,7 @@ function requestVectorTile (tileRequest) {
       featureTiles.cleanup()
       return tile
     }, true).then(base64Image => resolve(base64Image)).catch(e => {
+      // eslint-disable-next-line no-console
       console.error('Failed to render tile.')
       reject(e)
     })

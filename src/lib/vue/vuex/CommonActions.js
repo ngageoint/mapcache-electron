@@ -8,6 +8,7 @@ function setDataSourceVisible ({projectId, sourceId, visible}) {
 function deleteProject (project) {
   rmDirAsync(store.state.Projects[project.id].directory).then((err) => {
     if (err) {
+      // eslint-disable-next-line no-console
       console.error('Unable to delete internal project directory: ' + store.state.Projects[project.id].directory)
     }
   })

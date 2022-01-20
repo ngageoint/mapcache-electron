@@ -87,9 +87,11 @@ export default class WorkerThreadPool extends EventEmitter {
       })
       worker.config = config
       worker.stdout.on('data', chunk => {
+        // eslint-disable-next-line no-console
         console.log(chunk.toString())
       })
       worker.stderr.on('data', chunk => {
+        // eslint-disable-next-line no-console
         console.error(chunk.toString())
       })
       worker.once('error', (err) => {

@@ -339,6 +339,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       try {
         await rmDirAsync(source.directory)
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Unable to remove source directory')
       }
     }

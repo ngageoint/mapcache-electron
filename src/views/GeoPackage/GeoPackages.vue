@@ -171,6 +171,7 @@ export default {
             } else {
               window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath}).then(added => {
                 if (!added) {
+                  // eslint-disable-next-line no-console
                   console.error('Failed to import GeoPackage')
                   EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
                 }
@@ -197,6 +198,7 @@ export default {
             if (!existsInApp) {
               window.mapcache.addGeoPackage({projectId: this.project.id, filePath: fileInfo.absolutePath}).then(added => {
                 if (!added) {
+                  // eslint-disable-next-line no-console
                   console.error('Failed to import GeoPackage')
                   EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to import GeoPackage')
                 }

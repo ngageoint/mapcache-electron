@@ -152,8 +152,20 @@ module.exports = {
             }
           ],
           target: [
-            "dmg",
-            "pkg"
+            {
+              target: "dmg",
+              arch: [
+                "x64",
+                "arm64"
+              ]
+            },
+            {
+              target: "pkg",
+              arch: [
+                "x64",
+                "arm64"
+              ]
+            }
           ],
           icon: "buildResources/icon.icns",
           hardenedRuntime : true,
@@ -172,8 +184,20 @@ module.exports = {
             }
           ],
           target: [
-            "dmg",
-            "pkg"
+            {
+              target: "dmg",
+              arch: [
+                "x64",
+                "arm64"
+              ]
+            },
+            {
+              target: "pkg",
+              arch: [
+                "x64",
+                "arm64"
+              ]
+            }
           ],
           icon: "buildResources/icon.icns",
           hardenedRuntime : true,

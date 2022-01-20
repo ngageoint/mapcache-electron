@@ -395,7 +395,8 @@ export default {
             this.failedToSaveSnackBar = true
           }
         } catch (e) {
-          console.error(e)
+          // eslint-disable-next-line no-console
+          console.error('Failed to save changes.')
         }
       },
       getHumanReadableDate (dateString) {

@@ -118,6 +118,7 @@ function _getGeoPackageFeatureTableForApp (gp, table) {
       columnOrder: columnOrder
     }
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Unable to process feature table: ' + table)
     return null
   }
@@ -271,6 +272,7 @@ function _getInternalTableInformation (gp) {
         styleKey: 0
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Unable to process tile table: ' + table)
       tables.unsupported.push(table)
     }
@@ -440,6 +442,7 @@ async function getOrCreateGeoPackageForApp (filePath) {
       tables: _getInternalTableInformation(gp)
     }
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to getOrCreate GeoPackage.')
     geopackage = null
   } finally {

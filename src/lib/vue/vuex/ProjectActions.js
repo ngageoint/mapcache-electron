@@ -257,6 +257,7 @@ function removeDataSource ({projectId, sourceId}) {
   if (!isNil(source.directory)) {
     rmDirAsync(source.directory).then((err) => {
       if (err) {
+        // eslint-disable-next-line no-console
         console.error('Failed to remove source layer directory: ' + source.directory)
       }
     })
@@ -264,6 +265,7 @@ function removeDataSource ({projectId, sourceId}) {
   if (!isNil(source.sourceDirectory) && exists(source.sourceDirectory) && isDirEmpty(path.join(source.sourceDirectory, LAYER_DIRECTORY_IDENTIFIER))) {
     rmDirAsync(source.sourceDirectory).then((err) => {
       if (err) {
+        // eslint-disable-next-line no-console
         console.error('Failed to remove source directory: ' + source.sourceDirectory)
       }
     })
@@ -386,6 +388,7 @@ async function createGeoPackageWithFeatureTable (projectId, filePath, featureTab
         addGeoPackage({projectId: projectId, filePath: filePath})
         success = true
       }).catch(() => {
+        // eslint-disable-next-line no-console
         console.error('Failed to create feature table.')
       }).finally(() => {
         try {
@@ -748,6 +751,7 @@ function editBaseMap (baseMap) {
 function removeBaseMap (baseMap) {
   rmDirAsync(baseMap.directory).then((err) => {
     if (err) {
+      // eslint-disable-next-line no-console
       console.error('Failed to remove base map directory: ' + baseMap.directory)
     }
   })

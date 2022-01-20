@@ -87,6 +87,7 @@ export default class MapcacheThreadHelper {
           const { rmDirAsync } = require('../../util/file/FileUtilities')
           rmDirAsync(directory).then((err) => {
             if (err) {
+              // eslint-disable-next-line no-console
               console.error('Failed to delete source directory.')
             }
             resolve(result)
@@ -97,6 +98,7 @@ export default class MapcacheThreadHelper {
         const { rmDirAsync } = require('../../util/file/FileUtilities')
         rmDirAsync(directory).then((err) => {
           if (err) {
+            // eslint-disable-next-line no-console
             console.error('Failed to delete source directory.')
           }
           resolve({cancelled: true})

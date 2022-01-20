@@ -36,6 +36,7 @@ export default class KMZSource extends Source {
     // remove unzipped directory
     rmDirAsync(unzippedDirectory).then((err) => {
       if (err) {
+        // eslint-disable-next-line no-console
         console.error('Failed to remove unzipped KMZ directory: ' + unzippedDirectory)
       }
     })

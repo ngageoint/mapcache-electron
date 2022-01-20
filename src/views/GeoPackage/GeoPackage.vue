@@ -493,6 +493,7 @@ export default {
           window.mapcache.copyFile(oldPath, newPath).then(() => {
             window.mapcache.addGeoPackage({projectId: this.project.id, filePath: newPath}).then(added => {
               if (!added) {
+                // eslint-disable-next-line no-console
                 console.error('Failed to copy GeoPackage')
                 EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to copy GeoPackage')
               }

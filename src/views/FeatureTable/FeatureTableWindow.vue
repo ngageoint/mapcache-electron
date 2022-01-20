@@ -79,7 +79,6 @@ export default {
           }
           // eslint-disable-next-line no-unused-vars
         } catch (e) {
-          console.error(e)
           // eslint-disable-next-line no-console
           console.error('Failed to retrieve features.')
         }

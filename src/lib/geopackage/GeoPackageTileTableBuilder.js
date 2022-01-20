@@ -320,6 +320,7 @@ async function buildTileLayer (configuration, statusCallback) {
           Promise.allSettled(tilePromises).then(results => {
             results.forEach(result => {
               if (result.status === 'rejected') {
+                // eslint-disable-next-line no-console
                 console.error('Failed to render tile.')
                 reject(result.reason)
               } else if (!isNil(result.value) && !isNil(result.value.image)) {

@@ -124,8 +124,10 @@ async function start() {
   // check if store is out of date, if so, delete content
   try {
     if (!await runMigration()) {
+      // eslint-disable-next-line no-console
       console.error('Migration failed. Forcing reset.')
       if (!await runMigration(true)) {
+        // eslint-disable-next-line no-console
         console.error('Reset failed. Contact administrator.')
         app.quit()
         return
@@ -143,6 +145,7 @@ async function start() {
 }
 
 if (!gotTheLock) {
+  // eslint-disable-next-line no-console
   console.error('MapCache is already running.')
   app.quit()
 } else {
@@ -182,8 +185,7 @@ if (!gotTheLock) {
       MapCacheWindowManager.quit().then(() => {
         readyToQuit = true
         app.quit()
-      }).catch(e => {
-        console.error(e)
+      }).catch(() => {
         readyToQuit = true
         app.quit()
       })

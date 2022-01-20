@@ -211,6 +211,7 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
   featureTile.drawTile(x, y, z).then((result) => {
     resolve(result)
   }).catch(error => {
+    // eslint-disable-next-line no-console
     console.error('Failed to render tile.')
     reject(error)
   }).finally(() => {
@@ -232,6 +233,7 @@ async function requestGeoPackageTile (data, resolve, reject) {
   connection.xyzTile(data.tableName, x, y, z, 256, 256).then((result) => {
     resolve(result)
   }).catch(error => {
+    // eslint-disable-next-line no-console
     console.error('Failed to render tile.')
     reject(error)
   }).finally(() => {

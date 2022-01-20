@@ -186,7 +186,6 @@ function _getFeatureImageObjectUrl (gp, tableName, featureId) {
     }
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.error(error)
     // eslint-disable-next-line no-console
     console.error('Failed to get media relationships.')
   }
@@ -227,7 +226,6 @@ function _getAllAttachments (gp, tableName, featureId, types) {
     }
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.error(error)
     // eslint-disable-next-line no-console
     console.error('Failed to get media relationships.')
   }

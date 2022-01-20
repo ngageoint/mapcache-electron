@@ -14,6 +14,7 @@ export default (scheme) => {
       }
       readFile(absolutePath, (error, data) => {
         if (error) {
+          // eslint-disable-next-line no-console
           console.error(`Failed to read ${pathName} on ${scheme} protocol`, error)
         }
         const extension = path.extname(pathName).toLowerCase()
