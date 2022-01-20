@@ -86,6 +86,7 @@ module.exports = {
       builderOptions: {
         productName: "MapCache",
         appId: "mil.nga.mapcache",
+        artifactName: "${productName}-${version}.${ext}",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         npmRebuild: false,
         extraResources: ["./extraResources/**", {
