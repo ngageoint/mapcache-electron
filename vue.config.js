@@ -216,10 +216,6 @@ module.exports = {
           ],
           icon: "buildResources/icon.ico"
         },
-        appx: {
-          publisher: 'CN=App Signing, O=National Geospatial Intelligence Agency, C=US',
-          publisherDisplayName: 'National Geospatial-Intelligence Agency',
-        },
         nsis: {
           oneClick: false,
           allowToChangeInstallationDirectory: true,
