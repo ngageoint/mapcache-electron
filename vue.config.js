@@ -88,7 +88,6 @@ module.exports = {
         appId: "mil.nga.mapcache",
         artifactName: "${productName}-${version}.${ext}",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
-        npmRebuild: false,
         extraResources: ["./extraResources/**", {
           from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
           to: "canvaskit/canvaskit.wasm",

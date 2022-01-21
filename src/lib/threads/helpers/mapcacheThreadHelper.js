@@ -20,7 +20,8 @@ export default class MapcacheThreadHelper {
 
   constructor () {
     let file = path.join(__dirname, 'mapcacheThread.js')
-    file = file.replace('app.asar', 'app.asar.unpacked')
+    // need to replace the mapcacheThread.js's file path to the unpackaged location
+    file = file.replace('app.asar', 'app.asar.unpacked').replace('app-x64.asar', 'app-x64.asar.unpacked').replace('app-arm64.asar', 'app-arm64.asar.unpacked')
     const os = require('os')
     const WorkerThreadPool = require('../pool/workerThreadPool').default
     const workerCount = Math.max(2, os.cpus().length)
