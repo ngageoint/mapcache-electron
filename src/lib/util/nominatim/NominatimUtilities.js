@@ -165,11 +165,13 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
       controller = new AbortController()
       id = setTimeout(() => controller.abort(), timeout)
       let wikiRes = null
-      try {
-        const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') +  '&prop=pageimages&format=json&pithumbsize=500', {signal: controller.signal})
-        wikiRes = await wikiReq.json()
-        // eslint-disable-next-line no-empty, no-unused-vars
-      } catch (e) {}
+      if (environment.wikipediaUrl != null) {
+        try {
+          const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') +  '&prop=pageimages&format=json&pithumbsize=500', {signal: controller.signal})
+          wikiRes = await wikiReq.json()
+          // eslint-disable-next-line no-empty, no-unused-vars
+        } catch (e) {}
+      }
       clearTimeout(id)
       if (wikiRes != null) {
         keys(wikiRes.query.pages).filter(key => wikiRes.query.pages[key].thumbnail != null).forEach((page) => {

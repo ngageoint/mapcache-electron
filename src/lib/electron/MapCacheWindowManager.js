@@ -69,6 +69,7 @@ import {
   LOAD_OR_DISPLAY_GEOPACKAGES
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
+import {environment} from "../env/env"
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -985,35 +986,28 @@ class MapCacheWindowManager {
             role: 'close'
           }
         ]
-      },
-      {
+      }
+    ]
+
+    if (environment.mapcacheRepo != null) {
+      template.push({
         role: 'help',
         submenu: [
           {
-            label: 'Learn more',
-            click () {
-              shell.openExternal('https://github.com/ngageoint/mapcache-electron')
-            }
-          },
-          {
             label: 'Documentation',
             click () {
-              shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.2.0/README.md`
-              )
+              shell.openExternal(environment.mapcacheRepo + '/blob/v' + app.getVersion() + '/README.md')
             }
           },
           {
             label: 'What\'s New...',
             click () {
-              shell.openExternal(
-                `https://github.com/ngageoint/mapcache-electron/blob/v1.2.0/changelog/v1.2.0.md`
-              )
+              shell.openExternal(environment.mapcacheRepo + '/blob/v' + app.getVersion() + '/changelog/v' + app.getVersion() + '.md')
             }
           }
         ]
-      }
-    ]
+      })
+    }
 
     if (isMac) {
       template.unshift({

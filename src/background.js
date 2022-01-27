@@ -2,6 +2,7 @@
 import { app, protocol } from 'electron'
 import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
+import {environment} from './lib/env/env'
 const gotTheLock = app.requestSingleInstanceLock()
 
 // used to indicate the .gpkg file path that was used to launch MapCache
@@ -88,10 +89,10 @@ function setupWebContentHandling () {
     contents.setWindowOpenHandler(({ url }) => {
       if (url.startsWith('http://localhost') ||
         url.startsWith('mapcache://') ||
-        url.startsWith('http://www.geopackage.org') ||
-        url.startsWith('https://github.com/ngageoint') ||
-        url.startsWith('http://ngageoint.github.io') ||
-        url.startsWith('https://eventkit.gs.mil')) {
+        (environment.geopackageLibrariesUrl != null && url.startsWith(environment.geopackageLibrariesUrl)) ||
+        (environment.geopackageUrl != null && url.startsWith(environment.geopackageUrl)) ||
+        (environment.mapcacheRepo != null && url.startsWith(environment.mapcacheRepo)) ||
+        (environment.eventkitUrl != null && url.startsWith(environment.eventkitUrl))) {
         return { action: 'allow' }
       }
       return { action: 'deny' }

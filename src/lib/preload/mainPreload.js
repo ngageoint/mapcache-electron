@@ -17,12 +17,22 @@ import {
   SHOW_PROJECT
 } from '../electron/ipc/MapCacheIPC'
 import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
+import {environment} from '../env/env'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
-const allowedOpenExternalLinks = ['http://www.geopackage.org/', 'http://ngageoint.github.io/GeoPackage/', 'https://eventkit.gs.mil/']
+const allowedOpenExternalLinks = []
+if (environment.geopackageUrl != null) {
+  allowedOpenExternalLinks.push(environment.geopackageUrl)
+}
+if (environment.geopackageLibrariesUrl != null) {
+  allowedOpenExternalLinks.push(environment.geopackageLibrariesUrl)
+}
+if (environment.eventkitUrl != null) {
+  allowedOpenExternalLinks.push(environment.eventkitUrl)
+}
 
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)

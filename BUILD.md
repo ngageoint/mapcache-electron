@@ -56,7 +56,7 @@ The MapCache Desktop build and runtime processes will generate several files. Th
 `rm -rf ~/Library/Application\ Support/Electron`
 * To remove the MapCache Desktop production runtime application data:  
 `rm -rf ~/Library/Application\ Support/MapCache`
-* To remove all the client (javascript) dependencies installed by `npm run install` use:  
+* To remove all the client (javascript) dependencies installed by `yarn` use:  
 `rm -rf node_modules`
 
 # Logging, Debugging, Building, and Testing
@@ -90,6 +90,15 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `yarn electron:build-mas`
 5. The newly created installers are located in the build folder:  
 `cd dist_electron`
+
+# Environment configuration
+There are several services and urls that are used by MapCache. In order for mapcache to work on a specific network, you will need to ensure access to these services/urls.
+If there is no access to a service or url, you will need to reconfigure them to point to a valid location or leave them blank, which will disable the feature.
+1. Edit `src/lib/env/env.js`
+2. Make necessary changes
+3. Save
+
+note: Do not check these changes in.
    
 
 # Notarization
@@ -129,9 +138,8 @@ Software source code previously released under an open source license and then m
 # Releasing a New Version
 1. Update package.json version
 2. Add a changelog file for the version describing new features added and bugs fixed
-3. Update MapCacheWindowManager.js to reference correct version tag
-4. Commit changes
-5. Tag version
-6. Build windows, linux and mac installers
-7. Notarize mac installers
-8. Create release on github for the new version and upload all the installer files
+3. Commit changes
+4. Tag version
+5. Build windows, linux and mac installers
+6. Notarize mac installers
+7. Create release on github for the new version and upload all the installer files

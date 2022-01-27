@@ -10,7 +10,7 @@
 
     <div class="divider"></div>
     <div v-for="item in sidebarItems" :key="item.id">
-      <button class="sidebar-item" @click="open(item.link)">
+      <button v-if="item.link != null" class="sidebar-item" @click="open(item.link)">
         <img class="sidebar-item-img" :src="item.image"/>
 
         <div class="sidebar-item-info">
@@ -31,22 +31,24 @@
 </template>
 
 <script>
+  import {environment} from '../../lib/env/env'
+
   const sidebarItems = [{
     title: 'What is a GeoPackage?',
     description: 'Visit geopackage.org to learn more',
-    link: 'http://www.geopackage.org/',
+    link: environment.geopackageUrl,
     image: 'images/geopackage-2.png',
     key: 'sidebar-item-0'
   }, {
     title: 'NGA GeoPackage Libraries',
     description: 'Learn about the GeoPackage libraries developed by NGA',
-    link: 'http://ngageoint.github.io/GeoPackage/',
+    link: environment.geopackageLibrariesUrl,
     image: 'images/nga.png',
-    key: 'sidebar-item-1'
+    key: 'sidebar-item-1',
   }, {
     title: 'EventKit',
     description: 'Import GeoPackage files created with EventKit',
-    link: 'https://eventkit.gs.mil/',
+    link: environment.eventkitUrl,
     image: 'images/eventkit.png',
     key: 'sidebar-item-2'
   }]
@@ -146,6 +148,11 @@
 
   button:hover {
     background-color: #326482;
+  }
+
+  button:disabled {
+    background-color: #626c73;
+    cursor: default !important;
   }
 
   button.alt {

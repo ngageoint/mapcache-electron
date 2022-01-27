@@ -354,7 +354,7 @@
   import { environment } from '../../lib/env/env'
   import { WMTS } from '../../lib/layer/LayerTypes'
   import { getRecommendedEpsg, getRecommendedSrs } from '../../lib/util/wmts/WMTSUtilities'
-  import Sortable from "sortablejs";
+  import Sortable from 'sortablejs'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
