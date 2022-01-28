@@ -29,6 +29,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--max_old_space_size=4096"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache Executables
+          path: |
+            dist_electron/*.dmg
+            dist_electron/*.pkg
   build_on_win:
     runs-on: windows-latest
     steps:
@@ -43,3 +50,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--max_old_space_size=4096"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache Executables
+          path: |
+            dist_electron/*.exe
