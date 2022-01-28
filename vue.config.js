@@ -86,7 +86,7 @@ module.exports = {
       builderOptions: {
         productName: "MapCache",
         appId: "mil.nga.mapcache",
-        artifactName: "${productName}-${version}.${ext}",
+        artifactName: "${productName}.${version}.${ext}",
         copyright: "Copyright © 2020 National Geospatial-Intelligence Agency",
         extraResources: ["./extraResources/**", {
           from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
@@ -220,7 +220,7 @@ module.exports = {
           oneClick: false,
           allowToChangeInstallationDirectory: true,
           include: "buildResources/uninstaller.nsh",
-          artifactName: "${productName}-${version}-Installer.${ext}"
+          artifactName: "${productName}.${version}.Installer.${ext}"
         },
         linux: {
           icon: "buildResources/icons",

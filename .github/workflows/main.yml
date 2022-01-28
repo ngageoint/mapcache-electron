@@ -1,0 +1,72 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build
+
+# Controls when the workflow will run
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+# build workflow
+jobs:
+  build_on_mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@master
+        with:
+          node-version: 16.9.1
+      - name: install dependencies
+        run: yarn install
+      - name: Get package version
+        id: package
+        uses: codex-team/action-nodejs-package-info@v1
+      - name: build
+        run: yarn electron:build-win
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--max_old_space_size=4096"
+      - name: Upload DMG
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.package.outputs.version }}.dmg
+          path: |
+            dist_electron/*.dmg
+      - name: Upload PKG
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.package.outputs.version }}.pkg
+          path: |
+            dist_electron/*.pkg
+  build_on_win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@master
+        with:
+          node-version: 16.9.1
+      - name: install dependencies
+        run: yarn install
+      - name: Get package version
+        id: package
+        uses: codex-team/action-nodejs-package-info@v1
+      - name: build
+        run: yarn electron:build-mac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--max_old_space_size=4096"
+      - name: Upload Standalone Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.package.outputs.version }}.exe
+          path: |
+            dist_electron/*.exe
+            !dist_electron/*.Installer.exe
+      - name: Upload Installer Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.package.outputs.version }}.Installer.exe
+          path: |
+            dist_electron/*.Installer.exe
