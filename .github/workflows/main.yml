@@ -26,9 +26,9 @@ jobs:
         run: yarn install
       - name: build
         run: yarn electron:build-win
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--max_old_space_size=4096"
   build_on_win:
     runs-on: windows-latest
     steps:
@@ -40,5 +40,6 @@ jobs:
         run: yarn install
       - name: build
         run: yarn electron:build-mac
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--max_old_space_size=4096"
