@@ -4,13 +4,9 @@ name: Build
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-#  push:
-#    branches: [ develop ]
-#  pull_request:
-#    branches: [ develop ]
-
-  # Allows you to run this workflow manually from the Actions tab
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 # build workflow
@@ -24,17 +20,25 @@ jobs:
           node-version: 16.9.1
       - name: install dependencies
         run: yarn install
+      - name: Tag Version
+        id: get_version
+        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
       - name: build
         run: yarn electron:build-win
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--max_old_space_size=4096"
-      - name: Upload artifacts
+      - name: Upload DMG
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache Executables
+          name: MapCache.${{ steps.vars.outputs.tag }}.dmg
           path: |
             dist_electron/*.dmg
+      - name: Upload PKG
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.vars.outputs.tag }}.pkg
+          path: |
             dist_electron/*.pkg
   build_on_win:
     runs-on: windows-latest
@@ -45,14 +49,24 @@ jobs:
           node-version: 16.9.1
       - name: install dependencies
         run: yarn install
+      - name: Tag Version
+        id: get_version
+        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
       - name: build
         run: yarn electron:build-mac
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--max_old_space_size=4096"
-      - name: Upload artifacts
+      - name: Upload Standalone Executable
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache Executables
+          name: MapCache.${{ steps.vars.outputs.tag }}.exe
           path: |
             dist_electron/*.exe
+            !dist_electron/*.Installer.exe
+      - name: Upload Installer Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: MapCache.${{ steps.vars.outputs.tag }}.Installer.exe
+          path: |
+            dist_electron/*.Installer.exe
