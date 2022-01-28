@@ -31,13 +31,13 @@ jobs:
       - name: Upload DMG
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.v${{ steps.package.outputs.version }}.dmg
+          name: MapCache.${{ steps.package.outputs.version }}.dmg
           path: |
             dist_electron/*.dmg
       - name: Upload PKG
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.v${{ steps.package.outputs.version }}.pkg
+          name: MapCache.${{ steps.package.outputs.version }}.pkg
           path: |
             dist_electron/*.pkg
   build_on_win:
@@ -60,13 +60,13 @@ jobs:
       - name: Upload Standalone Executable
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.v${{ steps.package.outputs.version }}.exe
+          name: MapCache.${{ steps.package.outputs.version }}.exe
           path: |
             dist_electron/*.exe
             !dist_electron/*.Installer.exe
       - name: Upload Installer Executable
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.v${{ steps.package.outputs.version }}.Installer.exe
+          name: MapCache.${{ steps.package.outputs.version }}.Installer.exe
           path: |
             dist_electron/*.Installer.exe
