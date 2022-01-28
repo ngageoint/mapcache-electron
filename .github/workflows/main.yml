@@ -20,9 +20,9 @@ jobs:
           node-version: 16.9.1
       - name: install dependencies
         run: yarn install
-      - name: Tag Version
-        id: get_version
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
+      - name: Get package version
+        id: package
+        uses: codex-team/action-nodejs-package-info@v1
       - name: build
         run: yarn electron:build-win
         env:
@@ -31,13 +31,13 @@ jobs:
       - name: Upload DMG
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.${{ steps.vars.outputs.tag }}.dmg
+          name: MapCache.v${{ steps.package.outputs.version }}.dmg
           path: |
             dist_electron/*.dmg
       - name: Upload PKG
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.${{ steps.vars.outputs.tag }}.pkg
+          name: MapCache.v${{ steps.package.outputs.version }}.pkg
           path: |
             dist_electron/*.pkg
   build_on_win:
@@ -49,9 +49,9 @@ jobs:
           node-version: 16.9.1
       - name: install dependencies
         run: yarn install
-      - name: Tag Version
-        id: get_version
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
+      - name: Get package version
+          id: package
+          uses: codex-team/action-nodejs-package-info@v1
       - name: build
         run: yarn electron:build-mac
         env:
@@ -60,13 +60,13 @@ jobs:
       - name: Upload Standalone Executable
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.${{ steps.vars.outputs.tag }}.exe
+          name: MapCache.v${{ steps.package.outputs.version }}.exe
           path: |
             dist_electron/*.exe
             !dist_electron/*.Installer.exe
       - name: Upload Installer Executable
         uses: actions/upload-artifact@v2
         with:
-          name: MapCache.${{ steps.vars.outputs.tag }}.Installer.exe
+          name: MapCache.v${{ steps.package.outputs.version }}.Installer.exe
           path: |
             dist_electron/*.Installer.exe
