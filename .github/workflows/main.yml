@@ -50,8 +50,8 @@ jobs:
       - name: install dependencies
         run: yarn install
       - name: Get package version
-          id: package
-          uses: codex-team/action-nodejs-package-info@v1
+        id: package
+        uses: codex-team/action-nodejs-package-info@v1
       - name: build
         run: yarn electron:build-mac
         env:
