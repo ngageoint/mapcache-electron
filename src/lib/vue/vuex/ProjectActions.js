@@ -53,6 +53,27 @@ async function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+function updateAllFeatureTableStyleKeys (projectId, id, isGeoPackage, isBaseMap = false) {
+  if (isGeoPackage) {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
+    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+    const featureTables = Object.keys(geopackage.tables.features)
+    for (let i = 0; i < featureTables.length; i++) {
+      const table = featureTables[i]
+      geopackage.tables.features[table].styleKey = geopackage.tables.features[table].styleKey + 1
+    }
+    store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
+  } else if (isBaseMap) {
+    const baseMap = cloneDeep(store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id))
+    baseMap.layerConfiguration.styleKey = baseMap.layerConfiguration.styleKey + 1
+    store.dispatch('BaseMaps/editBaseMap', baseMap)
+  } else {
+    const source = cloneDeep(store.state.Projects[projectId].sources[id])
+    source.styleKey = source.styleKey + 1
+    store.dispatch('Projects/setDataSource', {projectId, source})
+  }
+}
+
 function updateStyleKey (projectId, id, tableName, isGeoPackage, isBaseMap = false) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
@@ -325,28 +346,28 @@ function createIconRow ({projectId, id, tableName, isGeoPackage, icon, isBaseMap
 function updateStyleRow ({projectId, id, tableName, styleRow, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
   GeoPackageStyleUtilities.updateStyleRow(filePath, tableName, styleRow).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+    updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
 function updateIconRow ({projectId, id, tableName, iconRow, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
   GeoPackageStyleUtilities.updateIconRow(filePath, tableName, iconRow).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+    updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function deleteStyleRow ({projectId, id, tableName, styleId, isGeoPackage, isBaseMap}) {
+function deleteStyleRow ({projectId, id, styleId, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.deleteStyleRow(filePath, tableName, styleId).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+  GeoPackageStyleUtilities.deleteStyleRow(filePath, styleId).then(function () {
+    updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function deleteIconRow ({projectId, id, tableName, iconId, isGeoPackage, isBaseMap}) {
+function deleteIconRow ({projectId, id, iconId, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.deleteIconRow(filePath, tableName, iconId).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+  GeoPackageStyleUtilities.deleteIconRow(filePath, iconId).then(function () {
+    updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
@@ -360,7 +381,7 @@ function addStyleExtensionForTable ({projectId, id, tableName, isGeoPackage, isB
 function removeStyleExtensionForTable ({projectId, id, tableName, isGeoPackage, isBaseMap}) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
   GeoPackageStyleUtilities.removeStyleExtensionForTable(filePath, tableName).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
+    updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 

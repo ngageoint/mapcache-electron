@@ -190,7 +190,7 @@
     <v-footer class="background" v-if="editing">
       <v-spacer/>
       <v-btn v-if="editing" @click="disableEdit" text>Cancel</v-btn>
-      <v-btn v-if="editing" @click="saveChanges" text color="primary">Save</v-btn>
+      <v-btn v-if="editing" :disabled="!formValid" @click="saveChanges" text color="primary">Save</v-btn>
     </v-footer>
   </v-sheet>
 </template>

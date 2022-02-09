@@ -12,6 +12,7 @@ import {
   ProjectionConstants,
   SqliteQueryBuilder,
   FeatureTableReader,
+  UserRow,
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
@@ -21,6 +22,10 @@ import isObject from 'lodash/isObject'
 import reproject from 'reproject'
 import wkx from 'wkx'
 import bbox from '@turf/bbox'
+import area from '@turf/area'
+import distance from '@turf/distance'
+import pointToLineDistance from '@turf/point-to-line-distance'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import moment from 'moment'
 import {
   performSafeGeoPackageOperation,
@@ -28,13 +33,19 @@ import {
   getQueryBoundingBoxForCoordinateAndZoom,
   _calculateTrueExtentForFeatureTable
 } from './GeoPackageCommon'
-import {_addMediaAttachment, _getMediaAttachmentsCounts} from './GeoPackageMediaUtilities'
+import {
+  _addMedia,
+  _addMediaAttachment,
+  _getMediaAttachmentsCounts,
+  _linkMediaToFeature
+} from './GeoPackageMediaUtilities'
 import {
   _addOrSetStyleForFeature,
   _clearStylingForFeature,
   _getStyleAssignmentForFeatures,
 } from './GeoPackageStyleUtilities'
 import orderBy from 'lodash/orderBy'
+import {getMediaTableName} from '../util/media/MediaUtilities'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
@@ -216,7 +227,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   const columns = []
   columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-  const extent = bbox(featureCollection)
+  const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
   const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
   const featureDao = gp.getFeatureDao(tableName)
@@ -262,18 +273,19 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
         featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
       }
 
+      // object correction
+      if (isObject(feature.properties[key])) {
+        feature.properties[key] = JSON.stringify(feature.properties[key])
+      }
+
       // date correction
-      if (featureDao.table.columns.getColumn(key).getDataType() === GeoPackageDataType.DATETIME) {
+      const dataType = featureDao.table.columns.getColumn(key).getDataType()
+      if (dataType === GeoPackageDataType.DATE || dataType === GeoPackageDataType.DATETIME) {
         if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
           feature.properties[key] = moment.utc(feature.properties[key]).toDate()
         } else {
           delete feature.properties[key]
         }
-      }
-
-      // object correction
-      if (isObject(feature.properties[key])) {
-        feature.properties[key] = JSON.stringify(feature.properties[key])
       }
     })
 
@@ -292,7 +304,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
  * Done also returns the number of features added and extent of the data in the table
  * @param gp
  * @param tableName
- * @return {Promise<{adjustBatchSize: adjustBatchSize, addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): {extent: [(number|*), (number|*), (number|*), (number|*)], count: *}), addIcon: (function(*): number)}>}
+ * @return {Promise<{adjustBatchSize: function, addMediaAttachment: function, setFeatureIcon: function, addField: function, setFeatureStyle: function, processBatch: function, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): {extent: [(number|*), (number|*), (number|*), (number|*)], count: *}), addIcon: (function(*): number)}>}
  * @private
  */
 async function _createFeatureTableWithFeatureStream (gp, tableName) {
@@ -315,6 +327,8 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   const srs = featureDao.srs;
   let iconMappingDao
   let styleMappingDao
+  let tableIconMappingDao
+  let tableStyleMappingDao
   let styleDao
   let iconDao
   let featureStyleExtension
@@ -328,35 +342,54 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   featureTableStyles.createIconRelationship()
   iconMappingDao = featureTableStyles.getIconMappingDao()
   styleMappingDao = featureTableStyles.getStyleMappingDao()
+  tableIconMappingDao = featureTableStyles.getTableIconMappingDao()
+  tableStyleMappingDao = featureTableStyles.getTableStyleMappingDao()
+  const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName).id
   styleDao = featureTableStyles.getStyleDao()
   iconDao = featureTableStyles.getIconDao()
   featureStyleExtension = featureTableStyles.getFeatureStyleExtension()
 
   const addStyle = (style) => {
-    const featureStyleRow = styleDao.newRow()
-    featureStyleRow.setColor(style.color, style.opacity)
-    featureStyleRow.setFillColor(style.fillColor, style.fillOpacity)
-    featureStyleRow.setWidth(style.width)
-    featureStyleRow.setName(style.name)
+    let featureStyleRow
+    if (style instanceof UserRow) {
+      style.resetId()
+      featureStyleRow = style
+    } else {
+      featureStyleRow = styleDao.newRow()
+      featureStyleRow.setColor(style.color, style.opacity)
+      featureStyleRow.setFillColor(style.fillColor, style.fillOpacity)
+      featureStyleRow.setWidth(style.width)
+      featureStyleRow.setName(style.name)
+    }
     return featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(featureStyleRow)
   }
 
   const addIcon = (icon) => {
-    const featureIconRow = iconDao.newRow()
-    featureIconRow.data = icon.data
-    featureIconRow.contentType = icon.contentType
-    featureIconRow.width = icon.width
-    featureIconRow.height = icon.height
-    featureIconRow.anchorU = icon.anchorU
-    featureIconRow.anchorV = icon.anchorV
-    featureIconRow.name = icon.name
+    let featureIconRow
+    if (icon instanceof UserRow) {
+      icon.resetId()
+      featureIconRow = icon
+    } else {
+      featureIconRow = iconDao.newRow()
+      featureIconRow.data = icon.data
+      featureIconRow.contentType = icon.contentType
+      featureIconRow.width = icon.width
+      featureIconRow.height = icon.height
+      featureIconRow.anchorU = icon.anchorU
+      featureIconRow.anchorV = icon.anchorV
+      featureIconRow.name = icon.name
+    }
     return featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(featureIconRow)
   }
 
   const addField = (field) => {
     if (definedColumnNames[field.name.toLowerCase()] == null) {
       definedColumnNames[field.name.toLowerCase()] = true
-      featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), field.name, GeoPackageDataType.fromName(field.dataType), undefined, field.notNull, field.defaultValue))
+      const column = new FeatureColumn(featureDao.table.columns.columnCount(), field.name, field.dataType, field.max, field.notNull, field.defaultValue)
+      column.unique = field.unique
+      column.constraints = field.constraints
+      column.min = field.min
+      featureDao.addColumn(column)
     }
   }
 
@@ -383,6 +416,15 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   let geometryData = new GeometryData()
   geometryData.setSrsId(srs.srs_id)
 
+  // setup a media table for this feature table
+  const mediaTableName = getMediaTableName()
+  const rte = gp.relatedTablesExtension
+  if (!gp.connection.isTableExists(mediaTableName)) {
+    const mediaTable = MediaTable.create(mediaTableName)
+    rte.createRelatedTable(mediaTable)
+  }
+  const mediaDao = rte.getMediaDao(mediaTableName)
+
   const handleQueuedStylesAndAttachments = () => {
     while (styleQueue.length > 0) {
       const args = styleQueue.shift()
@@ -394,7 +436,11 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     }
     while (attachmentQueue.length > 0) {
       const args = attachmentQueue.shift()
-      _addMediaAttachment(gp, tableName, args[0], args[1])
+      const featureRow = featureDao.newRow()
+      featureRow.id = args[0]
+      const mediaRow = mediaDao.newRow()
+      mediaRow.id = args[1]
+      _linkMediaToFeature(gp, featureDao, featureRow, mediaRow)
     }
   }
 
@@ -406,15 +452,23 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     iconQueue.push([featureRowId, iconRowId, geometryType])
   }
 
+  const setTableStyle = (styleId, geometryType) => {
+    featureTableStyles.getFeatureStyleExtension().insertStyleMapping(tableStyleMappingDao, featureContentsId, styleId, GeometryType.fromName(geometryType))
+  }
+
+  const setTableIcon = (iconId, geometryType) => {
+    featureTableStyles.getFeatureStyleExtension().insertStyleMapping(tableIconMappingDao, featureContentsId, iconId, GeometryType.fromName(geometryType))
+  }
+
   const addMediaAttachment = (featureRowId, attachment) => {
-    attachmentQueue.push([featureRowId, attachment])
+    attachmentQueue.push([featureRowId, (typeof attachment === 'number' ? attachment : _addMedia(gp, mediaDao, attachment))])
   }
 
   const processBatch = () => {
     // batch insert features
     const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
     const reprojectionNeeded = !(srs.organization === ProjectionConstants.EPSG && srs.organization_coordsys_id === ProjectionConstants.EPSG_CODE_4326)
-    const insertSql = SqliteQueryBuilder.buildInsert("'" + featureDao.gpkgTableName + "'", featureRow)
+    const insertSql = SqliteQueryBuilder.buildInsert('\'' + featureDao.gpkgTableName + '\'', featureRow)
     featureRow = featureDao.newRow()
     featureDao.connection.transaction(() => {
       // builds the insert sql statement
@@ -435,9 +489,13 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         featureRow.geometry = geometryData
         for (const propertyKey in feature.properties) {
           if (Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
-            featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
+            try {
+              featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
+              // eslint-disable-next-line no-unused-vars, no-empty
+            } catch (e) {}
           }
         }
+
         // bind this feature's data to the insert statement and insert into the table
         const id = featureDao.connection.adapter.bindAndInsert(insertStatement, SqliteQueryBuilder.buildUpdateOrInsertObject(featureRow))
 
@@ -493,18 +551,24 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
       }
 
-      // date correction
-      if (featureDao.table.columns.getColumn(key).getDataType() === GeoPackageDataType.DATETIME) {
-        if (!isNil(feature.properties[key]) && !isEmpty(feature.properties[key])) {
-          feature.properties[key] = moment.utc(feature.properties[key]).toDate()
-        } else {
-          delete feature.properties[key]
-        }
-      }
-
       // object correction
       if (isObject(feature.properties[key])) {
         feature.properties[key] = JSON.stringify(feature.properties[key])
+      }
+
+      // date correction
+      const dataType = featureDao.table.columns.getColumn(key).getDataType()
+      if (dataType === GeoPackageDataType.DATETIME || dataType === GeoPackageDataType.DATE) {
+        if (feature.properties[key] == null) {
+          delete feature.properties[key]
+        } else {
+          try {
+            feature.properties[key] = moment.utc(feature.properties[key]).toDate()
+            // eslint-disable-next-line no-unused-vars
+          } catch (e) {
+            delete feature.properties[key]
+          }
+        }
       }
     })
 
@@ -532,7 +596,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     }
   }
 
-  return { adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, done }
+  return { adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, setTableStyle, setTableIcon, processBatch, done }
 }
 
 /**
@@ -1054,7 +1118,7 @@ function _getFeatureCount (gp, tableName, search) {
     const featureDao = gp.getFeatureDao(tableName)
     const whereClause = _getWhereClause(featureDao, search)
     if (whereClause != null) {
-      const query = SqliteQueryBuilder.buildCount("'" + tableName + "'", whereClause)
+      const query = SqliteQueryBuilder.buildCount('\'' + tableName + '\'', whereClause)
       count = featureDao.connection.get(query).count
     } else {
       count = featureDao.count()
@@ -1173,7 +1237,13 @@ function _getFeatureViewData (gp, tableName, featureId) {
       const featureStyleExtension = new FeatureTableStyles(gp, tableName).getFeatureStyleExtension()
       const icon = featureStyleExtension.getIcon(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
       const style = featureStyleExtension.getStyle(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
-      if (style != null) {
+      const tableIcon = featureStyleExtension.getTableIcon(tableName, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+      const tableStyle = featureStyleExtension.getTableStyle(tableName, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+      if (icon != null) {
+        featureData.style.icon = {
+          url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+        }
+      } else if (style != null) {
         featureData.style.style = {
           id: style.id,
           name: style.getName(),
@@ -1184,9 +1254,20 @@ function _getFeatureViewData (gp, tableName, featureId) {
           fillOpacity: style.getFillOpacityOrDefault(),
           width: style.getWidth()
         }
-      } else if (icon != null) {
+      } else if (tableIcon != null) {
         featureData.style.icon = {
-          url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
+          url: 'data:' + tableIcon.contentType + ';base64,' + tableIcon.data.toString('base64')
+        }
+      } else if (tableStyle != null) {
+        featureData.style.style = {
+          id: tableStyle.id,
+          name: tableStyle.getName(),
+          description: tableStyle.getDescription(),
+          color: tableStyle.getHexColor(),
+          opacity: tableStyle.getOpacity(),
+          fillColor: tableStyle.getFillHexColor(),
+          fillOpacity: tableStyle.getFillOpacityOrDefault(),
+          width: tableStyle.getWidth()
         }
       } else {
         featureData.style.style = {
@@ -1241,34 +1322,150 @@ async function checkUnique (filePath, tableName, column, value) {
 }
 
 /**
- * Get the feature on top
- * @param gp
- * @param tableName
- * @param latlng
- * @param zoom
- * @return {Promise<null>}
+ * Determines the distance from a geojson feature to a coordinate in meters
+ * @param coordinate
+ * @param feature
+ * @returns {number}
  */
-async function _getTopFeature (gp, tableName, latlng, zoom) {
-  let feature = null
-  const featureDao = gp.getFeatureDao(tableName)
-  const srs = featureDao.srs
-  const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
-  const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
-  const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
-  const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC')
-  const row = featureDao.connection.get(query, geomEnvelope.whereArgs)
-  if (!isNil(row)) {
-    feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureDao.getRow(row), srs)
-    feature.type = 'Feature'
-    feature.id = row.id
+function getDistanceToCoordinateInMeters(coordinate, feature) {
+  let distanceInMeters = Number.MAX_SAFE_INTEGER
+  switch (feature.geometry.type) {
+    case 'Point':
+      distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, {units: 'kilometers'}) * 1000.0
+      break
+    case 'LineString':
+      distanceInMeters = pointToLineDistance(coordinate, feature, {units: 'kilometers'}) * 1000.0
+      break
+    case 'MultiPoint':
+      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+        distanceInMeters = Math.min(distanceInMeters, distance([feature.geometry.coordinates[i][0], feature.geometry.coordinates[i][1]], coordinate, {units: 'kilometers'}) * 1000.0)
+      }
+      break
+    case 'MultiLineString':
+      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+        distanceInMeters = Math.min(distanceInMeters, pointToLineDistance(coordinate, {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: feature.geometry.coordinates[i]
+          }
+        }, {units: 'kilometers'}) * 1000.0)
+      }
+      break
+    case 'GeometryCollection':
+      for (let i = 0; i < feature.geometries.length; i++) {
+        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, {
+          type: 'Feature',
+          properties: {},
+          geometry: feature.geometries[i]
+        }))
+      }
+      break
+    case 'Polygon':
+      distanceInMeters = booleanPointInPolygon(coordinate, feature) ? 10 : -1
+      break
+    case 'MultiPolygon':
+      distanceInMeters = booleanPointInPolygon(coordinate, feature) ? 10 : -1
+      break
+    default:
+      break
   }
-  return feature
+  return distanceInMeters
 }
 
-async function getTopFeature (filePath, tableName, latlng, zoom) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getTopFeature(gp, tableName, latlng, zoom)
-  })
+/**
+ * Determines the minimum distance a feature must be from the cursor (in meters)
+ * @param latitude
+ * @param zoom
+ * @returns {number}
+ */
+function determineMinDistanceBasedOnZoom (latitude, zoom) {
+  const EARTH_RADIUS_METERS = 6378137.0
+  return Math.abs(Math.PI * 2.0 * EARTH_RADIUS_METERS * Math.cos(latitude) / Math.pow(2.0, zoom + 8)) * 6
+}
+
+/**
+ * Get closest feature among the given layers
+ * @param layers
+ * @param latlng
+ * @param zoom
+ * @returns {Promise<{feature: null, distance: number, layer: null}>}
+ * @private
+ */
+async function _getClosestFeature (layers, latlng, zoom) {
+  let closestFeature = null
+  let closestDistance = Number.MAX_SAFE_INTEGER
+  let closestLayer = null
+  let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
+  const polygonFeatures = []
+  for (let lId = 0; lId < layers.length; lId++) {
+    const layer = layers[lId]
+    await performSafeGeoPackageOperation(layer.path, (gp) => {
+      const featureDao = gp.getFeatureDao(layer.tableName)
+      const srs = featureDao.srs
+      const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
+      const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+      const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+      const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
+      const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
+      const coordinate = [latlng.lng, latlng.lat]
+      for (let i = 0; i < rows.length; i++) {
+        const featureRow = featureDao.getRow(rows[i])
+        const featureId = featureRow.id
+        const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+        feature.type = 'Feature'
+        feature.id = featureId
+        if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+          const polygonData = {
+            feature,
+            distance: getDistanceToCoordinateInMeters(coordinate, feature),
+            area: area(feature),
+            layer: layer
+          }
+          // ignore polygons where the coordinate is not within
+          if (polygonData.distance > 0) {
+            polygonFeatures.push(polygonData)
+          }
+        } else {
+          if (closestFeature == null) {
+            closestFeature = feature
+            closestDistance = getDistanceToCoordinateInMeters(coordinate, feature)
+            closestLayer = layer
+          } else {
+            const distance = getDistanceToCoordinateInMeters(coordinate, feature)
+            if (distance < closestDistance) {
+              closestFeature = feature
+              closestDistance = distance
+              closestLayer = layer
+            }
+          }
+        }
+      }
+    })
+  }
+
+  if (polygonFeatures.length > 0 && closestDistance > minDistanceAway) {
+    polygonFeatures.sort((a, b) => a.area - b.area)
+    closestDistance = minDistanceAway
+    closestFeature = polygonFeatures[0].feature
+    closestLayer = polygonFeatures[0].layer
+  }
+
+  if (closestDistance > minDistanceAway) {
+    closestFeature = null
+    closestLayer = null
+  }
+
+  return {
+    feature: closestFeature,
+    distance: closestDistance,
+    layer: closestLayer
+  }
+}
+
+async function getClosestFeature (layers, latlng, zoom) {
+  return _getClosestFeature(layers, latlng, zoom)
 }
 
 /**
@@ -1529,6 +1726,22 @@ async function countOfFeaturesAt (filePath, tableNames, coordinate, zoom) {
   })
 }
 
+// TODO: verify this is working by creating two feature tables, each with two rows with similar constraints, but have one be named
+function constraintsEqual (constraintsA, constraintsB) {
+  let equal = true
+
+  if (!isNil(constraintsA) && !isNil(constraintsB)) {
+    const allAConstraints = constraintsA.all()
+    const allBConstraints = constraintsB.all()
+    if (allAConstraints.length === allBConstraints.length) {
+      equal = allAConstraints.filter(constraint => !isNil(allBConstraints.find(c => c.sql === constraint.sql))).length === allAConstraints.length
+    }
+  } else if (constraintsA === constraintsB) {
+    equal = true
+  }
+  return equal
+}
+
 /**
  * merges feature columns from several tables to be used in a new table
  * will create new column if data type is different
@@ -1680,13 +1893,17 @@ function getEditableColumnObject (column, properties) {
   if (!column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id') {
     columnObject.rules = []
     if (column.notNull) {
-      columnObject.rules.push(v => !!v || (column.lowerCaseName + ' is required'))
+      columnObject.rules.push(v => v != null || (column.name.toLowerCase() + ' is required'))
     }
     if (column.max) {
-      columnObject.rules.push(v => v < column.max || (column.lowerCaseName + ' exceeds the max of ' + column.max))
+      if (column.dataType === GeoPackageDataType.TEXT) {
+        columnObject.rules.push(v => v == null || v.length < column.max || (column.name.toLowerCase() + ' exceeds the max length of ' + column.max))
+      } else {
+        columnObject.rules.push(v => v < column.max || (column.name.toLowerCase() + ' exceeds the max of ' + column.max))
+      }
     }
     if (column.min) {
-      columnObject.rules.push(v => v < column.min || (column.lowerCaseName + ' is below the min of ' + column.min))
+      columnObject.rules.push(v => v < column.min || (column.name.toLowerCase() + ' is below the min of ' + column.min))
     }
 
     // TODO update this to perform a database check for uniqueness
@@ -1784,13 +2001,13 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
  * done will signal to close the geopackage and return the stats from the streaming, extent of data in table and count of rows in table.
  * @param fileName
  * @param tableName
- * @return {Promise<{adjustBatchSize: adjustBatchSize, addMediaAttachment: addMediaAttachment, setFeatureIcon: setFeatureIcon, addField: addField, setFeatureStyle: setFeatureStyle, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): *), addIcon: (function(*): number)}>}
+ * @return {Promise<{adjustBatchSize: function, addMediaAttachment: function, setFeatureIcon: function, addField: function, setFeatureStyle: function, setTableStyle: function, setTableIcon: function, processBatch: function, addFeature: (function(*=): number), addStyle: (function(*): number), done: (function(): *), addIcon: (function(*): number)}>}
  */
 async function streamingGeoPackageBuild (fileName, tableName) {
   // create the geopackage
   let gp = await GeoPackageAPI.create(fileName)
 
-  let {adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+  let {adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, setTableStyle, setTableIcon, processBatch, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
 
   return {
     adjustBatchSize: adjustBatchSize,
@@ -1801,6 +2018,9 @@ async function streamingGeoPackageBuild (fileName, tableName) {
     addIcon: addIcon,
     setFeatureStyle: setFeatureStyle,
     setFeatureIcon: setFeatureIcon,
+    setTableStyle: setTableStyle,
+    setTableIcon: setTableIcon,
+    processBatch: processBatch,
     done: async () => {
       const result = await done()
       try {
@@ -1875,8 +2095,10 @@ export {
   getGeoPackageEditableColumnsForFeature,
   saveGeoPackageEditedFeature,
   getEditableColumnObject,
-  getTopFeature,
+  getClosestFeature,
   getFeatureViewData,
   checkUnique,
-  _addGeoPackageFeatureTableColumns
+  _addGeoPackageFeatureTableColumns,
+  constraintsEqual,
+  _createFeatureTableWithFeatureStream
 }

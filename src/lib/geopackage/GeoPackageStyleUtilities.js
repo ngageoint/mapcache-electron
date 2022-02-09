@@ -446,6 +446,80 @@ function _getStyleRowObjects(gp, tableName) {
 }
 
 /**
+ * Iterates over styles referenced by a feature table
+ * @param gp
+ * @param tableName
+ * @param callback
+ * @private
+ */
+function _iterateStyleRows (gp, tableName, callback) {
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  let styleDao = featureTableStyles.getStyleDao()
+  if (!isNil(styleDao)) {
+    const each = styleDao.queryForEach()
+    for (let row of each) {
+      if (!isNil(row)) {
+        callback(styleDao.createObject(row))
+      }
+    }
+  }
+}
+
+/**
+ * Iterates over icons referenced by a feature table
+ * @param gp
+ * @param tableName
+ * @param callback
+ * @private
+ */
+function _iterateIconRows (gp, tableName, callback) {
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  let iconDao = featureTableStyles.getIconDao()
+  if (!isNil(iconDao)) {
+    const each = iconDao.queryForEach()
+    for (let row of each) {
+      if (!isNil(row)) {
+        callback(iconDao.createObject(row))
+      }
+    }
+  }
+}
+
+
+/**
+ * Iterates table style mappings
+ * @param gp
+ * @param tableName
+ * @param callback
+ * @private
+ */
+function _iterateTableStyleMappings (gp, tableName, callback) {
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  const tableStyleMappingDao = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName)
+  if (!isNil(tableStyleMappingDao)) {
+    let each = tableStyleMappingDao.queryForEach()
+    for (let row of each) {
+      if (!isNil(row)) {
+        callback(tableStyleMappingDao.createObject(row))
+      }
+    }
+  }
+}
+
+function _iterateTableIconMappings (gp, tableName, callback) {
+  let featureTableStyles = new FeatureTableStyles(gp, tableName)
+  const tableIconMappingDao = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName)
+  if (!isNil(tableIconMappingDao)) {
+    let each = tableIconMappingDao.queryForEach()
+    for (let row of each) {
+      if (!isNil(row)) {
+        callback(tableIconMappingDao.createObject(row))
+      }
+    }
+  }
+}
+
+/**
  * Gets the icon rows for a table
  * @param gp
  * @param tableName
@@ -750,48 +824,48 @@ async function createIconRow(filePath, tableName, icon = getDefaultIcon()) {
 /**
  * Deletes a style row
  * @param gp
- * @param tableName
  * @param styleId
  */
-function _deleteStyleRow(gp, tableName, styleId) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  featureTableStyles.deleteStyleAndMappingsByStyleRowId(styleId)
+function _deleteStyleRow(gp, styleId) {
+  gp.getFeatureTables().forEach(tableName => {
+    let featureTableStyles = new FeatureTableStyles(gp, tableName)
+    featureTableStyles.deleteStyleAndMappingsByStyleRowId(styleId)
+  })
 }
 
 /**
  * Deletes a style row
  * @param filePath
- * @param tableName
  * @param styleId
  * @returns {Promise<any>}
  */
-async function deleteStyleRow(filePath, tableName, styleId) {
+async function deleteStyleRow(filePath, styleId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _deleteStyleRow(gp, tableName, styleId)
+    return _deleteStyleRow(gp, styleId)
   })
 }
 
 /**
  * Deletes an icon row
  * @param gp
- * @param tableName
  * @param iconId
  */
-function _deleteIconRow(gp, tableName, iconId) {
-  let featureTableStyles = new FeatureTableStyles(gp, tableName)
-  featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
+function _deleteIconRow(gp, iconId) {
+  gp.getFeatureTables().forEach(tableName => {
+    let featureTableStyles = new FeatureTableStyles(gp, tableName)
+    featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
+  })
 }
 
 /**
  * Deletes an icon row
  * @param filePath
- * @param tableName
  * @param iconId
  * @returns {Promise<any>}
  */
-async function deleteIconRow(filePath, tableName, iconId) {
+async function deleteIconRow(filePath, iconId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _deleteIconRow(gp, tableName, iconId)
+    return _deleteIconRow(gp, iconId)
   })
 }
 
@@ -1130,39 +1204,6 @@ function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true, feat
   return featureStyleMapping
 }
 
-/**
- * Gets table styles/icons as list of {id, geometryType}
- * @param gp
- * @param tableName
- */
-function _getTableStyleMappings(gp, tableName) {
-  const featureTableStyles = new FeatureTableStyles(gp, tableName)
-  const tableStyleMappingDao = featureTableStyles.getFeatureStyleExtension().getTableStyleMappingDao(tableName)
-  let tableStyleMappings = []
-  if (!isNil(tableStyleMappingDao)) {
-    tableStyleMappings = tableStyleMappingDao.queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
-  }
-  const tableIconMappingDao = featureTableStyles.getFeatureStyleExtension().getTableIconMappingDao(tableName)
-  let tableIconMappings = []
-  if (!isNil(tableIconMappingDao)) {
-    tableIconMappings = tableIconMappingDao.queryForAll().map(record => {
-      return {
-        id: record.related_id,
-        geometryType: GeometryType.fromName(record.geometry_type_name)
-      }
-    })
-  }
-  return {
-    tableIconMappings,
-    tableStyleMappings
-  }
-}
-
 function _getStyleDrawOverlap (gp, tableName) {
   const featureDao = gp.getFeatureDao(tableName)
   const featureTiles = new FeatureTiles(featureDao)
@@ -1343,7 +1384,6 @@ export {
   setFeatureIcon,
   _getAllFeatureIdsAndGeometryTypes,
   _getFeatureStyleMapping,
-  _getTableStyleMappings,
   _getStyleRowObjects,
   _getIconRowObjects,
   getStyleDrawOverlap,
@@ -1354,5 +1394,9 @@ export {
   hasStyleExtension,
   getGeoPackageFeatureTableStyleData,
   getIconImageData,
-  getFeatureStyleOrIcon
+  getFeatureStyleOrIcon,
+  _iterateStyleRows,
+  _iterateIconRows,
+  _iterateTableStyleMappings,
+  _iterateTableIconMappings
 }

@@ -271,12 +271,44 @@ async function getImageAttachments (filePath, tableName, featureId) {
   })
 }
 
+function _linkMediaToFeature (gp, featureDao, featureRow, mediaRow) {
+  featureDao.linkMediaRow(featureRow, mediaRow)
+}
+
+function _addMedia (gp, mediaDao, media) {
+  let buffer
+  let contentType
+  const mediaRow = mediaDao.newRow()
+  if (media.data != null) {
+    buffer = media.data
+    contentType = media.contentType
+  } else {
+    buffer = jetpack.read(media, 'buffer')
+    contentType = getMimeType(media)
+    if (contentType === false) {
+      contentType = 'application/octet-stream'
+    }
+  }
+  // check if table has required columns, other than id, data and content_type
+  const requiredColumns = difference(mediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
+  // iterate over those columns and set them to the default value for that data type, as we do not support
+  // additional columns currently in mapcache media attachments
+  requiredColumns.forEach(columnName => {
+    const type = mediaRow.getRowColumnTypeWithColumnName(columnName)
+    mediaRow.setValueWithColumnName(columnName, getDefaultValueForDataType(type))
+  })
+
+  mediaRow.data = buffer
+  mediaRow.contentType = contentType
+  return mediaDao.create(mediaRow)
+}
+
 /**
  * Adds a media attachment
  * @param gp
  * @param tableName
  * @param featureId
- * @param attachment
+ * @param attachment (either a filePath, media table row (includes the raw data), or an id
  * @returns {Promise<boolean>}
  */
 function _addMediaAttachment (gp, tableName, featureId, attachment) {
@@ -284,11 +316,22 @@ function _addMediaAttachment (gp, tableName, featureId, attachment) {
   try {
     const featureDao = gp.getFeatureDao(tableName)
     const featureRow = featureDao.queryForId(featureId)
-    if (!isNil(featureRow)) {
+    const mediaTableName = getMediaTableName()
+    const rte = gp.relatedTablesExtension
+    if (!gp.connection.isTableExists(mediaTableName)) {
+      const mediaTable = MediaTable.create(mediaTableName)
+      rte.createRelatedTable(mediaTable)
+    }
+    const mediaDao = rte.getMediaDao(mediaTableName)
+    const mediaRow = mediaDao.newRow()
+
+    if (typeof attachment === 'number') {
+      mediaRow.id = attachment
+    } else {
       let buffer
       let contentType
-      if (attachment.raw != null) {
-        buffer = Buffer.from(attachment.raw)
+      if (attachment.data != null) {
+        buffer = attachment.data
         contentType = attachment.contentType
       } else {
         buffer = jetpack.read(attachment, 'buffer')
@@ -297,16 +340,6 @@ function _addMediaAttachment (gp, tableName, featureId, attachment) {
           contentType = 'application/octet-stream'
         }
       }
-
-      const mediaTableName = getMediaTableName()
-      const rte = gp.relatedTablesExtension
-      if (!gp.connection.isTableExists(mediaTableName)) {
-        const mediaTable = MediaTable.create(mediaTableName)
-        rte.createRelatedTable(mediaTable)
-      }
-      const mediaDao = rte.getMediaDao(mediaTableName)
-      const mediaRow = mediaDao.newRow()
-
       // check if table has required columns, other than id, data and content_type
       const requiredColumns = difference(mediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
       // iterate over those columns and set them to the default value for that data type, as we do not support
@@ -319,9 +352,11 @@ function _addMediaAttachment (gp, tableName, featureId, attachment) {
       mediaRow.data = buffer
       mediaRow.contentType = contentType
       mediaRow.id = mediaDao.create(mediaRow)
-      featureDao.linkMediaRow(featureRow, mediaRow)
-      success = true
     }
+    if (!isNil(featureRow) && !isNil(mediaRow)) {
+      featureDao.linkMediaRow(featureRow, mediaRow)
+    }
+    success = true
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -541,5 +576,7 @@ export {
   getFeatureImageObjectUrl,
   getAllAttachments,
   getImageAttachments,
-  getVideoAttachments
+  getVideoAttachments,
+  _linkMediaToFeature,
+  _addMedia
 }

@@ -117,7 +117,7 @@ import {
   getGeoPackageEditableColumnsForFeature,
   saveGeoPackageEditedFeature,
   getEditableColumnObject,
-  getTopFeature,
+  getClosestFeature,
   getFeatureViewData,
   checkUnique,
 } from '../geopackage/GeoPackageFeatureTableUtilities'
@@ -849,7 +849,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   convertToWebMercator,
   getIconImageData,
   addStyleExtensionForTable,
-  getTopFeature,
+  getClosestFeature,
   getFeatureImageObjectUrl,
   getImageAttachments,
   getVideoAttachments,

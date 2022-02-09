@@ -18,19 +18,19 @@ function getFeatureCollectionForLayer (esriLayer) {
 }
 
 const esriToGeoPackageDataTypeMap = {
-  esriFieldTypeSmallInteger: 'TINYINT',
-  esriFieldTypeInteger: 'INTEGER',
-  esriFieldTypeSingle: 'REAL',
-  esriFieldTypeDouble: 'DOUBLE',
-  esriFieldTypeString: 'TEXT',
-  esriFieldTypeDate: 'DATETIME',
-  esriFieldTypeOID: 'INTEGER',
+  esriFieldTypeSmallInteger: 1,
+  esriFieldTypeInteger: 5,
+  esriFieldTypeSingle: 8,
+  esriFieldTypeDouble: 7,
+  esriFieldTypeString: 9,
+  esriFieldTypeDate: 12,
+  esriFieldTypeOID: 5,
   esriFieldTypeGeometry: null,
-  esriFieldTypeBlob: 'BLOB',
+  esriFieldTypeBlob: 10,
   esriFieldTypeRaster: null,
-  esriFieldTypeGUID: 'TEXT',
-  esriFieldTypeGlobalID: 'TEXT',
-  esriFieldTypeXML: 'TEXT'
+  esriFieldTypeGUID: 9,
+  esriFieldTypeGlobalID: 9,
+  esriFieldTypeXML: 9
 }
 
 /**

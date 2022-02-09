@@ -64,8 +64,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   addListeners: () => {
     ipcRenderer.on(WORKER_BUILD_FEATURE_LAYER, (e, data) => {
-      const statusCallback = (status) => {
-        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_STATUS(data.taskId), status)
+      const statusCallback = (message, progress, error) => {
+        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_STATUS(data.taskId), {message, progress, error})
       }
       buildFeatureLayer(data.configuration, statusCallback).then((result) => {
         ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_COMPLETED(data.taskId), result)

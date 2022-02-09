@@ -238,6 +238,22 @@ function projectGeometryTo4326 (geometry, srs) {
 }
 
 /**
+ * Projects a geometry to 4326 from the srs provided
+ * @param geoJSON
+ * @param srs
+ * @returns {wkx.Geometry}
+ */
+function projectGeoJSONTo4326 (geoJSON, srs) {
+  let projectedGeometry = geometry.geometry
+  if (geometry && !geometry.empty && geometry.geometry) {
+    let geoJsonGeom = geometry.geometry.toGeoJSON()
+    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + ':' + srs.srs_id, 'EPSG:4326')
+    projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
+  }
+  return projectedGeometry
+}
+
+/**
  * Determines internal table information for a geopackage
  * @param gp
  * @returns {{features: {}, tiles: {}, unsupported: []}}
@@ -594,7 +610,7 @@ function getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
   return new BoundingBox(normalizeLongitude(coordinate.lng) - queryDistanceDegrees, normalizeLongitude(coordinate.lng) + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
 }
 
-async function wait (timeMs) {
+async function sleep (timeMs) {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve()
@@ -713,7 +729,7 @@ export {
   getBoundingBoxForTable,
   normalizeLongitude,
   getQueryBoundingBoxForCoordinateAndZoom,
-  wait,
+  sleep,
   flatten,
   prettyPrintMs,
   boundingBoxIntersection,

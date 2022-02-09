@@ -69,7 +69,7 @@ import {
   LOAD_OR_DISPLAY_GEOPACKAGES
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
-import {environment} from "../env/env"
+import {environment} from '../env/env'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'

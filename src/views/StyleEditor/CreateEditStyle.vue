@@ -197,7 +197,6 @@ export default {
         window.mapcache.deleteStyleRow({
           projectId: this.projectId,
           id: this.id,
-          tableName: this.tableName,
           styleId: this.styleRow.id,
           isGeoPackage: this.isGeoPackage,
           isBaseMap: this.isBaseMap

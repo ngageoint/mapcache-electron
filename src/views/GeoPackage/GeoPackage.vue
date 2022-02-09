@@ -572,6 +572,8 @@ export default {
             if (this.geopackage == null || newDisplayFeature.id === this.geopackage.id) {
               this.$nextTick(() => {
                 this.layerSelected(newDisplayFeature.tableName)
+                this.hideAddFeatureDialog()
+                this.hideAddTileDialog()
               })
             }
           }

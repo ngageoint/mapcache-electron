@@ -218,7 +218,6 @@ export default {
         window.mapcache.deleteIconRow({
           projectId: this.projectId,
           id: this.id,
-          tableName: this.tableName,
           iconId: this.iconRow.id,
           isGeoPackage: this.isGeoPackage,
           isBaseMap: this.isBaseMap

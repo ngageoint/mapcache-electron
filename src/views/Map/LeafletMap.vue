@@ -527,27 +527,32 @@ export default {
         this.hideFeatureTable()
       }
     },
-    async queryForFeatures (e) {
-      if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing && !this.layerSelectionVisible && !this.showAddFeatureDialog && isNil(this.drawBoundsId) && isNil(this.gridBoundsId)) {
-        let feature = null
-        for (let i = 0; i < this.layerOrder.length && feature == null; i++) {
+    async queryForClosestFeature (e) {
+      if (!this.isMapBusy()) {
+        let layers = []
+        for (let i = 0; i < this.layerOrder.length; i++) {
           const layer = this.layerOrder[i]
           if (layer.type === 'vector') {
             if (layer.geopackageId) {
               const geopackage = this.geopackages[layer.geopackageId]
-              feature = await window.mapcache.getTopFeature(geopackage.path, layer.tableName, e.latlng, this.map.getZoom())
-              if (feature != null) {
-                this.showFeature(layer.geopackageId, true, layer.tableName, feature.id)
-              }
+              layers.push({
+                id: layer.geopackageId,
+                isGeoPackage: true,
+                tableName: layer.tableName,
+                path: geopackage.path
+              })
             } else {
               const source = this.sources[layer.id]
-              feature = await window.mapcache.getTopFeature(source.geopackageFilePath, source.sourceLayerName, e.latlng, this.map.getZoom())
-              if (feature != null) {
-                this.showFeature(layer.id, false, source.sourceLayerName, feature.id)
-              }
+              layers.push({
+                id: layer.id,
+                isGeoPackage: false,
+                tableName: source.sourceLayerName,
+                path: source.geopackageFilePath
+              })
             }
           }
         }
+        return await window.mapcache.getClosestFeature(layers, e.latlng, this.map.getZoom())
       }
     },
     convertLatLng2GARS (lat, lng, label = false) {
@@ -964,6 +969,12 @@ export default {
       sortedLayers.forEach(layerId => {
         newLayerOrder.push(this.layerOrder.find(l => l.id === layerId))
       })
+      for (let i = 0; i < this.layerOrder.length; i++) {
+        const layer = this.layerOrder[i]
+        if (sortedLayers.find(id => id === layer.id) == null) {
+          newLayerOrder.splice(i, 0, layer)
+        }
+      }
       this.layerOrder = newLayerOrder
     },
     registerResizeObserver () {
@@ -1073,6 +1084,9 @@ export default {
         })
       })
     },
+    isMapBusy () {
+      return this.editingControl.isEditing() || this.drawingControl.isDrawing || this.layerSelectionVisible || this.showAddFeatureDialog || !isNil(this.drawBoundsId) || !isNil(this.gridBoundsId) || this.performingReverseQuery
+    },
     setupBaseMaps () {
       for (let i = 0; i < this.baseMaps.length; i++) {
         this.addBaseMap(this.baseMaps[i], this.map)
@@ -1152,44 +1166,25 @@ export default {
       this.project.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
 
     },
-    debounceClickHandler: debounce(function (e) {
-      if (this.consecutiveClicks === 1) {
-        this.queryForFeatures(e )
-      }
+    debounceClickHandler: debounce(function () {
       this.consecutiveClicks = 0
     }, DOUBLE_CLICK_THRESHOLD),
     setupEventHandlers () {
       const self = this
-      const checkFeatureCount = throttle(async function (e) {
-        if (!this.editingControl.isEditing() && !self.drawingControl.isDrawing && !self.layerSelectionVisible && !self.showAddFeatureDialog && isNil(self.drawBoundsId) && isNil(self.gridBoundsId) && !self.performingReverseQuery) {
-          this.removeGeoPackageFeatureHighlight()
-          let feature = null
-          for (let i = 0; i < this.layerOrder.length && feature == null; i++) {
-            const layer = this.layerOrder[i]
-            if (layer.type === 'vector') {
-              if (layer.geopackageId) {
-                const geopackage = this.geopackages[layer.geopackageId]
-                feature = await window.mapcache.getTopFeature(geopackage.path, layer.tableName, e.latlng, this.map.getZoom())
-                if (feature != null) {
-                  await this.highlightGeoPackageFeature(geopackage.path, layer.tableName, feature)
-                }
-              } else {
-                const source = this.sources[layer.id]
-                feature = await window.mapcache.getTopFeature(source.geopackageFilePath, source.sourceLayerName, e.latlng, this.map.getZoom())
-                if (feature != null) {
-                  await this.highlightGeoPackageFeature(source.geopackageFilePath, source.sourceLayerName, feature)
-                }
-              }
-            }
-          }
+      const checkFeatureCount = throttle(async (e) => {
+        if (!this.isMapBusy()) {
+          let {feature, layer} = await this.queryForClosestFeature(e)
           if (feature != null) {
             document.getElementById('map').style.cursor = 'pointer'
+            await this.highlightGeoPackageFeature(layer.id, layer.isGeoPackage, layer.path, layer.tableName, feature)
           } else {
+            this.removeGeoPackageFeatureHighlight()
             document.getElementById('map').style.cursor = ''
           }
         }
-      }.bind(this), 100)
-      this.map.on('click', (e) => {
+      }, 100)
+
+      const clickHandler = (e) => {
         this.showLayerOrderingDialog = false
         this.showGridSelection = false
         this.showBaseMapSelection = false
@@ -1201,7 +1196,9 @@ export default {
           this.debounceClickHandler(e)
         }
         this.nominatimReverseQueryResultsReturned = false
-      })
+      }
+
+      this.map.on('click', clickHandler)
       this.map.on('moveend', () => {
         if (this.map != null) {
           const bounds = this.map.getBounds()
@@ -1712,7 +1709,7 @@ export default {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
         this.zoomToFeature(path, table, featureId)
       } else if (action === FEATURE_TABLE_ACTIONS.HIGHLIGHT_FEATURE) {
-        this.highlightGeoPackageFeature(path, table, feature)
+        this.highlightGeoPackageFeature(id, isGeoPackage, path, table, feature)
       } else if (action === FEATURE_TABLE_ACTIONS.SHOW_FEATURE) {
         this.showFeature(id, isGeoPackage, table, featureId)
       }
@@ -1879,5 +1876,11 @@ export default {
   .mgrs-100km-label {
     border: #2e2e2e 1px solid !important;
     background: #FFFF00AA !important;
+  }
+  .darken {
+    filter: brightness(1.0) !important;
+  }
+  .pressed {
+    filter: brightness(1.2) !important;
   }
 </style>

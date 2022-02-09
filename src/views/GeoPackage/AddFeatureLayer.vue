@@ -6,19 +6,26 @@
       flat
       class="sticky-toolbar"
     >
-      <v-toolbar-title>{{geopackage.name + ': Add feature layer'}}</v-toolbar-title>
+      <v-toolbar-title>{{geopackage.name + ': ' + layerName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet v-if="processing" class="mapcache-sheet-content detail-bg">
       <v-card flat tile class="ma-0 pa-0">
-        <v-card-title>{{'Adding ' + layerName}}</v-card-title>
+        <v-card-title>{{'Adding feature layer'}}</v-card-title>
         <v-card-text>
-          <v-card-subtitle>{{status.message}}</v-card-subtitle>
           <p v-if="status.error">
             {{ status.error }}
           </p>
-          <v-progress-linear class="mt-4" :indeterminate="status.progress === -1" :value="status.error ? 100 : status.progress" :color="status.error ? 'warning' : 'primary'"></v-progress-linear>
+          <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+            Status
+          </p>
+          <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+            {{status.message + (!cancelling ? (': ' + (status.error ? 100 : status.progress) + '%') : '')}}
+          </p>
+          <p class="pt-2">
+            <v-progress-linear :indeterminate="status.progress === -1" :color="status.error ? 'warning' : 'primary'" :value="status.error ? 100 : status.progress"></v-progress-linear>
+          </p>
         </v-card-text>
-        <v-card-actions class="mt-8">
+        <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
             v-if="!done"
@@ -168,11 +175,51 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" :rules="[() => !isEditingBoundingBox() || (Number(step) === 4)]" color="primary">
+        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
+          Order layers
+          <small class="pt-1">{{selectedGeoPackageFeatureLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''}}</small>
+        </v-stepper-step>
+        <v-stepper-content step="4">
+          <v-card flat tile>
+            <v-card-subtitle class="pt-0">
+              Drag the layers to specify the rendering order. Layers at the top of the list will be rendered on top.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-list
+                  id="sortable-list"
+                  style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
+                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
+                  dense>
+                <v-list-item
+                    v-for="item in sortedLayers"
+                    class="sortable-list-item"
+                    :key="item.id">
+                  <v-list-item-icon class="mt-1">
+                    <v-btn icon @click.stop="item.zoomTo">
+                      <img v-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                    </v-btn>
+                  </v-list-item-icon>
+                  <v-list-item-content class="pa-0 ma-0">
+                    <v-list-item-title v-text="item.title"></v-list-item-title>
+                    <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
+                    <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+                  </v-list-item-icon>
+                </v-list-item>
+              </v-list>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 5">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 5" step="5" :rules="[() => !isEditingBoundingBox() || (Number(step) === 5)]" color="primary">
           Specify bounding box filter (optional)
           <small class="pt-1">{{isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box applied' : 'No bounding box')}}</small>
         </v-stepper-step>
-        <v-stepper-content step="4">
+        <v-stepper-content step="5">
           <v-card flat tile>
             <v-card-subtitle>
               Restrict features to a specified area of the map. If not provided, all features from your selected data source and GeoPackage layers will be added.
@@ -182,14 +229,14 @@
           <v-btn
             text
             color="primary"
-            @click="step = 5">
+            @click="step = 6">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable step="5" color="primary">
+        <v-stepper-step editable step="6" color="primary">
           Summary
         </v-stepper-step>
-        <v-stepper-content step="5">
+        <v-stepper-content step="6">
           <v-card flat tile>
             <v-card-text>
               <b>{{filteredFeatureCount}}</b>{{(boundingBoxFilter ? ' filtered' : '') + ' features will be added to the '}}<b>{{geopackage.name}}</b>{{' GeoPackage as the '}}<b>{{layerName}}</b>{{' feature layer.'}}
@@ -209,7 +256,7 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="Number(step) === 5 && !done && !isEditingBoundingBox() && layerNameValid"
+          v-if="Number(step) === 6 && !done && !isEditingBoundingBox() && layerNameValid"
           color="primary"
           text
           @click.stop="addFeatureLayer">
@@ -226,7 +273,10 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
-import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
+import { mdiDragHorizontalVariant } from '@mdi/js'
+import Sortable from 'sortablejs'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     components: {
@@ -238,6 +288,22 @@ export default {
       geopackage: Object,
       back: Function
     },
+    directives: {
+      'sortable-list': {
+        inserted: (el, binding) => {
+          Sortable.create(el, binding.value ? {
+            ...binding.value,
+            handle: '.sortHandle',
+            ghostClass: 'ghost',
+            dragClass: 'detail-bg',
+            forceFallback : true,
+            onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
+            onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+          } : {})
+        },
+      },
+    },
     data () {
       return {
         step: 1,
@@ -248,8 +314,8 @@ export default {
           v => Object.keys(this.geopackage.tables.features).concat(Object.keys(this.geopackage.tables.tiles)).indexOf(v) === -1 || 'Layer name must be unique'
         ],
         status: {
-          message: 'Starting...',
-          progress: 0.0
+          message: 'Starting build',
+          progress: '0.0'
         },
         processing: false,
         error: false,
@@ -258,10 +324,26 @@ export default {
         configuration: null,
         cancelling: false,
         boundingBoxFilter: null,
-        filteredFeatureCount: 0
+        filteredFeatureCount: 0,
+        mdiDragHorizontalVariant: mdiDragHorizontalVariant,
+        internalRenderingOrder: []
       }
     },
     methods: {
+      updateSortedLayerOrder (evt) {
+        document.body.style.cursor = 'default'
+        const layerOrderTmp = this.sortedLayers.slice()
+        const oldIndex = evt.oldIndex
+        let newIndex = Math.max(0, evt.newIndex)
+        if (newIndex >= layerOrderTmp.length) {
+          let k = newIndex - layerOrderTmp.length + 1
+          while (k--) {
+            layerOrderTmp.push(undefined)
+          }
+        }
+        layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
+        this.sortedLayers = layerOrderTmp
+      },
       async cancelAddFeatureLayer () {
         const self = this
         this.cancelling = true
@@ -271,44 +353,58 @@ export default {
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
-              self.status.progress = 100
+              self.status.progress = 100.0
               window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             }).catch(() => {
               // table may not have been created yet
               self.done = true
               self.cancelling = false
               self.status.message = 'Cancelled'
-              self.status.progress = 100
+              self.status.progress = 100.0
               window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             })
           }, 500)
         })
-        this.status.message = 'Cancelling...'
+        this.status.message = 'Cancelling'
         this.status.progress = -1
       },
       async addFeatureLayer () {
-        this.processing = true
         this.configuration = {
           id: window.mapcache.createUniqueID(),
           path: this.geopackage.path,
           projectId: this.project.id,
           table: this.layerName,
+          geopackageId: this.geopackage.id,
           sourceLayers: this.dataSourceLayers.filter(item => item.visible).map(item => this.project.sources[item.value]),
           boundingBoxFilter: this.boundingBoxFilter,
           geopackageLayers: this.geopackageFeatureLayers.filter(item => item.visible).map(item => {
             return {geopackage: this.project.geopackages[item.geopackageId], table: item.tableName}
-          })
+          }),
+          layerOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
         }
 
-        window.mapcache.addFeatureLayer(this.configuration, (status) => {
-          if (!this.done) {
-            this.status = status
-          }
-        }).then(() => {
-          this.done = true
-          window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-          window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
-        })
+        if (this.configuration.sourceLayers.length === 0 && this.configuration.geopackageLayers.length === 0) {
+          window.mapcache.addFeatureTableToGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id, tableName: this.layerName, featureCollection: {type: 'FeatureCollection', features: []}}).then(() => {
+            this.done = true
+            window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+            this.back()
+          })
+        } else {
+          this.processing = true
+          window.mapcache.addFeatureLayer(this.configuration, (status) => {
+            if (!this.done) {
+              this.status = status
+              if (this.status.progress != null) {
+                this.status.progress = parseFloat(this.status.progress).toFixed(1)
+              }
+            }
+          }).then(() => {
+            this.done = true
+            window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
+            window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+          })
+        }
       },
       cancel () {
         if (this.isEditingBoundingBox()) {
@@ -361,6 +457,7 @@ export default {
               const visible = geopackage.tables.features[table].visible
               const geopackageId = geopackage.id
               items.push({
+                id: geopackageId + '_' + tableName,
                 value: geopackageId + '_' + tableName,
                 geopackageId: geopackageId,
                 tableName: tableName,
@@ -385,6 +482,7 @@ export default {
         return Object.values(this.project.sources).filter(source => source.pane === 'vector').map(source => {
           return {
             text: source.displayName ? source.displayName : source.name,
+            title: source.displayName ? source.displayName : source.name,
             value: source.id,
             id: source.id,
             visible: source.visible,
@@ -397,7 +495,10 @@ export default {
             }, 100)
           }
         })
-      }
+      },
+      fireReorderMapLayers: debounce((layers) => {
+        EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
+      }, 100)
     },
     asyncComputed: {
       geopackageFeatureLayers: {
@@ -417,6 +518,28 @@ export default {
           return this.getDataSourceLayers().filter(item => item.visible).map(item => item.value)
         },
         default: []
+      },
+      internalRenderingOrder: {
+        async get () {
+          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageFeatureLayers.filter(item => item.visible))
+          return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+        },
+        default: []
+      }
+    },
+    computed: {
+      sortedLayers: {
+        get () {
+          return this.internalRenderingOrder
+        },
+        set (layers) {
+          this.internalRenderingOrder = layers
+          const newMapRenderingOrder = []
+          layers.forEach(item => {
+            newMapRenderingOrder.push(item.id)
+          })
+          this.fireReorderMapLayers(newMapRenderingOrder)
+        }
       }
     },
     watch: {
@@ -427,6 +550,8 @@ export default {
           this.geopackageFeatureLayers = await this.getGeoPackageFeatureLayerItems()
           this.selectedGeoPackageFeatureLayers = this.geopackageFeatureLayers.filter(item => item.visible).map(item => item.value)
           this.filteredFeatureCount = await this.getFilteredFeatures()
+          const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageFeatureLayers.filter(item => item.visible))
+          this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
         },
         deep: true
       },

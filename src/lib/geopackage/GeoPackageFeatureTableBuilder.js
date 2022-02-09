@@ -1,387 +1,491 @@
-import {
-  BoundingBox,
-  FeatureColumn,
-  FeatureTableStyles,
-  GeometryColumns,
-  GeometryType,
-  IconTable,
-  MediaTable,
-} from '@ngageoint/geopackage'
+import { BoundingBox, FeatureTableStyles, GeometryType, GeoPackage, GeoPackageDataType, IconTable, MediaTable } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
-import throttle from 'lodash/throttle'
-import keys from 'lodash/keys'
-import values from 'lodash/values'
-import difference from 'lodash/difference'
-import bbox from '@turf/bbox'
+import { performSafeGeoPackageOperation, sleep, deleteGeoPackageTable } from './GeoPackageCommon'
 import {
-  performSafeGeoPackageOperation,
-  wait,
-  flatten,
-  getDefaultValueForDataType,
-  deleteGeoPackageTable
-} from './GeoPackageCommon'
-import { _getAllFeatureRowsIn4326, _getFeatureColumns, mergeFeatureColumns, _indexFeatureTable, _linkFeatureRowToMediaRow } from './GeoPackageFeatureTableUtilities'
-import { _getStyleRowObjects, _getIconRowObjects, _getFeatureStyleMapping, _getTableStyleMappings } from './GeoPackageStyleUtilities'
-import { getMediaRow } from './GeoPackageMediaUtilities'
+  getFeatureColumns,
+  _createFeatureTableWithFeatureStream
+} from './GeoPackageFeatureTableUtilities'
+import {
+  _iterateTableStyleMappings,
+  _iterateTableIconMappings,
+} from './GeoPackageStyleUtilities'
+import { _getMediaRow } from './GeoPackageMediaUtilities'
 import { getMediaTableName } from '../util/media/MediaUtilities'
 
 /**
  * GeoPackgeFeatureTableBuilder handles building a feature layer using other GeoPackage layers and data sources
  */
+
 /**
- * Builds a feature layer
- * currently this just merges features
- * TODO: support extensions
- * TODO: support non-media related tables
- * TODO: support DataColumns
+ * Determines if a data type is a number type
+ * @param dataType
+ * @returns {boolean}
+ */
+function isNumberType (dataType) {
+  return dataType === GeoPackageDataType.TINYINT ||
+    dataType === GeoPackageDataType.SMALLINT ||
+    dataType === GeoPackageDataType.MEDIUMINT ||
+    dataType === GeoPackageDataType.INT ||
+    dataType === GeoPackageDataType.INTEGER ||
+    dataType === GeoPackageDataType.FLOAT ||
+    dataType === GeoPackageDataType.DOUBLE ||
+    dataType === GeoPackageDataType.REAL
+}
+
+function getUserFriendlyColumnTypeName (dataType) {
+  if (isNumberType(dataType)) {
+    return '(Number)'
+  } else if (dataType === GeoPackageDataType.DATE) {
+    return '(Date)'
+  } else if (dataType === GeoPackageDataType.DATETIME) {
+    return '(Date and time)'
+  } else if (dataType === GeoPackageDataType.TEXT) {
+    return '(Text)'
+  } else if (dataType === GeoPackageDataType.BOOLEAN) {
+    return '(Checkbox)'
+  } else {
+    return '(Media)'
+  }
+}
+
+/**
+ * Determines columns to add to the target table and adds them. Returns objects for tracking
+ * source => target name changes, and functions for ensuring data is valid, and tracking which columns are not null
+ * @param layers
+ * @param addField
+ * @returns {Promise<{targetColumns: {}, tableColumnMapping: {}}>}
+ */
+async function  addTargetColumns (layers, addField) {
+  // determine the target table's columns
+  const targetColumns = {}
+  const tableColumnMapping = {}
+
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i]
+    let layerTableName, filePath
+    const isGeoPackageLayer = !isNil(layer.geopackage)
+    if (isGeoPackageLayer) {
+      layerTableName = layer.table
+      filePath = layer.geopackage.path
+
+    } else {
+      layerTableName = layer.sourceLayerName
+      filePath = layer.geopackageFilePath
+    }
+
+    tableColumnMapping[layer._id] = {}
+
+    const featureColumns = await getFeatureColumns(filePath, layerTableName)
+    featureColumns.getColumns().filter(column => !column.isPrimaryKey() && !column.isGeometry()).map(c => {
+      // copy column but remove all constraints
+      const copy = c.copy()
+      copy.unique = false
+      copy.max = undefined
+      copy.min = undefined
+      copy.notNull = false
+      copy.defaultValue = undefined
+      if (copy.constraints != null) {
+        copy.constraints.clear()
+      }
+      return copy
+    }).forEach(column => {
+      let readyToAdd = false
+      let foundMatch = false
+      let typeNameSet = false
+      const sourceColumnName = column.getName()
+      let targetColumnName = column.getName()
+      let duplicateIndex = 1
+      while (!readyToAdd && !foundMatch) {
+        const existingColumn = targetColumns[targetColumnName.toLowerCase()]
+        if (isNil(existingColumn)) {
+          readyToAdd = true
+        } else if (existingColumn.dataType !== column.dataType) {
+          if (isNumberType(column.dataType) && isNumberType(existingColumn.dataType)) {
+            existingColumn.dataType = Math.max(column.dataType, existingColumn.dataType)
+            targetColumnName = existingColumn.getName()
+            foundMatch = true
+          } else {
+            if (typeNameSet) {
+              targetColumnName = sourceColumnName + ' #' + duplicateIndex++
+            } else {
+              targetColumnName = sourceColumnName + ' ' + getUserFriendlyColumnTypeName(column.dataType)
+              typeNameSet = true
+            }
+            column.setName(targetColumnName)
+          }
+        } else {
+          targetColumnName = existingColumn.getName()
+          foundMatch = true
+        }
+      }
+
+      if (readyToAdd) {
+        // add this target column
+        addField(column)
+        // track target columns here to handle any conflicts
+        targetColumns[targetColumnName.toLowerCase()] = column
+      }
+
+      // track name => target table name
+      tableColumnMapping[layer._id][sourceColumnName.toLowerCase()] = targetColumnName
+    })
+  }
+
+  return {targetColumns, tableColumnMapping}
+}
+
+/**
+ * Get feature counts for each layer
+ * @param layers
+ * @param boundingBoxFilter
+ * @returns {Promise<{}>}
+ */
+async function getTableFeatureCounts (layers, boundingBoxFilter) {
+  const featureTableCountMap = {}
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i]
+    let layerTableName, filePath
+    const isGeoPackageLayer = !isNil(layer.geopackage)
+    if (isGeoPackageLayer) {
+      layerTableName = layer.table
+      filePath = layer.geopackage.path
+    } else {
+      layerTableName = layer.sourceLayerName
+      filePath = layer.geopackageFilePath
+    }
+
+    await performSafeGeoPackageOperation(filePath, async (layerGeoPackage) => {
+      const featureDao = layerGeoPackage.getFeatureDao(layerTableName)
+      const epsg4326 = 'EPSG:4326'
+      let count
+      if (!isNil(boundingBoxFilter) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
+        count = featureDao.featureTableIndex.countWithBoundingBox(boundingBoxFilter, epsg4326)
+      } else {
+        count = featureDao.count()
+      }
+      featureTableCountMap[layer._id] = count
+    })
+  }
+  return featureTableCountMap
+}
+
+/**
+ * Builds a feature layer by merging together all the features from the provides sources
+ * Current limitations of merging feature tables:
+ *  - table constraints are not merged
+ *  - unique constraints are dropped
+ *  - check constraints are dropped
+ *  - collate constraints are dropped
+ *  - related tables, other than media/styles are not copied to target GeoPackage
+ *  - table styles will need to be associated to each feature in order to preserve the look (unless only one layer is being used)
  * @param configuration
  * @param statusCallback
- * @returns {Promise<any>}
+ * @returns {Promise<*>}
  */
 async function buildFeatureLayer (configuration, statusCallback) {
   return performSafeGeoPackageOperation(configuration.path, async (gp) => {
-    const status = {
-      message: 'Starting...',
-      progress: 0.0
-    }
+    const tableName = configuration.table
+    // only issue an update every 100ms
+    statusCallback('Starting build', 0.0)
+
+    await sleep(1000)
+
+    let currentStatusPercentage = 0.0
 
     try {
-      const throttleStatusCallback = throttle(statusCallback, 100)
-
-      const tableName = configuration.table
-
-      throttleStatusCallback(status)
-
-      await wait(1000)
-
-      let sourceFeatureMap = {}
-      let sourceColumnMap = {}
-      let sourceNameChanges = {}
-      let sourceStyleMap = {}
-      let parentStyleMapping = {}
-      let mediaRelations = {}
-      let insertedMediaMap = {}
-
-      // retrieve layers
-      status.message = 'Retrieving features from data sources and geopackage feature layers...'
-      status.progress = 0.0
-      throttleStatusCallback(status)
-
-      const numberLayersToRetrieve = configuration.sourceLayers.length + configuration.geopackageLayers.length
-
-      let layersRetrieved = 0
-      let featureColumns = null
-
+      // get bounding box filter
       let boundingBoxFilter
       if (configuration.boundingBoxFilter) {
         boundingBoxFilter = new BoundingBox(configuration.boundingBoxFilter[0], configuration.boundingBoxFilter[2], configuration.boundingBoxFilter[1], configuration.boundingBoxFilter[3])
       }
 
-      const allLayers = configuration.sourceLayers.concat(configuration.geopackageLayers)
+      statusCallback('Creating table', 5.0)
+      currentStatusPercentage = 5.0
+      await sleep(1000)
 
-      let sourceIdx = 0
-      // copy data from source layers
-      for (let i = 0; i < allLayers.length; i++) {
-        const sourceLayer = allLayers[i]
-        let tableName, geopackageFilePath, parentId
-        const isGeoPackageLayer = !isNil(sourceLayer.geopackage)
-        if (isGeoPackageLayer) {
-          tableName = sourceLayer.table
-          geopackageFilePath = sourceLayer.geopackage.path
-          parentId = sourceLayer.geopackage.id
+      // start streaming build for tableName
+      const {adjustBatchSize, addField, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, addMediaAttachment, setTableStyle, setTableIcon, processBatch, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+
+      statusCallback('Merging and adding fields', 10.0)
+      currentStatusPercentage = 10.0
+      await sleep(1000)
+
+      // get all layers into a list
+      const layers = configuration.layerOrder.reverse().map(id => {
+        const sourceLayer = configuration.sourceLayers.find(layer => layer.id === id)
+        const geopackageLayer = configuration.geopackageLayers.find(layer => (layer.geopackage.id + '_' + layer.table) === id)
+        if (sourceLayer != null) {
+          return sourceLayer
         } else {
-          tableName = sourceLayer.sourceLayerName
-          geopackageFilePath = sourceLayer.geopackageFilePath
-          parentId = sourceLayer.id
+          return geopackageLayer
         }
-        await performSafeGeoPackageOperation(geopackageFilePath, async (geopackage) => {
-          sourceFeatureMap[sourceIdx] = _getAllFeatureRowsIn4326(geopackage, tableName, 4326, boundingBoxFilter)
-          sourceColumnMap[sourceIdx] = _getFeatureColumns(geopackage, tableName)
-          sourceStyleMap[sourceIdx] = {
-            styles: _getStyleRowObjects(geopackage, tableName),
-            icons: _getIconRowObjects(geopackage, tableName),
-            featureStyleMapping: _getFeatureStyleMapping(geopackage, tableName, numberLayersToRetrieve > 1),
-            tableStyleMappings: _getTableStyleMappings(geopackage, tableName),
-            parentId: parentId
-          }
-          // feature row id -> list of objects (media table name, row id)
-          mediaRelations[sourceIdx] = {}
-          if (geopackage.relatedTablesExtension.has()) {
-            geopackage.getFeatureDao(tableName).mediaRelations.forEach(mediaRelation => {
-              if (mediaRelation.mapping_table_name !== (IconTable.TABLE_NAME + '_' + tableName)) {
-                const userMappingDao = geopackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
-                const mappings = userMappingDao.queryForAll()
-                mappings.forEach(mapping => {
-                  if (isNil(mediaRelations[sourceIdx][mapping.base_id])) {
-                    mediaRelations[sourceIdx][mapping.base_id] = []
-                  }
-                  mediaRelations[sourceIdx][mapping.base_id].push({
-                    filePath: geopackageFilePath,
-                    mediaTable: mediaRelation.related_table_name,
-                    mediaRowId: mapping.related_id
-                  })
-                })
+      })
+
+      // add an id value we can key off of
+      layers.forEach((layer, index) => layer._id = index)
+
+      const isSingleLayer = layers.length === 1
+
+      // merge columns from source tables and add them to target table
+      const {tableColumnMapping} = await addTargetColumns(layers, addField)
+
+      // get feature counts
+      const tableFeatureCountMap = await getTableFeatureCounts(layers, boundingBoxFilter)
+
+      const targetFeatureTableStyles = new FeatureTableStyles(gp, tableName)
+
+      // feature progress tracking variables
+      let featuresAdded = 0
+      let totalFeaturesToAdd = Object.values(tableFeatureCountMap).reduce((a, b) => (a + b))
+
+      // media tracking
+      let targetMediaDao = null
+      let insertedMediaMap = {} // this has potential to get very large if there are a lot of features with media
+      const mediaTableName = getMediaTableName()
+
+      // style/icon tracking
+      const styleIdMap = {} // this has the potential to get very large if there are a lot of features with
+
+      statusCallback('Copying features', 15.0)
+      currentStatusPercentage = 15.0
+
+      // add features from souce tables to target table
+      for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i]
+        const layerId = layer._id
+        let layerInTargetGeoPackage = false
+        let layerTableName, layerFilePath
+        const isGeoPackageLayer = !isNil(layer.geopackage)
+        if (isGeoPackageLayer) {
+          layerTableName = layer.table
+          layerFilePath = layer.geopackage.path
+          layerInTargetGeoPackage = layer.geopackage.id === configuration.geopackageId
+        } else {
+          layerTableName = layer.sourceLayerName
+          layerFilePath = layer.geopackageFilePath
+        }
+
+        const addFeaturesToGeoPackage = async (layerGeoPackage) => {
+          const featureDao = layerGeoPackage.getFeatureDao(layerTableName)
+
+          // get media relations
+          const mediaRelations = []
+          if (layerGeoPackage.relatedTablesExtension.has()) {
+            featureDao.mediaRelations.forEach(mediaRelation => {
+              if (!mediaRelation.mapping_table_name.startsWith(IconTable.TABLE_NAME)) {
+                mediaRelations.push(layerGeoPackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name))
               }
             })
           }
 
-          const result = mergeFeatureColumns(featureColumns, _getFeatureColumns(geopackage, tableName))
-          featureColumns = result.mergedColumns
-          sourceNameChanges[sourceIdx] = result.nameChanges
-          sourceIdx++
-          layersRetrieved++
-          status.progress = 25.0 * (layersRetrieved / numberLayersToRetrieve)
-          throttleStatusCallback(status)
-        })
-      }
-
-      const stylesAndIconsExist = keys(sourceStyleMap).filter(id => (keys(sourceStyleMap[id].styles).length + keys(sourceStyleMap[id].icons).length) > 0).length > 0
-
-      await wait(500)
-      // combine layers
-      status.message = 'Combining features and organizing properties...'
-      throttleStatusCallback(status)
-
-      let geometryColumns = new GeometryColumns()
-      geometryColumns.table_name = tableName
-      geometryColumns.column_name = 'geometry'
-      geometryColumns.geometry_type_name = GeometryType.nameFromType(GeometryType.GEOMETRY)
-      geometryColumns.z = 0
-      geometryColumns.m = 0
-      let columns = []
-      columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
-      columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-      let columnIndex = 2
-      if (!isNil(featureColumns)) {
-        featureColumns.getColumns().forEach(column => {
-          column.resetIndex()
-          column.setIndex(columnIndex++)
-          columns.push(column)
-        })
-      }
-
-      const featureCollection = {
-        type: 'FeatureCollection',
-        features: flatten(values(sourceFeatureMap)).map(row => {
-          return {
-            type: 'Feature',
-            properties: {},
-            geometry: row.geometry.geometry.toGeoJSON()
+          // create media table if it hasn't already been
+          if (mediaRelations.length > 0 && targetMediaDao == null) {
+            const rte = gp.relatedTablesExtension
+            if (!gp.connection.isTableExists(mediaTableName)) {
+              const mediaTable = MediaTable.create(mediaTableName)
+              rte.createRelatedTable(mediaTable)
+            }
+            targetMediaDao = gp.relatedTablesExtension.getMediaDao(mediaTableName)
           }
-        })
-      }
 
-      const featureCount = featureCollection.features.length
-      let extent = featureCount > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
-      let bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
+          // get feature table styles
+          let featureTableStyles = new FeatureTableStyles(layerGeoPackage, layerTableName)
+          const hasStylesOrIcons = featureTableStyles.has()
 
-      status.progress = 30.0
+          // setup the style source to target id map
+          if (styleIdMap[layerFilePath] == null) {
+            styleIdMap[layerFilePath] = {
+              style: {},
+              icon: {}
+            }
+          }
 
-      await wait(500)
+          // create functions for checking for valid styles or adding new styles to the target (if needed)
+          let checkForCompatibleStyleOrAdd = (style) => {
+            let targetStyleId
+            const results = targetFeatureTableStyles.getStyleDao().queryWhere('width = ? and color = ? and opacity = ? and fill_color = ? and fill_opacity = ?', [style.getWidth(), style.getHexColor(), style.getOpacity(), style.getFillHexColor(), style.getFillOpacity()])
+            let foundMatch = false
+            for (let result of results) {
+              if (result != null) {
+                foundMatch = true
+                targetStyleId = result.id
+              }
+            }
+            // didn't find a match so we need to insert this icon
+            if (!foundMatch) {
+              targetStyleId = addStyle(style)
+            }
+            return targetStyleId
+          }
+          let checkForCompatibleIconOrAdd = (icon) => {
+            let targetIconId
+            const results = targetFeatureTableStyles.getIconDao().queryWhere('width = ? and height = ? and anchor_u = ? and anchor_v = ? and data = ?', [icon.width, icon.height, icon.anchorU, icon.anchorV, icon.data])
+            let foundMatch = false
+            for (let result of results) {
+              if (result != null) {
+                foundMatch = true
+                targetIconId = result.id
+              }
+            }
+            // didn't find a match so we need to insert this icon
+            if (!foundMatch) {
+              targetIconId = addIcon(icon)
+            }
+            return targetIconId
+          }
 
-      status.message = 'Creating ' + tableName + '...'
-      throttleStatusCallback(status)
-      await wait(500)
-      gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
+          // handle case where we want to set default table styles
+          if (isSingleLayer) {
+            if (layerInTargetGeoPackage) {
+              _iterateTableStyleMappings(layerGeoPackage, layerTableName, styleMapping => {
+                setTableStyle(styleMapping.relatedId, styleMapping.getGeometryTypeName())
+              })
+              _iterateTableIconMappings(layerGeoPackage, layerTableName, iconMapping => {
+                setTableIcon(iconMapping.relatedId, iconMapping.getGeometryTypeName())
+              })
+            } else {
+              _iterateTableStyleMappings(layerGeoPackage, layerTableName, styleMapping => {
+                styleIdMap[layerFilePath].style[styleMapping.relatedId] = checkForCompatibleStyleOrAdd(featureTableStyles.getStyleDao().queryForId(styleMapping.relatedId))
+                setTableStyle(styleIdMap[layerFilePath].style[styleMapping.relatedId], styleMapping.getGeometryTypeName())
+              })
+              _iterateTableIconMappings(layerGeoPackage, layerTableName, iconMapping => {
+                styleIdMap[layerFilePath].icon[iconMapping.relatedId] = checkForCompatibleIconOrAdd(featureTableStyles.getIconDao().queryForId(iconMapping.relatedId))
+                setTableIcon(styleIdMap[layerFilePath].icon[iconMapping.relatedId], iconMapping.getGeometryTypeName())
+              })
+            }
+          }
 
-      if (featureCollection.features.length > 0) {
-        status.message = 'Adding features to ' + tableName + '...'
-        throttleStatusCallback(status)
-        await wait(500)
-        const featureDao = gp.getFeatureDao(tableName)
-        let featureTableStyles
-        if (stylesAndIconsExist) {
-          featureTableStyles = new FeatureTableStyles(gp, tableName)
-          featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
-          featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
-          featureTableStyles.getFeatureStyleExtension().getContentsId().getOrCreateExtension()
-          featureTableStyles.createTableStyleRelationship()
-          featureTableStyles.createTableIconRelationship()
-          featureTableStyles.createStyleRelationship()
-          featureTableStyles.createIconRelationship()
-        }
-
-        // if any of the source layers have media relations, create the media table (this is where all of the media for the source layers will be copied into)
-        const mediaTableName = getMediaTableName()
-        const hasMediaRelations = keys(mediaRelations).filter(id => keys(mediaRelations[id]).length > 0).length > 0
-        let targetMediaDao
-        if (hasMediaRelations) {
-          const rte = gp.relatedTablesExtension
-          if (!gp.connection.isTableExists(mediaTableName)) {
-            const mediaTable = MediaTable.create(mediaTableName)
-            rte.createRelatedTable(mediaTable)
+          const srs = featureDao.srs
+          const epsg4326 = 'EPSG:4326'
+          const featureCount = tableFeatureCountMap[layerId]
+          let each
+          if (!isNil(boundingBoxFilter) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
+            each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBoxFilter, epsg4326)
           } else {
-            // media table already exists, there may be layers from this geopackage being added to the new feature layer, so add the existing
-            const mediaDao = gp.relatedTablesExtension.getMediaDao(mediaTableName)
-            const each = mediaDao.queryForEach()
-            for (let row of each) {
-              const sourceMediaKey = configuration.path + '_' + mediaTableName + '_' + row.id
-              insertedMediaMap[sourceMediaKey] = row.id
-
-            }
-          }
-          targetMediaDao = gp.relatedTablesExtension.getMediaDao(getMediaTableName())
-        }
-
-        const columnTypes = {}
-        for (let i = 0; i < featureDao.table.getColumnCount(); i++) {
-          const column = featureDao.table.getColumnWithIndex(i)
-          columnTypes[column.name] = column.dataType
-        }
-
-        let id = 0
-        const sourceFeatureMapKeys = keys(sourceFeatureMap)
-        for (let sIdx = 0; sIdx < sourceFeatureMapKeys.length; sIdx++) {
-          const sourceIdx = sourceFeatureMapKeys[sIdx]
-          const featureRows = sourceFeatureMap[sourceIdx]
-          const columns = sourceColumnMap[sourceIdx]
-          const nameChanges = sourceNameChanges[sourceIdx]
-
-          const styles = sourceStyleMap[sourceIdx].styles
-          const icons = sourceStyleMap[sourceIdx].icons
-          const featureStyleMapping = sourceStyleMap[sourceIdx].featureStyleMapping
-          const parentId = sourceStyleMap[sourceIdx].parentId
-          const featureMediaListMap = mediaRelations[sourceIdx]
-
-          // insert styles and icons
-          if (!isNil(featureTableStyles) && isNil(parentStyleMapping[parentId])) {
-            parentStyleMapping[parentId] = {
-              iconMapping: {},
-              styleMapping: {}
-            }
-            keys(styles).forEach(styleId => {
-              const styleRow = styles[styleId]
-              styleRow.id = null
-              parentStyleMapping[parentId].styleMapping[styleId] = featureTableStyles.getFeatureStyleExtension().getOrInsertStyle(styleRow)
-            })
-            keys(icons).forEach(iconId => {
-              const iconRow = icons[iconId]
-              iconRow.id = null
-
-              parentStyleMapping[parentId].iconMapping[iconId] = featureTableStyles.getFeatureStyleExtension().getOrInsertIcon(iconRow)
-            })
-
-            // only one layer being added to this feature table, so we can migrate over table style/icon relationships
-            if (numberLayersToRetrieve === 1) {
-              const tableStyleMapping = sourceStyleMap[sourceIdx].tableStyleMappings
-              const featureContentsId = featureTableStyles.getFeatureStyleExtension().contentsIdExtension.getOrCreateIdByTableName(tableName)
-              tableStyleMapping.tableStyleMappings.forEach(mapping => {
-                featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableStyleMappingDao(), featureContentsId.id, parentStyleMapping[parentId].styleMapping[mapping.id], mapping.geometryType)
-              })
-              tableStyleMapping.tableIconMappings.forEach(mapping => {
-                featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getTableIconMappingDao(), featureContentsId.id, parentStyleMapping[parentId].iconMapping[mapping.id], mapping.geometryType)
-              })
-            }
+            each = featureDao.queryForEach()
           }
 
-          for (let featureRowIndex = 0; featureRowIndex < featureRows.length; featureRowIndex++) {
-            const featureRow = featureRows[featureRowIndex]
-            const values = {}
+          statusCallback('Copying features', 15.0 + (80.0 * (featuresAdded / totalFeaturesToAdd)))
+          currentStatusPercentage = 15.0 + (80.0 * (featuresAdded / totalFeaturesToAdd))
 
-            // iterate over this row's columns and pull values out to be added to the new row
-            columns.getColumns().forEach(column => {
-              const columnName = column.getName()
-              let value = featureRow.getValueWithColumnName(columnName)
-              const name = isNil(nameChanges[columnName]) ? columnName : nameChanges[columnName]
-              const tableColumn = featureDao.table.getUserColumns().getColumn(name)
-              if (isNil(value) && tableColumn.isNotNull() && !tableColumn.hasDefaultValue()) {
-                value = getDefaultValueForDataType(tableColumn.getDataType())
-              }
-              values[name] = value
-            })
+          // adjust the batch size for the number of elements to be inserted
+          adjustBatchSize(featureCount)
 
-            // check for any of our table's columns that require a not null value
-            if (!isNil(featureColumns)) {
-              featureColumns.getColumns().forEach(column => {
-                const columnName = column.getName()
-                if (!isNil(values[columnName]) && column.isNotNull() && !column.hasDefaultValue) {
-                  values[columnName] = getDefaultValueForDataType(column.getDataType())
+          for (let row of each) {
+            if (!isNil(row)) {
+              const featureRow = featureDao.getRow(row)
+              const sourceId = featureRow.id
+              const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureDao.getRow(row), srs)
+              delete feature.id
+
+              // fix fields
+              Object.keys(feature.properties).forEach(sourceColumnName => {
+                const targetColumnName = tableColumnMapping[layer._id][sourceColumnName.toLowerCase()]
+                const value = feature.properties[sourceColumnName]
+                delete feature.properties[sourceColumnName]
+                feature.properties[targetColumnName] = value
+              })
+
+              // add feature
+              const targetId = addFeature(feature)
+
+              // query for media and add
+              mediaRelations.forEach(userMappingDao => {
+                const mappings = userMappingDao.queryByBaseId(sourceId)
+                for (let mapping of mappings) {
+                  const sourceMediaTable = mapping.related_table_name
+                  const sourceMediaRowId = mapping.related_id
+                  const sourceMediaKey = layerFilePath + '_' + sourceMediaTable + '_' + sourceMediaRowId
+                  const inserted = insertedMediaMap[sourceMediaKey] || layerInTargetGeoPackage
+                  if (!inserted) {
+                    addMediaAttachment(targetId, _getMediaRow(layerGeoPackage, sourceMediaTable, sourceMediaRowId))
+                    insertedMediaMap[sourceMediaKey] = true
+                  } else {
+                    addMediaAttachment(targetId, sourceMediaRowId)
+                  }
                 }
               })
-            }
 
-            values.id = id++
-            values.geometry = featureRow.geometry
-
-            // create the new row
-            const featureId = featureDao.create(featureDao.newRow(columnTypes, values))
-
-            // add style mapping if necessary
-            if (!isNil(featureTableStyles)) {
-              let geometryType = !isNil(featureRow.geometry) ? featureRow.geometry.toGeoJSON().type.toUpperCase() : 'GEOMETRY'
-              const styleMapping = featureStyleMapping[featureRow.id]
-              if (!isNil(styleMapping.iconId) && styleMapping.iconId.id > -1) {
-                featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), featureId, parentStyleMapping[parentId].iconMapping[styleMapping.iconId.id], GeometryType.fromName(geometryType))
+              // query for styles
+              if (hasStylesOrIcons) {
+                const featureStyle = featureTableStyles.getFeatureStyleExtension().getFeatureStyleForFeatureRow(featureRow)
+                if (featureStyle != null && featureStyle.icon != null) {
+                  const sourceIconId = featureStyle.icon.id
+                  if (layerInTargetGeoPackage) {
+                    styleIdMap[layerFilePath].icon[sourceIconId] = sourceIconId
+                  } else if (styleIdMap[layerFilePath].icon[sourceIconId] == null) {
+                    styleIdMap[layerFilePath].icon[sourceIconId] = checkForCompatibleIconOrAdd(featureStyle.icon)
+                  }
+                  setFeatureIcon(targetId, feature.geometry.type, styleIdMap[layerFilePath].icon[sourceIconId])
+                } else if (featureStyle != null && featureStyle.style != null) {
+                  const sourceStyleId = featureStyle.style.id
+                  if (layerInTargetGeoPackage) {
+                    styleIdMap[layerFilePath].style[sourceStyleId] = sourceStyleId
+                  } else if (styleIdMap[layerFilePath].style[sourceStyleId] == null) {
+                    styleIdMap[layerFilePath].style[sourceStyleId] = checkForCompatibleStyleOrAdd(featureStyle.style)
+                  }
+                  setFeatureStyle(targetId, feature.geometry.type, styleIdMap[layerFilePath].style[sourceStyleId])
+                } else if (layers.length > 1) {
+                  const tableIcon = featureTableStyles.getTableIcon(GeometryType.fromName(feature.geometry.type.toUpperCase()))
+                  if (tableIcon != null) {
+                    const sourceIconId = tableIcon.id
+                    if (layerInTargetGeoPackage) {
+                      styleIdMap[layerFilePath].icon[sourceIconId] = sourceIconId
+                    } else if (styleIdMap[layerFilePath].icon[sourceIconId] == null) {
+                      styleIdMap[layerFilePath].icon[sourceIconId] = checkForCompatibleIconOrAdd(tableIcon)
+                    }
+                    setFeatureIcon(targetId, feature.geometry.type, styleIdMap[layerFilePath].icon[sourceIconId])
+                  } else {
+                    const tableStyle = featureTableStyles.getTableStyle(GeometryType.fromName(feature.geometry.type.toUpperCase()))
+                    if (tableStyle != null) {
+                      const sourceStyleId = tableStyle.id
+                      if (layerInTargetGeoPackage) {
+                        styleIdMap[layerFilePath].style[sourceStyleId] = sourceStyleId
+                      } else if (styleIdMap[layerFilePath].style[sourceStyleId] == null) {
+                        styleIdMap[layerFilePath].style[sourceStyleId] = checkForCompatibleStyleOrAdd(tableStyle)
+                      }
+                      setFeatureStyle(targetId, feature.geometry.type, styleIdMap[layerFilePath].style[sourceStyleId])
+                    }
+                  }
+                }
               }
-              if (!isNil(styleMapping.styleId) && styleMapping.styleId.id > -1) {
-                featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), featureId, parentStyleMapping[parentId].styleMapping[styleMapping.styleId.id], GeometryType.fromName(geometryType))
+
+              featuresAdded++
+              if (15.0 + (80.0 * (featuresAdded / totalFeaturesToAdd) - currentStatusPercentage >= 0.1)) {
+                statusCallback('Copying features', 15.0 + (80.0 * (featuresAdded / totalFeaturesToAdd)))
+                currentStatusPercentage = 15.0 + (80.0 * (featuresAdded / totalFeaturesToAdd))
               }
             }
-
-            // add related media rows for feature row
-            const mediaToAdd = featureMediaListMap[featureRow.id] || []
-
-            for (let i = 0; i < mediaToAdd.length; i++) {
-              const mediaRef = mediaToAdd[i]
-              const geopackageFilePath = mediaRef.filePath
-              const sourceMediaTable = mediaRef.mediaTable
-              const sourceMediaRowId = mediaRef.mediaRowId
-              const sourceMediaKey = geopackageFilePath + '_' + sourceMediaTable + '_' + sourceMediaRowId
-
-              // check if media has been previously added for a different feature row
-              if (isNil(insertedMediaMap[sourceMediaKey])) {
-                // get media
-                const sourceMediaRow = await getMediaRow(geopackageFilePath, sourceMediaTable, sourceMediaRowId)
-
-                // create new media row
-                let mediaRow = targetMediaDao.newRow()
-                // check if table has required columns, other than id, data and content_type
-                const requiredColumns = difference(targetMediaDao.table.getRequiredColumns(), ['id', 'data', 'content_type'])
-                // iterate over those columns and set them to the default value for that data type, as we do not support
-                // additional columns currently in mapcache media attachments
-                requiredColumns.forEach(columnName => {
-                  const type = mediaRow.getRowColumnTypeWithColumnName(columnName)
-                  mediaRow.setValueWithColumnName(columnName, getDefaultValueForDataType(type))
-                })
-
-                mediaRow.data = sourceMediaRow.data
-                mediaRow.contentType = sourceMediaRow.contentType
-                mediaRow.id = targetMediaDao.create(mediaRow)
-
-                // this relates a source's media row to it's new id in the gpkg_media table
-                insertedMediaMap[sourceMediaKey] = mediaRow.id
-                mediaRow = null
-              }
-              _linkFeatureRowToMediaRow(gp, tableName, featureId, mediaTableName, insertedMediaMap[sourceMediaKey])
-            }
-
-            status.progress = 30 + (50 * id / featureCount)
-            throttleStatusCallback(status)
           }
+          processBatch()
+        }
+
+        if (layerFilePath === configuration.path) {
+          gp.connection.adapter.db.unsafeMode(true)
+          await addFeaturesToGeoPackage(gp)
+          gp.connection.adapter.db.unsafeMode(false)
+        } else {
+          await performSafeGeoPackageOperation(layerFilePath, addFeaturesToGeoPackage)
         }
       }
+      // call done to close the geopackage and clean up
+      await done()
 
-      await wait(500)
-      status.message = 'Indexing ' + tableName + ' for improved performance...'
-      throttleStatusCallback(status)
-      // index table
-      await _indexFeatureTable(gp, tableName)
+      statusCallback('Cleaning up', 95.0)
+      await sleep(2000)
+      statusCallback('Completed', 100.0)
 
-      status.message = 'Completed.'
-      status.progress = 100.0
-      statusCallback(status)
-      await wait(500)
     } catch (error) {
       try {
         await deleteGeoPackageTable(configuration.path, configuration.table)
         // eslint-disable-next-line no-empty
       } catch (e) {}
-      status.message = 'Failed to build feature layer'
-      status.error = error.message
-      statusCallback(status)
+      statusCallback('Failed to build feature layer', 100, error.message)
+      await sleep(2000)
     }
   }, true)
 }
+
 export {
   buildFeatureLayer
 }

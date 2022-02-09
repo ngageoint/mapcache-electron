@@ -5,7 +5,7 @@ import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import {
   performSafeGeoPackageOperation,
-  wait,
+  sleep,
   prettyPrintMs,
   deleteGeoPackageTable
 } from './GeoPackageCommon'
@@ -74,7 +74,7 @@ async function buildTileLayer (configuration, statusCallback) {
 
       throttleStatusCallback(status)
 
-      await wait(1000)
+      await sleep(1000)
 
       let minZoom = configuration.minZoom
       let maxZoom = configuration.maxZoom
@@ -245,7 +245,7 @@ async function buildTileLayer (configuration, statusCallback) {
         tileScalingExtension.createOrUpdate(tileScalingRecord)
       }
 
-      await wait(500)
+      await sleep(500)
 
       // update status to generating tiles
       status.message = 'Generating tiles...'
@@ -352,7 +352,7 @@ async function buildTileLayer (configuration, statusCallback) {
       status.message = 'Completed in ' + prettyPrintMs(new Date().getTime() - buildStart) + '.'
       status.progress = 100.0
       statusCallback(status)
-      await wait(500)
+      await sleep(500)
     } catch (error) {
       try {
         await deleteGeoPackageTable(configuration.path, configuration.table)

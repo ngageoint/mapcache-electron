@@ -105,9 +105,11 @@ export default {
         featureId
       })
     },
-    highlightFeature (path, table, feature) {
+    highlightFeature (id, isGeoPackage, path, table, feature) {
       window.mapcache.sendFeatureTableAction({
         action: FEATURE_TABLE_ACTIONS.HIGHLIGHT_FEATURE,
+        id,
+        isGeoPackage,
         path,
         table,
         feature

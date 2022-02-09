@@ -176,7 +176,7 @@
         <v-stepper-content step="4">
           <v-card flat tile>
             <v-card-subtitle>
-              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
+              Drag the layers to specify the rendering order. Layers at the top of the list will be rendered on top.
             </v-card-subtitle>
             <v-card-text>
               <v-list

@@ -407,7 +407,7 @@ export default {
       },
       handleHover (value) {
         if (this.table.visible) {
-          this.highlightFeature(this.filePath, this.table.tableName, value.feature)
+          this.highlightFeature(this.id, this.isGeoPackage, this.filePath, this.table.tableName, value.feature)
         }
       },
       handleClick (value) {
