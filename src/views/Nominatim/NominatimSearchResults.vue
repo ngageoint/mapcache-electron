@@ -18,7 +18,6 @@
           :items="results.featureCollection.features.concat({type: 'END'})"
           :bench="10"
           item-height="105"
-          @scroll.native="scrolling"
       >
         <template v-slot:default="{ item }">
           <v-list-item
@@ -50,8 +49,9 @@
           </v-list-item>
           <v-divider  v-if="item.type !== 'END'"></v-divider>
           <div v-if="item.type === 'END'">
-            <div v-if="!noMoreResults && results.featureCollection.features.length % 10 === 0" style="background: white">
-              <search-result-skelton v-for="i in 10" :key="i + '_search_skeleton'"></search-result-skelton>
+            <div v-if="!noMoreResults && results.featureCollection.features.length % 10 === 0">
+              <search-result-skelton :key="'top_search_skeleton'" v-observe-visibility="visibilityChanged"></search-result-skelton>
+              <search-result-skelton v-for="i in 9" :key="i + '_search_skeleton'"></search-result-skelton>
             </div>
             <v-list-item three-line v-else>
               <v-list-item-content>
@@ -82,9 +82,9 @@
 import EventBus from '../../lib/vue/EventBus'
 import NominatimResultDetails from '../Nominatim/NominatimResultDetails'
 import {prettyifyAddress, prettyifyWords, queryWithRequestObject} from '../../lib/util/nominatim/NominatimUtilities'
-import throttle from 'lodash/throttle'
 import {mdiChevronLeft, mdiContentSave, mdiClose} from '@mdi/js'
 import SearchResultSkelton from './SearchResultSkelton'
+import isEqual from 'lodash/isEqual'
 
 export default {
   components: {SearchResultSkelton, NominatimResultDetails},
@@ -102,11 +102,7 @@ export default {
       fab: false,
       selection: 0,
       noMoreResults: false,
-      scrolling: null
     }
-  },
-  created () {
-    this.scrolling = throttle(this.scroll, 250)
   },
   mounted () {
     EventBus.$on(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, (osm_id) => {
@@ -122,22 +118,23 @@ export default {
   watch: {
     results: {
       handler () {
-        this.selectedResult = null
+        // check if selected result is in the list
+        if (this.selectedResult != null) {
+          if (this.results == null || this.results.featureCollection == null || this.results.featureCollection.features.findIndex(feature => isEqual(this.selectedResult, feature)) === -1) {
+            this.selectedResult = null
+          }
+        }
         this.noMoreResults = false
       }
     }
   },
   methods: {
-    scroll (event) {
-      const margin = 104 * 10
-      const element = event.currentTarget || event.target
-      if (element && (element.scrollHeight - element.scrollTop - margin) <= element.clientHeight) {
-        if (!this.noMoreResults && !this.fetching) {
-          this.fetching = true
-          this.fetchMore().then(() => {
-            this.fetching = false
-          })
-        }
+    visibilityChanged (isVisible) {
+      if (isVisible && !this.noMoreResults && !this.fetching) {
+        this.fetching = true
+        this.fetchMore().then(() => {
+          this.fetching = false
+        })
       }
     },
     prettyifyWords,

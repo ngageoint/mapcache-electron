@@ -11,5 +11,7 @@ export function constructMapLayer (options) {
   const mapPane = options.mapPane || 'overlayPane'
   const isPreview = options.isPreview || false
   const maxFeatures = options.maxFeatures
-  return isRemote(layer) ? NetworkMapLayer.constructMapLayer(layer, mapPane, isPreview) : DefaultMapLayer.constructMapLayer(layer, mapPane, maxFeatures)
+  const zIndex = options.zIndex || 401
+  const className = options.className
+  return isRemote(layer) ? NetworkMapLayer.constructMapLayer(layer, mapPane, isPreview) : DefaultMapLayer.constructMapLayer(layer, mapPane, maxFeatures, className, zIndex)
 }

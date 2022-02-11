@@ -6,12 +6,13 @@ import { isRemote, MBTILES, GEOTIFF } from '../../../layer/LayerTypes'
  * Deafult Map Layer, which wraps MapCache Layers in a MapCacheMapLayer
  */
 export default class DefaultMapLayer {
-  static constructMapLayer (layer, mapPane = 'overlayPane', maxFeatures) {
+  static constructMapLayer (layer, mapPane = 'overlayPane', maxFeatures, className = '', zIndex = 401) {
     const options = {
       layer: layer,
       pane: mapPane,
-      zIndex: 401,
-      maxFeatures: maxFeatures
+      zIndex: zIndex,
+      maxFeatures: maxFeatures,
+      className: className
     }
 
     if (isRemote(layer)) {

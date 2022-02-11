@@ -19,7 +19,6 @@ import {
   createNextAvailableBaseMapDirectory,
   createNextAvailableSourceDirectory,
   getExtraResourcesDirectory,
-  readJSONFile,
   exists,
   rmDirAsync
 } from '../util/file/FileUtilities'
@@ -324,8 +323,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   copyToClipboard: (text) => {
     clipboard.writeText(text)
   },
-  getOfflineMap: () => {
-    return readJSONFile(path.join(getExtraResourcesDirectory(), 'offline.json'))
+  getOfflineGeoPackageFilePath: () => {
+    return path.join(getExtraResourcesDirectory(), 'offline.gpkg')
   },
   getProjectionDefinition: (code) => {
     return getDef(code)

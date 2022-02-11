@@ -11,6 +11,8 @@ import createMapCachePersistedStateWrapper from './lib/vue/vuex/MapCachePersiste
 import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedMutationsWrapper'
 import Vuex from 'vuex'
 import modules from './store/modules'
+import { ObserveVisibility } from 'vue-observe-visibility'
+Vue.directive('observe-visibility', ObserveVisibility)
 
 Object.assign(console, window.log)
 

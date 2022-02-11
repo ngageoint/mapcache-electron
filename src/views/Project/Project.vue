@@ -87,7 +87,8 @@
             :project="project"
             :preview-layer="previewLayer"
             :resizeListener="tabId"
-            :get-map-center-and-zoom="getMapCenterAndZoom">
+            :get-map-center-and-zoom="getMapCenterAndZoom"
+            :dark-theme="darkTheme">
           </preview-map>
           <leaflet-map
             ref="map"
@@ -97,7 +98,8 @@
             :project-id="project.id"
             :project="project"
             :resizeListener="tabId"
-            :feature-table-popped-out="featureTablePoppedOut">
+            :feature-table-popped-out="featureTablePoppedOut"
+            :dark-theme="darkTheme">
           </leaflet-map>
         </v-col>
       </v-row>

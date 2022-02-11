@@ -65,7 +65,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Website
               </p>
-              <p class="fake-link allowselect" :style="{color: 'blue',fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(result.properties.website)">
+              <p class="fake-link allowselect" :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(result.properties.website)">
                 {{result.properties.website}}
               </p>
             </v-col>
@@ -75,7 +75,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Wikipedia
               </p>
-              <p class="fake-link allowselect" :style="{color: 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(getWikiUrl(result.properties.wikipedia))">
+              <p class="fake-link allowselect" :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(getWikiUrl(result.properties.wikipedia))">
                 {{result.properties.wikipedia}}
               </p>
             </v-col>

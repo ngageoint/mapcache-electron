@@ -38,7 +38,7 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
     this.layer = options.layer
     this.id = options.layer.id
     this.maxFeatures = options.maxFeatures
-
+    this.className = options.className || ''
     this.outstandingTileRequests = {}
 
     const renderer = constructRenderer(this.layer, false)

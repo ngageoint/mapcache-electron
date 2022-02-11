@@ -66,7 +66,8 @@ export default {
       previewLayer: Object,
       resizeListener: Number,
       visible: Boolean,
-      getMapCenterAndZoom: Function
+      getMapCenterAndZoom: Function,
+      darkTheme: Boolean
     },
     data () {
       return {
@@ -109,33 +110,14 @@ export default {
         const baseMapId = baseMap.id
         const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
         if (baseMapId === getOfflineBaseMapId()) {
-          self.baseMapLayers[baseMapId] = L.geoJson(window.mapcache.getOfflineMap(), {
-            pane: BASE_MAP_PANE.name,
-            zIndex: BASE_MAP_PANE.zIndex,
-            style: function() {
-              return {
-                color: '#000000',
-                weight: 0.5,
-                fill: true,
-                fillColor: '#F9F9F6',
-                fillOpacity: 1
-              }
-            }
-          })
+          self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, this.$vuetify.theme.dark)
           if (this.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
             this.setAttribution(baseMap.attribution)
             self.baseMapLayers[baseMapId].bringToBack()
           }
         } else if (!isNil(defaultBaseMap)) {
-          self.baseMapLayers[baseMapId] = L.tileLayer(defaultBaseMap.layerConfiguration.url, {
-            pane: BASE_MAP_PANE.name,
-            zIndex: BASE_MAP_PANE.zIndex,
-            subdomains: defaultBaseMap.layerConfiguration.subdomains || [],
-            attribution: defaultBaseMap.layerConfiguration.attribution || '',
-            minZoom: 0,
-            maxZoom: 20
-          })
+          self.baseMapLayers[baseMapId] = this.createDefaultBaseMapLayer(defaultBaseMap, this.$vuetify.theme.dark)
           if (self.selectedBaseMapId === baseMapId) {
             map.addLayer(self.baseMapLayers[baseMapId])
             this.setAttribution(baseMap.attribution)
@@ -229,9 +211,56 @@ export default {
           this.previewMapLayer.remove()
           this.previewMapLayer = null
         }
+      },
+      createDefaultBaseMapLayer (baseMap, dark = false) {
+        return L.tileLayer(baseMap.layerConfiguration.url, {
+          pane: BASE_MAP_PANE.name,
+          zIndex: BASE_MAP_PANE.zIndex,
+          subdomains: baseMap.layerConfiguration.subdomains || [],
+          attribution: baseMap.layerConfiguration.attribution || '',
+          minZoom: 0,
+          maxZoom: 20,
+          className: dark ? 'dark' : ''
+        })
+      },
+      createOfflineBaseMapLayer (baseMap, dark = false) {
+        let layer = constructLayer({
+          id: baseMap.id,
+          geopackageFilePath: window.mapcache.getOfflineGeoPackageFilePath(),
+          sourceType: 'GeoPackage',
+          sourceLayerName: 'basemap',
+          layerType: 'Vector',
+          styleKey: 0,
+          count: 1,
+          extent: [-180, -90, 180, 90],
+        })
+        return constructMapLayer({layer: layer, mapPane: BASE_MAP_PANE.name, zIndex: BASE_MAP_PANE.zIndex, maxFeatures: 5000, className: dark ? 'dark' : ''})
       }
     },
     watch: {
+      darkTheme: {
+        handler (newDarkTheme) {
+          getDefaultBaseMaps().forEach(bm => {
+            const baseMapLayer = this.baseMapLayers[bm.id]
+            if (baseMapLayer != null) {
+              if (bm.id === this.selectedBaseMapId) {
+                this.map.removeLayer(this.baseMapLayers[bm.id])
+              }
+              if (bm.id !== getOfflineBaseMapId()) {
+                this.baseMapLayers[bm.id] = this.createDefaultBaseMapLayer(bm, newDarkTheme)
+              } else {
+                this.baseMapLayers[bm.id] = this.createOfflineBaseMapLayer(bm, newDarkTheme)
+              }
+              if (bm.id === this.selectedBaseMapId) {
+                this.map.addLayer(this.baseMapLayers[bm.id])
+                this.setAttribution(bm.attribution)
+                this.baseMapLayers[bm.id].bringToBack()
+                this.mapBackground = newDarkTheme ? (bm.darkBackground || bm.background || '#333333') : (bm.background || '#ddd')
+              }
+            }
+          })
+        }
+      },
       baseMaps: {
         handler (newBaseMaps) {
           const self = this
@@ -415,5 +444,8 @@ export default {
     right: 60px !important;
     max-height: 350px !important;
     border: 2px solid rgba(0,0,0,0.2) !important;
+  }
+  .dark {
+    filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
   }
 </style>

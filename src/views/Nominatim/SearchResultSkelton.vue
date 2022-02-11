@@ -1,6 +1,6 @@
 <template>
-  <div style="min-height: 105px !important;">
-    <v-row no-gutters style="background: white; height: 104px;" justify="space-between">
+  <div style="min-height: 105px !important;" class="background">
+    <v-row no-gutters style="height: 104px;" justify="space-between">
       <v-col cols="9">
         <v-skeleton-loader
             loading
@@ -32,7 +32,7 @@
 
 <script>
 export default {
-  name: "SearchResultSkelton"
+  name: 'SearchResultSkelton'
 }
 </script>
 

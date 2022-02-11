@@ -341,7 +341,8 @@ export default {
     project: Object,
     resizeListener: Number,
     visible: Boolean,
-    featureTablePoppedOut: Boolean
+    featureTablePoppedOut: Boolean,
+    darkTheme: Boolean
   },
   directives: {
     'sortable-list': {
@@ -767,35 +768,18 @@ export default {
       const baseMapId = baseMap.id
       const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
       if (baseMapId === getOfflineBaseMapId()) {
-        self.baseMapLayers[baseMapId] = L.geoJSON(window.mapcache.getOfflineMap(), {
-          pane: BASE_MAP_PANE.name,
-          zIndex: BASE_MAP_PANE.zIndex,
-          style: function() {
-            return {
-              color: '#000000',
-              weight: 0.5,
-              fill: true,
-              fillColor: '#F9F9F6',
-              fillOpacity: 1
-            }
-          }
-        })
+        self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, this.$vuetify.theme.dark)
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
+          self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
           this.setAttribution(baseMap.attribution)
           self.baseMapLayers[baseMapId].bringToBack()
         }
       } else if (!isNil(defaultBaseMap)) {
-        self.baseMapLayers[baseMapId] = L.tileLayer(defaultBaseMap.layerConfiguration.url, {
-          pane: BASE_MAP_PANE.name,
-          zIndex: BASE_MAP_PANE.zIndex,
-          subdomains: defaultBaseMap.layerConfiguration.subdomains || [],
-          attribution: defaultBaseMap.layerConfiguration.attribution || '',
-          minZoom: 0,
-          maxZoom: 20
-        })
+        self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, this.$vuetify.theme.dark)
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
+          self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
           this.setAttribution(baseMap.attribution)
           self.baseMapLayers[baseMapId].bringToBack()
         }
@@ -1241,6 +1225,30 @@ export default {
       for (const geopackageId in this.geopackages) {
         this.addGeoPackageToMap(this.geopackages[geopackageId], this.map)
       }
+    },
+    createDefaultBaseMapLayer (baseMap, dark = false) {
+     return L.tileLayer(baseMap.layerConfiguration.url, {
+        pane: BASE_MAP_PANE.name,
+        zIndex: BASE_MAP_PANE.zIndex,
+        subdomains: baseMap.layerConfiguration.subdomains || [],
+        attribution: baseMap.layerConfiguration.attribution || '',
+        minZoom: 0,
+        maxZoom: 20,
+        className: dark ? 'dark' : ''
+      })
+    },
+    createOfflineBaseMapLayer (baseMap, dark = false) {
+      let layer = constructLayer({
+        id: baseMap.id,
+        geopackageFilePath: window.mapcache.getOfflineGeoPackageFilePath(),
+        sourceType: 'GeoPackage',
+        sourceLayerName: 'basemap',
+        layerType: 'Vector',
+        styleKey: 0,
+        count: 1,
+        extent: [-180, -90, 180, 90],
+      })
+      return constructMapLayer({layer: layer, mapPane: BASE_MAP_PANE.name, zIndex: BASE_MAP_PANE.zIndex, maxFeatures: 5000, className: dark ? 'dark' : ''})
     }
   },
   watch: {
@@ -1313,7 +1321,7 @@ export default {
             if (repaintRequired) {
               self.baseMapLayers[selectedBaseMapId].redraw()
             }
-            this.mapBackground = selectedBaseMap.background || '#ddd'
+            this.mapBackground = this.$vuetify.theme.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
           }
         }
       }
@@ -1351,7 +1359,7 @@ export default {
               this.setAttribution(newBaseMap.attribution)
               self.baseMapLayers[newBaseMapId].bringToBack()
             }
-            self.mapBackground = newBaseMap.background || '#ddd'
+            self.mapBackground = self.$vuetify.theme.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
           } else {
             self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
             this.setAttribution(newBaseMap.attribution)
@@ -1622,6 +1630,29 @@ export default {
         })
       }
     },
+    darkTheme: {
+      handler (newDarkTheme) {
+        getDefaultBaseMaps().forEach(bm => {
+          const baseMapLayer = this.baseMapLayers[bm.id]
+          if (baseMapLayer != null) {
+            if (bm.id === this.selectedBaseMapId) {
+              this.map.removeLayer(this.baseMapLayers[bm.id])
+            }
+            if (bm.id !== getOfflineBaseMapId()) {
+              this.baseMapLayers[bm.id] = this.createDefaultBaseMapLayer(bm, newDarkTheme)
+            } else {
+              this.baseMapLayers[bm.id] = this.createOfflineBaseMapLayer(bm, newDarkTheme)
+            }
+            if (bm.id === this.selectedBaseMapId) {
+              this.map.addLayer(this.baseMapLayers[bm.id])
+              this.setAttribution(bm.attribution)
+              this.baseMapLayers[bm.id].bringToBack()
+              this.mapBackground = newDarkTheme ? (bm.darkBackground || bm.background || '#333333') : (bm.background || '#ddd')
+            }
+          }
+        })
+      }
+    },
     project: {
       async handler (updatedProject) {
         let self = this
@@ -1629,6 +1660,7 @@ export default {
         updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
         updatedProject.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
         updatedProject.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
+
         // max features setting changed
         if (updatedProject.maxFeatures !== this.maxFeatures) {
           for (const gp of Object.values(updatedProject.geopackages)) {
@@ -1882,5 +1914,8 @@ export default {
   }
   .pressed {
     filter: brightness(1.2) !important;
+  }
+  .dark {
+    filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
   }
 </style>

@@ -89,7 +89,7 @@ function getCountryCodeName (feature) {
  * @param timeout - timeout to wait for results
  * @return {Promise<{featureCollection: any, requestObject: {q, exclude_place_ids: *[], addressdetails: number, polygon_geojson: number, format: string, limit: number, extratags: number, namedetails: number}}>}
  */
-async function queryWithRequestObject (requestObject, reverse = false, timeout = 5000) {
+async function queryWithRequestObject (requestObject, reverse = false, timeout = 10000) {
   try {
     requestObject.polygon_geojson = 1
     const searchUrl = `${environment.nominatimUrl}/search`
