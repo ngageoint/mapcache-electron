@@ -38,8 +38,8 @@ function generateGridStyle (color, maxLength = null) {
   }
 }
 
-function getDefaultStyle (maxLength) {
-  return generateGridStyle('#000', maxLength)
+function getDefaultStyle (maxLength, isDark = false) {
+  return generateGridStyle(isDark ? '#ddddddaa' : '#000', maxLength)
 }
 
 function getFontStyle (fontStyle) {
@@ -64,7 +64,7 @@ function getFontStyle (fontStyle) {
   return styleString
 }
 
-function defaultGridOptions () {
+function defaultGridOptions (dark = false) {
   return {
     onClick: null,
     interactive: false,
@@ -73,42 +73,42 @@ function defaultGridOptions () {
       maxZoom: 3,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle()
+      ...getDefaultStyle(null, dark)
     },
     ten_degree: {
       minZoom: 4,
       maxZoom: 5,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle()
+      ...getDefaultStyle(null, dark)
     },
     five_degree: {
       minZoom: 6,
       maxZoom: 7,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle()
+      ...getDefaultStyle(null, dark)
     },
     thirty_minute: {
       minZoom: 8,
       maxZoom: 9,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle(5)
+      ...getDefaultStyle(5, dark)
     },
     fifteen_minute: {
       minZoom: 10,
       maxZoom: 10,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle(6)
+      ...getDefaultStyle(6, dark)
     },
     five_minute: {
       minZoom: 11,
       maxZoom: 20,
       showLabel: true,
       gridLabelClassName: '',
-      ...getDefaultStyle(7)
+      ...getDefaultStyle(7, dark)
     }
   }
 }
@@ -143,21 +143,26 @@ function defaultGridOptions () {
 function setupGARSGrid (L) {
   L.GARSGrid = L.LayerGroup.extend({
     options: {
-      gridOptions: defaultGridOptions(),
+      gridOptions: defaultGridOptions(false),
       // Redraw on move or moveend
       // Can be any leaflet event, but move and moveend are the sensible ones.
       // Will also be called on viewreset.
-      redraw: 'move'
+      redraw: 'move',
+      dark: false
     },
 
     initialize: function (options) {
       this.pane = options.pane || 'overlayPane'
       this.zIndex = options.zIndex || 400
       L.LayerGroup.prototype.initialize.call(this)
-      this.options.gridOptions = defaultGridOptions()
+      this.options.gridOptions = defaultGridOptions(options.dark)
       merge(this.options, options)
       this._canvas = document.createElement('canvas')
       this._canvasContext = this._canvas.getContext('2d')
+    },
+
+    setDarkModeEnabled: function (enabled) {
+      this.options.gridOptions = defaultGridOptions(enabled)
     },
 
     measureText (text, font = 'bold 12px Roboto') {

@@ -6,8 +6,13 @@ function setupXYZGrid (L) {
       L.GridLayer.prototype.initialize.call(this, options)
       this.currentId = options.id
       this.interactive = options.interactive
-      this.bgColor = options.bgColor
-      this.fgColor = options.fgColor
+      this.bgColor = options.dark ? '#00000000' : '#00000000'
+      this.fgColor = options.dark ? '#ddddddaa' : '#000000ff'
+    },
+    setDarkModeEnabled (enabled) {
+      this.bgColor = enabled ? '#00000000' : '#00000000'
+      this.fgColor = enabled ? '#ddddddaa' : '#000000ff'
+      this.redraw()
     },
     createTile: function (coords) {
       const self = this

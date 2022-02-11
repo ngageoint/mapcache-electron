@@ -37,7 +37,7 @@ export default {
           interactive: true,
           pane: GRID_SELECTION_PANE.name,
           zIndex: GRID_SELECTION_PANE.zIndex,
-          id: this.gridBoundsId
+          id: this.gridBoundsId,
         })
         this.gridLayer.addTo(this.map)
       } else if (type === 1) {

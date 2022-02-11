@@ -1013,22 +1013,24 @@ export default {
       this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
       this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
       this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
+
       this.garsGridOverlay = L.garsGrid({
         pane: GRID_SELECTION_PANE.name,
-        zIndex: GRID_SELECTION_PANE.zIndex
+        zIndex: GRID_SELECTION_PANE.zIndex,
+        dark: this.darkTheme
       })
 
       this.mgrsGridOverlay = L.mgrsGrid({
         pane: GRID_SELECTION_PANE.name,
-        zIndex: GRID_SELECTION_PANE.zIndex
+        zIndex: GRID_SELECTION_PANE.zIndex,
+        dark: this.darkTheme
       })
 
       this.xyzGridOverlay = L.xyzGrid({
         interactive: false,
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
-        bgColor: '#00000000',
-        fgColor: '#000000ff'
+        dark: this.darkTheme
       })
 
       this.map.setView(defaultCenter, defaultZoom)
@@ -1651,6 +1653,21 @@ export default {
             }
           }
         })
+
+        this.garsGridOverlay.setDarkModeEnabled(newDarkTheme)
+        this.mgrsGridOverlay.setDarkModeEnabled(newDarkTheme)
+        this.xyzGridOverlay.setDarkModeEnabled(newDarkTheme)
+
+        if (this.gridSelection === 1) {
+          this.xyzGridOverlay.remove()
+          this.xyzGridOverlay.addTo(this.map)
+        } else if (this.gridSelection === 2) {
+          this.garsGridOverlay.remove()
+          this.garsGridOverlay.addTo(this.map)
+        } else if (this.gridSelection === 3) {
+          this.mgrsGridOverlay.remove()
+          this.mgrsGridOverlay.addTo(this.map)
+        }
       }
     },
     project: {

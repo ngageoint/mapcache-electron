@@ -1,7 +1,7 @@
 import merge from 'lodash/merge'
 import {zonesWithin} from './gzd/GZDZones'
 
-function generateGridStyle (color = '#000', opacity = 1.0, weight = 1) {
+function generateGridStyle (color = '#000', labelColor = '#000', opacity = 1.0, weight = 1) {
   return {
     style: {
       color: color,
@@ -31,7 +31,7 @@ function generateGridStyle (color = '#000', opacity = 1.0, weight = 1) {
       },
       fontSize: 12,
       fontFamily: 'Roboto',
-      fontColor: color,
+      fontColor: labelColor,
       fontWeight: 'bold'
     }
   }
@@ -59,7 +59,7 @@ function getFontStyle (fontStyle) {
   return styleString
 }
 
-function defaultGridOptions () {
+function defaultGridOptions (isDark = false) {
   return {
     onClick: null,
     interactive: false,
@@ -69,7 +69,7 @@ function defaultGridOptions () {
       maxZoom: 20,
       showLabel: true,
       gridLabelClassName: 'mgrs-gzd-label',
-      ...generateGridStyle('red', 0.5,2.0)
+      ...generateGridStyle(isDark ? '#FF4444ff' : 'red', isDark ? '#FF4444ff' : 'red',0.5,2.0)
     },
     one_hundred_km: {
       minZoom: 6,
@@ -77,7 +77,7 @@ function defaultGridOptions () {
       precision: 100000,
       showLabel: true,
       gridLabelClassName: 'mgrs-100km-label',
-      ...generateGridStyle('black', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000ff', '#000000ff', 0.5,1.0)
     },
     ten_km: {
       minZoom: 10,
@@ -85,7 +85,7 @@ function defaultGridOptions () {
       precision: 10000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('grey', 0.5,1.0)
+      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
     },
     one_km: {
       minZoom: 13,
@@ -93,7 +93,7 @@ function defaultGridOptions () {
       precision: 1000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('grey', 0.5,1.0)
+      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
     },
     one_hundred_meter: {
       minZoom: 16,
@@ -101,7 +101,7 @@ function defaultGridOptions () {
       precision: 100,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('grey', 0.5,1.0)
+      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
     },
     ten_meter: {
       minZoom: 19,
@@ -109,7 +109,7 @@ function defaultGridOptions () {
       precision: 10,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('gray', 0.5,1.0)
+      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
     }
   }
 }
@@ -123,7 +123,7 @@ function toExtent (bounds) {
 function setupMGRSGrid (L) {
   L.MGRSGrid = L.LayerGroup.extend({
     options: {
-      gridOptions: defaultGridOptions(),
+      gridOptions: defaultGridOptions(false),
       redraw: 'move',
     },
 
@@ -131,10 +131,14 @@ function setupMGRSGrid (L) {
       this.pane = options.pane || 'overlayPane'
       this.zIndex = options.zIndex || 400
       L.LayerGroup.prototype.initialize.call(this)
-      this.options.gridOptions = defaultGridOptions()
+      this.options.gridOptions = defaultGridOptions(options.dark)
       merge(this.options, options)
       this._canvas = document.createElement('canvas')
       this._canvasContext = this._canvas.getContext('2d')
+    },
+
+    setDarkModeEnabled (enabled) {
+      this.options.gridOptions = defaultGridOptions(enabled)
     },
 
     measureText (text, font = 'bold 12px Roboto') {
