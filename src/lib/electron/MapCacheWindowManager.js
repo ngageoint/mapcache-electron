@@ -69,7 +69,6 @@ import {
   LOAD_OR_DISPLAY_GEOPACKAGES
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
-import {environment} from '../env/env'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -83,6 +82,7 @@ class MapCacheWindowManager {
   projectWindow
   loadingWindow
   workerWindow
+  releaseNotesWindow
   featureTableWindow
   mainWindowState
   projectWindowState
@@ -615,6 +615,13 @@ class MapCacheWindowManager {
       // eslint-disable-next-line no-empty
     } catch (e) {}
     try {
+      if (!isNil(this.releaseNotesWindow)) {
+        this.releaseNotesWindow.destroy()
+        this.releaseNotesWindow = null
+      }
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+    try {
       if (!isNil(this.mainWindow)) {
         this.mainWindow.destroy()
         this.mainWindow = null
@@ -736,6 +743,10 @@ class MapCacheWindowManager {
           }
           this.mainWindow = null
         }
+        if ((isNil(this.projectWindow) || !this.projectWindow.isVisible()) && !isNil(this.releaseNotesWindow)) {
+          this.releaseNotesWindow.destroy()
+          this.releaseNotesWindow = null
+        }
       })
     }))
   }
@@ -759,6 +770,31 @@ class MapCacheWindowManager {
         this.loadingWindow.show()
       })
     }, 0)
+  }
+
+  launchReleaseNotesWindow () {
+    if (this.releaseNotesWindow == null) {
+      const windowHeight = 600 + (isWin ? 20 : 0)
+      const winURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/release_notes`
+        : `mapcache://./index.html/#/release_notes`
+      this.releaseNotesWindow = new BrowserWindow({
+        title: 'MapCache Release Notes',
+        show: false,
+        width: 800,
+        minWidth: 800,
+        minHeight: 600,
+        height: windowHeight
+      })
+      this.releaseNotesWindow.on('close', () => {
+        this.releaseNotesWindow = null
+      })
+      this.loadContent(this.releaseNotesWindow, winURL, () => {
+        this.releaseNotesWindow.show()
+      })
+    } else {
+      this.releaseNotesWindow.show()
+    }
   }
 
   /**
@@ -958,6 +994,7 @@ class MapCacheWindowManager {
    * @returns {*[]}
    */
   getMenuTemplate () {
+    const self = this
     const template = [
       {
         label: 'Edit',
@@ -989,25 +1026,17 @@ class MapCacheWindowManager {
       }
     ]
 
-    if (environment.mapcacheRepo != null) {
-      template.push({
-        role: 'help',
-        submenu: [
-          {
-            label: 'Documentation',
-            click () {
-              shell.openExternal(environment.mapcacheRepo + '/blob/v' + app.getVersion() + '/README.md')
-            }
-          },
-          {
-            label: 'What\'s New...',
-            click () {
-              shell.openExternal(environment.mapcacheRepo + '/blob/v' + app.getVersion() + '/changelog/v' + app.getVersion() + '.md')
-            }
+    template.push({
+      role: 'help',
+      submenu: [
+        {
+          label: 'What\'s New...',
+          click () {
+            self.launchReleaseNotesWindow()
           }
-        ]
-      })
-    }
+        }
+      ]
+    })
 
     if (isMac) {
       template.unshift({
@@ -1088,6 +1117,9 @@ class MapCacheWindowManager {
     if (this.featureTableWindow) {
       this.featureTableWindow.webContents.openDevTools()
     }
+    if (this.releaseNotesWindow) {
+      this.releaseNotesWindow.webContents.openDevTools()
+    }
   }
 
   /**
@@ -1105,6 +1137,9 @@ class MapCacheWindowManager {
     }
     if (this.featureTableWindow) {
       this.featureTableWindow.webContents.closeDevTools()
+    }
+    if (this.releaseNotesWindow) {
+      this.releaseNotesWindow.webContents.closeDevTools()
     }
   }
 }

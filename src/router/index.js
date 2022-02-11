@@ -5,6 +5,7 @@ const LandingPageLoader = () => import('../views/LandingPage/LandingPage.vue')
 const ProjectLoader = () => import('../views/Project/Project.vue')
 const WorkerLoader = () => import('../views/Worker/Worker.vue')
 const FeatureTableLoader = () => import('../views/FeatureTable/FeatureTableWindow.vue')
+const ReleaseNotes = () => import('../views/Documentation/ReleaseNotes.vue')
 
 Vue.use(VueRouter)
 
@@ -31,6 +32,11 @@ const router = new VueRouter({
       path: '/feature_table/:id',
       name: 'FeatureTable',
       component: FeatureTableLoader,
+    },
+    {
+      path: '/release_notes',
+      name: 'ReleaseNotes',
+      component: ReleaseNotes,
     }
   ]
 })
