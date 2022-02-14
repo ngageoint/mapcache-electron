@@ -191,6 +191,8 @@ class MapCacheWindowManager {
       })
     })
 
+    const origin = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
+
     // if auth was enabled, be sure to add response header allow for auth to occur
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       let headers = details.responseHeaders
@@ -200,12 +202,18 @@ class MapCacheWindowManager {
         headers['Access-Control-Allow-Origin'] = headers['access-control-allow-origin']
       }
       if (isNil(headers['Access-Control-Allow-Origin']) || (Array.isArray(headers['Access-Control-Allow-Origin']) && headers['Access-Control-Allow-Origin'][0] === '*') || headers['Access-Control-Allow-Origin'] === '*') {
-        headers['Access-Control-Allow-Origin'] = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
+        headers['Access-Control-Allow-Origin'] = origin
+      }
+      if (Array.isArray(headers['Access-Control-Allow-Origin']) && headers['Access-Control-Allow-Origin'].length === 1) {
+        headers['Access-Control-Allow-Origin'] = headers['Access-Control-Allow-Origin'][0]
       }
       delete headers['access-control-allow-origin']
 
       headers['Origin'] = headers['Access-Control-Allow-Origin']
       delete headers['origin']
+
+      headers['Access-Control-Allow-Credentials'] = 'true'
+      delete headers['access-control-allow-credentials']
 
       callback({
         responseHeaders: headers
@@ -782,7 +790,7 @@ class MapCacheWindowManager {
         title: 'MapCache Release Notes',
         show: false,
         width: 800,
-        minWidth: 800,
+        minWidth: 650,
         minHeight: 600,
         height: windowHeight
       })
