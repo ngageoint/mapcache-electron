@@ -37,8 +37,10 @@ async function getImageBufferFromCanvas (canvas) {
         return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
           plugins: [imageminPngquant({speed: 8, quality: [0.5, 0.8]})]
         })
+        // return Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64')
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
+        console.error(e)
         // eslint-disable-next-line no-console
         console.error('Failed to add tile')
       }
@@ -158,6 +160,7 @@ async function buildTileLayer (configuration, statusCallback) {
         layerZoomExtentMap[z] = {}
       }
 
+      // updates the total extent
       const updateTotalExtent = (extent) => {
         if (extent != null) {
           if (totalExtent == null) {
@@ -171,6 +174,7 @@ async function buildTileLayer (configuration, statusCallback) {
         }
       }
 
+      // converts an extent in 4326 to 3857
       const convertToWebMercator = (extent) => {
         let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
         let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
@@ -234,6 +238,9 @@ async function buildTileLayer (configuration, statusCallback) {
       const tileMatrixSetSrsId = 3857
 
       await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+
+      const tileDao = gp.getTileDao(tableName)
+      const tileRow = tileDao.newRow()
 
       if (configuration.tileScalingEnabled) {
         const tileScalingRecord = new TileScaling()
@@ -339,7 +346,12 @@ async function buildTileLayer (configuration, statusCallback) {
         })
         buffer = await getImageBufferFromCanvas(canvas)
         if (buffer != null) {
-          gp.addTile(buffer, tableName, z, y, x)
+          tileRow.resetId()
+          tileRow.zoomLevel = z
+          tileRow.tileColumn = x
+          tileRow.tileRow = y
+          tileRow.tileData = buffer
+          tileDao.create(tileRow)
         }
         disposeCanvas(canvas)
         tilesAdded += 1

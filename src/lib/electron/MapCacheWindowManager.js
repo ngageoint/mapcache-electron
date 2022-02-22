@@ -66,7 +66,8 @@ import {
   FEATURE_TABLE_ACTION,
   FEATURE_TABLE_EVENT,
   LAUNCH_WITH_GEOPACKAGE_FILES,
-  LOAD_OR_DISPLAY_GEOPACKAGES
+  LOAD_OR_DISPLAY_GEOPACKAGES,
+  LAUNCH_USER_GUIDE
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 
@@ -83,6 +84,7 @@ class MapCacheWindowManager {
   loadingWindow
   workerWindow
   releaseNotesWindow
+  userGuideWindow
   featureTableWindow
   mainWindowState
   projectWindowState
@@ -590,6 +592,10 @@ class MapCacheWindowManager {
       }
       event.sender.send(CANCEL_BUILD_TILE_LAYER_COMPLETED(taskId))
     })
+
+    ipcMain.on(LAUNCH_USER_GUIDE, () => {
+      this.launchUserGuideWindow()
+    })
   }
 
   /**
@@ -626,6 +632,13 @@ class MapCacheWindowManager {
       if (!isNil(this.releaseNotesWindow)) {
         this.releaseNotesWindow.destroy()
         this.releaseNotesWindow = null
+      }
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+    try {
+      if (!isNil(this.userGuideWindow)) {
+        this.userGuideWindow.destroy()
+        this.userGuideWindow = null
       }
       // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -751,9 +764,15 @@ class MapCacheWindowManager {
           }
           this.mainWindow = null
         }
-        if ((isNil(this.projectWindow) || !this.projectWindow.isVisible()) && !isNil(this.releaseNotesWindow)) {
-          this.releaseNotesWindow.destroy()
-          this.releaseNotesWindow = null
+        if (isNil(this.projectWindow) || !this.projectWindow.isVisible()) {
+          if (!isNil(this.releaseNotesWindow)) {
+            this.releaseNotesWindow.destroy()
+            this.releaseNotesWindow = null
+          }
+          if (!isNil(this.userGuideWindow)) {
+            this.userGuideWindow.destroy()
+            this.userGuideWindow = null
+          }
         }
       })
     }))
@@ -782,17 +801,25 @@ class MapCacheWindowManager {
 
   launchReleaseNotesWindow () {
     if (this.releaseNotesWindow == null) {
-      const windowHeight = 600 + (isWin ? 20 : 0)
+      const windowHeight = 700 + (isWin ? 20 : 0)
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
         ? `${process.env.WEBPACK_DEV_SERVER_URL}#/release_notes`
         : `mapcache://./index.html/#/release_notes`
+      this.releaseNotesWindowState = windowStateKeeper({
+        defaultWidth: 800,
+        defaultHeight: windowHeight,
+        file: 'release-notes-page.json',
+        path: path.join(app.getPath('userData'), 'window_state')
+      })
       this.releaseNotesWindow = new BrowserWindow({
         title: 'MapCache Release Notes',
         show: false,
-        width: 800,
-        minWidth: 650,
+        x: this.releaseNotesWindowState.x,
+        y: this.releaseNotesWindowState.y,
+        width: this.releaseNotesWindowState.width,
+        height: this.releaseNotesWindowState.height,
         minHeight: 600,
-        height: windowHeight
+        minWidth: 600
       })
       this.releaseNotesWindow.on('close', () => {
         this.releaseNotesWindow = null
@@ -802,6 +829,39 @@ class MapCacheWindowManager {
       })
     } else {
       this.releaseNotesWindow.show()
+    }
+  }
+
+  launchUserGuideWindow () {
+    if (this.userGuideWindow == null) {
+      const windowHeight = 1000 + (isWin ? 20 : 0)
+      const winURL = process.env.WEBPACK_DEV_SERVER_URL
+        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/user_guide`
+        : `mapcache://./index.html/#/user_guide`
+      this.userGuideWindowState = windowStateKeeper({
+        defaultWidth: 900,
+        defaultHeight: windowHeight,
+        file: 'user-guide-page.json',
+        path: path.join(app.getPath('userData'), 'window_state')
+      })
+      this.userGuideWindow = new BrowserWindow({
+        title: 'MapCache User Guide',
+        show: false,
+        x: this.userGuideWindowState.x,
+        y: this.userGuideWindowState.y,
+        width: this.userGuideWindowState.width,
+        height: this.userGuideWindowState.height,
+        minWidth: 600,
+        minHeight: 600,
+      })
+      this.userGuideWindow.on('close', () => {
+        this.userGuideWindow = null
+      })
+      this.loadContent(this.userGuideWindow, winURL, () => {
+        this.userGuideWindow.show()
+      })
+    } else {
+      this.userGuideWindow.show()
     }
   }
 
@@ -1038,6 +1098,12 @@ class MapCacheWindowManager {
       role: 'help',
       submenu: [
         {
+          label: 'User guide',
+          click () {
+            self.launchUserGuideWindow()
+          }
+        },
+        {
           label: 'What\'s New...',
           click () {
             self.launchReleaseNotesWindow()
@@ -1128,6 +1194,9 @@ class MapCacheWindowManager {
     if (this.releaseNotesWindow) {
       this.releaseNotesWindow.webContents.openDevTools()
     }
+    if (this.userGuideWindow) {
+      this.userGuideWindow.webContents.openDevTools()
+    }
   }
 
   /**
@@ -1148,6 +1217,9 @@ class MapCacheWindowManager {
     }
     if (this.releaseNotesWindow) {
       this.releaseNotesWindow.webContents.closeDevTools()
+    }
+    if (this.userGuideWindow) {
+      this.userGuideWindow.webContents.closeDevTools()
     }
   }
 }

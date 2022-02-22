@@ -1,0 +1,48 @@
+variables:
+  TF_APP_ID: $TF_APP_ID
+  TF_API_KEY: $TF_API_KEY
+  TF_URL: $TF_URL
+  SCAN_PATH: $SCAN_PATH
+
+stages:
+  - test
+
+fortify_scanning:
+  image: ${CI_REGISTRY}/dso-millennium-falcon/docker/fortify-sca:latest
+  stage: test
+  script:
+    - /opt/Fortify/bin/sourceanalyzer -64 -version
+    - /opt/Fortify/bin/fortifyupdate -showInstalledRules
+    - /opt/Fortify/bin/sourceanalyzer -64 -b "desktopMapcache-${CI_JOB_ID}" -clean
+    - echo ${SCAN_PATH}
+    - echo ${TF_APP_ID}
+    - /opt/Fortify/bin/sourceanalyzer -64 -Xmx4G -b "desktopMapcache-${CI_JOB_ID}" ${SCAN_PATH}
+    - /opt/Fortify/bin/sourceanalyzer -64 -b "desktopMapcache-${CI_JOB_ID}" -show-build-warnings
+    - /opt/Fortify/bin/sourceanalyzer -64 -b "desktopMapcache-${CI_JOB_ID}" -show-files
+    - /opt/Fortify/bin/sourceanalyzer -64 -Xmx4G -b "desktopMapcache-${CI_JOB_ID}" -scan -output-file "fortify-scan-results.fpr" -debug -logfile sca.log -verbose
+    - /opt/Fortify/bin/BIRTReportGenerator
+      -template "Developer Workbook"
+      -format PDF
+      -source fortify-scan-results.fpr
+      -output fortify-scan-results.pdf
+  after_script:
+    - |
+      if [[ ${TF_APP_ID} ]] && [[ ${TF_API_KEY} ]] && [[ ${TF_URL} ]]
+      then
+        curl -vk -H 'Accept: application/json' \
+          -H "Authorization: APIKEY ${TF_API_KEY}" \
+          -X POST --form file=@fortify-scan-results.fpr \
+          "${TF_URL}/rest/latest/applications/${TF_APP_ID}/upload"
+      else
+        echo "Skipping uploading fortify-scan-results.fpr report to ThreadFix."
+        echo "To upload to ThreadFix, please specify a TF_APP_ID, TF_API_KEY, and TF_URL."
+      fi
+  artifacts:
+    paths:
+      - fortify-scan-results.fpr
+      - fortify-scan-results.pdf
+      - sca.log
+    expire_in: 1 week
+  allow_failure: true
+  tags:
+    - standard

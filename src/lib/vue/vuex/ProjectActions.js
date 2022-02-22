@@ -467,6 +467,9 @@ async function addFeatureToGeoPackage ({projectId, geopackageId, tableName, feat
     const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
     updateGeoPackageFileInfo(geopackage)
     updateExistingTable(existingTable, tableInfo, true, true)
+    if (!existingTable.visible) {
+      existingTable.visible = true
+    }
     store.dispatch('Projects/setGeoPackage', {projectId, geopackage})
   })
 }

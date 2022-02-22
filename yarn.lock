@@ -6721,7 +6721,7 @@ image-size@0.8.3:
 
 "imagemin-pngquant@git://github.com/caldwellc/imagemin-pngquant.git#master":
   version "9.0.1"
-  resolved "git://github.com/caldwellc/imagemin-pngquant.git#045647f7fd300616832128f5150c8913b80565f3"
+  resolved "git://github.com/caldwellc/imagemin-pngquant.git#3e46710539fc34d27c8bb42693d77103b2c921fd"
   dependencies:
     execa "^4.0.0"
     is-png "^2.0.0"

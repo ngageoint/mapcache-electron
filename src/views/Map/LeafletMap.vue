@@ -3,91 +3,11 @@
     <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1, backgroundColor: mapBackground}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
-        v-model="geopackageExistsDialog"
-        max-width="400"
-        persistent
-        @keydown.esc="cancelDrawing">
-        <v-card>
-          <v-card-title>
-            <v-icon color="orange" class="pr-2">{{mdiAlert}}</v-icon>
-            Create GeoPackage warning
-          </v-card-title>
-          <v-card-text>
-            <v-card-subtitle>
-              The name of the geopackage you tried to create already exists. Would you like try another file name?
-            </v-card-subtitle>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              text
-              @click="cancelDrawing">
-              Cancel
-            </v-btn>
-            <v-btn
-              color="primary"
-              text
-              @click="confirmGeoPackageFeatureLayerSelection">
-              OK
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-      <v-dialog
-        v-model="layerSelectionVisible"
+        v-model="geopackageFeatureLayerSelectionDialog"
         max-width="450"
         persistent
         @keydown.esc="cancelDrawing">
-        <v-card v-if="layerSelectionVisible">
-          <v-card-title>
-            Add feature
-          </v-card-title>
-          <v-card-text>
-            Add feature to the selected GeoPackage and feature layer.
-            <v-row no-gutters class="mt-4">
-              <v-col cols="12">
-                <v-select v-model="geoPackageSelection" :items="geoPackageChoices" label="GeoPackage" dense>
-                </v-select>
-              </v-col>
-            </v-row>
-            <v-row v-if="geoPackageSelection !== 0" no-gutters>
-              <v-col cols="12">
-                <v-select v-model="geoPackageFeatureLayerSelection" :items="geoPackageFeatureLayerChoices" label="Feature layer" dense>
-                </v-select>
-              </v-col>
-            </v-row>
-            <v-form ref="featureTableNameForm" v-on:submit.prevent v-if="geoPackageSelection === 0 || geoPackageFeatureLayerSelection === 0" v-model="featureTableNameValid">
-              <v-container class="ma-0 pa-0">
-                <v-row no-gutters>
-                  <v-col cols="12">
-                    <v-text-field
-                      autofocus
-                      v-model="featureTableName"
-                      :rules="featureTableNameRules"
-                      label="Feature layer name"
-                      required
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              text
-              @click="cancelDrawing">
-              Cancel
-            </v-btn>
-            <v-btn
-              v-if="geoPackageFeatureLayerSelection !== 0 || featureTableNameValid"
-              color="primary"
-              text
-              @click="confirmGeoPackageFeatureLayerSelection">
-              Confirm
-            </v-btn>
-          </v-card-actions>
-        </v-card>
+        <add-feature-to-geo-package v-if="geopackageFeatureLayerSelectionDialog" :project="project" :cancel="cancelDrawing" :active-geopackage="project.activeGeoPackage" :geopackages="geopackages" :save="confirmGeoPackageFeatureLayerSelection"></add-feature-to-geo-package>
       </v-dialog>
       <v-dialog
         v-model="showAddFeatureDialog"
@@ -291,9 +211,8 @@ import {latLng2GARS} from '../../lib/leaflet/map/grid/gars/GARS'
 import {FEATURE_TABLE_WINDOW_EVENTS} from '../FeatureTable/FeatureTableEvents'
 import {FEATURE_TABLE_ACTIONS} from '../FeatureTable/FeatureTableActions'
 import Sortable from 'sortablejs'
+import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
 
-const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
-const NEW_FEATURE_LAYER_OPTION = {text: 'New feature layer', value: 0}
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
 
@@ -379,6 +298,7 @@ export default {
     })
   },
   components: {
+    AddFeatureToGeoPackage,
     NominatimResultMapPopup,
     NominatimSearch,
     GeoTIFFTroubleshooting,
@@ -396,7 +316,6 @@ export default {
       mdiContentCopy: mdiContentCopy,
       mdiMapOutline: mdiMapOutline,
       mdiDragHorizontalVariant: mdiDragHorizontalVariant,
-      geoPackageMapLayers: {},
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
       defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
@@ -406,34 +325,17 @@ export default {
       selectedBaseMapId: navigator.onLine ? '0' : '3',
       isDrawing: false,
       maxFeatures: undefined,
-      NEW_GEOPACKAGE_OPTION,
-      NEW_FEATURE_LAYER_OPTION,
-      layerSelectionVisible: false,
-      geoPackageChoices: [NEW_GEOPACKAGE_OPTION],
+      geopackageFeatureLayerSelectionDialog: false,
       popup: null,
       showFeatureTable: false,
-      isFeatureTablePoppedOut: false,
-      featureTableDialogWidth: 500,
       table: null,
-      geoPackageFeatureLayerChoices: [NEW_FEATURE_LAYER_OPTION],
-      geoPackageSelection: 0,
-      geoPackageFeatureLayerSelection: 0,
-      geoPackageFeatureLayerSelectionHasEditableFields: false,
       lastCreatedFeature: null,
-      featureTableNameValid: false,
-      featureTableName: 'Feature layer',
-      featureTableNameRules: [
-        v => !!v || 'Layer name is required',
-        v => /^[\w,\s-]+$/.test(v) || 'Layer name is not valid',
-        v => (this.geoPackageSelection === 0 || keys(this.geopackages[this.geoPackageSelection].tables.features).map(table => table.toLowerCase()).findIndex(table => table === v.toLowerCase()) === -1) || 'Layer name already exists'
-      ],
       showAddFeatureDialog: false,
       featureToAdd: null,
       featureToAddColumns: null,
       featureToAddGeoPackage: null,
       featureToAddTableName: null,
       lastShowFeatureTableEvent: null,
-      geopackageExistsDialog: false,
       dialogCoordinate: null,
       showAlertMessage: false,
       alertMessage: '',
@@ -465,6 +367,7 @@ export default {
       window.mapcache.hideFeatureTableWindow()
       this.showFeatureTable = false
       this.table = null
+      this.lastShowFeatureTableEvent = null
     },
     displayFeatureTable () {
       this.$nextTick(() => {
@@ -596,13 +499,13 @@ export default {
         this.showAlertMessage = true
       }, 100)
     },
-    async confirmGeoPackageFeatureLayerSelection () {
-      this.geopackageExistsDialog = false
+    async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
+      const geopackage = this.geopackages[geoPackageId]
+      this.geopackageFeatureLayerSelectionDialog = false
       this.featureToAdd = null
       this.featureToAddColumns = null
       this.featureToAddGeoPackage = null
       this.featureToAddTableName = null
-      let self = this
       let feature = null
       let additionalFeature = null
       if (this.createdLayer != null) {
@@ -658,67 +561,33 @@ export default {
         additionalFeature = this.searchResultToSave.pointFeature
       }
 
-      const featureTableName = this.featureTableName
-      let featureCollection = {
-        type: 'FeatureCollection',
-        features: [feature]
-      }
-      if (additionalFeature != null) {
-        additionalFeature.id = window.mapcache.createUniqueID()
-        additionalFeature.properties = Object.assign({}, feature.properties)
-        featureCollection.features.push(additionalFeature)
-      }
-
-      if (this.geoPackageSelection === 0) {
-        window.mapcache.showSaveDialog({
-          title: 'New GeoPackage'
-        }).then(({canceled, filePath}) => {
-          if (!canceled) {
-            if (!filePath.endsWith('.gpkg')) {
-              filePath = filePath + '.gpkg'
-            }
-            if (window.mapcache.fileExists(filePath)) {
-              this.geopackageExistsDialog = true
-            } else {
+      if (feature != null) {
+        let featureCollection = {
+          type: 'FeatureCollection',
+          features: [feature]
+        }
+        if (additionalFeature != null) {
+          additionalFeature.id = window.mapcache.createUniqueID()
+          additionalFeature.properties = Object.assign({}, feature.properties)
+          featureCollection.features.push(additionalFeature)
+        }
+        const columns = await window.mapcache.getFeatureColumns(geopackage.path, featureTable)
+        if (!isNil(columns) && !isNil(columns._columns) && (keys(feature.properties).filter(key => key !== '_feature_id').length > 0 || columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0)) {
+          this.featureToAdd = feature
+          this.additionalFeatureToAdd = additionalFeature
+          this.featureToAddGeoPackage = geopackage
+          this.featureToAddTableName = featureTable
+          this.featureToAddColumns = columns
+          this.$nextTick(() => {
+            this.showAddFeatureDialog = true
+            this.$nextTick(() => {
               this.cancelDrawing()
-              this.$nextTick(() => {
-                window.mapcache.createGeoPackageWithFeatureTable(self.projectId, filePath, featureTableName, featureCollection).then(() => {
-                  window.mapcache.notifyTab({projectId: self.projectId, tabId: 0})
-                })
-              })
-            }
-          } else {
-            this.cancelDrawing()
-          }
-        })
-      } else {
-        const self = this
-        const geopackage = this.geopackages[this.geoPackageSelection]
-        if (this.geoPackageFeatureLayerSelection === 0) {
-          window.mapcache.addFeatureTableToGeoPackage({projectId: self.projectId, geopackageId: geopackage.id, tableName: featureTableName, featureCollection: featureCollection}).then(() => {
-            window.mapcache.notifyTab({projectId: self.projectId, tabId: 0})
-          })
-          this.cancelDrawing()
-        } else {
-          const featureTable = self.geoPackageFeatureLayerChoices[self.geoPackageFeatureLayerSelection].text
-          const columns = await window.mapcache.getFeatureColumns(geopackage.path, featureTable)
-          if (!isNil(columns) && !isNil(columns._columns) && (keys(feature.properties).filter(key => key !== '_feature_id').length > 0 || columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').length > 0)) {
-            self.featureToAdd = feature
-            self.additionalFeatureToAdd = additionalFeature
-            self.featureToAddGeoPackage = geopackage
-            self.featureToAddTableName = featureTable
-            self.featureToAddColumns = columns
-            self.$nextTick(() => {
-              self.showAddFeatureDialog = true
-              self.$nextTick(() => {
-                self.cancelDrawing()
-              })
             })
-          } else {
-            self.additionalFeatureToAdd = additionalFeature
-            await self.saveFeature(self.project.id, geopackage.id, featureTable, feature)
-            self.cancelDrawing()
-          }
+          })
+        } else {
+          this.additionalFeatureToAdd = additionalFeature
+          await this.saveFeature(this.project.id, geopackage.id, featureTable, feature)
+          this.cancelDrawing()
         }
       }
     },
@@ -733,15 +602,11 @@ export default {
     },
     cancelDrawing () {
       this.$nextTick(() => {
-        this.geopackageExistsDialog = false
-        this.layerSelectionVisible = false
+        this.geopackageFeatureLayerSelectionDialog = false
         if (this.createdLayer != null) {
           this.map.removeLayer(this.createdLayer)
           this.createdLayer = null
         }
-        this.featureTableName = 'Feature layer'
-        this.geoPackageFeatureLayerSelection = 0
-        this.geoPackageSelection = 0
       })
     },
     zoomToFeature (path, table, featureId) {
@@ -1071,35 +936,16 @@ export default {
       })
     },
     isMapBusy () {
-      return this.editingControl.isEditing() || this.drawingControl.isDrawing || this.layerSelectionVisible || this.showAddFeatureDialog || !isNil(this.drawBoundsId) || !isNil(this.gridBoundsId) || this.performingReverseQuery
+      return this.editingControl.isEditing() || this.drawingControl.isDrawing || this.geopackageFeatureLayerSelectionDialog || this.showAddFeatureDialog || !isNil(this.drawBoundsId) || !isNil(this.gridBoundsId) || this.performingReverseQuery
     },
     setupBaseMaps () {
       for (let i = 0; i < this.baseMaps.length; i++) {
         this.addBaseMap(this.baseMaps[i], this.map)
       }
     },
-    setupAndDisplayGeoPackageSelection () {
+    displayGeoPackageFeatureLayerSelection () {
       this.$nextTick(() => {
-        const NEW_GEOPACKAGE_OPTION = {text: 'New GeoPackage', value: 0}
-        let layers = [NEW_GEOPACKAGE_OPTION]
-        Object.values(this.geopackages).forEach((geopackage) => {
-          layers.push({text: geopackage.name, value: geopackage.id})
-        })
-        this.geoPackageChoices = layers
-        if (!isNil(this.project.activeGeoPackage)) {
-          if (!isNil(this.project.activeGeoPackage.geopackageId)) {
-            const index = this.geoPackageChoices.findIndex(choice => choice.value === this.project.activeGeoPackage.geopackageId)
-            if (index > 0) {
-              this.geoPackageSelection = this.geoPackageChoices[index].value
-            }
-          }
-        }
-        this.layerSelectionVisible = true
-        this.$nextTick(() => {
-          if (!isNil(this.$refs.featureTableNameForm)) {
-            this.$refs.featureTableNameForm.validate()
-          }
-        })
+        this.geopackageFeatureLayerSelectionDialog = true
       })
     },
     setupControls () {
@@ -1213,7 +1059,7 @@ export default {
         if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
           e.layer.toggleEdit()
           self.createdLayer = e.layer
-          self.setupAndDisplayGeoPackageSelection()
+          self.displayGeoPackageFeatureLayerSelection()
         }
       })
       this.map.on('zoomend', () => {
@@ -1597,40 +1443,6 @@ export default {
         })
       },
       deep: true
-    },
-    geoPackageFeatureLayerSelection: {
-      handler () {
-        // check if it has editable fields, instead of confirm, it will say continue and display the edit fields dialog
-        this.$nextTick(() => {
-          if (!isNil(this.$refs.featureTableNameForm)) {
-            this.$refs.featureTableNameForm.validate()
-          }
-        })
-      }
-    },
-    geoPackageSelection: {
-      handler (updatedGeoPackageSelection) {
-        let layers = [NEW_FEATURE_LAYER_OPTION]
-        if (updatedGeoPackageSelection !== 0) {
-          Object.keys(this.geopackages[updatedGeoPackageSelection].tables.features).forEach((tableName, index) => {
-            layers.push({text: tableName, value: index + 1})
-          })
-        }
-        let geoPackageFeatureLayerSelection = 0
-        if (!isNil(this.project.activeGeoPackage) && !isNil(this.project.activeGeoPackage.geopackageId) && this.project.activeGeoPackage.geopackageId === updatedGeoPackageSelection && !isNil(this.project.activeGeoPackage.tableName)) {
-          const tableNameIndex = layers.findIndex(choice => choice.value !== 0 && choice.text === this.project.activeGeoPackage.tableName)
-          if (tableNameIndex !== -1) {
-            geoPackageFeatureLayerSelection = layers[tableNameIndex].value
-          }
-        }
-        this.geoPackageFeatureLayerSelection = geoPackageFeatureLayerSelection
-        this.geoPackageFeatureLayerChoices = layers
-        this.$nextTick(() => {
-          if (!isNil(this.$refs.featureTableNameForm)) {
-            this.$refs.featureTableNameForm.validate()
-          }
-        })
-      }
     },
     darkTheme: {
       handler (newDarkTheme) {

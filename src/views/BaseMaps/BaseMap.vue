@@ -254,7 +254,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters justify="start" v-if="baseMap.url || configuration.pane === 'tile' && (configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer')">
+          <v-row class="pb-2" no-gutters justify="start" v-if="baseMap.url || configuration.pane === 'tile' && (configuration.layerType === 'WMS' || configuration.layerType === 'WMTS' || configuration.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 URL

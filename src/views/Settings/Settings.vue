@@ -44,9 +44,6 @@
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
       <edit-number-modal autofocus :icon="mdiPencil" title="Edit max features" save-text="Save" :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)" :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold" label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
-    <v-dialog v-model="helpDialog" max-width="500">
-      <help :close="() => {helpDialog = false}"></help>
-    </v-dialog>
     <v-sheet class="mapcache-sheet-content">
       <v-list two-line subheader>
         <v-row no-gutters justify="space-between" align="center">
@@ -59,7 +56,7 @@
                 v-bind="attrs"
                 v-on="on"
                 class="ma-2"
-                @click.stop.prevent="helpDialog = true"
+                @click.stop.prevent="launchHelpWindow"
                 icon
               >
                 <v-icon>{{mdiHelpCircleOutline}}</v-icon>
@@ -226,7 +223,6 @@
 <script>
 import EditTextModal from '../Common/EditTextModal'
 import EditNumberModal from '../Common/EditNumberModal'
-import Help from './Help'
 import SavedUrls from './SavedUrls'
 import BaseMaps from '../BaseMaps/BaseMaps'
 import {mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan} from '@mdi/js'
@@ -244,8 +240,7 @@ export default {
       BaseMaps,
       SavedUrls,
       EditTextModal,
-      EditNumberModal,
-      Help
+      EditNumberModal
     },
     computed: {
       darkTheme: {
@@ -331,6 +326,9 @@ export default {
       }
     },
     methods: {
+      launchHelpWindow () {
+        window.mapcache.launchUserGuide()
+      },
       saveProjectName (val) {
         window.mapcache.setProjectName({project: this.project, name: val})
         this.toggleEditProjectNameDialog()

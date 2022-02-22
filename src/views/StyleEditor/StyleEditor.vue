@@ -226,7 +226,7 @@ import CreateEditIcon from './CreateEditIcon'
 import EditTableStyleAssignment from './EditTableStyleAssignment'
 import GeometryStyleSvg from '../Common/GeometryStyleSvg'
 import {mdiLinkVariant, mdiMapMarker, mdiPalette, mdiPencil, mdiPlus, mdiTrashCan} from '@mdi/js'
-import {getDefaultMapCacheStyle} from '../../lib/util/style/CommonStyleUtilities'
+import {getNewStyle} from '../../lib/util/style/CommonStyleUtilities'
 
 export default {
     props: {
@@ -310,7 +310,7 @@ export default {
     },
     methods: {
       addStyle() {
-        this.showStyleEditor(getDefaultMapCacheStyle())
+        this.showStyleEditor(getNewStyle())
       },
       addIcon() {
         const icon = window.mapcache.getDefaultIcon()

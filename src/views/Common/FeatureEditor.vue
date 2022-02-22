@@ -1,11 +1,12 @@
 <template>
   <v-card>
     <v-card-title>
-      {{isEditing ? 'Edit feature' : 'Save feature'}}
+      {{isEditing ? 'Edit feature' : 'Specify feature information'}}
     </v-card-title>
     <v-card-text style="max-height: 500px;">
       <v-card-subtitle v-if="editableColumns.length > 0">
-        {{isEditing ? 'Edit the feature\'s fields' : 'Adjust the feature\'s fields.'}}
+        <span v-if="isEditing">Edit the feature's fields</span>
+        <span v-else>The <strong>{{tableName}}</strong> layer has several fields defined. Enter values for those fields and then save.</span>
       </v-card-subtitle>
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">

@@ -212,7 +212,7 @@ export default {
           this.searchResultToSave.pointFeature.attachment = attachment
         }
       }
-      this.setupAndDisplayGeoPackageSelection()
+      this.displayGeoPackageFeatureLayerSelection()
     })
   },
   beforeDestroy () {

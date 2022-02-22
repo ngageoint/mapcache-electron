@@ -10,6 +10,19 @@ function getDefaultMapCacheStyle () {
   }
 }
 
+function getNewStyle () {
+  return {
+    color: '#000000',
+    opacity: 1.0,
+    fillColor: '#000000',
+    fillOpacity: 0.2,
+    width: 3.0,
+    name: '',
+    description: ''
+  }
+}
+
+
 function leafletStyle () {
   return {
     color: '#3388FF',
@@ -79,5 +92,6 @@ export {
   leafletStyle,
   hashCode,
   lightenDarkenColor,
-  adjustColorForHighlight
+  adjustColorForHighlight,
+  getNewStyle
 }

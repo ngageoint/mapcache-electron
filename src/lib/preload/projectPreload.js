@@ -216,6 +216,7 @@ import {
   REQUEST_TILE_COMPLETED,
   SELECT_CLIENT_CERTIFICATE,
   SHOW_FEATURE_TABLE_WINDOW,
+  LAUNCH_USER_GUIDE,
 } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
@@ -660,6 +661,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     return new Promise(resolve => {
       fs.copyFile(filePath, toFilePath, resolve)
     })
+  },
+  launchUserGuide: () => {
+    ipcRenderer.send(LAUNCH_USER_GUIDE)
   },
   getGeoPackageEditableColumnsForFeature,
   updateGeoPackageFeatureTableColumnOrder,

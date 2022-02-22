@@ -1,66 +1,75 @@
 <template>
   <v-sheet class="overflow-hidden">
-    <v-row no-gutters class="pa-8 detail-bg" justify="center">
-      <h1>MapCache Release Notes</h1>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="4">
-        <v-row no-gutters class="pt-8">
-          <h4 class="ml-4 mb-3">Release notes</h4>
+    <v-card>
+      <v-toolbar
+          src="/images/documentation/toolbar.jpg"
+          dark
+          flat
+          height="172">
+        <v-row no-gutters class="justify-center mt-13" align="center" style="width: 100vw;">
+          <h1>MapCache Release Notes</h1>
         </v-row>
-        <v-row v-for="item in releaseNotes" :key="item.title" no-gutters>
-          <p class="fake-link allowselect ml-8 mt-1" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => scrollToElement(item.title)">
-            {{item.title}}
-          </p>
-        </v-row>
-      </v-col>
-      <v-col cols="8" class="overflow-y-auto pt-4 pb-8" style="height: calc(100vh - 114px)">
-        <v-row v-for="item in releaseNotes" :key="item.title" no-gutters :ref="item.title">
-          <v-col cols="12" no-gutters class="mt-4" >
-            <h3>{{item.title}}</h3>
-          </v-col>
-          <v-col cols="12" no-gutters class="mb-4">
-            <h5>{{item.releaseDate}}</h5>
-          </v-col>
-          <v-col cols="12">
-            <v-row v-if="item.bugFixes && item.bugFixes.length > 0" no-gutters class="mb-4">
-              <v-col cols="12" no-gutters class="mb-1">
-                <h4>Bug fixes</h4>
-              </v-col>
-              <ul>
-                <li v-for="(fix, i) in item.bugFixes" :key="i">
-                  {{fix}}
-                </li>
-              </ul>
-            </v-row>
-          </v-col>
-          <v-col cols="12">
-            <v-row v-if="item.newFeatures && item.newFeatures.length > 0" no-gutters class="mb-4">
-              <v-col cols="12" no-gutters class="mb-1">
-                <h4>New features</h4>
-              </v-col>
-              <ul>
-                <li v-for="(feature, i) in item.newFeatures" :key="i">
-                  {{feature}}
-                </li>
-              </ul>
-            </v-row>
-          </v-col>
-          <v-col cols="12">
-            <v-row v-if="item.security && item.security.length > 0" no-gutters class="mb-4">
-              <v-col cols="12" no-gutters class="mb-1">
-                <h4>Security changes</h4>
-              </v-col>
-              <ul>
-                <li v-for="(sec, i) in item.security" :key="i">
-                  {{sec}}
-                </li>
-              </ul>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+        <v-spacer></v-spacer>
+      </v-toolbar>
+      <v-row no-gutters>
+        <v-col cols="4">
+          <v-row no-gutters class="pt-8">
+            <h4 class="ml-4 mb-3">Release notes</h4>
+          </v-row>
+          <v-row v-for="item in releaseNotes" :key="item.title" no-gutters>
+            <p class="fake-link allowselect ml-8 mt-1" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => scrollToElement(item.title)">
+              {{item.title}}
+            </p>
+          </v-row>
+        </v-col>
+        <v-col cols="8" class="overflow-y-auto pt-4 pb-8" style="height: calc(100vh - 114px)">
+          <v-row v-for="item in releaseNotes" :key="item.title" no-gutters :ref="item.title">
+            <v-col cols="12" no-gutters class="mt-4" >
+              <h3>{{item.title}}</h3>
+            </v-col>
+            <v-col cols="12" no-gutters class="mb-4">
+              <h5>{{item.releaseDate}}</h5>
+            </v-col>
+            <v-col cols="12">
+              <v-row v-if="item.bugFixes && item.bugFixes.length > 0" no-gutters class="mb-4">
+                <v-col cols="12" no-gutters class="mb-1">
+                  <h4>Bug fixes</h4>
+                </v-col>
+                <ul>
+                  <li v-for="(fix, i) in item.bugFixes" :key="i">
+                    {{fix}}
+                  </li>
+                </ul>
+              </v-row>
+            </v-col>
+            <v-col cols="12">
+              <v-row v-if="item.newFeatures && item.newFeatures.length > 0" no-gutters class="mb-4">
+                <v-col cols="12" no-gutters class="mb-1">
+                  <h4>New features</h4>
+                </v-col>
+                <ul>
+                  <li v-for="(feature, i) in item.newFeatures" :key="i">
+                    {{feature}}
+                  </li>
+                </ul>
+              </v-row>
+            </v-col>
+            <v-col cols="12">
+              <v-row v-if="item.security && item.security.length > 0" no-gutters class="mb-4">
+                <v-col cols="12" no-gutters class="mb-1">
+                  <h4>Security changes</h4>
+                </v-col>
+                <ul>
+                  <li v-for="(sec, i) in item.security" :key="i">
+                    {{sec}}
+                  </li>
+                </ul>
+              </v-row>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card>
   </v-sheet>
 </template>
 
@@ -78,9 +87,10 @@ export default {
             'Fix for grids in dark mode being hard to see',
           ],
           newFeatures: [
-            'Dark theme added for OSM basemaps.',
+            'Dark theme added for OSM base maps.',
             'Release notes are now shipped with the application for viewing offline.',
             'Feature layers now utilize streaming during the build to prevent high memory utilization.',
+            'Added user guide'
           ],
         },
         {
