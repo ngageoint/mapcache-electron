@@ -1095,7 +1095,7 @@ class MapCacheWindowManager {
     ]
 
     template.push({
-      role: 'help',
+      label: 'Help',
       submenu: [
         {
           label: 'User guide',

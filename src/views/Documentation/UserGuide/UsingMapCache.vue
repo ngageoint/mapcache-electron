@@ -36,7 +36,12 @@ import {
   mdiCloudDownloadOutline,
   mdiSteering,
   mdiLayersPlus,
-  mdiExportVariant
+  mdiExportVariant,
+  mdiOpenInNew,
+  mdiTableEye,
+  mdiDragHorizontalVariant,
+  mdiPalette,
+  mdiPaperclip
 } from '@mdi/js'
 import MapCacheArticle from './Article/MapCacheArticle'
 
@@ -108,10 +113,9 @@ export default {
               title: `<b>Rename</b> a GeoPackage`,
               article: {
                 title: 'Rename a GeoPackage',
-                introduction: '',
                 sections: [
                   {
-                    title: 'How to remove a GeoPackage in MapCache',
+                    title: 'How to rename a GeoPackage in MapCache',
                     paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel. Click on your GeoPackage and the GeoPackage information will be displayed.`,
                     image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                   },
@@ -175,35 +179,326 @@ export default {
           no_divider: true,
           articles: [
             {
-              title: `TODO: <b>What is</b> a GeoPackage feature layer?`,
+              title: `<b>What is</b> a GeoPackage feature layer?`,
               article: {
-                title: 'What is a GeoPackage feature?',
-                introduction: '',
-                sections: [],
+                title: 'What is a GeoPackage feature layer?',
+                introduction: 'A GeoPackage feature layer represents a collection of vector features and optionally, attribute and/or media data associated with those features.',
+                note: `Within MapCache, feature layers are indicated by the <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> symbol.`,
+                sections: [
+                  {
+                    title: 'What is vector feature?',
+                    paragraph: 'A vector feature is a point, line, polygon or other geometrical shape where the vertices are represented by coordinates on the Earth.'
+                  },
+                  {
+                    title: 'What attributes can a vector feature have?',
+                    paragraph: 'Vector features can have any number of attributes, such as a name, description, etc. The attributes can be any of the following types: <br/><ul><li>Text</li><li>Number</li><li>Checkbox (true/false)</li><li>Date</li><li>Date and Time</li></ul>'
+                  },
+                  {
+                    title: 'What about media?',
+                    paragraph: 'GeoPackage allows for any file to be associated with a vector feature, however, MapCache is only able to display content of certain file types, shown below.<br/><ul><li>Images (.png, .jpg, .gif, .svg, .bmp)</li><li>Videos (.mp4, .ogg, .webm)</li><li>Audio (.mp3, .mp4)</li><li>Other files (.pdf, .xml, .json, .txt, .html)</li></ul>'
+                  },
+                ],
               }
             },
             {
-              title: `TODO: <b>Manage</b> a GeoPackage feature layer`,
+              title: `<b>Manage</b> fields`,
               article: {
-                title: 'Manage a GeoPackage feature layer',
-                introduction: '',
-                sections: [],
+                title: 'Manage fields',
+                introduction: 'The feature data in your GeoPackage can be much more than shapes on a map. You can add all sorts of information to describe those features.',
+                sections: [
+                  {
+                    title: 'How to manage a GeoPackage feature layer\'s fields in MapCache',
+                    paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel. Click on your GeoPackage.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Select the feature layer you wish to rename and the GeoPackage feature layer management view will be displayed.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg',
+                  },
+                  {
+                    paragraph: `Below is the field management area. Here you can create new fields and manage existing fields.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/field_management.jpg',
+                  },
+                  {
+                    title: 'Adding a field',
+                    paragraph: `Adding a field to your feature layer enables you to provide additional information for your features. Taking a look at the Buildings layer we added earlier, it already has several fields defined. Let's add a field to track whether the building is damaged. Click on the Add field button.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/add_field_button.jpg',
+                  },
+                  {
+                    paragraph: `In the add field dialog we will enter the name of our field, in this case it will be called <strong>damage</strong> and we will select the <strong>checkbox</strong> type. Once that has been configured we can click the save button.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/add_field_dialog.jpg',
+                  },
+                  {
+                    paragraph: `The field will now be listed in the fields section and be available to set when editing your features.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/field_listed.jpg',
+                  },
+                  {
+                    title: 'Ordering fields',
+                    paragraph: `You can also choose to order your fields. The order of the fields determines their order in the feature view as well as the feature table view. Click and drag the field using the drag <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiDragHorizontalVariant}"></path></svg> icon.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/field_management/reorder.webm',
+                  },
+                  {
+                    title: 'Manage a field',
+                    paragraph: `If you decide to rename or delete a field, you can do so by first accessing the field's management view. Click on the field to display the management view.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/management_view.jpg',
+                  },
+                  {
+                    title: 'Rename a field',
+                    paragraph: `Click the rename button and the rename dialog will appear. Enter the new name and click the rename button to save your changes.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/rename.jpg',
+                  },
+                  {
+                    title: 'Deleting a field',
+                    paragraph: `Click the delete button to delete the field. A confirmation dialog will appear and you can confirm your decision by clicking the delete button. This action is permanent and can't be undone.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/field_management/delete.jpg',
+                    note: 'Deleting a field will erase all data previously stored in that field for each feature in the layer.'
+                  }
+                ],
               }
             },
             {
-              title: `TODO: <b>Create</b> a GeoPackage feature layer`,
+              title: `<b>Create</b> feature layer`,
               article: {
-                title: 'Create a GeoPackage feature layer',
-                introduction: '',
-                sections: [],
+                title: 'Create feature layer',
+                sections: [
+                  {
+                    paragraph: `Creating a GeoPackage feature layer can be a complicated process, but MapCache looks to simplify this process by providing a step-by-step guide. In order to get started, navigate to the  the GeoPackages <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> section in the side panel and select the GeoPackage you'll be using.`,
+                    image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
+                  },
+                  {
+                    paragraph: `Click on the add layer <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg> button at the bottom of the view. This will present two options, one for creating a feature layer <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> and the other for creating a tile layer  <img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> . Click on the add feature layer <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> option.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/add_feature_layer_button.jpg'
+                  },
+                  {
+                    paragraph: `The step-by-step guide will now be displayed. Start by entering the name of your feature layer and then click the continue button.`,
+                    image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_layer_name.jpg'
+                  },
+                  {
+                    paragraph: `Next, select zero or more data source layers whose features you'd like to include in your <strong>Buildings</strong> GeoPackage feature layer.`,
+                    image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_select_ds.jpg'
+                  },
+                  {
+                    paragraph: `Next, select zero or more existing GeoPackage feature layers you'd like to include in your <strong>Buildings</strong> GeoPackage feature layer.`,
+                    image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_select_gpl.jpg',
+                    note: 'You can create a GeoPackage feature layer without any features by not selecting any data source layers or existing GeoPackage feature layers.'
+                  },
+                  {
+                    paragraph: `Next, you will have the opportunity to order your layers. The order will help decide which features get drawn first.`,
+                    image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_order_layers.jpg'
+                  },
+                  {
+                    paragraph: `Next, you will specify the bounds of your GeoPackage feature layer. This is an optional step, specifying a bounding box will filter out any feature that does not intersect it.`,
+                    video: '/images/documentation/geopackage_articles/create_feature_layer/cfl_bounds.webm'
+                  },
+                  {
+                    paragraph: `At this point you will see a summary of the GeoPackage feature layer you'll be creating.`,
+                    image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_summary.jpg'
+                  },
+                  {
+                    paragraph: `If that all looks good you can click the add button and the layer creation process will begin, as demonstrated in the video below.`,
+                    video: '/images/documentation/geopackage_articles/create_feature_layer/cfl_progress.webm'
+                  }
+                ],
               }
             },
             {
-              title: `TODO: <b>Delete</b> a GeoPackage feature layer`,
+              title: `<b>Manage</b> features`,
               article: {
-                title: 'Delete a GeoPackage feature layer',
-                introduction: '',
-                sections: [],
+                title: 'Manage features',
+                introduction: `Feature management is an important tool in keep your data up-to-date. MapCache provides a couple of mechanisms for accessing a feature's management view. First, you can click on a feature on the map and second, you can click on a feature in the feature table.`,
+                sections: [
+                  {
+                    title: 'Access feature management view',
+                    paragraph: 'Recall the instructions for viewing a feature table\'s features in the feature table view. Click on the feature you wish to manage and the feature view will be displayed in the side panel, as shown below.',
+                    image: '/images/documentation/geopackage_articles/feature_layer/feature/manage_feature.jpg'
+                  },
+                  {
+                    paragraph: `There are several actions that can be done from the feature's management view, they include: <ul><li>Zooming to the feature on the map</li><li>Editing</li><li>Styling</li><li>Attaching files</li><li>Deleting</li></ul>`,
+                  },
+                  {
+                    paragraph: `The following sections will describe each of these actions.`,
+                  },
+                  {
+                    title: 'Zooming to the feature',
+                    paragraph: `Clicking on the feature's styled shape designator in the top left of the management view will zoom the map onto that feature.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/feature/zoom_feature.jpg'
+                  },
+                  {
+                    title: 'Editing a feature',
+                    paragraph: `Clicking the edit <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg> button will allow fields to become editable and the geometry of the field will be editable on the map. Watch the video below on how you can edit a feature and save those changes.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature/edit_feature.webm'
+                  },
+                  {
+                    title: 'Styling a feature',
+                    paragraph: `Clicking the style <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg> button will display a dialog allowing users to select a style from the available styles. The video below demonstrates this action.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature/style.webm'
+                  },
+                  {
+                    title: 'Attaching files',
+                    paragraph: `Clicking the attach <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPaperclip}"></path></svg> button will display the media attachement dialog. This dialog allows users to add and remove file attachments to a feature. The video below shows adding an image to a feature.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature/attach_media.webm'
+                  },
+                  {
+                    title: 'Deleting a feature',
+                    paragraph: `Clicking the delete <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg> button will display a dialog allowing users to permanently delete the feature.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/feature/delete.jpg',
+                  },
+                ],
+              }
+            },
+            {
+              title: `<b>Manage</b> feature layer`,
+              article: {
+                title: 'Manage feature layer',
+                introduction: `MapCache provides many ways you can manage your feature layer. Need to apply a style, view your features, copy or rename your layer? See the instructions below for accessing the GeoPackage feature layer management view.`,
+                sections: [
+                  {
+                    paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel and click on the GeoPackage containing your feature layer.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Next, click on the feature layer you'd like to manage.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg'
+                  },
+                  {
+                    paragraph: `This will display the management view. Here, you'll be able to perform several management functions.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_manage.jpg',
+                  }
+                ],
+              }
+            },
+            {
+              title: `<b>Using</b> the feature table view`,
+              article: {
+                title: 'Using the feature table view',
+                introduction: 'The feature table view is a powerful tool for navigating your data. It allows you search across all of your fields as well as sort the results. It helps you to identify your features on the map by highlighting those features while you hover over them or allowing you to zoom directly to a feature by double clicking. It also provides the ability to delete several features at once. When it comes to interacting with your feature layer, the table view is a necessary component to understand.',
+                sections: [
+                  {
+                    paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel and click on the GeoPackage containing your feature layer.`,
+                    image: `/images/documentation/geopackage_articles/feature_layer/select_gp.jpg`
+                  },
+                  {
+                    paragraph: `Then you can select your feature layer from the list of layers in your GeoPackage.`,
+                    image: `/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg`
+                  },
+                  {
+                    paragraph: `Click on the view features <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTableEye}"></path></svg> button.`,
+                    image: `/images/documentation/geopackage_articles/feature_layer/gp_fl_view_features_button.jpg`
+                  },
+                  {
+                    paragraph: `The feature table will first appear in the map view. But if you wish to view that content in a separate window, you can click the pop out <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiOpenInNew}"></path></svg> button.`,
+                    image: `/images/documentation/geopackage_articles/feature_layer/feature_table/gp_fl_ft.jpg`
+                  },
+                  {
+                    paragraph: `Taking a closer look at the feature table, now popped out, there are several actions for interacting with your data.`,
+                    image: `/images/documentation/geopackage_articles/feature_layer/feature_table/ft_window.jpg`
+                  },
+                  {
+                    paragraph: `These actions include:<ul><li>Searching features</li><li>Sorting and arranging fields</li><li>Deleting features</li><li>Adjusting the page and page size</li><li>Viewing features (click)</li><li>Zooming to a feature (double click)</li></ul><br/>Below you will find more detailed explanation of each of these actions.`,
+                  },
+                  {
+                    title: `Searching features`,
+                    paragraph: `Searching your features is a powerful capability that can help you find a specific feature within a large data set. Given a feature set that contains a field with identifiable information, it can be much easier to search using that information rather than looking for it on the map or scrolling through pages of features.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature_table/ft_search.webm'
+                  },
+                  {
+                    title: `Sorting and arranging fields`,
+                    paragraph: `Sorting your data is a great way to look for trends and arranging fields helps you to put the information you care most about into view.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature_table/ft_sort_arrange.webm'
+                  },
+                  {
+                    title: `Deleting features`,
+                    paragraph: `Deleting features one at a time can be cumbersome and if you find that you need to delete multiple, the MapCache feature table provides a way to do that. Follow the video below to see how..`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature_table/ft_delete.webm',
+                    note: `Deleting features from here is a permanent action and can't be undone. The GeoPackage on the file system will be modified.`
+                  },
+                  {
+                    title: `Adjusting the page and page size`,
+                    paragraph: `Depending on the size of your screen you may be able to view more or less features. MapCache let's you specify how many features you wish to see on your page. You can also move from the first page to the last page in a single click.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature_table/ft_paging.webm'
+                  },
+                  {
+                    title: `Viewing and zooming to features`,
+                    paragraph: `Like the features on the map, features in the table view are interactive. Clicking on a feature will show it's feature management view and double clicking on a feature will zoom to it on the map.`,
+                    video: '/images/documentation/geopackage_articles/feature_layer/feature_table/ft_view_zoom.webm'
+                  },
+                ],
+              }
+            },
+            {
+              title: `<b>Rename</b> feature layer`,
+              article: {
+                title: 'Rename feature layer',
+                sections: [
+                  {
+                    title: 'How to rename a GeoPackage feature layer in MapCache',
+                    paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel. Click on your GeoPackage.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Select the feature layer you wish to rename and the GeoPackage feature layer management view will be displayed.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg',
+                  },
+                  {
+                    paragraph: `Click the rename <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg> button and a dialog will appear.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_rename_button.jpg',
+                  },
+                  {
+                    paragraph: `Enter the new name for your GeoPackage feature layer and click the <b>Rename</b> button.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_rename_dialog.jpg',
+                  }
+                ],
+              }
+            },
+            {
+              title: `<b>Delete</b> feature layer`,
+              article: {
+                title: 'Delete feature layer',
+                sections: [
+                  {
+                    title: 'How to delete a GeoPackage feature layer in MapCache',
+                    paragraph: `In your project, navigate to the <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> GeoPackages section of the side panel. Click on your GeoPackage.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Select the feature layer you wish to delete and the GeoPackage feature layer management view will be displayed.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg',
+                  },
+                  {
+                    paragraph: `Click the delete <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg> button and a dialog will appear.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_delete_button.jpg',
+                  },
+                  {
+                    paragraph: `Click the delete button to confirm.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_confirm_delete.jpg',
+                    note: 'Deleting a feature layer is a permanent action. The layer will be removed from the underlying GeoPackage file on your computer.'
+                  }
+                ],
+              }
+            },
+            {
+              title: `<b>Zoom to</b> the extent of a feature layer`,
+              article: {
+                title: 'Zoom to the extent of a GeoPackage feature layer',
+                introduction: `While navigating the map, you may find that you've moved too far away from your GeoPackage feature layer and want to quickly get back. Luckily, anywhere you see the vector <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> symbol, you can click on that to zoom to your feature layer. Below are a few places where you'll find that symbols.`,
+                sections: [
+                  {
+                    paragraph: `In your project, navigate to the GeoPackage <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> section of the side panel. Scroll down until you find your GeoPackage and click on it.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Scroll down until you find your feature layer and click on the <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> symbol.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_list_zoom.jpg'
+                  },
+                  {
+                    paragraph: `You can also navigate to your feature layer's management view and click the symbol in the top left.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_manage_zoom.jpg',
+                  },
+                  {
+                    paragraph: `If you'd rather not navigate to the GeoPackages section, on the map, if you click on the layer order button, each GeoPackage feature layer listed will also include their symbol.`,
+                    image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_map_zoom.jpg'
+                  }
+                ],
               }
             },
           ]
@@ -218,18 +513,64 @@ export default {
               title: `TODO: <b>What is</b> a GeoPackage tile layer?`,
               article: {
                 title: 'What is a GeoPackage tile layer?',
-                introduction: 'In the simplest terms, a GeoPackage tile layer is where imagery/raster data is stored.',
-                sections: [
-                    'Advanced definition'
-                ],
+                introduction: 'In the simplest terms, a GeoPackage tile layer is how imagery/raster data is stored.',
+                sections: [],
               }
             },
             {
-              title: `TODO: <b>Create</b> a GeoPackage tile layer`,
+              title: `<b>Create</b> tile layer`,
               article: {
-                title: 'Create a a GeoPackage tile layer',
-                introduction: '',
-                sections: [],
+                title: 'Create tile layer',
+                sections: [
+                  {
+                    paragraph: `MapCache provides a step-by-step guide for creating your tile layer. In order to get started, navigate to the GeoPackages <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg> section in the side panel and select the GeoPackage you'll be using.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/select_gp.jpg'
+                  },
+                  {
+                    paragraph: `Click on the add layer <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg> button at the bottom of the view. This will present two options, one for creating a feature layer <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> and the other for creating a tile layer  <img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> . Click on the add tile layer <img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> option.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_button.jpg'
+                  },
+                  {
+                    paragraph: `The step-by-step guide will now be displayed. Start by entering the name of your tile layer and then click the continue button.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_name.jpg'
+                  },
+                  {
+                    paragraph: `Select zero or more data source layers you'd like to include in your <strong>Imagery</strong> GeoPackage tile layer.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_select_ds.jpg'
+                  },
+                  {
+                    paragraph: `Select zero or more existing GeoPackage layers (you'd like to include in your <strong>Imagery</strong> GeoPackage tile layer.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_select_gpl.jpg',
+                    note: 'A GeoPackage tile layer must include at least one data source or GeoPackage layer to be created.'
+                  },
+                  {
+                    paragraph: `Now that you've selected your layers, you can specify the order in which they are rendered. The layer on the top is drawn on top.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_order_layers.jpg'
+                  },
+                  {
+                    paragraph: `In this step you will specify the bounds of your GeoPackage tile layer.`,
+                    video: '/images/documentation/geopackage_articles/create_tile_layer/ctl_bounds.webm',
+                    note: 'Keep in mind that the larger this area is, the more tiles will need to be generated at lower zoom levels.'
+                  },
+                  {
+                    paragraph: `Once the bounds are specified you will adjust the zoom levels for your GeoPackage tile layer.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_zoom.jpg',
+                    note: 'The higher the max zoom level, the more tiles will be generated.'
+                  },
+                  {
+                    paragraph: `If you find you have a large number of tiles but need a particular zoom level, you can choose to enable <strong>tile scaling</strong>. Tile scaling reduces the number of tiles generated and stored in your GeoPackage layer by scaling tiles at nearby zoom levels.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_tile_scaling.jpg',
+                    note: 'Some of your tiles may be less detailed due to scaling and there could be unintended visual artifacts from feature layers.'
+                  },
+                  {
+                    paragraph: `You have now reached the summary of the GeoPackage tile layer you'll be creating. Here you get an indication of how many tiles will be generated. If the number is very large, you will receive a warning.`,
+                    image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_summary.jpg'
+                  },
+                  {
+                    paragraph: `If that all looks good you can click the add button and the layer creation process will begin, as demonstrated in the video below.`,
+                    video: '/images/documentation/geopackage_articles/create_tile_layer/ctl_progress.webm'
+                  }
+                ],
               }
             },
           ]
@@ -284,7 +625,7 @@ export default {
               }
             },
             {
-              title: `TODO: <b>Style</b> a data source`,
+              title: `<b>Style</b> a data source`,
               article: {
                 title: 'Style a data source',
                 introduction: 'Your data sources can provide a lot of information, but visually some of that information isn\'t immediately apparent. Styling your points, lines and polygons, manipulating GeoTIFFs, and specifying opacity are all ways you can bring your data to life.',
@@ -307,19 +648,19 @@ export default {
                         }
                       },
                       {
-                        title: 'Tile styling',
+                        title: 'Opacity',
                         section: {
-                          title: `Tile styling`,
-                          paragraph: ``,
-                          video: '',
+                          title: `Opacity`,
+                          paragraph: `When you have imagery or raster data sources and you want that information to be partially visible, you can adjust that layer's opacity. Watch the video below to see how.`,
+                          video: '/images/documentation/datasource_articles/opacity.webm',
                         }
                       },
                       {
                         title: 'GeoTIFF styling',
                         section: {
                           title: `GeoTIFF styling`,
-                          paragraph: ``,
-                          video: '',
+                          paragraph: `The unique structure of the GeoTIFF format allows for use in a variety of ways, such as imagery and even digital elevation models. The video below demonstrates modifying the style of a GeoTIFF containing SRTM (Shuttle Radar Topography Mission) elevation data to remove some unnecessary information and adjust opacity so the base map is still visible.`,
+                          video: '/images/documentation/datasource_articles/geotiff_styling.webm',
                         }
                       }],
                     tabHeight: 600
@@ -401,7 +742,7 @@ export default {
               }
             },
             {
-              title: `<b>Zoom to</b> the extent of a data source?`,
+              title: `<b>Zoom to</b> the extent of a data source`,
               article: {
                 title: 'Zoom to the extent of a data source',
                 introduction: `While navigating the map, you may find that you've moved too far away from your data source and want to quickly get back. Luckily, anywhere you see the vector <img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> symbol or tile <img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/> symbol, you can click on that to zoom to your data source. Below are a few places where you'll find those symbols.`,
@@ -417,6 +758,27 @@ export default {
                   {
                     paragraph: `If you'd rather not navigate to the data sources section, on the map, if you click on the layer order button, each data source listed will also include their symbol.`,
                     image: '/images/documentation/datasource_articles/zoom_map_layer.jpg'
+                  }
+                ],
+              }
+            },
+            {
+              title: `<b>Rename</b> a data source`,
+              article: {
+                title: 'Rename a data source',
+                sections: [
+                  {
+                    title: 'How to rename a data source in MapCache',
+                    paragraph: `In your project, navigate to the data source <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg> section of the side panel. Click on your data source and the data source management view will be displayed.`,
+                    image: '/images/documentation/datasource_articles/select_ds.jpg'
+                  },
+                  {
+                    paragraph: `Click the rename <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg> button and a dialog will appear.`,
+                    image: '/images/documentation/datasource_articles/rename_ds_button.jpg',
+                  },
+                  {
+                    paragraph: `Enter the new name for your data source and click the <b>Rename</b> button.`,
+                    image: '/images/documentation/datasource_articles/rename_ds_dialog.jpg',
                   }
                 ],
               }
@@ -446,9 +808,9 @@ export default {
           color: 'primary',
           articles: [
             {
-              title: `<b>How</b> do I <b>change</b> my base map?`,
+              title: `<b>Change</b> the base map`,
               article: {
-                title: 'How do I change my base map?',
+                title: 'Change the base map',
                 introduction: 'Different problems may require different information. Adjusting your base map can help provide the information you need to get started on your task.',
                 sections: [
                   {
@@ -463,9 +825,9 @@ export default {
               }
             },
             {
-              title: `<b>How</b> do I <b>display</b> a grid overlay?`,
+              title: `<b>Display</b> a grid overlay`,
               article: {
-                title: 'How do I display a grid overlay?',
+                title: 'Display a grid overlay',
                 introduction: 'Grid overlays help to provide spatial awareness. They help you dive down to the area or place you need to be to start building your map.',
                 sections: [
                   {
@@ -539,7 +901,7 @@ export default {
               }
             },
             {
-              title: `<b>Zoom to</b> extent of all map layers?`,
+              title: `<b>Zoom to</b> extent of all map layers`,
               article: {
                 title: 'Zoom to the extent of all visible map layers ',
                 introduction: `Clicking on the zoom to extent <svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; margin-bottom: -7px;" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,12H17V15H14V17H19V12M7,9H10V7H5V12H7V9M21,3H3A2,2 0 0,0 1,5V19A2,2 0 0,0 3,21H21A2,2 0 0,0 23,19V5A2,2 0 0,0 21,3M21,19H3V5H21V19Z" /></svg> button will move the map so that all of your visible layers, both data sources and GeoPackage layers, are visible.`,

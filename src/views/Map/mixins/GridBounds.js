@@ -39,6 +39,8 @@ export default {
           zIndex: GRID_SELECTION_PANE.zIndex,
           id: this.gridBoundsId,
         })
+        this.gridLayer.bgColor = null
+        this.gridLayer.fgColor = null
         this.gridLayer.addTo(this.map)
       } else if (type === 1) {
         const style = {

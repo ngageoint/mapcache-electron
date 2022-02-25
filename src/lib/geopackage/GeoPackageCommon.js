@@ -283,7 +283,8 @@ function _getInternalTableInformation (gp) {
         tileCount: count,
         minZoom: tileDao.minZoom,
         maxZoom: tileDao.maxZoom,
-        extent: _calculateTrueExtentForTileTable(gp, table),
+        extent: _getBoundingBoxForTable(gp, table),
+        tileExtent:  _calculateTrueExtentForTileTable(gp, table),
         description: 'An image layer with ' + count + ' tiles',
         styleKey: 0
       }

@@ -10,7 +10,7 @@
         <v-row no-gutters v-if="article.introduction">
           <p class="detail--text" v-html="article.introduction"></p>
         </v-row>
-        <tip v-if="article.note" :tip="article.note" class="mt-2 mb-2"/>
+        <tip v-if="article.note" :tip="article.note" class="mt-2 mb-4"/>
         <div v-for="(section, index) of article.sections" :key="index" class="mb-4">
           <article-section :title="section.title" :note="section.note" :paragraph="section.paragraph" :divider="section.divider" :image="section.image" :video="section.video"></article-section>
           <v-row no-gutters v-if="section.tabItems">
@@ -47,8 +47,8 @@
 <script>
 import {mdiClose} from '@mdi/js'
 import Tip from './Tip'
-import ArticleSection from "@/views/Documentation/UserGuide/Article/ArticleSection";
-import ArticleSkeleton from "@/views/Documentation/UserGuide/Article/ArticleSkeleton";
+import ArticleSection from './ArticleSection'
+import ArticleSkeleton from './ArticleSkeleton'
 
 export default {
   components: {ArticleSkeleton, ArticleSection, Tip},

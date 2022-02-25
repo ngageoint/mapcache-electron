@@ -12,7 +12,7 @@
     <tip v-if="note" :tip="note" class="mt-2 mb-2"/>
     <v-row no-gutters v-if="image">
       <p>
-        <v-img :src="image" width="560"></v-img>
+        <v-img :src="image" width="560" contain></v-img>
       </p>
     </v-row>
     <v-row no-gutters v-if="video">
