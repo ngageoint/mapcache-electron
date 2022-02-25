@@ -55,7 +55,7 @@
 import GettingStarted from './UserGuide/GettingStarted'
 import UsingMapCache from './UserGuide/UsingMapCache'
 import Settings from './UserGuide/Settings'
-import FrequentlyAskedQuestions from "@/views/Documentation/UserGuide/FrequentlyAskedQuestions";
+import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions'
 
 export default {
   components: {FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache},
