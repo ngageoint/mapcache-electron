@@ -1,7 +1,7 @@
 
 <template>
   <div>
-    <v-card v-show="loaded" flat style="width: 640px;">
+    <v-card v-if="loaded" flat style="width: 640px;">
       <v-container>
         <v-row no-gutters justify="space-between" align="center" class="pb-4">
           <v-card-title class="pa-0 ma-0" v-html="article.title"></v-card-title>
@@ -39,6 +39,10 @@
           </v-row>
         </div>
       </v-container>
+      <v-card-actions v-if="nextArticleTitle != null" class="mb-8">
+        <v-spacer/>
+        Next article:&nbsp;<span class="clickable fake-link" style="color: #326482" @click="nextArticle" v-html="nextArticleTitle"></span>
+      </v-card-actions>
     </v-card>
     <article-skeleton v-if="!loaded"></article-skeleton>
   </div>
@@ -54,6 +58,8 @@ export default {
   components: {ArticleSkeleton, ArticleSection, Tip},
   props: {
     article: Object,
+    nextArticleTitle: String,
+    nextArticle: Function,
     back: Function
   },
   data () {
@@ -66,6 +72,17 @@ export default {
   mounted () {
     document.getElementById('tab-items').scrollTo({left: 0, top: 0})
     this.loaded = true
+  },
+  watch: {
+    article: {
+      handler () {
+        this.loaded = false
+        document.getElementById('tab-items').scrollTo({left: 0, top: 0})
+        setTimeout(() => {
+          this.loaded = true
+        }, 0)
+      }
+    }
   }
 }
 </script>
