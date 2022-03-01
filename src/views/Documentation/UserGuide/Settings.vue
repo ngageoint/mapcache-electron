@@ -49,7 +49,7 @@ export default {
               title: `<b>Change</b> the theme`,
               article: {
                 title: 'Change the theme',
-                introduction: 'Depending on your preference, you may wish to adjust the theme to reduce the overall brightness of the app. Dark mode provides an experience more suited to low light environments.',
+                introduction: 'Adjusting the theme to the dark mode will reduce the overall brightness of the app. Dark mode provides an experience more suited to low light environments.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under General, toggle the theme switch to enable dark mode.`,
@@ -62,19 +62,19 @@ export default {
               title: `<b>Manage</b> saved urls`,
               article: {
                 title: 'Manage saved urls',
-                introduction: 'Any data source you import using a url will be saved for future use. Saved urls are available for use across all of your projects. When you need to manage these urls, head to the settings.',
+                introduction: 'Any data source imported using a url will be saved for future use. Saved urls are available for use in each project. The saved urls can be managed by navigating to the settings section.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under General, click on manage urls.`,
                     image: '/images/documentation/settings_articles/manage_urls.jpg'
                   },
                   {
-                    paragraph: `A dialog will appear providing you options for managing your saved urls.`,
+                    paragraph: `A dialog will appear providing options for managing the saved urls.`,
                     image: '/images/documentation/settings_articles/manage_url_dialog.jpg'
                   },
                   {
                     title: '<b>Add</b> url',
-                    paragraph: `Click the add url button in the dialog and a dialog will appear. Enter your url and click save.`,
+                    paragraph: `Click the add url button in the dialog and a dialog will appear. Enter a url and click save.`,
                     image: '/images/documentation/settings_articles/add_url.jpg',
                     divider: true
                   },
@@ -98,7 +98,7 @@ export default {
               title: `<b>Disable</b> tooltips`,
               article: {
                 title: 'Disable tooltips',
-                introduction: 'Once you know your way around MapCache, you may no longer want to see the tooltips that help newer users.',
+                introduction: `Tooltips are provided to help provide context for the meaning of certain buttons in MapCache. These tooltips can be disabled if they are no longer useful.`,
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under General, toggle the tooltips switch to disable tooltips.`,
@@ -117,36 +117,36 @@ export default {
                     image: '/images/documentation/settings_articles/manage_basemap.jpg'
                   },
                   {
-                    paragraph: `A list of your base maps will be displayed providing you the ability to create or view a base map.`,
+                    paragraph: `A list of base maps will be displayed, which can be managed, as well as a create new base map button.`,
                     image: '/images/documentation/settings_articles/base_map_list.jpg'
                   },
                   {
                     title: '<b>Add</b> base map',
                     paragraph: `Watch the following video on adding a base map. `,
                     video: '/images/documentation/settings_articles/add_base_map.webm',
-                    note: 'Base maps you add are available across all of your projects.'
+                    note: 'Base maps are available across all projects.'
                   },
                   {
-                    title: '<b>View</b> base map',
-                    paragraph: `If you'd like to view information about your recently added base map, or make changes to it, you can click on your base map.`,
+                    title: '<b>Manage</b> base map',
+                    paragraph: `To view information about base map, or make changes to it, click on its associated entry in the list.`,
                     image: '/images/documentation/settings_articles/base_map_view.jpg'
                   },
                   {
-                    paragraph: `From this view you'll be able to perform several actions that include renaming, styling and removing your base map.`,
+                    paragraph: `This view provides several actions that include renaming, styling and removing the base map.`,
                     image: '/images/documentation/settings_articles/base_map_actions.jpg',
                     tabItems: [
                       {
                         title: 'Rename',
                         section: {
-                          title: 'Rename your base map.',
-                          paragraph: `To rename your base map, click on the rename button and a dialog will appear. Enter your desired name and click the rename button to save your change.`,
+                          title: 'Rename a base map.',
+                          paragraph: `To rename a base map, click on the rename button and a dialog will appear. Enter the desired name and click the rename button to save the change.`,
                           image: '/images/documentation/settings_articles/base_map_rename.jpg'
                         }
                       },
                       {
                         title: 'Style',
                         section: {
-                          title: 'Style your base map.',
+                          title: 'Style a base map.',
                           paragraph: `Depending on the type of base map, there will several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. Below shows an adjustment of the opacity`,
                           image: '/images/documentation/settings_articles/base_map_style.jpg'
                         }
@@ -154,8 +154,8 @@ export default {
                       {
                         title: 'Remove',
                         section: {
-                          title: 'Remove your base map.',
-                          paragraph: `To remove your base map, click on the remove button and a dialog will appear. Click remove to confirm.`,
+                          title: 'Remove a base map.',
+                          paragraph: `To remove a base map, click on the remove button and a dialog will appear. Click remove to confirm.`,
                           image: '/images/documentation/settings_articles/base_map_remove.jpg'
                         }
                       }],
@@ -175,7 +175,7 @@ export default {
               title: `<b>Hide</b> zoom controls`,
               article: {
                 title: 'Hide zoom controls',
-                introduction: 'Many users will only need to use their mouse wheel or track pad gestures for adjusting the zoom level on the map. If you do not need to use the zoom control, you can hide it from the map.',
+                introduction: 'The zoom control provides zoom in and zoom out buttons for adjusting the zoom level of the map. However, some users will only need to use their mouse wheel or track pad gestures for adjusting the zoom level on the map, rather than the zoom control. Follow the instructions below to hide the zoom control from the map.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Map, toggle the zoom controls switch to hide it form the map.`,
@@ -188,7 +188,7 @@ export default {
               title: `<b>Hide</b> coordinates`,
               article: {
                 title: 'Hide coordinates',
-                introduction: 'Coordinates are displayed on the map to show you the last location of the mouse cursor. If you do not wish to see these coordinates, you can hide them in the settings.',
+                introduction: 'Coordinates are displayed on the map to show the last location of the mouse cursor. If you do not wish to see these coordinates, follow the instructions below to hide the coordinates',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Map, toggle the display coordinates switch to hide them from the map.`,
@@ -201,7 +201,7 @@ export default {
               title: `<b>Hide</b> current zoom`,
               article: {
                 title: 'Hide current zoom',
-                introduction: 'If you do not wish to see the current zoom level on the map, you can choose to hide it',
+                introduction: 'This control provides insight into the map\'s current zoom level. This is helpful in making decisions when creating new layers. However, if this is not needed, it can be hidden. Follow the instructions below to hide the current zoom.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Map, toggle the current zoom switch to hide it from the map.`,
@@ -214,7 +214,7 @@ export default {
               title: `<b>Hide</b> map scale`,
               article: {
                 title: 'Hide map scale',
-                introduction: 'Having an understanding of the scale of your features and tiles can be useful in map making. If you find that you do not need to view the scale, you can hide it in the settings.',
+                introduction: 'MapCache displays a distance scale at the bottom left of the map. This provides insight into the size of features on the map. If you wish to hide this control, follow the instructions below.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Map, toggle the display scale switch to hide it from the map..`,
@@ -227,7 +227,7 @@ export default {
               title: `<b>Hide</b> the address search`,
               article: {
                 title: 'Hide the address search bar',
-                introduction: 'The address search requires network access to use. If you are in a disconnected environment or simply do not wish to have the search bar displayed, you can hide it in the settings.',
+                introduction: 'The address search requires network access to use. If you are in a disconnected environment or simply do not wish to have the search bar displayed, follow the instructions below to hide it.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Map, toggle the address search switch to hide it from the map.`,
@@ -240,7 +240,7 @@ export default {
               title: `<b>Adjust</b> max features`,
               article: {
                 title: 'Adjust max features',
-                introduction: 'Occasionally, you may have a feature layer or data source with a very large number of features. The more features there are, the longer it takes to draw them on the map. If you find your feature layers are taking too long to render, it may be a good idea to reduce the max features setting.',
+                introduction: 'Occasionally, you may have a feature layer or data source with a very large number of features. The more features there are, the longer it takes to draw them on the map. If a feature layer is taking too long to render, it may be a good idea to reduce the max features setting.',
                 note: 'This only affects features rendered on the map. When creating a tile layer using feature layers, each feature will be drawn.',
                 sections: [
                   {
@@ -248,7 +248,7 @@ export default {
                     image: '/images/documentation/settings_articles/max_features.jpg'
                   },
                   {
-                    paragraph: `Once you've set the max features to the updated value, click on the save button.`,
+                    paragraph: `Once the max features have been adjusted, click on the save button.`,
                     image: '/images/documentation/settings_articles/adjust_max_features.jpg'
                   }
                 ],
@@ -264,15 +264,15 @@ export default {
             {
               title: `<b>Rename</b> a project`,
               article: {
-                title: 'Rename a proejct',
-                introduction: 'If you decide to change the name of your project, you can do so in the settings.',
+                title: 'Rename a project',
+                introduction: 'The name of a project helps users distinguish between workspaces, and that name may need to be adjusted from time to time. Follow the instructions below for renaming a project.',
                 sections: [
                   {
                     paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Project, click on Rename project and a confirmation dialog will apppear.`,
                     image: '/images/documentation/settings_articles/rename_project.jpg'
                   },
                   {
-                    paragraph: `Enter your desired project name and click the rename button.`,
+                    paragraph: `Enter the desired project name and click the rename button.`,
                     image: '/images/documentation/settings_articles/rename_confirmation.jpg'
                   }
                 ],
@@ -282,23 +282,23 @@ export default {
               title: `<b>Delete</b> project`,
               article: {
                 title: 'Delete project',
-                introduction: 'If you no longer need a project and wish to remove it from your list of projects you can delete that project in a couple of ways.',
-                note: 'Deleting your project will <b>not</b> delete your GeoPackages from your computer.',
+                introduction: 'If a project is no longer needed, it can be removed from the list of projects in a couple of ways.',
+                note: 'Deleting a project will <b>not</b> delete the GeoPackages from your computer.',
                 sections: [
                   {
                     paragraph: `First, in the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under Project, click on Delete project and a confirmation dialog will appear.`,
                     image: '/images/documentation/settings_articles/delete_project.jpg'
                   },
                   {
-                    paragraph: `Click the delete button to delete your project.`,
+                    paragraph: `Click the delete button to confirm the deletion of the project.`,
                     image: '/images/documentation/settings_articles/confirm_delete_project.jpg'
                   },
                   {
-                    paragraph: `Second, you can remove your project from the landing page. Click on the trash <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg> button and a confirmation dialog will appear.`,
+                    paragraph: `Second, a project can be removed from the landing page. Click on the trash <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg> button and a confirmation dialog will appear.`,
                     image: '/images/documentation/settings_articles/delete_project_lp.jpg'
                   },
                   {
-                    paragraph: `Click the delete button to delete your project.`,
+                    paragraph: `Click the delete button to confirm the deletion of the project.`,
                     image: '/images/documentation/settings_articles/confirm_delete_project_lp.jpg'
                   },
                 ],

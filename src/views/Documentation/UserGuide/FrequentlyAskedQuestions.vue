@@ -40,11 +40,11 @@ export default {
         },
         {
           question: 'My file or web service is not supported in MapCache. How can I import my data?',
-          answer: `There are a couple of ways this can be handled. You can reach out to the MapCache team and request a data source or web service be supported. Alternatively, you can use tools, such as GDAL, to convert your data into a format already supported by MapCache.`
+          answer: `There are a couple of ways this can be handled. You can reach out to the MapCache team and request a data source or web service be supported. Alternatively, other tools, such as GDAL, can be used to convert data into a format already supported by MapCache.`
         },
         {
           question: 'Why can\'t I select a different certificate?',
-          answer: 'Similar to Google Chrome, once you have decided on your certificate, the session will remember your selection. If you would like to select a different certificate, you will need to restart the application.'
+          answer: 'Similar to Google Chrome, once a certificate has been selected, the session will remember that selection. If a different certificate is necessary, users will need to restart the application.'
         },
         {
           question: 'What happens when I remove a GeoPackage from MapCache?',
@@ -52,15 +52,15 @@ export default {
         },
         {
           question: 'When I add a drawing to a GeoPackage feature table, why does it not appear?',
-          answer: 'If the GeoPackage feature layer is not enabled, that layer\'s features will not be visible. This includes the newly added drawing. If you would like to see your drawing, enable the GeoPackage feature layer.'
+          answer: 'If the GeoPackage feature layer is not enabled, that layer\'s features will not be visible. This includes the newly added drawing. Enable the GeoPackage feature layer to view the recently added drawing.'
         },
         {
           question: 'Why are some map tiles blank for my WMS/XYZ data source and/or base map?',
-          answer: 'If you find that one or more tiles for your WMS/XYZ source are missing, it is likely that your request timeout (ms) and/or max retry attempts are too low. You can adjust these network settings in the data source or base map. If you think your max timeout is still too low, you can disable the timeout by setting it to 0.'
+          answer: 'If one or more tiles for a WMS/XYZ source are missing, it is likely that the request timeout (ms) and/or max retry attempts are too low. These network settings can be adjusted in the data source or base map. If the max timeout is set to the highest value and is still timing out, it can be disabled by setting the value to zero.'
         },
         {
           question: 'How does tile scaling affect a GeoPackage tile layer?',
-          answer: 'Tile scaling is used to reduce the overall number of tiles in your tile layer, which reduces the size of your GeoPackage. The draw back to tile scaling is that some of your tiles may be less detailed due to scaling and there could be unintended visual artifacts.'
+          answer: 'Tile scaling is used to reduce the overall number of tiles in the created tile layer, which reduces the size of the GeoPackage. The draw back to tile scaling is that some of the tiles may be less detailed due to scaling and there could be unintended visual artifacts.'
         },
       ],
     }

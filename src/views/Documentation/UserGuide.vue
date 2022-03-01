@@ -33,7 +33,7 @@
         </template>
       </v-toolbar>
 
-      <v-tabs-items id="tab-items" v-model="tab" class="overflow-y-auto" style="height: calc(100vh - 208px)">
+      <v-tabs-items id="tab-items" v-model="tab" class="overflow-y-auto" style="height: calc(100vh - 212px)">
         <v-tab-item
             v-for="item in items"
             :key="item"

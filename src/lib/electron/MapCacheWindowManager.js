@@ -448,9 +448,7 @@ class MapCacheWindowManager {
     MapCacheWindowManager.clearEventHandlers()
 
     ipcMain.on(OPEN_EXTERNAL, (event, link) => {
-      // this will only be received by the main page.
-      // There is a filter in place in the preload script to ensure only the links presented on the landing page can be
-      // passed through.
+      // There is a filter in place in the preload script to ensure only the links presented on the landing page can be passed through.
       shell.openExternal(link)
     })
 
@@ -846,6 +844,9 @@ class MapCacheWindowManager {
       })
       this.userGuideWindow = new BrowserWindow({
         title: 'MapCache User Guide',
+        webPreferences: {
+          preload: path.join(__dirname, 'userGuidePreload.js')
+        },
         show: false,
         x: this.userGuideWindowState.x,
         y: this.userGuideWindowState.y,

@@ -17,7 +17,7 @@ Object.assign(console, window.log)
 
 Vue.use(Vuex)
 let store
-if (window.mapcache) {
+if (window.mapcache && window.mapcache.setupGeoPackgeContext) {
   if (window.mapcache.setupGeoPackgeContext) {
     window.mapcache.setupGeoPackgeContext()
   }
