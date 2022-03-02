@@ -38,8 +38,14 @@ export default {
         this.nextArticleIndex = articleIdx + 1
         this.nextArticleTitle = this.sections[sectionIdx].articles[articleIdx + 1].title
       } else {
-        this.nextArticleIndex = -1
-        this.nextArticleTitle = null
+        if (this.sections.length > (sectionIdx + 1)) {
+          this.selectedSectionIndex = sectionIdx + 1
+          this.nextArticleIndex = 0
+          this.nextArticleTitle = this.sections[sectionIdx + 1].articles[0].title
+        } else {
+          this.nextArticleIndex = -1
+          this.nextArticleTitle = null
+        }
       }
     },
     showNext () {
@@ -47,7 +53,7 @@ export default {
     }
   },
   props: {
-    sections: Object
+    sections: Array
   },
   data () {
     return {

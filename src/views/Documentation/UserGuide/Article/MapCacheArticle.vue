@@ -70,14 +70,14 @@ export default {
     }
   },
   mounted () {
-    document.getElementById('tab-items').scrollTo({left: 0, top: 0})
+    document.getElementById('scroll-target').scrollTo({left: 0, top: 0})
     this.loaded = true
   },
   watch: {
     article: {
       handler () {
         this.loaded = false
-        document.getElementById('tab-items').scrollTo({left: 0, top: 0})
+        document.getElementById('scroll-target').scrollTo({left: 0, top: 0})
         setTimeout(() => {
           this.loaded = true
         }, 0)

@@ -32,20 +32,36 @@
           </v-tabs>
         </template>
       </v-toolbar>
-
-      <v-tabs-items id="tab-items" v-model="tab" class="overflow-y-auto" style="height: calc(100vh - 212px)">
-        <v-tab-item
-            v-for="item in items"
-            :key="item"
-        >
-          <v-row no-gutters class="justify-center" align="center">
-            <getting-started v-if="tab === 0" :key="key"/>
-            <using-map-cache ref="using" v-else-if="tab === 1" :key="key"/>
-            <settings ref="settings" v-else-if="tab === 2" :key="key"/>
-            <frequently-asked-questions v-else-if="tab === 3" :key="key"/>
-          </v-row>
-        </v-tab-item>
-      </v-tabs-items>
+      <v-card-text id="scroll-target" class="ma-0 pa-0 overflow-y-auto" style="height: calc(100vh - 212px)">
+        <v-tabs-items v-model="tab">
+          <v-tab-item
+              v-for="item in items"
+              :key="item"
+          >
+            <v-row no-gutters class="justify-center" align="center">
+              <getting-started v-if="tab === 0" :key="key"/>
+              <using-map-cache ref="using" v-else-if="tab === 1" :key="key"/>
+              <settings ref="settings" v-else-if="tab === 2" :key="key"/>
+              <frequently-asked-questions v-else-if="tab === 3" :key="key"/>
+            </v-row>
+            <v-row no-gutters>
+              <v-btn
+                  v-scroll:#scroll-target="onScroll"
+                  v-show="fab"
+                  fab
+                  dark
+                  fixed
+                  bottom
+                  right
+                  color="primary"
+                  @click="toTop"
+              >
+                <v-icon>{{ mdiArrowUp }}</v-icon>
+              </v-btn>
+            </v-row>
+          </v-tab-item>
+        </v-tabs-items>
+      </v-card-text>
     </v-card>
   </v-sheet>
 </template>
@@ -56,11 +72,14 @@ import GettingStarted from './UserGuide/GettingStarted'
 import UsingMapCache from './UserGuide/UsingMapCache'
 import Settings from './UserGuide/Settings'
 import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions'
+import {mdiArrowUp} from '@mdi/js'
 
 export default {
   components: {FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache},
   data () {
     return {
+      mdiArrowUp,
+      fab: false,
       tab: null,
       key: 0,
       items: [
@@ -72,11 +91,13 @@ export default {
     forceUpdate () {
       this.key++
     },
-    scrollToElement (version) {
-      const el = this.$refs[version][0]
-      if (el) {
-        el.scrollIntoView({behavior: 'smooth'})
-      }
+    onScroll (e) {
+      if (typeof window === 'undefined') return
+      const top = window.scrollY || e.target.scrollTop || 0
+      this.fab = top > 20
+    },
+    toTop () {
+      document.getElementById('scroll-target').scrollTo({top: 0, behavior: 'smooth'})
     }
   }
 }
