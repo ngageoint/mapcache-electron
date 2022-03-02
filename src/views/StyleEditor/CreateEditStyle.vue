@@ -41,7 +41,7 @@
     <v-card-text>
       <v-row no-gutters class="pl-4">
         <v-col cols="11">
-          <v-text-field autofocus label="Name" v-model="name"></v-text-field>
+          <v-text-field autofocus label="Name" v-model="name" :rules="nameRules"></v-text-field>
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
@@ -86,7 +86,7 @@
         Close
       </v-btn>
       <v-btn
-        v-if="this.opacityValid && this.fillOpacityValid && this.widthValid"
+        v-if="this.opacityValid && this.fillOpacityValid && this.widthValid && name != null && name.trim().length > 0"
         color="primary"
         text
         @click="save">
@@ -134,7 +134,10 @@ export default {
         isNew: isNil(this.styleRow.id),
         opacityValid: true,
         fillOpacityValid: true,
-        widthValid: true
+        widthValid: true,
+        nameRules: [
+          v => !!v || 'Name is required'
+        ]
       }
     },
     components: {
