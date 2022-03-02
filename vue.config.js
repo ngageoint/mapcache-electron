@@ -112,6 +112,8 @@ module.exports = {
           "**/node_modules/file-uri-to-path/**/*",
           "**/mapcacheThread.js",
           "**/0.js",
+          "**/1.js",
+          "**/2.js",
           "**/3.js",
           "**/4.js",
           "**/5.js",
@@ -119,8 +121,10 @@ module.exports = {
           "**/7.js",
           "**/8.js",
           "**/9.js",
-          "**/10+.js",
-          "**/11.js"
+          "**/10.js",
+          "**/11.js",
+          "**/12.js",
+          "**/13.js"
         ],
         directories: {
           buildResources: "buildResources"

@@ -154,7 +154,7 @@ if (!gotTheLock) {
 
 // Scheme must be registered before the app is ready
   protocol.registerSchemesAsPrivileged([
-    { scheme: 'mapcache', privileges: { secure: true, standard: true } }
+    { scheme: 'mapcache', privileges: { secure: true, standard: true, stream: true } }
   ])
 
   const isProduction = process.env.NODE_ENV === 'production'

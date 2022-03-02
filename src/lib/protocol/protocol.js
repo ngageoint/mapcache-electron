@@ -3,9 +3,7 @@ import { readFile } from 'fs'
 import { URL } from 'url'
 
 export default (scheme) => {
-  require('electron').protocol.registerBufferProtocol(
-    scheme,
-    (request, respond) => {
+  require('electron').protocol.registerBufferProtocol(scheme, (request, callback) => {
       let pathName = new URL(request.url).pathname
       pathName = decodeURI(pathName) // Needed in case URL contains spaces
       let absolutePath = pathName
@@ -32,9 +30,11 @@ export default (scheme) => {
           mimeType = 'application/json'
         } else if (extension === '.wasm') {
           mimeType = 'application/wasm'
+        } else if (extension === '.webm') {
+          mimeType = 'video/webm'
         }
 
-        respond({ mimeType, data })
+        callback({ mimeType, data })
       })
     }
   )

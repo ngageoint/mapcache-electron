@@ -17,10 +17,7 @@
     </v-row>
     <v-row no-gutters v-if="video">
       <video controls width="560" controlsList="nodownload nofullscreen noremoteplayback" muted disablepictureinpicture>
-        <source :src="video"
-                type="video/webm">
-
-        Sorry, your browser doesn't support embedded videos.
+        <source :src="video" type="video/webm">
       </video>
     </v-row>
   </v-card>
