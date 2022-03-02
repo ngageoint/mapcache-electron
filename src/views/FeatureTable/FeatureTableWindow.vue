@@ -40,6 +40,7 @@ export default {
   methods: {
     closeFeatureTable () {
       window.mapcache.hideFeatureTableWindow()
+      this.lastShowFeatureTableEvent = null
     },
     async displayFeaturesForTable (id, tableName, isGeoPackage) {
       if (!isNil(id) && !isNil(tableName) && ((isGeoPackage && !isNil(this.project.geopackages[id]) && !isNil(this.project.geopackages[id].tables.features[tableName])) || (!isGeoPackage && !isNil(this.project.sources[id])))) {

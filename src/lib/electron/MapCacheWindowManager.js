@@ -67,7 +67,7 @@ import {
   FEATURE_TABLE_EVENT,
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES,
-  LAUNCH_USER_GUIDE
+  LAUNCH_USER_GUIDE,
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 
@@ -978,6 +978,7 @@ class MapCacheWindowManager {
         this.closingProjectWindow = false
         this.featureTableWindow = null
       } else {
+        this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
         this.showHideFeatureTableWindow(false)
         event.preventDefault()
       }

@@ -1576,6 +1576,10 @@ export default {
       }
     })
 
+    window.mapcache.registerHideFeatureTableWindowListener(() => {
+      this.lastShowFeatureTableEvent = null
+    })
+
     this.registerResizeObserver()
     this.initializeMap()
     this.addLayersToMap()
