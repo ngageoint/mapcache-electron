@@ -202,7 +202,7 @@ export default class GeoTIFFSource extends Source {
     const transform = getConverter('EPSG:4326', epsgString)
     const minCoord = transform.inverse([bbox[0], bbox[1]])
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
-    const extent = [minCoord[0], minCoord[1], maxCoord[0], maxCoord[1]]
+    const extent = [Math.max(-180, minCoord[0]), Math.max(-90, minCoord[1]), Math.min(180, maxCoord[0]), Math.min(90, maxCoord[1])]
 
     GeoTIFFSource.closeGeoTIFF(geotiff)
 

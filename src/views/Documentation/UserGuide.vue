@@ -56,7 +56,7 @@
                   color="primary"
                   @click="toTop"
               >
-                <v-icon>{{ mdiArrowUp }}</v-icon>
+                <v-icon large>{{ mdiChevronUp }}</v-icon>
               </v-btn>
             </v-row>
           </v-tab-item>
@@ -72,13 +72,13 @@ import GettingStarted from './UserGuide/GettingStarted'
 import UsingMapCache from './UserGuide/UsingMapCache'
 import Settings from './UserGuide/Settings'
 import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions'
-import {mdiArrowUp} from '@mdi/js'
+import {mdiChevronUp} from '@mdi/js'
 
 export default {
   components: {FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache},
   data () {
     return {
-      mdiArrowUp,
+      mdiChevronUp,
       fab: false,
       tab: null,
       key: 0,

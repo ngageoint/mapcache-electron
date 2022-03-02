@@ -90,7 +90,7 @@ export default {
             'Dark theme added for OSM base maps.',
             'Release notes are now shipped with the application for viewing offline.',
             'Feature layers now utilize streaming during the build to prevent high memory utilization.',
-            'Added user guide'
+            'Added user guide.'
           ],
         },
         {
