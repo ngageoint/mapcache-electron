@@ -45,7 +45,7 @@
               Cancel
             </v-btn>
             <v-btn
-              v-if="renameValid"
+              :disabled="!renameValid"
               color="primary"
               text
               @click="rename">

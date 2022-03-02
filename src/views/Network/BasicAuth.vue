@@ -34,7 +34,7 @@
         Cancel
       </v-btn>
       <v-btn
-        v-if="signInValid"
+        :disabled="!signInValid"
         color="primary"
         text
         @click="callSignIn">

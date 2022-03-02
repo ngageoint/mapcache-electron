@@ -50,7 +50,7 @@
         {{editableColumns.length > 0 ? 'Cancel' : 'Close'}}
       </v-btn>
       <v-btn
-        v-if="formValid"
+        :disabled="!formValid"
         color="primary"
         text
         @click="save">

@@ -24,7 +24,7 @@
         {{cancelText}}
       </v-btn>
       <v-btn
-        v-if="valid"
+        :disabled="!valid"
         color="primary"
         text
         :dark="darkMode"

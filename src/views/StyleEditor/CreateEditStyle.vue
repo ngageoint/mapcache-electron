@@ -87,6 +87,7 @@
       </v-btn>
       <v-btn
         v-if="this.opacityValid && this.fillOpacityValid && this.widthValid && name != null && name.trim().length > 0"
+        :disabled="!this.opacityValid || !this.fillOpacityValid || !this.widthValid || this.name == null || this.name.trim().length === 0"
         color="primary"
         text
         @click="save">

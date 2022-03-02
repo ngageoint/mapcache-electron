@@ -32,7 +32,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 2" v-if="dataSourceNameValid">
+          <v-btn class="mb-2" text color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -116,7 +116,7 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="importReady"
+          :disabled="!importReady"
           color="primary"
           text
           @click.stop.prevent="addLayer">

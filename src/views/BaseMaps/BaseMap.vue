@@ -83,7 +83,7 @@
             Cancel
           </v-btn>
           <v-btn
-            v-if="renameValid"
+            :disabled="!renameValid"
             color="primary"
             text
             @click="saveBaseMapName">
@@ -129,7 +129,7 @@
             Cancel
           </v-btn>
           <v-btn
-            v-if="rateLimitValid && timeoutValid && retryAttemptsValid"
+            :disabled="!rateLimitValid || !timeoutValid || !retryAttemptsValid"
             color="primary"
             text
             @click="saveConnectionSettings">

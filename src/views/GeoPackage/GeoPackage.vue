@@ -89,7 +89,7 @@
           </v-btn>
           <v-btn
             :loading="renaming"
-            v-if="renameValid"
+            :disabled="!renameValid"
             color="primary"
             text
             @click="rename">
@@ -133,7 +133,7 @@
             Cancel
           </v-btn>
           <v-btn
-            v-if="copyValid"
+            :disabled="!copyValid"
             color="primary"
             text
             @click="copy">

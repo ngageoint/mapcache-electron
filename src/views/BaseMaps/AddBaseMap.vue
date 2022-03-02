@@ -33,7 +33,7 @@
                   </v-form>
                 </v-card-text>
               </v-card>
-              <v-btn text color="primary" @click="step = 2" v-if="baseMapNameValid">
+              <v-btn text color="primary" @click="step = 2" :disabled="!baseMapNameValid">
                 Continue
               </v-btn>
             </v-stepper-content>
@@ -106,7 +106,7 @@
             Cancel
           </v-btn>
           <v-btn
-            v-if="baseMapNameValid && layers.length > 0 && step === '3'"
+            :disabled="!baseMapNameValid || layers.length === 0 || step !== '3'"
             text
             color="primary"
             @click="save">

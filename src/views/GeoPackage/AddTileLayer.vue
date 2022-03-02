@@ -64,7 +64,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" v-if="layerNameValid">
+          <v-btn text color="primary" @click="step = 2" :disabled="!layerNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -320,7 +320,8 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="Number(step) === 8 && !done && !processing && boundingBoxFilter && layerNameValid && ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) > 0)"
+          v-if="!done && !processing"
+          :disabled="Number(step) !== 8 || !boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)"
           color="primary"
           text
           @click.stop="addTileLayer">

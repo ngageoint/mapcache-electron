@@ -69,7 +69,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" v-if="layerNameValid">
+          <v-btn text color="primary" @click="step = 2" :disabled="!layerNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -256,7 +256,8 @@
           Cancel
         </v-btn>
         <v-btn
-          v-if="Number(step) === 6 && !done && !isEditingBoundingBox() && layerNameValid"
+          v-if="!done"
+          :disabled="Number(step) !== 6 || isEditingBoundingBox() || !layerNameValid"
           color="primary"
           text
           @click.stop="addFeatureLayer">
