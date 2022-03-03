@@ -40,7 +40,6 @@ async function getImageBufferFromCanvas (canvas) {
         // return Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64')
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
-        console.error(e)
         // eslint-disable-next-line no-console
         console.error('Failed to add tile')
       }
