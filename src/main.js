@@ -16,28 +16,43 @@ Vue.directive('observe-visibility', ObserveVisibility)
 Object.assign(console, window.log)
 
 Vue.use(Vuex)
-let store
-if (window.mapcache && window.mapcache.setupGeoPackgeContext) {
-  if (window.mapcache.setupGeoPackgeContext) {
+
+let createStore = () => {
+  return new Vuex.Store({
+    modules,
+    plugins: [
+      createMapCachePersistedStateWrapper({throttle: 500}),
+      createMapCacheSharedMutationsWrapper(),
+    ],
+    strict: true
+  })
+}
+
+let store = undefined
+if (window.mapcache != null) {
+  if (window.mapcache.setupGeoPackgeContext != null) {
     window.mapcache.setupGeoPackgeContext()
   }
-  try {
-    store = new Vuex.Store({
-      modules,
-      plugins: [
-        createMapCachePersistedStateWrapper(),
-        createMapCacheSharedMutationsWrapper(),
-      ],
-      strict: true
-    })
 
-    // eslint-disable-next-line no-unused-vars
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to setup store. Exiting.')
+  if (window.mapcache.createStorage != null) {
+    let storeAttempts = 0
+    while (store == null || storeAttempts < 3){
+      try {
+        store = createStore()
+        // eslint-disable-next-line no-unused-vars
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        storeAttempts++
+      }
+    }
+
+    if (store == null) {
+      console.error('Unable to create vuex store. Exiting.')
+      process.exit(0)
+    }
   }
 
-// use BrowserCanvasAdapter in renderer processes
+  // use BrowserCanvasAdapter in renderer processes
   setCreateCanvasFunction((width, height) => {
     const canvas = document.createElement('canvas')
     canvas.width = width
@@ -45,8 +60,6 @@ if (window.mapcache && window.mapcache.setupGeoPackgeContext) {
     return canvas
   })
 }
-
-// axios.defaults.withCredentials = true
 
 Vue.use(AsyncComputed)
 

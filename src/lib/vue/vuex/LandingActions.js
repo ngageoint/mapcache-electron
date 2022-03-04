@@ -12,10 +12,12 @@ async function newProject({id, name, directory}) {
  * Disables remote sources
  * @param projectId
  */
-function disableRemoteSources (projectId) {
-  values(store.state.Projects[projectId].sources).filter(source => isRemote(source)).forEach(source => {
-    setDataSourceVisible({projectId, sourceId: source.id, visible: false})
-  })
+async function disableRemoteSources (projectId) {
+  const sources = values(store.state.Projects[projectId].sources).filter(source => isRemote(source))
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i]
+    await setDataSourceVisible({projectId, sourceId: source.id, visible: false})
+  }
 }
 
 async function addGeoPackage ({projectId, filePath}) {

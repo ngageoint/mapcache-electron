@@ -270,11 +270,11 @@ export default {
         this.deleteProjectDialog = false
         this.reset()
       },
-      onClickOpenProject (project) {
+      async onClickOpenProject (project) {
         this.geoPackageFileImportDialog = false
         this.dialogText = 'Loading ' + project.name + '...'
         this.dialog = true
-        window.mapcache.disableRemoteSources(project.id)
+        await window.mapcache.disableRemoteSources(project.id)
         this.$nextTick(() => {
           window.mapcache.showProject(project.id, null, this.geoPackageFiles.slice())
           this.reset()
