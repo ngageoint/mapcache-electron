@@ -36,7 +36,7 @@ if (window.mapcache != null) {
 
   if (window.mapcache.createStorage != null) {
     let storeAttempts = 0
-    while (store == null || storeAttempts < 3){
+    while (store == null && storeAttempts < 3){
       try {
         store = createStore()
         // eslint-disable-next-line no-unused-vars
