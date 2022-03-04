@@ -155,7 +155,7 @@ export default {
     computed: {
       ...mapState({
         projects: state => {
-          return Object.values(state.Projects).sort((a, b) => {return (b.lastAccessedDateTime || 0) - (a.lastAccessedDateTime || 0)})
+          return state != null ? Object.values(state.Projects).sort((a, b) => {return (b.lastAccessedDateTime || 0) - (a.lastAccessedDateTime || 0)}) : []
         }
       })
     },
@@ -206,23 +206,25 @@ export default {
       setupDragAndDrop () {
         const project = document.getElementById('wrapper')
         const importDialog = document.getElementById('import-dialog')
-        project.ondragover = () => {return false}
-        project.ondragleave = () => {return false}
-        project.ondragend = () => {return false}
-        project.ondrop = (e) => {
-          e.preventDefault()
-          for (let f of e.dataTransfer.files) {
-            if (f.path.endsWith('.gpkg') && this.geoPackageFiles.indexOf(f.path) === -1) {
-              this.geoPackageFiles.push(f.path)
+        if (project != null && importDialog != null) {
+          project.ondragover = () => {return false}
+          project.ondragleave = () => {return false}
+          project.ondragend = () => {return false}
+          project.ondrop = (e) => {
+            e.preventDefault()
+            for (let f of e.dataTransfer.files) {
+              if (f.path.endsWith('.gpkg') && this.geoPackageFiles.indexOf(f.path) === -1) {
+                this.geoPackageFiles.push(f.path)
+              }
             }
+            this.geoPackageFileImportDialog = this.geoPackageFiles.length > 0
+            return false
           }
-          this.geoPackageFileImportDialog = this.geoPackageFiles.length > 0
-          return false
+          importDialog.ondragover = () => {return false}
+          importDialog.ondragleave = () => {return false}
+          importDialog.ondragend = () => {return false}
+          importDialog.ondrop = () => {return false}
         }
-        importDialog.ondragover = () => {return false}
-        importDialog.ondragleave = () => {return false}
-        importDialog.ondragend = () => {return false}
-        importDialog.ondrop = () => {return false}
       },
       cancelGeoPackageFileImport () {
         this.geoPackageFileImportDialog = false
