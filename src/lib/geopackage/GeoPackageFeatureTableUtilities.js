@@ -387,7 +387,9 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
       definedColumnNames[field.name.toLowerCase()] = true
       const column = new FeatureColumn(featureDao.table.columns.columnCount(), field.name, field.dataType, field.max, field.notNull, field.defaultValue)
       column.unique = field.unique
-      column.constraints = field.constraints
+      if (field.constraints != null) {
+        column.constraints = field.constraints
+      }
       column.min = field.min
       featureDao.addColumn(column)
     }
