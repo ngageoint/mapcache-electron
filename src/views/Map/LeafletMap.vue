@@ -779,9 +779,11 @@ export default {
         const geopackageId = geopackageKeys[i]
         const geopackage = geopackageLayers[geopackageId]
         const tablesToZoomTo = keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
-        const extentForGeoPackage = await window.mapcache.getExtentOfGeoPackageTables(geopackage.path, tablesToZoomTo)
-        if (!isNil(extentForGeoPackage)) {
-          overallExtent = this.updateExtent(overallExtent, extentForGeoPackage)
+        if (tablesToZoomTo.length > 0) {
+          const extentForGeoPackage = await window.mapcache.getExtentOfGeoPackageTables(geopackage.path, tablesToZoomTo)
+          if (!isNil(extentForGeoPackage)) {
+            overallExtent = this.updateExtent(overallExtent, extentForGeoPackage)
+          }
         }
       }
       const visibleSourceKeys = keys(this.dataSourceMapLayers).filter(key => this.dataSourceMapLayers[key].getLayer().visible)

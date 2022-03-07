@@ -273,7 +273,10 @@ async function buildFeatureLayer (configuration, statusCallback) {
           if (layerGeoPackage.relatedTablesExtension.has()) {
             featureDao.mediaRelations.forEach(mediaRelation => {
               if (!mediaRelation.mapping_table_name.startsWith(IconTable.TABLE_NAME)) {
-                mediaRelations.push(layerGeoPackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name))
+                mediaRelations.push({
+                  mediaTable: mediaRelation.related_table_name,
+                  mappingDao: layerGeoPackage.relatedTablesExtension.getMappingDao(mediaRelation.mapping_table_name)
+                })
               }
             })
           }
@@ -390,15 +393,14 @@ async function buildFeatureLayer (configuration, statusCallback) {
               const targetId = addFeature(feature)
 
               // query for media and add
-              mediaRelations.forEach(userMappingDao => {
-                const mappings = userMappingDao.queryByBaseId(sourceId)
+              mediaRelations.forEach(({mediaTable, mappingDao}) => {
+                const mappings = mappingDao.queryByBaseId(sourceId)
                 for (let mapping of mappings) {
-                  const sourceMediaTable = mapping.related_table_name
                   const sourceMediaRowId = mapping.related_id
-                  const sourceMediaKey = layerFilePath + '_' + sourceMediaTable + '_' + sourceMediaRowId
+                  const sourceMediaKey = layerFilePath + '_' + mediaTable + '_' + sourceMediaRowId
                   const inserted = insertedMediaMap[sourceMediaKey] || layerInTargetGeoPackage
                   if (!inserted) {
-                    addMediaAttachment(targetId, _getMediaRow(layerGeoPackage, sourceMediaTable, sourceMediaRowId))
+                    addMediaAttachment(targetId, _getMediaRow(layerGeoPackage, mediaTable, sourceMediaRowId))
                     insertedMediaMap[sourceMediaKey] = true
                   } else {
                     addMediaAttachment(targetId, sourceMediaRowId)
