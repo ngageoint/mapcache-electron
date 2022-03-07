@@ -318,7 +318,7 @@
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
-        <v-switch v-model="previewing" class="pl-2 mt-0" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && selectedServiceType !== 3 && (selectedDataSourceLayersValid() || selectedServiceType === 2)" label="Preview"></v-switch>
+        <v-switch v-model="previewing" class="pl-2 mt-0" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && selectedServiceType !== 1 && selectedServiceType !== 3 && (selectedDataSourceLayersValid() || selectedServiceType === 2)" label="Preview"></v-switch>
         <v-spacer></v-spacer>
         <v-btn
           text
