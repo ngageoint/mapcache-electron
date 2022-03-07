@@ -1,6 +1,6 @@
 <template>
   <v-sheet class="overflow-hidden">
-    <v-card>
+    <v-card flat tile>
       <v-toolbar
           src="/images/documentation/toolbar.jpg"
           dark

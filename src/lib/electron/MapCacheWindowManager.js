@@ -852,8 +852,8 @@ class MapCacheWindowManager {
         y: this.userGuideWindowState.y,
         width: this.userGuideWindowState.width,
         height: this.userGuideWindowState.height,
-        minWidth: 600,
-        minHeight: 600,
+        minWidth: 800,
+        minHeight: 800,
       })
       this.userGuideWindow.on('close', () => {
         this.userGuideWindow = null
