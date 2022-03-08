@@ -85,7 +85,7 @@ function defaultGridOptions (isDark = false) {
       precision: 10000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
     },
     one_km: {
       minZoom: 13,
@@ -93,7 +93,7 @@ function defaultGridOptions (isDark = false) {
       precision: 1000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
     },
     one_hundred_meter: {
       minZoom: 16,
@@ -101,7 +101,7 @@ function defaultGridOptions (isDark = false) {
       precision: 100,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
     },
     ten_meter: {
       minZoom: 19,
@@ -109,7 +109,7 @@ function defaultGridOptions (isDark = false) {
       precision: 10,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle('#ddddddaa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
     }
   }
 }

@@ -125,7 +125,6 @@ export default {
         })
         this.gridLayer.addTo(this.map)
       }
-
     },
     cancelGridPicking () {
       if (this.gridBoundsId != null) {
@@ -149,6 +148,7 @@ export default {
         this.mgrsGridOverlay.remove()
         this.xyzGridOverlay.remove()
         this.showGridSelection = false
+        this.gridSelection = 0
       }
       if (this.coordinateControl) {
         if (type === 0) {

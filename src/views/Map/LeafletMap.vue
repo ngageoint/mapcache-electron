@@ -1468,19 +1468,21 @@ export default {
           }
         })
 
-        this.garsGridOverlay.setDarkModeEnabled(newDarkTheme)
-        this.mgrsGridOverlay.setDarkModeEnabled(newDarkTheme)
-        this.xyzGridOverlay.setDarkModeEnabled(newDarkTheme)
+        if (this.gridLayer == null) {
+          this.garsGridOverlay.setDarkModeEnabled(newDarkTheme)
+          this.mgrsGridOverlay.setDarkModeEnabled(newDarkTheme)
+          this.xyzGridOverlay.setDarkModeEnabled(newDarkTheme)
 
-        if (this.gridSelection === 1) {
-          this.xyzGridOverlay.remove()
-          this.xyzGridOverlay.addTo(this.map)
-        } else if (this.gridSelection === 2) {
-          this.garsGridOverlay.remove()
-          this.garsGridOverlay.addTo(this.map)
-        } else if (this.gridSelection === 3) {
-          this.mgrsGridOverlay.remove()
-          this.mgrsGridOverlay.addTo(this.map)
+          if (this.gridSelection === 1) {
+            this.xyzGridOverlay.remove()
+            this.xyzGridOverlay.addTo(this.map)
+          } else if (this.gridSelection === 2) {
+            this.garsGridOverlay.remove()
+            this.garsGridOverlay.addTo(this.map)
+          } else if (this.gridSelection === 3) {
+            this.mgrsGridOverlay.remove()
+            this.mgrsGridOverlay.addTo(this.map)
+          }
         }
       }
     },
