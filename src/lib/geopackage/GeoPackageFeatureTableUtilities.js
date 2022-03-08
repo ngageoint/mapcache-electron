@@ -26,6 +26,7 @@ import area from '@turf/area'
 import distance from '@turf/distance'
 import pointToLineDistance from '@turf/point-to-line-distance'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import polygonToLine from '@turf/polygon-to-line'
 import moment from 'moment'
 import {
   performSafeGeoPackageOperation,
@@ -1327,10 +1328,11 @@ async function checkUnique (filePath, tableName, column, value) {
  * Determines the distance from a geojson feature to a coordinate in meters
  * @param coordinate
  * @param feature
- * @returns {number}
+ * @returns {{distance: number, isContained: boolean}}
  */
-function getDistanceToCoordinateInMeters(coordinate, feature) {
+function getDistanceToCoordinateInMeters (coordinate, feature) {
   let distanceInMeters = Number.MAX_SAFE_INTEGER
+  let isContained = false
   switch (feature.geometry.type) {
     case 'Point':
       distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, {units: 'kilometers'}) * 1000.0
@@ -1339,41 +1341,71 @@ function getDistanceToCoordinateInMeters(coordinate, feature) {
       distanceInMeters = pointToLineDistance(coordinate, feature, {units: 'kilometers'}) * 1000.0
       break
     case 'MultiPoint':
+      // eslint-disable-next-line no-case-declarations
+      const internalPointFeature = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Point',
+          coordinates: []
+        }
+      }
       for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-        distanceInMeters = Math.min(distanceInMeters, distance([feature.geometry.coordinates[i][0], feature.geometry.coordinates[i][1]], coordinate, {units: 'kilometers'}) * 1000.0)
+        internalPointFeature.geometry.coordinates = feature.geometry.coordinates[i]
+        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalPointFeature).distance)
       }
       break
     case 'MultiLineString':
+      // eslint-disable-next-line no-case-declarations
+      const internalLineStringFeature = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: []
+        }
+      }
       for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-        distanceInMeters = Math.min(distanceInMeters, pointToLineDistance(coordinate, {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: feature.geometry.coordinates[i]
-          }
-        }, {units: 'kilometers'}) * 1000.0)
+        internalLineStringFeature.geometry.coordinates = feature.geometry.coordinates[i]
+        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalLineStringFeature).distance)
       }
       break
     case 'GeometryCollection':
-      for (let i = 0; i < feature.geometries.length; i++) {
-        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, {
+      for (let i = 0; i < feature.geometry.geometries.length; i++) {
+        const internalDistance = getDistanceToCoordinateInMeters(coordinate, {
           type: 'Feature',
           properties: {},
-          geometry: feature.geometries[i]
-        }))
+          geometry: feature.geometry.geometries[i]
+        })
+        distanceInMeters = Math.min(distanceInMeters, internalDistance.distance)
+        isContained = isContained || internalDistance.isContained
       }
       break
     case 'Polygon':
-      distanceInMeters = booleanPointInPolygon(coordinate, feature) ? 10 : -1
+      isContained = booleanPointInPolygon(coordinate, feature)
+      distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
       break
     case 'MultiPolygon':
-      distanceInMeters = booleanPointInPolygon(coordinate, feature) ? 10 : -1
+      // eslint-disable-next-line no-case-declarations
+      const internalPolygonFeature = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Polygon',
+          coordinates: []
+        }
+      }
+      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+        internalPolygonFeature.geometry.coordinates = feature.geometry.coordinates[i]
+        const distanceResult = getDistanceToCoordinateInMeters(coordinate, internalPolygonFeature)
+        distanceInMeters = Math.min(distanceInMeters, distanceResult.distance)
+        isContained = isContained || distanceResult.isContained
+      }
       break
     default:
       break
   }
-  return distanceInMeters
+  return {distance: distanceInMeters, isContained}
 }
 
 /**
@@ -1389,6 +1421,10 @@ function determineMinDistanceBasedOnZoom (latitude, zoom) {
 
 /**
  * Get closest feature among the given layers
+ * How this works:
+ * 1. look at each feature and determine distance from that feature (for lines/polygons it is the distance to the closest line part)
+ * 2. if nothing is close enough (a minimum designated distance based on the zoom level, then we look at any polygon that the point is contained in
+ * 2a. if multiple polygons exist, we take the one with the smallest area (not perfect, but works well enough
  * @param layers
  * @param latlng
  * @param zoom
@@ -1400,7 +1436,7 @@ async function _getClosestFeature (layers, latlng, zoom) {
   let closestDistance = Number.MAX_SAFE_INTEGER
   let closestLayer = null
   let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
-  const polygonFeatures = []
+
   for (let lId = 0; lId < layers.length; lId++) {
     const layer = layers[lId]
     await performSafeGeoPackageOperation(layer.path, (gp) => {
@@ -1418,45 +1454,15 @@ async function _getClosestFeature (layers, latlng, zoom) {
         const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
         feature.type = 'Feature'
         feature.id = featureId
-        if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-          const polygonData = {
-            feature,
-            distance: getDistanceToCoordinateInMeters(coordinate, feature),
-            area: area(feature),
-            layer: layer
-          }
-          // ignore polygons where the coordinate is not within
-          if (polygonData.distance > 0) {
-            polygonFeatures.push(polygonData)
-          }
-        } else {
-          if (closestFeature == null) {
-            closestFeature = feature
-            closestDistance = getDistanceToCoordinateInMeters(coordinate, feature)
-            closestLayer = layer
-          } else {
-            const distance = getDistanceToCoordinateInMeters(coordinate, feature)
-            if (distance < closestDistance) {
-              closestFeature = feature
-              closestDistance = distance
-              closestLayer = layer
-            }
-          }
+
+        const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
+        if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
+          closestFeature = feature
+          closestDistance = distanceResult.distance
+          closestLayer = layer
         }
       }
     })
-  }
-
-  if (polygonFeatures.length > 0 && closestDistance > minDistanceAway) {
-    polygonFeatures.sort((a, b) => a.area - b.area)
-    closestDistance = minDistanceAway
-    closestFeature = polygonFeatures[0].feature
-    closestLayer = polygonFeatures[0].layer
-  }
-
-  if (closestDistance > minDistanceAway) {
-    closestFeature = null
-    closestLayer = null
   }
 
   return {

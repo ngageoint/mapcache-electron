@@ -31,6 +31,7 @@
     "@turf/intersect": "6.5.0",
     "@turf/point-on-feature": "6.5.0",
     "@turf/point-to-line-distance": "6.5.0",
+    "@turf/polygon-to-line": "6.5.0",
     "@turf/transform-rotate": "6.5.0",
     "adm-zip": "0.5.9",
     "axios": "0.23.0",
