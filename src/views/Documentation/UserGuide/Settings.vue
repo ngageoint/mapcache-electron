@@ -38,7 +38,7 @@ export default {
             {
               order: 2,
               title: `<b>Enable</b>&nbsp;system notifications`,
-              introduction: 'MapCache supports alerting users when long running tasks complete using system notifications. Some of these tasks include creating a feature layer, creating a tile layer, and importing a data source. This allows a user to minimize a window and perform other tasks.',
+              introduction: 'MapCache supports alerting users when long running operations complete using system notifications. Some of these operations include creating a feature layer, creating a tile layer, and importing a data source. This allows a user to minimize a window, perform other tasks, and receive a notification when the MapCache operation is finished. Clicking on the notification will show the MapCache window.',
               sections: [
                 {
                   paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under General, toggle the notifications switch to enable or disable system notifications.`,
