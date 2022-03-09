@@ -9,7 +9,8 @@ import {
   mdiFolderOutline,
   mdiMapOutline,
   mdiTrashCanOutline,
-  mdiPencil
+  mdiPencil,
+  mdiPalette
 } from '@mdi/js'
 import MapCacheSection from './MapCacheSection'
 
@@ -30,7 +31,7 @@ export default {
               introduction: 'Adjusting the theme to the dark mode will reduce the overall brightness of the app. Dark mode provides an experience more suited to low light environments.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the theme switch to enable dark mode.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the&nbsp;<strong>Theme</strong>&nbsp;switch to enable dark mode.`,
                   image: '/images/documentation/settings_articles/toggle_theme.jpg'
                 }
               ],
@@ -41,7 +42,7 @@ export default {
               introduction: 'MapCache supports alerting users when long running operations complete using system notifications. Some of these operations include creating a feature layer, creating a tile layer, and importing a data source. This allows a user to minimize a window, perform other tasks, and receive a notification when the MapCache operation is finished. Clicking on the notification will show the MapCache window.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the notifications switch to enable or disable system notifications.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the&nbsp;<strong>Notifications</strong>&nbsp;switch to enable or disable system notifications.`,
                   image: '/images/documentation/settings_articles/system_notifications.jpg',
                   note: 'Depending on how your system\'s notification settings are configured, enabling this setting may or may not display notifications.'
                 }
@@ -53,7 +54,7 @@ export default {
               introduction: `Tooltips are provided to help provide context for the meaning of certain buttons in MapCache. These tooltips can be disabled if they are no longer useful.`,
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the tooltips switch to disable tooltips.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, toggle the&nbsp;<strong>Tooltips</strong>&nbsp;switch to disable tooltips.`,
                   image: '/images/documentation/settings_articles/toggle_tooltips.jpg'
                 }
               ],
@@ -64,7 +65,7 @@ export default {
               introduction: 'Any data source imported using a url will be saved for future use. Saved urls are available for use in each project. The saved urls can be managed by navigating to the settings section.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, click on manage urls.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, click on&nbsp;<strong>Saved urls</strong>&nbsp;.`,
                   image: '/images/documentation/settings_articles/manage_urls.jpg'
                 },
                 {
@@ -73,19 +74,19 @@ export default {
                 },
                 {
                   title: '<strong>Add</strong>&nbsp;url',
-                  paragraph: `Click the add url button in the dialog and a dialog will appear. Enter a url and click save.`,
+                  paragraph: `Click the&nbsp;<strong>Add url</strong>&nbsp;button in the dialog and a dialog will appear. Enter a url and click the&nbsp;<strong>Add</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/add_url.jpg',
                   divider: true
                 },
                 {
                   title: '<strong>Edit</strong>&nbsp;url',
-                  paragraph: `Click the edit&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear. Enter the updated url and click save.`,
+                  paragraph: `Click the&nbsp;<strong>Edit</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear. Enter the updated url and click the&nbsp;<strong>Save</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/edit_url.jpg',
                   divider: true
                 },
                 {
                   title: '<strong>Delete</strong>&nbsp;url',
-                  paragraph: `Click delete&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear. Confirm by clicking delete.`,
+                  paragraph: `Click&nbsp;<strong>Delete</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear. Confirm by clicking the&nbsp;<strong>Delete</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/delete_url.jpg',
                   note: 'A deleted url will no longer appear when adding a new data source from a url.',
                   divider: true
@@ -97,7 +98,7 @@ export default {
               title: `<strong>Manage</strong>&nbsp;base maps`,
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, click on base maps.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under General, click on&nbsp;<strong>Base maps</strong>&nbsp;.`,
                   image: '/images/documentation/settings_articles/manage_base map.jpg'
                 },
                 {
@@ -122,8 +123,8 @@ export default {
                     {
                       title: 'Rename',
                       section: {
-                        title: 'Rename a base map.',
-                        paragraph: `To rename a base map, click on the rename button and a dialog will appear. Enter the desired name and click the rename button to save the change.`,
+                        title: '<strong>Rename</strong>&nbsp;a base map.',
+                        paragraph: `To rename a base map, click on the&nbsp;<strong>Rename</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear. Enter the desired name and click the&nbsp;<strong>Rename</strong>&nbsp;button to save the change.`,
                         image: '/images/documentation/settings_articles/base_map_rename.jpg'
                       }
                     },
@@ -131,7 +132,7 @@ export default {
                       title: 'Style',
                       section: {
                         title: 'Style a base map.',
-                        paragraph: `Depending on the type of base map, there will several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. Below shows an adjustment of the opacity`,
+                        paragraph: `Depending on the type of base map, there will several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. To make an adjustment to the opacity, start by clicking on the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button. This will display the style management view and allow for adjustments, as shown below.`,
                         image: '/images/documentation/settings_articles/base_map_style.jpg'
                       }
                     },
@@ -139,7 +140,7 @@ export default {
                       title: 'Remove',
                       section: {
                         title: 'Remove a base map.',
-                        paragraph: `To remove a base map, click on the remove button and a dialog will appear. Click remove to confirm.`,
+                        paragraph: `To remove a base map, click on the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click&nbsp;<strong>Remove</strong>&nbsp;to confirm.`,
                         image: '/images/documentation/settings_articles/base_map_remove.jpg'
                       }
                     }],
@@ -160,7 +161,7 @@ export default {
               introduction: 'The zoom control provides zoom in and zoom out buttons for adjusting the zoom level of the map. However, some users will only need to use their mouse wheel or track pad gestures for adjusting the zoom level on the map, rather than the zoom control. Follow the instructions below to hide the zoom control from the map.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the zoom controls switch to hide it form the map.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the&nbsp;<strong>Zoom control</strong>&nbsp;switch to hide it form the map.`,
                   image: '/images/documentation/settings_articles/zoom_control.jpg'
                 }
               ],
@@ -171,7 +172,7 @@ export default {
               introduction: 'This control provides insight into the map\'s current zoom level. This is helpful in making decisions when creating new layers. However, if this is not needed, it can be hidden. Follow the instructions below to hide the current zoom.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the current zoom switch to hide it from the map.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the&nbsp;<strong>Display current zoom</strong>&nbsp;switch to hide it from the map.`,
                   image: '/images/documentation/settings_articles/current_zoom.jpg'
                 }
               ],
@@ -182,7 +183,7 @@ export default {
               introduction: 'The address search requires network access to use. If you are in a disconnected environment or simply do not wish to have the search bar displayed, follow the instructions below to hide it.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the address search switch to hide it from the map.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the&nbsp;<strong>Address search</strong>&nbsp;switch to hide it from the map.`,
                   image: '/images/documentation/settings_articles/address_search.jpg'
                 }
               ],
@@ -193,7 +194,7 @@ export default {
               introduction: 'Coordinates are displayed on the map to show the last location of the mouse cursor. If you do not wish to see these coordinates, follow the instructions below to hide the coordinates',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the display coordinates switch to hide them from the map.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the&nbsp;<strong>Display coordinates</strong>&nbsp;switch to hide them from the map.`,
                   image: '/images/documentation/settings_articles/coordinates.jpg'
                 }
               ],
@@ -204,7 +205,7 @@ export default {
               introduction: 'MapCache displays a distance scale at the bottom left of the map. This provides insight into the size of features on the map. If you wish to hide this control, follow the instructions below.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the display scale switch to hide it from the map..`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, toggle the&nbsp;<strong>Display scale</strong>&nbsp;switch to hide it from the map..`,
                   image: '/images/documentation/settings_articles/scale.jpg'
                 }
               ],
@@ -216,11 +217,11 @@ export default {
               note: 'This only affects features rendered on the map. When creating a tile layer using feature layers, each feature will be drawn.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, click on the max features button.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Map, click on the&nbsp;<strong>Max features</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/max_features.jpg'
                 },
                 {
-                  paragraph: `Once the max features have been adjusted, click on the save button.`,
+                  paragraph: `Once the max features have been adjusted, click on the&nbsp;<strong>Save</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/adjust_max_features.jpg'
                 }
               ],
@@ -238,11 +239,11 @@ export default {
               introduction: 'The name of a project helps users distinguish between workspaces, and that name may need to be adjusted from time to time. Follow the instructions below for renaming a project.',
               sections: [
                 {
-                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Project, click on Rename project and a confirmation dialog will apppear.`,
+                  paragraph: `In the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Project, click on&nbsp;<strong>Rename</strong>&nbsp;project and a confirmation dialog will apppear.`,
                   image: '/images/documentation/settings_articles/rename_project.jpg'
                 },
                 {
-                  paragraph: `Enter the desired project name and click the rename button.`,
+                  paragraph: `Enter the desired project name and click the&nbsp;<strong>Rename</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/rename_confirmation.jpg'
                 }
               ],
@@ -254,11 +255,11 @@ export default {
               note: 'Deleting a project will&nbsp;<strong>not</strong>&nbsp;delete the GeoPackages from your computer.',
               sections: [
                 {
-                  paragraph: `First, in the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Project, click on Delete project and a confirmation dialog will appear.`,
+                  paragraph: `First, in the settings&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under Project, click on&nbsp;<strong>Delete</strong>&nbsp;project and a confirmation dialog will appear.`,
                   image: '/images/documentation/settings_articles/delete_project.jpg'
                 },
                 {
-                  paragraph: `Click the delete button to confirm the deletion of the project.`,
+                  paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;button to confirm the deletion of the project.`,
                   image: '/images/documentation/settings_articles/confirm_delete_project.jpg'
                 },
                 {
@@ -266,7 +267,7 @@ export default {
                   image: '/images/documentation/settings_articles/delete_project_lp.jpg'
                 },
                 {
-                  paragraph: `Click the delete button to confirm the deletion of the project.`,
+                  paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;button to confirm the deletion of the project.`,
                   image: '/images/documentation/settings_articles/confirm_delete_project_lp.jpg'
                 },
               ],

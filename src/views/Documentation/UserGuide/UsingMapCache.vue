@@ -128,7 +128,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
-                  paragraph: `Click the remove&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear.`,
+                  paragraph: `Click the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear.`,
                   image: '/images/documentation/geopackage_articles/remove_geopackage.jpg',
                 },
                 {
@@ -175,7 +175,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
-                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer &nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
+                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/add_feature_layer_button.jpg'
                 },
                 {
@@ -531,7 +531,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/create_tile_layer/select_gp.jpg'
                 },
                 {
-                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer &nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
+                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
                   image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_button.jpg'
                 },
                 {
