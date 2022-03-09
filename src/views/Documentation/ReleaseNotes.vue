@@ -83,14 +83,16 @@ export default {
           title: 'MapCache 1.3.0',
           releaseDate: 'TBD',
           bugFixes: [
-            'Fix for dark mode style issue for nominatim results',
-            'Fix for grids in dark mode being hard to see',
+            'Fix for dark mode style issue for nominatim results.',
+            'Fix for grids in dark mode being hard to see.',
+            'More consistent alerts.'
           ],
           newFeatures: [
             'Dark theme added for OSM base maps.',
             'Release notes are now shipped with the application for viewing offline.',
             'Feature layers now utilize streaming during the build to prevent high memory utilization.',
-            'Added user guide.'
+            'Added user guide.',
+            'Added system notification setting.'
           ],
         },
         {

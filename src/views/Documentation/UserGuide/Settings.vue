@@ -37,6 +37,18 @@ export default {
             },
             {
               order: 2,
+              title: `<b>Enable</b>&nbsp;system notifications`,
+              introduction: 'MapCache supports alerting users when long running tasks complete using system notifications. Some of these tasks include creating a feature layer, creating a tile layer, and importing a data source. This allows a user to minimize a window and perform other tasks.',
+              sections: [
+                {
+                  paragraph: `In the settings <svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg> section, under General, toggle the notifications switch to enable or disable system notifications.`,
+                  image: '/images/documentation/settings_articles/system_notifications.jpg',
+                  note: 'Depending on how your system\'s notification settings are configured, enabling this setting may or may not display notifications.'
+                }
+              ],
+            },
+            {
+              order: 4,
               title: `<b>Disable</b>&nbsp;tooltips`,
               introduction: `Tooltips are provided to help provide context for the meaning of certain buttons in MapCache. These tooltips can be disabled if they are no longer useful.`,
               sections: [
