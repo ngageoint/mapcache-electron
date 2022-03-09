@@ -351,6 +351,7 @@ export default {
   props: {
     project: Object,
     geopackage: Object,
+    allowNotifications: Boolean,
     back: Function
   },
   directives: {
@@ -476,6 +477,20 @@ export default {
         this.done = true
         window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
         window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+        if (this.status == null || this.status.error == null) {
+          window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+          if (this.allowNotifications) {
+            new Notification('GeoPackage tile layer created', {
+              body: 'Finished building the "' + this.layerName + '" tile layer',
+            }).onclick = () => {window.mapcache.sendWindowToFront()}
+          }
+        } else {
+          if (this.allowNotifications) {
+            new Notification('Failed to create tile layer', {
+              body: 'Failed to build the "' + this.layerName + '" tile layer.\r\n' + this.status.error,
+            }).onclick = () => {window.mapcache.sendWindowToFront()}
+          }
+        }
       })
     },
     cancel () {

@@ -17,8 +17,8 @@
     :projectId="project.id"
     :back="deselectLayer"
     :renamed="selectedLayerRenamed"/>
-  <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog"></add-feature-layer>
-  <add-tile-layer v-else-if="addTileLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddTileDialog"></add-tile-layer>
+  <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog" :allow-notifications="allowNotifications"></add-feature-layer>
+  <add-tile-layer v-else-if="addTileLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddTileDialog" :allow-notifications="allowNotifications"></add-tile-layer>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       color="main"
@@ -172,18 +172,6 @@
       </v-card>
     </v-dialog>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
-      <v-alert
-        class="alert-position"
-        v-model="showCopiedAlert"
-        dismissible
-        type="success"
-      >GeoPackage copied.</v-alert>
-      <v-alert
-          class="alert-position"
-          v-model="showErrorAlert"
-          dismissible
-          type="warning"
-      >Rename failed. Please ensure all layers are disabled and wait for resource to become available.</v-alert>
       <v-row class="pl-3 pt-3 pr-3 background" no-gutters>
         <v-col>
           <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
@@ -368,6 +356,7 @@ export default {
     props: {
       geopackage: Object,
       project: Object,
+      allowNotifications: Boolean,
       back: Function,
       displayFeature: Object
     },
@@ -389,7 +378,6 @@ export default {
         mdiFolder: mdiFolder,
         mdiLayersPlus: mdiLayersPlus,
         fab: false,
-        showCopiedAlert: false,
         addFeatureLayerDialog: false,
         addTileLayerDialog: false,
         selectedLayer: null,
@@ -413,7 +401,6 @@ export default {
           v => /^[\w,\s-]+$/.test(v) || 'Name must be a valid file name',
           v => !window.mapcache.fileExists(window.mapcache.pathJoin(window.mapcache.getDirectoryName(this.geopackage.path), v + '.gpkg')) || 'Name already exists'
         ],
-        showErrorAlert: false
       }
     },
     computed: {
@@ -478,7 +465,7 @@ export default {
             this.renameDialog = false
             this.renaming = false
             if (e.toString().toLowerCase().indexOf('ebusy') !== -1) {
-              this.showErrorAlert = true
+              EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Rename failed. Please ensure all layers are disabled and wait for resource to become available.', 'warning')
             } else {
               EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to rename GeoPackage')
             }
@@ -496,9 +483,11 @@ export default {
                 // eslint-disable-next-line no-console
                 console.error('Failed to copy GeoPackage')
                 EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Failed to copy GeoPackage')
+              } else {
+                EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage copied', 'primary')
+
               }
             })
-            this.showCopiedAlert = true
           })
           // eslint-disable-next-line no-unused-vars
         } catch (e) {

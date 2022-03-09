@@ -2,6 +2,7 @@ const GET_APP_VERSION = 'get-app-version'
 const GET_USER_DATA_DIRECTORY = 'get-user-data-directory'
 const GET_APP_DATA_DIRECTORY = 'get-app-data-directory'
 const OPEN_EXTERNAL = 'open-external'
+const SEND_WINDOW_TO_FRONT = 'send-window-to-front'
 const SHOW_SAVE_DIALOG = 'show-save-dialog'
 const SHOW_SAVE_DIALOG_COMPLETED = 'show-save-dialog-completed'
 const SHOW_OPEN_DIALOG = 'show-open-dialog'
@@ -21,7 +22,6 @@ const BUILD_FEATURE_LAYER = 'build-feature-layer'
 const CANCEL_BUILD_FEATURE_LAYER = 'cancel-build-feature-layer'
 const BUILD_TILE_LAYER = 'build-tile-layer'
 const CANCEL_BUILD_TILE_LAYER = 'cancel-build-tile-layer'
-const QUICK_DOWNLOAD_GEOPACKAGE = 'quick-download-geopackage'
 const ATTACH_MEDIA = 'attach-media'
 function ATTACH_MEDIA_COMPLETED (id) {
   return 'attach-media-completed-' + id
@@ -128,7 +128,6 @@ const MAIN_CHANNELS = [
   CANCEL_BUILD_FEATURE_LAYER,
   BUILD_TILE_LAYER,
   CANCEL_BUILD_TILE_LAYER,
-  QUICK_DOWNLOAD_GEOPACKAGE,
   WORKER_READY,
   LAUNCH_USER_GUIDE
 ]
@@ -169,7 +168,6 @@ export {
   CANCEL_BUILD_FEATURE_LAYER,
   BUILD_TILE_LAYER,
   CANCEL_BUILD_TILE_LAYER,
-  QUICK_DOWNLOAD_GEOPACKAGE,
   WORKER_READY,
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
@@ -223,4 +221,5 @@ export {
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES,
   LAUNCH_USER_GUIDE,
+  SEND_WINDOW_TO_FRONT
 }

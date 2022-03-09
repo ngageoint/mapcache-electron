@@ -1,5 +1,5 @@
 <template>
-  <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project" :geopackage="selectedGeoPackage" :display-feature="displayFeature" :back="deselectGeoPackage"></geo-package>
+  <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project" :geopackage="selectedGeoPackage" :display-feature="displayFeature" :back="deselectGeoPackage" :allow-notifications="allowNotifications"></geo-package>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
       dark
@@ -26,9 +26,6 @@
           </v-col>
         </v-row>
       </v-card>
-      <v-alert class="alert-position" dismissible v-model="addGeoPackageError" type="error">
-        GeoPackage already exists in project.
-      </v-alert>
       <v-dialog
         v-model="geopackageExistsDialog"
         max-width="400"
@@ -125,6 +122,7 @@ export default {
     props: {
       geopackages: Object,
       project: Object,
+      allowNotifications: Boolean,
       back: Function,
       displayFeature: Object
     },
@@ -135,7 +133,6 @@ export default {
         mdiPlus: mdiPlus,
         mdiChevronLeft: mdiChevronLeft,
         fab: false,
-        addGeoPackageError: false,
         geopackageExistsDialog: false,
         selectedGeoPackage: null
       }
@@ -205,7 +202,7 @@ export default {
               })
             } else {
               // exists in app, show error
-              this.addGeoPackageError = true
+              EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage already exists in project')
             }
           }
         })

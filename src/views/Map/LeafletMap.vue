@@ -37,14 +37,6 @@
         </v-list-item>
       </v-list>
     </div>
-    <v-snackbar
-        v-if="showAlertMessage"
-        v-model="showAlertMessage"
-        timeout="1500"
-        absolute
-    >
-      {{alertMessage}}
-    </v-snackbar>
     <v-expand-transition>
       <v-card
         tile
@@ -337,8 +329,6 @@ export default {
       featureToAddTableName: null,
       lastShowFeatureTableEvent: null,
       dialogCoordinate: null,
-      showAlertMessage: false,
-      alertMessage: '',
       isEditing: false,
       showLayerOrderingDialog: false,
       showBaseMapSelection: false,
@@ -495,8 +485,7 @@ export default {
       window.mapcache.copyToClipboard(text)
       this.closePopup()
       setTimeout(() => {
-        this.alertMessage = 'Copied to clipboard.'
-        this.showAlertMessage = true
+        EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Copied to clipboard.', 'primary')
       }, 100)
     },
     async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
@@ -660,9 +649,6 @@ export default {
     },
     closePopup() {
       this.map.removeLayer(this.contextMenuPopup)
-      this.$nextTick(() => {
-        this.showAlertMessage = false
-      })
 
     },
     convertToDms (dd, isLng) {
@@ -1556,10 +1542,6 @@ export default {
       const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
       this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
     })
-    EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message) => {
-      this.alertMessage = message
-      this.showAlertMessage = true
-    })
     EventBus.$on(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, (feature) => {
       this.editingControl.editFeature(this.map, feature)
       this.isEditing = true
@@ -1589,7 +1571,7 @@ export default {
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.ALERT_MESSAGE])
+    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO])
   },
   beforeUpdate: function () {
     const self = this

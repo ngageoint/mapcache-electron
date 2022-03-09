@@ -77,6 +77,18 @@
             ></v-switch>
           </v-list-item-action>
         </v-list-item>
+        <v-list-item selectable @click.stop.prevent="notifications = !notifications">
+          <v-list-item-content>
+            <v-list-item-title>Notifications</v-list-item-title>
+            <v-list-item-subtitle>Allow system notifications</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-switch
+                v-model="notifications"
+                color="primary"
+            ></v-switch>
+          </v-list-item-action>
+        </v-list-item>
         <v-list-item selectable @click.stop.prevent="toggleShowToolTip">
           <v-list-item-content>
             <v-list-item-title>Tooltips</v-list-item-title>
@@ -226,11 +238,16 @@ import EditNumberModal from '../Common/EditNumberModal'
 import SavedUrls from './SavedUrls'
 import BaseMaps from '../BaseMaps/BaseMaps'
 import {mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan} from '@mdi/js'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     props: {
       project: Object,
       dark: {
+        type: Boolean,
+        default: false
+      },
+      allowNotifications: {
         type: Boolean,
         default: false
       },
@@ -257,6 +274,25 @@ export default {
         },
         set (val) {
           window.mapcache.showToolTips({projectId: this.project.id, show: val})
+        }
+      },
+      notifications: {
+        get () {
+          return this.allowNotifications
+        },
+        set (val) {
+          if (val && Notification.permission !== 'granted') {
+            Notification.requestPermission().then((permission) => {
+              if (permission === 'granted') {
+                window.mapcache.allowNotifications({projectId: this.project.id, allow: val})
+              } else if (permission === 'denied') {
+                EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Notification permission not granted.')
+                window.mapcache.allowNotifications({projectId: this.project.id, allow: false})
+              }
+            })
+          } else {
+            window.mapcache.allowNotifications({projectId: this.project.id, allow: val})
+          }
         }
       },
       settings: {

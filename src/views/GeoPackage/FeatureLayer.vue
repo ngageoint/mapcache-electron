@@ -46,12 +46,6 @@
       <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
-      <v-alert
-        class="alert-position"
-        v-model="showCopiedAlert"
-        dismissible
-        type="success"
-      >Layer copied.</v-alert>
       <v-dialog
         v-model="indexDialog"
         max-width="400"
@@ -548,7 +542,6 @@ export default {
         mdiTrashCan: mdiTrashCan,
         mdiPalette: mdiPalette,
         mdiDragHorizontalVariant: mdiDragHorizontalVariant,
-        showCopiedAlert: false,
         styleEditorVisible: false,
         showFeatureLayerField: false,
         featureLayerField: null,
@@ -726,7 +719,7 @@ export default {
           this.copying = false
           this.$nextTick(() => {
             this.copyDialog = false
-            this.showCopiedAlert = true
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Feature layer copied', 'primary')
           })
         })
       },

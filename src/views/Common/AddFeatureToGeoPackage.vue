@@ -64,13 +64,29 @@
         Add feature
       </v-btn>
     </v-card-actions>
+    <v-snackbar
+        v-if="showAlert"
+        v-model="showAlert"
+        style="position: fixed; bottom: 0;"
+    >
+      GeoPackage already exists.
+      <template v-slot:action="{ attrs }">
+        <v-btn
+            color="warning"
+            text
+            v-bind="attrs"
+            @click="showAlert = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-card>
 </template>
 
 <script>
 import isNil from 'lodash/isNil'
 import {mdiPlus, mdiClose, mdiCheck} from '@mdi/js'
-import EventBus from '../../lib/vue/EventBus'
 
 export default {
   props: {
@@ -86,6 +102,7 @@ export default {
       mdiClose,
       mdiCheck,
       valid: false,
+      showAlert: false,
       step: 1,
       geoPackageModel: this.project.activeGeoPackage ? this.project.activeGeoPackage.geopackageId : null,
       search: '',
@@ -141,7 +158,7 @@ export default {
               }
             })
           } else {
-            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage already exists.')
+            this.showAlert = true
           }
         }
       })

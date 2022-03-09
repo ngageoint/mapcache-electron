@@ -215,12 +215,6 @@
       </v-card>
     </v-dialog>
     <v-sheet class="text-left mapcache-sheet-content detail-bg">
-      <v-alert
-        class="alert-position"
-        v-model="showExportAlert"
-        dismissible
-        type="success"
-      >Successfully exported.</v-alert>
       <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="space-between">
         <v-col>
           <p class="text-subtitle-1">
@@ -468,8 +462,9 @@ export default {
         }
       },
       project: Object,
+      allowNotifications: Boolean,
       back: Function,
-      displayFeature: Object
+      displayFeature: Object,
     },
     components: {
       FeatureView,
@@ -507,7 +502,6 @@ export default {
         defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,
         exportingProgressDialog: false,
         styleEditorVisible: false,
-        showExportAlert: false,
         showOverwriteDialog: false,
         overwriteFile: '',
         overwriteFileName: '',
@@ -577,8 +571,12 @@ export default {
           this.overwriteFile = ''
           setTimeout(() => {
             this.exportingProgressDialog = false
-            this.exportSnackBarText = 'Export successful.'
-            this.showExportAlert = true
+            if (this.allowNotifications) {
+              new Notification('Data source exported', {
+                body: 'Exported GeoPackage file location: ' + filePath,
+              }).onclick = () => {window.mapcache.sendWindowToFront()}
+            }
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage exported.', 'primary')
           }, 1000)
         })
       },

@@ -95,7 +95,7 @@ import {
   addStyleExtensionForTable,
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder
+  updateDataSourceColumnOrder, allowNotifications
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
@@ -216,7 +216,7 @@ import {
   REQUEST_TILE_COMPLETED,
   SELECT_CLIENT_CERTIFICATE,
   SHOW_FEATURE_TABLE_WINDOW,
-  LAUNCH_USER_GUIDE,
+  LAUNCH_USER_GUIDE, SEND_WINDOW_TO_FRONT,
 } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
@@ -728,6 +728,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     fromName: GeoPackageDataType.fromName,
     nameFromType: GeoPackageDataType.nameFromType
   },
+  sendWindowToFront: () => {
+    ipcRenderer.send(SEND_WINDOW_TO_FRONT)
+  },
   convertPbfToDataUrl,
   getOrCreateGeoPackage,
   getGeoPackageExtent,
@@ -773,6 +776,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   setDataSource,
   setProjectName,
   showToolTips,
+  allowNotifications,
   setDataSourceDisplayName,
   addDataSources,
   addGeoPackage,

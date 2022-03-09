@@ -84,6 +84,7 @@ export default {
     props: {
       project: Object,
       source: Object,
+      allowNotifications: Boolean,
       onComplete: Function,
       onCancel: Function,
       onClose: Function
@@ -167,7 +168,14 @@ export default {
       const source = this.source
       // setup listener for when processing is completed
       window.mapcache.onceProcessSourceCompleted(source.id).then((result) => {
+        const fileOrUrl = source.file ? source.file.path : source.url
+
         if (isNil(result.error)) {
+          if (this.allowNotifications) {
+            new Notification('Data source imported', {
+              body: 'Successfully imported data from ' + fileOrUrl,
+            }).onclick = () => {window.mapcache.sendWindowToFront()}
+          }
           setTimeout(() => {
             window.mapcache.addDataSources({projectId: self.project.id, dataSources: result.dataSources})
             self.$nextTick(() => {
@@ -175,6 +183,11 @@ export default {
             })
           }, 1000)
         } else {
+          if (this.allowNotifications) {
+            new Notification('Data source import failed', {
+              body: 'Failed to import ' + fileOrUrl,
+            }).onclick = () => {window.mapcache.sendWindowToFront()}
+          }
           self.error = result.error
           if (result.error.message) {
             self.error = self.error.message

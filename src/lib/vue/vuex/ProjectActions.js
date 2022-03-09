@@ -714,6 +714,10 @@ function setDarkTheme ({projectId, enabled}) {
   store.dispatch('UIState/setDarkTheme', {projectId, enabled})
 }
 
+function allowNotifications ({projectId, allow}) {
+  store.dispatch('UIState/allowNotifications', {projectId, allow})
+}
+
 function clearNotification ({projectId, tabId}) {
   store.dispatch('UIState/clearNotification', {projectId, tabId})
 }
@@ -904,5 +908,6 @@ export {
   deleteFeatureIdsFromDataSource,
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder
+  updateDataSourceColumnOrder,
+  allowNotifications
 }

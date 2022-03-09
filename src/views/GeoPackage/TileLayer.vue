@@ -10,12 +10,6 @@
       <v-toolbar-title :title="tableName">{{tableName}}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
-      <v-alert
-        class="alert-position"
-        v-model="showCopiedAlert"
-        dismissible
-        type="success"
-      >Layer copied.</v-alert>
       <v-dialog
         v-model="renameDialog"
         max-width="400"
@@ -254,6 +248,7 @@
 import isNil from 'lodash/isNil'
 import {mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan} from '@mdi/js'
 import {zoomToGeoPackageTable} from '../../lib/leaflet/map/ZoomUtilities'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     props: {
@@ -271,7 +266,6 @@ export default {
         mdiTrashCan: mdiTrashCan,
         mdiPalette: mdiPalette,
         deleteDialog: false,
-        showCopiedAlert: false,
         renameValid: false,
         renameDialog: false,
         renaming: false,
@@ -345,8 +339,7 @@ export default {
         window.mapcache.copyGeoPackageTable({projectId: this.projectId, geopackageId: this.geopackage.id, filePath: this.geopackage.path, tableName: this.tableName, copyTableName: this.copiedTable, type: 'tile'}).then(() => {
           this.copying = false
           this.$nextTick(() => {
-            this.showCopiedAlert = true
-            this.copyDialog = false
+            EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Tile layer copied', 'primary')
           })
         })
       },

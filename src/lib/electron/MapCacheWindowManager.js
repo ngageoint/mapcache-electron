@@ -23,7 +23,6 @@ import {
   CANCEL_BUILD_FEATURE_LAYER,
   BUILD_TILE_LAYER,
   CANCEL_BUILD_TILE_LAYER,
-  QUICK_DOWNLOAD_GEOPACKAGE,
   WORKER_READY,
   PROCESS_SOURCE,
   PROCESS_SOURCE_COMPLETED,
@@ -67,7 +66,7 @@ import {
   FEATURE_TABLE_EVENT,
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES,
-  LAUNCH_USER_GUIDE,
+  LAUNCH_USER_GUIDE, SEND_WINDOW_TO_FRONT,
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 
@@ -452,6 +451,11 @@ class MapCacheWindowManager {
       shell.openExternal(link)
     })
 
+    ipcMain.on(SEND_WINDOW_TO_FRONT, (event) => {
+      BrowserWindow.fromWebContents(event.sender).show()
+    })
+
+
     ipcMain.on(GET_APP_VERSION, (event) => {
       event.returnValue = app.getVersion()
     })
@@ -499,13 +503,6 @@ class MapCacheWindowManager {
       this.closeProject(true)
     })
 
-    ipcMain.on(QUICK_DOWNLOAD_GEOPACKAGE, (event, payload) => {
-      this.downloadURL(payload.url).then(() => {
-      }).catch(() => {
-        // eslint-disable-next-line no-console
-        console.error('Failed to download GeoPackage.')
-      })
-    })
     ipcMain.on(BUILD_FEATURE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
       const statusCallback = (status) => {

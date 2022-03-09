@@ -21,7 +21,8 @@ const mutations = {
       activeCount: 0,
       dark: false,
       previewLayer: null,
-      popOutFeatureTable: false
+      popOutFeatureTable: false,
+      allowNotifications: false
     })
   },
   setProjectExtents (state, {projectId, extents}) {
@@ -32,6 +33,9 @@ const mutations = {
   },
   setDarkTheme (state, {projectId, enabled}) {
     Vue.set(state[projectId], 'dark', enabled)
+  },
+  allowNotifications (state, {projectId, allow}) {
+    Vue.set(state[projectId], 'allowNotifications', allow)
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
@@ -84,6 +88,9 @@ const actions = {
   },
   setDarkTheme ({ commit }, {projectId, enabled}) {
     commit('setDarkTheme', {projectId, enabled})
+  },
+  allowNotifications ({ commit }, {projectId, allow}) {
+    commit('allowNotifications', {projectId, allow})
   },
   resetState ({ commit }) {
     return commit('resetState')

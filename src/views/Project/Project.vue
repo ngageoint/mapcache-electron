@@ -76,9 +76,9 @@
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="tabId >= 0">
-          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages" :display-feature="displayFeature"></geo-packages>
-          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources" :display-feature="displayFeature"></data-sources>
-          <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme"></settings>
+          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages" :display-feature="displayFeature" :allow-notifications="allowNotifications"></geo-packages>
+          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project" :sources="project.sources" :display-feature="displayFeature" :allow-notifications="allowNotifications"></data-sources>
+          <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme" :allow-notifications="allowNotifications"></settings>
           <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
@@ -106,6 +106,7 @@
     </v-layout>
     <v-snackbar
       top
+      style="margin-left: 56px;"
       v-model="noInternet"
       color="orange"
       timeout="-1"
@@ -116,6 +117,25 @@
           text
           v-bind="attrs"
           @click="noInternet = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
+    <v-snackbar
+        v-if="showAlertMessage"
+        v-model="showAlertMessage"
+        timeout="1500"
+        bottom
+        style="margin-left: 56px;"
+    >
+      {{alertMessage}}
+      <template v-slot:action="{ attrs }">
+        <v-btn
+            :color="alertColor"
+            text
+            v-bind="attrs"
+            @click="showAlertMessage = false"
         >
           Close
         </v-btn>
@@ -175,7 +195,10 @@ export default {
         confirmationMessage: null,
         confirmationIcon: null,
         confirmationId: null,
-        displayFeature: null
+        displayFeature: null,
+        showAlertMessage: false,
+        alertMessage: '',
+        alertColor: 'warning',
       }
     },
     computed: {
@@ -217,6 +240,15 @@ export default {
           }
           this.$vuetify.theme.dark = isDark
           return isDark
+        },
+        allowNotifications (state) {
+          const projectId = this.$route.params.id
+          let project = state.UIState[projectId]
+          let allowNotifications = false
+          if (!isNil(project)) {
+            allowNotifications = project.allowNotifications
+          }
+          return allowNotifications
         },
         featureTablePoppedOut (state) {
           let popOut = false
@@ -491,11 +523,16 @@ export default {
           }
         }
       })
+      EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message, color = 'warning') => {
+        this.alertMessage = message
+        this.alertColor = color
+        this.showAlertMessage = true
+      })
     },
     beforeDestroy() {
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
-      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE])
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE, EventBus.EventTypes.ALERT_MESSAGE])
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()

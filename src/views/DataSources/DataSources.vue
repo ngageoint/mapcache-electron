@@ -6,6 +6,7 @@
       :source="selectedDataSource"
       :project="project"
       :display-feature="displayFeature"
+      :allow-notifications="allowNotifications"
       :back="deselectDataSource">
     </data-source>
     <add-data-source-url v-else-if="urlSourceDialog" :back="() => {urlSourceDialog = false}" :sources="sources" :project="project" :add-source="addSource"></add-data-source-url>
@@ -31,7 +32,8 @@
             class="sources processing-source"
             :on-cancel="() => cancelProcessing(source)"
             :on-complete="() => clearProcessing(source)"
-            :on-close="() => clearProcessing(source)">
+            :on-close="() => clearProcessing(source)"
+            :allow-notifications="allowNotifications">
           </processing-source>
         </template>
       </v-sheet>
@@ -134,6 +136,7 @@ import OverpassDataSource from '../Overpass/OverpassDataSource'
     props: {
       sources: Object,
       project: Object,
+      allowNotifications: Boolean,
       back: Function,
       displayFeature: Object
     },

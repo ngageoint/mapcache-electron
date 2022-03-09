@@ -53,17 +53,12 @@
         ></v-divider>
       </template>
     </v-list>
-    <v-alert
-      class="alert-position"
-      v-model="alert"
-      dismissible
-      type="error"
-    >{{alertText}}.</v-alert>
   </v-sheet>
 </template>
 
 <script>
 import {mdiAlertCircle, mdiChevronRight} from '@mdi/js'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
     props: {
@@ -103,14 +98,11 @@ export default {
                   _this.geopackageSelected(geopackage.id)
                 } else {
                   if (item.health.missing) {
-                    _this.alertText = 'GeoPackage file not found'
-                    _this.alert = true
+                    EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage file not found')
                   } else if (item.health.invalid) {
-                    _this.alertText = 'GeoPackage is not valid'
-                    _this.alert = true
+                    EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage is not vald')
                   } else if (!item.health.synchronized) {
-                    _this.alertText = 'GeoPackage not synchronized'
-                    _this.alert = true
+                    EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'GeoPackage not synchronized')
                   }
                 }
               },
@@ -152,8 +144,6 @@ export default {
       return {
         mdiAlertCircle: mdiAlertCircle,
         mdiChevronRight: mdiChevronRight,
-        alert: false,
-        alertText: '',
         showDialog: false,
         dialogText: '',
         dialogSubText: '',

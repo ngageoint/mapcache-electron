@@ -287,6 +287,7 @@ export default {
     props: {
       project: Object,
       geopackage: Object,
+      allowNotifications: Boolean,
       back: Function
     },
     directives: {
@@ -319,7 +320,6 @@ export default {
           progress: '0.0'
         },
         processing: false,
-        error: false,
         done: false,
         dataSourceLayers: this.getDataSourceLayers(),
         configuration: null,
@@ -389,6 +389,10 @@ export default {
             this.done = true
             window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
             window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+            if (this.allowNotifications) {
+              new Notification('GeoPackage feature layer created', {
+              }).onclick = () => {window.mapcache.sendWindowToFront()}
+            }
             this.back()
           })
         } else {
@@ -403,7 +407,20 @@ export default {
           }).then(() => {
             this.done = true
             window.mapcache.synchronizeGeoPackage({projectId: this.project.id, geopackageId: this.geopackage.id})
-            window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+            if (this.status == null || this.status.error == null) {
+              window.mapcache.notifyTab({projectId: this.project.id, tabId: 0})
+              if (this.allowNotifications) {
+                new Notification('GeoPackage feature layer created', {
+                  body: 'Finished building the "' + this.layerName + '" feature layer',
+                }).onclick = () => {window.mapcache.sendWindowToFront()}
+              }
+            } else {
+              if (this.allowNotifications) {
+                new Notification('Failed to create feature layer', {
+                  body: 'Failed to build the "' + this.layerName + '" feature layer.\r\n' + this.status.error,
+                }).onclick = () => {window.mapcache.sendWindowToFront()}
+              }
+            }
           })
         }
       },
