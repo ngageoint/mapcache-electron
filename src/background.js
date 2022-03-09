@@ -19,6 +19,7 @@ function processArguments (argv) {
 
 if (process.platform === 'win32') {
   processArguments(process.argv)
+  app.setAppUserModelId('mil.nga.mapcache')
 }
 
 async function setupVueDevTools () {
