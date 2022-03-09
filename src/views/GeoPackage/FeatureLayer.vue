@@ -182,7 +182,7 @@
         <v-card v-if="addFieldDialog">
           <v-card-title>
             <v-row no-gutters justify="start" align="center">
-              New field
+              Add field
             </v-row>
           </v-card-title>
           <v-card-text>
@@ -432,7 +432,7 @@
             <p style="font-size: 16px; font-weight: 500;">Fields</p>
           </v-row>
           <v-row no-gutters>
-            <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add Field</v-btn>
+            <v-btn block color="accent" class="detail-bg" @click="addFieldDialog = true">Add field</v-btn>
           </v-row>
           <v-row no-gutters class="mt-4 detail-bg">
             <v-list

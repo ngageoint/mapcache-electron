@@ -872,20 +872,17 @@ export default {
         zIndex: GRID_SELECTION_PANE.zIndex,
         dark: this.darkTheme
       })
-
       this.mgrsGridOverlay = L.mgrsGrid({
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
         dark: this.darkTheme
       })
-
       this.xyzGridOverlay = L.xyzGrid({
         interactive: false,
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
         dark: this.darkTheme
       })
-
       this.map.setView(defaultCenter, defaultZoom)
       this.setupControls()
       this.map.setView(defaultCenter, defaultZoom)
@@ -938,7 +935,6 @@ export default {
     },
     setupControls () {
       const self = this
-
       this.basemapControl = new LeafletBaseMapTool({}, function () {
         self.showBaseMapSelection = !self.showBaseMapSelection
         if (self.showBaseMapSelection) {
@@ -1531,6 +1527,7 @@ export default {
     }
   },
   mounted: function () {
+    this.maxFeatures = this.project.maxFeatures
     EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage, true))
     EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
     EventBus.$on(EventBus.EventTypes.ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
@@ -1551,7 +1548,6 @@ export default {
         this.isEditing = false
       })
     })
-    this.maxFeatures = this.project.maxFeatures
     window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
         this.zoomToFeature(path, table, featureId)
@@ -1561,11 +1557,9 @@ export default {
         this.showFeature(id, isGeoPackage, table, featureId)
       }
     })
-
     window.mapcache.registerHideFeatureTableWindowListener(() => {
       this.lastShowFeatureTableEvent = null
     })
-
     this.registerResizeObserver()
     this.initializeMap()
     this.addLayersToMap()
