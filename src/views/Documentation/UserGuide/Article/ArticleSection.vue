@@ -12,11 +12,11 @@
     <tip v-if="note" :tip="note" class="mt-2 mb-2"/>
     <v-row no-gutters v-if="image">
       <p>
-        <v-img :src="image" width="560" contain></v-img>
+        <v-img style="margin-left: 26px;" :src="image" width="560" contain></v-img>
       </p>
     </v-row>
     <v-row no-gutters v-if="video">
-      <video controls width="560" controlsList="nodownload nofullscreen noremoteplayback" muted disablepictureinpicture>
+      <video controls style="margin-left: 26px;" width="560" controlsList="nodownload nofullscreen noremoteplayback" muted disablepictureinpicture>
         <source :src="video" type="video/webm">
       </video>
     </v-row>
