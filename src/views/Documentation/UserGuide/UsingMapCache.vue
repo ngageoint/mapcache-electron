@@ -95,7 +95,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
-                  paragraph: `Click the show&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiFolder}"></path></svg>&nbsp;button and the GeoPackage will be highlighted in the computer's file explorer.`,
+                  paragraph: `Click the&nbsp;<strong>Show</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiFolder}"></path></svg>&nbsp;button and the GeoPackage will be highlighted in the computer's file explorer.`,
                   image: '/images/documentation/geopackage_articles/show_geopackage.jpg',
                 }
               ],
@@ -110,7 +110,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
-                  paragraph: `Click the rename&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear.`,
+                  paragraph: `Click the&nbsp;<strong>Rename</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear.`,
                   image: '/images/documentation/geopackage_articles/rename_geopackage.jpg',
                 },
                 {
@@ -175,28 +175,28 @@ export default {
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
-                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
+                  paragraph: `Click on the&nbsp;<strong>Add layer</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the&nbsp;<strong>Add feature layer</strong>&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/add_feature_layer_button.jpg'
                 },
                 {
-                  paragraph: `The step-by-step guide will now be displayed. Start by entering the name of the feature layer; then, click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `The step-by-step guide will now be displayed. Start by entering the name of the feature layer.`,
                   image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_layer_name.jpg'
                 },
                 {
-                  paragraph: `Next, select zero or more data source layers. The features in these layers will be included in the&nbsp;<strong>Buildings</strong>&nbsp;GeoPackage feature layer. Once finished, click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `Next, select zero or more data source layers. The features in these layers will be included in the&nbsp;<strong>Buildings</strong>&nbsp;GeoPackage feature layer.`,
                   image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_select_ds.jpg'
                 },
                 {
-                  paragraph: `Next, select zero or more existing GeoPackage feature layers to include in the&nbsp;<strong>Buildings</strong>&nbsp;GeoPackage feature layer; then, click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `Next, select zero or more existing GeoPackage feature layers to include in the&nbsp;<strong>Buildings</strong>&nbsp;GeoPackage feature layer`,
                   image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_select_gpl.jpg',
                   note: 'A GeoPackage feature layer can be created without any features by not selecting any data source layers or existing GeoPackage feature layers.'
                 },
                 {
-                  paragraph: `Next, the order of the selected layers can be set. The order will help decide which features get drawn first. Once set, click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `Next, the order of the selected layers can be set. The order will help decide which features get drawn first.`,
                   image: '/images/documentation/geopackage_articles/create_feature_layer/cfl_order_layers.jpg'
                 },
                 {
-                  paragraph: `Optionally, users can set the bounds of the GeoPackage feature layer. Setting the bounds will filter any feature that does not intersect the bounds. Once completed, click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `Optionally, users can set the bounds of the GeoPackage feature layer. Setting the bounds will filter any feature that does not intersect the bounds.`,
                   video: '/images/documentation/geopackage_articles/create_feature_layer/cfl_bounds.webm'
                 },
                 {
@@ -313,7 +313,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg',
                 },
                 {
-                  paragraph: `Click the copy&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiContentCopy}"></path></svg>&nbsp;button and a dialog will appear.`,
+                  paragraph: `Click the&nbsp;<strong>Copy</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiContentCopy}"></path></svg>&nbsp;button and a dialog will appear.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_copy_button.jpg',
                 },
                 {
@@ -355,7 +355,7 @@ export default {
                 },
                 {
                   title: 'Ordering fields',
-                  paragraph: `The order of the fields determines their order in the feature view as well as the feature table view. Click and drag the field using the drag&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiDragHorizontalVariant}"></path></svg>&nbsp;icon.`,
+                  paragraph: `The order of the fields determines their order in the feature view as well as the feature table view. Click and drag the field using the&nbsp;<strong>Drag</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiDragHorizontalVariant}"></path></svg>&nbsp;icon.`,
                   video: '/images/documentation/geopackage_articles/feature_layer/field_management/reorder.webm',
                 },
                 {
@@ -390,11 +390,11 @@ export default {
                   image: `/images/documentation/geopackage_articles/feature_layer/select_gp_fl.jpg`
                 },
                 {
-                  paragraph: `Click on the view features&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTableEye}"></path></svg>&nbsp;button.`,
+                  paragraph: `Click on the&nbsp;<strong>View features</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTableEye}"></path></svg>&nbsp;button.`,
                   image: `/images/documentation/geopackage_articles/feature_layer/gp_fl_view_features_button.jpg`
                 },
                 {
-                  paragraph: `The feature table will first appear in the map view. The feature table can be viewed in a separate window by clicking the pop out&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiOpenInNew}"></path></svg>&nbsp;button.`,
+                  paragraph: `The feature table will first appear in the map view. The feature table can be viewed in a separate window by clicking the&nbsp;<strong>Pop out</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiOpenInNew}"></path></svg>&nbsp;button.`,
                   image: `/images/documentation/geopackage_articles/feature_layer/feature_table/gp_fl_ft.jpg`
                 },
                 {
@@ -455,17 +455,17 @@ export default {
                 },
                 {
                   title: 'Editing a feature',
-                  paragraph: `Clicking the edit&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button will allow fields to become editable and the geometry of the field will be editable on the map. Watch the video below on how to edit a feature and save those changes.`,
+                  paragraph: `Clicking the&nbsp;<strong>Edit</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button will allow fields to become editable and the geometry of the field will be editable on the map. Watch the video below on how to edit a feature and save those changes.`,
                   video: '/images/documentation/geopackage_articles/feature_layer/feature/edit_feature.webm'
                 },
                 {
                   title: 'Styling a feature',
-                  paragraph: `Clicking the style&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button will display a dialog allowing users to select a style from the available styles. The video below demonstrates this action.`,
+                  paragraph: `Clicking the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button will display a dialog allowing users to select a style from the available styles. The video below demonstrates this action.`,
                   video: '/images/documentation/geopackage_articles/feature_layer/feature/style.webm'
                 },
                 {
                   title: 'Attaching files',
-                  paragraph: `Clicking the attach&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPaperclip}"></path></svg>&nbsp;button will display the media attachement dialog. This dialog allows users to add and remove file attachments to a feature. The video below shows adding an image to a feature.`,
+                  paragraph: `Clicking the&nbsp;<strong>Attach</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPaperclip}"></path></svg>&nbsp;button will display the media attachement dialog. This dialog allows users to add and remove file attachments to a feature. The video below shows adding an image to a feature.`,
                   video: '/images/documentation/geopackage_articles/feature_layer/feature/attach_media.webm'
                 },
                 {
@@ -531,11 +531,11 @@ export default {
                   image: '/images/documentation/geopackage_articles/create_tile_layer/select_gp.jpg'
                 },
                 {
-                  paragraph: `Click on the add layer&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the add tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
+                  paragraph: `Click on the&nbsp;<strong>Add layer</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the&nbsp;<strong>Add tile layer</strong>&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
                   image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_button.jpg'
                 },
                 {
-                  paragraph: `The step-by-step guide will now be displayed. Start by entering the name for the tile layer and then click the&nbsp;<strong>Continue</strong>&nbsp;button.`,
+                  paragraph: `The step-by-step guide will now be displayed. Start by entering the name for the tile layer.`,
                   image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_name.jpg'
                 },
                 {
@@ -744,14 +744,14 @@ export default {
               sections: [
                 {
                   title: `How to add a data source?`,
-                  paragraph: `In the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click the add data source&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button to reveal several methods for adding data sources.`,
+                  paragraph: `In the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click the&nbsp;<strong>Add data source</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button to reveal several methods for adding data sources.`,
                   image: '/images/documentation/datasource_articles/add_data_source_button.jpg',
                   tabItems: [
                     {
                       title: 'File',
                       section: {
                         title: `Importing a supported file type`,
-                        paragraph: `Click on the import from file&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiFileDocumentOutline}"></path></svg>&nbsp;button and an open file dialog will appear. Select a supported file type (such as KML, GeoJSON, Shapefile, or GeoTIFF). The video below shows the import of a shapefile zip.`,
+                        paragraph: `Click on the&nbsp;<strong>Import from file</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiFileDocumentOutline}"></path></svg>&nbsp;button and an open file dialog will appear. Select a supported file type (such as KML, GeoJSON, Shapefile, or GeoTIFF). The video below shows the import of a shapefile zip.`,
                         video: '/images/documentation/datasource_articles/file_source.webm',
                         note: 'The source file(s) are copied to a temporary directory for the data to be extracted. The original file(s) are never modified.'
                       }
@@ -760,7 +760,7 @@ export default {
                       title: 'Url',
                       section: {
                         title: `Adding a supported web service url`,
-                        paragraph: `Click on the import from file&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCloudDownloadOutline}"></path></svg>&nbsp;button and watch the guided process shown in the video below.`,
+                        paragraph: `Click on the&nbsp;<strong>Download from URL</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCloudDownloadOutline}"></path></svg>&nbsp;button and watch the guided process shown in the video below.`,
                         video: '/images/documentation/datasource_articles/web_service.webm',
                         note: 'Verify the service\'s terms of use prior to importing into MapCache.'
                       }
@@ -769,7 +769,7 @@ export default {
                       title: 'Overpass',
                       section: {
                         title: `Adding OpenStreetMap data using the Overpass API`,
-                        paragraph: `Click on the import from file&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiSteering}"></path></svg>&nbsp;button and watch the guided process shown in the video below.`,
+                        paragraph: `Click on the&nbsp;<strong>Download features with Overpass</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiSteering}"></path></svg>&nbsp;button and watch the guided process shown in the video below.`,
                         video: '/images/documentation/datasource_articles/overpass.webm',
                         note: 'This service is not meant to download large areas of data. The Overpass API will prevent excessively large downloads. If a larger area is needed, visit https://planet.openstreetmap.org/ for more information.'
                       }
@@ -803,7 +803,7 @@ export default {
                   image: '/images/documentation/datasource_articles/select_ds.jpg'
                 },
                 {
-                  paragraph: `Click the rename&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear.`,
+                  paragraph: `Click the&nbsp;<strong>Rename</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear.`,
                   image: '/images/documentation/datasource_articles/rename_ds_button.jpg',
                 },
                 {
@@ -823,7 +823,7 @@ export default {
                   image: '/images/documentation/datasource_articles/click_data_source.jpg',
                 },
                 {
-                  paragraph: `In the management view, click on the style button.`,
+                  paragraph: `In the management view, click on the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button.`,
                   image: '/images/documentation/datasource_articles/style_button.jpg',
                   tabItems: [
                     {
@@ -860,7 +860,7 @@ export default {
               introduction: 'This functionality is only available for data sources containing vector features. MapCache will copy the underlying GeoPackage to a user-specified location. It will then be automatically imported under the GeoPackages section.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;data source to open its management view. Click on the export&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear. Specify the name of the GeoPackage and where to save it on the computer.`,
+                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;data source to open its management view. Click on the&nbsp;<strong>Export</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear. Specify the name of the GeoPackage and where to save it on the computer.`,
                   image: '/images/documentation/datasource_articles/export.jpg'
                 }
               ],
@@ -894,7 +894,7 @@ export default {
                   image: '/images/documentation/datasource_articles/remove_data_source.jpg'
                 },
                 {
-                  paragraph: `Click the remove&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click confirm to delete.`,
+                  paragraph: `Click the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click confirm to delete.`,
                   image: '/images/documentation/datasource_articles/confirm_remove_data_source.jpg'
                 }
               ],
@@ -912,7 +912,7 @@ export default {
               introduction: 'Changing the base map can provide different information about the world. For instance, the humanitarian base map provides visual elevation information.',
               sections: [
                 {
-                  paragraph: `To change a base map, click on the base map&nbsp;<svg style="width:24px; height:24px; margin-bottom: -6px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20.5,3L20.34,3.03L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21L3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19.03 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3M10,5.47L14,6.87V18.53L10,17.13V5.47M5,6.46L8,5.45V17.15L5,18.31V6.46M19,17.54L16,18.55V6.86L19,5.7V17.54Z" /></svg>&nbsp;button.`,
+                  paragraph: `To change a base map, click on the&nbsp;<strong>Base map</strong>&nbsp;<svg style="width:24px; height:24px; margin-bottom: -6px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20.5,3L20.34,3.03L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21L3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19.03 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3M10,5.47L14,6.87V18.53L10,17.13V5.47M5,6.46L8,5.45V17.15L5,18.31V6.46M19,17.54L16,18.55V6.86L19,5.7V17.54Z" /></svg>&nbsp;button.`,
                   image: '/images/documentation/map_articles/base_map_control.jpg'
                 },
                 {
@@ -941,7 +941,7 @@ export default {
             {
               order: 4,
               title: `<strong>Clear all</strong>&nbsp;map layers`,
-              introduction: `To clear all map layers, click the clear layers&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="width: 24px; height: 24px; margin-bottom: -7px;"><path fill="currentColor" d="M3.27,1L2,2.27L6.22,6.5L3,9L4.63,10.27L12,16L14.1,14.37L15.53,15.8L12,18.54L4.63,12.81L3,14.07L12,21.07L16.95,17.22L20.73,21L22,19.73L3.27,1M19.36,10.27L21,9L12,2L9.09,4.27L16.96,12.15L19.36,10.27M19.81,15L21,14.07L19.57,12.64L18.38,13.56L19.81,15Z"/></svg>&nbsp;button on the map.`,
+              introduction: `To clear all map layers, click the&nbsp;<strong>Clear layers</strong>&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="width: 24px; height: 24px; margin-bottom: -7px;"><path fill="currentColor" d="M3.27,1L2,2.27L6.22,6.5L3,9L4.63,10.27L12,16L14.1,14.37L15.53,15.8L12,18.54L4.63,12.81L3,14.07L12,21.07L16.95,17.22L20.73,21L22,19.73L3.27,1M19.36,10.27L21,9L12,2L9.09,4.27L16.96,12.15L19.36,10.27M19.81,15L21,14.07L19.57,12.64L18.38,13.56L19.81,15Z"/></svg>&nbsp;button on the map.`,
               sections: [
                 {
                   image: '/images/documentation/map_articles/clear_layers.jpg'
@@ -951,7 +951,7 @@ export default {
             {
               order: 6,
               title: `<strong>Zoom to</strong>&nbsp;extent of all map layers`,
-              introduction: `Clicking on the zoom to extent&nbsp;<svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; margin-bottom: -7px;" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,12H17V15H14V17H19V12M7,9H10V7H5V12H7V9M21,3H3A2,2 0 0,0 1,5V19A2,2 0 0,0 3,21H21A2,2 0 0,0 23,19V5A2,2 0 0,0 21,3M21,19H3V5H21V19Z" /></svg>&nbsp;button will move the map so that all the visible layers, both data sources and GeoPackage layers, are visible.`,
+              introduction: `Clicking on the&nbsp;<strong>Zoom to extent</strong>&nbsp;<svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; margin-bottom: -7px;" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,12H17V15H14V17H19V12M7,9H10V7H5V12H7V9M21,3H3A2,2 0 0,0 1,5V19A2,2 0 0,0 3,21H21A2,2 0 0,0 23,19V5A2,2 0 0,0 21,3M21,19H3V5H21V19Z" /></svg>&nbsp;button will move the map so that all the visible layers, both data sources and GeoPackage layers, are visible.`,
               sections: [
                 {
                   image: '/images/documentation/map_articles/zoom_to_extent.jpg'
@@ -964,7 +964,7 @@ export default {
               introduction: 'Grid overlays are useful in helping to locate positions and areas on the map.',
               sections: [
                 {
-                  paragraph: `To display a grid overlay, click on the grid overlay&nbsp;<svg style="width:24px; height:24px; margin-bottom: -6px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4C2.92,22 2,21.1 2,20V4A2,2 0 0,1 4,2Z" /></svg>&nbsp;button.`,
+                  paragraph: `To display a grid overlay, click on the&nbsp;<strong>Grid overlay</strong>&nbsp;<svg style="width:24px; height:24px; margin-bottom: -6px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4C2.92,22 2,21.1 2,20V4A2,2 0 0,1 4,2Z" /></svg>&nbsp;button.`,
                   image: '/images/documentation/map_articles/grid_map_control.jpg'
                 },
                 {
@@ -978,7 +978,7 @@ export default {
               title: `<strong>Arrange</strong>&nbsp;map layers`,
               sections: [
                 {
-                  paragraph: `All layers that have been enabled will be displayed on the map. The maps are initially ordered in the manner in which they are enabled, where the last enabled layer is shown on top. To adjust the layer order, click on the layer order&nbsp;<svg style="margin-bottom: -6px;" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g><rect fill="none" height="602" width="802" y="-1" x="-1"/></g><g><path d="m8.33641,16.13578l6.81733,-5.30751l1.51908,-1.17636l-8.33641,-6.48387l-8.33641,6.48387l1.50982,1.17636m6.82659,7.66023l-6.83586,-5.30751l-1.50055,1.1671l8.33641,6.48387l8.33641,-6.48387l-1.50982,-1.17636l-6.82659,5.31678z"/><g fill="currentColor" id="svg_4"><path fill="currentColor" id="svg_1" d="m18.26648,11.39818l5.73352,-0.01077l-2.87463,-4.83841l-2.85889,4.84918z"/><path fill="currentColor" id="svg_3" d="m23.99987,12.62895l-5.73339,-0.04327l2.83508,4.86532l2.89831,-4.82205z"/></g></g></svg>&nbsp;button and the layer order will appear.`,
+                  paragraph: `All layers that have been enabled will be displayed on the map. The maps are initially ordered in the manner in which they are enabled, where the last enabled layer is shown on top. To adjust the layer order, click on the&nbsp;<strong>Layer order</strong>&nbsp;<svg style="margin-bottom: -6px;" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g><rect fill="none" height="602" width="802" y="-1" x="-1"/></g><g><path d="m8.33641,16.13578l6.81733,-5.30751l1.51908,-1.17636l-8.33641,-6.48387l-8.33641,6.48387l1.50982,1.17636m6.82659,7.66023l-6.83586,-5.30751l-1.50055,1.1671l8.33641,6.48387l8.33641,-6.48387l-1.50982,-1.17636l-6.82659,5.31678z"/><g fill="currentColor" id="svg_4"><path fill="currentColor" id="svg_1" d="m18.26648,11.39818l5.73352,-0.01077l-2.87463,-4.83841l-2.85889,4.84918z"/><path fill="currentColor" id="svg_3" d="m23.99987,12.62895l-5.73339,-0.04327l2.83508,4.86532l2.89831,-4.82205z"/></g></g></svg>&nbsp;button and the layer order will appear.`,
                   image: '/images/documentation/map_articles/layer_order.jpg',
                 },
                 {
