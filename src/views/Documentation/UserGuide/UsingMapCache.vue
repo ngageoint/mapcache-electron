@@ -515,10 +515,10 @@ export default {
               sections: [
                 {
                   paragraph: `Most web based maps utilize a web mercator map. Web mercator is a projection that allows the world to be viewed in a square view. This view can be broken down into tiles and as the zoom level increase, in order to capture more detail, the number of tiles quadruples. At zoom level zero there is 1 tile, at zoom level one there are 4 tiles, at zoom level two there are 16 tiles, etc...`,
-                  note: 'MapCache only supports generating GeoPackages tile layers in web mercator, currently.'
+                  note: 'MapCache only supports generating GeoPackage tile layers in web mercator, currently.'
                 },
                 {
-                  paragraph: `In MapCache, Imagery and raster data can be imported from a variety of sources. Some of those sources require an internet connection to access, such as WMS, WMTS, and XYZ tile servers. By creating a GeoPackage tile layer, the tiles from those web services can be stored for offline use.`
+                  paragraph: `In MapCache, imagery and raster data can be imported from a variety of sources. Some of those sources require an internet connection to access, such as WMS, WMTS, and XYZ tile servers. By creating a GeoPackage tile layer, the tiles from those web services can be stored for offline use.`
                 }
               ],
             },
@@ -554,10 +554,10 @@ export default {
                 {
                   paragraph: `Specify the bounds of the GeoPackage tile layer.`,
                   video: '/images/documentation/geopackage_articles/create_tile_layer/ctl_bounds.webm',
-                  note: 'Keep in mind that the larger this area is, the more tiles will need to be generated at lower zoom levels.'
+                  note: 'Keep in mind that the larger this area is, the more tiles will need to be generated at lower zoom levels. This will result in a larger GeoPackage file size.'
                 },
                 {
-                  paragraph: `Once the bounds are specified, adjust the zoom levels for the GeoPackage tile layer.`,
+                  paragraph: `Once the bounds are specified, adjust the zoom levels for the GeoPackage tile layer. The allowed zoom levels are between 0 and 20.`,
                   image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_zoom.jpg',
                   note: 'The higher the max zoom level, the more tiles will be generated.'
                 },
@@ -860,8 +860,8 @@ export default {
               introduction: 'This functionality is only available for data sources containing vector features. MapCache will copy the underlying GeoPackage to a user-specified location. It will then be automatically imported under the GeoPackages section.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;data source to open its management view. Click on the&nbsp;<strong>Export</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear. Specify the name of the GeoPackage and where to save it on the computer.`,
-                  image: '/images/documentation/datasource_articles/export.jpg'
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>data source to open its management view. Click on the&nbsp;<strong>Export</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear in order to specify where to save the exported GeoPackage. Watch the video below to see export in action.`,
+                  video: '/images/documentation/datasource_articles/export.webm'
                 }
               ],
             },
@@ -894,7 +894,7 @@ export default {
                   image: '/images/documentation/datasource_articles/remove_data_source.jpg'
                 },
                 {
-                  paragraph: `Click the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click confirm to delete.`,
+                  paragraph: `Click the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click&nbsp;<strong>Remove</strong>&nbsp;to delete.`,
                   image: '/images/documentation/datasource_articles/confirm_remove_data_source.jpg'
                 }
               ],
@@ -941,7 +941,7 @@ export default {
             {
               order: 4,
               title: `<strong>Clear all</strong>&nbsp;map layers`,
-              introduction: `To clear all map layers, click the&nbsp;<strong>Clear layers</strong>&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="width: 24px; height: 24px; margin-bottom: -7px;"><path fill="currentColor" d="M3.27,1L2,2.27L6.22,6.5L3,9L4.63,10.27L12,16L14.1,14.37L15.53,15.8L12,18.54L4.63,12.81L3,14.07L12,21.07L16.95,17.22L20.73,21L22,19.73L3.27,1M19.36,10.27L21,9L12,2L9.09,4.27L16.96,12.15L19.36,10.27M19.81,15L21,14.07L19.57,12.64L18.38,13.56L19.81,15Z"/></svg>&nbsp;button on the map.`,
+              introduction: `To clear all map layers, click the&nbsp;<strong>Clear layers</strong>&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="width: 24px; height: 24px; margin-bottom: -7px;"><path fill="currentColor" d="M3.27,1L2,2.27L6.22,6.5L3,9L4.63,10.27L12,16L14.1,14.37L15.53,15.8L12,18.54L4.63,12.81L3,14.07L12,21.07L16.95,17.22L20.73,21L22,19.73L3.27,1M19.36,10.27L21,9L12,2L9.09,4.27L16.96,12.15L19.36,10.27M19.81,15L21,14.07L19.57,12.64L18.38,13.56L19.81,15Z"/></svg>&nbsp;button on the map. This will remove all data sources and GeoPackage feature and tile layers from the map.`,
               sections: [
                 {
                   image: '/images/documentation/map_articles/clear_layers.jpg'
@@ -990,7 +990,7 @@ export default {
             {
               order: 5,
               title: `<strong>View</strong>&nbsp;the cursor's&nbsp;<strong>coordinates</strong>&nbsp`,
-              introduction: `As the mouse's cursor is moved around the map, the coordinates associated with the cursor update. If the coordinates map control enabled (enabled by default), the coordinates will be displayed in the bottom right of the map. To copy the coordinates, right click the map and a context menu will appear. Click on the coordinates in one of the several formats and that text will be copied to the clipboard.`,
+              introduction: `As the mouse's cursor is moved around the map, the coordinates associated with the cursor update. If the coordinates map control is enabled (enabled by default), the coordinates will be displayed in the bottom-left corner of the map, next to the distance scale. To copy the coordinates, right click the map and a context menu will appear. Click on the coordinates in one of the several formats and that text will be copied to the clipboard.`,
               sections: [
                 {
                   image: '/images/documentation/map_articles/map_coordinates.jpg'
