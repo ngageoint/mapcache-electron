@@ -80,7 +80,7 @@ export default {
               sections: [
                 {
                   title: 'How to create a GeoPackage in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. At the bottom, click the add GeoPackage button&nbsp;<svg width="22px" height="22" viewBox="0 0 24 24" style="margin-bottom: -6px;"><path d="${addGeoPackagePath}"></path></svg>. There will be an option to import an existing GeoPackage from the computer or add a new GeoPackage. Click the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPlus}"></path></svg>&nbsp;button. A file dialog will appear. Enter the name of the GeoPackage and where to save it on the computer.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. At the bottom, click the&nbsp;<strong>Add GeoPackage</strong>&nbsp;<svg width="22px" height="22" viewBox="0 0 24 24" style="margin-bottom: -6px;"><path d="${addGeoPackagePath}"></path></svg>&nbsp;button. There will be an option to import an existing GeoPackage from the computer or add a new GeoPackage. Click the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPlus}"></path></svg>&nbsp;button. A file dialog will appear. Enter the name of the GeoPackage and where to save it on the computer.`,
                   image: '/images/documentation/geopackage_articles/create_geopackage.jpg'
                 }
               ],
@@ -91,7 +91,7 @@ export default {
               introduction: 'To show the folder where the GeoPackage file exists, follow the instructions below.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage and the GeoPackage management view will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage and the GeoPackage management view will be displayed.`,
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
@@ -106,7 +106,7 @@ export default {
               sections: [
                 {
                   title: 'How to rename a GeoPackage in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage and the GeoPackage information will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage and the GeoPackage information will be displayed.`,
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
@@ -124,7 +124,7 @@ export default {
               order: 3,
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage and the GeoPackage's management view will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage and the GeoPackage's management view will be displayed.`,
                   image: '/images/documentation/geopackage_articles/select_geopackage.jpg'
                 },
                 {
@@ -215,7 +215,7 @@ export default {
               introduction: `MapCache provides many ways to manage a feature layer. Need to apply a style, view features, copy or rename the layer? See the instructions below for accessing the GeoPackage feature layer management view.`,
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel and click on a GeoPackage containing a feature layer.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel and click on a GeoPackage containing a feature layer.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
                 },
                 {
@@ -234,7 +234,7 @@ export default {
               sections: [
                 {
                   title: 'How to rename a GeoPackage feature layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
                 },
                 {
@@ -269,7 +269,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_manage_zoom.jpg',
                 },
                 {
-                  paragraph: `Clicking on the layer order button, each data source listed will also include their symbol.`,
+                  paragraph: `Clicking on the&nbsp;<strong>Layer order</strong>&nbsp;<svg style="margin-bottom: -6px;" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g><rect fill="none" height="602" width="802" y="-1" x="-1"/></g><g><path d="m8.33641,16.13578l6.81733,-5.30751l1.51908,-1.17636l-8.33641,-6.48387l-8.33641,6.48387l1.50982,1.17636m6.82659,7.66023l-6.83586,-5.30751l-1.50055,1.1671l8.33641,6.48387l8.33641,-6.48387l-1.50982,-1.17636l-6.82659,5.31678z"/><g fill="currentColor" id="svg_4"><path fill="currentColor" id="svg_1" d="m18.26648,11.39818l5.73352,-0.01077l-2.87463,-4.83841l-2.85889,4.84918z"/><path fill="currentColor" id="svg_3" d="m23.99987,12.62895l-5.73339,-0.04327l2.83508,4.86532l2.89831,-4.82205z"/></g></g></svg>&nbsp;button, each data source listed will also include their symbol.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/gp_fl_map_zoom.jpg'
                 }
               ],
@@ -281,7 +281,7 @@ export default {
               sections: [
                 {
                   title: 'How to index a GeoPackage feature layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg',
                   note: 'A feature layer only needs to be indexed once and any GeoPackage feature layer created in MapCache will already be indexed.'
                 },
@@ -305,7 +305,7 @@ export default {
               sections: [
                 {
                   title: 'How to copy a GeoPackage feature layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
                 },
                 {
@@ -329,7 +329,7 @@ export default {
               sections: [
                 {
                   title: 'How to manage a GeoPackage feature layer\'s fields in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
                 },
                 {
@@ -382,7 +382,7 @@ export default {
               introduction: 'The feature table view is a powerful tool for navigating a feature layer\'s data. It allows users to search across all the layer\'s fields as well as sort the results. It helps identify features on the map by highlighting features under the mouse\'s cursor. Users can also zoom directly to a feature by double clicking. When it comes to interacting with a feature layer, the table view is a necessary component to understand.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel and click on a GeoPackage containing feature layers.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel and click on a GeoPackage containing feature layers.`,
                   image: `/images/documentation/geopackage_articles/feature_layer/select_gp.jpg`
                 },
                 {
@@ -482,7 +482,7 @@ export default {
               sections: [
                 {
                   title: 'How to delete a GeoPackage feature layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/feature_layer/select_gp.jpg'
                 },
                 {
@@ -571,7 +571,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/create_tile_layer/ctl_summary.jpg'
                 },
                 {
-                  paragraph: `Click the add button and the layer creation process will begin, as demonstrated in the video below.`,
+                  paragraph: `Click the&nbsp;<strong>Add</strong>&nbsp;button and the layer creation process will begin, as demonstrated in the video below.`,
                   video: '/images/documentation/geopackage_articles/create_tile_layer/ctl_progress.webm'
                 }
               ],
@@ -582,7 +582,7 @@ export default {
               introduction: `Need to view the tiles, copy or rename the layer? See the instructions below for accessing the GeoPackage tile layer management view.`,
               sections: [
                 {
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel and click on a GeoPackage containing a tile layer.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel and click on a GeoPackage containing a tile layer.`,
                   image: '/images/documentation/geopackage_articles/tile_layer/select_gp.jpg'
                 },
                 {
@@ -613,7 +613,7 @@ export default {
                   image: '/images/documentation/geopackage_articles/tile_layer/gp_tl_manage_zoom.jpg',
                 },
                 {
-                  paragraph: `Clicking on the layer order button, each data source listed will also include their symbol.`,
+                  paragraph: `Clicking on the&nbsp;<strong>Layer order</strong>&nbsp;<svg style="margin-bottom: -6px;" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g><rect fill="none" height="602" width="802" y="-1" x="-1"/></g><g><path d="m8.33641,16.13578l6.81733,-5.30751l1.51908,-1.17636l-8.33641,-6.48387l-8.33641,6.48387l1.50982,1.17636m6.82659,7.66023l-6.83586,-5.30751l-1.50055,1.1671l8.33641,6.48387l8.33641,-6.48387l-1.50982,-1.17636l-6.82659,5.31678z"/><g fill="currentColor" id="svg_4"><path fill="currentColor" id="svg_1" d="m18.26648,11.39818l5.73352,-0.01077l-2.87463,-4.83841l-2.85889,4.84918z"/><path fill="currentColor" id="svg_3" d="m23.99987,12.62895l-5.73339,-0.04327l2.83508,4.86532l2.89831,-4.82205z"/></g></g></svg>&nbsp;button, each data source listed will also include their symbol.`,
                   image: '/images/documentation/geopackage_articles/tile_layer/gp_tl_map_zoom.jpg'
                 }
               ],
@@ -624,7 +624,7 @@ export default {
               sections: [
                 {
                   title: 'How to rename a GeoPackage tile layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/tile_layer/select_gp.jpg'
                 },
                 {
@@ -647,7 +647,7 @@ export default {
               sections: [
                 {
                   title: 'How to copy a GeoPackage tile layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/tile_layer/select_gp.jpg'
                 },
                 {
@@ -670,7 +670,7 @@ export default {
               sections: [
                 {
                   title: 'How to delete a GeoPackage tile layer in MapCache',
-                  paragraph: `In the project, navigate to the&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;GeoPackages section of the side panel. Click on a GeoPackage.`,
+                  paragraph: `In the project, navigate to the&nbsp<strong>GeoPackages</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPackageVariant}"></path></svg>&nbsp;section of the side panel. Click on a GeoPackage.`,
                   image: '/images/documentation/geopackage_articles/tile_layer/select_gp.jpg'
                 },
                 {
@@ -744,7 +744,7 @@ export default {
               sections: [
                 {
                   title: `How to add a data source?`,
-                  paragraph: `In the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click the&nbsp;<strong>Add data source</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button to reveal several methods for adding data sources.`,
+                  paragraph: `In the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click the&nbsp;<strong>Add data source</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button to reveal several methods for adding data sources.`,
                   image: '/images/documentation/datasource_articles/add_data_source_button.jpg',
                   tabItems: [
                     {
@@ -784,7 +784,7 @@ export default {
               introduction: `Need to style a data source, view the features, or even delete it? Accessing the data source management view will provide this functionality and more.`,
               sections: [
                 {
-                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on the data source and the management view will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on the data source and the management view will be displayed.`,
                   image: '/images/documentation/datasource_articles/click_data_source.jpg'
                 },
                 {
@@ -799,7 +799,7 @@ export default {
               sections: [
                 {
                   title: 'How to rename a data source in MapCache',
-                  paragraph: `In the project, navigate to the data source&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a data source and the data source management view will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a data source and the data source management view will be displayed.`,
                   image: '/images/documentation/datasource_articles/select_ds.jpg'
                 },
                 {
@@ -819,7 +819,7 @@ export default {
               sections: [
                 {
                   title: `How to style a data source?`,
-                  paragraph: `In the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click on a data source to show the management view.`,
+                  paragraph: `In the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click on a data source to show the management view.`,
                   image: '/images/documentation/datasource_articles/click_data_source.jpg',
                 },
                 {
@@ -860,7 +860,7 @@ export default {
               introduction: 'This functionality is only available for data sources containing vector features. MapCache will copy the underlying GeoPackage to a user-specified location. It will then be automatically imported under the GeoPackages section.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;data source to open its management view. Click on the&nbsp;<strong>Export</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear. Specify the name of the GeoPackage and where to save it on the computer.`,
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a feature&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;data source to open its management view. Click on the&nbsp;<strong>Export</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiExportVariant}"></path></svg>&nbsp;button. A file dialog will appear. Specify the name of the GeoPackage and where to save it on the computer.`,
                   image: '/images/documentation/datasource_articles/export.jpg'
                 }
               ],
@@ -871,7 +871,7 @@ export default {
               introduction: `Need to quickly navigate the map to the bounds of a data source? In MapCache, any vector&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;or tile&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;symbol can be clicked and will zoom to the associated data source's bounds. Below are a few places where these symbols can be found.`,
               sections: [
                 {
-                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Each layer has a vector or tile symbol.`,
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Each layer has a vector or tile symbol.`,
                   image: '/images/documentation/datasource_articles/zoom_list.jpg'
                 },
                 {
@@ -879,7 +879,7 @@ export default {
                   image: '/images/documentation/datasource_articles/zoom_data_source.jpg'
                 },
                 {
-                  paragraph: `Clicking on the layer order button, each data source listed will also include their symbol.`,
+                  paragraph: `Clicking on the&nbsp;<strong>Layer order</strong>&nbsp;<svg style="margin-bottom: -6px;" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g><rect fill="none" height="602" width="802" y="-1" x="-1"/></g><g><path d="m8.33641,16.13578l6.81733,-5.30751l1.51908,-1.17636l-8.33641,-6.48387l-8.33641,6.48387l1.50982,1.17636m6.82659,7.66023l-6.83586,-5.30751l-1.50055,1.1671l8.33641,6.48387l8.33641,-6.48387l-1.50982,-1.17636l-6.82659,5.31678z"/><g fill="currentColor" id="svg_4"><path fill="currentColor" id="svg_1" d="m18.26648,11.39818l5.73352,-0.01077l-2.87463,-4.83841l-2.85889,4.84918z"/><path fill="currentColor" id="svg_3" d="m23.99987,12.62895l-5.73339,-0.04327l2.83508,4.86532l2.89831,-4.82205z"/></g></g></svg>&nbsp;button, each data source listed will also include their symbol.`,
                   image: '/images/documentation/datasource_articles/zoom_map_layer.jpg'
                 }
               ],
@@ -890,7 +890,7 @@ export default {
               introduction: 'Removing a data source will remove the reference in MapCache and any files that were generated during the import process. The web service and/or the original files used for import are not affected.',
               sections: [
                 {
-                  paragraph: `In the project, navigate to the data sources&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a data source and the management view will be displayed.`,
+                  paragraph: `In the project, navigate to the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section of the side panel. Click on a data source and the management view will be displayed.`,
                   image: '/images/documentation/datasource_articles/remove_data_source.jpg'
                 },
                 {
