@@ -44,7 +44,7 @@ export default {
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, toggle the&nbsp;<strong>Notifications</strong>&nbsp;switch to enable or disable system notifications.`,
                   image: '/images/documentation/settings_articles/system_notifications.jpg',
-                  note: 'Depending on how your system\'s notification settings are configured, enabling this setting may or may not display notifications.'
+                  note: 'The system’s (i.e. Mac, Windows, Linux) notifications will also need to be enabled for MapCache notifications to display properly.'
                 }
               ],
             },
@@ -86,7 +86,7 @@ export default {
                 },
                 {
                   title: '<strong>Delete</strong>&nbsp;url',
-                  paragraph: `Click&nbsp;<strong>Delete</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear. Confirm by clicking the&nbsp;<strong>Delete</strong>&nbsp;button.`,
+                  paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear. Confirm by clicking the&nbsp;<strong>Delete</strong>&nbsp;button.`,
                   image: '/images/documentation/settings_articles/delete_url.jpg',
                   note: 'A deleted url will no longer appear when adding a new data source from a url.',
                   divider: true
@@ -113,7 +113,7 @@ export default {
                 },
                 {
                   title: '<strong>Manage</strong>&nbsp;base map',
-                  paragraph: `To view information about base map, or make changes to it, click on its associated entry in the list.`,
+                  paragraph: `To view information about a base map, or make changes to it, click on its associated entry in the list.`,
                   image: '/images/documentation/settings_articles/base_map_view.jpg'
                 },
                 {
@@ -132,7 +132,7 @@ export default {
                       title: 'Style',
                       section: {
                         title: 'Style a base map.',
-                        paragraph: `Depending on the type of base map, there will several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. To make an adjustment to the opacity, start by clicking on the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button. This will display the style management view and allow for adjustments, as shown below.`,
+                        paragraph: `Depending on the type of base map, there will be several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. To make an adjustment to the opacity, start by clicking on the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button. This will display the style management view and allow for adjustments, as shown below.`,
                         image: '/images/documentation/settings_articles/base_map_style.jpg'
                       }
                     },
@@ -205,7 +205,7 @@ export default {
               introduction: 'MapCache displays a distance scale at the bottom left of the map. This provides insight into the size of features on the map. If you wish to hide this control, follow the instructions below.',
               sections: [
                 {
-                  paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Display scale</strong>&nbsp;switch to hide it from the map..`,
+                  paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Display scale</strong>&nbsp;switch to hide it from the map.`,
                   image: '/images/documentation/settings_articles/scale.jpg'
                 }
               ],
