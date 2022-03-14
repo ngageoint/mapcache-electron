@@ -81,7 +81,7 @@ export default {
       releaseNotes: [
         {
           title: 'MapCache 1.3.0',
-          releaseDate: 'TBD',
+          releaseDate: 'Mar. 14, 2022',
           bugFixes: [
             'Fix for dark mode style issue for nominatim results.',
             'Fix for grids in dark mode being hard to see.',
