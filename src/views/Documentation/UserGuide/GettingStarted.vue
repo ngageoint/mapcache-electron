@@ -14,7 +14,7 @@
         <v-divider/>
       </v-row>
       <v-row no-gutters>
-        <p class="detail--text">The landing page allows the creation a new project and access to recent projects. A project is a geospatial workspace. It provides a container for managing resources and creating map products.</p>
+        <p class="detail--text">The landing page allows the creation of a new project and access to recent projects. A project is a geospatial workspace. It provides a container for managing resources and creating map products.</p>
       </v-row>
       <v-row no-gutters>
         <p>
