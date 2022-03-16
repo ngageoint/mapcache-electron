@@ -32,7 +32,22 @@
   * nvm install 16.13.0
 * Install Yarn
   * npm install yarn -g
-  
+
+### Linux - Fedora
+* Install dependencies 
+  * sudo dnf install git-all
+  * sudo yum install cairo-devel
+  * sudo yum install gcc gcc-c++
+  * sudo dnf groupinstall "Development Tools" "Development Libraries" --skip-broken
+* Configure GIT
+  * git config --global url."https://github.com/".insteadOf git://github.com/ 
+* Install Node Version Manager
+  * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+* Install Node
+  * nvm install 16.13.0
+* Install Yarn
+  * npm install yarn -g
+
 ### yarn.lock adjustments:
 * bindings@^1.5.0 does not work in electron, so it has been updated to use: 'git://github.com/caldwellc/node-bindings.git#master' which provides a fix for undefined filename errors
 
