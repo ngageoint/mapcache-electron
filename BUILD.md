@@ -25,6 +25,7 @@
 
 ### Linux - Ubuntu
 * Install Git, Pip, Build tools, and Canvas dependencies 
+  * sudo apt-get upgrade
   * sudo apt-get install pip git build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev build-essential g++
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
@@ -33,12 +34,14 @@
 * Install Yarn
   * npm install yarn -g
 
-### Linux - Fedora
+### Linux - Fedora 28 Workstation
 * Install dependencies 
-  * sudo dnf install git-all
+  * sudo yum upgrade 
+  * sudo yum install git-all
   * sudo yum install cairo-devel
   * sudo yum install gcc gcc-c++
-  * sudo dnf groupinstall "Development Tools" "Development Libraries" --skip-broken
+  * sudo yum groupinstall "Development Tools" "Development Libraries"
+  * sudo yum install rpm-build
 * Configure GIT
   * git config --global url."https://github.com/".insteadOf git://github.com/ 
 * Install Node Version Manager
