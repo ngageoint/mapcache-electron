@@ -80,6 +80,13 @@ export default {
     return {
       releaseNotes: [
         {
+          title: 'MapCache 1.3.1',
+          releaseDate: 'Mar. 21, 2022',
+          bugFixes: [
+            'KML/KMZ GroundOverlay and style fixes.',
+          ]
+        },
+        {
           title: 'MapCache 1.3.0',
           releaseDate: 'Mar. 14, 2022',
           bugFixes: [

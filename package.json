@@ -1,6 +1,6 @@
 {
   "name": "mapcache",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "author": "Christopher Caldwell <c.caldwell90@gmail.com>",
   "scripts": {

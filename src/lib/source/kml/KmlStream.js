@@ -189,7 +189,6 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
       let styleMap = null
       let pair = null
       let inPlacemark = false
-      let inStyle = false
       let hasStyleUrl = false
       const saxStream = sax.createStream(false, {
         lowercase: true
@@ -199,20 +198,13 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
         currentTag = tag
         switch (tag.name) {
           case 'style':
-            inStyle = true
-            style = {}
-            if (tag.attributes.id != null) {
-              style.id = '#' + tag.attributes.id
-            } else {
-              style.id = '#' + nextId()
+            style = {
+              id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
             }
             return
           case 'stylemap':
-            styleMap = {}
-            if (tag.attributes.id != null) {
-              styleMap.id = '#' + tag.attributes.id
-            } else {
-              styleMap.id = '#' + nextId()
+            styleMap = {
+              id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
             }
             return
           case 'pair':
@@ -232,17 +224,22 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             return
           case 'linestyle':
             styleMode = 'line'
+            if (style != null) {
+              style.hasLine = true
+            }
             return
           case 'polystyle':
             styleMode = 'poly'
+            if (style != null) {
+              style.hasPoly = true
+            }
             return
           case 'iconstyle':
             styleMode = 'icon'
-            if (inPlacemark) {
-              icon = {id: style.id}
-            } else {
-              icon = {id: style.id}
+            if (style != null) {
+              style.hasIcon = true
             }
+            icon = {}
             return
           case 'groundoverlay':
             groundOverlay = {}
@@ -298,6 +295,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             }
             isMulti++
             geoms = []
+            return
         }
       })
       saxStream.on('text', (data) => {
@@ -310,17 +308,46 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             return
           case 'color':
             if (groundOverlay != null) {
-              groundOverlay.alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
+              try {
+                groundOverlay.alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
+                // eslint-disable-next-line no-unused-vars
+              } catch (e) {
+                groundOverlay.alpha = 1.0
+              }
             } else if (style != null) {
-              const alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
-              const blue = data.substring(2, 4)
-              const green = data.substring(4, 6)
-              const red = data.substring(6)
+              let alpha = 1.0
+              let blue = '00'
+              let green = '00'
+              let red = '00'
+              try {
+                if (data.length === 3) {
+                  alpha = 1.0
+                  blue = data.substring(0, 1) + data.substring(0, 1)
+                  green = data.substring(1, 2) + data.substring(1, 2)
+                  red = data.substring(2) + data.substring(2)
+                } else if (data.length === 4) {
+                  alpha = parseInt(data.substring(0, 1) + data.substring(0, 1), 16) / 255
+                  blue = data.substring(1, 2) + data.substring(1, 2)
+                  green = data.substring(2, 3) + data.substring(2, 3)
+                  red = data.substring(3) + data.substring(3)
+                } else if (data.length === 6) {
+                  alpha = 1.0
+                  blue = data.substring(0, 2)
+                  green = data.substring(2, 4)
+                  red = data.substring(4)
+                } else  if (data.length === 8) {
+                  alpha = parseInt(data.substring(0, 2), 16) / 255.0
+                  blue = data.substring(2, 4)
+                  green = data.substring(4, 6)
+                  red = data.substring(6)
+                }
+                // eslint-disable-next-line no-empty, no-unused-vars
+              } catch (e) {}
               if (styleMode === 'line') {
-                style.color = '#' + red + blue + green
+                style.color = '#' + red + green + blue
                 style.opacity = alpha
               } else if (styleMode === 'poly') {
-                style.fillColor = '#' + red + blue + green
+                style.fillColor = '#' + red + green + blue
                 style.fillOpacity = alpha
               }
             }
@@ -343,6 +370,8 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
           case 'name':
             if (groundOverlay != null) {
               groundOverlay.name = data
+            } else if (inPlacemark) {
+              props.name = data
             }
             return
           case 'scale':
@@ -407,7 +436,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             coordsText += data
             return
           case 'styleurl':
-            hasStyleUrl = true
+            hasStyleUrl = inPlacemark
             if (pair != null) {
               pair.styleUrl = data
             } else {
@@ -435,45 +464,49 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             pair = null
             return
           case 'style':
-            inStyle = false
-            if (!hasStyleUrl) {
+            if (style != null && !hasStyleUrl) {
+              if (fillStyle === 0 && style.fillOpacity != null) {
+                style.fillOpacity = 0.0
+              }
+              if (outlineStyle === 0 && style.opacity != null) {
+                style.opacity = 0.0
+              }
+              if (style.width == null) {
+                style.width = 2.0
+              }
               if (icon != null) {
-                if (pair != null) {
-                  pair.style = icon
-                } else if (inPlacemark) {
-                  styleId = icon.id
-                }
-                onStyle(icon)
-                icon = null
-              } else if (style != null) {
-                if (fillStyle === 0 && style.fillOpacity != null) {
+                style.icon = icon
+              }
+              if (pair != null) {
+                pair.style = style
+              }
+              if (inPlacemark) {
+                styleId = style.id
+              }
+              if (style.hasLine || style.hasPoly) {
+                if (style.fillOpacity == null) {
                   style.fillOpacity = 0.0
                 }
-                if (outlineStyle === 0 && style.opacity != null) {
-                  style.opacity = 0.0
+                if (style.fillColor == null) {
+                  style.fillColor = '#000000'
                 }
-                if (style.width == null) {
-                  style.width = 2.0
+                if (style.opacity == null) {
+                  style.opacity = 1.0
                 }
-                if (pair != null) {
-                  pair.style = style
-                } if (inPlacemark) {
-                  styleId = style.id
+                if (style.color == null) {
+                  style.color = '#000000'
                 }
-                onStyle(style)
-                style = null
               }
-            } else {
-              // TODO: handle merged style
-              style = null
-              icon = null
+              onStyle(style)
             }
+            style = null
+            icon = null
             return
           case 'stylemap':
-            onStyleMap(styleMap)
             if (inPlacemark) {
               styleId = styleMap.id
             }
+            onStyleMap(styleMap)
             styleMap = null
             return
           case 'linestyle':
@@ -512,10 +545,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
             // eslint-disable-next-line no-case-declarations
             const out = {
               type: 'Feature',
-              properties: folder ? {
-                folder: folder,
-                ...props
-              } : props,
+              properties: props,
               geometry: null
             }
             if (styleId != null) {

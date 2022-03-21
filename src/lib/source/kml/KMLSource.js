@@ -105,7 +105,6 @@ export default class KMLSource extends Source {
     const kmlDirectory = path.dirname(this.filePath)
     const name = path.basename(this.filePath, path.extname(this.filePath))
 
-
     statusCallback('Parsing and storing features', 0)
 
     const groundOverlays = []
@@ -122,7 +121,6 @@ export default class KMLSource extends Source {
     }, styleMap => {
       styleMaps[styleMap.id] = styleMap
     })
-
     const featureStatusMax = 100 - groundOverlays.length
 
     if (featureCount > 0) {
@@ -141,9 +139,9 @@ export default class KMLSource extends Source {
       for (let i = 0; i < styleIds.length; i++) {
         const styleId = styleIds[i]
         const style = styles[styleId]
-        if (style.href != null) {
+        if (style.hasIcon) {
           try {
-            const icon = await this.generateIconFromKmlIconStyle(style, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount)
+            const icon = await this.generateIconFromKmlIconStyle(style.icon, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount)
             if (icon != null) {
               iconIdMap[styleId] = addIcon(icon)
               iconFileNameCount++
@@ -152,7 +150,9 @@ export default class KMLSource extends Source {
             // eslint-disable-next-line no-console
             console.error('Failed to generate icon.')
           }
-        } else {
+        }
+
+        if (style.hasLine || style.hasPoly) {
           style.name = style.id
           styleIdMap[styleId] = addStyle(style)
         }
@@ -167,17 +167,18 @@ export default class KMLSource extends Source {
         const featureRowId = addFeature(feature)
         if (styleRef != null) {
           // if ref is for a map, select the normal style reference
-          if (styleMaps[styleRef] != null) {
+          const styleRefs = [styleRef]
+          while (styleMaps[styleRef] != null) {
             styleRef = styleMaps[styleRef].normal
+            styleRefs.push(styleRef)
           }
           // check if it is a style or icon
-          if (styleIdMap[styleRef] != null) {
-            const styleRowId = styleIdMap[styleRef]
-            setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
-
-          } else if (iconIdMap[styleRef] != null) {
+          if ((feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') && iconIdMap[styleRef] != null) {
             const iconRowId = iconIdMap[styleRef]
             setFeatureIcon(featureRowId, feature.geometry.type, iconRowId)
+          } else if (styleIdMap[styleRef] != null) {
+            const styleRowId = styleIdMap[styleRef]
+            setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
           }
         }
 

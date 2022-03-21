@@ -4,7 +4,7 @@ import { BoundingBox } from '@ngageoint/geopackage'
 import bbox from '@turf/bbox'
 import transformRotate from '@turf/transform-rotate'
 import isNil from 'lodash/isNil'
-import * as GeoTIFF from 'geotiff'
+import { writeArrayBuffer } from 'geotiff'
 import GeoTIFFSource from '../../source/geotiff/GeoTIFFSource'
 import { getRemoteImage } from '../../network/NetworkRequestUtils'
 import { createCanvas, disposeCanvas, disposeImage, makeImage } from '../canvas/CanvasUtilities'
@@ -27,14 +27,18 @@ async function convert4326ImageToGeoTIFF (filePath, geotiffFilePath, extent) {
        const imageData = context.getImageData(0, 0, image.width(), image.height())
        const values = new Uint8Array(imageData.data)
        const metadata = {
-         height: image.height(),
-         width: image.width(),
+         ImageLength: image.height(),
+         ImageWidth: image.width(),
+         Compression: 1, // no compression
          ModelPixelScale: [(extent[2] - extent[0]) / image.width(), (extent[3] - extent[1]) / image.height(), 0],
          ModelTiepoint: [0, 0, 0, extent[0], extent[3], 0],
-         PhotometricInterpretation: 2
+         PhotometricInterpretation: 2,
+         GeographicTypeGeoKey: 4326,
+         GeogCitationGeoKey: 'WGS 84',
+         GTModelTypeGeoKey: 2,
        }
-       GeoTIFF.writeArrayBuffer(values, metadata).then(arrayBuffer => {
-         fs.writeFile(geotiffFilePath, Buffer.from(arrayBuffer), function (err) {
+       try {
+         fs.writeFile(geotiffFilePath, Buffer.from(writeArrayBuffer(values, metadata)), function (err) {
            if (err) {
              // eslint-disable-next-line no-console
              console.error('Failed to write GeoTIFF for KML Ground Overlay.')
@@ -44,14 +48,13 @@ async function convert4326ImageToGeoTIFF (filePath, geotiffFilePath, extent) {
            }
          })
          // eslint-disable-next-line no-unused-vars
-       }).catch(e => {
+       } catch (e) {
          // eslint-disable-next-line no-console
          console.error('Failed to convert kml ground overlay into 4326 GeoTIFF image.')
-         resolve(false)
-       }).finally(() => {
          disposeImage(image)
          disposeCanvas(canvas)
-       })
+         resolve(false)
+       }
      })
   })
 }
