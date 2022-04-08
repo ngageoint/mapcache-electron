@@ -204,6 +204,7 @@ import {FEATURE_TABLE_WINDOW_EVENTS} from '../FeatureTable/FeatureTableEvents'
 import {FEATURE_TABLE_ACTIONS} from '../FeatureTable/FeatureTableActions'
 import Sortable from 'sortablejs'
 import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
+import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -885,6 +886,7 @@ export default {
       })
       this.map.setView(defaultCenter, defaultZoom)
       this.setupControls()
+      this.setupBaseMaps()
       this.map.setView(defaultCenter, defaultZoom)
       this.setupEventHandlers()
     },
@@ -935,6 +937,7 @@ export default {
     },
     setupControls () {
       const self = this
+      // create controls
       this.basemapControl = new LeafletBaseMapTool({}, function () {
         self.showBaseMapSelection = !self.showBaseMapSelection
         if (self.showBaseMapSelection) {
@@ -942,7 +945,6 @@ export default {
           self.showGridSelection = false
         }
       })
-      this.map.addControl(this.basemapControl)
       this.gridOverlayControl = new LeafletGridOverlayTool({}, function () {
         self.showGridSelection = !self.showGridSelection
         if (self.showGridSelection) {
@@ -950,11 +952,8 @@ export default {
           self.showBaseMapSelection = false
         }
       })
-      this.map.addControl(this.gridOverlayControl)
-      this.setupBaseMaps()
-      this.map.zoomControl.setPosition('topright')
       this.displayZoomControl = new LeafletZoomIndicator()
-      this.map.addControl(this.displayZoomControl)
+      this.snapshotControl = new LeafletSnapshot()
       this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
         self.zoomToContent()
       }, function () {
@@ -966,21 +965,56 @@ export default {
           self.showGridSelection = false
         }
       })
-
       this.scaleControl = L.control.scale()
-      this.scaleControl.addTo(this.map)
       this.coordinateControl = new LeafletCoordinates()
+      this.drawingControl = new LeafletDraw()
+      this.drawingControl.onDrawStart(() => {
+        this.isDrawing = true
+        this.snapshotControl.disable()
+
+      })
+      this.drawingControl.onDrawEnd((e) => {
+        this.isDrawing = false
+        if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
+          e.layer.toggleEdit()
+          self.createdLayer = e.layer
+          self.displayGeoPackageFeatureLayerSelection()
+        }
+        this.snapshotControl.enable()
+      })
+      this.editingControl = new LeafletEdit()
+
+      // add controls to map
+      this.map.addControl(this.basemapControl)
+      this.map.addControl(this.gridOverlayControl)
+      this.map.zoomControl.setPosition('topright')
+      this.map.addControl(this.displayZoomControl)
+      this.map.addControl(this.snapshotControl)
+      this.map.addControl(this.scaleControl)
       this.map.addControl(this.coordinateControl)
       this.map.addControl(this.activeLayersControl)
-      this.drawingControl = new LeafletDraw()
-      this.editingControl = new LeafletEdit()
       this.map.addControl(this.drawingControl)
       this.map.addControl(this.editingControl)
+
+      // hide controls that are disabled by the user
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
       this.project.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
       this.project.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
       this.project.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
 
+      // prevent bubbling of mouse events while in controls
+      const elementList = document.getElementsByClassName('leaflet-control')
+      const stopBubbling = (e) => {
+        // need to force hiding of highlight as map does not produce a mouse out event
+        this.removeGeoPackageFeatureHighlight()
+        e.stopPropagation()
+        e.preventDefault();
+        return true
+      }
+      Object.values(elementList).forEach(el => {
+        el.addEventListener('mouseover', stopBubbling)
+        el.addEventListener('mousemove', stopBubbling)
+      })
     },
     debounceClickHandler: debounce(function () {
       this.consecutiveClicks = 0
@@ -1037,13 +1071,6 @@ export default {
                 .openOn(this.map)
             })
           }
-        }
-      })
-      this.map.on('editable:drawing:end', function (e) {
-        if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
-          e.layer.toggleEdit()
-          self.createdLayer = e.layer
-          self.displayGeoPackageFeatureLayerSelection()
         }
       })
       this.map.on('zoomend', () => {
@@ -1226,11 +1253,13 @@ export default {
     isEditing: {
       handler (newValue) {
         if (newValue) {
-          this.drawingControl.hide()
+          this.drawingControl.disableDrawingLinks()
           this.editingControl.show()
+          this.snapshotControl.disable()
         } else {
-          this.drawingControl.show()
+          this.drawingControl.enableDrawingLinks()
           this.editingControl.hide()
+          this.snapshotControl.enable()
         }
       }
     },

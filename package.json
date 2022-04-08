@@ -38,6 +38,7 @@
     "better-sqlite3": "7.4.1",
     "bindings": "git://github.com/caldwellc/node-bindings.git#master",
     "caniuse-lite": "^1.0.30001292",
+    "dom-to-image-more": "^2.9.5",
     "electron-dl": "3.2.1",
     "electron-log": "4.4.1",
     "electron-store": "8.0.1",

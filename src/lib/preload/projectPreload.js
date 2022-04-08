@@ -657,6 +657,11 @@ contextBridge.exposeInMainWorld('mapcache', {
       absolutePath: true
     })
   },
+  downloadBase64Image: (filePath, base64Image) => {
+    return new Promise(resolve => {
+      fs.writeFile(filePath, base64Image, {encoding: 'base64'}, resolve)
+    })
+  },
   copyFile: (filePath, toFilePath) => {
     return new Promise(resolve => {
       fs.copyFile(filePath, toFilePath, resolve)

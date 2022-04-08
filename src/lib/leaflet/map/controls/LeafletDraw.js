@@ -17,6 +17,14 @@ export default class LeafletDraw extends L.Control {
     this.drawing = null
   }
 
+  onDrawStart (listener) {
+    this.drawStartListener = listener
+  }
+
+  onDrawEnd (listener) {
+    this.drawEndListener = listener
+  }
+
   onAdd (map) {
     map.createPane(DRAWING_MAP_PANE.name)
     map.getPane(DRAWING_MAP_PANE.name).style.zIndex = DRAWING_MAP_PANE.zIndex
@@ -151,7 +159,6 @@ export default class LeafletDraw extends L.Control {
       e.preventDefault()
     }.bind(this)
 
-
     map.on('editable:drawing:commit', function () {
       this.enableDrawingLinks()
       this.isDrawing = false
@@ -182,8 +189,18 @@ export default class LeafletDraw extends L.Control {
         }
       }
     }
-    map.on('editable:drawing:start', addTooltip)
-    map.on('editable:drawing:end', removeTooltip)
+    map.on('editable:drawing:start', (e) => {
+      if (this.drawStartListener != null) {
+        this.drawStartListener(e)
+      }
+      addTooltip()
+    })
+    map.on('editable:drawing:end', (e) => {
+      if (this.drawEndListener != null) {
+        this.drawEndListener(e)
+      }
+      removeTooltip()
+    })
     map.on('editable:drawing:click', updateTooltip)
 
     return container

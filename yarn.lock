@@ -4610,6 +4610,11 @@ dom-serializer@^1.0.1:
     domhandler "^4.2.0"
     entities "^2.0.0"
 
+dom-to-image-more@^2.9.5:
+  version "2.9.5"
+  resolved "https://registry.yarnpkg.com/dom-to-image-more/-/dom-to-image-more-2.9.5.tgz#a5dd5a30480e01b795fde9e99278096143b3ece7"
+  integrity sha512-7pr43ZY/Nk0k2z3NXDKN4GvnZqP/3iZvddLeIuGfNTyFJuzzr0UeLl+poZ1ewYt3YIK+WHCEZUkz+RNuocN3/Q==
+
 domain-browser@^1.1.1:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/domain-browser/-/domain-browser-1.2.0.tgz#3d31f50191a6749dd1375a7f522e823d42e54eda"

@@ -178,31 +178,43 @@ function setupMGRSGrid (L) {
     },
 
     redraw: function () {
-      this.eachLayer(this.removeLayer, this)
+      this.clearLayers()
       let blocks = []
+      let labels = []
       let zoom = this._map.getZoom()
       const bounds = toExtent(this._map.getBounds())
       let zones = zonesWithin(bounds, this.options.gridOptions.onlyInterestingZones)
 
       // handle GZD zones
       if (zoom >= this.options.gridOptions.gzd.minZoom && zoom <= this.options.gridOptions.gzd.maxZoom) {
-        blocks = blocks.concat(this.getGridZoneDesignatorPolygons(zones, bounds, 0, this.options.gridOptions.gzd, zoom > 3))
+        let result = this.getGridZoneDesignatorPolygons(zones, bounds, 0, this.options.gridOptions.gzd, zoom > 3)
+        blocks = blocks.concat(result.blocks)
+        labels = labels.concat(result.labels)
       }
 
       if (zoom >= this.options.gridOptions.one_hundred_km.minZoom && zoom <= this.options.gridOptions.one_hundred_km.maxZoom) {
-        blocks = blocks.concat(this.getGridZoneDesignatorPolygons(zones, bounds, this.options.gridOptions.one_hundred_km.precision, this.options.gridOptions.one_hundred_km, zoom > 6))
+        let result = this.getGridZoneDesignatorPolygons(zones, bounds, this.options.gridOptions.one_hundred_km.precision, this.options.gridOptions.one_hundred_km, zoom > 6)
+        blocks = blocks.concat(result.blocks)
+        labels = labels.concat(result.labels)
       }
 
       const grids = [this.options.gridOptions.ten_km, this.options.gridOptions.one_km, this.options.gridOptions.one_hundred_meter, this.options.gridOptions.ten_meter]
 
       grids.forEach(grid => {
         if (zoom >= grid.minZoom && zoom <= grid.maxZoom) {
-          blocks = blocks.concat(this.getGridZoneDesignatorPolygons(zones, bounds, grid.precision, grid, false))
+          let result = this.getGridZoneDesignatorPolygons(zones, bounds, grid.precision, grid, false)
+          blocks = blocks.concat(result.blocks)
+          labels = labels.concat(result.labels)
         }
       })
 
       for (let i in blocks) {
         this.addLayer(blocks[i])
+      }
+      for (let i in labels) {
+        if (this._map.getBounds().contains(labels[i].getLatLng())) {
+          this.addLayer(labels[i])
+        }
       }
       return this
     },
@@ -234,7 +246,8 @@ function setupMGRSGrid (L) {
       }
     },
     getGridZoneDesignatorPolygons: function (zones, bounds, precision, options, showLabel) {
-      const ret = []
+      const blocks = []
+      const labelMarkers = []
       zones.forEach(zone => {
         const {polygons, labels} = zone.polygonsAndLabelsInBounds(bounds, precision)
         polygons.forEach(polygon => {
@@ -256,18 +269,18 @@ function setupMGRSGrid (L) {
               rect.on('click', (e) => this.options.gridOptions.onClick(e, rect))
             }
           }
-          ret.push(rect)
+          blocks.push(rect)
         })
         if (showLabel) {
           labels.forEach(label => {
             const leafletLabel = this.drawLabel(label, options)
             if (leafletLabel != null) {
-              ret.push(leafletLabel)
+              labelMarkers.push(leafletLabel)
             }
           })
         }
       })
-      return ret
+      return {blocks, labels: labelMarkers}
 
     },
   })

@@ -523,6 +523,9 @@ export default {
           }
         }
       })
+      EventBus.$on(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, () => {
+        this.tabId = 3
+      })
       EventBus.$on(EventBus.EventTypes.ALERT_MESSAGE, (message, color = 'warning') => {
         this.alertMessage = message
         this.alertColor = color
@@ -532,7 +535,7 @@ export default {
     beforeDestroy() {
       window.removeEventListener('online', this.onLineListener)
       window.removeEventListener('offline', this.offLineListener)
-      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE, EventBus.EventTypes.ALERT_MESSAGE])
+      EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE, EventBus.EventTypes.ALERT_MESSAGE, EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT])
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()
       window.mapcache.removeRequestClientCredentialsListener()
