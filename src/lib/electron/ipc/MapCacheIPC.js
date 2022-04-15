@@ -114,6 +114,8 @@ const LAUNCH_WITH_GEOPACKAGE_FILES = 'launch-with-geopackage-files'
 const LOAD_OR_DISPLAY_GEOPACKAGES = 'load-or-display-geopackages'
 
 const LAUNCH_USER_GUIDE = 'launch-user-guide'
+const UNDO = 'undo'
+const REDO = 'redo'
 
 const MAIN_CHANNELS = [
   GET_APP_VERSION,
@@ -221,5 +223,7 @@ export {
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES,
   LAUNCH_USER_GUIDE,
-  SEND_WINDOW_TO_FRONT
+  SEND_WINDOW_TO_FRONT,
+  UNDO,
+  REDO
 }

@@ -30,9 +30,10 @@ function _imageDataEqual (data1, data2) {
   return equal
 }
 
-function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
+function  _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
   if (!isNil(feature.style)) {
     const featureTableStyles = _addStyleExtensionForTable(gp, tableName)
+    const geometryType = feature.geometry != null ? GeometryType.fromName(feature.geometry.type.toUpperCase()) : null
     if (feature.style.icon) {
       const newIcon = feature.style.icon
       const existingIcons = featureTableStyles.getIconDao().queryForAll()
@@ -42,10 +43,10 @@ function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
       })
       if (existingIconId !== -1) {
         const existingIcon = existingIcons[existingIconId]
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, existingIcon.id, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, existingIcon.id, geometryType)
       } else {
         const iconId = _createIconRow(gp, tableName, newIcon)
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, iconId, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getIconMappingDao(), rowId, iconId, geometryType)
       }
     } else if (feature.style.style) {
       const newStyle = feature.style.style
@@ -54,10 +55,10 @@ function _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
       const existingStyleId = existingStyles.findIndex(style => style.color === newStyle.color && style.opacity === newStyle.opacity && style.fill_color === newStyle.fillColor && style.fill_opacity === newStyle.fillOpacity && style.width === newStyle.width)
       if (existingStyleId !== -1) {
         const existingStyle = existingStyles[existingStyleId]
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, geometryType)
       } else {
         const styleId = _createStyleRow(gp, tableName, newStyle)
-        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+        featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, geometryType)
       }
     }
   }

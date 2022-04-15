@@ -118,7 +118,7 @@ import {
   getEditableColumnObject,
   getClosestFeature,
   getFeatureViewData,
-  checkUnique,
+  checkUnique, getForms,
 } from '../geopackage/GeoPackageFeatureTableUtilities'
 import {
   getMediaAttachmentsCounts,
@@ -216,7 +216,10 @@ import {
   REQUEST_TILE_COMPLETED,
   SELECT_CLIENT_CERTIFICATE,
   SHOW_FEATURE_TABLE_WINDOW,
-  LAUNCH_USER_GUIDE, SEND_WINDOW_TO_FRONT,
+  LAUNCH_USER_GUIDE,
+  SEND_WINDOW_TO_FRONT,
+  UNDO,
+  REDO,
 } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
@@ -773,6 +776,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   countOfFeaturesAt,
   getFeatureCountInBoundingBox,
   getFeatureColumns,
+  getForms,
   indexFeatureTable,
   getAllFeaturesAsGeoJSON,
   getMediaAttachmentsCounts,
@@ -869,5 +873,17 @@ contextBridge.exposeInMainWorld('mapcache', {
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,
   getFeatureStyleOrIcon,
-  popOutFeatureTable
+  popOutFeatureTable,
+  registerUndoListener: (listener) => {
+    ipcRenderer.on(UNDO, listener)
+  },
+  registerRedoListener: (listener) => {
+    ipcRenderer.on(REDO, listener)
+  },
+  unregisterUndoListeners: () => {
+    ipcRenderer.removeAllListeners(UNDO)
+  },
+  unregisterRedoListeners: () => {
+    ipcRenderer.removeAllListeners(REDO)
+  }
 })

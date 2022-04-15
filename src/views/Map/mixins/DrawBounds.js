@@ -2,21 +2,24 @@ import {L} from '../../../lib/leaflet/vendor'
 import isNil from 'lodash/isNil'
 import EventBus from '../../../lib/vue/EventBus'
 import {getDefaultLeafletOverlayStyleForMapCache} from '../../../lib/leaflet/map/style/Style'
-
+import {DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
 
 export default {
   data () {
     return {
-      drawBoundsId: null
+      drawBoundsId: null,
+      isDrawingBounds: false,
+      drawBoundsMode: 0
     }
   },
   methods: {
     disableBoundingBoxDrawing () {
       if (this.r && this.map) {
-        this.r.disableEdit()
+        this.stopDrawBoundsMode()
         this.map.removeLayer(this.r)
         this.r = undefined
       }
+      this.isDrawingBounds = false
     },
     enableBoundingBoxDrawing (boundingBoxFilter) {
       let boundingBox = boundingBoxFilter
@@ -26,7 +29,7 @@ export default {
         let ne = this.map.getBounds().getNorthEast()
         boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
         bounds = L.latLngBounds(boundingBox)
-        bounds = bounds.pad(-0.05)
+        bounds = bounds.pad(-0.1)
         boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
         if (this.drawBoundsId != null) {
           EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.drawBoundsId), [Number(boundingBox[0][1]), Number(boundingBox[0][0]), Number(boundingBox[1][1]), Number(boundingBox[1][0])])
@@ -35,10 +38,11 @@ export default {
         bounds = L.latLngBounds(boundingBox)
       }
 
-      this.r = L.rectangle(bounds, {pane: 'markerPane'})
+      this.drawBoundsMode = 0
+      this.r = L.rectangle(bounds, {pane: DRAWING_LAYER_PANE.name})
       this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
       this.r.addTo(this.map)
-      this.r.enableEdit()
+      this.toggleBoundsEdit()
 
       this.map.fitBounds(boundingBox)
 
@@ -51,6 +55,7 @@ export default {
           EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(self.drawBoundsId), [Number(boundingBox[0][1]), Number(boundingBox[0][0]), Number(boundingBox[1][1]), Number(boundingBox[1][0])])
         }
       })
+      this.isDrawingBounds = true
     },
     cancelDrawingBounds () {
       if (this.drawBoundsId != null) {
@@ -58,6 +63,45 @@ export default {
         this.drawBoundsId = null
       }
       this.disableBoundingBoxDrawing()
+    },
+    stopDrawBoundsMode () {
+      if (this.r != null) {
+        this.r.pm.disableLayerDrag()
+        this.r.pm.disable()
+        this.r.off('pm:edit')
+        this.r.off('pm:dragend')
+      }
+      this.map.off('pm:dragend')
+      this.isDragging = false
+    },
+    toggleBoundsEdit () {
+      this.stopDrawBoundsMode()
+      this.r.pm.enable({
+        allowSelfIntersection: true,
+        panes: {
+          vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+        },
+        snapDistance: 5
+      })
+      this.r.on('pm:edit', () => {
+        this.updateBounds()
+      })
+    },
+    toggleBoundsDrag () {
+      this.stopDrawBoundsMode()
+      this.isDragging = true
+      this.r.pm.enableLayerDrag()
+      this.r.on('pm:dragend', () => {
+        this.updateBounds()
+      })
+    },
+    updateBounds() {
+      let sw = this.r.getBounds().getSouthWest()
+      let ne = this.r.getBounds().getNorthEast()
+      let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
+      if (this.drawBoundsId != null) {
+        EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.drawBoundsId), [Number(boundingBox[0][1]), Number(boundingBox[0][0]), Number(boundingBox[1][1]), Number(boundingBox[1][0])])
+      }
     }
   },
   mounted () {

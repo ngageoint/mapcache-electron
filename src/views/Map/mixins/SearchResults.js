@@ -107,6 +107,8 @@ export default {
         }
         this.searchResultLayers = {
           pointFeatures: L.geoJSON(pointFeatureCollection, {
+            pmIgnore: true,
+            snapIgnore: false,
             pane: SEARCH_RESULT_POINTS_ONLY_PANE.name,
             zIndex: SEARCH_RESULT_POINTS_ONLY_PANE.zIndex,
             style: {
@@ -150,6 +152,8 @@ export default {
             }
           }),
           nonPointFeatures: L.geoJSON(nonPointFeatureCollection, {
+            pmIgnore: true,
+            snapIgnore: false,
             pane: SEARCH_RESULTS_PANE.name,
             zIndex: SEARCH_RESULTS_PANE.zIndex,
             style: {

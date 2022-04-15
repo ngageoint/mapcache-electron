@@ -6,8 +6,8 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import blankMarker from '../leaflet/map/markers/marker-icon-blank.png'
 import blankMarker2x from '../leaflet/map/markers/marker-icon-blank-2x.png'
 import LeafletEditable from 'leaflet-editable' // eslint-disable-line no-unused-vars
-import LeafletDraw from 'leaflet-draw' // eslint-disable-line no-unused-vars
-import 'leaflet-draw/dist/leaflet.draw.css'
+// import LeafletDraw from 'leaflet-draw' // eslint-disable-line no-unused-vars
+// import 'leaflet-draw/dist/leaflet.draw.css'
 import isNil from 'lodash/isNil'
 import EventBus from '../vue/EventBus'
 import { getAxiosRequestScheduler, testServiceConnection } from '../network/ServiceConnectionUtils'
@@ -20,6 +20,8 @@ import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
 import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
 import { setupXYZGrid } from './map/grid/xyz/xyz'
 import { clipImage, stitchTileData } from '../../lib/util/tile/TileUtilities'
+import '@geoman-io/leaflet-geoman-free'
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 
 delete L.Icon.Default.prototype._getIconUrl
 

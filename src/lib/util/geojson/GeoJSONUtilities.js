@@ -103,129 +103,88 @@ function isValid (geometry) {
 }
 
 /**
- * Explodes a flattened feature using it's container structure
- * @param container
+ * Unflattens a list of features
  * @param features
- * @returns {{coordinates: *, type: *}|{geometries: *, type: *}}
+ * @returns any
  */
-function explodeFlattenedFeature (container, features) {
-  let geometry
-  if (container.isLeaf) {
-    const indexedFeature = features.find(feature => feature.properties.index === container.index)
-    if (!isNil(indexedFeature)) {
-      geometry = indexedFeature.geometry
-    }
-  } else {
-    if (container.type === 'GeometryCollection') {
-      let geometries = container.items.map(item => explodeFlattenedFeature(item, features))
-      if (geometries.length > 0) {
-        geometry = {
-          type: container.type,
-          geometries: geometries
-        }
-      }
-    } else if (container.type === 'Polygon') {
-      let coordinates = container.items.map(item => explodeFlattenedFeature(item, features))
+function explodeFlattenedFeature (features) {
+  let geometry = null
+  if (features.length === 1) {
+    geometry = features[0].geometry
+  } else if (features.length > 1) {
+    const featureTypes = features.map(feature => feature.geometry.type)
+    const isMultiPoint = featureTypes.filter(type => type === 'Point').length === featureTypes.length
+    const isMultiLineString = featureTypes.filter(type => type === 'LineString').length === featureTypes.length
+    const isMultiPolygon = featureTypes.filter(type => type === 'Polygon').length === featureTypes.length
+    if (isMultiPoint) {
       geometry = {
-        type: 'Polygon',
-        coordinates: coordinates.map(coordinate => coordinate.coordinates[0])
+        type: 'MultiPoint',
+        coordinates: features.map(feature => feature.geometry.coordinates)
+      }
+    } else if (isMultiLineString) {
+      geometry = {
+        type: 'MultiLineString',
+        coordinates: features.map(feature => feature.geometry.coordinates)
+      }
+    } else if (isMultiPolygon) {
+      geometry = {
+        type: 'MultiPolygon',
+        coordinates: features.map(feature => feature.geometry.coordinates)
       }
     } else {
-      let coordinates = container.items.map(item => explodeFlattenedFeature(item, features)).map(geometry => geometry.coordinates)
-      if (coordinates.length > 0) {
-        geometry = {
-          type: container.type,
-          coordinates: coordinates
-        }
+      geometry = {
+        type: 'GeometryCollection',
+        geometries: features.map(feature => feature.geometry)
       }
     }
   }
+
   return geometry
 }
 
 /**
- * This will take a feature and flatten it. If it contains any multi features or geometry collections within it, they will be flattened as well
+ * Takes a feature and flattens it into an array of features
+ * Realistically, this just looks for GeometryCollections and creates a list of features for that collection
  * @param feature
- * @param indexObject
  */
-function flattenFeature (feature, indexObject = {index: 0}) {
+function flattenFeature (feature) {
   let features = []
-  // each container represents a geometry in the feature
-  let container = {
-    type: feature.geometry.type,
-    isLeaf: false,
-    items: []
-  }
-  switch (window.mapcache.GeometryType.fromName(feature.geometry.type.toUpperCase())) {
-    case window.mapcache.GeometryType.MULTIPOINT:
-    case window.mapcache.GeometryType.MULTILINESTRING:
-    case window.mapcache.GeometryType.MULTIPOLYGON:
-      feature.geometry.coordinates.forEach(coordinates => {
-        let result = flattenFeature({
-          type: 'Feature',
-          geometry: {
-            type: feature.geometry.type.substring(5),
-            coordinates
-          },
-          properties: {}
-        }, indexObject)
-        result.features.forEach(feature => {
-          features.push(feature)
-        })
-        container.items.push(result.container)
-      })
-      break
-    case window.mapcache.GeometryType.GEOMETRYCOLLECTION:
-      feature.geometry.geometries.forEach(geometry => {
-        let result = flattenFeature({
-          type: 'Feature',
-          geometry: geometry,
-          properties: {}
-        }, indexObject)
-        result.features.forEach(feature => {
-          features.push(feature)
-        })
-        container.items.push(result.container)
-      })
-      break
-    case window.mapcache.GeometryType.POLYGON:
-      // polygon has an external ring and up to several holes.
-      // split these up some...
-      if (feature.geometry.coordinates.length > 1) {
+  if (feature.geometry != null) {
+    switch (window.mapcache.GeometryType.fromName(feature.geometry.type.toUpperCase())) {
+      case window.mapcache.GeometryType.MULTIPOINT:
+      case window.mapcache.GeometryType.MULTILINESTRING:
+      case window.mapcache.GeometryType.MULTIPOLYGON:
         feature.geometry.coordinates.forEach(coordinates => {
-          let result = flattenFeature({
+          flattenFeature({
             type: 'Feature',
             geometry: {
-              type: 'Polygon',
-              coordinates: [coordinates]
+              type: feature.geometry.type.substring(5),
+              coordinates
             },
             properties: {}
-          }, indexObject)
-          result.features.forEach(feature => {
+          }).forEach(feature => {
             features.push(feature)
           })
-          container.items.push(result.container)
         })
-      } else {
-        container.isLeaf = true
-        container.index = indexObject.index
-        feature.properties.index = indexObject.index
+        break
+      case window.mapcache.GeometryType.GEOMETRYCOLLECTION:
+        feature.geometry.geometries.forEach(geometry => {
+          let result = flattenFeature({
+            type: 'Feature',
+            geometry: geometry,
+            properties: {}
+          })
+          result.forEach(feature => {
+            features.push(feature)
+          })
+        })
+        break
+      default:
         features.push(feature)
-        indexObject.index++
-      }
-      break
-    default:
-      container.isLeaf = true
-      container.index = indexObject.index
-      feature.properties.index = indexObject.index
-      features.push(feature)
-      indexObject.index++
-      break
+        break
+    }
   }
-  return {
-    features,
-    container
-  }
+  return features
 }
 
 export {

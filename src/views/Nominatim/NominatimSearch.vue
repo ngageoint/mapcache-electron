@@ -3,7 +3,8 @@
     <v-row no-gutters>
       <v-col>
         <v-form v-on:submit.prevent="runSearch">
-          <v-text-field style="max-width: 350px;"
+          <v-text-field :disabled="disableSearch"
+                        style="max-width: 350px;"
                         solo
                         dense
                         hide-details
@@ -17,6 +18,7 @@
               <v-tooltip right :disabled="!project.showToolTips">
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
+                      :disabled="disableSearch"
                       v-bind="attrs"
                       v-on="on"
                       class="mr-1"
@@ -31,7 +33,7 @@
               <v-divider inset vertical style="margin-bottom: 8px;"></v-divider>
               <v-tooltip right :disabled="!project.showToolTips">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" class="ml-1" style="margin-right: -8px;" color="primary" icon @click="runSearch"><v-icon>{{ mdiMagnify }}</v-icon></v-btn>
+                  <v-btn :disabled="disableSearch" v-bind="attrs" v-on="on" class="ml-1" style="margin-right: -8px;" color="primary" icon @click="runSearch"><v-icon>{{ mdiMagnify }}</v-icon></v-btn>
                 </template>
                 <span>Search</span>
               </v-tooltip>
@@ -52,6 +54,7 @@ export default {
   name: 'NominatimSearch',
   props: {
     project: Object,
+    disableSearch: Boolean,
     mapBounds: Array
   },
   data () {

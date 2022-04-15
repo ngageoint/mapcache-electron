@@ -72,7 +72,7 @@
               <v-row class="pb-2" no-gutters justify="space-between">
                 <v-col>
                   <v-row no-gutters align-content="center" class="align-center">
-                    <v-btn @click="zoomTo" class="mr-2" icon v-if="featureViewData.style.style || featureViewData.style.icon">
+                    <v-btn :disabled="featureViewData.feature.geometry == null" @click="zoomTo" class="mr-2" icon v-if="featureViewData.style.style || featureViewData.style.icon">
                       <geometry-style-svg v-if="featureViewData.style.style" :color="featureViewData.style.style.color" :fill-color="featureViewData.style.style.fillColor" :fill-opacity="featureViewData.style.style.fillOpacity" :geometry-type="featureViewData.geometryTypeCode"/>
                       <img v-else-if="featureViewData.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="featureViewData.style.icon.url"/>
                     </v-btn>
@@ -102,7 +102,7 @@
                     </v-card>
                   </template>
                 </v-hover>
-                <v-hover :disabled="editing">
+                <v-hover :disabled="editing" v-if="featureViewData.canStyle">
                   <template v-slot="{ hover }">
                     <v-card :disabled="editing" class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="editing ? 0 : (hover ? 4 : 1)" @click.stop="showStyleAssignment">
                       <v-card-text class="pa-2">
@@ -248,7 +248,7 @@ export default {
         failedToSaveSnackBar: false,
         columnsToAdd: [],
         editing: false,
-        geometryTypeCode: this.feature != null ? window.mapcache.GeometryType.fromName(this.feature.geometry.type.toUpperCase()) : 0,
+        geometryTypeCode: this.feature != null && this.feature.geometry != null ? window.mapcache.GeometryType.fromName(this.feature.geometry.type.toUpperCase()) : 0,
         showAttachmentDialog: false,
         removeDialog: false,
         assignStyleDialog: false,
@@ -273,7 +273,7 @@ export default {
               return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
             })
           }
-
+          featureViewData.canStyle = featureViewData.feature.geometry != null
           return featureViewData
         },
         default: {
@@ -359,30 +359,30 @@ export default {
         this.showFeatureMediaAttachments = true
       },
       zoomTo () {
-        zoomToGeoPackageFeature(this.geopackagePath, this.tableName, this.featureId)
+        zoomToGeoPackageFeature(this.geopackagePath, this.tableName, this.featureId, false)
       },
       enableEdit () {
         this.$nextTick(() => {
           this.editing = true
           const feature = cloneDeep(this.featureViewData.feature)
           EventBus.$emit(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, feature)
-          this.zoomTo()
+          // this.zoomTo()
         })
       },
       disableEdit () {
         this.editing = false
-        EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY)
+        EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, false)
       },
       async saveChanges () {
         try {
           this.editing = false
-          const feature = await new Promise (resolve => {
+          const feature = await new Promise(resolve => {
             EventBus.$once(EventBus.EventTypes.EDITED_FEATURE_GEOMETRY, (feature) => {
               resolve(feature)
             })
-            EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY)
+            EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, true)
           })
-          const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, this.featureViewData.editableColumns, feature.geometry)
+          const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, this.featureViewData.editableColumns, feature.geometry, true)
           if (result.changes > 0) {
             if (this.isGeoPackage) {
               window.mapcache.synchronizeGeoPackage({projectId: this.projectId, geopackageId: this.id})

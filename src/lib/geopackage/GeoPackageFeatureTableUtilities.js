@@ -12,7 +12,7 @@ import {
   ProjectionConstants,
   SqliteQueryBuilder,
   FeatureTableReader,
-  UserRow,
+  UserRow
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
@@ -22,7 +22,6 @@ import isObject from 'lodash/isObject'
 import reproject from 'reproject'
 import wkx from 'wkx'
 import bbox from '@turf/bbox'
-import area from '@turf/area'
 import distance from '@turf/distance'
 import pointToLineDistance from '@turf/point-to-line-distance'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
@@ -43,7 +42,11 @@ import {
 import {
   _addOrSetStyleForFeature,
   _clearStylingForFeature,
+  _getFeatureIcon,
+  _getFeatureStyle,
   _getStyleAssignmentForFeatures,
+  _setFeatureIcon,
+  _setFeatureStyle,
 } from './GeoPackageStyleUtilities'
 import orderBy from 'lodash/orderBy'
 import {getMediaTableName} from '../util/media/MediaUtilities'
@@ -1005,8 +1008,10 @@ function _getBoundingBoxForFeature (gp, tableName, featureRowId) {
   const featureRow = featureDao.queryForId(featureRowId)
   if (featureRow) {
     const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, featureDao.srs)
-    extent = bbox(feature)
-    type = feature.geometry.type
+    if (feature.geometry != null) {
+      extent = bbox(feature)
+      type = feature.geometry.type
+    }
   }
   return {extent, type}
 }
@@ -1192,7 +1197,7 @@ function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined
     }
 
     const featureIds = features.map(f => f.id)
-    const featureIdAndGeometryTypes = features.map(f => {
+    const featureIdAndGeometryTypes = features.filter(f => f.geometry != null).map(f => {
       return {id: f.id, geometryType: f.geometry.type}
     })
     const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
@@ -1237,11 +1242,12 @@ function _getFeatureViewData (gp, tableName, featureId) {
       feature.type = 'Feature'
       feature.id = featureRow.id
       featureData.feature = feature
+      const geometryType = feature.geometry != null ? GeometryType.fromName(feature.geometry.type.toUpperCase()) : null
       const featureStyleExtension = new FeatureTableStyles(gp, tableName).getFeatureStyleExtension()
-      const icon = featureStyleExtension.getIcon(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
-      const style = featureStyleExtension.getStyle(tableName, featureId, GeometryType.fromName(feature.geometry.type.toUpperCase()), false)
-      const tableIcon = featureStyleExtension.getTableIcon(tableName, GeometryType.fromName(feature.geometry.type.toUpperCase()))
-      const tableStyle = featureStyleExtension.getTableStyle(tableName, GeometryType.fromName(feature.geometry.type.toUpperCase()))
+      const icon = featureStyleExtension.getIcon(tableName, featureId, geometryType, false)
+      const style = featureStyleExtension.getStyle(tableName, featureId, geometryType, false)
+      const tableIcon = featureStyleExtension.getTableIcon(tableName, geometryType)
+      const tableStyle = featureStyleExtension.getTableStyle(tableName, geometryType)
       if (icon != null) {
         featureData.style.icon = {
           url: 'data:' + icon.contentType + ';base64,' + icon.data.toString('base64')
@@ -1285,7 +1291,7 @@ function _getFeatureViewData (gp, tableName, featureId) {
         }
       }
 
-      featureData.geometryTypeCode = GeometryType.fromName(feature.geometry.type.toUpperCase())
+      featureData.geometryTypeCode = geometryType
       featureData.columns = _getFeatureColumns(gp, tableName)._columns
       const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
       const columnObjects = featureData.columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
@@ -1333,77 +1339,79 @@ async function checkUnique (filePath, tableName, column, value) {
 function getDistanceToCoordinateInMeters (coordinate, feature) {
   let distanceInMeters = Number.MAX_SAFE_INTEGER
   let isContained = false
-  switch (feature.geometry.type) {
-    case 'Point':
-      distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, {units: 'kilometers'}) * 1000.0
-      break
-    case 'LineString':
-      distanceInMeters = pointToLineDistance(coordinate, feature, {units: 'kilometers'}) * 1000.0
-      break
-    case 'MultiPoint':
-      // eslint-disable-next-line no-case-declarations
-      const internalPointFeature = {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'Point',
-          coordinates: []
-        }
-      }
-      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-        internalPointFeature.geometry.coordinates = feature.geometry.coordinates[i]
-        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalPointFeature).distance)
-      }
-      break
-    case 'MultiLineString':
-      // eslint-disable-next-line no-case-declarations
-      const internalLineStringFeature = {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: []
-        }
-      }
-      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-        internalLineStringFeature.geometry.coordinates = feature.geometry.coordinates[i]
-        distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalLineStringFeature).distance)
-      }
-      break
-    case 'GeometryCollection':
-      for (let i = 0; i < feature.geometry.geometries.length; i++) {
-        const internalDistance = getDistanceToCoordinateInMeters(coordinate, {
+  if (feature.geometry != null) {
+    switch (feature.geometry.type) {
+      case 'Point':
+        distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, {units: 'kilometers'}) * 1000.0
+        break
+      case 'LineString':
+        distanceInMeters = pointToLineDistance(coordinate, feature, {units: 'kilometers'}) * 1000.0
+        break
+      case 'MultiPoint':
+        // eslint-disable-next-line no-case-declarations
+        const internalPointFeature = {
           type: 'Feature',
           properties: {},
-          geometry: feature.geometry.geometries[i]
-        })
-        distanceInMeters = Math.min(distanceInMeters, internalDistance.distance)
-        isContained = isContained || internalDistance.isContained
-      }
-      break
-    case 'Polygon':
-      isContained = booleanPointInPolygon(coordinate, feature)
-      distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
-      break
-    case 'MultiPolygon':
-      // eslint-disable-next-line no-case-declarations
-      const internalPolygonFeature = {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'Polygon',
-          coordinates: []
+          geometry: {
+            type: 'Point',
+            coordinates: []
+          }
         }
-      }
-      for (let i = 0; i < feature.geometry.coordinates.length; i++) {
-        internalPolygonFeature.geometry.coordinates = feature.geometry.coordinates[i]
-        const distanceResult = getDistanceToCoordinateInMeters(coordinate, internalPolygonFeature)
-        distanceInMeters = Math.min(distanceInMeters, distanceResult.distance)
-        isContained = isContained || distanceResult.isContained
-      }
-      break
-    default:
-      break
+        for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+          internalPointFeature.geometry.coordinates = feature.geometry.coordinates[i]
+          distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalPointFeature).distance)
+        }
+        break
+      case 'MultiLineString':
+        // eslint-disable-next-line no-case-declarations
+        const internalLineStringFeature = {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        }
+        for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+          internalLineStringFeature.geometry.coordinates = feature.geometry.coordinates[i]
+          distanceInMeters = Math.min(distanceInMeters, getDistanceToCoordinateInMeters(coordinate, internalLineStringFeature).distance)
+        }
+        break
+      case 'GeometryCollection':
+        for (let i = 0; i < feature.geometry.geometries.length; i++) {
+          const internalDistance = getDistanceToCoordinateInMeters(coordinate, {
+            type: 'Feature',
+            properties: {},
+            geometry: feature.geometry.geometries[i]
+          })
+          distanceInMeters = Math.min(distanceInMeters, internalDistance.distance)
+          isContained = isContained || internalDistance.isContained
+        }
+        break
+      case 'Polygon':
+        isContained = booleanPointInPolygon(coordinate, feature)
+        distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
+        break
+      case 'MultiPolygon':
+        // eslint-disable-next-line no-case-declarations
+        const internalPolygonFeature = {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: []
+          }
+        }
+        for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+          internalPolygonFeature.geometry.coordinates = feature.geometry.coordinates[i]
+          const distanceResult = getDistanceToCoordinateInMeters(coordinate, internalPolygonFeature)
+          distanceInMeters = Math.min(distanceInMeters, distanceResult.distance)
+          isContained = isContained || distanceResult.isContained
+        }
+        break
+      default:
+        break
+    }
   }
   return {distance: distanceInMeters, isContained}
 }
@@ -1509,7 +1517,7 @@ function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng
     }
   }
   const featureIds = features.map(f => f.id)
-  const featureIdAndGeometryTypes = features.map(f => {
+  const featureIdAndGeometryTypes = features.filter(f => f.geometry != null).map(f => {
     return {id: f.id, geometryType: f.geometry.type}
   })
   const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
@@ -1823,6 +1831,55 @@ async function getFeatureColumns (filePath, tableName) {
 }
 
 /**
+ * Get all forms for this Feature table
+ * @param gp
+ * @param tableName
+ * @returns {*[]}
+ * @private
+ */
+function _getForms (gp, tableName) {
+  const forms = []
+  const rte = gp.relatedTablesExtension
+  const extendedRelations = rte.getRelationships(tableName)
+  extendedRelations.forEach(relation => {
+    if (relation.relation_name === 'attributes' && relation.related_table_name !== 'nga_style') {
+      const attributeDao = gp.getAttributeDao(relation.related_table_name)
+      forms.push({
+        name: relation.related_table_name,
+        columns: attributeDao.table.getUserColumns().getColumns().map(column => {
+          const dataColumn = gp.dataColumnsDao.getDataColumns(relation.related_table_name, column.name)
+          column.displayName = dataColumn && dataColumn.name ? dataColumn.name : column.name
+          return column
+        })
+      })
+    } else if (relation.relation_name === 'simple_attributes') {
+      const simpleAttributesDao = gp.getSimpleAttributesDao(relation.related_table_name)
+      forms.push({
+        name: relation.related_table_name,
+        columns: simpleAttributesDao.table.getUserColumns().getColumns().map(column => {
+          const dataColumn = gp.dataColumnsDao.getDataColumns(relation.related_table_name, column.name)
+          column.displayName = dataColumn && dataColumn.name ? dataColumn.name : column.name
+          return column
+        })
+      })
+    }
+  })
+  return forms
+}
+
+/**
+ * Gets any related attribute table
+ * @param filePath
+ * @param tableName
+ * @returns {Promise<any>}
+ */
+async function getForms (filePath, tableName) {
+  return performSafeGeoPackageOperation(filePath, (gp) => {
+    return _getForms(gp, tableName)
+  })
+}
+
+/**
  * Check if a feature exists
  * @param gp
  * @param tableName
@@ -1942,13 +1999,17 @@ async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feat
  * @param featureId
  * @param editableColumns
  * @param updatedGeometry
+ * @param updateGeometry
  * @return {Promise<*>}
  */
-async function saveGeoPackageEditedFeature (filePath, tableName, featureId, editableColumns, updatedGeometry) {
+async function saveGeoPackageEditedFeature (filePath, tableName, featureId, editableColumns, updatedGeometry, updateGeometry = false) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     const featureDao = gp.getFeatureDao(tableName)
     const srs = featureDao.srs
     const featureRow = featureDao.queryForId(featureId)
+    const style = _getFeatureStyle(gp, tableName, featureId)
+    const icon = _getFeatureIcon(gp, tableName, featureId)
+
     editableColumns.forEach(column => {
       let value = column.value
       if (column.dataType === GeoPackageDataType.BOOLEAN) {
@@ -1980,25 +2041,36 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
       featureRow.setValueNoValidationWithIndex(column.index, value)
     })
 
-    if (updatedGeometry != null) {
-      const geometryData = new GeometryData()
-      geometryData.setSrsId(srs.srs_id)
-      let feature = {type: 'Feature', properties: {}, geometry: updatedGeometry}
-      if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
-        feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+    if (updateGeometry) {
+      if (updatedGeometry != null) {
+        const geometryData = new GeometryData()
+        geometryData.setSrsId(srs.srs_id)
+        let feature = {type: 'Feature', properties: {}, geometry: updatedGeometry}
+        if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
+          feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+        }
+        const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
+        if (featureGeometry !== null) {
+          const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+          geometryData.setGeometry(geometry)
+        } else {
+          const temp = wkx.Geometry.parse('POINT EMPTY')
+          geometryData.setGeometry(temp)
+        }
+        featureRow.geometry = geometryData
+
+      } else if (updatedGeometry === null) {
+        featureRow.geometry = null
       }
-      const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-      if (featureGeometry !== null) {
-        const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-        geometryData.setGeometry(geometry)
-      } else {
-        const temp = wkx.Geometry.parse('POINT EMPTY')
-        geometryData.setGeometry(temp)
-      }
-      featureRow.geometry = geometryData
     }
     let result = featureDao.update(featureRow)
     _updateBoundingBoxForFeatureTable(gp, tableName)
+    if (style != null) {
+      _setFeatureStyle(gp, tableName, featureRow.id, style.id)
+    }
+    if (icon != null) {
+      _setFeatureIcon(gp, tableName, featureRow.id, icon.id)
+    }
     return result
   })
 }
@@ -2108,5 +2180,6 @@ export {
   checkUnique,
   _addGeoPackageFeatureTableColumns,
   constraintsEqual,
-  _createFeatureTableWithFeatureStream
+  _createFeatureTableWithFeatureStream,
+  getForms
 }

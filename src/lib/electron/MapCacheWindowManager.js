@@ -66,7 +66,10 @@ import {
   FEATURE_TABLE_EVENT,
   LAUNCH_WITH_GEOPACKAGE_FILES,
   LOAD_OR_DISPLAY_GEOPACKAGES,
-  LAUNCH_USER_GUIDE, SEND_WINDOW_TO_FRONT,
+  LAUNCH_USER_GUIDE,
+  SEND_WINDOW_TO_FRONT,
+  REDO,
+  UNDO
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 
@@ -194,6 +197,25 @@ class MapCacheWindowManager {
 
     const origin = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
 
+    // session.defaultSession.webRequest.onBeforeSendHeaders(
+    //   (details, callback) => {
+    //
+    //     let headers = details.requestHeaders
+    //
+    //     console.log(headers)
+    //
+    //     headers['Access-Control-Allow-Origin'] = origin
+    //     headers['Origin'] = origin
+    //     headers['Access-Control-Allow-Credentials'] = 'true'
+    //     delete headers['access-control-Allow-Origin']
+    //     delete headers['origin']
+    //     delete headers['access-control-allow-credentials']
+    //
+    //     callback({ requestHeaders: headers })
+    //   },
+    // )
+
+
     // if auth was enabled, be sure to add response header allow for auth to occur
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       let headers = details.responseHeaders
@@ -215,6 +237,8 @@ class MapCacheWindowManager {
 
       headers['Access-Control-Allow-Credentials'] = 'true'
       delete headers['access-control-allow-credentials']
+
+      console.log(headers)
 
       callback({
         responseHeaders: headers
@@ -893,6 +917,24 @@ class MapCacheWindowManager {
     this.projectWindowState.manage(this.projectWindow)
 
     this.closingProjectWindow = false
+
+    this.projectWindow.on('focus', () => {
+      globalShortcut.register('CommandOrControl+Shift+Z', () => {
+        if (this.projectWindow != null) {
+          this.projectWindow.send(REDO)
+        }
+      })
+      globalShortcut.register('CommandOrControl+Z', () => {
+        if (this.projectWindow != null) {
+          this.projectWindow.send(UNDO)
+        }
+      })
+    });
+
+    this.projectWindow.on('blur', () => {
+      globalShortcut.unregister('CommandOrControl+Shift+Z')
+      globalShortcut.unregister('CommandOrControl+Z')
+    })
 
     this.projectWindow.on('close', (event) => {
       if (!this.isShuttingDown) {

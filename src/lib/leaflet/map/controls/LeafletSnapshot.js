@@ -1,6 +1,5 @@
 import {L} from '../../vendor'
 import isNil from 'lodash/isNil'
-// import {BASE_MAP_PANE, GRID_SELECTION_PANE} from '../panes/MapPanes'
 import domtoimage from 'dom-to-image-more'
 export default class LeafletSnapshot extends L.Control {
   constructor (options) {
@@ -53,33 +52,6 @@ export default class LeafletSnapshot extends L.Control {
     })
   }
 
-  // async printLayer (context, layer, zoom, bounds) {
-  //   const tileSize = layer._tileSize.x
-  //   const tileBounds = L.bounds(bounds.min.divideBy(tileSize)._floor(), bounds.max.divideBy(tileSize)._floor())
-  //   const alreadyLoadedTiles = {}
-  //   const scalePoint = new L.Point(tileSize, tileSize)
-  //
-  //   for (let j = tileBounds.min.y; j <= tileBounds.max.y; j++) {
-  //     for (let i = tileBounds.min.x; i <= tileBounds.max.x; i++) {
-  //       const tilePoint = new L.Point(i, j)
-  //       const originalTilePoint = tilePoint.clone()
-  //       if (layer._adjustTilePoint) {
-  //         layer._adjustTilePoint(tilePoint)
-  //       }
-  //       if (tilePoint.y >= 0) {
-  //         const tilePosition = originalTilePoint.scaleBy(scalePoint).subtract(bounds.min)
-  //         const tileIndex = tilePoint.x + ':' + tilePoint.y + ':' + zoom
-  //         const tile = layer._tiles[tileIndex]
-  //         if (tile != null && !alreadyLoadedTiles[tileIndex]) {
-  //           await this.loadImage(context, tile.el.src, tilePosition, tileSize, tileSize)
-  //           alreadyLoadedTiles[tileIndex] = true
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-  //
-  //
   async printMap (map) {
     let dimensions = map.getSize()
     // const zoom = map.getZoom()
@@ -88,36 +60,6 @@ export default class LeafletSnapshot extends L.Control {
     canvas.width = dimensions.x
     canvas.height = dimensions.y
     const context = canvas.getContext('2d')
-    // let baseMapLayer = null
-    // const layers = []
-    // let gridLayer = null
-    // for (const layerId in map._layers) {
-    //   const layer = map._layers[layerId]
-    //   if (layer instanceof L.TileLayer || layer instanceof L.GridLayer) {
-    //     if (layer.options.pane === BASE_MAP_PANE.name) {
-    //       baseMapLayer = layer
-    //     } else {
-    //       layers.push(layer)
-    //     }
-    //   } else if (layer.options.pane === GRID_SELECTION_PANE.name) {
-    //     gridLayer = layer
-    //   }
-    // }
-    // layers.sort((a, b) => {
-    //   return a.options.zIndex - b.options.zIndex
-    // })
-    //
-    // if (baseMapLayer != null) {
-    //   await this.printLayer(context, baseMapLayer, zoom, bounds)
-    // }
-    // for (let i = 0; i < layers.length; i++) {
-    //   await this.printLayer(context, layers[i], zoom, bounds)
-    // }
-    // if (gridLayer != null) {
-    //   console.log(gridLayer.getPane())
-    //   console.log(map.getPane(GRID_SELECTION_PANE.name))
-    //   await this.printGridLayer(context, gridLayer)
-    // }
 
     const filterControls = (node) => {
       return node.classList == null || Object.values(node.classList).indexOf('leaflet-control') === -1

@@ -1,5 +1,5 @@
 <template>
-  <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}">
+  <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}" @mouseleave="mouseLeft" @mouseenter="mouseEntered">
     <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1, backgroundColor: mapBackground}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
@@ -59,7 +59,7 @@
           Select grid overlay to view.
         </v-card-subtitle>
         <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
-          <v-list-item-group dense v-model="gridSelection">
+          <v-list-item-group dense v-model="gridSelection" mandatory>
             <v-list-item dense v-for="(item) in gridOptions" :key="item.id" :value="item.id">
               <v-list-item-content>
                 <v-list-item-title>{{item.title}}</v-list-item-title>
@@ -136,8 +136,143 @@
       </v-card-text>
     </v-card>
     <v-card v-if="project.displayAddressSearchBar" outlined class="nominatim-card ma-0 pa-0 transparent">
-      <nominatim-search :project="project" :map-bounds="mapBounds"/>
+      <nominatim-search :project="project" :map-bounds="mapBounds" :disable-search="disableSearch"/>
     </v-card>
+    <v-card v-if="isEditing" flat tile class="feature-editing-card ma-0 pa-0">
+      <v-navigation-drawer
+          width="208"
+          permanent
+          expand-on-hover
+          class="background"
+      >
+        <v-list>
+          <v-list-item dense>
+            <v-list-item-icon>
+              <v-icon>{{ mdiPencil }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title class="text-h6">
+              Edit tools
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list dense>
+          <v-list-item-group v-model="mode">
+            <v-list-item link @click="toggleVertexEditing" :value="0">
+              <v-list-item-icon>
+                <v-icon>{{ mdiVectorPolylineEdit }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Edit</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleDrag" :value="1">
+              <v-list-item-icon>
+                <v-icon> {{ mdiCursorMove }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Drag</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleCut" :value="2">
+              <v-list-item-icon>
+                <v-icon>{{ mdiContentCut }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Cut</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleRotate" :value="3">
+              <v-list-item-icon>
+                <v-icon>{{ mdiReload }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Rotate</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleErase" :value="4">
+              <v-list-item-icon>
+                <v-icon>{{ mdiEraser }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Erase</v-list-item-title>
+            </v-list-item>
+          </v-list-item-group>
+          <v-list-item link @click="undoEdit" :disabled="noUndo">
+            <v-list-item-icon>
+              <v-icon :disabled="noUndo">{{ mdiUndo }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>Undo</v-list-item-title>
+          </v-list-item>
+          <v-list-item link @click="redoEdit" :disabled="noRedo">
+            <v-list-item-icon>
+              <v-icon :disabled="noRedo">{{ mdiRedo }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>Redo</v-list-item-title>
+          </v-list-item>
+          <v-divider></v-divider>
+          <v-list-group :prepend-icon="mdiShapePlus">
+            <template v-slot:activator>
+              <v-list-item-title>Add shapes</v-list-item-title>
+            </template>
+            <v-list-item-group v-model="mode">
+              <v-list-item link @click="toggleDrawMarker" :value="5">
+                <v-list-item-icon>
+                  <v-icon>{{ mdiMapMarker }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Marker</v-list-item-title>
+              </v-list-item>
+              <v-list-item link @click="toggleDrawLine" :value="6">
+                <v-list-item-icon>
+                  <v-icon>{{ mdiVectorPolyline }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Line</v-list-item-title>
+              </v-list-item>
+              <v-list-item link @click="toggleDrawRectangle" :value="7">
+                <v-list-item-icon>
+                  <v-icon>{{ mdiVectorRectangle }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Rectangle</v-list-item-title>
+              </v-list-item>
+              <v-list-item link @click="toggleDrawPolygon" :value="8">
+                <v-list-item-icon>
+                  <v-icon>{{ mdiVectorPolygon }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Polygon</v-list-item-title>
+              </v-list-item>
+            </v-list-item-group>
+          </v-list-group>
+        </v-list>
+      </v-navigation-drawer>
+    </v-card>
+    <v-card v-if="isDrawingBounds" flat tile class="feature-editing-card ma-0 pa-0">
+      <v-navigation-drawer
+          width="208"
+          permanent
+          expand-on-hover
+          class="background"
+      >
+        <v-list>
+          <v-list-item dense>
+            <v-list-item-icon>
+              <v-icon>{{ mdiPencil }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title class="text-h6">
+              Edit tools
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list dense>
+          <v-list-item-group v-model="drawBoundsMode" mandatory>
+            <v-list-item link @click="toggleBoundsEdit" :value="0">
+              <v-list-item-icon>
+                <v-icon>{{ mdiVectorPolylineEdit }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Edit</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleBoundsDrag" :value="1">
+              <v-list-item-icon>
+                <v-icon> {{ mdiCursorMove }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Drag</v-list-item-title>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+      </v-navigation-drawer>
+    </v-card>
+
     <div v-show="false">
       <nominatim-result-map-popup ref="searchResultPopup" :result="hoveredSearchResult" :mouseover="cancelSearchResultPopupClose" :mouseleave="searchResultClose"></nominatim-result-map-popup>
     </div>
@@ -159,12 +294,11 @@ import throttle from 'lodash/throttle'
 import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import DrawBounds from './mixins/DrawBounds'
+import EditFeature from './mixins/EditFeature'
 import GridBounds from './mixins/GridBounds'
 import HighlightFeature from './mixins/HighlightFeature'
 import FeatureTables from '../FeatureTable/FeatureTables'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
-import LeafletEdit from '../../lib/leaflet/map/controls/LeafletEdit'
-import LeafletDraw from '../../lib/leaflet/map/controls/LeafletDraw'
 import FeatureEditor from '../Common/FeatureEditor'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
@@ -176,11 +310,34 @@ import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import {
   GRID_SELECTION_PANE,
   BASE_MAP_PANE,
-  EDITING_PANE,
   SEARCH_RESULTS_PANE,
-  SEARCH_RESULT_POINTS_ONLY_PANE
+  SEARCH_RESULT_POINTS_ONLY_PANE,
+  OVERLAY_PANE_FEATURES,
+  DRAWING_VERTEX_PANE,
+  DRAWING_LAYER_PANE
 } from '../../lib/leaflet/map/panes/MapPanes'
-import { mdiAlert, mdiClose, mdiContentCopy, mdiMapOutline, mdiMagnify, mdiDragHorizontalVariant } from '@mdi/js'
+import {
+  mdiAlert,
+  mdiClose,
+  mdiContentCopy,
+  mdiMapOutline,
+  mdiMagnify,
+  mdiDragHorizontalVariant,
+  mdiVectorPolylineEdit,
+  mdiReload,
+  mdiEraser,
+  mdiContentCut,
+  mdiCursorMove,
+  mdiPencil,
+  mdiRedo,
+  mdiUndo,
+  mdiCog,
+  mdiMapMarker,
+  mdiVectorPolyline,
+  mdiVectorRectangle,
+  mdiVectorPolygon,
+  mdiShapePlus
+} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {
   zoomToBaseMap,
@@ -244,7 +401,8 @@ export default {
     DrawBounds,
     GridBounds,
     SearchResult,
-    HighlightFeature
+    HighlightFeature,
+    EditFeature
   ],
   props: {
     sources: Object,
@@ -301,14 +459,29 @@ export default {
   },
   data () {
     return {
+      disableSearch: false,
       mapBounds: [-180, -90, 180, 90],
       consecutiveClicks: 0,
-      mdiAlert: mdiAlert,
-      mdiClose: mdiClose,
-      mdiMagnify: mdiMagnify,
-      mdiContentCopy: mdiContentCopy,
-      mdiMapOutline: mdiMapOutline,
-      mdiDragHorizontalVariant: mdiDragHorizontalVariant,
+      mdiCog,
+      mdiReload,
+      mdiEraser,
+      mdiAlert,
+      mdiVectorPolylineEdit,
+      mdiClose,
+      mdiMagnify,
+      mdiContentCopy,
+      mdiMapOutline,
+      mdiDragHorizontalVariant,
+      mdiContentCut,
+      mdiCursorMove,
+      mdiPencil,
+      mdiRedo,
+      mdiUndo,
+      mdiMapMarker,
+      mdiVectorPolyline,
+      mdiVectorRectangle,
+      mdiVectorPolygon,
+      mdiShapePlus,
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
       defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
@@ -330,7 +503,6 @@ export default {
       featureToAddTableName: null,
       lastShowFeatureTableEvent: null,
       dialogCoordinate: null,
-      isEditing: false,
       showLayerOrderingDialog: false,
       showBaseMapSelection: false,
       showGridSelection: false,
@@ -348,6 +520,25 @@ export default {
     }
   },
   methods: {
+    enableDrawingLinks () {
+      this.map.pm.Toolbar.addControls({
+        position: 'topright',
+        drawCircle: false,
+        drawCircleMarker: false,
+        editControls: false
+      })
+    },
+    disableDrawingLinks () {
+      this.map.pm.Toolbar.removeControls()
+
+    },
+    mouseEntered () {
+      this.cursorInside = true
+    },
+    mouseLeft () {
+      this.cursorInside = false
+      this.removeGeoPackageFeatureHighlight()
+    },
     showFeature (id, isGeoPackage, table, featureId) {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, table, featureId)
     },
@@ -447,7 +638,7 @@ export default {
             }
           }
         }
-        return await window.mapcache.getClosestFeature(layers, e.latlng, this.map.getZoom())
+        return await window.mapcache.getClosestFeature(layers, this.map.wrapLatLng(e.latlng), this.map.getZoom())
       }
     },
     convertLatLng2GARS (lat, lng, label = false) {
@@ -455,6 +646,13 @@ export default {
     },
     convertLatLng2MGRS (lat, lng, label = false) {
       return (label ? 'MGRS - ' : '') + MGRS.from(new LatLng(lat, lng)).toString()
+    },
+    copyText (text) {
+      window.mapcache.copyToClipboard(text)
+      this.closePopup()
+      setTimeout(() => {
+        EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Copied to clipboard.', 'primary')
+      }, 100)
     },
     getMapCenterAndZoom () {
       return {center: this.map.getCenter(), zoom: this.map.getZoom()}
@@ -481,13 +679,6 @@ export default {
       if (index !== -1) {
         this.layerOrder.splice(index, 1)
       }
-    },
-    copyText (text) {
-      window.mapcache.copyToClipboard(text)
-      this.closePopup()
-      setTimeout(() => {
-        EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Copied to clipboard.', 'primary')
-      }, 100)
     },
     async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
       const geopackage = this.geopackages[geoPackageId]
@@ -854,20 +1045,17 @@ export default {
         center: defaultCenter,
         zoom: defaultZoom,
         minZoom: 2,
-        maxZoom: 20
+        maxZoom: 20,
       })
       window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
-      this.map.createPane(GRID_SELECTION_PANE.name)
-      this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
-      this.map.createPane(BASE_MAP_PANE.name)
-      this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
-      this.map.createPane(EDITING_PANE.name)
-      this.map.getPane(EDITING_PANE.name).style.zIndex = EDITING_PANE.zIndex
-      this.map.createPane(SEARCH_RESULTS_PANE.name)
-      this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
-      this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
-      this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
-
+      this.createMapPanes()
+      this.createGridOverlays()
+      this.setupControls()
+      this.setupBaseMaps()
+      this.map.setView(defaultCenter, defaultZoom)
+      this.setupEventHandlers()
+    },
+    createGridOverlays () {
       this.garsGridOverlay = L.garsGrid({
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
@@ -884,11 +1072,23 @@ export default {
         zIndex: GRID_SELECTION_PANE.zIndex,
         dark: this.darkTheme
       })
-      this.map.setView(defaultCenter, defaultZoom)
-      this.setupControls()
-      this.setupBaseMaps()
-      this.map.setView(defaultCenter, defaultZoom)
-      this.setupEventHandlers()
+    },
+    createMapPanes () {
+      this.map.createPane(BASE_MAP_PANE.name)
+      this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
+      this.map.createPane(OVERLAY_PANE_FEATURES.name)
+      this.map.getPane(OVERLAY_PANE_FEATURES.name).style.zIndex = OVERLAY_PANE_FEATURES.zIndex
+      this.map.createPane(DRAWING_VERTEX_PANE.name)
+      this.map.getPane(DRAWING_VERTEX_PANE.name).style.zIndex = DRAWING_VERTEX_PANE.zIndex
+      this.map.createPane(DRAWING_LAYER_PANE.name)
+      this.map.getPane(DRAWING_LAYER_PANE.name).style.zIndex = DRAWING_LAYER_PANE.zIndex
+      this.map.createPane(SEARCH_RESULTS_PANE.name)
+      this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
+      this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
+      this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
+      this.map.createPane(GRID_SELECTION_PANE.name)
+      this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
+
     },
     performReverseQuery () {
       const self = this
@@ -923,7 +1123,7 @@ export default {
       })
     },
     isMapBusy () {
-      return this.editingControl.isEditing() || this.drawingControl.isDrawing || this.geopackageFeatureLayerSelectionDialog || this.showAddFeatureDialog || !isNil(this.drawBoundsId) || !isNil(this.gridBoundsId) || this.performingReverseQuery
+      return !this.cursorInside || this.isDragging || this.contextMenuPopup != null || this.geopackageFeatureLayerSelectionDialog || this.showAddFeatureDialog || !isNil(this.drawBoundsId) || !isNil(this.gridBoundsId) || this.performingReverseQuery
     },
     setupBaseMaps () {
       for (let i = 0; i < this.baseMaps.length; i++) {
@@ -967,22 +1167,6 @@ export default {
       })
       this.scaleControl = L.control.scale()
       this.coordinateControl = new LeafletCoordinates()
-      this.drawingControl = new LeafletDraw()
-      this.drawingControl.onDrawStart(() => {
-        this.isDrawing = true
-        this.snapshotControl.disable()
-
-      })
-      this.drawingControl.onDrawEnd((e) => {
-        this.isDrawing = false
-        if (!self.drawingControl.isDrawing && !self.drawingControl.cancelled) {
-          e.layer.toggleEdit()
-          self.createdLayer = e.layer
-          self.displayGeoPackageFeatureLayerSelection()
-        }
-        this.snapshotControl.enable()
-      })
-      this.editingControl = new LeafletEdit()
 
       // add controls to map
       this.map.addControl(this.basemapControl)
@@ -993,8 +1177,32 @@ export default {
       this.map.addControl(this.scaleControl)
       this.map.addControl(this.coordinateControl)
       this.map.addControl(this.activeLayersControl)
-      this.map.addControl(this.drawingControl)
-      this.map.addControl(this.editingControl)
+      this.map.pm.setGlobalOptions({
+        continueDrawing: false,
+        allowSelfIntersection: true,
+        panes: {
+          vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+        },
+        snapDistance: 5
+      })
+      this.map.pm.addControls({
+        position: 'topright',
+        drawCircle: false,
+        drawCircleMarker: false,
+        editControls: false,
+      })
+      this.map.on('pm:create', ({layer}) => {
+        if (!this.isEditing) {
+          this.createdLayer = layer
+          this.displayGeoPackageFeatureLayerSelection()
+        }
+      })
+      this.map.on('pm:drawstart', () => {
+        this.isDrawing = true
+      })
+      this.map.on('pm:drawend', () => {
+        this.isDrawing = false
+      })
 
       // hide controls that are disabled by the user
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
@@ -1031,6 +1239,8 @@ export default {
             this.removeGeoPackageFeatureHighlight()
             document.getElementById('map').style.cursor = ''
           }
+        } else {
+          this.removeGeoPackageFeatureHighlight()
         }
       }, 100)
 
@@ -1055,11 +1265,16 @@ export default {
           this.mapBounds = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
         }
       })
+
       this.map.on('mousemove', (e) => {
         checkFeatureCount(e)
       })
+      this.map.on('mouseout', () => {
+        this.removeGeoPackageFeatureHighlight()
+      })
+
       this.map.on('contextmenu', e => {
-        if (!this.editingControl.isEditing() && !this.drawingControl.isDrawing) {
+        if (!this.isEditing) {
           this.contextMenuCoordinate = e.latlng
           if (this.contextMenuPopup && this.contextMenuPopup.isOpen()) {
             this.contextMenuPopup.setLatLng(e.latlng)
@@ -1069,6 +1284,9 @@ export default {
                 .setLatLng(e.latlng)
                 .setContent(this.$refs['contextMenuPopup'])
                 .openOn(this.map)
+            })
+            this.map.once('popupclose', () => {
+              this.contextMenuPopup = null
             })
           }
         }
@@ -1253,13 +1471,22 @@ export default {
     isEditing: {
       handler (newValue) {
         if (newValue) {
-          this.drawingControl.disableDrawingLinks()
-          this.editingControl.show()
           this.snapshotControl.disable()
+          this.disableDrawingLinks()
         } else {
-          this.drawingControl.enableDrawingLinks()
-          this.editingControl.hide()
           this.snapshotControl.enable()
+          this.enableDrawingLinks()
+        }
+      }
+    },
+    isDrawingBounds: {
+      handler (newValue) {
+        if (newValue) {
+          this.snapshotControl.disable()
+          this.disableDrawingLinks()
+        } else {
+          this.snapshotControl.enable()
+          this.enableDrawingLinks()
         }
       }
     },
@@ -1545,9 +1772,9 @@ export default {
         }
         this.maxFeatures = updatedProject.maxFeatures
         if (isNil(updatedProject.boundingBoxFilterEditing) || updatedProject.boundingBoxFilterEditing !== 'manual') {
-          this.drawingControl.enableDrawingLinks()
+          this.enableDrawingLinks()
         } else {
-          this.drawingControl.disableDrawingLinks()
+          this.disableDrawingLinks()
         }
 
         this.manualBoundingBoxDialog = !isNil(updatedProject.boundingBoxFilterEditing) && updatedProject.boundingBoxFilterEditing === 'manual'
@@ -1569,12 +1796,25 @@ export default {
       this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
     })
     EventBus.$on(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, (feature) => {
-      this.editingControl.editFeature(this.map, feature)
-      this.isEditing = true
-      EventBus.$once(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, () => {
-        const editedFeature = this.editingControl.completeEditing()
-        EventBus.$emit(EventBus.EventTypes.EDITED_FEATURE_GEOMETRY, editedFeature)
-        this.isEditing = false
+      // setup map for feature editing
+      if (feature != null) {
+        EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
+        this.disableSearch = true
+      }
+      this.editFeature(feature)
+      // TODO: I want the feature to be hidden while it is edited, however, maybe i should keep it?
+      //   Hack #1 - update this feature's style to be something dumb like totally invisible
+      //   Hack #2 - remove the feature, edit, and then add back in?
+      EventBus.$once(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, (save) => {
+        this.disableSearch = false
+        if (save) {
+          const editedFeature = this.saveChanges(save)
+          if (editedFeature != null) {
+            EventBus.$emit(EventBus.EventTypes.EDITED_FEATURE_GEOMETRY, editedFeature)
+          }
+        } else {
+          this.stopEditing()
+        }
       })
     })
     window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
@@ -1594,7 +1834,7 @@ export default {
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO])
+    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY])
   },
   beforeUpdate: function () {
     const self = this
@@ -1677,6 +1917,12 @@ export default {
     position: absolute !important;
     left: 10px !important;
     max-height: 350px !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
+  }
+  .feature-editing-card {
+    top: 62px !important;
+    left: 0 !important;
+    position: absolute !important;
     border: 2px solid rgba(0,0,0,0.2) !important;
   }
   .reorder-card {
