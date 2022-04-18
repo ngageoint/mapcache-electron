@@ -272,7 +272,6 @@
         </v-list>
       </v-navigation-drawer>
     </v-card>
-
     <div v-show="false">
       <nominatim-result-map-popup ref="searchResultPopup" :result="hoveredSearchResult" :mouseover="cancelSearchResultPopupClose" :mouseleave="searchResultClose"></nominatim-result-map-popup>
     </div>
@@ -1088,7 +1087,6 @@ export default {
       this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
       this.map.createPane(GRID_SELECTION_PANE.name)
       this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
-
     },
     performReverseQuery () {
       const self = this
@@ -1817,6 +1815,19 @@ export default {
         }
       })
     })
+    EventBus.$on(EventBus.EventTypes.REQUEST_MAP_DETAILS, (options) => {
+      if (!options.isPreview) {
+        let bounds = this.map.getBounds()
+        if (options.padBounds) {
+          bounds = bounds.pad(-0.1)
+        }
+        const details = {
+          zoom: this.map.getZoom(),
+          extent: [bounds.getSouthWest().lng, bounds.getSouthWest().lat, bounds.getNorthEast().lng, bounds.getNorthEast().lat]
+        }
+        EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
+      }
+    })
     window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
         this.zoomToFeature(path, table, featureId)
@@ -1834,7 +1845,7 @@ export default {
     this.addLayersToMap()
   },
   beforeDestroy: function () {
-    EventBus.$off([EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY])
+    EventBus.$off([EventBus.EventTypes.REQUEST_MAP_DETAILS, EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY])
   },
   beforeUpdate: function () {
     const self = this

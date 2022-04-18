@@ -83,7 +83,7 @@
         </v-col>
         <v-col>
           <preview-map
-            :visible="previewLayer !== null && previewLayer !== undefined && tabId === 1"
+            :visible="previewLayer != null && tabId === 1"
             :project="project"
             :preview-layer="previewLayer"
             :resizeListener="tabId"
@@ -92,7 +92,7 @@
           </preview-map>
           <leaflet-map
             ref="map"
-            :visible="previewLayer === null || previewLayer === undefined || tabId !== 1"
+            :visible="previewLayer == null || tabId !== 1"
             :geopackages="project.geopackages"
             :sources="project.sources"
             :project-id="project.id"

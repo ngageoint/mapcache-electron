@@ -26,6 +26,42 @@
         </v-list>
       </v-card-text>
     </v-card>
+    <v-card v-if="isDrawingBounds" flat tile class="feature-editing-card ma-0 pa-0">
+      <v-navigation-drawer
+          width="208"
+          permanent
+          expand-on-hover
+          class="background"
+      >
+        <v-list>
+          <v-list-item dense>
+            <v-list-item-icon>
+              <v-icon>{{ mdiPencil }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title class="text-h6">
+              Edit tools
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list dense>
+          <v-list-item-group v-model="drawBoundsMode" mandatory>
+            <v-list-item link @click="toggleBoundsEdit" :value="0">
+              <v-list-item-icon>
+                <v-icon>{{ mdiVectorPolylineEdit }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Edit</v-list-item-title>
+            </v-list-item>
+            <v-list-item link @click="toggleBoundsDrag" :value="1">
+              <v-list-item-icon>
+                <v-icon> {{ mdiCursorMove }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>Drag</v-list-item-title>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+      </v-navigation-drawer>
+    </v-card>
   </div>
 </template>
 
@@ -41,19 +77,26 @@ import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiv
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import LeafletCoordinates from '../../lib/leaflet/map/controls/LeafletCoordinates'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
-import { mdiMapOutline } from '@mdi/js'
+import { mdiMapOutline, mdiVectorPolylineEdit, mdiCursorMove, mdiPencil } from '@mdi/js'
 import { L } from '../../lib/leaflet/vendor'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { constructLayer } from '../../lib/layer/LayerFactory'
-import {getDefaultBaseMaps, getOfflineBaseMapId} from '../../lib/util/basemaps/BaseMapUtilities'
+import { getDefaultBaseMaps, getOfflineBaseMapId } from '../../lib/util/basemaps/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import DrawBounds from './mixins/DrawBounds'
 import GridBounds from './mixins/GridBounds'
 import EventBus from '../../lib/vue/EventBus'
-import {zoomToBaseMap, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
-import {BASE_MAP_PANE, GRID_SELECTION_PANE} from '../../lib/leaflet/map/panes/MapPanes'
+import { zoomToBaseMap, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
+import {
+  BASE_MAP_PANE,
+  DRAWING_LAYER_PANE,
+  DRAWING_VERTEX_PANE,
+  GRID_SELECTION_PANE,
+  OVERLAY_PANE_FEATURES, SEARCH_RESULT_POINTS_ONLY_PANE,
+  SEARCH_RESULTS_PANE
+} from '../../lib/leaflet/map/panes/MapPanes'
 
 export default {
     mixins: [
@@ -67,11 +110,14 @@ export default {
       resizeListener: Number,
       visible: Boolean,
       getMapCenterAndZoom: Function,
-      darkTheme: Boolean
+      darkTheme: Boolean,
     },
     data () {
       return {
-        mdiMapOutline: mdiMapOutline,
+        mdiMapOutline,
+        mdiVectorPolylineEdit,
+        mdiCursorMove,
+        mdiPencil,
         previewMapLayer: null,
         observer: null,
         mapBackground: navigator.onLine ? '#ddd' : '#C0D9E4',
@@ -150,10 +196,12 @@ export default {
       initializeMap () {
         const defaultCenter = [39.658748, -104.843165]
         const defaultZoom = 3
-
         this.map = L.map('map-preview', {
           editable: true,
           attributionControl: false,
+          editOptions: {
+            zIndex: 502,
+          },
           center: defaultCenter,
           zoom: defaultZoom,
           minZoom: 2
@@ -162,15 +210,28 @@ export default {
           this.showBaseMapSelection = false
         })
         this.map.setView(defaultCenter, defaultZoom)
-        this.map.createPane(BASE_MAP_PANE.name)
-        this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
-        this.map.createPane(GRID_SELECTION_PANE.name)
-        this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
+        this.createMapPanes()
         this.setupControls()
         this.map.setView(defaultCenter, defaultZoom)
         if (!isNil(this.previewLayer)) {
           this.setupPreviewLayer()
         }
+      },
+      createMapPanes () {
+        this.map.createPane(BASE_MAP_PANE.name)
+        this.map.getPane(BASE_MAP_PANE.name).style.zIndex = BASE_MAP_PANE.zIndex
+        this.map.createPane(OVERLAY_PANE_FEATURES.name)
+        this.map.getPane(OVERLAY_PANE_FEATURES.name).style.zIndex = OVERLAY_PANE_FEATURES.zIndex
+        this.map.createPane(DRAWING_VERTEX_PANE.name)
+        this.map.getPane(DRAWING_VERTEX_PANE.name).style.zIndex = DRAWING_VERTEX_PANE.zIndex
+        this.map.createPane(DRAWING_LAYER_PANE.name)
+        this.map.getPane(DRAWING_LAYER_PANE.name).style.zIndex = DRAWING_LAYER_PANE.zIndex
+        this.map.createPane(SEARCH_RESULTS_PANE.name)
+        this.map.getPane(SEARCH_RESULTS_PANE.name).style.zIndex = SEARCH_RESULTS_PANE.zIndex
+        this.map.createPane(SEARCH_RESULT_POINTS_ONLY_PANE.name)
+        this.map.getPane(SEARCH_RESULT_POINTS_ONLY_PANE.name).style.zIndex = SEARCH_RESULT_POINTS_ONLY_PANE.zIndex
+        this.map.createPane(GRID_SELECTION_PANE.name)
+        this.map.getPane(GRID_SELECTION_PANE.name).style.zIndex = GRID_SELECTION_PANE.zIndex
       },
       setupBaseMaps () {
         for (let i = 0; i < this.baseMaps.length; i++) {
@@ -195,16 +256,23 @@ export default {
         this.scaleControl.addTo(this.map)
         this.coordinateControl = new LeafletCoordinates()
         this.map.addControl(this.coordinateControl)
-
+        this.map.pm.setGlobalOptions({
+          continueDrawing: false,
+          allowSelfIntersection: true,
+          panes: {
+            vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+          },
+          snapDistance: 5
+        })
       },
       setupPreviewLayer () {
         const layer = constructLayer(this.previewLayer)
         this.previewMapLayer = constructMapLayer({layer: layer, isPreview: true})
         this.previewMapLayer.addTo(this.map)
         this.activeLayersControl.enable()
-        this.$nextTick(() => {
-          EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, layer.extent, layer.minZoom || 2, layer.maxZoom)
-        })
+        // this.$nextTick(() => {
+        //   EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, layer.extent, layer.minZoom || 2, layer.maxZoom)
+        // })
       },
       removePreviewLayer () {
         if (!isNil(this.previewMapLayer)) {
@@ -406,17 +474,32 @@ export default {
     mounted: function () {
       this.initializeMap()
       EventBus.$on(EventBus.EventTypes.PREVIEW_ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
-        let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
-        let bounds = L.latLngBounds(boundingBox)
-        bounds = bounds.pad(0.05)
-        const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
-        const currentMapCenter = this.map.getCenter()
-        const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
-        this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
+        if (extent != null) {
+          let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
+          let bounds = L.latLngBounds(boundingBox)
+          bounds = bounds.pad(0.05)
+          const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: maxZoom})
+          const currentMapCenter = this.map.getCenter()
+          const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
+          this.map.flyTo(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
+        }
+      })
+      EventBus.$on(EventBus.EventTypes.REQUEST_MAP_DETAILS, (options) => {
+        if (options.isPreview) {
+          let bounds = this.map.getBounds()
+          if (options.padBounds) {
+            bounds = bounds.pad(-0.1)
+          }
+          const details = {
+            zoom: this.map.getZoom(),
+            extent: [bounds.getSouthWest().lng, bounds.getSouthWest().lat, bounds.getNorthEast().lng, bounds.getNorthEast().lat]
+          }
+          EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
+        }
       })
     },
     beforeDestroy: function () {
-      EventBus.$off(EventBus.EventTypes.PREVIEW_ZOOM_TO)
+      EventBus.$off(EventBus.EventTypes.PREVIEW_ZOOM_TO, EventBus.EventTypes.REQUEST_MAP_DETAILS)
       if (!isNil(this.previewMapLayer)) {
         this.previewMapLayer.remove()
         this.previewMapLayer = null
@@ -447,5 +530,12 @@ export default {
   }
   .dark {
     filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
+  }
+  .feature-editing-card {
+    top: 62px !important;
+    left: 0 !important;
+    position: absolute !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
+    z-index: 800;
   }
 </style>

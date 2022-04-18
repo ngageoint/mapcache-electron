@@ -183,7 +183,7 @@
             <v-card-subtitle>
               Restrict your xyz tile requests to a specified area of the map.
             </v-card-subtitle>
-            <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="boundingBoxFilter" :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
+            <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="boundingBoxFilter" :preview-mode="previewing" :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
           </v-card>
           <v-btn class="mb-2" text color="primary" @click="step = 5">
             Continue
@@ -872,6 +872,7 @@
       previewing: {
         handler (previewing) {
           this.$nextTick(() => {
+
             if (previewing) {
               this.sendLayerPreview()
             } else {

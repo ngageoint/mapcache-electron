@@ -77,26 +77,27 @@
           </v-btn>
         </template>
         <v-list dense>
-          <v-list-item-group>
-            <v-list-item dense @click="editingDirectly = true">
-              <v-list-item-title>Type in</v-list-item-title>
-            </v-list-item>
-            <v-list-item dense @click="drawBoundingBox">
-              <v-list-item-title>Draw on map</v-list-item-title>
-            </v-list-item>
-            <v-list-item dense @click="() => gridBoundingBox(0)">
-              <v-list-item-title>Use XYZ</v-list-item-title>
-            </v-list-item>
-            <v-list-item dense @click="() => gridBoundingBox(1)">
-              <v-list-item-title>Use GARS</v-list-item-title>
-            </v-list-item>
-            <v-list-item dense @click="() => gridBoundingBox(2)">
-              <v-list-item-title>Use MGRS</v-list-item-title>
-            </v-list-item>
-            <v-list-item dense v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
-              <v-list-item-title>Use extent</v-list-item-title>
-            </v-list-item>
-          </v-list-item-group>
+          <v-list-item dense @click="editingDirectly = true">
+            <v-list-item-title>Type in</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense @click="drawBoundingBox">
+            <v-list-item-title>Draw on map</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense @click="() => gridBoundingBox(0)">
+            <v-list-item-title>Use XYZ</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense @click="() => gridBoundingBox(1)">
+            <v-list-item-title>Use GARS</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense @click="() => gridBoundingBox(2)">
+            <v-list-item-title>Use MGRS</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
+            <v-list-item-title>Use data extent</v-list-item-title>
+          </v-list-item>
+          <v-list-item dense @click="setBoundingBoxToMapExtent">
+            <v-list-item-title>Use map extent</v-list-item-title>
+          </v-list-item>
         </v-list>
       </v-menu>
     </v-card-actions>
@@ -198,6 +199,16 @@ export default {
         console.error('Failed to set bounding box filter to the extent of visible layers.')
       })
     },
+    setBoundingBoxToMapExtent () {
+      EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({extent}) => {
+        this.updateBoundingBox(extent)
+      })
+      const options = {
+        isPreview: this.previewMode,
+        padBounds: false
+      }
+      EventBus.$emit(EventBus.EventTypes.REQUEST_MAP_DETAILS, options)
+    },
     stopDrawingBoundingBox () {
       EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX_STOP)
       EventBus.$off(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.id))
@@ -214,7 +225,20 @@ export default {
         EventBus.$off(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.id))
         this.drawingBounds = false
       })
-      EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, this.boundingBox)
+
+      if (this.boundingBox == null) {
+        EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({extent}) => {
+          this.updateBoundingBox(extent)
+          EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, extent)
+        })
+        const options = {
+          isPreview: this.previewMode,
+          padBounds: true
+        }
+        EventBus.$emit(EventBus.EventTypes.REQUEST_MAP_DETAILS, options)
+      } else {
+        EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, this.boundingBox)
+      }
       this.drawingBounds = true
     },
     stopPickingGrid () {
@@ -232,7 +256,6 @@ export default {
       EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX, this.id, type)
       this.pickingGrid = true
     },
-
     updateBoundingBoxInput () {
       this.editingDirectly = false
       this.updateBoundingBox([this.minLongitude, this.minLatitude, this.maxLongitude, this.maxLatitude])
@@ -252,6 +275,14 @@ export default {
     updateMaxLong (val) {
       this.maxLon = val
       this.$refs['minLongRef'].revalidate()
+    }
+  },
+  watch: {
+    previewMode: {
+      handler () {
+        this.stopPickingGrid()
+        this.stopDrawingBoundingBox()
+      }
     }
   }
 }

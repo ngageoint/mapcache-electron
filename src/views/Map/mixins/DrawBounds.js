@@ -16,36 +16,19 @@ export default {
     disableBoundingBoxDrawing () {
       if (this.r && this.map) {
         this.stopDrawBoundsMode()
-        this.map.removeLayer(this.r)
+        this.r.remove()
         this.r = undefined
       }
       this.isDrawingBounds = false
     },
     enableBoundingBoxDrawing (boundingBoxFilter) {
-      let boundingBox = boundingBoxFilter
-      let bounds
-      if (isNil(boundingBox)) {
-        let sw = this.map.getBounds().getSouthWest()
-        let ne = this.map.getBounds().getNorthEast()
-        boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]
-        bounds = L.latLngBounds(boundingBox)
-        bounds = bounds.pad(-0.1)
-        boundingBox = [[bounds.getSouthWest().lat, bounds.getSouthWest().lng], [bounds.getNorthEast().lat, bounds.getNorthEast().lng]]
-        if (this.drawBoundsId != null) {
-          EventBus.$emit(EventBus.EventTypes.BOUNDING_BOX_UPDATED(this.drawBoundsId), [Number(boundingBox[0][1]), Number(boundingBox[0][0]), Number(boundingBox[1][1]), Number(boundingBox[1][0])])
-        }
-      } else {
-        bounds = L.latLngBounds(boundingBox)
-      }
-
+      let bounds = L.latLngBounds(boundingBoxFilter)
       this.drawBoundsMode = 0
       this.r = L.rectangle(bounds, {pane: DRAWING_LAYER_PANE.name})
       this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
       this.r.addTo(this.map)
       this.toggleBoundsEdit()
-
-      this.map.fitBounds(boundingBox)
-
+      this.map.fitBounds(boundingBoxFilter)
       const self = this
       this.r.on('editable:vertex:dragend', () => {
         let sw = this.r.getBounds().getSouthWest()
@@ -79,7 +62,9 @@ export default {
       this.r.pm.enable({
         allowSelfIntersection: true,
         panes: {
-          vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+          vertexPane: DRAWING_VERTEX_PANE.name,
+          layerPane: DRAWING_LAYER_PANE.name,
+          markerPane: DRAWING_VERTEX_PANE.name
         },
         snapDistance: 5
       })
