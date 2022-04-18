@@ -197,25 +197,6 @@ class MapCacheWindowManager {
 
     const origin = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
 
-    // session.defaultSession.webRequest.onBeforeSendHeaders(
-    //   (details, callback) => {
-    //
-    //     let headers = details.requestHeaders
-    //
-    //     console.log(headers)
-    //
-    //     headers['Access-Control-Allow-Origin'] = origin
-    //     headers['Origin'] = origin
-    //     headers['Access-Control-Allow-Credentials'] = 'true'
-    //     delete headers['access-control-Allow-Origin']
-    //     delete headers['origin']
-    //     delete headers['access-control-allow-credentials']
-    //
-    //     callback({ requestHeaders: headers })
-    //   },
-    // )
-
-
     // if auth was enabled, be sure to add response header allow for auth to occur
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       let headers = details.responseHeaders
@@ -237,8 +218,6 @@ class MapCacheWindowManager {
 
       headers['Access-Control-Allow-Credentials'] = 'true'
       delete headers['access-control-allow-credentials']
-
-      console.log(headers)
 
       callback({
         responseHeaders: headers
