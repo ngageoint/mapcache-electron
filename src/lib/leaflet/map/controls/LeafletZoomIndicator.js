@@ -17,7 +17,7 @@ export default class LeafletZoomIndicator extends L.Control {
     this._link = L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
     this._link.innerHTML = map.getZoom()
     map.on('zoomend', () => {
-      this._link.innerHTML = map.getZoom()
+      this._link.innerHTML = Math.floor(map.getZoom())
     }, this)
 
     return container
