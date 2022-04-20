@@ -1045,6 +1045,9 @@ export default {
         zoom: defaultZoom,
         minZoom: 2,
         maxZoom: 20,
+        scrollWheelZoom: false,
+        smoothWheelZoom: true,
+        smoothSensitivity: 1.5,
       })
       window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
       this.createMapPanes()
@@ -1226,7 +1229,6 @@ export default {
       this.consecutiveClicks = 0
     }, DOUBLE_CLICK_THRESHOLD),
     setupEventHandlers () {
-      const self = this
       const checkFeatureCount = throttle(async (e) => {
         if (!this.isMapBusy()) {
           let {feature, layer} = await this.queryForClosestFeature(e)
@@ -1290,7 +1292,7 @@ export default {
         }
       })
       this.map.on('zoomend', () => {
-        window.mapcache.setMapZoom({projectId: self.project.id, mapZoom: self.map.getZoom()})
+        window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: Math.floor(this.map.getZoom())})
       })
     },
     addLayersToMap () {

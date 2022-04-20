@@ -204,7 +204,10 @@ export default {
           },
           center: defaultCenter,
           zoom: defaultZoom,
-          minZoom: 2
+          minZoom: 2,
+          scrollWheelZoom: false,
+          smoothWheelZoom: true,
+          smoothSensitivity: 1.5,
         })
         this.map.on('click', () => {
           this.showBaseMapSelection = false
