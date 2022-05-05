@@ -363,7 +363,6 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
           abortController.abort()
           // eslint-disable-next-line no-empty, no-unused-vars
         } catch (e) {
-          console.error(e)
         }
       }
     }

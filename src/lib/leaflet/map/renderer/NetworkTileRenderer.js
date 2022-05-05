@@ -178,7 +178,6 @@ export default class NetworkTileRenderer {
           }
         }
       } catch (e) {
-        console.error(e)
         rendered = true
         callback(e, null)
       } finally {
