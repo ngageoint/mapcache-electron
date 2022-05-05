@@ -35,9 +35,6 @@ import {
   CANCEL_TILE_REQUEST,
   GENERATE_GEOTIFF_RASTER_FILE,
   GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
-  REQUEST_REPROJECT_TILE,
-  REQUEST_REPROJECT_TILE_COMPLETED,
-  CANCEL_REPROJECT_TILE_REQUEST,
   BUILD_TILE_LAYER_STATUS,
   BUILD_TILE_LAYER_COMPLETED,
   WORKER_BUILD_TILE_LAYER,
@@ -69,7 +66,10 @@ import {
   LAUNCH_USER_GUIDE,
   SEND_WINDOW_TO_FRONT,
   REDO,
-  UNDO
+  UNDO,
+  REQUEST_TILE_COMPILATION,
+  REQUEST_TILE_COMPILATION_COMPLETED,
+  CANCEL_TILE_COMPILATION_REQUEST
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 
@@ -95,6 +95,7 @@ class MapCacheWindowManager {
   isShuttingDown = false
   quitFromParent = false
   forceClose = false
+  store
 
   // request tracking
   requests = {}
@@ -265,11 +266,19 @@ class MapCacheWindowManager {
   }
 
   /**
+   * Sets up the vuex store, which will listen for state changes from the browser processes
+   */
+  setupVuexStore () {
+    this.store = require('../../store')
+  }
+
+  /**
    * Starts the app and returns once the main window has loaded
    * @return {Promise<unknown>}
    */
   start () {
     return new Promise(resolve => {
+      this.setupVuexStore()
       this.setupGlobalShortcuts()
       this.setupWebRequestWorkflow()
       this.registerEventHandlers()
@@ -315,15 +324,17 @@ class MapCacheWindowManager {
 
       ipcMain.on(CANCEL_PROCESS_SOURCE, (event, payload) => {
         const taskId = payload.id
-        this.mapcacheThreadHelper.cancelTask(taskId).then(() => {
+        this.mapcacheThreadHelper.cancelTask(taskId, true).then(() => {
           event.sender.send(CANCEL_PROCESS_SOURCE_COMPLETED(taskId))
         })
       })
 
       ipcMain.on(CANCEL_TILE_REQUEST, async (event, payload) => {
         const taskId = payload.id
-        event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
-          error: 'Cancelled by user.'
+        await this.mapcacheThreadHelper.cancelTask(taskId, false).then(() => {
+          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
+            error: 'Cancelled by user.'
+          })
         })
       })
 
@@ -351,14 +362,14 @@ class MapCacheWindowManager {
         })
       })
 
-      ipcMain.on(REQUEST_REPROJECT_TILE, async (event, payload) => {
+      ipcMain.on(REQUEST_TILE_COMPILATION, async (event, payload) => {
         const taskId = payload.id
-        this.mapcacheThreadHelper.reprojectTile(payload).then(response => {
-          event.sender.send(REQUEST_REPROJECT_TILE_COMPLETED(taskId), {
+        this.mapcacheThreadHelper.compileTiles(payload, event.sender).then(response => {
+          event.sender.send(REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
             base64Image: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_REPROJECT_TILE_COMPLETED(taskId), {
+          event.sender.send(REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
             error: e
           })
         })
@@ -429,9 +440,9 @@ class MapCacheWindowManager {
         })
       })
 
-      ipcMain.on(CANCEL_REPROJECT_TILE_REQUEST, async (event, payload) => {
+      ipcMain.on(CANCEL_TILE_COMPILATION_REQUEST, async (event, payload) => {
         const taskId = payload.id
-        await this.mapcacheThreadHelper.cancelPendingTask(taskId)
+        await this.mapcacheThreadHelper.cancelTask(taskId, false)
       })
     }
   }

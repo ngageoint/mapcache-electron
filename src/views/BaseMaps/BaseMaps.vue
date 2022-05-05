@@ -26,6 +26,9 @@
             </v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-html="item.name" ></v-list-item-title>
+              <v-list-item-subtitle v-if="item.type != null" v-html="item.type"></v-list-item-subtitle>
+              <v-list-item-subtitle v-if="item.subtitle != null" v-html="item.subtitle"></v-list-item-subtitle>
+              <v-list-item-subtitle v-if="item.count != null">{{item.count + ' features'}}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">
               <base-map-troubleshooting :base-map="item.baseMap"></base-map-troubleshooting>
@@ -56,7 +59,7 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
@@ -65,8 +68,9 @@ import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import {mdiChevronLeft, mdiMapOutline} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import {zoomToBaseMap} from '../../lib/leaflet/map/ZoomUtilities'
-import {getDefaultBaseMaps} from '../../lib/util/basemaps/BaseMapUtilities'
+import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
+import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
+import { getDisplayText } from '../../lib/layer/LayerTypes'
 
 export default {
     components: {
@@ -86,10 +90,23 @@ export default {
         },
         baseMapItems: state => {
           return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMap => {
+            let subtitle = null
+            let count = null
+            let type = null
+            if (baseMap.layerConfiguration != null) {
+              count = baseMap.layerConfiguration.count
+              if (baseMap.layerConfiguration.layers != null) {
+                subtitle = baseMap.layerConfiguration.layers.filter(l => l.enabled).length === 0 ? 'No layers enabled' : (baseMap.layerConfiguration.layers.filter(l => l.enabled).length === baseMap.layerConfiguration.layers.length ? 'All layers enabled' : (baseMap.layerConfiguration.layers.filter(l => l.enabled).length + ' of ' + baseMap.layerConfiguration.layers.length + ' layers enabled'))
+              }
+              type = getDisplayText(baseMap.layerConfiguration.sourceType) || getDisplayText(baseMap.layerConfiguration.layerType)
+            }
             return {
               id: baseMap.id,
               baseMap: baseMap,
               name: baseMap.name,
+              subtitle: subtitle,
+              count: count,
+              type: type,
               readonly: baseMap.readonly,
               missingRaster: window.mapcache.isRasterMissing(baseMap.layerConfiguration),
               background: baseMap.background || '#ddd',

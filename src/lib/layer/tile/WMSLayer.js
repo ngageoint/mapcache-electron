@@ -4,6 +4,7 @@ import {
 } from '../../util/geoserver/GeoServiceUtilities'
 import NetworkTileLayer from './NetworkTileLayer'
 import { WMS } from '../LayerTypes'
+import cloneDeep from 'lodash/cloneDeep'
 
 export default class WMSLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -11,8 +12,8 @@ export default class WMSLayer extends NetworkTileLayer {
     this.layers = configuration.layers
     this.format = configuration.format || 'image/png'
     this.version = configuration.version
-    this.requiresReprojection = !configuration.srs.endsWith(':3857')
     this.srs = configuration.srs
+    this.extent = WMSLayer.getExtentForLayers(configuration.layers)
   }
 
   get configuration () {
@@ -22,13 +23,44 @@ export default class WMSLayer extends NetworkTileLayer {
         layerType: WMS,
         version: this.version,
         layers: this.layers,
-        formats: this.formats
+        formats: this.formats,
+        srs: this.srs
       }
     }
   }
 
+  static getExtentForLayers (layers) {
+    let layersToReview = layers.filter(layer => layer.enabled)
+    if (layersToReview.length === 0) {
+      layersToReview = layers
+    }
+
+    const extent = cloneDeep(layersToReview[0].extent)
+
+    layersToReview.slice(1).forEach(layer => {
+      if (layer.extent[0] < extent[0]) {
+        extent[0] = layer.extent[0]
+      }
+      if (layer.extent[1] < extent[1]) {
+        extent[1] = layer.extent[1]
+      }
+      if (layer.extent[2] > extent[2]) {
+        extent[2] = layer.extent[2]
+      }
+      if (layer.extent[3] > extent[3]) {
+        extent[3] = layer.extent[3]
+      }
+    })
+
+    return extent
+  }
+
   update (configuration) {
     super.update(configuration)
+    if (configuration.layers != null) {
+      this.layers = configuration.layers
+      this.extent = WMSLayer.getExtentForLayers(configuration.layers)
+    }
   }
 
   /**
@@ -36,21 +68,24 @@ export default class WMSLayer extends NetworkTileLayer {
    * @param webMercatorBoundingBox
    * @param coords
    * @param size
-   * @param projectedBoundingBox
-   * @return {{webMercatorBoundingBox: *, srs, bbox, webRequests: [{url: string}]}}
+   * @param projectedBoundingBoxFunction
+   * @returns {*[]}
    */
-  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBox) {
+  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBoxFunction) {
+    const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, this.srs)
     const bbox = getBoundingBoxForWMSRequest(projectedBoundingBox, this.version, this.srs)
-
-    return {
-      bbox: projectedBoundingBox,
-      srs: this.srs,
-      webRequests: [{
-        url: getTileRequestURL(this.filePath, this.layers, size.x, size.y, bbox, this.srs, this.version, this.format),
+    const layers = this.layers.filter(l => l.enabled).map(l => l.name).reverse()
+    const requests = []
+    if (layers.length > 0) {
+      requests.push({
+        url: getTileRequestURL(this.filePath, layers, size.x, size.y, bbox, this.srs, this.version, this.format),
         width: size.x,
         height: size.y,
-        tileBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat]
-      }]
+        tileBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+        imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+        tileSRS: this.srs
+      })
     }
+    return requests
   }
 }

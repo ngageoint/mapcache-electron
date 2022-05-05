@@ -24,7 +24,7 @@ import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageComm
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/file/FileConstants'
 import GeoTIFFSource from '../../lib/source/geotiff/GeoTIFFSource'
 import {GEOTIFF, VECTOR, MBTILES, WMS, isRemote} from '../../lib/layer/LayerTypes'
-
+import { WEB_MERCATOR } from '../../lib/projection/ProjectionConstants'
 
 /**
  * Executes the necessary migration scripts based on current version of the store and the installation version of the store
@@ -261,7 +261,7 @@ export async function runMigration (forceReset = false) {
         for (let j = 0; j < sourceKeys.length; j++) {
           const sourceId = sourceKeys[j]
           if (state.Projects[projectId].sources[sourceId].layerType === WMS) {
-            state.Projects[projectId].sources[sourceId].srs = 'EPSG:3857'
+            state.Projects[projectId].sources[sourceId].srs = WEB_MERCATOR
           }
         }
       }
@@ -270,7 +270,7 @@ export async function runMigration (forceReset = false) {
       for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
         const baseMap = state.BaseMaps.baseMaps[i]
         if (baseMap.layerConfiguration.layerType === WMS) {
-          baseMap.layerConfiguration.srs = 'EPSG:3857'
+          baseMap.layerConfiguration.srs = WEB_MERCATOR
         }
       }
     },

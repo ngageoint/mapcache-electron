@@ -7,7 +7,9 @@ import {
   setMakeImageDataFunction,
   disposeCanvas,
   setMakeImageFunction,
-  setReadPixelsFunction
+  setReadPixelsFunction,
+  makeImage,
+  disposeImage
 } from '../util/canvas/CanvasUtilities'
 import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
@@ -18,18 +20,20 @@ import {
   REQUEST_PROCESS_SOURCE,
   REQUEST_RENDER,
   REQUEST_GEOTIFF_RASTER,
-  REQUEST_TILE_REPROJECTION,
   GEOPACKAGE_TABLE_RENAME,
   GEOPACKAGE_TABLE_DELETE,
   GEOPACKAGE_TABLE_COPY,
   GEOPACKAGE_TABLE_COUNT,
-  GEOPACKAGE_TABLE_SEARCH
+  GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL
 } from './mapcacheThreadRequestTypes'
 import path from 'path'
 import { reproject } from '../projection/ReprojectionUtilities'
 import { base64toUInt8Array } from '../util/Base64Utilities'
 import { copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable } from '../geopackage/GeoPackageCommon'
-import {getFeatureCount, getFeatureTablePage} from '../geopackage/GeoPackageFeatureTableUtilities'
+import { getFeatureCount, getFeatureTablePage } from '../geopackage/GeoPackageFeatureTableUtilities'
+import groupBy from 'lodash/groupBy'
+import { clipImage, stitchTileData } from '../util/tile/TileUtilities'
+import { epsgMatches } from '../projection/ProjectionUtilities'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -112,6 +116,7 @@ const cachedGeoPackageConnections = {}
 // track style changes, anytime the style changes, the cached connection will need to be reset
 const styleKeyMap = {}
 
+const currentTask = {}
 
 /**
  * Sets up an expiring geopackage connection wrapper.
@@ -314,6 +319,64 @@ async function reprojectTile (data) {
   return result
 }
 
+/**
+ * Returns an image after compiling all the tiles for a given srs
+ * @param tiles
+ * @param size
+ * @param sourceSrs
+ * @param targetSrs
+ * @param targetBounds
+ * @param clippingRegion
+ * @param canvas
+ * @returns {Promise<HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap>}
+ */
+async function compileTileImage (tiles, size, sourceSrs, targetSrs, targetBounds, clippingRegion, canvas) {
+  const sourceBounds = tiles[0].imageBounds
+  let dataUrl = await stitchTileData(canvas, tiles, size, sourceBounds)
+  // check if this tile needs reprojected
+  if (!epsgMatches(targetSrs, sourceSrs)) {
+    dataUrl = await reprojectTile({
+      sourceTile: dataUrl,
+      sourceBoundingBox: {minLon: sourceBounds[0], minLat: sourceBounds[1], maxLon: sourceBounds[2], maxLat: sourceBounds[3]},
+      sourceSrs: sourceSrs,
+      targetSrs: targetSrs,
+      targetWidth: size.x,
+      targetHeight: size.y,
+      targetBoundingBox: targetBounds
+    })
+  }
+  dataUrl = await clipImage(canvas, dataUrl, clippingRegion, size)
+  return makeImage(dataUrl)
+}
+
+/**
+ * Handles a tile compilation request (WMS, WMTS, XYZ)
+ * @param data
+ * @returns {Promise<string>}
+ * */
+async function compileTiles (data) {
+  const { tiles, size, clippingRegion, targetSrs, targetBounds } = data
+  const canvas = createCanvas(size.x, size.y)
+  const context = canvas.getContext('2d')
+  const srsTilesMap = groupBy(tiles, tile => tile.tileSRS)
+  const promises = Object.keys(srsTilesMap).map(sourceSrs => {
+    const tilesForSrs = srsTilesMap[sourceSrs]
+    return compileTileImage(tilesForSrs, size, sourceSrs, targetSrs, targetBounds, clippingRegion, canvas)
+  })
+  const results = await Promise.allSettled(promises)
+  context.clearRect(0, 0, size.x, size.y)
+  results.forEach(result => {
+    if (result.status === 'fulfilled') {
+      const image = result.value
+      context.drawImage(image, 0, 0, size.x, size.y)
+      disposeImage(image)
+    }
+  })
+  const result = canvas.toDataURL()
+  disposeCanvas(canvas)
+  return result
+}
+
 function renameTable (data) {
   return renameGeoPackageTable(data.filePath, data.tableName, data.newTableName)
 }
@@ -335,69 +398,104 @@ function searchTable (data) {
 }
 
 /**
+ * Executes a cancellable task
+ * @param message
+ * @returns {Promise<unknown>}
+ */
+function executeTask (message) {
+  return new Promise ((resolve, reject) => {
+    const ac = new AbortController()
+    ac.signal.addEventListener('abort', () => {
+      reject({error: 'Cancelled', result: null})
+      },
+      { once: true }
+    )
+    currentTask.cancelTask = ac.abort
+    if (message.type === REQUEST_ATTACH_MEDIA) {
+      attachMedia(message.data).then((result) => {
+        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === REQUEST_PROCESS_SOURCE) {
+      processDataSource(message.data).then((result) => {
+        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === REQUEST_RENDER) {
+      renderTile(message.data).then((result) => {
+        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === REQUEST_GEOTIFF_RASTER) {
+      generateGeoTIFFRasterFile(message.data).then((result) => {
+        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === REQUEST_TILE_COMPILATION) {
+      compileTiles(message.data).then(result => {
+        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to project tile.', result: null, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_RENAME) {
+      renameTable(message.data).then(() => {
+        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to rename table.', result: false, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_DELETE) {
+      deleteTable(message.data).then(() => {
+        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to delete table.', result: false, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_COPY) {
+      copyTable(message.data).then(() => {
+        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to copy table.', result: false, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_COUNT) {
+      countTable(message.data).then((count) => {
+        resolve({error: null, result: count, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to get table count.', result: false, cancelled: ac.signal.aborted})
+      })
+    } else if (message.type === GEOPACKAGE_TABLE_SEARCH) {
+      searchTable(message.data).then((results) => {
+        resolve({error: null, result: results, cancelled: ac.signal.aborted})
+      }).catch(() => {
+        reject({error: 'Failed to search table.', result: false, cancelled: ac.signal.aborted})
+      })
+    }
+  })
+
+}
+
+/**
  * Handles incoming requests from the parent port
  */
 function setupRequestListener () {
   parentPort.on('message', (message) => {
-    if (message.type === REQUEST_ATTACH_MEDIA) {
-      attachMedia(message.data).then((result) => {
-        parentPort.postMessage({error: null, result: result})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to attach media.', result: null})
-      })
-    } else if (message.type === REQUEST_PROCESS_SOURCE) {
-      processDataSource(message.data).then((result) => {
-        parentPort.postMessage({error: null, result: result})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to process data source.', result: null})
-      })
-    } else if (message.type === REQUEST_RENDER) {
-      renderTile(message.data).then((result) => {
-        parentPort.postMessage({error: null, result: result})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to render tile.', result: null})
-      })
-    } else if (message.type === REQUEST_GEOTIFF_RASTER) {
-      generateGeoTIFFRasterFile(message.data).then((result) => {
-        parentPort.postMessage({error: null, result: result})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to generate raster file.', result: null})
-      })
-    } else if (message.type === REQUEST_TILE_REPROJECTION) {
-      reprojectTile(message.data).then(result => {
-        parentPort.postMessage({error: null, result: result})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to project tile.', result: null})
-      })
-    } else if (message.type === GEOPACKAGE_TABLE_RENAME) {
-      renameTable(message.data).then(() => {
-        parentPort.postMessage({error: null, result: true})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to rename table.', result: false})
-      })
-    } else if (message.type === GEOPACKAGE_TABLE_DELETE) {
-      deleteTable(message.data).then(() => {
-        parentPort.postMessage({error: null, result: true})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to delete table.', result: false})
-      })
-    } else if (message.type === GEOPACKAGE_TABLE_COPY) {
-      copyTable(message.data).then(() => {
-        parentPort.postMessage({error: null, result: true})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to copy table.', result: false})
-      })
-    } else if (message.type === GEOPACKAGE_TABLE_COUNT) {
-      countTable(message.data).then((count) => {
-        parentPort.postMessage({error: null, result: count})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to get table count.', result: false})
-      })
-    } else if (message.type === GEOPACKAGE_TABLE_SEARCH) {
-      searchTable(message.data).then((results) => {
-        parentPort.postMessage({error: null, result: results})
-      }).catch(() => {
-        parentPort.postMessage({error: 'Failed to search table.', result: false})
+    if (message.type === CANCEL) {
+      if (currentTask.cancelTask) {
+        currentTask.cancelTask()
+      }
+    } else {
+      executeTask(message).then((post) => {
+        if (!post.cancelled) {
+          parentPort.postMessage(post)
+        }
+      }).catch((post) => {
+        if (!post.cancelled) {
+          parentPort.postMessage(post)
+        }
+      }).finally(() => {
+        delete currentTask.cancelTask
       })
     }
   })

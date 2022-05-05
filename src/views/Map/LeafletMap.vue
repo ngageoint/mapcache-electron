@@ -543,6 +543,7 @@ export default {
     },
     popOutFeatureTable () {
       window.mapcache.popOutFeatureTable({projectId: this.projectId, popOut: true})
+      window.mapcache.showFeatureTableWindow(true)
     },
     hideFeatureTable () {
       window.mapcache.hideFeatureTableWindow()
@@ -1047,7 +1048,7 @@ export default {
         maxZoom: 20,
         scrollWheelZoom: false,
         smoothWheelZoom: true,
-        smoothSensitivity: 1.5,
+        smoothSensitivity: 1
       })
       window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
       this.createMapPanes()
@@ -1818,17 +1819,15 @@ export default {
       })
     })
     EventBus.$on(EventBus.EventTypes.REQUEST_MAP_DETAILS, (options) => {
-      if (!options.isPreview) {
-        let bounds = this.map.getBounds()
-        if (options.padBounds) {
-          bounds = bounds.pad(-0.1)
-        }
-        const details = {
-          zoom: this.map.getZoom(),
-          extent: [bounds.getSouthWest().lng, bounds.getSouthWest().lat, bounds.getNorthEast().lng, bounds.getNorthEast().lat]
-        }
-        EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
+      let bounds = this.map.getBounds()
+      if (options.padBounds) {
+        bounds = bounds.pad(-0.1)
       }
+      const details = {
+        zoom: this.map.getZoom(),
+        extent: [bounds.getSouthWest().lng, bounds.getSouthWest().lat, bounds.getNorthEast().lng, bounds.getNorthEast().lat]
+      }
+      EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
     })
     window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
@@ -2018,5 +2017,8 @@ export default {
   }
   .dark {
     filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
+  }
+  .leaflet-tile-container img {
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
   }
 </style>

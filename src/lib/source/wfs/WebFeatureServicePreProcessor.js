@@ -1,6 +1,7 @@
 import Preprocessor from '../preprocessing/Preprocessor'
 import {getLayerOutputFormat, getFeatureRequestURL} from '../../util/geoserver/GeoServiceUtilities'
 import {PROCESSING_STATES} from '../../../lib/source/SourceProcessing'
+import { COLON_DELIMITER, WORLD_GEODETIC_SYSTEM_CODE } from '../../projection/ProjectionConstants'
 
 /**
  * Handles the preprocessing of a Web Feature Service. This retrieves the feature data from the service before sending to
@@ -72,7 +73,7 @@ export default class WebFeatureServicePreProcessor extends Preprocessor {
       const layer = layers[i]
       let outputFormat = getLayerOutputFormat(layer)
       let srs = layer.defaultSRS
-      const otherSrs = layer.otherSRS.find(s => s.endsWith(':4326'))
+      const otherSrs = layer.otherSRS.find(s => s.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE))
       if (otherSrs) {
         srs = otherSrs
       }

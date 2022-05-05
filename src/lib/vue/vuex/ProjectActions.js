@@ -730,6 +730,10 @@ function setMapZoom ({projectId, mapZoom}) {
   store.dispatch('UIState/setMapZoom', {projectId, mapZoom})
 }
 
+function addProjectState ({projectId}) {
+  store.dispatch('UIState/addProjectState', {projectId})
+}
+
 /**
  * Sets the rendering order of the map
  * @param projectId
@@ -740,29 +744,12 @@ function setMapRenderingOrder ({projectId, mapRenderingOrder}) {
 }
 
 /**
- * Sets the preview layer when adding URL data source
- * @param projectId
- * @param previewLayer
- */
-function setPreviewLayer ({projectId, previewLayer}) {
-  store.dispatch('UIState/setPreviewLayer', {projectId, previewLayer})
-}
-
-/**
- * Sets the preview layer when adding URL data source
+ * Pop out feature table
  * @param projectId
  * @param popOut
  */
 function popOutFeatureTable ({projectId, popOut}) {
   store.dispatch('UIState/popOutFeatureTable', {projectId, popOut})
-}
-
-/**
- * Sets the preview layer when adding URL data source
- * @param projectId
- */
-function clearPreviewLayer ({projectId}) {
-  store.dispatch('UIState/clearPreviewLayer', {projectId})
 }
 
 /**
@@ -894,8 +881,6 @@ export {
   clearNotifications,
   setMapZoom,
   setMapRenderingOrder,
-  setPreviewLayer,
-  clearPreviewLayer,
   addBaseMap,
   editBaseMap,
   removeBaseMap,
@@ -909,5 +894,6 @@ export {
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
   updateDataSourceColumnOrder,
-  allowNotifications
+  allowNotifications,
+  addProjectState
 }

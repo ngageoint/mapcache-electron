@@ -392,8 +392,11 @@ export default {
         this.editMaxFeaturesDialog = !this.editMaxFeaturesDialog
       },
       deleteProjectAndClose () {
-        window.mapcache.deleteProject(this.project)
-        window.mapcache.closeProject()
+        window.mapcache.deleteProject(this.project).then(() => {
+          setTimeout(() => {
+            window.mapcache.closeProject()
+          }, 100)
+        })
       }
     }
   }

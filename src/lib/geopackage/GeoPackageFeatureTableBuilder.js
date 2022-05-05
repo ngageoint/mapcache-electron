@@ -11,6 +11,7 @@ import {
 } from './GeoPackageStyleUtilities'
 import { _getMediaRow } from './GeoPackageMediaUtilities'
 import { getMediaTableName } from '../util/media/MediaUtilities'
+import { WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
 
 /**
  * GeoPackgeFeatureTableBuilder handles building a feature layer using other GeoPackage layers and data sources
@@ -156,10 +157,9 @@ async function getTableFeatureCounts (layers, boundingBoxFilter) {
 
     await performSafeGeoPackageOperation(filePath, async (layerGeoPackage) => {
       const featureDao = layerGeoPackage.getFeatureDao(layerTableName)
-      const epsg4326 = 'EPSG:4326'
       let count
       if (!isNil(boundingBoxFilter) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
-        count = featureDao.featureTableIndex.countWithBoundingBox(boundingBoxFilter, epsg4326)
+        count = featureDao.featureTableIndex.countWithBoundingBox(boundingBoxFilter, WORLD_GEODETIC_SYSTEM)
       } else {
         count = featureDao.count()
       }
@@ -359,11 +359,10 @@ async function buildFeatureLayer (configuration, statusCallback) {
           }
 
           const srs = featureDao.srs
-          const epsg4326 = 'EPSG:4326'
           const featureCount = tableFeatureCountMap[layerId]
           let each
           if (!isNil(boundingBoxFilter) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
-            each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBoxFilter, epsg4326)
+            each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBoxFilter, WORLD_GEODETIC_SYSTEM)
           } else {
             each = featureDao.queryForEach()
           }

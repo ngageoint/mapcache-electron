@@ -21,7 +21,7 @@ let createStore = () => {
   return new Vuex.Store({
     modules,
     plugins: [
-      createMapCachePersistedStateWrapper({throttle: 500}),
+      createMapCachePersistedStateWrapper({throttle: 100}),
       createMapCacheSharedMutationsWrapper(),
     ],
     strict: true
@@ -30,8 +30,8 @@ let createStore = () => {
 
 let store = undefined
 if (window.mapcache != null) {
-  if (window.mapcache.setupGeoPackgeContext != null) {
-    window.mapcache.setupGeoPackgeContext()
+  if (window.mapcache.setupGeoPackageContext != null) {
+    window.mapcache.setupGeoPackageContext()
   }
 
   if (window.mapcache.createStorage != null) {

@@ -12,7 +12,14 @@ import {
 import { constructLayer } from '../layer/LayerFactory'
 import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
-import {createCanvas, isBlank, hasTransparentPixels, disposeCanvas} from '../util/canvas/CanvasUtilities'
+import {
+  createCanvas,
+  isBlank,
+  hasTransparentPixels,
+  disposeCanvas,
+  makeImage,
+  disposeImage
+} from '../util/canvas/CanvasUtilities'
 import { wgs84ToWebMercator } from '../projection/ProjectionUtilities'
 import { constructRenderer } from '../leaflet/map/renderer/RendererFactory'
 import {
@@ -24,6 +31,7 @@ import {
   trimExtentToFilter
 } from '../util/tile/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
+import { WEB_MERCATOR_CODE, WORLD_GEODETIC_SYSTEM_CODE } from '../projection/ProjectionConstants'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
@@ -232,11 +240,10 @@ async function buildTileLayer (configuration, statusCallback) {
       totalExtent = trimExtentToWebMercatorMax(totalExtent)
 
       const contentsBounds = new BoundingBox(totalExtent[0], totalExtent[2], totalExtent[1], totalExtent[3])
-      const contentsSrsId = 4326
+      const contentsSrsId = WORLD_GEODETIC_SYSTEM_CODE
       const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
-      const tileMatrixSetSrsId = 3857
 
-      await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, tileMatrixSetSrsId, minZoom, maxZoom)
+      await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, WEB_MERCATOR_CODE, minZoom, maxZoom)
 
       const tileDao = gp.getTileDao(tableName)
       const tileRow = tileDao.newRow()
@@ -297,18 +304,15 @@ async function buildTileLayer (configuration, statusCallback) {
                     reject(err)
                   } else if (!isNil(result)) {
                     try {
-                      let img = new Image()
-                      img.onload = () => {
+                      makeImage(result).then((image) => {
                         resolve({
-                          image: img,
+                          image: image,
                           opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
                           layerId: layer.id
                         })
-                      }
-                      img.onerror = (e) => {
+                      }).catch(e => {
                         reject(e)
-                      }
-                      img.src = result
+                      })
                       // eslint-disable-next-line no-unused-vars
                     } catch (e) {
                       reject(e)
@@ -336,6 +340,7 @@ async function buildTileLayer (configuration, statusCallback) {
                 ctx.rect(clippingMap[result.value.layerId][0], clippingMap[result.value.layerId][1], clippingMap[result.value.layerId][2], clippingMap[result.value.layerId][3])
                 ctx.clip()
                 ctx.drawImage(result.value.image, 0, 0)
+                disposeImage(result.value.image)
                 ctx.globalAlpha = 1.0
                 ctx.restore()
               }

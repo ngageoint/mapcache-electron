@@ -20,7 +20,6 @@ const mutations = {
       boundsBeingDrawn: {},
       activeCount: 0,
       dark: false,
-      previewLayer: null,
       popOutFeatureTable: false,
       allowNotifications: false
     })
@@ -58,12 +57,6 @@ const mutations = {
   },
   setMapZoom (state, {projectId, mapZoom}) {
     Vue.set(state[projectId], 'mapZoom', mapZoom)
-  },
-  setPreviewLayer (state, {projectId, previewLayer}) {
-    Vue.set(state[projectId], 'previewLayer', previewLayer)
-  },
-  clearPreviewLayer (state, {projectId}) {
-    Vue.delete(state[projectId], 'previewLayer')
   },
   popOutFeatureTable (state, {projectId, popOut}) {
     Vue.set(state[projectId], 'featureTablePoppedOut', popOut)
@@ -106,12 +99,6 @@ const actions = {
   },
   setMapZoom ({ commit }, {projectId, mapZoom}) {
     return commit('setMapZoom', {projectId, mapZoom})
-  },
-  setPreviewLayer ({ commit }, {projectId, previewLayer}) {
-    commit('setPreviewLayer', {projectId, previewLayer})
-  },
-  clearPreviewLayer ({ commit }, {projectId}) {
-    commit('clearPreviewLayer', {projectId})
   },
   popOutFeatureTable ({ commit }, {projectId, popOut}) {
     commit('popOutFeatureTable', {projectId, popOut})

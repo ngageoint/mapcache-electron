@@ -9,7 +9,6 @@ import {
   GeoPackage,
   GeometryData,
   MediaTable,
-  ProjectionConstants,
   SqliteQueryBuilder,
   FeatureTableReader,
   UserRow
@@ -50,6 +49,12 @@ import {
 } from './GeoPackageStyleUtilities'
 import orderBy from 'lodash/orderBy'
 import {getMediaTableName} from '../util/media/MediaUtilities'
+import {
+  EPSG,
+  COLON_DELIMITER,
+  WORLD_GEODETIC_SYSTEM,
+  WORLD_GEODETIC_SYSTEM_CODE
+} from '../projection/ProjectionConstants'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
@@ -95,8 +100,8 @@ function _updateFeatureGeometry (gp, tableName, featureGeoJson, updateBoundingBo
   const geometryData = new GeometryData()
   geometryData.setSrsId(srs.srs_id)
   let feature = cloneDeep(featureGeoJson)
-  if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
-    feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+  if (!(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)) {
+    feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
   }
 
   const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
@@ -233,7 +238,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
   const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
   const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
-  gp.createFeatureTable(tableName, geometryColumns, columns, bb, 4326)
+  gp.createFeatureTable(tableName, geometryColumns, columns, bb, WORLD_GEODETIC_SYSTEM_CODE)
   const featureDao = gp.getFeatureDao(tableName)
 
   // add feature style extension
@@ -325,7 +330,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   const columns = []
   columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-  gp.createFeatureTable(tableName, geometryColumns, columns, undefined, 4326)
+  gp.createFeatureTable(tableName, geometryColumns, columns, undefined, WORLD_GEODETIC_SYSTEM_CODE)
   await _indexFeatureTable(gp, tableName)
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs;
@@ -473,7 +478,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   const processBatch = () => {
     // batch insert features
     const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
-    const reprojectionNeeded = !(srs.organization === ProjectionConstants.EPSG && srs.organization_coordsys_id === ProjectionConstants.EPSG_CODE_4326)
+    const reprojectionNeeded = !(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)
     const insertSql = SqliteQueryBuilder.buildInsert('\'' + featureDao.gpkgTableName + '\'', featureRow)
     featureRow = featureDao.newRow()
     featureDao.connection.transaction(() => {
@@ -488,7 +493,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         let feature = batch.shift()
         featureRow.resetId()
         if (reprojectionNeeded) {
-          feature = reproject.reproject(feature, ProjectionConstants.EPSG_4326, featureDao.projection)
+          feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = feature.geometry
         geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
@@ -1073,7 +1078,7 @@ async function updateBoundingBoxForFeatureTable (filePath, tableName) {
  * @returns {number}
  */
 function _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
-  return gp.getFeatureDao(tableName).countInBoundingBox(new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]), 'EPSG:4326')
+  return gp.getFeatureDao(tableName).countInBoundingBox(new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]), WORLD_GEODETIC_SYSTEM)
 }
 
 function _getWhereClause(featureDao, search) {
@@ -1450,7 +1455,7 @@ async function _getClosestFeature (layers, latlng, zoom) {
     await performSafeGeoPackageOperation(layer.path, (gp) => {
       const featureDao = gp.getFeatureDao(layer.tableName)
       const srs = featureDao.srs
-      const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
+      const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
       const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
       const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
       const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
@@ -1501,7 +1506,7 @@ function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs
   const offset = page * pageSize
-  const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox('EPSG:4326', featureDao.projection).buildEnvelope()
+  const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
   const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
   const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
   const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, sortBy ? '"' + sortBy + '"' + (desc ? ' DESC NULLS LAST' : ' ASC NULLS LAST') : undefined, pageSize, offset)
@@ -1589,10 +1594,10 @@ async function getAllFeaturesAsGeoJSON (filePath, tableName) {
 function _getAllFeatureRowsIn4326 (gp, tableName, srsId, boundingBox) {
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs
-  const projectionNeeded = srs.organization.toUpperCase() + ':' + srs.srs_id !== 'EPSG:4326'
+  const projectionNeeded = srs.organization.toUpperCase() + COLON_DELIMITER + srs.srs_id !== WORLD_GEODETIC_SYSTEM
   let each
   if (!isNil(boundingBox) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
-    each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBox, 'EPSG:4326')
+    each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBox, WORLD_GEODETIC_SYSTEM)
   } else {
     each = featureDao.queryForEach()
   }
@@ -1722,7 +1727,7 @@ function _countOfFeaturesAt (gp, tableNames, coordinate, zoom) {
     const tableName = tableNames[i]
     const featureDao = gp.getFeatureDao(tableName)
     if (featureDao.isIndexed()) {
-      count += featureDao.countInBoundingBox(getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom), 'EPSG:4326')
+      count += featureDao.countInBoundingBox(getQueryBoundingBoxForCoordinateAndZoom(coordinate, zoom), WORLD_GEODETIC_SYSTEM)
     }
   }
   return count
@@ -2046,8 +2051,8 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
         const geometryData = new GeometryData()
         geometryData.setSrsId(srs.srs_id)
         let feature = {type: 'Feature', properties: {}, geometry: updatedGeometry}
-        if (!(srs.organization === 'EPSG' && srs.organization_coordsys_id === 4326)) {
-          feature = reproject.reproject(feature, 'EPSG:4326', featureDao.projection)
+        if (!(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)) {
+          feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
         if (featureGeometry !== null) {

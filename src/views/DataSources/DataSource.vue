@@ -341,16 +341,6 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters justify="start" v-if="source.pane === 'tile' && (source.layerType === 'WMTS')">
-            <v-col>
-              <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                Layer
-              </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
-                {{source.layer.identifier}}
-              </p>
-            </v-col>
-          </v-row>
           <v-row class="pb-2" no-gutters justify="start" v-if="hasSubdomains()">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
@@ -391,7 +381,7 @@
               </v-row>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters v-if="source.layerType === 'WMS' || source.layerType === 'WMTS'">
+          <v-row class="pb-2" no-gutters v-if="source.srs != null">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Spatial reference system
@@ -417,6 +407,8 @@
               </p>
             </v-col>
           </v-row>
+          <w-m-s-layer-editor v-if="source.layerType === 'WMS'" class="mt-4" :error="source.error" :configuration="source" :update-configuration="updateSource" :set-error="setSourceError"></w-m-s-layer-editor>
+          <w-m-t-s-layer-editor v-if="source.layerType === 'WMTS'" class="mt-4" :error="source.error" :configuration="source" :update-configuration="updateSource" :set-error="setSourceError"></w-m-t-s-layer-editor>
         </v-col>
       </v-row>
     </v-sheet>
@@ -443,13 +435,19 @@ import {
   mdiPalette,
   mdiPencil,
   mdiTableEye,
-  mdiTrashCan
+  mdiTrashCan,
 } from '@mdi/js'
-import {DEFAULT_RETRY_ATTEMPTS, DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT} from '../../lib/network/HttpUtilities'
+import {
+  DEFAULT_RETRY_ATTEMPTS,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_TIMEOUT,
+} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import EditZoomRange from '../../views/Common/EditZoomRange'
 import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
 import FeatureView from '../Common/FeatureView'
+import WMSLayerEditor from '../Common/WMSLayerEditor'
+import WMTSLayerEditor from '../Common/WMTSLayerEditor'
 
 export default {
     props: {
@@ -467,6 +465,8 @@ export default {
       displayFeature: Object,
     },
     components: {
+      WMSLayerEditor,
+      WMTSLayerEditor,
       FeatureView,
       EditZoomRange,
       GeoTIFFTroubleshooting,
@@ -490,13 +490,13 @@ export default {
     },
     data () {
       return {
-        mdiChevronLeft: mdiChevronLeft,
-        mdiPencil: mdiPencil,
-        mdiCloudBraces: mdiCloudBraces,
-        mdiTrashCan: mdiTrashCan,
-        mdiExportVariant: mdiExportVariant,
-        mdiPalette: mdiPalette,
-        mdiTableEye: mdiTableEye,
+        mdiChevronLeft,
+        mdiPencil,
+        mdiCloudBraces,
+        mdiTrashCan,
+        mdiExportVariant,
+        mdiPalette,
+        mdiTableEye,
         defaultTimeout: DEFAULT_TIMEOUT,
         defaultRateLimit: DEFAULT_RATE_LIMIT,
         defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,
@@ -636,6 +636,12 @@ export default {
         window.mapcache.setDataSource({
           projectId: this.project.id,
           source: updatedSource
+        })
+      },
+      setSourceError (error) {
+        window.mapcache.setSourceError({
+          id: this.source.id,
+          error: error
         })
       }
     }

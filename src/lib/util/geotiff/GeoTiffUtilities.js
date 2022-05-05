@@ -1,6 +1,7 @@
 import { fromFile } from 'geotiff'
 import isNil from 'lodash/isNil'
 import { slice } from '../file/FileUtilities'
+import { WEB_MERCATOR_CODE } from '../../projection/ProjectionConstants'
 
 const maxByteValue = 255
 
@@ -70,7 +71,7 @@ function getCRSForGeoTiff (image) {
       } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
         crs = image.getGeoKeys()['GeographicTypeGeoKey']
       } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTCitationGeoKey') && image.getGeoKeys()['GTCitationGeoKey'].search("WGS_1984_Web_Mercator_Auxiliary_Sphere") !== -1) {
-        crs = 3857
+        crs = WEB_MERCATOR_CODE
       }
     }
   }

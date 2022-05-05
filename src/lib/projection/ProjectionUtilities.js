@@ -3,10 +3,23 @@ import path from 'path'
 import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
 import { getExtraResourcesDirectory } from '../util/file/FileUtilities'
+import {
+  WEB_MERCATOR,
+  WEB_MERCATOR_CODE,
+  WORLD_GEODETIC_SYSTEM,
+  WORLD_GEODETIC_SYSTEM_CODE,
+  WORLD_GEODETIC_SYSTEM_CRS
+} from './ProjectionConstants'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
   return matches.length > 0 ? Number.parseInt(matches[0]) : -1
+}
+
+function epsgMatches (srsA, srsB) {
+  const srsIdA = srsA.match(/\d+/g)[0]
+  const srsIdB = srsB.match(/\d+/g)[0]
+  return srsIdA === srsIdB
 }
 
 function getMetersPerUnit (name) {
@@ -24,9 +37,9 @@ function getUnits (name) {
     units = def.units
   }
   if (def != null && units == null) {
-    if (getCode(name) === 4326) {
+    if (getCode(name) === WORLD_GEODETIC_SYSTEM_CODE) {
       units = 'degrees'
-    } else if (getCode(name) === 3857) {
+    } else if (getCode(name) === WEB_MERCATOR_CODE) {
       units = 'meters'
     } else if (def.projName === 'longlat') {
       units = 'degrees'
@@ -77,7 +90,7 @@ function defineProjection (name, definition = null) {
  * @returns {{minLon: number, maxLat: number, minLat: number, maxLon: number}}
  */
 function reprojectWebMercatorBoundingBox (minLon, maxLon, minLat, maxLat, srs, density = 21) {
-  const converter = getConverter('EPSG:3857', srs)
+  const converter = getConverter(WEB_MERCATOR, srs)
   const xStep = (maxLon - minLon) / density
   const yStep = (maxLat - minLat) / density
   const steps = density + 1
@@ -121,7 +134,7 @@ function getConverter (from, to) {
 
   if (isNil(to)) {
     to = from
-    from = 'EPSG:4326'
+    from = WORLD_GEODETIC_SYSTEM
   }
 
   if (to && !proj4.defs(to)) {
@@ -131,8 +144,8 @@ function getConverter (from, to) {
   return proj4(from, to)
 }
 
-const wgs84ToWebMercator = getConverter('EPSG:4326', 'EPSG:3857')
-proj4.defs('CRS:84', getDef(4326))
+const wgs84ToWebMercator = getConverter(WORLD_GEODETIC_SYSTEM, WEB_MERCATOR)
+proj4.defs(WORLD_GEODETIC_SYSTEM_CRS, getDef(WORLD_GEODETIC_SYSTEM_CODE))
 
 function convertToWebMercator (extent) {
   let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
@@ -149,5 +162,6 @@ export {
   wgs84ToWebMercator,
   reprojectWebMercatorBoundingBox,
   getMetersPerUnit,
-  convertToWebMercator
+  convertToWebMercator,
+  epsgMatches
 }

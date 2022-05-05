@@ -79,8 +79,6 @@ import {
   clearNotifications,
   setMapZoom,
   setMapRenderingOrder,
-  setPreviewLayer,
-  clearPreviewLayer,
   addBaseMap,
   editBaseMap,
   removeBaseMap,
@@ -95,7 +93,8 @@ import {
   addStyleExtensionForTable,
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder, allowNotifications
+  updateDataSourceColumnOrder, allowNotifications,
+  addProjectState
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
@@ -177,7 +176,6 @@ import {
   CANCEL_BUILD_TILE_LAYER_COMPLETED,
   CANCEL_PROCESS_SOURCE,
   CANCEL_PROCESS_SOURCE_COMPLETED,
-  CANCEL_REPROJECT_TILE_REQUEST,
   CANCEL_SERVICE_REQUEST,
   CANCEL_TILE_REQUEST,
   CLIENT_CERTIFICATE_SELECTED,
@@ -210,8 +208,6 @@ import {
   REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_RENAME,
   REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED,
-  REQUEST_REPROJECT_TILE,
-  REQUEST_REPROJECT_TILE_COMPLETED,
   REQUEST_TILE,
   REQUEST_TILE_COMPLETED,
   SELECT_CLIENT_CERTIFICATE,
@@ -219,7 +215,7 @@ import {
   LAUNCH_USER_GUIDE,
   SEND_WINDOW_TO_FRONT,
   UNDO,
-  REDO,
+  REDO, CANCEL_TILE_COMPILATION_REQUEST, REQUEST_TILE_COMPILATION_COMPLETED, REQUEST_TILE_COMPILATION,
 } from '../electron/ipc/MapCacheIPC'
 import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
 import {
@@ -279,19 +275,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getState(key) {
     return storage.get(key)
   },
-  setState(key, state) {
-    storage.set(key, state)
-  },
-  checkStorage(testKey) {
-    try {
-      storage.set(testKey, testKey)
-      storage.get(testKey)
-      storage.delete(testKey)
-    } catch (error) {
-      throw new Error("[Vuex Electron] Storage is not valid. Please, read the docs.")
-    }
-  },
-  setupGeoPackgeContext: () => {
+  setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   getUserDataDirectory,
@@ -488,16 +472,16 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_TILE, request)
     })
   },
-  cancelTileReprojectionRequest: (id) => {
-    ipcRenderer.send(CANCEL_REPROJECT_TILE_REQUEST, {id: id})
-    ipcRenderer.removeAllListeners(REQUEST_REPROJECT_TILE_COMPLETED(id))
+  cancelTileCompilationRequest: (id) => {
+    ipcRenderer.send(CANCEL_TILE_COMPILATION_REQUEST, {id: id})
+    ipcRenderer.removeAllListeners(REQUEST_TILE_COMPILATION_COMPLETED(id))
   },
-  requestTileReprojection: (request) => {
+  requestTileCompilation: (request) => {
     return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_REPROJECT_TILE_COMPLETED(request.id), (event, result) => {
+      ipcRenderer.once(REQUEST_TILE_COMPILATION_COMPLETED(request.id), (event, result) => {
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_REPROJECT_TILE, request)
+      ipcRenderer.send(REQUEST_TILE_COMPILATION, request)
     })
   },
   renameGeoPackageTable: ({projectId, geopackageId, filePath, tableName, newTableName, type = 'feature'}) => {
@@ -831,6 +815,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   synchronizeGeoPackage,
   synchronizeDataSource,
   setActiveGeoPackage,
+  addProjectState,
   setActiveGeoPackageFeatureLayer,
   updateStyleKey,
   setDarkTheme,
@@ -839,8 +824,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   clearNotifications,
   setMapZoom,
   setMapRenderingOrder,
-  setPreviewLayer,
-  clearPreviewLayer,
   addBaseMap,
   editBaseMap,
   removeBaseMap,

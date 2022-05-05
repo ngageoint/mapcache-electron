@@ -1,15 +1,15 @@
 import path from 'path'
+
 import {
   REQUEST_RENDER,
   REQUEST_PROCESS_SOURCE,
   REQUEST_ATTACH_MEDIA,
   REQUEST_GEOTIFF_RASTER,
-  REQUEST_TILE_REPROJECTION,
   GEOPACKAGE_TABLE_RENAME,
   GEOPACKAGE_TABLE_DELETE,
   GEOPACKAGE_TABLE_COPY,
   GEOPACKAGE_TABLE_COUNT,
-  GEOPACKAGE_TABLE_SEARCH
+  GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION
 } from '../mapcacheThreadRequestTypes'
 
 /**
@@ -20,20 +20,22 @@ export default class MapcacheThreadHelper {
 
   constructor () {
     let file = path.join(__dirname, 'mapcacheThread.js')
+
     // need to replace the mapcacheThread.js's file path to the unpackaged location
     file = file.replace('app.asar', 'app.asar.unpacked').replace('app-x64.asar', 'app-x64.asar.unpacked').replace('app-arm64.asar', 'app-arm64.asar.unpacked')
+
     const os = require('os')
     const WorkerThreadPool = require('../pool/workerThreadPool').default
-    const workerCount = Math.max(2, os.cpus().length)
+    const workerCount = Math.max(2, os.cpus().length * 1.5)
     const config = []
     // perform tile rendering only
     config.push({
-      types: [REQUEST_RENDER, REQUEST_TILE_REPROJECTION]
+      types: [REQUEST_RENDER, REQUEST_TILE_COMPILATION]
     })
     // perform any task
     for (let i = 1; i < workerCount; i++) {
       config.push({
-        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_REPROJECTION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY, GEOPACKAGE_TABLE_COUNT, GEOPACKAGE_TABLE_SEARCH]
+        types: [REQUEST_RENDER, REQUEST_PROCESS_SOURCE, REQUEST_ATTACH_MEDIA, REQUEST_GEOTIFF_RASTER, REQUEST_TILE_COMPILATION, GEOPACKAGE_TABLE_RENAME, GEOPACKAGE_TABLE_DELETE, GEOPACKAGE_TABLE_COPY, GEOPACKAGE_TABLE_COUNT, GEOPACKAGE_TABLE_SEARCH]
       })
     }
 
@@ -143,13 +145,14 @@ export default class MapcacheThreadHelper {
   }
 
   /**
-   * Reprojects a tile reprojection request
+   * Compile tiles
    * @param data
+   * @param sender
    * @returns {Promise<unknown>}
    */
-  reprojectTile (data) {
+  compileTiles (data, sender) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: REQUEST_TILE_REPROJECTION, data: data}, null, (err, result) => {
+      this.threadPool.addTask({id: data.id, type: REQUEST_TILE_COMPILATION, data: data}, sender, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -241,10 +244,11 @@ export default class MapcacheThreadHelper {
   /**
    * Cancels a task, will terminate the thread running the task, if needed
    * @param id
+   * @param forceRestart
    * @returns {Promise<void>}
    */
-  async cancelTask (id) {
-    await this.threadPool.cancelTask(id)
+  async cancelTask (id, forceRestart) {
+    await this.threadPool.cancelTask(id, forceRestart)
   }
 
   /**

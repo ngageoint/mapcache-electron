@@ -45,35 +45,31 @@ async function getZoomToOptionsForGeoPackageTable (geopackage, table) {
   }
 }
 
-function zoomToExtent (extent, minZoom = 0, maxZoom = 20, isPreview = false) {
+function zoomToExtent (extent, minZoom = 0, maxZoom = 20) {
   if (extent != null) {
-    if (isPreview) {
-      EventBus.$emit(EventBus.EventTypes.PREVIEW_ZOOM_TO, extent, minZoom, maxZoom)
-    } else {
-      EventBus.$emit(EventBus.EventTypes.ZOOM_TO, extent, minZoom, maxZoom)
-    }
+    EventBus.$emit(EventBus.EventTypes.ZOOM_TO, extent, minZoom, maxZoom)
   }
 }
 
 
-function zoomToSource (dataSource, isPreview = false) {
+function zoomToSource (dataSource) {
   const {extent, minZoom, maxZoom} = getZoomToOptionsForDataSource(dataSource)
-  zoomToExtent(extent, minZoom, maxZoom, isPreview)
+  zoomToExtent(extent, minZoom, maxZoom)
 }
 
-function zoomToBaseMap (baseMap, isPreview = false) {
+function zoomToBaseMap (baseMap) {
   const {extent, minZoom, maxZoom} = getZoomToOptionsForBaseMap(baseMap)
-  zoomToExtent(extent, minZoom, maxZoom, isPreview)
+  zoomToExtent(extent, minZoom, maxZoom)
 }
 
-async function zoomToGeoPackageTable (geopackage, table, isPreview = false) {
+async function zoomToGeoPackageTable (geopackage, table) {
   const {extent, minZoom, maxZoom} = await getZoomToOptionsForGeoPackageTable(geopackage, table)
-  zoomToExtent(extent, minZoom, maxZoom, isPreview)
+  zoomToExtent(extent, minZoom, maxZoom)
 }
 
-async function zoomToGeoPackageFeature (path, table, featureId, isPreview = false) {
+async function zoomToGeoPackageFeature (path, table, featureId) {
   window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function ({extent, type}) {
-    zoomToExtent(extent, 0, type === 'Point' ? 16 : 18, isPreview)
+    zoomToExtent(extent, 0, type === 'Point' ? 16 : 18)
   })
 }
 

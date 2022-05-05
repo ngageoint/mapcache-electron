@@ -1,5 +1,5 @@
 <template>
-  <feature-tables id="feature-table-view" show-items-per-page :project="project" :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :table="table" :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-tables>
+  <feature-tables v-if="project != null" id="feature-table-view" show-items-per-page :project="project" :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :table="table" :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-tables>
 </template>
 
 <script>
@@ -14,7 +14,7 @@ export default {
   components: {FeatureTables},
   computed: {
     ...mapState({
-      project(state) {
+      project (state) {
         return state.Projects[this.$route.params.id]
       },
       darkTheme (state) {

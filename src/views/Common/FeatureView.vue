@@ -67,12 +67,12 @@
           <v-row class="pb-2"  v-if="featureImageObjectUrl" no-gutters>
             <v-img class="clickable" @click="showFeatureMediaAttachments = true" :src="featureImageObjectUrl" height="200" max-height="200"/>
           </v-row>
-          <v-row no-gutters class="pl-4 pr-4 pt-2">
+          <v-row no-gutters class="pl-4 pr-4 pt-2" v-if="featureViewData != null">
             <v-col>
               <v-row class="pb-2" no-gutters justify="space-between">
                 <v-col>
                   <v-row no-gutters align-content="center" class="align-center">
-                    <v-btn :disabled="featureViewData.feature.geometry == null" @click="zoomTo" class="mr-2" icon v-if="featureViewData.style.style || featureViewData.style.icon">
+                    <v-btn :disabled="featureViewData == null || featureViewData.feature == null || featureViewData.feature.geometry == null" @click="zoomTo" class="mr-2" icon v-if="featureViewData.style.style || featureViewData.style.icon">
                       <geometry-style-svg v-if="featureViewData.style.style" :color="featureViewData.style.style.color" :fill-color="featureViewData.style.style.fillColor" :fill-opacity="featureViewData.style.style.fillOpacity" :geometry-type="featureViewData.geometryTypeCode"/>
                       <img v-else-if="featureViewData.style.icon" class="icon-box" style="width: 25px; height: 25px;" :src="featureViewData.style.icon.url"/>
                     </v-btn>
@@ -273,7 +273,7 @@ export default {
               return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
             })
           }
-          featureViewData.canStyle = featureViewData.feature.geometry != null
+          featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
           return featureViewData
         },
         default: {

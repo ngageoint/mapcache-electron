@@ -4,14 +4,16 @@ import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
 import { buildFeatureLayer } from '../geopackage/GeoPackageFeatureTableBuilder'
 import { buildTileLayer } from '../geopackage/GeoPackageTileTableBuilder'
-import { setSourceError } from '../vue/vuex/ProjectActions'
-import { createUniqueID } from '../util/UniqueIDUtilities'
-import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
-import { convertToWebMercator, reprojectWebMercatorBoundingBox } from '../projection/ProjectionUtilities'
-import { GET_USER_DATA_DIRECTORY, WORKER_BUILD_FEATURE_LAYER, WORKER_BUILD_FEATURE_LAYER_COMPLETED, WORKER_BUILD_FEATURE_LAYER_STATUS, WORKER_BUILD_TILE_LAYER, WORKER_BUILD_TILE_LAYER_COMPLETED, WORKER_BUILD_TILE_LAYER_STATUS, WORKER_READY } from '../electron/ipc/MapCacheIPC'
 import {
-  convertPbfToDataUrl,
-} from '../util/rendering/MBTilesUtilities'
+  GET_USER_DATA_DIRECTORY,
+  WORKER_BUILD_FEATURE_LAYER,
+  WORKER_BUILD_FEATURE_LAYER_COMPLETED,
+  WORKER_BUILD_FEATURE_LAYER_STATUS,
+  WORKER_BUILD_TILE_LAYER,
+  WORKER_BUILD_TILE_LAYER_COMPLETED,
+  WORKER_BUILD_TILE_LAYER_STATUS,
+  WORKER_READY
+} from '../electron/ipc/MapCacheIPC'
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
@@ -21,7 +23,7 @@ Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 
 contextBridge.exposeInMainWorld('mapcache', {
-  setupGeoPackgeContext: () => {
+  setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   getUserDataDirectory,
@@ -52,12 +54,5 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   sendReady: () => {
     ipcRenderer.send(WORKER_READY)
-  },
-  createUniqueID,
-  getWebMercatorBoundingBoxFromXYZ,
-  tileIntersectsXYZ,
-  reprojectWebMercatorBoundingBox,
-  setSourceError,
-  convertToWebMercator,
-  convertPbfToDataUrl
+  }
 })

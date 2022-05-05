@@ -213,7 +213,7 @@
             </v-card>
           </template>
         </v-hover>
-        <v-hover v-if="configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer'">
+        <v-hover v-if="configuration.layerType === 'WMS' || configuration.layerType === 'WMTS' || configuration.layerType === 'XYZServer'">
           <template v-slot="{ hover }">
             <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
@@ -294,7 +294,7 @@
               </p>
             </v-col>
           </v-row>
-          <v-row class="pb-2" no-gutters v-if="!baseMap.readonly && (configuration.layerType === 'WMS' || configuration.layerType === 'XYZServer')">
+          <v-row class="pb-2" no-gutters v-if="!baseMap.readonly && (configuration.layerType === 'WMS' || configuration.layerType === 'WMTS' || configuration.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Network settings
@@ -310,6 +310,8 @@
               </p>
             </v-col>
           </v-row>
+          <w-m-s-layer-editor v-if="configuration.layerType === 'WMS'" class="mt-4" :configuration="configuration" :error="baseMap.error" :update-configuration="updateConfiguration" :set-error="setBaseMapError"></w-m-s-layer-editor>
+          <w-m-t-s-layer-editor v-if="configuration.layerType === 'WMTS'" class="mt-4" :configuration="configuration" :error="baseMap.error" :update-configuration="updateConfiguration" :set-error="setBaseMapError"></w-m-t-s-layer-editor>
         </v-col>
       </v-row>
     </v-sheet>
@@ -330,6 +332,8 @@ import {mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, md
 import {DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS} from '../../lib/network/HttpUtilities'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {zoomToBaseMap} from '../../lib/leaflet/map/ZoomUtilities'
+import WMSLayerEditor from '../Common/WMSLayerEditor'
+import WMTSLayerEditor from '../Common/WMTSLayerEditor'
 
 export default {
     props: {
@@ -346,6 +350,8 @@ export default {
       back: Function
     },
     components: {
+      WMTSLayerEditor,
+      WMSLayerEditor,
       GeoTIFFTroubleshooting,
       NumberPicker,
       BaseMapTroubleshooting,
@@ -437,6 +443,12 @@ export default {
         const baseMap = cloneDeep(this.baseMap)
         baseMap.layerConfiguration = newConfiguration
         window.mapcache.editBaseMap(baseMap)
+      },
+      setBaseMapError (error) {
+        window.mapcache.setSourceError({
+          id: this.baseMap.id,
+          error: error
+        })
       }
     }
   }

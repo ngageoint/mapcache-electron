@@ -250,10 +250,10 @@ export default {
         while (this.geoPackageFiles.length > 0) {
           geopackageIds.push(await window.mapcache.addGeoPackage({projectId: id, filePath: this.geoPackageFiles.pop()}))
         }
-        this.$nextTick(() => {
+        setTimeout(() => {
           window.mapcache.showProject(id, geopackageIds)
           this.reset()
-        })
+        }, 100)
       },
       onClickNewProject (event, projectName = 'New project') {
         this.projectName = projectName

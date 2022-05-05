@@ -234,9 +234,6 @@
       },
       updateOverpassBoundingBox(boundingBox) {
         this.overpassBoundingBox = boundingBox
-        if (this.previewing) {
-          this.sendLayerPreview()
-        }
       },
     },
     mounted() {

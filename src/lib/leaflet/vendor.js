@@ -15,16 +15,18 @@ import { DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, SERVICE_TY
 import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
-import { getIntersection } from '../util/xyz/XYZTileUtilities'
+import { getClippingRegion } from '../util/xyz/XYZTileUtilities'
 import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
 import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
 import { setupXYZGrid } from './map/grid/xyz/xyz'
-import { clipImage, stitchTileData } from '../../lib/util/tile/TileUtilities'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import initSmoothWheel from './map/improvements/Leaflet.SmoothWheelZoom'
+import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap'
+import { WEB_MERCATOR, WEB_MERCATOR_CODE } from '../projection/ProjectionConstants'
 
 initSmoothWheel(L)
+tileLayerNoGap(L)
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -50,9 +52,9 @@ L.Map.mergeOptions({
 /**
  * The map cache map layer is a wrapper for a MapCache Layer object. This object has functions for handling the rendering of EPSG:3857 tiles
  */
-L.GridLayer.MapCacheLayer = L.GridLayer.extend({
+L.TileLayer.MapCacheLayer = L.TileLayer.extend({
   initialize: function (options) {
-    L.GridLayer.prototype.initialize.call(this, options)
+    L.TileLayer.prototype.initialize.call(this, null, options)
     this.layer = options.layer
     this.id = options.layer.id
     this.maxFeatures = options.maxFeatures
@@ -131,37 +133,33 @@ L.GridLayer.MapCacheLayer = L.GridLayer.extend({
  */
 L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   initialize: function (options) {
+    this.originalOptions = options
     L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
     this.outstandingTileRequests = {}
     this.layer = options.layer
     this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
     this.id = options.layer.id
-    this.isPreview = !isNil(options.isPreview) ? options.preview : false
     this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
     this.timeout = !isNil(this.layer.timeoutMs) ? this.layer.timeoutMs : DEFAULT_TIMEOUT
     this.error = null
     this.axiosRequestScheduler = getAxiosRequestScheduler(this.layer.rateLimit || DEFAULT_RATE_LIMIT)
     this.layer.setRenderer(constructRenderer(this.layer, false))
-    this.requiresReprojection = !isNil(this.layer.srs) && !this.layer.srs.endsWith(':3857')
     this.on('tileunload', (event) => {
       event.tile.onload = null
       event.tile.src = ''
       if (event.tile.requestId != null && this.outstandingTileRequests[event.tile.requestId] != null) {
-        this.outstandingTileRequests[event.tile.requestId].cancelled = true
-        this.outstandingTileRequests[event.tile.requestId].done('Cancelled', event.tile)
-        if (this.outstandingTileRequests[event.tile.requestId].activeTileRequest != null) {
-          this.outstandingTileRequests[event.tile.requestId].activeTileRequest.cancel()
-        }
+        this.outstandingTileRequests[event.tile.requestId].cancel()
         delete this.outstandingTileRequests[event.tile.requestId]
       }
     })
+    this.srs = WEB_MERCATOR
   },
   async testConnection (ignoreTimeoutError = true) {
     const options = {
       timeout: this.timeout,
       withCredentials: this.layer.withCredentials
     }
-
+    // TODO: add in test support for WMTS
     if (this.layer.layerType === XYZ_SERVER) {
       options.subdomains = this.layer.subdomains || []
       let {error} = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.XYZ, options)
@@ -214,91 +212,125 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
     }
   },
-
-  /**
-   * Determines the layer's clipping region
-   * @param coords
-   * @param webMercatorBoundingBox
-   * @return {{intersection: (null|{maxLongitude: number, minLatitude: number, minLongitude: number, maxLatitude: number}), tileWidth: number, tileBounds: {maxLongitude, minLatitude, minLongitude, maxLatitude}, tileHeight: number}}
-   */
-  getClippingRegion (coords, webMercatorBoundingBox) {
-    const tileBounds = {
-      minLongitude: webMercatorBoundingBox.minLon,
-      maxLongitude: webMercatorBoundingBox.maxLon,
-      minLatitude: webMercatorBoundingBox.minLat,
-      maxLatitude: webMercatorBoundingBox.maxLat,
-    }
-
-    const tileWidth = tileBounds.maxLongitude - tileBounds.minLongitude
-    const tileHeight = tileBounds.maxLatitude - tileBounds.minLatitude
-
-    let layerBounds = {
-      minLongitude: this.webMercatorLayerBounds.minLon,
-      maxLongitude: this.webMercatorLayerBounds.maxLon,
-      minLatitude: this.webMercatorLayerBounds.minLat,
-      maxLatitude: this.webMercatorLayerBounds.maxLat,
-    }
-
-    // clips tile so that only the intersection of the tile and the user specified bounds are drawn
-    return {
-      intersection: getIntersection(tileBounds, layerBounds),
-      tileBounds,
-      tileWidth,
-      tileHeight
-    }
-  },
-
   /**
    * Loads the dataUrl into the image.
    * @param dataUrl
    * @param coords
    * @param tile
-   * @param done
+   * @param resolve
+   * @param reject
    */
-  loadImage (dataUrl, coords, tile, done) {
+  loadImage (dataUrl, coords, tile, resolve, reject) {
     tile.onload = () => {
-      done(null, tile)
+      resolve()
     }
     tile.onerror = (e) => {
-      done(e, tile)
+      reject(e)
     }
     tile.src = dataUrl
   },
-
-  /**
-   * Handles reprojecting the tile into 3857,
-   * @param requestId
-   * @param dataUrl
-   * @param bbox
-   * @param srs
-   * @param size
-   * @param webMercatorBoundingBox
-   * @return {Promise<unknown>}
-   */
-  async reprojectTile (requestId, dataUrl, bbox, srs, size, webMercatorBoundingBox) {
+  async compileTiles (id, tiles, size, clippingRegion, targetSrs, targetBounds) {
     return new Promise((resolve, reject) => {
-      if (this.requiresReprojection) {
-        window.mapcache.requestTileReprojection({
-          id: requestId,
-          sourceTile: dataUrl,
-          sourceBoundingBox: bbox,
-          sourceSrs: srs,
-          targetSrs: 'EPSG:3857',
-          targetWidth: size.x,
-          targetHeight: size.y,
-          targetBoundingBox: webMercatorBoundingBox
-        }).then(result => {
-          resolve(result.base64Image)
-        }).catch(e => {
-          reject(e)
-        })
-      } else {
-        resolve(dataUrl)
+      const request = {
+        id,
+        tiles,
+        size,
+        clippingRegion,
+        targetSrs,
+        targetBounds
       }
+      window.mapcache.requestTileCompilation(request).then(result => {
+        resolve(result.base64Image)
+      }).catch(e => {
+        reject(e)
+      })
     })
   },
   dataUrlValid (dataUrl) {
     return !isNil(dataUrl) && dataUrl.startsWith('data:image')
+  },
+  _internalCreateTile (requestId, tile, coords, abortSignal) {
+    const cancellableTileRequests = []
+    const ret = {
+      cancelled: false,
+      compileRequestSent: false
+    }
+    ret.signal = new Promise((resolve, reject) => {
+      abortSignal.addEventListener('abort', () => {
+        ret.cancelled = true
+        if (ret.compileRequestSent) {
+          window.mapcache.cancelTileCompilationRequest(requestId)
+        }
+        cancellableTileRequests.forEach(tileRequest => {
+          tileRequest.cancel()
+        })
+        reject('Cancelled.')
+      })
+      // if this source is errored, do not allow tile requests
+      if (this.hasError()) {
+        resolve(null)
+      } else {
+        const size = this.getTileSize()
+        // get web mercator bounding box
+        const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+        // get tile requests
+        let requests = this.layer.getTileRequestData(webMercatorBoundingBox, coords, size, (bbox, srs) => {
+          let projectedBoundingBox
+          if (srs.endsWith(WEB_MERCATOR_CODE)) {
+            projectedBoundingBox = bbox
+          } else {
+            projectedBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, srs)
+          }
+          return projectedBoundingBox
+        })
+
+        // create promises for each tile request
+        if (requests != null && requests.length > 0) {
+          // iterate over each web request and attempt to perform
+          const promises = []
+          requests.forEach(request => {
+            promises.push(new Promise(resolve => {
+              if (!ret.cancelled) {
+                const cancellableTileRequest = new CancellableTileRequest()
+                cancellableTileRequests.push(cancellableTileRequest)
+                cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({dataUrl, error}) => {
+                  resolve({dataUrl, error, request})
+                })
+              } else {
+                resolve()
+              }
+            }))
+          })
+          Promise.allSettled(promises).then(results => {
+            if (!ret.cancelled) {
+              const tiles = []
+              // handle results
+              results.forEach(result => {
+                if (result.status === 'fulfilled') {
+                  const {dataUrl, error, request} = result.value
+                  if (!error && this.dataUrlValid(dataUrl)) {
+                    request.dataUrl = dataUrl
+                    tiles.push(request)
+                  }
+                }
+              })
+              if (tiles.length > 0 && !ret.cancelled) {
+                ret.compileRequestSent = true
+                const clippingRegion = getClippingRegion(webMercatorBoundingBox, this.webMercatorLayerBounds)
+                this.compileTiles(requestId, tiles, size, clippingRegion, this.srs, webMercatorBoundingBox).then(dataUrl => {
+                  this.loadImage(dataUrl, coords, tile, resolve, reject)
+                })
+              } else {
+                reject(new Error('No data retrieved.'))
+              }
+            }
+          })
+        } else {
+          reject(new Error('No layers.'))
+        }
+      }
+    });
+    return ret
   },
   /**
    * Creates the tile for the given xyz coordinates
@@ -309,10 +341,10 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   createTile (coords, done) {
     // create the tile img
     const requestId = window.mapcache.createUniqueID()
-    this.outstandingTileRequests[requestId] = {
-      done,
-      cancelled: false
-    }
+    const tile = document.createElement('img')
+    tile.requestId = requestId
+    tile.alt = ''
+    tile.setAttribute('role', 'presentation')
 
     const doneWrapper = (e, t) => {
       if (this.outstandingTileRequests[requestId] && !this.outstandingTileRequests[requestId].cancelled) {
@@ -320,77 +352,26 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       }
       delete this.outstandingTileRequests[requestId]
     }
-
-    const tile = document.createElement('img')
-    tile.requestId = requestId
-    tile.alt = ''
-    tile.setAttribute('role', 'presentation')
-    // if this source is errored, do not allow tile requests
-    if (this.hasError()) {
-      done(null, null)
-    } else {
-      const size = this.getTileSize()
-      const cancellableTileRequest = new CancellableTileRequest()
-      this.outstandingTileRequests[requestId].activeTileRequest = cancellableTileRequest
-      // get tile request data
-      const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
-      let projectedBoundingBox
-      if (this.requiresReprojection) {
-        projectedBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(webMercatorBoundingBox.minLon, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLat, this.layer.srs)
-      } else {
-        projectedBoundingBox = webMercatorBoundingBox
-      }
-      let requestData = this.layer.getTileRequestData(webMercatorBoundingBox, coords, size, projectedBoundingBox)
-      if (requestData != null && requestData.webRequests.length > 0) {
-        // iterate over each web request and attempt to perform
-        const promises = []
-        requestData.webRequests.forEach(request => {
-          promises.push(new Promise(resolve => {
-            cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({dataUrl, error}) => {
-              resolve({dataUrl, error, request})
-            })
-          }))
-        })
-        Promise.allSettled(promises).then(results => {
-          const tiles = []
-          // handle results
-          results.forEach(result => {
-            if (result.status === 'fulfilled') {
-              const {dataUrl, error, request} = result.value
-              if (!error && this.dataUrlValid(dataUrl)) {
-                tiles.push({
-                  bounds: request.tileBounds,
-                  width: request.width,
-                  height: request.height,
-                  dataUrl: dataUrl
-                })
-              }
-            }
-          })
-          if (tiles.length > 0) {
-            // stitch together the web requests
-            const canvas = document.createElement('canvas')
-            canvas.width = size.x
-            canvas.height = size.y
-            stitchTileData(canvas, tiles, size, requestData.bbox).then(dataUrl => {
-              this.reprojectTile(requestId, dataUrl, requestData.bbox, requestData.srs, size, webMercatorBoundingBox).then(reprojectedImage => {
-                clipImage(canvas, reprojectedImage, this.getClippingRegion(coords, webMercatorBoundingBox), size).then(clippedImage => {
-                  this.loadImage(clippedImage, coords, tile, done)
-                }).catch(e => {
-                  doneWrapper(e, tile)
-                })
-              }).catch(e => {
-                doneWrapper(e, tile)
-              })
-            })
-          } else {
-            doneWrapper(new Error('No data retrieved.'), tile)
-          }
-        })
-      } else {
-        doneWrapper(null, null)
+    const abortController = new AbortController()
+    const createTilePromise = this._internalCreateTile(requestId, tile, coords, abortController.signal)
+    this.outstandingTileRequests[requestId] = {
+      done: doneWrapper,
+      cancelled: false,
+      cancel: () => {
+        try {
+          this.outstandingTileRequests[requestId].cancelled = true
+          abortController.abort()
+          // eslint-disable-next-line no-empty, no-unused-vars
+        } catch (e) {
+          console.error(e)
+        }
       }
     }
+    createTilePromise.signal.then(() => {
+      doneWrapper(null, tile)
+    }).catch((e) => {
+      doneWrapper(e, tile)
+    })
     return tile
   },
   update: function (layer) {
@@ -416,7 +397,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       this.options.maxZoom = layer.maxZoom
       this._map._removeZoomLimit(this)
       this._map._addZoomLimit(this)
-      const currentZoom = this._map.getZoom()
+      const currentZoom = Math.floor(this._map.getZoom())
 
       if (currentZoom < layer.minZoom || currentZoom > layer.maxZoom) {
         this._removeAllTiles()
@@ -431,6 +412,11 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       this.error = null
     }
     this.layer.update(layer)
+    this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
+    let southWest = L.latLng(this.layer.extent[1], this.layer.extent[0])
+    let northEast = L.latLng(this.layer.extent[3], this.layer.extent[2])
+    this.originalOptions.bounds = L.latLngBounds(southWest, northEast)
+    L.setOptions(this, this.originalOptions)
   }
 })
 

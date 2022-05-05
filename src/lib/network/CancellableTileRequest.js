@@ -1,14 +1,15 @@
 import axios from 'axios'
 import isNil from 'lodash/isNil'
 import { USER_CANCELLED_MESSAGE, isNotFoundError } from './HttpUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
 
 export default class CancellableTileRequest {
   cancelled = false
-  source
   axiosRequestScheduler
   requestTimeoutFunction
   responseReceived = false
   convertPbfToDataUrl
+  requests = []
 
   constructor (isElectron = false) {
     if (isElectron) {
@@ -25,15 +26,18 @@ export default class CancellableTileRequest {
    */
   cancel () {
     this.cancelled = true
-    if (!isNil(this.source)) {
-      const token = this.source.token
-      this.source.cancel(USER_CANCELLED_MESSAGE)
+    const keys = Object.keys(this.requests)
+    while (keys.length > 0) {
+      const reqId = keys.shift()
+      const request = this.requests[reqId]
+      delete this.requests[reqId]
+      const token = request.token
+      request.cancel(USER_CANCELLED_MESSAGE)
       if (!isNil(this.axiosRequestScheduler)) {
         this.axiosRequestScheduler.cancel(token)
       }
     }
   }
-
 
   /**
    * Returns the data url of the response, or an error
@@ -49,19 +53,28 @@ export default class CancellableTileRequest {
     let dataUrl = null
     let attempts = 0
     let error = null
-
     this.axiosRequestScheduler = axiosRequestScheduler
     while (!this.cancelled && isNil(dataUrl) && attempts <= retryAttempts) {
+      const reqId = createUniqueID()
       try {
         const CancelToken = axios.CancelToken
-        this.source = CancelToken.source()
+        const source = CancelToken.source()
+        this.requests[reqId] = source
         let response = await axiosRequestScheduler.getAxiosInstance()({
           url: url,
           responseType: 'arraybuffer',
-          cancelToken: this.source.token,
+          cancelToken: source.token,
           timeout: timeout,
           withCredentials
         })
+        delete this.requests[reqId]
+        const contentLength = response.headers['content-length'] || response.headers['Content-Length']
+        if (contentLength != null && contentLength === 0) {
+          dataUrl = null
+          error = null
+          break
+        }
+
         const dataBuffer = Buffer.from(response.data)
         if (response.headers['content-type'] === 'image/pbf' || response.headers['content-type'] === 'application/x-protobuf') {
           dataUrl = this.convertPbfToDataUrl(dataBuffer, size.x, size.y)
@@ -86,6 +99,7 @@ export default class CancellableTileRequest {
           break
         }
       } finally {
+        delete this.requests[reqId]
         attempts++
       }
     }

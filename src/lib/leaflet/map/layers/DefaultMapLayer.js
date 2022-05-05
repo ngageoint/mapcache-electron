@@ -39,6 +39,6 @@ export default class DefaultMapLayer {
       options.opacity = layer.opacity
     }
 
-    return new L.GridLayer.MapCacheLayer(options)
+    return new L.TileLayer.MapCacheLayer(options)
   }
 }

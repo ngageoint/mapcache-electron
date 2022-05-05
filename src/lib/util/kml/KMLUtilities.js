@@ -9,6 +9,7 @@ import GeoTIFFSource from '../../source/geotiff/GeoTIFFSource'
 import { getRemoteImage } from '../../network/NetworkRequestUtils'
 import { createCanvas, disposeCanvas, disposeImage, makeImage } from '../canvas/CanvasUtilities'
 import { base64toUInt8Array } from '../Base64Utilities'
+import { WORLD_GEODETIC_SYSTEM_CODE } from '../../projection/ProjectionConstants'
 
 /**
  * Converts a 4326 jimp supported image into a geotiff
@@ -33,7 +34,7 @@ async function convert4326ImageToGeoTIFF (filePath, geotiffFilePath, extent) {
          ModelPixelScale: [(extent[2] - extent[0]) / image.width(), (extent[3] - extent[1]) / image.height(), 0],
          ModelTiepoint: [0, 0, 0, extent[0], extent[3], 0],
          PhotometricInterpretation: 2,
-         GeographicTypeGeoKey: 4326,
+         GeographicTypeGeoKey: WORLD_GEODETIC_SYSTEM_CODE,
          GeogCitationGeoKey: 'WGS 84',
          GTModelTypeGeoKey: 2,
        }

@@ -5,7 +5,8 @@ import { isRemote } from '../../layer/LayerTypes'
 import { getOrCreateGeoPackageForApp } from '../../geopackage/GeoPackageCommon'
 
 async function newProject({id, name, directory}) {
-  return store.dispatch('Projects/newProject', {id, name, directory})
+  await store.dispatch('Projects/newProject', {id, name, directory})
+  return store.dispatch('UIState/addProjectState', {projectId: id})
 }
 
 /**

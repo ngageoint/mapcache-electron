@@ -1,6 +1,8 @@
 import NetworkTileLayer from './NetworkTileLayer'
 import { generateUrlForTile } from '../../util/xyz/XYZTileUtilities'
 import { XYZ_SERVER } from '../LayerTypes'
+import { getTilesForExtentAtZoom } from '../../util/tile/WGS84TileBoundingBoxUtils'
+import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../projection/ProjectionConstants'
 
 export default class XYZServerLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -8,6 +10,7 @@ export default class XYZServerLayer extends NetworkTileLayer {
     this.subdomains = configuration.subdomains
     this.minZoom = configuration.minZoom || 0
     this.maxZoom = configuration.maxZoom || 20
+    this.srs = configuration.srs || WEB_MERCATOR
   }
 
   get configuration () {
@@ -17,7 +20,8 @@ export default class XYZServerLayer extends NetworkTileLayer {
         layerType: XYZ_SERVER,
         subdomains: this.subdomains,
         minZoom: this.minZoom,
-        maxZoom: this.maxZoom
+        maxZoom: this.maxZoom,
+        srs: this.srs
       }
     }
   }
@@ -28,6 +32,7 @@ export default class XYZServerLayer extends NetworkTileLayer {
     this.extent = configuration.extent || [-180, -90, 180, 90]
     this.minZoom = configuration.minZoom || 0
     this.maxZoom = configuration.maxZoom || 20
+    this.srs = configuration.srs || WEB_MERCATOR
   }
 
   getTileUrl (coords) {
@@ -39,18 +44,39 @@ export default class XYZServerLayer extends NetworkTileLayer {
    * @param webMercatorBoundingBox
    * @param coords
    * @param size
+   * @param projectedBoundingBoxFunction
    */
-  getTileRequestData (webMercatorBoundingBox, coords, size) {
-    return {
-      srs: 'EPSG:3857',
-      requiresReprojection: false,
-      bbox: webMercatorBoundingBox,
-      webRequests: [{
+  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBoxFunction) {
+    const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, this.srs)
+
+    const requests = []
+
+    // this xyz server is in 4326, so we should request data appropriately
+    if (this.srs === WORLD_GEODETIC_SYSTEM) {
+      // need to get coords in 4326 for the projectedBoundingBox
+      const zoom = coords.z
+      const tiles = getTilesForExtentAtZoom([projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat], zoom)
+      tiles.forEach((tile) => {
+        requests.push({
+          url: this.getTileUrl(tile.coords),
+          width: size.x,
+          height: size.y,
+          tileBounds: tile.extent,
+          imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+          tileSRS: this.srs
+        })
+      })
+    } else {
+      requests.push({
         url: this.getTileUrl(coords),
         width: size.x,
         height: size.y,
-        tileBounds: [webMercatorBoundingBox.minLon, webMercatorBoundingBox.minLat, webMercatorBoundingBox.maxLon, webMercatorBoundingBox.maxLat]
-      }],
+        tileBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+        imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+        tileSRS: this.srs
+      })
     }
+
+    return requests
   }
 }

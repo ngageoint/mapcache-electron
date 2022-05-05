@@ -12385,7 +12385,7 @@ vuetify@2.5.10:
 
 "vuex-electron@git://github.com/caldwellc/vuex-electron.git#master":
   version "1.0.3"
-  resolved "git://github.com/caldwellc/vuex-electron.git#0ebd1970e6677fd3afad4e13a4c22e79fdc75a40"
+  resolved "git://github.com/caldwellc/vuex-electron.git#42d5d5708da6291b87ac684cff8423b1e5b4cf2d"
   dependencies:
     deepmerge "^2.1.1"
     electron-store "^8.0.1"

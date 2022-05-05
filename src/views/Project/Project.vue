@@ -82,17 +82,9 @@
           <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null" :results="nominatimSearchResults" :back="back" :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
-          <preview-map
-            :visible="previewLayer != null && tabId === 1"
-            :project="project"
-            :preview-layer="previewLayer"
-            :resizeListener="tabId"
-            :get-map-center-and-zoom="getMapCenterAndZoom"
-            :dark-theme="darkTheme">
-          </preview-map>
           <leaflet-map
             ref="map"
-            :visible="previewLayer == null || tabId !== 1"
+            visible
             :geopackages="project.geopackages"
             :sources="project.sources"
             :project-id="project.id"
@@ -150,7 +142,6 @@ import isNil from 'lodash/isNil'
 import Vue from 'vue'
 import EventBus from '../../lib/vue/EventBus'
 import LeafletMap from '../Map/LeafletMap'
-import PreviewMap from '../Map/PreviewMap'
 import Settings from '../Settings/Settings'
 import GeoPackages from '../GeoPackage/GeoPackages'
 import DataSources from '../DataSources/DataSources'
@@ -222,15 +213,6 @@ export default {
           }
           return project
         },
-        previewLayer (state) {
-          const projectId = this.$route.params.id
-          let project = state.UIState[projectId]
-          let previewLayer
-          if (!isNil(project)) {
-            previewLayer = project.previewLayer
-          }
-          return previewLayer
-        },
         darkTheme (state) {
           let isDark = false
           const projectId = this.$route.params.id
@@ -296,7 +278,6 @@ export default {
       LeafletMap,
       Settings,
       GeoPackages,
-      PreviewMap,
       CertAuth
     },
     methods: {
@@ -468,7 +449,6 @@ export default {
         })
       })
       window.mapcache.clearNotifications({projectId: this.project.id})
-      window.mapcache.clearPreviewLayer({projectId: this.project.id})
       this.setupDragAndDrop()
       window.mapcache.removeClosingProjectWindowListener()
       window.mapcache.removeSelectClientCertificateListener()

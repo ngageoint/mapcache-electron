@@ -9,7 +9,6 @@ const Events = {
   CONFIRMATION_MESSAGE_RESPONSE: (id) => 'confirmation-message-response-' + id,
   ALERT_MESSAGE: 'alert-message',
   ZOOM_TO: 'zoom-to',
-  PREVIEW_ZOOM_TO: 'preview-zoom-to',
   REORDER_MAP_LAYERS: 'reorder-map-layers',
   SHOW_FEATURE_TABLE: 'show-feature-table',
   NETWORK_ERROR: 'network-error',

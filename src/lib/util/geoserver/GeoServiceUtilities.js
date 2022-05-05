@@ -4,6 +4,12 @@ import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import keys from 'lodash/keys'
 import axios from 'axios'
+import {
+  COLON_DELIMITER,
+  WEB_MERCATOR, WEB_MERCATOR_CODE,
+  WORLD_GEODETIC_SYSTEM, WORLD_GEODETIC_SYSTEM_CODE,
+  WORLD_GEODETIC_SYSTEM_CRS, WORLD_GEODETIC_SYSTEM_CRS_CODE
+} from '../../projection/ProjectionConstants'
 
 const WMS_VERSIONS = {
   V1_3_0: '1.3.0',
@@ -23,7 +29,7 @@ const supportedImageFormats = ['image/png', 'image/jpg', 'image/jpeg', 'image/gi
 const supportedWFSResponseFormats = ['application/json', 'json', 'geojson', 'gml32', 'text/xml; subtype=gml/3.2', 'gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1', 'gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2']
 
 function getBoundingBoxForWMSRequest (bbox, version, srs) {
-  if (srs.endsWith(':4326') && version === WMS_VERSIONS.V1_3_0) {
+  if (srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE) && version === WMS_VERSIONS.V1_3_0) {
     return [bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon].join(',')
   } else {
     return [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat].join(',')
@@ -85,12 +91,12 @@ function getRecommendedFormat (formats) {
  * @returns {string|*}
  */
 function getRecommendedSrs (srsList) {
-  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':3857')) !== -1) {
-    return 'EPSG:3857'
-  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':4326')) !== -1) {
-    return 'EPSG:4326'
-  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(':84')) !== -1) {
-    return 'CRS:84'
+  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE)) !== -1) {
+    return WEB_MERCATOR
+  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) !== -1) {
+    return WORLD_GEODETIC_SYSTEM
+  } else if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CRS_CODE)) !== -1) {
+    return WORLD_GEODETIC_SYSTEM_CRS
   } else {
     return srsList[0]
   }
@@ -237,13 +243,13 @@ async function getWMSInfo (serviceUrl, json, version, withCredentials) {
   }
 
   // if arcgis and none of the layers support 3857 based on get capabilities, see if GetMap automatically handles 3857
-  if (isArcGIS && layers.length > 0 && isNil(layers.find(l => l.srs.endsWith(':3857') || !isNil(l.supportedProjections.find(p => p.endsWith(':3857')))))) {
+  if (isArcGIS && layers.length > 0 && isNil(layers.find(l => l.srs.endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE) || !isNil(l.supportedProjections.find(p => p.endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE)))))) {
     // test if the first layer accepts EPSG:3857
     if (await testGetMapFor3857(serviceUrl, [layers[0].name], version, format, withCredentials)) {
       // ensure each layer has 3857 as an option, and the default to use
       layers.forEach(layer => {
-        layer.supportedProjections.push('EPSG:3857')
-        layer.srs = 'EPSG:3857'
+        layer.supportedProjections.push(WEB_MERCATOR)
+        layer.srs = WEB_MERCATOR
       })
     }
   }
@@ -264,7 +270,7 @@ async function getWMSInfo (serviceUrl, json, version, withCredentials) {
  */
 async function testGetMapFor3857 (wmsUrl, layers, version, format, withCredentials) {
   let webMercatorSupport
-  const url = getTileRequestURL(wmsUrl, layers, 256, 256, [-20026376.39, -20048966.10, 20026376.39, 20048966.10], 'EPSG:3857', version, format)
+  const url = getTileRequestURL(wmsUrl, layers, 256, 256, [-20026376.39, -20048966.10, 20026376.39, 20048966.10], WEB_MERCATOR, version, format)
   try {
     const response = await axios({
       url: url,

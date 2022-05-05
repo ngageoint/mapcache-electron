@@ -13,13 +13,13 @@ export default class SourceFactory {
       } else if (sourceConfiguration.serviceType === 1) {
         source = new (require('./wfs/WFSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 2) {
-        source = new (require('./xyz/XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent)
+        source = new (require('./xyz/XYZServerSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.subdomains, sourceConfiguration.name, sourceConfiguration.withCredentials, sourceConfiguration.minZoom, sourceConfiguration.maxZoom, sourceConfiguration.extent, sourceConfiguration.srs)
       } else if (sourceConfiguration.serviceType === 3) {
         source = new (require('./arcgis/ArcGISFeatureServiceSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.name)
       } else if (sourceConfiguration.serviceType === 4) {
         source = new (require('./overpass/OverpassSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.name, sourceConfiguration.fileData)
       } else if (sourceConfiguration.serviceType === 5) {
-        source = new (require('./wmts/WMTSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layer, sourceConfiguration.wmtsInfo, sourceConfiguration.name, sourceConfiguration.withCredentials)
+        source = new (require('./wmts/WMTSSource').default)(sourceConfiguration.id, sourceConfiguration.directory, sourceConfiguration.url, sourceConfiguration.layers, sourceConfiguration.wmtsInfo, sourceConfiguration.name, sourceConfiguration.withCredentials)
       }
     } else {
       const filePath = sourceConfiguration.file.path

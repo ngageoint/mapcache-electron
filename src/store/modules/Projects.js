@@ -178,9 +178,8 @@ const actions = {
         },
         lastAccessedDateTime: new Date().getTime()
       }
-      commit('UIState/addProjectState', {projectId: project.id}, { root: true })
       commit('pushProjectToProjects', project)
-      resolve()
+      resolve(project.id)
     })
   },
   setProjectAccessed ({ commit }, {projectId}) {

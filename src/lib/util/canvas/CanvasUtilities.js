@@ -43,6 +43,11 @@ function setMakeImageFunction (f) {
   makeImageFunction = f
 }
 
+/**
+ *
+ * @param source
+ * @returns {Promise<Image>}
+ */
 function makeImage (source) {
   return makeImageFunction(source)
 }

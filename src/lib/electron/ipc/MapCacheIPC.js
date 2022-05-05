@@ -35,9 +35,9 @@ const GENERATE_GEOTIFF_RASTER_FILE = 'generate-geotiff-raster-file'
 function GENERATE_GEOTIFF_RASTER_FILE_COMPLETED (id) {
   return 'generate-geotiff-raster-file-completed-' + id
 }
-const REQUEST_REPROJECT_TILE = 'request-reproject-tile'
-function REQUEST_REPROJECT_TILE_COMPLETED (id) {
-  return 'request-reproject-tile-completed-' + id
+const REQUEST_TILE_COMPILATION = 'request-tile-compilation'
+function REQUEST_TILE_COMPILATION_COMPLETED (id) {
+  return 'request-tile-compilation-completed-' + id
 }
 const REQUEST_GEOPACKAGE_TABLE_RENAME = 'request-geopackage-table-rename'
 function REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED (id) {
@@ -59,7 +59,7 @@ const REQUEST_GEOPACKAGE_TABLE_SEARCH = 'request-geopackage-table-search'
 function REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED (id) {
   return 'request-geopackage-table-search-completed-' + id
 }
-const CANCEL_REPROJECT_TILE_REQUEST = 'cancel-reproject-tile-request'
+const CANCEL_TILE_COMPILATION_REQUEST = 'cancel-tile-compilation-request'
 const WORKER_READY = 'worker-ready'
 const CANCEL_SERVICE_REQUEST = 'cancel-service-request'
 const WORKER_BUILD_TILE_LAYER = 'worker-build-tile-layer'
@@ -140,8 +140,8 @@ const WORKER_CHANNELS = [
   REQUEST_TILE,
   CANCEL_TILE_REQUEST,
   GENERATE_GEOTIFF_RASTER_FILE,
-  REQUEST_REPROJECT_TILE,
-  CANCEL_REPROJECT_TILE_REQUEST
+  REQUEST_TILE_COMPILATION,
+  CANCEL_TILE_COMPILATION_REQUEST,
 ]
 
 const FEATURE_TABLE_CHANNELS = [
@@ -182,9 +182,9 @@ export {
   CANCEL_TILE_REQUEST,
   GENERATE_GEOTIFF_RASTER_FILE,
   GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
-  REQUEST_REPROJECT_TILE,
-  REQUEST_REPROJECT_TILE_COMPLETED,
-  CANCEL_REPROJECT_TILE_REQUEST,
+  REQUEST_TILE_COMPILATION,
+  REQUEST_TILE_COMPILATION_COMPLETED,
+  CANCEL_TILE_COMPILATION_REQUEST,
   BUILD_TILE_LAYER_STATUS,
   BUILD_TILE_LAYER_COMPLETED,
   WORKER_BUILD_TILE_LAYER,

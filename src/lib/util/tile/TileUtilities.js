@@ -475,7 +475,7 @@ function extentIntersection (extentA, extentB) {
  * @return {Promise<void>}
  */
 async function iterateTilesInMatrix (tileMatrix, tileCallback) {
-  const zoomLevels = keys(tileMatrix).sort((a, b) => a - b)
+  const zoomLevels = keys(tileMatrix).sort((a, b) => a - b).map(z => Number(z))
   let stop = false
   for (let i = 0; i < zoomLevels.length && !stop; i++) {
     let z = zoomLevels[i]
@@ -598,9 +598,12 @@ function trimExtentToFilter(extent, filter) {
 }
 
 async function drawInCanvas (context, dataUrl, sx, sy, sw, sh, dx, dy, dw, dh) {
-  const image = await makeImage(dataUrl)
-  context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
-  disposeImage(image)
+  try {
+    const image = await makeImage(dataUrl)
+    context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
+    disposeImage(image)
+    // eslint-disable-next-line no-empty, no-unused-vars
+  } catch (e) {}
 }
 
 /**
@@ -608,13 +611,13 @@ async function drawInCanvas (context, dataUrl, sx, sy, sw, sh, dx, dy, dw, dh) {
  * @param canvas
  * @param tiles
  * @param targetSize
- * @param targetBounds
+ * @param targetExtent
  */
-async function stitchTileData (canvas, tiles, targetSize, targetBounds) {
+async function stitchTileData (canvas, tiles, targetSize, targetExtent) {
   if (tiles.length === 0) {
     return null
   }
-  const targetExtent = [targetBounds.minLon, targetBounds.minLat, targetBounds.maxLon, targetBounds.maxLat]
+
   const targetUnitsWidth = targetExtent[2] - targetExtent[0]
   const targetUnitsHeight = targetExtent[3] - targetExtent[1]
   const targetUnitsPerPixel = {
@@ -625,7 +628,8 @@ async function stitchTileData (canvas, tiles, targetSize, targetBounds) {
   const context = canvas.getContext('2d')
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i]
-    const srcExtent = tile.bounds
+    const srcExtent = tile.tileBounds
+
     const intersection = extentIntersection(srcExtent, targetExtent)
     if (intersection != null) {
       const srcUnitsWidth = srcExtent[2] - srcExtent[0]
@@ -705,7 +709,6 @@ async function clipImage (canvas, dataUrl, clippingRegion, size) {
     return dataUrl
   }
 }
-
 
 export {
   getZoomTileMatrixCount,

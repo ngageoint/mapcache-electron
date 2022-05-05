@@ -6,6 +6,11 @@ import WFS from 'ol-format-node/format/WFS'
 import GML32 from 'ol-format-node/format/GML32'
 import GML3 from 'ol-format-node/format/GML3'
 import GML2 from 'ol-format-node/format/GML2'
+import {
+  COLON_DELIMITER,
+  WORLD_GEODETIC_SYSTEM,
+  WORLD_GEODETIC_SYSTEM_CODE,
+} from '../../projection/ProjectionConstants'
 
 /**
  * Parse WFS GetFeature response into GeoJSON
@@ -19,15 +24,15 @@ function convertWFSToGeoJSON (layer, layerData) {
   let outputFormat = getLayerOutputFormat(layer).toLowerCase()
 
   let srs = layer.defaultSRS
-  const otherSrs = layer.otherSRS.find(s => s.endsWith(':4326'))
+  const otherSrs = layer.otherSRS.find(s => s.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE))
   if (otherSrs) {
     srs = otherSrs
   }
   const options = {}
   // if data is already in 4326, no need to specify a projection
-  if (!srs.endsWith(':4326')) {
-    addTransformation(srs, 'EPSG:4326')
-    options.featureProjection = 'EPSG:4326'
+  if (!srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) {
+    addTransformation(srs, WORLD_GEODETIC_SYSTEM)
+    options.featureProjection = WORLD_GEODETIC_SYSTEM
     options.dataProjection = srs
   }
 

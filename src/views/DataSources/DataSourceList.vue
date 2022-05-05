@@ -19,7 +19,10 @@
             </v-btn>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
+            <v-list-item-title :title="item.name" :style="{marginBottom: '0px', fontWeight: 500}" v-html="item.name"></v-list-item-title>
+            <v-list-item-subtitle v-if="item.type != null" v-html="item.type"></v-list-item-subtitle>
+            <v-list-item-subtitle v-if="item.subtitle != null" v-html="item.subtitle"></v-list-item-subtitle>
+            <v-list-item-subtitle v-if="item.count != null">{{item.count + ' features'}}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.error">
             <data-source-troubleshooting :project-id="projectId" :source="sources[item.id]"></data-source-troubleshooting>
@@ -42,7 +45,8 @@ import isNil from 'lodash/isNil'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import {zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import { zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
+import { getDisplayText } from '../../lib/layer/LayerTypes'
 
 export default {
     components: {
@@ -66,6 +70,10 @@ export default {
             e.stopPropagation()
             zoomToSource(source)
           }
+          let subtitle = null
+          if (source.layers != null) {
+            subtitle = source.layers.filter(l => l.enabled).length === 0 ? 'No layers enabled' : (source.layers.filter(l => l.enabled).length === source.layers.length ? 'All layers enabled' : (source.layers.filter(l => l.enabled).length + ' of ' + source.layers.length + ' layers enabled'))
+          }
           items.push({
             id: key,
             missingRaster: window.mapcache.isRasterMissing(source),
@@ -74,6 +82,9 @@ export default {
             name: isNil(source.displayName) ? source.name : source.displayName,
             path: source.filePath,
             isTile: source.pane === 'tile',
+            count: source.count,
+            type: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
+            subtitle: subtitle,
             click: function () {
               _this.sourceSelected(sourceId)
             },

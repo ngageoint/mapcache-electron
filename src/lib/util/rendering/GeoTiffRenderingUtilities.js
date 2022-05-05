@@ -8,6 +8,7 @@ import { trimExtentToWebMercatorMax } from '../xyz/XYZTileUtilities'
 import { getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../geotiff/GeoTiffUtilities'
 import { disposeCanvas, createCanvas, makeImageData } from '../canvas/CanvasUtilities'
 import keys from 'lodash/keys'
+import { COLON_DELIMITER, EPSG, WEB_MERCATOR } from '../../projection/ProjectionConstants'
 
 const maxByteValue = 255
 
@@ -72,7 +73,7 @@ function requestTile (tileRequest) {
 
       // if layer does not overlap with tile request, return an empty tile
       if (tileIntersects(tileUpperRightBuffered, tileLowerLeftBuffered, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
-        const transform = getConverter('EPSG:' + srs, 'EPSG:3857')
+        const transform = getConverter(EPSG + COLON_DELIMITER + srs, WEB_MERCATOR)
         const ur = wgs84ToWebMercator.forward([fullExtent[2], fullExtent[3]])
         const ll = wgs84ToWebMercator.forward([fullExtent[0], fullExtent[1]])
 

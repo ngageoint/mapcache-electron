@@ -1,12 +1,14 @@
-import {PROCESSING_STATES} from '../../source/SourceProcessing'
-import {PROCESS_SOURCE_STATUS} from '../../electron/ipc/MapCacheIPC'
-
+const throttle = require('lodash/throttle')
+const { PROCESSING_STATES } = require('../../source/SourceProcessing')
+const { PROCESS_SOURCE_STATUS } = require('../../electron/ipc/MapCacheIPC')
 const { AsyncResource } = require('async_hooks')
 const { EventEmitter } = require('events')
 const path = require('path')
 const { Worker } = require('worker_threads')
 const kTaskInfo = Symbol('kTaskInfo')
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
+const {CANCEL} = require('../../threads/mapcacheThreadRequestTypes')
+
 
 class WorkerPoolTaskInfo extends AsyncResource {
   constructor (task, sender, callback = () => {}, cancelCallback = () => {}) {
@@ -70,10 +72,11 @@ export default class WorkerThreadPool extends EventEmitter {
     this.freeWorkers = []
     this.queue = []
     this.restartWorker = true
+    this.throttleRun = throttle(this.run, 50)
   }
 
   async initialize () {
-    this.on(kWorkerFreedEvent, this.run)
+    this.on(kWorkerFreedEvent, this.throttleRun)
     for (let i = 0; i < this.config.length; i++) {
       await this.addNewWorker(this.config[i])
     }
@@ -150,11 +153,12 @@ export default class WorkerThreadPool extends EventEmitter {
     return this.queue.length > 0 || this.workers.length !== this.freeWorkers.length
   }
 
-  addTask (task, sender, callback, cancelled) {
-    const taskInfo = new WorkerPoolTaskInfo(task, sender, callback, cancelled)
+  addTask (task, sender, callback, cancelCallback) {
+    const taskInfo = new WorkerPoolTaskInfo(task, sender, callback, cancelCallback)
     taskInfo.emitQueued()
     this.queue.push(taskInfo)
-    this.run()
+    // if the queue's length is more than one, we can assume there is a wait, so we can just wait for the next available worker
+    this.throttleRun()
   }
 
   run () {
@@ -164,8 +168,8 @@ export default class WorkerThreadPool extends EventEmitter {
     for (let i = 0; i < this.queue.length && this.freeWorkers.length > 0; i++) {
       const worker = this.freeWorkers.find(worker => worker.config.types.indexOf(this.queue[i].task.type) !== -1)
       if (worker) {
-        const taskInfo = this.queue.splice(i, 1)[0]
         this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
+        const taskInfo = this.queue.splice(i, 1)[0]
         worker[kTaskInfo] = taskInfo
         taskInfo.setWorker(worker)
         taskInfo.emitProcessing()
@@ -175,14 +179,18 @@ export default class WorkerThreadPool extends EventEmitter {
     }
   }
 
-  async cancelTask (taskId) {
+  async cancelTask (taskId, forceRestart = true) {
     let cancelled = this.cancelPendingTask(taskId)
     if (!cancelled) {
-      const worker = this.workers.find(worker => worker[kTaskInfo] && worker[kTaskInfo].getTaskId() === taskId)
+      const worker = this.workers.find(worker => worker[kTaskInfo] != null && worker[kTaskInfo].task != null && worker[kTaskInfo].task.id === taskId)
       if (worker) {
-        this.workers.splice(this.workers.indexOf(worker), 1)
         worker[kTaskInfo].emitCancelling()
-        await worker.terminate()
+        if (forceRestart) {
+          this.workers.splice(this.workers.indexOf(worker), 1)
+          await worker.terminate()
+        } else {
+          worker.postMessage({type: CANCEL})
+        }
         worker[kTaskInfo].setCancelled()
         worker[kTaskInfo].done('Cancelled.', null)
         worker[kTaskInfo] = null
@@ -197,8 +205,7 @@ export default class WorkerThreadPool extends EventEmitter {
     // remove from the queue
     const taskInfoIndex = this.queue.findIndex(taskInfo => taskInfo.getTaskId() === taskId)
     if (taskInfoIndex !== -1) {
-      const task = this.queue[taskInfoIndex]
-      this.queue.splice(taskInfoIndex, 1)
+      const task = this.queue.splice(taskInfoIndex, 1)[0]
       task.done('Cancelled.')
       cancelled = true
     }

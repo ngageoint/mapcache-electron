@@ -144,6 +144,24 @@
                   </span>
                 </v-row>
                 <h4 v-if="error && !loading" class="warning--text">{{error.statusText ? error.statusText : error}}</h4>
+                <div v-if="selectedServiceType === 2 && connected">
+                  <v-card-subtitle class="pl-0">
+                    Specify the projection. {{ WEB_MERCATOR_DISPLAY_TEXT }} is more commonly the projection used for XYZ tile services.
+                  </v-card-subtitle>
+                  <v-radio-group
+                      v-model="xyzProjection"
+                      mandatory
+                  >
+                    <v-radio
+                        :label=WEB_MERCATOR_DISPLAY_TEXT
+                        :value=WEB_MERCATOR
+                    ></v-radio>
+                    <v-radio
+                        :label=WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
+                        :value=WORLD_GEODETIC_SYSTEM
+                    ></v-radio>
+                  </v-radio-group>
+                </div>
               </v-form>
             </v-card-text>
           </v-card>
@@ -151,51 +169,13 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step v-if="!loading && serviceInfo != null && (selectedServiceType === 2)" editable :complete="step > 3" step="3" color="primary">
-          {{'Specify zoom levels'}}
-        </v-stepper-step>
-        <v-stepper-content v-if="!loading && serviceInfo != null && selectedServiceType === 2" step="3">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Specify the xyz tile service's minimum and maximum zoom levels.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-container>
-                <v-row no-gutters>
-                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Minimum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
-                </v-row>
-                <v-row no-gutters>
-                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Maximum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
-                </v-row>
-              </v-container>
-            </v-card-text>
-          </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 4">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step v-if="!loading && serviceInfo != null && selectedServiceType === 2" editable :complete="step > 4" :rules="[() => !isEditingBoundingBox() || (Number(step) === 4)]" step="4" color="primary" >
-          Specify bounding box (optional)
-          <small class="pt-1">{{isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box applied' : 'No bounding box')}}</small>
-        </v-stepper-step>
-        <v-stepper-content v-if="!loading && serviceInfo != null && selectedServiceType === 2" step="4">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Restrict your xyz tile requests to a specified area of the map.
-            </v-card-subtitle>
-            <bounding-box-editor ref="boundingBoxEditor" :project="project" :boundingBox="boundingBoxFilter" :preview-mode="previewing" :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
-          </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 5">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step v-if="!loading && serviceInfo != null && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3 || selectedServiceType === 5)" editable :complete="step > 3" step="3" color="primary" :rules="[() => (selectedServiceType !== 0 || (selectedServiceType === 0 && serviceInfo.format !== undefined)) && serviceLayers.length > 0]">
-          {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layer' + (selectedServiceType === 5 ? '' : 's') }}
+        <v-stepper-step v-if="!loading && serviceInfo != null && (selectedServiceType === 1 || selectedServiceType === 3)" editable :complete="step > 3" step="3" color="primary" :rules="[() => serviceLayers.length > 0]">
+          {{'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers' }}
           <small v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="pt-1">No supported image formats</small>
           <small v-else-if="serviceLayers.length === 0" class="pt-1">No supported layers available</small>
-          <small v-else class="pt-1">{{!selectedDataSourceLayersValid() ? 'None' : (selectedServiceType === 5 ? '1' : selectedDataSourceLayers.length)}} selected</small>
+          <small v-else class="pt-1">{{!selectedDataSourceLayersValid() ? 'None' : selectedDataSourceLayers.length}} selected</small>
         </v-stepper-step>
-        <v-stepper-content v-if="!loading && serviceInfo != null && (selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3 || selectedServiceType === 5)" step="3">
+        <v-stepper-content v-if="!loading && serviceInfo != null && (selectedServiceType === 1 || selectedServiceType === 3)" step="3">
           <v-card flat tile>
             <v-card-text v-if="serviceInfo">
               <h4 class="primary--text">{{serviceInfo.title}}</h4>
@@ -206,12 +186,9 @@
               <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
             </v-card-text>
             <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
-              <v-card-subtitle v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="warning--text pb-0 mb-4">{{'WMS server does not utilize any of the following web supported image formats: ' + supportedImageFormats.join(', ')}}</v-card-subtitle>
-              <v-sheet v-else>
-                <v-card-subtitle v-if="selectedServiceType === 0" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Layers from the WMS service to import.' : 'The WMS service does not have any layers.'}}</v-card-subtitle>
+              <v-sheet>
                 <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">{{'Layers from the WFS service to import.'}}</v-card-subtitle>
                 <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">{{'Layers from the ArcGIS feature service to import.'}}</v-card-subtitle>
-                <v-card-subtitle v-if="selectedServiceType === 5" class="primary--text pb-0 mb-0">{{serviceLayers.length > 0 ? 'Layers from the WMTS service to import.' : 'The WMTS service does not have any layers.'}}</v-card-subtitle>
                 <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
                     <v-virtual-scroll
                         class="pt-4 pl-2 pr-2 ma-0 mt-8"
@@ -222,7 +199,7 @@
                       <template v-slot:default="{ item, i }">
                         <v-list-item-group
                             v-model="selectedDataSourceLayers"
-                            :multiple="selectedServiceType === 0 || selectedServiceType === 1 || selectedServiceType === 3"
+                            multiple
                             color="primary"
                         >
                         <v-list-item
@@ -256,50 +233,27 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step v-if="!loading && serviceInfo != null && selectedServiceType === 0" editable :complete="step > 4" step="4" color="primary">
-          Layer rendering order
-          <small class="pt-1">{{!selectedDataSourceLayersValid() ? 'No layers selected' : ''}}</small>
-        </v-stepper-step>
-        <v-stepper-content  v-if="!loading && serviceInfo != null && (selectedServiceType === 0)" step="4">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Drag layers in the list to specify the rendering order. Layers at the top of the list will be rendered on top.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-list
-                  id="sortable-list"
-                  style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
-                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
-                  dense>
-                <v-list-item
-                    v-for="item in sortedLayers"
-                    class="sortable-list-item"
-                    :key="item.id">
-                  <v-list-item-content class="pa-0 ma-0">
-                    <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-                    <div v-if="item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + '-sorted-layer-title'" v-html="title"></div></div>
-                  </v-list-item-content>
-                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
-                  </v-list-item-icon>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 5">
-            Continue
-          </v-btn>
-        </v-stepper-content>
         <v-stepper-step :editable="connected" :step="summaryStep" color="primary" :rules="[() => connected || step !== summaryStep]">
           Summary
           <small v-if="!connected && step === summaryStep" class="pt-1">Connection not verified.</small>
         </v-stepper-step>
         <v-stepper-content :step="summaryStep">
           <v-card flat tile>
-            <v-card-text>
-              <p v-if="!loading && selectedServiceType === 0 && !error && selectedDataSourceLayersValid()">
-                <b>{{selectedDataSourceLayers.length}}</b> {{' WMS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
+            <v-card-text class="ma-0 pa-0" v-if="!loading && (selectedServiceType === 0|| selectedServiceType === 5 ) && !error && serviceInfo">
+              <h4 class="primary--text pb-0 mb-0">{{serviceInfo.title}}</h4>
+              <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{serviceInfo.abstract}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.version">{{supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{'Contact person: ' + serviceInfo.contactName}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">{{'Contact organization:' + serviceInfo.contactOrg}}</p>
+              <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{'Copyright:' + serviceInfo.copyright}}</p>
+              <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 0">
+                <b>{{serviceLayers.length}}</b>{{' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '}}<b>{{serviceInfo.title}}</b>{{' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
               </p>
+              <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 5">
+                <b>{{serviceLayers.length}}</b>{{' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '}}<b>{{serviceInfo.title}}</b>{{' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
+              </p>
+            </v-card-text>
+            <v-card-text class="ma-0 pa-0"  v-else>
               <p v-if="!loading && selectedServiceType === 1 && !error && selectedDataSourceLayersValid()">
                 <b>{{selectedDataSourceLayers.length}}</b> {{' WFS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
               </p>
@@ -307,7 +261,6 @@
                 <b>{{selectedDataSourceLayers.length}}</b> {{' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}
               </p>
               <p v-if="!loading && selectedServiceType === 2 && !error && connected">{{'The XYZ layer will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}</p>
-              <p v-if="!loading && selectedServiceType === 5 && selectedDataSourceLayersValid() && !error && connected">{{'The WMTS layer will be imported as the '}}<b>{{dataSourceName}}</b>{{' data source.'}}</p>
               <h4 v-if="error" class="warning--text">{{error}}</h4>
               <h4 v-if="!dataSourceUrlValid || !connected || (!selectedDataSourceLayersValid() && selectedServiceType !== 2)" class="warning--text">Nothing to import.</h4>
             </v-card-text>
@@ -318,7 +271,6 @@
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
-        <v-switch v-model="previewing" class="pl-2 mt-0" hide-details v-if="connected && dataSourceNameValid && !accessDeniedOrForbidden && !error && selectedServiceType !== 1 && selectedServiceType !== 3 && (selectedDataSourceLayersValid() || selectedServiceType === 2)" label="Preview"></v-switch>
         <v-spacer></v-spacer>
         <v-btn
           text
@@ -340,21 +292,13 @@
 <script>
   import {mapActions, mapState} from 'vuex'
   import isNil from 'lodash/isNil'
-  import difference from 'lodash/difference'
   import isEmpty from 'lodash/isEmpty'
   import { mdiTrashCan, mdiDragHorizontalVariant} from '@mdi/js'
-  import WMSLayer from '../../lib/layer/tile/WMSLayer'
-  import XYZServerLayer from '../../lib/layer/tile/XYZServerLayer'
-  import WMTSLayer from '../../lib/layer/tile/WMTSLayer'
   import { SERVICE_TYPE, DEFAULT_TIMEOUT, getServiceName, isAuthenticationError, isServerError, isTimeoutError } from '../../lib/network/HttpUtilities'
   import { testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
-  import reverse from 'lodash/reverse'
-  import NumberPicker from '../Common/NumberPicker'
-  import BoundingBoxEditor from '../Common/BoundingBoxEditor'
   import { environment } from '../../lib/env/env'
-  import { WMTS } from '../../lib/layer/LayerTypes'
-  import { getRecommendedEpsg, getRecommendedSrs } from '../../lib/util/wmts/WMTSUtilities'
   import Sortable from 'sortablejs'
+  import { WEB_MERCATOR, WEB_MERCATOR_DISPLAY_TEXT, WORLD_GEODETIC_SYSTEM, WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT } from '../../lib/projection/ProjectionConstants'
 
   const whiteSpaceRegex = /\s/
   const endsInComma = /,$/
@@ -388,23 +332,18 @@
           return state.URLs.savedUrls || []
         }
       }),
-      sortedLayers: {
-        get () {
-          return this.sortedRenderingLayers || this.selectedDataSourceLayers
-        },
-        set (val) {
-          this.sortedRenderingLayers = val
-        }
-      },
       importReady () {
-        return this.step === this.summaryStep && this.connected && this.dataSourceNameValid && !this.isEditingBoundingBox() && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS || this.selectedServiceType === SERVICE_TYPE.WMTS) && this.selectedDataSourceLayersValid()) || this.selectedServiceType === SERVICE_TYPE.XYZ)
+        return this.step === this.summaryStep && this.connected && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayersValid()) || this.selectedServiceType === SERVICE_TYPE.XYZ || this.selectedServiceType === SERVICE_TYPE.WMS || this.selectedServiceType === SERVICE_TYPE.WMTS)
       }
     },
     data () {
       return {
-        boundingBoxFilter: undefined,
-        mdiTrashCan: mdiTrashCan,
-        mdiDragHorizontalVariant: mdiDragHorizontalVariant,
+        WEB_MERCATOR,
+        WEB_MERCATOR_DISPLAY_TEXT,
+        WORLD_GEODETIC_SYSTEM,
+        WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT,
+        mdiTrashCan,
+        mdiDragHorizontalVariant,
         supportedImageFormats: window.mapcache.supportedImageFormats,
         step: 1,
         summaryStep: 3,
@@ -434,7 +373,6 @@
           closeOnContentClick: true
         },
         urlIsValid: false,
-        previewing: false,
         subdomainText: '1,2,3,4',
         subdomainRules: [
           v => !!v || 'Subdomains are required. (valid format: 1,2,3,4)',
@@ -446,33 +384,14 @@
         withCredentials: false,
         connected: false,
         connectionId: null,
-        minZoom: 0,
-        maxZoom: 20
+        xyzProjection: WEB_MERCATOR
       }
-    },
-    components: {
-      BoundingBoxEditor,
-      NumberPicker
     },
     methods: {
       ...mapActions({
         addUrl: 'URLs/addUrl',
         removeUrl: 'URLs/removeUrl'
       }),
-      updateSortedLayerOrder (evt) {
-        document.body.style.cursor = 'default'
-        const layerOrderTmp = this.sortedLayers.slice()
-        const oldIndex = evt.oldIndex
-        let newIndex = Math.max(0, evt.newIndex)
-        if (newIndex >= layerOrderTmp.length) {
-          let k = newIndex - layerOrderTmp.length + 1
-          while (k--) {
-            layerOrderTmp.push(undefined)
-          }
-        }
-        layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
-        this.sortedLayers = layerOrderTmp
-      },
       cancelConnect () {
         this.connectionId = null
         this.connected = false
@@ -491,24 +410,7 @@
           })
         })
       },
-      updateMinZoom (val) {
-        if (val > this.maxZoom) {
-          this.maxZoom = val
-        }
-        this.minZoom = val
-        if (this.previewing) {
-          this.sendLayerPreview()
-        }
-      },
-      updateMaxZoom (val) {
-        if (val < this.minZoom) {
-          this.minZoom = val
-        }
-        this.maxZoom = val
-        if (this.previewing) {
-          this.sendLayerPreview()
-        }
-      },
+
       getHeightFromServiceLayers (serviceLayers) {
         let height = 48
         let maxSubs = 0
@@ -540,10 +442,10 @@
           this.authValid = true
           this.accessDeniedOrForbidden = isAuthenticationError(error)
           if (!isNil(serviceInfo)) {
-            if (serviceType === SERVICE_TYPE.WMS || serviceType === SERVICE_TYPE.XYZ) {
-              this.summaryStep = 5
-            } else if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS || serviceType === SERVICE_TYPE.WMTS) {
+            if (serviceType === SERVICE_TYPE.WFS || serviceType === SERVICE_TYPE.ARCGIS_FS) {
               this.summaryStep = 4
+            } else {
+              this.summaryStep = 3
             }
           } else {
             this.summaryStep = 3
@@ -551,22 +453,20 @@
           this.connected = true
           this.serviceLayers = serviceInfo.serviceLayers || []
           this.serviceInfo = serviceInfo
+          if (this.serviceInfo.is4326 != null) {
+            this.xyzProjection = this.serviceInfo.is4326 ? WORLD_GEODETIC_SYSTEM : WEB_MERCATOR
+          }
           this.withCredentials = withCredentials
         }
       },
       async addLayer () {
         if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
-          await this.processXYZUrl(window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl))
+          await this.processXYZUrl(window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), this.xyzProjection)
         } else {
           await this.confirmLayerImport()
         }
       },
       close () {
-        this.previewing = false
-        window.mapcache.clearPreviewLayer(({projectId: this.project.id}))
-        if (this.isEditingBoundingBox()) {
-          this.$refs.boundingBoxEditor.stopEditing()
-        }
         this.$nextTick(() => {
           this.back()
         })
@@ -576,7 +476,6 @@
         this.loading = true
         this.serviceInfo = null
         this.serviceLayers = []
-        this.sortedLayers = []
         this.sortedRenderingLayers = []
         this.error = null
         const urlToTest = this.dataSourceUrl
@@ -596,7 +495,7 @@
         return !isEmpty(this.selectedDataSourceLayers)
       },
       async confirmLayerImport () {
-        if (this.selectedDataSourceLayersValid()) {
+        if (this.selectedDataSourceLayersValid() || this.selectedServiceType === SERVICE_TYPE.WMS || this.selectedServiceType === SERVICE_TYPE.WMTS) {
           const id = window.mapcache.createUniqueID()
           let sourceToProcess = {
             id: id,
@@ -606,13 +505,34 @@
             name: this.dataSourceName,
             withCredentials: this.withCredentials || false
           }
-          if (this.selectedServiceType === SERVICE_TYPE.WMTS) {
-            sourceToProcess.layer = this.selectedDataSourceLayers
+          if (this.selectedServiceType === SERVICE_TYPE.WMS) {
+            sourceToProcess.layers = this.serviceLayers.map(layer => {
+              return {
+                name: layer.name,
+                extent: layer.extent,
+                enabled: false,
+                version: layer.version,
+                srs: layer.srs
+              }
+            })
+            sourceToProcess.format = this.serviceInfo.format
+          } else if (this.selectedServiceType === SERVICE_TYPE.WMTS) {
+            sourceToProcess.layers = this.serviceLayers.map(layer => {
+              return {
+                name: layer.title,
+                extent: layer.extent,
+                tileMatrixSets: layer.tileMatrixSets,
+                enabled: false,
+                version: this.serviceInfo.wmtsInfo.serviceIdentification.version,
+                resource: layer.resource
+              }
+            })
             sourceToProcess.wmtsInfo = this.serviceInfo.wmtsInfo
-          } else {
-            sourceToProcess.layers = (this.selectedServiceType === SERVICE_TYPE.WFS || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) ? this.selectedDataSourceLayers.slice() : reverse(this.sortedLayers.slice())
+          } else if (this.selectedServiceType === SERVICE_TYPE.WFS || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) {
+            sourceToProcess.layers = this.selectedDataSourceLayers.slice()
             sourceToProcess.format = this.serviceInfo.format
           }
+
           this.addUrlToHistory(this.dataSourceUrl)
           this.resetURLValidation()
           this.close()
@@ -627,7 +547,6 @@
         this.subdomains = environment.defaultBaseMaps[0].subdomains
         this.selectedServiceType = 2
         this.selectedDataSourceLayers = []
-        this.sortedLayers = []
         if (!isNil(this.$refs.dataSourceNameForm)) {
           this.$refs.dataSourceNameForm.validate()
         }
@@ -635,7 +554,7 @@
           this.$refs.urlForm.validate()
         }
       },
-      async processXYZUrl (url) {
+      async processXYZUrl (url, srs) {
         const id = window.mapcache.createUniqueID()
         let sourceToProcess = {
           id: id,
@@ -646,9 +565,7 @@
           subdomains: this.requiresSubdomains ? this.subdomainText.split(',') : undefined,
           name: this.dataSourceName,
           withCredentials: this.withCredentials,
-          minZoom: this.minZoom,
-          maxZoom: this.maxZoom,
-          extent: this.boundingBoxFilter
+          srs: srs
         }
         this.resetURLValidation()
         this.close()
@@ -682,78 +599,9 @@
         this.urlToDelete = url
         this.deleteUrlDialog = true
       },
-      async sendLayerPreview () {
-        let layer
-        if (this.dataSourceNameValid && !this.accessDeniedOrForbidden && !this.error) {
-          if (this.selectedServiceType === SERVICE_TYPE.WMS && this.sortedLayers.length > 0) {
-            const layerNames = reverse(this.sortedLayers.map(layer => layer.name))
-            let extent = this.sortedLayers[0].extent
-            let srs = this.sortedLayers[0].srs
-            this.sortedLayers.forEach(layer => {
-              if (layer.extent[0] < extent[0]) {
-                extent[0] = layer.extent[0]
-              }
-              if (layer.extent[1] < extent[1]) {
-                extent[1] = layer.extent[1]
-              }
-              if (layer.extent[2] > extent[2]) {
-                extent[2] = layer.extent[2]
-              }
-              if (layer.extent[3] > extent[3]) {
-                extent[3] = layer.extent[3]
-              }
-            })
-            const version = this.sortedLayers[0].version
-            layer = new WMSLayer({id: window.mapcache.createUniqueID(), filePath: this.dataSourceUrl, name: 'Preview', sourceLayerName: 'Preview', layers: layerNames, extent, version: version, format: this.serviceInfo.format, withCredentials: this.withCredentials, srs})
-          } else if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
-            layer = new XYZServerLayer({id: window.mapcache.createUniqueID(), filePath: window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), subdomains: this.subdomainText.split(','), sourceLayerName: 'Preview', visible: false, withCredentials: this.withCredentials, minZoom: this.minZoom, maxZoom: this.maxZoom, extent: this.boundingBoxFilter})
-          } else if (this.selectedServiceType === SERVICE_TYPE.WMTS) {
-            layer = this.createWMTSPreviewLayer()
-          }
-        }
-        if (!isNil(layer)) {
-          window.mapcache.setPreviewLayer({projectId: this.project.id, previewLayer: layer.configuration})
-        } else {
-          this.previewing = false
-        }
-      },
-      createWMTSPreviewLayer () {
-        const supportedTileMatrixSets = this.serviceInfo.wmtsInfo.tileMatrixSet.filter(tms => this.selectedDataSourceLayers.tileMatrixSets.findIndex(set => set.identifier === tms.identifier) !== -1)
-        const supportedTileMatrixSetSrsList = supportedTileMatrixSets.map(tms => tms.supportedCRS)
-        const preferredTileMatrixSetSrs = getRecommendedSrs(supportedTileMatrixSetSrsList)
-        const tileMatrixSet = supportedTileMatrixSets.find(tms => tms.supportedCRS === preferredTileMatrixSetSrs)
-        const srs = getRecommendedEpsg(supportedTileMatrixSetSrsList)
-
-        return new WMTSLayer({
-          id: window.mapcache.createUniqueID(),
-          filePath: this.dataSourceUrl,
-          name: 'Preview',
-          sourceLayerName: 'Preview',
-          layer: this.selectedDataSourceLayers,
-          tileMatrixSet: tileMatrixSet,
-          extent: this.selectedDataSourceLayers.extent,
-          version: '1.0.0',
-          layerType: WMTS,
-          srs: srs,
-          withCredentials: this.withCredentials,
-        })
-      },
-      isEditingBoundingBox () {
-        if (this.$refs.boundingBoxEditor) {
-          return this.$refs.boundingBoxEditor.isEditing()
-        }
-        return false
-      },
-      updateBoundingBoxFilter (boundingBox) {
-        this.boundingBoxFilter = boundingBox
-        if (this.previewing) {
-          this.sendLayerPreview()
-        }
-      },
     },
     mounted () {
       this.resetURLValidation()
-      this.previewing = false
       this.dataSourceUrl = environment.defaultBaseMaps[0].url
       this.urlIsValid = true
       this.$nextTick(() => {
@@ -775,9 +623,6 @@
           this.connected = false
           this.loading = false
           this.error = null
-          this.previewing = false
-          this.boundingBoxFilter = undefined
-          this.sortedLayers = []
           this.sortedRenderingLayers = []
           this.serviceInfo = null
           this.withCredentials = false
@@ -837,57 +682,11 @@
           this.summaryStep = 3
         }
       },
-      selectedDataSourceLayers: {
-        handler (newValue) {
-          if (this.selectedDataSourceLayersValid() && this.selectedServiceType === 0) {
-            const sortedRenderingLayersCopy = this.sortedRenderingLayers.slice()
-            const newRenderingLayers = newValue.slice()
-            const namesRemoved = difference(sortedRenderingLayersCopy.map(item => item.name), newRenderingLayers.map(item => item.name))
-            const namesAdded = difference(newRenderingLayers.map(item => item.name), sortedRenderingLayersCopy.map(item => item.name))
-            namesRemoved.forEach(name => {
-              const index = sortedRenderingLayersCopy.findIndex(item => item.name === name)
-              if (index !== -1) {
-                sortedRenderingLayersCopy.splice(index, 1)
-              }
-            })
-            namesAdded.forEach(name => {
-              const index = newRenderingLayers.findIndex(item => item.name === name)
-              if (index !== -1) {
-                sortedRenderingLayersCopy.push(newRenderingLayers[index])
-              }
-            })
-            this.sortedLayers = sortedRenderingLayersCopy
-          } else if (this.selectedDataSourceLayersValid() && this.selectedServiceType === SERVICE_TYPE.WMTS && this.connected && this.previewing) {
-            this.sendLayerPreview()
-          } else {
-            this.previewing = false
-          }
-        }
-      },
       subdomainText: {
         handler () {
           this.connected = false
         }
       },
-      previewing: {
-        handler (previewing) {
-          this.$nextTick(() => {
-
-            if (previewing) {
-              this.sendLayerPreview()
-            } else {
-              window.mapcache.clearPreviewLayer(({projectId: this.project.id}))
-            }
-          })
-        }
-      },
-      sortedLayers: {
-        handler () {
-          if (this.selectedServiceType === SERVICE_TYPE.WMS && this.connected && this.previewing) {
-            this.sendLayerPreview()
-          }
-        }
-      }
     }
   }
 </script>

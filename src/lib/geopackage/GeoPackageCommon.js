@@ -12,6 +12,7 @@ import path from 'path'
 import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/file/FileUtilities'
+import { EPSG, COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
 
 /**
  * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
@@ -70,13 +71,13 @@ function _getBoundingBoxForTable (gp, tableName) {
   if (!isNil(contents) && !isNil(contents.min_x) && !isNil(contents.min_y) && !isNil(contents.max_x) && !isNil(contents.max_y)) {
     bbox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y)
     srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
-    projection = 'EPSG:' + contents.srs_id
+    projection = EPSG + COLON_DELIMITER + contents.srs_id
     if (
       srs.definition &&
       srs.definition !== 'undefined' &&
-      srs.organization.toUpperCase() + ':' + srs.organization_coordsys_id !== 'EPSG:4326'
+      srs.organization.toUpperCase() + COLON_DELIMITER + srs.organization_coordsys_id !== WORLD_GEODETIC_SYSTEM
     ) {
-      bbox = bbox.projectBoundingBox(projection, 'EPSG:4326')
+      bbox = bbox.projectBoundingBox(projection, WORLD_GEODETIC_SYSTEM)
     }
     extent = [bbox.minLongitude, bbox.minLatitude, bbox.maxLongitude, bbox.maxLatitude]
   }
@@ -208,14 +209,14 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
     // need to convert to 4326 if not already in 4326
     const contents = gp.getTableContents(tableName)
     const srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
-    const projection = 'EPSG:' + contents.srs_id
+    const projection = EPSG + COLON_DELIMITER + contents.srs_id
     if (
       !isNil(tableBounds) &&
       srs.definition &&
       srs.definition !== 'undefined' &&
-      srs.organization.toUpperCase() + ':' + srs.organization_coordsys_id !== 'EPSG:4326'
+      srs.organization.toUpperCase() + COLON_DELIMITER + srs.organization_coordsys_id !== WORLD_GEODETIC_SYSTEM
     ) {
-      tableBounds = tableBounds.projectBoundingBox(projection, 'EPSG:4326')
+      tableBounds = tableBounds.projectBoundingBox(projection, WORLD_GEODETIC_SYSTEM)
     }
   }
   return [tableBounds.minLongitude, tableBounds.minLatitude, tableBounds.maxLongitude, tableBounds.maxLatitude]
@@ -231,27 +232,12 @@ function projectGeometryTo4326 (geometry, srs) {
   let projectedGeometry = geometry.geometry
   if (geometry && !geometry.empty && geometry.geometry) {
     let geoJsonGeom = geometry.geometry.toGeoJSON()
-    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + ':' + srs.srs_id, 'EPSG:4326')
+    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + COLON_DELIMITER + srs.srs_id, WORLD_GEODETIC_SYSTEM)
     projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
   }
   return projectedGeometry
 }
 
-/**
- * Projects a geometry to 4326 from the srs provided
- * @param geoJSON
- * @param srs
- * @returns {wkx.Geometry}
- */
-function projectGeoJSONTo4326 (geoJSON, srs) {
-  let projectedGeometry = geometry.geometry
-  if (geometry && !geometry.empty && geometry.geometry) {
-    let geoJsonGeom = geometry.geometry.toGeoJSON()
-    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + ':' + srs.srs_id, 'EPSG:4326')
-    projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
-  }
-  return projectedGeometry
-}
 
 /**
  * Determines internal table information for a geopackage
@@ -539,7 +525,7 @@ async function getGeoPackageExtent (filePath, tableName) {
     let contentsDao = gp.contentsDao
     let contents = contentsDao.queryForId(tableName)
     let proj = contentsDao.getProjection(contents)
-    let boundingBox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, 'EPSG:4326')
+    let boundingBox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y).projectBoundingBox(proj, WORLD_GEODETIC_SYSTEM)
     return [boundingBox.minLongitude, boundingBox.minLatitude, boundingBox.maxLongitude, boundingBox.maxLatitude]
   })
 }

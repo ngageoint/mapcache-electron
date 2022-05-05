@@ -7,6 +7,7 @@ import { getCRSForGeoTiff, getMaxForDataType } from '../../util/geotiff/GeoTiffU
 import fs from 'fs'
 import { GEOTIFF } from '../../layer/LayerTypes'
 import { getConverter } from '../../projection/ProjectionUtilities'
+import { EPSG, COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../../projection/ProjectionConstants'
 
 export default class GeoTIFFSource extends Source {
   static async getGeoTIFF (filePath) {
@@ -198,8 +199,8 @@ export default class GeoTIFFSource extends Source {
 
     // determine extent
     const bbox = image.getBoundingBox()
-    const epsgString = 'EPSG:' + srs
-    const transform = getConverter('EPSG:4326', epsgString)
+    const epsgString = EPSG + COLON_DELIMITER + srs
+    const transform = getConverter(WORLD_GEODETIC_SYSTEM, epsgString)
     const minCoord = transform.inverse([bbox[0], bbox[1]])
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
     const extent = [Math.max(-180, minCoord[0]), Math.max(-90, minCoord[1]), Math.min(180, maxCoord[0]), Math.min(90, maxCoord[1])]

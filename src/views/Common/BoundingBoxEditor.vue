@@ -120,11 +120,7 @@ export default {
     allowExtent: {
       type: Boolean,
       default: false
-    },
-    previewMode: {
-      type: Boolean,
-      default: false
-    },
+    }
   },
   data () {
     return {
@@ -204,7 +200,6 @@ export default {
         this.updateBoundingBox(extent)
       })
       const options = {
-        isPreview: this.previewMode,
         padBounds: false
       }
       EventBus.$emit(EventBus.EventTypes.REQUEST_MAP_DETAILS, options)
@@ -232,7 +227,6 @@ export default {
           EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, extent)
         })
         const options = {
-          isPreview: this.previewMode,
           padBounds: true
         }
         EventBus.$emit(EventBus.EventTypes.REQUEST_MAP_DETAILS, options)
@@ -275,14 +269,6 @@ export default {
     updateMaxLong (val) {
       this.maxLon = val
       this.$refs['minLongRef'].revalidate()
-    }
-  },
-  watch: {
-    previewMode: {
-      handler () {
-        this.stopPickingGrid()
-        this.stopDrawingBoundingBox()
-      }
     }
   }
 }

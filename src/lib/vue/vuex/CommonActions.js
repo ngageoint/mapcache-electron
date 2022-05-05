@@ -5,15 +5,15 @@ function setDataSourceVisible ({projectId, sourceId, visible}) {
   return store.dispatch('Projects/setDataSourceVisible', {projectId, sourceId, visible})
 }
 
-function deleteProject (project) {
+async function deleteProject (project) {
   rmDirAsync(store.state.Projects[project.id].directory).then((err) => {
     if (err) {
       // eslint-disable-next-line no-console
       console.error('Unable to delete internal project directory: ' + store.state.Projects[project.id].directory)
     }
   })
-  store.dispatch('UIState/deleteProject', { projectId: project.id.slice() })
-  store.dispatch('Projects/deleteProject', { projectId: project.id.slice() })
+  await store.dispatch('UIState/deleteProject', { projectId: project.id.slice() })
+  await store.dispatch('Projects/deleteProject', { projectId: project.id.slice() })
 }
 
 /**

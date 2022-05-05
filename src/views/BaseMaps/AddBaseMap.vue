@@ -126,6 +126,7 @@ import debounce from 'lodash/debounce'
 import ColorPicker from '../Common/ColorPicker'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import { getDisplayText } from '../../lib/layer/LayerTypes'
 
 export default {
     components: {
@@ -150,6 +151,7 @@ export default {
               error: source.error,
               name: source.displayName ? source.displayName : source.name,
               title: source.displayName ? source.displayName : source.name,
+              subtitle: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
               isGeoPackage: false,
               type: source.pane === 'vector' ? 'feature' : 'tile',
               zoomTo: debounce((e) => {

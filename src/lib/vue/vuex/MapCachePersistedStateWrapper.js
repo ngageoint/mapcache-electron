@@ -1,8 +1,13 @@
 import merge from 'deepmerge'
+
+const SET_STATE_THROTTLE = 0
 const STORAGE_NAME = 'vuex'
 const STORAGE_KEY = 'state'
-const STORAGE_TEST_KEY = 'test'
 
+
+/**
+ * MapCachePersistedStateWrapper really just handles importing initial state. it will not actually call set state on changes
+ */
 class MapCachePersistedStateWrapper {
   constructor(options, store) {
     this.options = options
@@ -10,12 +15,11 @@ class MapCachePersistedStateWrapper {
   }
 
   loadOptions() {
-    window.mapcache.createStorage(STORAGE_NAME)
     this.options.storageKey = STORAGE_KEY
-  }
-
-  setState(state) {
-    window.mapcache.setState(this.options.storageKey, state)
+    if (!this.options.throttle) {
+      this.options.throttle = SET_STATE_THROTTLE
+    }
+    window.mapcache.createStorage(STORAGE_NAME)
   }
 
   loadFilter(filter, name) {
@@ -34,10 +38,6 @@ class MapCachePersistedStateWrapper {
     return (mutation) => {
       return list.includes(mutation.type)
     }
-  }
-
-  checkStorage() {
-    window.mapcache.checkStorage(STORAGE_TEST_KEY)
   }
 
   combineMerge(target, source, options) {
@@ -61,26 +61,16 @@ class MapCachePersistedStateWrapper {
   }
 
   loadInitialState() {
-    const state = window.mapcache.getState(this.options.storageKey)
-
+    let state = window.mapcache.getState(this.options.storageKey)
     if (state) {
       const mergedState = merge(this.store.state, state, { arrayMerge: this.combineMerge })
       this.store.replaceState(mergedState)
     }
   }
-
-  subscribeOnChanges() {
-    this.store.subscribe((mutation, state) => {
-      window.mapcache.setState(this.options.storageKey, state)
-    })
-  }
 }
 
 export default (options = {}) => (store) => {
   const persistedState = new MapCachePersistedStateWrapper(options, store)
-
   persistedState.loadOptions()
-  persistedState.checkStorage()
   persistedState.loadInitialState()
-  persistedState.subscribeOnChanges()
 }

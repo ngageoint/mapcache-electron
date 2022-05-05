@@ -3,7 +3,7 @@ import Store from 'electron-store'
 import path from 'path'
 import { contextBridge, ipcRenderer } from 'electron'
 import { deleteProject } from '../vue/vuex/CommonActions'
-import {addGeoPackage, disableRemoteSources, newProject, setProjectAccessed} from '../vue/vuex/LandingActions'
+import { addGeoPackage, disableRemoteSources, newProject, setProjectAccessed } from '../vue/vuex/LandingActions'
 import { createNextAvailableProjectDirectory } from '../util/file/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
@@ -56,18 +56,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   getState(key) {
     return storage.get(key)
   },
-  setState(key, state) {
-    storage.set(key, state)
-  },
-  checkStorage(testKey) {
-    try {
-      storage.set(testKey, testKey)
-      storage.get(testKey)
-      storage.delete(testKey)
-    } catch (error) {
-      throw new Error("[Vuex Electron] Storage is not valid. Please, read the docs.")
-    }
-  },
   getUserDataDirectory,
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -80,7 +68,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(OPEN_EXTERNAL, link)
     }
   },
-  setupGeoPackgeContext: () => {
+  setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   showProject: (projectId, geopackageIds, filePaths) => {

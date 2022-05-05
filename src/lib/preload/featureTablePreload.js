@@ -29,6 +29,7 @@ import {
   REQUEST_GEOPACKAGE_TABLE_SEARCH,
   REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED
 } from '../electron/ipc/MapCacheIPC'
+
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
@@ -55,19 +56,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getState(key) {
     return storage.get(key)
   },
-  setState(key, state) {
-    storage.set(key, state)
-  },
-  checkStorage(testKey) {
-    try {
-      storage.set(testKey, testKey)
-      storage.get(testKey)
-      storage.delete(testKey)
-    } catch (error) {
-      throw new Error("[Vuex Electron] Storage is not valid. Please, read the docs.")
-    }
-  },
-  setupGeoPackgeContext: () => {
+  setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   getUserDataDirectory,

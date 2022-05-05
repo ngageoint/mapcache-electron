@@ -2,6 +2,12 @@
 import isNil from 'lodash/isNil'
 import { METERS_PER_UNIT } from '../units/units'
 import { generateUrlWithQueryParams, getBaseUrlAndQueryParams } from '../../network/URLUtilities'
+import {
+  EPSG, COLON_DELIMITER,
+  WEB_MERCATOR, WEB_MERCATOR_CODE,
+  WORLD_GEODETIC_SYSTEM, WORLD_GEODETIC_SYSTEM_CODE,
+  WORLD_GEODETIC_SYSTEM_CRS, WORLD_GEODETIC_SYSTEM_CRS_CODE
+} from '../../projection/ProjectionConstants'
 
 const supportedImageFormats = ['image/png', 'image/pbf', 'image/jpg', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/bmp', 'image/webp']
 
@@ -211,16 +217,16 @@ function getBoundingBox (set) {
 
 function convertCRSToEPSGCode (crs) {
   let epsgString
-  if (crs != null && crs.toUpperCase().indexOf('EPSG') !== -1) {
-    epsgString = 'EPSG' + crs.substring(crs.lastIndexOf(':'))
+  if (crs != null && crs.toUpperCase().indexOf(EPSG) !== -1) {
+    epsgString = EPSG + crs.substring(crs.lastIndexOf(COLON_DELIMITER))
   }
   return epsgString
 }
 
 function getEPSGCode (crs) {
   let epsgCode
-  if (crs != null && crs.toUpperCase().indexOf('EPSG') !== -1) {
-    epsgCode = parseInt(crs.substring(crs.lastIndexOf(':') + 1))
+  if (crs != null && crs.toUpperCase().indexOf(EPSG) !== -1) {
+    epsgCode = parseInt(crs.substring(crs.lastIndexOf(COLON_DELIMITER) + 1))
   }
   return epsgCode
 }
@@ -369,10 +375,10 @@ function getRecommendedFormat (formats) {
  * @returns {string|*}
  */
 function getRecommendedSrs (srsList) {
-  const index3857 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':3857'))
-  const index4326 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':4326'))
-  const indexCRS84 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':84'))
-  const epsgIndex = srsList.findIndex(crs => crs.toUpperCase().indexOf('EPSG') !== -1)
+  const index3857 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE))
+  const index4326 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE))
+  const indexCRS84 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CRS_CODE))
+  const epsgIndex = srsList.findIndex(crs => crs.toUpperCase().indexOf(EPSG) !== -1)
   if (index3857 !== -1) {
     return srsList[index3857]
   } else if (index4326 !== -1) {
@@ -392,18 +398,18 @@ function getRecommendedSrs (srsList) {
  * @returns {string|*}
  */
 function getRecommendedEpsg (srsList) {
-  const index3857 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':3857'))
-  const index4326 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':4326'))
-  const indexCRS84 = srsList.findIndex(crs => crs.toUpperCase().endsWith(':84'))
-  const epsgIndex = srsList.findIndex(crs => crs.toUpperCase().indexOf('EPSG') !== -1)
+  const index3857 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE))
+  const index4326 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE))
+  const indexCRS84 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CRS_CODE))
+  const epsgIndex = srsList.findIndex(crs => crs.toUpperCase().indexOf(EPSG) !== -1)
   if (index3857 !== -1) {
-    return 'EPSG:3857'
+    return WEB_MERCATOR
   } else if (index4326 !== -1) {
-    return 'EPSG:4326'
+    return WORLD_GEODETIC_SYSTEM
   } else if (indexCRS84 !== -1) {
-    return 'CRS:84'
-  } else if (epsgIndex !== -1 && srsList[epsgIndex].lastIndexOf(':') !== -1) {
-    return 'EPSG' + srsList[epsgIndex].substring(srsList[epsgIndex].lastIndexOf(':'))
+    return WORLD_GEODETIC_SYSTEM_CRS
+  } else if (epsgIndex !== -1 && srsList[epsgIndex].lastIndexOf(COLON_DELIMITER) !== -1) {
+    return EPSG + srsList[epsgIndex].substring(srsList[epsgIndex].lastIndexOf(COLON_DELIMITER))
   } else {
     return srsList[0]
   }

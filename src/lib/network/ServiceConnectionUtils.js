@@ -237,6 +237,26 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
   return {serviceInfo, error, withCredentials}
 }
 
+async function testXYZin4326 (serviceUrl, subdomains, options) {
+  let is4326 = false
+  // 4326 tiles will have two tiles at zoom level 0
+  const url = generateUrlForTile(serviceUrl, subdomains, 1, 0, 0)
+  let cancellableServiceRequest = new CancellableServiceRequest()
+  cancellableServiceRequest.withCredentials = options.withCredentials || false
+  try {
+    const response = await cancellableServiceRequest.request(url)
+    const contentLength = response.headers['content-length'] || response.headers['Content-Length']
+    if (contentLength != null && contentLength !== 0) {
+      is4326 = true
+    }
+  } catch (e) {
+    // 401 unauthorized, no need to keep checking
+    if (e.response && e.response.status === 401) {
+      throw e
+    }
+  }
+  return is4326
+}
 
 /**
  * Tests a XYZ connection
@@ -281,7 +301,10 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
         if (invalidSubdomains.length > 0) {
           error = 'The following XYZ service url subdomains were invalid: ' + invalidSubdomains.join(',')
         } else {
-          serviceInfo = {}
+          const is4326 = await testXYZin4326(serviceUrl, subdomains, options)
+          serviceInfo = {
+            is4326
+          }
         }
       } else {
         error = 'The XYZ service url requires at least one valid subdomain'
@@ -299,8 +322,11 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
           throw e
         }
       }
+      const is4326 = await testXYZin4326(serviceUrl, [], options)
+
       serviceInfo = {
-        limitedTileSet
+        limitedTileSet,
+        is4326
       }
       requiredCredentials = cancellableServiceRequest.requiredCredentials()
     }
