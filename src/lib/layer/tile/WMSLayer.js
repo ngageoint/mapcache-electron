@@ -5,6 +5,7 @@ import {
 import NetworkTileLayer from './NetworkTileLayer'
 import { WMS } from '../LayerTypes'
 import cloneDeep from 'lodash/cloneDeep'
+import { WEB_MERCATOR } from '../../projection/ProjectionConstants'
 
 export default class WMSLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -12,7 +13,7 @@ export default class WMSLayer extends NetworkTileLayer {
     this.layers = configuration.layers
     this.format = configuration.format || 'image/png'
     this.version = configuration.version
-    this.srs = configuration.srs
+    this.srs = configuration.srs || WEB_MERCATOR
     this.extent = WMSLayer.getExtentForLayers(configuration.layers)
   }
 

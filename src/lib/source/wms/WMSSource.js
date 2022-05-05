@@ -23,6 +23,7 @@ export default class WMSSource extends Source {
       return []
     } else {
       const version = this.layers[0].version
+      const srs = this.layers[0].srs
       const { layerId, layerDirectory } = this.createLayerDirectory()
       statusCallback('Cleaning up', 100)
       await this.sleep(250)
@@ -35,6 +36,7 @@ export default class WMSSource extends Source {
           name: this.sourceName,
           sourceLayerName: this.sourceName,
           layers: this.layers,
+          srs: srs,
           version,
           format: this.format,
           layerType: WMS,
