@@ -146,9 +146,10 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 import EditTextModal from '../Common/EditTextModal'
-import {mdiPlus, mdiTrashCan, mdiTrashCanOutline, mdiPackageVariant} from '@mdi/js'
+import { mdiPlus, mdiTrashCan, mdiTrashCanOutline, mdiPackageVariant } from '@mdi/js'
+import { environment } from '../../lib/env/env'
 
 export default {
     components: { EditTextModal },
@@ -238,6 +239,18 @@ export default {
           this.reset()
         })
       },
+      createPreloadedDataSources(directory) {
+        const sources = {}
+        environment.preloadedDataSources.forEach(source => {
+          const sourceDirectory = window.mapcache.createSourceDirectory(directory)
+          const { layerId, layerDirectory } = window.mapcache.createNextAvailableLayerDirectory(sourceDirectory)
+          source.id = layerId
+          source.directory = layerDirectory
+          source.sourceDirectory = sourceDirectory
+          sources[source.id] = source
+        })
+        return sources
+      },
       async createNewProject (projectName) {
         this.addProjectDialog = false
         this.geoPackageFileImportDialog = false
@@ -245,7 +258,8 @@ export default {
         this.dialog = true
         const id = window.mapcache.createUniqueID()
         const directory = window.mapcache.createProjectDirectory()
-        await window.mapcache.newProject({id: id, name: projectName, directory: directory})
+        const sources = this.createPreloadedDataSources(directory)
+        await window.mapcache.newProject({id: id, name: projectName, directory: directory, sources: sources})
         let geopackageIds = []
         while (this.geoPackageFiles.length > 0) {
           geopackageIds.push(await window.mapcache.addGeoPackage({projectId: id, filePath: this.geoPackageFiles.pop()}))

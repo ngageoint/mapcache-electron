@@ -36,24 +36,27 @@ export default class WMSLayer extends NetworkTileLayer {
       layersToReview = layers
     }
 
-    const extent = cloneDeep(layersToReview[0].extent)
+    if (layersToReview.length === 0) {
+      return [-180, -90, 180, 90]
+    } else {
+      const extent = cloneDeep(layersToReview[0].extent)
 
-    layersToReview.slice(1).forEach(layer => {
-      if (layer.extent[0] < extent[0]) {
-        extent[0] = layer.extent[0]
-      }
-      if (layer.extent[1] < extent[1]) {
-        extent[1] = layer.extent[1]
-      }
-      if (layer.extent[2] > extent[2]) {
-        extent[2] = layer.extent[2]
-      }
-      if (layer.extent[3] > extent[3]) {
-        extent[3] = layer.extent[3]
-      }
-    })
-
-    return extent
+      layersToReview.slice(1).forEach(layer => {
+        if (layer.extent[0] < extent[0]) {
+          extent[0] = layer.extent[0]
+        }
+        if (layer.extent[1] < extent[1]) {
+          extent[1] = layer.extent[1]
+        }
+        if (layer.extent[2] > extent[2]) {
+          extent[2] = layer.extent[2]
+        }
+        if (layer.extent[3] > extent[3]) {
+          extent[3] = layer.extent[3]
+        }
+      })
+      return extent
+    }
   }
 
   update (configuration) {

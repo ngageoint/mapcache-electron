@@ -1,4 +1,4 @@
-import {CLIENT_CREDENTIALS_INPUT, REQUEST_CLIENT_CREDENTIALS} from '../ipc/MapCacheIPC'
+import { CLIENT_CREDENTIALS_INPUT, REQUEST_CLIENT_CREDENTIALS } from '../ipc/MapCacheIPC'
 
 const { ipcMain } = require('electron')
 import CredentialsManagement from '../../network/CredentialsManagement'

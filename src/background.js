@@ -2,7 +2,7 @@
 import { app, protocol } from 'electron'
 import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
-import {environment} from './lib/env/env'
+import { environment } from './lib/env/env'
 const gotTheLock = app.requestSingleInstanceLock()
 
 // used to indicate the .gpkg file path that was used to launch MapCache

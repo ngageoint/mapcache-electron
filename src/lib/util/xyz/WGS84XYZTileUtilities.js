@@ -20,6 +20,19 @@ function trimExtentToWGS84Max(extent) {
   }
 }
 
+function trimBboxToWGS84Max(bounds) {
+  if (bounds) {
+    const copy = Object.assign({}, bounds)
+    copy.minLon = Math.min(180.0, Math.max(-180.0, copy.minLon))
+    copy.minLat = Math.min(90.0, Math.max(-90.0, copy.minLat))
+    copy.maxLon = Math.min(180.0, Math.max(-180.0, copy.maxLon))
+    copy.maxLat = Math.min(90.0, Math.max(-90.0, copy.maxLat))
+    return copy
+  } else {
+    return bounds
+  }
+}
+
 function tile2lon (x, z) {
   return (x / Math.pow(2, z + 1) * 360 - 180)
 }
@@ -135,5 +148,6 @@ export {
   tileCountInExtentForZoomLevels,
   tilesInExtentAtZoom,
   tileExtentCalculator,
-  trimExtentToWGS84Max
+  trimExtentToWGS84Max,
+  trimBboxToWGS84Max
 }

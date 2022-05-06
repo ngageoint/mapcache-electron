@@ -157,13 +157,13 @@ const mutations = {
 }
 
 const actions = {
-  async newProject ({ commit }, { id, name, directory }) {
+  async newProject ({ commit }, { id, name, directory, sources = {}}) {
     return new Promise (resolve => {
       let project = {
         id: id,
         name: name || 'New Project',
         directory: directory,
-        sources: {},
+        sources: sources,
         geopackages: {},
         zoomControlEnabled: true,
         displayZoomEnabled: true,

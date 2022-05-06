@@ -48,7 +48,7 @@ import {
   _setFeatureStyle,
 } from './GeoPackageStyleUtilities'
 import orderBy from 'lodash/orderBy'
-import {getMediaTableName} from '../util/media/MediaUtilities'
+import { getMediaTableName } from '../util/media/MediaUtilities'
 import {
   EPSG,
   COLON_DELIMITER,

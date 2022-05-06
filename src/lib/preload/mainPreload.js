@@ -4,7 +4,11 @@ import path from 'path'
 import { contextBridge, ipcRenderer } from 'electron'
 import { deleteProject } from '../vue/vuex/CommonActions'
 import { addGeoPackage, disableRemoteSources, newProject, setProjectAccessed } from '../vue/vuex/LandingActions'
-import { createNextAvailableProjectDirectory } from '../util/file/FileUtilities'
+import {
+  createNextAvailableLayerDirectory,
+  createNextAvailableProjectDirectory,
+  createNextAvailableSourceDirectory
+} from '../util/file/FileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
   GET_APP_VERSION,
@@ -86,6 +90,12 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getBaseName: (filePath) => {
     return path.basename(filePath)
+  },
+  createSourceDirectory: (projectDirectory) => {
+    return createNextAvailableSourceDirectory(projectDirectory)
+  },
+  createNextAvailableLayerDirectory: (sourceDirectory) => {
+    return createNextAvailableLayerDirectory(sourceDirectory)
   },
   disableRemoteSources,
   newProject,

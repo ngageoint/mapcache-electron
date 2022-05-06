@@ -40,7 +40,7 @@
     </v-card-text>
     <v-card-text class="ma-0 pa-0 detail-bg" v-else>
       <v-skeleton-loader
-          v-for="i in configuration.layers.length"
+          v-for="i in configuration.layers.length || 3"
           tile
           flat
           class="skeleton"
@@ -115,10 +115,6 @@ export default {
   },
   methods: {
     _updateConfiguration (configuration) {
-      // window.mapcache.setDataSource({
-      //   projectId: this.project.id,
-      //   source: updatedSource
-      // })
       this.updateConfiguration(configuration)
     },
     toggleLayer (item) {
@@ -168,6 +164,10 @@ export default {
             return this.configuration.layers.findIndex(l => l.name === a.name) - this.configuration.layers.findIndex(l => l.name === b.name)
           })
           this.loaded = true
+          const configuration = cloneDeep(this.configuration)
+          configuration.layers = this.sortedRenderingLayers
+          configuration.extent = WMSLayer.getExtentForLayers(configuration.layers)
+          this._updateConfiguration(configuration)
         } else if (result.error) {
           this.loaded = true
           this.setError(result.error)

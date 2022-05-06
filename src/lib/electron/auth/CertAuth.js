@@ -1,4 +1,4 @@
-import {CLIENT_CERTIFICATE_SELECTED, SELECT_CLIENT_CERTIFICATE} from '../ipc/MapCacheIPC'
+import { CLIENT_CERTIFICATE_SELECTED, SELECT_CLIENT_CERTIFICATE } from '../ipc/MapCacheIPC'
 
 const { ipcMain } = require('electron')
 
@@ -15,7 +15,7 @@ const promises = {}
  * @param {WebContents} webContents The WebContents instance requesting a certificate.
  * @return {!Promise<!Electron.Certificate>} A promise that resolves to the selected certificate.
  */
-function getUserCertForUrl (url, list, webContents) {
+function getUserCertForUrl(url, list, webContents) {
   if (!url) {
     return Promise.reject(new Error('URL for certificate request was empty.'))
   }

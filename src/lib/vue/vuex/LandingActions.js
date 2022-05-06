@@ -4,8 +4,8 @@ import { setDataSourceVisible } from './CommonActions'
 import { isRemote } from '../../layer/LayerTypes'
 import { getOrCreateGeoPackageForApp } from '../../geopackage/GeoPackageCommon'
 
-async function newProject({id, name, directory}) {
-  await store.dispatch('Projects/newProject', {id, name, directory})
+async function newProject({id, name, directory, sources}) {
+  await store.dispatch('Projects/newProject', {id, name, directory, sources})
   return store.dispatch('UIState/addProjectState', {projectId: id})
 }
 

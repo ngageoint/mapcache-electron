@@ -4,12 +4,14 @@ import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
 import { getExtraResourcesDirectory } from '../util/file/FileUtilities'
 import {
+  COLON_DELIMITER,
   WEB_MERCATOR,
   WEB_MERCATOR_CODE,
   WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_CODE,
   WORLD_GEODETIC_SYSTEM_CRS
 } from './ProjectionConstants'
+import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
@@ -119,12 +121,18 @@ function reprojectWebMercatorBoundingBox (minLon, maxLon, minLat, maxLat, srs, d
     yArray.push(projected[1])
   }
 
-  return {
+  let bounds = {
     minLon: Math.min(...xArray),
     maxLon: Math.max(...xArray),
     minLat: Math.min(...yArray),
     maxLat: Math.max(...yArray)
   }
+
+  if (srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) {
+    bounds = trimBboxToWGS84Max(bounds)
+  }
+
+  return bounds
 }
 
 function getConverter (from, to) {

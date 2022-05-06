@@ -20,7 +20,7 @@ import {
   createNextAvailableSourceDirectory,
   getExtraResourcesDirectory,
   exists,
-  rmDirAsync
+  rmDirAsync, createNextAvailableLayerDirectory
 } from '../util/file/FileUtilities'
 import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
 import {
@@ -320,6 +320,9 @@ contextBridge.exposeInMainWorld('mapcache', {
   createBaseMapDirectory,
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
+  },
+  createNextAvailableLayerDirectory: (sourceDirectory) => {
+    return createNextAvailableLayerDirectory(sourceDirectory)
   },
   deleteSourceDirectory: async (source) => {
     if (source.directory && exists(source.directory)) {
