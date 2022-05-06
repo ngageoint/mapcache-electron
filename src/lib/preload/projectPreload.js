@@ -94,7 +94,7 @@ import {
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
   updateDataSourceColumnOrder, allowNotifications,
-  addProjectState
+  addProjectState, setNominatimUrl, setOverpassUrl
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import {
@@ -807,6 +807,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   getMediaRelationships,
   setDataSource,
   setProjectName,
+  setNominatimUrl,
+  setOverpassUrl,
   showToolTips,
   allowNotifications,
   setDataSourceDisplayName,

@@ -53,6 +53,17 @@
                          :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold"
                          label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
+    <v-dialog v-model="nominatimUrlDialog" max-width="400" persistent @keydown.esc="toggleNominatimUrlDialog">
+      <edit-text-modal autofocus :icon="mdiPencil" title="Edit nominatim url" :rules="urlRules" save-text="Save"
+                       :on-cancel="toggleNominatimUrlDialog" :value="nominatimUrl" font-size="16px"
+                       font-weight="bold" label="Project name" :on-save="saveNominatimUrl"/>
+    </v-dialog>
+    <v-dialog v-model="overpassUrlDialog" max-width="400" persistent @keydown.esc="toggleOverpassUrlDialog">
+      <edit-text-modal autofocus :icon="mdiPencil" title="Edit overpass interpreter url" :rules="urlRules"
+                       save-text="Save"
+                       :on-cancel="toggleOverpassUrlDialog" :value="overpassUrl" font-size="16px"
+                       font-weight="bold" label="Project name" :on-save="saveOverpassUrl"/>
+    </v-dialog>
     <v-sheet class="mapcache-sheet-content">
       <v-list two-line subheader>
         <v-row no-gutters justify="space-between" align="center">
@@ -120,6 +131,18 @@
           <v-list-item-content>
             <v-list-item-title>Base maps</v-list-item-title>
             <v-list-item-subtitle>Manage base maps</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item @click="toggleNominatimUrlDialog">
+          <v-list-item-content style="padding-right: 12px;">
+            <v-list-item-title>Nominatim URL</v-list-item-title>
+            <v-list-item-subtitle>Adjust the nominatim service used to search the map.</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item @click="toggleOverpassUrlDialog">
+          <v-list-item-content style="padding-right: 12px;">
+            <v-list-item-title>Overpass URL</v-list-item-title>
+            <v-list-item-subtitle>Adjust the interpreter used for Overpass data imports.</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -251,6 +274,8 @@ import SavedUrls from './SavedUrls'
 import BaseMaps from '../BaseMaps/BaseMaps'
 import { mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
+import { mapState } from 'vuex'
+import { environment } from '../../lib/env/env'
 
 export default {
   props: {
@@ -272,6 +297,14 @@ export default {
     EditNumberModal
   },
   computed: {
+    ...mapState({
+      nominatimUrl: state => {
+        return state.URLs.nominatimUrl || environment.nominatimUrl
+      },
+      overpassUrl: state => {
+        return state.URLs.overpassUrl || environment.overpassUrl
+      }
+    }),
     darkTheme: {
       get () {
         return this.dark
@@ -373,6 +406,12 @@ export default {
       deleteProjectDialog: false,
       savedUrlDialog: false,
       baseMapsDialog: false,
+      nominatimUrlDialog: false,
+      overpassUrlDialog: false,
+      urlRules: [
+        v => !!v || 'Url is required',
+        v => window.mapcache.isUrlValid(v) || 'Invalid url',
+      ],
       projectNameRules: [v => !!v || 'Project name is required.']
     }
   },
@@ -405,6 +444,20 @@ export default {
     },
     toggleEditMaxFeaturesDialog () {
       this.editMaxFeaturesDialog = !this.editMaxFeaturesDialog
+    },
+    toggleNominatimUrlDialog () {
+      this.nominatimUrlDialog = !this.nominatimUrlDialog
+    },
+    saveNominatimUrl (val) {
+      window.mapcache.setNominatimUrl({ url: val })
+      this.toggleNominatimUrlDialog()
+    },
+    toggleOverpassUrlDialog () {
+      this.overpassUrlDialog = !this.overpassUrlDialog
+    },
+    saveOverpassUrl (val) {
+      window.mapcache.setOverpassUrl({ url: val })
+      this.toggleOverpassUrlDialog()
     },
     deleteProjectAndClose () {
       window.mapcache.deleteProject(this.project).then(() => {

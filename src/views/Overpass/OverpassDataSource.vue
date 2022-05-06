@@ -163,18 +163,10 @@ export default {
   },
   computed: {
     ...mapState({
-      urls: state => {
-        return state.URLs.savedUrls || []
+      overpassUrl: state => {
+        return state.URLs.overpassUrl || environment.overpassUrl
       }
     }),
-    sortedLayers: {
-      get () {
-        return this.sortedRenderingLayers || this.selectedDataSourceLayers
-      },
-      set (val) {
-        this.sortedRenderingLayers = val
-      }
-    },
     importReady () {
       return this.step === 4 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
     }
@@ -218,7 +210,7 @@ export default {
       let sourceToProcess = {
         id: id,
         directory: window.mapcache.createSourceDirectory(this.project.directory),
-        url: environment.overpassUrl,
+        url: this.overpassUrl,
         query: query,
         queryCount: queryCount,
         bbox: this.overpassBoundingBox,

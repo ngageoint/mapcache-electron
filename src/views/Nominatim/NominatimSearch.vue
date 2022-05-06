@@ -52,6 +52,8 @@
 import { mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { queryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
+import { mapState } from 'vuex'
+import { environment } from '../../lib/env/env'
 
 export default {
   name: 'NominatimSearch',
@@ -59,6 +61,13 @@ export default {
     project: Object,
     disableSearch: Boolean,
     mapBounds: Array
+  },
+  computed: {
+    ...mapState({
+      nominatimUrl: state => {
+        return state.URLs.nominatimUrl || environment.nominatimUrl
+      }
+    })
   },
   data () {
     return {
@@ -96,7 +105,7 @@ export default {
       if (this.applyViewBox) {
         bbox = this.mapBounds
       }
-      return queryNominatim(value, bbox, [])
+      return queryNominatim(this.nominatimUrl, value, bbox, [])
     }
   },
   mounted () {

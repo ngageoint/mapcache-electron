@@ -103,6 +103,14 @@ function setProjectName ({ project, name }) {
   store.dispatch('Projects/setProjectName', { project, name })
 }
 
+function setNominatimUrl ({ url }) {
+  store.dispatch('URLs/setNominatimUrl', { url })
+}
+
+function setOverpassUrl ({ url }) {
+  store.dispatch('URLs/setOverpassUrl', { url })
+}
+
 function showToolTips ({ projectId, show }) {
   store.dispatch('Projects/showToolTips', { projectId, show })
 }
@@ -901,5 +909,7 @@ export {
   updateGeoPackageFeatureTableColumnOrder,
   updateDataSourceColumnOrder,
   allowNotifications,
-  addProjectState
+  addProjectState,
+  setNominatimUrl,
+  setOverpassUrl
 }

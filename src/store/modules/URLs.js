@@ -1,9 +1,12 @@
 // Keeps a history of any tile URLs that the user has added, accessible across all projects
 import Vue from 'vue'
+import { environment } from '../../lib/env/env'
 
 const getDefaultState = () => {
   return {
-    savedUrls: []
+    savedUrls: [],
+    nominatimUrl: environment.nominatimUrl,
+    overpassUrl: environment.overpassUrl
   }
 }
 
@@ -12,7 +15,7 @@ const state = getDefaultState()
 const getters = {
   getUrls: (state) => {
     return state.savedUrls
-  }
+  },
 }
 
 const mutations = {
@@ -40,6 +43,12 @@ const mutations = {
         state.savedUrls.splice(i, 1, { url: newUrl })
       }
     }
+  },
+  setNominatimUrl (state, { url }) {
+    Vue.set(state, 'nominatimUrl', url)
+  },
+  setOverpassUrl (state, { url }) {
+    Vue.set(state, 'overpassUrl', url)
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
@@ -70,7 +79,13 @@ const actions = {
   },
   migrateState ({ commit }, { migratedState }) {
     commit('migrateState', { migratedState })
-  }
+  },
+  setNominatimUrl ({ commit }, { url }) {
+    commit('setNominatimUrl', { url })
+  },
+  setOverpassUrl ({ commit }, { url }) {
+    commit('setOverpassUrl', { url })
+  },
 }
 
 export default {

@@ -389,6 +389,7 @@ import { FEATURE_TABLE_ACTIONS } from '../FeatureTable/FeatureTableActions'
 import Sortable from 'sortablejs'
 import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
 import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
+import { environment } from '../../lib/env/env'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -462,6 +463,9 @@ export default {
   },
   computed: {
     ...mapState({
+      nominatimUrl: state => {
+        return state.URLs.nominatimUrl || environment.nominatimUrl
+      },
       baseMapItems: state => {
         return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
           return {
@@ -1148,7 +1152,7 @@ export default {
       self.performingReverseQuery = true
       document.getElementById('map').style.cursor = 'wait'
       self.$nextTick(() => {
-        reverseQueryNominatim(self.contextMenuCoordinate.lat, self.contextMenuCoordinate.lng, zoom).then(result => {
+        reverseQueryNominatim(this.nominatimUrl, self.contextMenuCoordinate.lat, self.contextMenuCoordinate.lng, zoom).then(result => {
           if (result.error) {
             EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, result.error)
           } else if (result.featureCollection.features.length === 0) {

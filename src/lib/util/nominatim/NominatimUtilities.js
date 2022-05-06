@@ -1,10 +1,11 @@
 import keys from 'lodash/keys'
 import { OpenStreetMapProvider } from 'leaflet-geosearch'
-import { environment } from '../../env/env'
 import pointOnFeature from '@turf/point-on-feature'
+import { environment } from '../../env/env'
 
-async function queryNominatim (query, bbox = null, idsToIgnore = []) {
+async function queryNominatim (url, query, bbox = null, idsToIgnore = []) {
   const requestObject = {
+    nominatimUrl: url,
     q: query,
     format: 'geojson',
     addressdetails: 1,
@@ -20,8 +21,9 @@ async function queryNominatim (query, bbox = null, idsToIgnore = []) {
   return queryWithRequestObject(requestObject)
 }
 
-async function reverseQueryNominatim (lat, lon, zoom) {
+async function reverseQueryNominatim (url, lat, lon, zoom) {
   const requestObject = {
+    nominatimUrl: url,
     lat: lat,
     lon: lon,
     zoom: zoom >= 15 ? 18 : zoom,
@@ -92,8 +94,8 @@ function getCountryCodeName (feature) {
 async function queryWithRequestObject (requestObject, reverse = false, timeout = 10000) {
   try {
     requestObject.polygon_geojson = 1
-    const searchUrl = `${environment.nominatimUrl}/search`
-    const reverseUrl = `${environment.nominatimUrl}/reverse`
+    const searchUrl = `${requestObject.nominatimUrl}/search`
+    const reverseUrl = `${requestObject.nominatimUrl}/reverse`
     const provider = new OpenStreetMapProvider({ searchUrl, reverseUrl })
     let url = provider.getUrl(reverse ? provider.reverseUrl : provider.searchUrl, requestObject)
     let controller = new AbortController()

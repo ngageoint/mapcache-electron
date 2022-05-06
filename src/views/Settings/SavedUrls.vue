@@ -108,7 +108,7 @@ export default {
       urlRules: [
         v => !!v || 'Url is required',
         v => window.mapcache.isUrlValid(v) || 'Invalid url',
-        v => !this.urls.find(url => url.url.toLowerCase() === v) || 'Urk already exists'
+        v => !this.urls.find(url => url.url.toLowerCase() === v) || 'Url already exists'
       ],
       urlValid: false,
       editUrlValue: null,
