@@ -56,13 +56,13 @@
     <v-dialog v-model="nominatimUrlDialog" max-width="400" persistent @keydown.esc="toggleNominatimUrlDialog">
       <edit-text-modal autofocus :icon="mdiPencil" title="Edit nominatim url" :rules="urlRules" save-text="Save"
                        :on-cancel="toggleNominatimUrlDialog" :value="nominatimUrl" font-size="16px"
-                       font-weight="bold" label="Project name" :on-save="saveNominatimUrl"/>
+                       font-weight="bold" label="Nominatim url" :on-save="saveNominatimUrl"/>
     </v-dialog>
     <v-dialog v-model="overpassUrlDialog" max-width="400" persistent @keydown.esc="toggleOverpassUrlDialog">
       <edit-text-modal autofocus :icon="mdiPencil" title="Edit overpass interpreter url" :rules="urlRules"
                        save-text="Save"
                        :on-cancel="toggleOverpassUrlDialog" :value="overpassUrl" font-size="16px"
-                       font-weight="bold" label="Project name" :on-save="saveOverpassUrl"/>
+                       font-weight="bold" label="Overpass url" :on-save="saveOverpassUrl"/>
     </v-dialog>
     <v-sheet class="mapcache-sheet-content">
       <v-list two-line subheader>

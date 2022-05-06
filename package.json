@@ -108,6 +108,9 @@
     "vuetify-loader": "1.7.3",
     "webpack-bundle-analyzer": "4.5.0"
   },
+  "resolutions": {
+    "@electron/universal": "1.2.1"
+  },
   "contributors": [
     {
       "name": "Daniel Barela",
