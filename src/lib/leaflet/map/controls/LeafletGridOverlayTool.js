@@ -1,7 +1,8 @@
-import {L} from '../../vendor'
+import { L } from '../../vendor'
 
 export default class LeafletGridOverlayTool extends L.Control {
   gridFunction
+
   constructor (options, gridFunction) {
     let mergedOptions = {
       ...{
@@ -27,7 +28,8 @@ export default class LeafletGridOverlayTool extends L.Control {
     }.bind(this)
 
     this.disable = () => {
-      this._gridLink.onclick = function () {}
+      this._gridLink.onclick = function () {
+      }
       L.DomUtil.addClass(this._gridLink, 'leaflet-control-disabled')
     }
 

@@ -19,7 +19,7 @@ function _imageDataEqual (data1, data2) {
   let equal = true
   if (data1.length === data2.length) {
     for (let i = 0; i < data1.length; i++) {
-      if (data1[i] !== data2[i]){
+      if (data1[i] !== data2[i]) {
         equal = false
         break
       }
@@ -30,7 +30,7 @@ function _imageDataEqual (data1, data2) {
   return equal
 }
 
-function  _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
+function _addOrSetStyleForFeature (gp, feature, rowId, tableName) {
   if (!isNil(feature.style)) {
     const featureTableStyles = _addStyleExtensionForTable(gp, tableName)
     const geometryType = feature.geometry != null ? GeometryType.fromName(feature.geometry.type.toUpperCase()) : null
@@ -69,7 +69,7 @@ function  _addOrSetStyleForFeature(gp, feature, rowId, tableName) {
  * @param gp
  * @param tableName
  */
-function _addStyleExtensionForTable(gp, tableName) {
+function _addStyleExtensionForTable (gp, tableName) {
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
   featureTableStyles.getFeatureStyleExtension().getOrCreateExtension(tableName)
   featureTableStyles.getFeatureStyleExtension().getRelatedTables().getOrCreateExtension()
@@ -95,7 +95,7 @@ function _addStyleExtensionForTable(gp, tableName) {
  * @param tableName
  * @returns {Promise<any>}
  */
-async function addStyleExtensionForTable(filePath, tableName) {
+async function addStyleExtensionForTable (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _addStyleExtensionForTable(gp, tableName)
   })
@@ -106,7 +106,7 @@ async function addStyleExtensionForTable(filePath, tableName) {
  * @param gp
  * @param tableName
  */
-function _removeStyleExtensionForTable(gp, tableName) {
+function _removeStyleExtensionForTable (gp, tableName) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   featureTableStyles.setTableFeatureStyles(null)
   featureTableStyles.deleteRelationships()
@@ -121,7 +121,7 @@ function _removeStyleExtensionForTable(gp, tableName) {
  * @param tableName
  * @returns {Promise<any>}
  */
-async function removeStyleExtensionForTable(filePath, tableName) {
+async function removeStyleExtensionForTable (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _removeStyleExtensionForTable(gp, tableName)
   })
@@ -134,7 +134,7 @@ async function removeStyleExtensionForTable(filePath, tableName) {
  * @param geometryType
  * @returns {StyleRow}
  */
-function _getTableStyle(gp, tableName, geometryType) {
+function _getTableStyle (gp, tableName, geometryType) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   return featureTableStyles.getTableStyle(geometryType)
 }
@@ -146,7 +146,7 @@ function _getTableStyle(gp, tableName, geometryType) {
  * @param geometryType
  * @returns {Promise<any>}
  */
-async function getTableStyle(filePath, tableName, geometryType) {
+async function getTableStyle (filePath, tableName, geometryType) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getTableStyle(gp, tableName, geometryType)
   })
@@ -159,7 +159,7 @@ async function getTableStyle(filePath, tableName, geometryType) {
  * @param geometryType
  * @returns {IconRow}
  */
-function _getTableIcon(gp, tableName, geometryType) {
+function _getTableIcon (gp, tableName, geometryType) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   return featureTableStyles.getTableIcon(geometryType)
 }
@@ -171,7 +171,7 @@ function _getTableIcon(gp, tableName, geometryType) {
  * @param geometryType
  * @returns {Promise<any>}
  */
-async function getTableIcon(filePath, tableName, geometryType) {
+async function getTableIcon (filePath, tableName, geometryType) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getTableIcon(gp, tableName, geometryType)
   })
@@ -184,7 +184,7 @@ async function getTableIcon(filePath, tableName, geometryType) {
  * @param id
  * @returns {UserRow}
  */
-function _getIconById(gp, tableName, id) {
+function _getIconById (gp, tableName, id) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   return featureTableStyles.getIconDao().queryForId(id)
 }
@@ -196,7 +196,7 @@ function _getIconById(gp, tableName, id) {
  * @param id
  * @returns {Promise<any>}
  */
-async function getIconById(filePath, tableName, id) {
+async function getIconById (filePath, tableName, id) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getIconById(gp, tableName, id)
   })
@@ -209,7 +209,7 @@ async function getIconById(filePath, tableName, id) {
  * @param geometryType
  * @returns {number}
  */
-function _getTableIconId(gp, tableName, geometryType) {
+function _getTableIconId (gp, tableName, geometryType) {
   let id = -1
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let icon = featureTableStyles.getTableIcon(geometryType)
@@ -226,12 +226,11 @@ function _getTableIconId(gp, tableName, geometryType) {
  * @param geometryType
  * @returns {Promise<any>}
  */
-async function getTableIconId(filePath, tableName, geometryType) {
+async function getTableIconId (filePath, tableName, geometryType) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getTableIconId(gp, tableName, geometryType)
   })
 }
-
 
 
 /**
@@ -241,7 +240,7 @@ async function getTableIconId(filePath, tableName, geometryType) {
  * @param rowId
  * @returns {any}
  */
-function _getFeatureStyleOrIcon(gp, tableName, rowId) {
+function _getFeatureStyleOrIcon (gp, tableName, rowId) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let featureDao = gp.getFeatureDao(tableName)
   let feature = featureDao.queryForId(rowId)
@@ -330,7 +329,7 @@ function _getFeatureStyleOrIcon(gp, tableName, rowId) {
  * @param rowId
  * @returns {Promise<any>}
  */
-async function getFeatureStyleOrIcon(filePath, tableName, rowId) {
+async function getFeatureStyleOrIcon (filePath, tableName, rowId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureStyleOrIcon(gp, tableName, rowId)
   })
@@ -343,7 +342,7 @@ async function getFeatureStyleOrIcon(filePath, tableName, rowId) {
  * @param rowId
  * @returns {StyleRow}
  */
-function _getFeatureStyle(gp, tableName, rowId) {
+function _getFeatureStyle (gp, tableName, rowId) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let featureDao = gp.getFeatureDao(tableName)
   let feature = featureDao.queryForId(rowId)
@@ -357,7 +356,7 @@ function _getFeatureStyle(gp, tableName, rowId) {
  * @param rowId
  * @returns {Promise<any>}
  */
-async function getFeatureStyle(filePath, tableName, rowId) {
+async function getFeatureStyle (filePath, tableName, rowId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureStyle(gp, tableName, rowId)
   })
@@ -370,7 +369,7 @@ async function getFeatureStyle(filePath, tableName, rowId) {
  * @param rowId
  * @returns {IconRow}
  */
-function _getFeatureIcon(gp, tableName, rowId) {
+function _getFeatureIcon (gp, tableName, rowId) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let featureDao = gp.getFeatureDao(tableName)
   let feature = featureDao.queryForId(rowId)
@@ -384,7 +383,7 @@ function _getFeatureIcon(gp, tableName, rowId) {
  * @param rowId
  * @returns {Promise<any>}
  */
-async function getFeatureIcon(filePath, tableName, rowId) {
+async function getFeatureIcon (filePath, tableName, rowId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureIcon(gp, tableName, rowId)
   })
@@ -395,7 +394,7 @@ async function getFeatureIcon(filePath, tableName, rowId) {
  * @param gp
  * @param tableName
  */
-function _getStyleRows(gp, tableName) {
+function _getStyleRows (gp, tableName) {
   let styleRows = {}
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let styleDao = featureTableStyles.getStyleDao()
@@ -422,7 +421,7 @@ function _getStyleRows(gp, tableName) {
  * @param tableName
  * @returns {Promise<any>}
  */
-async function getStyleRows(filePath, tableName) {
+async function getStyleRows (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getStyleRows(gp, tableName)
   })
@@ -433,7 +432,7 @@ async function getStyleRows(filePath, tableName) {
  * @param gp
  * @param tableName
  */
-function _getStyleRowObjects(gp, tableName) {
+function _getStyleRowObjects (gp, tableName) {
   let styleRows = {}
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let styleDao = featureTableStyles.getStyleDao()
@@ -525,7 +524,7 @@ function _iterateTableIconMappings (gp, tableName, callback) {
  * @param gp
  * @param tableName
  */
-function _getIconRows(gp, tableName) {
+function _getIconRows (gp, tableName) {
   let iconRows = {}
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let iconDao = featureTableStyles.getIconDao()
@@ -553,7 +552,7 @@ function _getIconRows(gp, tableName) {
  * @param gp
  * @param tableName
  */
-function _getIconRowObjects(gp, tableName) {
+function _getIconRowObjects (gp, tableName) {
   let iconRows = {}
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let iconDao = featureTableStyles.getIconDao()
@@ -572,13 +571,13 @@ function _getIconRowObjects(gp, tableName) {
  * @param tableName
  * @returns {Promise<any>}
  */
-async function getIconRows(filePath, tableName) {
+async function getIconRows (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getIconRows(gp, tableName)
   })
 }
 
-function _getStyleItemsForFeature(gp, tableName, rowId) {
+function _getStyleItemsForFeature (gp, tableName, rowId) {
   const hasStyleExtension = gp.featureStyleExtension.has(tableName)
   const featureDao = gp.getFeatureDao(tableName)
   const feature = featureDao.queryForId(rowId)
@@ -638,7 +637,7 @@ function _getStyleItemsForFeature(gp, tableName, rowId) {
  * @param rowId
  * @returns {Promise<any>}
  */
-async function getStyleItemsForFeature(filePath, tableName, rowId) {
+async function getStyleItemsForFeature (filePath, tableName, rowId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getStyleItemsForFeature(gp, tableName, rowId)
   })
@@ -650,7 +649,7 @@ async function getStyleItemsForFeature(filePath, tableName, rowId) {
  * @param tableName
  * @param featureIdAndGeometryTypes
  */
-function _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes) {
+function _getStyleAssignmentForFeatures (gp, tableName, featureIdAndGeometryTypes) {
   let styleAssignmentMap = {}
   const hasStyleExtension = gp.featureStyleExtension.has(tableName)
   if (hasStyleExtension) {
@@ -684,7 +683,7 @@ function _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes
  * @param featureIdAndGeometryTypes, null will search against all features
  * @returns {Promise<any>}
  */
-async function getStyleAssignmentForFeatures(filePath, tableName, featureIdAndGeometryTypes) {
+async function getStyleAssignmentForFeatures (filePath, tableName, featureIdAndGeometryTypes) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
   })
@@ -696,7 +695,7 @@ async function getStyleAssignmentForFeatures(filePath, tableName, featureIdAndGe
  * @param tableName
  * @param styleRow
  */
-function _updateStyleRow(gp, tableName, styleRow) {
+function _updateStyleRow (gp, tableName, styleRow) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let styleDao = featureTableStyles.getStyleDao()
   let updatedRow = styleDao.newRow()
@@ -716,7 +715,7 @@ function _updateStyleRow(gp, tableName, styleRow) {
  * @param styleRow
  * @returns {Promise<any>}
  */
-async function updateStyleRow(filePath, tableName, styleRow) {
+async function updateStyleRow (filePath, tableName, styleRow) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _updateStyleRow(gp, tableName, styleRow)
   })
@@ -728,7 +727,7 @@ async function updateStyleRow(filePath, tableName, styleRow) {
  * @param tableName
  * @param iconRow
  */
-function _updateIconRow(gp, tableName, iconRow) {
+function _updateIconRow (gp, tableName, iconRow) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let iconDao = featureTableStyles.getIconDao()
   let updatedRow = iconDao.newRow()
@@ -751,7 +750,7 @@ function _updateIconRow(gp, tableName, iconRow) {
  * @param iconRow
  * @returns {Promise<any>}
  */
-async function updateIconRow(filePath, tableName, iconRow) {
+async function updateIconRow (filePath, tableName, iconRow) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _updateIconRow(gp, tableName, iconRow)
   })
@@ -763,7 +762,7 @@ async function updateIconRow(filePath, tableName, iconRow) {
  * @param tableName
  * @param style
  */
-function _createStyleRow(gp, tableName, style = getDefaultMapCacheStyle()) {
+function _createStyleRow (gp, tableName, style = getDefaultMapCacheStyle()) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let styleDao = featureTableStyles.getStyleDao()
   let styleRow = styleDao.newRow()
@@ -782,7 +781,7 @@ function _createStyleRow(gp, tableName, style = getDefaultMapCacheStyle()) {
  * @param style
  * @returns {Promise<any>}
  */
-async function createStyleRow(filePath, tableName, style) {
+async function createStyleRow (filePath, tableName, style) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _createStyleRow(gp, tableName, style)
   })
@@ -794,7 +793,7 @@ async function createStyleRow(filePath, tableName, style) {
  * @param tableName
  * @param icon
  */
-function _createIconRow(gp, tableName, icon = getDefaultIcon()) {
+function _createIconRow (gp, tableName, icon = getDefaultIcon()) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   let iconDao = featureTableStyles.getIconDao()
   let iconRow = iconDao.newRow()
@@ -816,7 +815,7 @@ function _createIconRow(gp, tableName, icon = getDefaultIcon()) {
  * @param icon
  * @returns {Promise<any>}
  */
-async function createIconRow(filePath, tableName, icon = getDefaultIcon()) {
+async function createIconRow (filePath, tableName, icon = getDefaultIcon()) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _createIconRow(gp, tableName, icon)
   })
@@ -827,7 +826,7 @@ async function createIconRow(filePath, tableName, icon = getDefaultIcon()) {
  * @param gp
  * @param styleId
  */
-function _deleteStyleRow(gp, styleId) {
+function _deleteStyleRow (gp, styleId) {
   gp.getFeatureTables().forEach(tableName => {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.deleteStyleAndMappingsByStyleRowId(styleId)
@@ -840,7 +839,7 @@ function _deleteStyleRow(gp, styleId) {
  * @param styleId
  * @returns {Promise<any>}
  */
-async function deleteStyleRow(filePath, styleId) {
+async function deleteStyleRow (filePath, styleId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _deleteStyleRow(gp, styleId)
   })
@@ -851,7 +850,7 @@ async function deleteStyleRow(filePath, styleId) {
  * @param gp
  * @param iconId
  */
-function _deleteIconRow(gp, iconId) {
+function _deleteIconRow (gp, iconId) {
   gp.getFeatureTables().forEach(tableName => {
     let featureTableStyles = new FeatureTableStyles(gp, tableName)
     featureTableStyles.deleteIconAndMappingsByIconRowId(iconId)
@@ -864,7 +863,7 @@ function _deleteIconRow(gp, iconId) {
  * @param iconId
  * @returns {Promise<any>}
  */
-async function deleteIconRow(filePath, iconId) {
+async function deleteIconRow (filePath, iconId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _deleteIconRow(gp, iconId)
   })
@@ -878,7 +877,7 @@ async function deleteIconRow(filePath, iconId) {
  * @param geometryType
  * @returns {StyleRow}
  */
-function _getFeatureStyleRow(gp, tableName, featureId, geometryType) {
+function _getFeatureStyleRow (gp, tableName, featureId, geometryType) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   return featureTableStyles.getFeatureStyleExtension().getStyle(tableName, featureId, geometryType, false)
 }
@@ -891,7 +890,7 @@ function _getFeatureStyleRow(gp, tableName, featureId, geometryType) {
  * @param geometryType
  * @returns {Promise<any>}
  */
-async function getFeatureStyleRow(filePath, tableName, featureId, geometryType) {
+async function getFeatureStyleRow (filePath, tableName, featureId, geometryType) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureStyleRow(gp, tableName, featureId, geometryType)
   })
@@ -905,7 +904,7 @@ async function getFeatureStyleRow(filePath, tableName, featureId, geometryType) 
  * @param geometryType
  * @returns {IconRow}
  */
-function _getFeatureIconRow(gp, tableName, featureId, geometryType) {
+function _getFeatureIconRow (gp, tableName, featureId, geometryType) {
   let featureTableStyles = new FeatureTableStyles(gp, tableName)
   return featureTableStyles.getFeatureStyleExtension().getIcon(tableName, featureId, geometryType, false)
 }
@@ -918,7 +917,7 @@ function _getFeatureIconRow(gp, tableName, featureId, geometryType) {
  * @param geometryType
  * @returns {Promise<any>}
  */
-async function getFeatureIconRow(filePath, tableName, featureId, geometryType) {
+async function getFeatureIconRow (filePath, tableName, featureId, geometryType) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getFeatureIconRow(gp, tableName, featureId, geometryType)
   })
@@ -932,7 +931,7 @@ async function getFeatureIconRow(filePath, tableName, featureId, geometryType) {
  * @param styleId
  * @returns {number}
  */
-function _setTableStyle(gp, tableName, geometryType, styleId) {
+function _setTableStyle (gp, tableName, geometryType, styleId) {
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
   if (styleId === -1) {
     return featureTableStyles.getFeatureStyleExtension().setTableStyle(tableName, geometryType, null)
@@ -952,7 +951,7 @@ function _setTableStyle(gp, tableName, geometryType, styleId) {
  * @param styleId
  * @returns {Promise<any>}
  */
-async function setTableStyle(filePath, tableName, geometryType, styleId) {
+async function setTableStyle (filePath, tableName, geometryType, styleId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _setTableStyle(gp, tableName, geometryType, styleId)
   })
@@ -966,7 +965,7 @@ async function setTableStyle(filePath, tableName, geometryType, styleId) {
  * @param iconId
  * @returns {number}
  */
-function _setTableIcon(gp, tableName, geometryType, iconId) {
+function _setTableIcon (gp, tableName, geometryType, iconId) {
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
   if (iconId === -1) {
     return featureTableStyles.getFeatureStyleExtension().setTableIcon(tableName, geometryType, null)
@@ -986,7 +985,7 @@ function _setTableIcon(gp, tableName, geometryType, iconId) {
  * @param iconId
  * @returns {Promise<any>}
  */
-async function setTableIcon(filePath, tableName, geometryType, iconId) {
+async function setTableIcon (filePath, tableName, geometryType, iconId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _setTableIcon(gp, tableName, geometryType, iconId)
   })
@@ -1000,7 +999,7 @@ async function setTableIcon(filePath, tableName, geometryType, iconId) {
  * @param styleId
  * @returns {number}
  */
-function _setFeatureStyle(gp, tableName, featureId, styleId) {
+function _setFeatureStyle (gp, tableName, featureId, styleId) {
   const featureDao = gp.getFeatureDao(tableName)
   const feature = featureDao.queryForId(featureId)
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -1022,7 +1021,7 @@ function _setFeatureStyle(gp, tableName, featureId, styleId) {
  * @param styleId
  * @returns {Promise<any>}
  */
-async function setFeatureStyle(filePath, tableName, featureId, styleId) {
+async function setFeatureStyle (filePath, tableName, featureId, styleId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _setFeatureStyle(gp, tableName, featureId, styleId)
   })
@@ -1034,7 +1033,7 @@ async function setFeatureStyle(filePath, tableName, featureId, styleId) {
  * @param tableName
  * @param featureId
  */
-function _clearStylingForFeature(gp, tableName, featureId) {
+function _clearStylingForFeature (gp, tableName, featureId) {
   const featureDao = gp.getFeatureDao(tableName)
   const feature = featureDao.queryForId(featureId)
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
@@ -1058,7 +1057,7 @@ function _clearStylingForFeature(gp, tableName, featureId) {
  * @param featureId
  * @returns {Promise<any>}
  */
-async function clearStylingForFeature(filePath, tableName, featureId) {
+async function clearStylingForFeature (filePath, tableName, featureId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _clearStylingForFeature(gp, tableName, featureId)
   })
@@ -1072,7 +1071,7 @@ async function clearStylingForFeature(filePath, tableName, featureId) {
  * @param iconId
  * @returns {number}
  */
-function _setFeatureIcon(gp, tableName, featureId, iconId) {
+function _setFeatureIcon (gp, tableName, featureId, iconId) {
   const featureDao = gp.getFeatureDao(tableName)
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
   const feature = featureDao.queryForId(featureId)
@@ -1094,7 +1093,7 @@ function _setFeatureIcon(gp, tableName, featureId, iconId) {
  * @param iconId
  * @returns {Promise<any>}
  */
-async function setFeatureIcon(filePath, tableName, featureId, iconId) {
+async function setFeatureIcon (filePath, tableName, featureId, iconId) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _setFeatureIcon(gp, tableName, featureId, iconId)
   })
@@ -1106,7 +1105,7 @@ async function setFeatureIcon(filePath, tableName, featureId, iconId) {
  * @param tableName
  * @returns {any[]}
  */
-function _getAllFeatureIdsAndGeometryTypes(gp, tableName) {
+function _getAllFeatureIdsAndGeometryTypes (gp, tableName) {
   const featureDao = gp.getFeatureDao(tableName)
   let each = featureDao.queryForEach()
   const results = []
@@ -1135,7 +1134,7 @@ function _getAllFeatureIdsAndGeometryTypes(gp, tableName) {
  * @param checkForTableStyles
  * @param featureIdAndGeometryTypes - feature ids to filter with
  */
-function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true, featureIdAndGeometryTypes) {
+function _getFeatureStyleMapping (gp, tableName, checkForTableStyles = true, featureIdAndGeometryTypes) {
   const featureTableStyles = new FeatureTableStyles(gp, tableName)
   const filter = featureIdAndGeometryTypes != null
   const features = featureIdAndGeometryTypes || _getAllFeatureIdsAndGeometryTypes(gp, tableName)
@@ -1208,7 +1207,7 @@ function _getFeatureStyleMapping(gp, tableName, checkForTableStyles = true, feat
 function _getStyleDrawOverlap (gp, tableName) {
   const featureDao = gp.getFeatureDao(tableName)
   const featureTiles = new FeatureTiles(featureDao)
-  return {width: featureTiles.widthOverlap, height: featureTiles.heightOverlap}
+  return { width: featureTiles.widthOverlap, height: featureTiles.heightOverlap }
 }
 
 function getStyleDrawOverlap (filePath, tableName) {
@@ -1218,13 +1217,13 @@ function getStyleDrawOverlap (filePath, tableName) {
 }
 
 function getIconImageData (file) {
-  const fileInfo = jetpack.inspect(file, {times: true, absolutePath: true})
+  const fileInfo = jetpack.inspect(file, { times: true, absolutePath: true })
   let extension = path.extname(fileInfo.absolutePath).slice(1)
   if (extension === 'jpg') {
     extension = 'jpeg'
   }
   let url = 'data:image/' + extension + ';base64,' + fs.readFileSync(fileInfo.absolutePath).toString('base64')
-  return {extension, url}
+  return { extension, url }
 }
 
 function determineAssignment (gp, tableName, geometryType) {
@@ -1309,6 +1308,7 @@ async function getGeoPackageFeatureTableStyleData (filePath, tableName) {
   }
   return result
 }
+
 async function hasStyleExtension (path, tableName) {
   let hasStyle = false
   let gp

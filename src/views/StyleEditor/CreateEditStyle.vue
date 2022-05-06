@@ -1,36 +1,36 @@
 <template>
   <v-card>
     <v-dialog
-      v-model="deleteDialog"
-      max-width="350"
-      persistent
-      @keydown.esc="deleteDialog = false">
+        v-model="deleteDialog"
+        max-width="350"
+        persistent
+        @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{mdiTrashCan}}</v-icon>
+          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
           Delete style
         </v-card-title>
         <v-card-text>
-          Are you sure you want to delete the <b>{{this.styleRow.name}}</b> style? This action can't be undone.
+          Are you sure you want to delete the <b>{{ this.styleRow.name }}</b> style? This action can't be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            text
-            @click="deleteDialog = false">
+              text
+              @click="deleteDialog = false">
             Cancel
           </v-btn>
           <v-btn
-            color="warning"
-            text
-            @click="deleteStyle">
+              color="warning"
+              text
+              @click="deleteStyle">
             Delete
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
     <v-card-title>
-      {{isNew ? 'Create style' : 'Edit style'}}
+      {{ isNew ? 'Create style' : 'Edit style' }}
       <v-spacer/>
       <v-row no-gutters justify="end" align="center">
         <geometry-style-svg :geometry-type="1" :color="color" :fill-color="fillColor" :fill-opacity="fillOpacity"/>
@@ -51,46 +51,49 @@
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5">
-          <colorpicker :color="color" v-model="color" label="Point / Line color" />
+          <colorpicker :color="color" v-model="color" label="Point / Line color"/>
         </v-col>
         <v-col offset="1" cols="5">
-          <colorpicker :color="fillColor" v-model="fillColor" label="Fill color" />
+          <colorpicker :color="fillColor" v-model="fillColor" label="Fill color"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
+          <numberpicker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)"
+                        :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
         </v-col>
         <v-col offset="1" cols="5" class="align-center">
-          <numberpicker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)" :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid" />
+          <numberpicker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)"
+                        :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="justify-space-between pl-4" align="center">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only @update-number="updateWidth" @update-valid="setWidthValid"/>
+          <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only
+                        @update-number="updateWidth" @update-valid="setWidthValid"/>
         </v-col>
       </v-row>
     </v-card-text>
     <v-card-actions>
       <v-btn
-        v-if="styleRow.id !== null && styleRow.id !== undefined"
-        color="warning"
-        text
-        @click="deleteDialog = true">
+          v-if="styleRow.id !== null && styleRow.id !== undefined"
+          color="warning"
+          text
+          @click="deleteDialog = true">
         Delete
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
-        text
-        @click="close">
+          text
+          @click="close">
         Close
       </v-btn>
       <v-btn
-        v-if="this.opacityValid && this.fillOpacityValid && this.widthValid && name != null && name.trim().length > 0"
-        :disabled="!this.opacityValid || !this.fillOpacityValid || !this.widthValid || this.name == null || this.name.trim().length === 0"
-        color="primary"
-        text
-        @click="save">
+          v-if="this.opacityValid && this.fillOpacityValid && this.widthValid && name != null && name.trim().length > 0"
+          :disabled="!this.opacityValid || !this.fillOpacityValid || !this.widthValid || this.name == null || this.name.trim().length === 0"
+          color="primary"
+          text
+          @click="save">
         Save
       </v-btn>
     </v-card-actions>
@@ -102,117 +105,117 @@ import isNil from 'lodash/isNil'
 import ColorPicker from '../Common/ColorPicker'
 import NumberPicker from '../Common/NumberPicker'
 import GeometryStyleSvg from '../Common/GeometryStyleSvg'
-import {mdiTrashCan} from '@mdi/js'
+import { mdiTrashCan } from '@mdi/js'
 
 export default {
-    props: {
-      id: String,
-      tableName: String,
-      geometryType: String,
-      styleRow: Object,
-      projectId: String,
-      isGeoPackage: {
-        type: Boolean,
-        default: true
-      },
-      isBaseMap: {
-        type: Boolean,
-        default: false
-      },
-      close: Function
+  props: {
+    id: String,
+    tableName: String,
+    geometryType: String,
+    styleRow: Object,
+    projectId: String,
+    isGeoPackage: {
+      type: Boolean,
+      default: true
     },
-    data () {
-      return {
-        mdiTrashCan: mdiTrashCan,
-        name: this.styleRow.name,
-        description: this.styleRow.description || '',
-        color: this.styleRow.color,
-        opacity: this.styleRow.opacity,
-        fillColor: this.styleRow.fillColor,
-        fillOpacity: this.styleRow.fillOpacity,
-        width: this.styleRow.width,
-        deleteDialog: false,
-        isNew: isNil(this.styleRow.id),
-        opacityValid: true,
-        fillOpacityValid: true,
-        widthValid: true,
-        nameRules: [
-          v => !!v || 'Name is required'
-        ]
+    isBaseMap: {
+      type: Boolean,
+      default: false
+    },
+    close: Function
+  },
+  data () {
+    return {
+      mdiTrashCan: mdiTrashCan,
+      name: this.styleRow.name,
+      description: this.styleRow.description || '',
+      color: this.styleRow.color,
+      opacity: this.styleRow.opacity,
+      fillColor: this.styleRow.fillColor,
+      fillOpacity: this.styleRow.fillOpacity,
+      width: this.styleRow.width,
+      deleteDialog: false,
+      isNew: isNil(this.styleRow.id),
+      opacityValid: true,
+      fillOpacityValid: true,
+      widthValid: true,
+      nameRules: [
+        v => !!v || 'Name is required'
+      ]
+    }
+  },
+  components: {
+    GeometryStyleSvg,
+    'colorpicker': ColorPicker,
+    'numberpicker': NumberPicker
+  },
+  methods: {
+    setOpacityValid (val) {
+      this.opacityValid = val
+    },
+    setFillOpacityValid (val) {
+      this.fillOpacityValid = val
+    },
+    setWidthValid (val) {
+      this.widthValid = val
+    },
+    updateOpacity (val) {
+      this.opacity = val
+    },
+    updateFillOpacity (val) {
+      this.fillOpacity = val
+    },
+    updateWidth (val) {
+      this.width = val
+    },
+    save () {
+      let styleRow = {
+        name: this.name,
+        description: this.description,
+        color: this.color,
+        opacity: this.opacity,
+        fillColor: this.fillColor,
+        fillOpacity: this.fillOpacity,
+        width: this.width
       }
-    },
-    components: {
-      GeometryStyleSvg,
-      'colorpicker': ColorPicker,
-      'numberpicker': NumberPicker
-    },
-    methods: {
-      setOpacityValid (val) {
-        this.opacityValid = val
-      },
-      setFillOpacityValid (val) {
-        this.fillOpacityValid = val
-      },
-      setWidthValid (val) {
-        this.widthValid = val
-      },
-      updateOpacity (val) {
-        this.opacity = val
-      },
-      updateFillOpacity (val) {
-        this.fillOpacity = val
-      },
-      updateWidth (val) {
-        this.width = val
-      },
-      save () {
-        let styleRow = {
-          name: this.name,
-          description: this.description,
-          color: this.color,
-          opacity: this.opacity,
-          fillColor: this.fillColor,
-          fillOpacity: this.fillOpacity,
-          width: this.width
-        }
-        if (this.styleRow.id) {
-          styleRow.id = this.styleRow.id
-          window.mapcache.updateStyleRow({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            styleRow: styleRow,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
-        } else {
-          window.mapcache.createStyleRow({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            style: styleRow,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
-        }
-        this.close()
-      },
-      deleteStyle () {
-        window.mapcache.deleteStyleRow({
+      if (this.styleRow.id) {
+        styleRow.id = this.styleRow.id
+        window.mapcache.updateStyleRow({
           projectId: this.projectId,
           id: this.id,
-          styleId: this.styleRow.id,
+          tableName: this.tableName,
+          styleRow: styleRow,
           isGeoPackage: this.isGeoPackage,
           isBaseMap: this.isBaseMap
         })
-        this.close()
+      } else {
+        window.mapcache.createStyleRow({
+          projectId: this.projectId,
+          id: this.id,
+          tableName: this.tableName,
+          style: styleRow,
+          isGeoPackage: this.isGeoPackage,
+          isBaseMap: this.isBaseMap
+        })
       }
+      this.close()
+    },
+    deleteStyle () {
+      window.mapcache.deleteStyleRow({
+        projectId: this.projectId,
+        id: this.id,
+        styleId: this.styleRow.id,
+        isGeoPackage: this.isGeoPackage,
+        isBaseMap: this.isBaseMap
+      })
+      this.close()
     }
   }
+}
 </script>
 
 <style scoped>
-  .fs12 {
-    font-size: 12px;
-  }
+.fs12 {
+  font-size: 12px;
+}
 </style>

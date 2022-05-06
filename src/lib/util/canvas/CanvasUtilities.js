@@ -3,7 +3,7 @@ let makeImageDataFunction = (width, height) => {
 }
 
 let makeImageFunction = async (source) => {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = function () {
       resolve(image)

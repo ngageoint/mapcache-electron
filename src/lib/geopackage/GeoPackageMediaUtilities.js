@@ -393,12 +393,12 @@ async function _addMediaAttachmentFromUrl (gp, tableName, featureId, url) {
     const featureDao = gp.getFeatureDao(tableName)
     const featureRow = featureDao.queryForId(featureId)
     if (!isNil(featureRow)) {
-      let {buffer, contentType} = await new Promise (resolve => {
+      let { buffer, contentType } = await new Promise(resolve => {
         request.get({ url, encoding: null }, function (err, res, body) {
           if (!err) {
-            resolve({buffer: body, contentType: res.headers['content-type']})
+            resolve({ buffer: body, contentType: res.headers['content-type'] })
           } else {
-            resolve({buffer: null, contentType: null})
+            resolve({ buffer: null, contentType: null })
           }
         })
       })
@@ -520,7 +520,7 @@ async function getMediaAttachmentsCounts (filePath, tableName, featureIds) {
  * @param mediaRelationship
  */
 function _deleteMediaAttachment (gp, mediaRelationship) {
-  const {baseId, relatedTable, relatedId, mappingTable} = mediaRelationship
+  const { baseId, relatedTable, relatedId, mappingTable } = mediaRelationship
   const rte = gp.relatedTablesExtension
   // delete relationship
   let mappingDao = rte.getMappingDao(mappingTable)
@@ -550,7 +550,7 @@ function _deleteMediaAttachment (gp, mediaRelationship) {
  * @param mediaRelationship
  * @returns {Promise<any>}
  */
-function deleteMediaAttachment(filePath, mediaRelationship) {
+function deleteMediaAttachment (filePath, mediaRelationship) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _deleteMediaAttachment(gp, mediaRelationship)
   })

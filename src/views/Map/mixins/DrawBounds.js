@@ -1,8 +1,8 @@
-import {L} from '../../../lib/leaflet/vendor'
+import { L } from '../../../lib/leaflet/vendor'
 import isNil from 'lodash/isNil'
 import EventBus from '../../../lib/vue/EventBus'
-import {getDefaultLeafletOverlayStyleForMapCache} from '../../../lib/leaflet/map/style/Style'
-import {DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
+import { getDefaultLeafletOverlayStyleForMapCache } from '../../../lib/leaflet/map/style/Style'
+import { DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 
 export default {
   data () {
@@ -24,7 +24,7 @@ export default {
     enableBoundingBoxDrawing (boundingBoxFilter) {
       let bounds = L.latLngBounds(boundingBoxFilter)
       this.drawBoundsMode = 0
-      this.r = L.rectangle(bounds, {pane: DRAWING_LAYER_PANE.name})
+      this.r = L.rectangle(bounds, { pane: DRAWING_LAYER_PANE.name })
       this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
       this.r.addTo(this.map)
       this.toggleBoundsEdit()
@@ -80,7 +80,7 @@ export default {
         this.updateBounds()
       })
     },
-    updateBounds() {
+    updateBounds () {
       let sw = this.r.getBounds().getSouthWest()
       let ne = this.r.getBounds().getNorthEast()
       let boundingBox = [[sw.lat, sw.lng], [ne.lat, ne.lng]]

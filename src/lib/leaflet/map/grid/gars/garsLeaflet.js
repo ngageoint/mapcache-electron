@@ -1,5 +1,5 @@
 import merge from 'lodash/merge'
-import {latLng2GARS, latLng2Name} from './GARS'
+import { latLng2GARS, latLng2Name } from './GARS'
 
 function generateGridStyle (color, maxLength = null) {
   return {
@@ -249,9 +249,9 @@ function setupGARSGrid (L) {
     },
     calculateBlocks: function (bounds, increment, options, labelFn) {
       let ret = []
-      for (let bw = bounds.getWest(); bw < bounds.getEast(); bw += increment){
+      for (let bw = bounds.getWest(); bw < bounds.getEast(); bw += increment) {
         for (let bs = bounds.getSouth(); bs < bounds.getNorth(); bs += increment) {
-          const rect = L.rectangle([[bs,bw], [bs + increment, bw + increment]], {
+          const rect = L.rectangle([[bs, bw], [bs + increment, bw + increment]], {
             ...options.style,
             interactive: this.options.gridOptions.interactive,
             pane: this.pane,

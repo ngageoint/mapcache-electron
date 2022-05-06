@@ -1,6 +1,9 @@
 <template>
   <v-card flat class="ml-8 mt-8" style="width: 640px;">
-    <v-card-title><v-icon class="mr-2" color="primary">{{mdiChatQuestionOutline}}</v-icon>Frequently Asked Questions</v-card-title>
+    <v-card-title>
+      <v-icon class="mr-2" color="primary">{{ mdiChatQuestionOutline }}</v-icon>
+      Frequently Asked Questions
+    </v-card-title>
     <v-container>
       <v-expansion-panels>
         <v-expansion-panel
@@ -69,13 +72,15 @@ export default {
 </script>
 
 <style scoped>
- .fs-11 {
-   font-size: 11pt;
- }
- .link-color {
-   color: #326482;
- }
- .link-color:active {
-   color: #37A5AC;
- }
+.fs-11 {
+  font-size: 11pt;
+}
+
+.link-color {
+  color: #326482;
+}
+
+.link-color:active {
+  color: #37A5AC;
+}
 </style>

@@ -1,13 +1,13 @@
 import path from 'path'
 import Source from '../Source'
 import VectorLayer from '../../layer/vector/VectorLayer'
-import {streamingGeoPackageBuild} from '../../geopackage/GeoPackageFeatureTableUtilities'
+import { streamingGeoPackageBuild } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import { VECTOR } from '../../layer/LayerTypes'
 import fs from 'fs'
-import {chain} from 'stream-chain'
-import {parser} from 'stream-json'
-import {pick} from 'stream-json/filters/Pick'
-import {streamArray} from 'stream-json/streamers/StreamArray'
+import { chain } from 'stream-chain'
+import { parser } from 'stream-json'
+import { pick } from 'stream-json/filters/Pick'
+import { streamArray } from 'stream-json/streamers/StreamArray'
 
 export default class GeoJSONSource extends Source {
   async retrieveLayers (statusCallback) {
@@ -18,7 +18,7 @@ export default class GeoJSONSource extends Source {
     const name = path.basename(this.filePath, path.extname(this.filePath))
     let fileName = name + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
-    const {addFeature, done} = await streamingGeoPackageBuild(filePath, name)
+    const { addFeature, done } = await streamingGeoPackageBuild(filePath, name)
 
     let { size } = fs.statSync(this.filePath)
     const notifyStepSize = Math.ceil(size / 100)
@@ -29,7 +29,7 @@ export default class GeoJSONSource extends Source {
       const pipeline = chain([
         stream,
         parser(),
-        pick({filter: 'features'}),
+        pick({ filter: 'features' }),
         streamArray()
       ])
       stream.on('data', data => {
@@ -54,7 +54,7 @@ export default class GeoJSONSource extends Source {
     })
 
 
-    const {count, extent} = await done()
+    const { count, extent } = await done()
     statusCallback('Cleaning up', 100)
     await this.sleep(250)
 

@@ -15,7 +15,7 @@ const promises = {}
  * @param {WebContents} webContents The WebContents instance requesting a certificate.
  * @return {!Promise<!Electron.Certificate>} A promise that resolves to the selected certificate.
  */
-function getUserCertForUrl(url, list, webContents) {
+function getUserCertForUrl (url, list, webContents) {
   if (!url) {
     return Promise.reject(new Error('URL for certificate request was empty.'))
   }

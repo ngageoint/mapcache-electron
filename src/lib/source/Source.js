@@ -23,7 +23,7 @@ export default class Source {
    * @returns {{layerDirectory: string, layerId: *}}
    */
   createLayerDirectory (id = createUniqueID()) {
-    return { layerId: id, layerDirectory: createNextAvailableLayerDirectory(this.directory)}
+    return { layerId: id, layerDirectory: createNextAvailableLayerDirectory(this.directory) }
   }
 
   /**
@@ -35,7 +35,7 @@ export default class Source {
     throw new Error('Subclass must define the retrieveLayers function')
   }
 
-  async sleep(ms) {
+  async sleep (ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
   }
 }

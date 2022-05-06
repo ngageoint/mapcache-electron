@@ -39,7 +39,7 @@ export default class NetworkTileLayer extends TileLayer {
     }
   }
 
-  getRepaintFields() {
+  getRepaintFields () {
     return ['rateLimit', 'retryAttempts', 'timeoutMs', 'layers'].concat(super.getRepaintFields())
   }
 }

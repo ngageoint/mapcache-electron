@@ -8,6 +8,7 @@ export default class MBTilesLayer extends TileLayer {
   lineStyle
   polygonStyle
   dbFile
+
   constructor (configuration = {}) {
     super(configuration)
     this.dbFile = configuration.filePath
@@ -25,7 +26,7 @@ export default class MBTilesLayer extends TileLayer {
     this.renderer.setStyle(this.pointStyle, this.lineStyle, this.polygonStyle)
   }
 
-  getRepaintFields() {
+  getRepaintFields () {
     return ['pointStyle', 'lineStyle', 'polygonStyle'].concat(super.getRepaintFields())
   }
 

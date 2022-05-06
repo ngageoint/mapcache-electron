@@ -1,6 +1,6 @@
 import { L } from '../../../lib/leaflet/vendor'
 import cloneDeep from 'lodash/cloneDeep'
-import {DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
+import { DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 import { flattenFeature, explodeFlattenedFeature } from '../../../lib/util/geojson/GeoJSONUtilities'
 
 const MODES = {
@@ -30,7 +30,7 @@ export default {
     }
   },
   methods: {
-    addFeature ({layer}) {
+    addFeature ({ layer }) {
       this.map.removeLayer(layer)
       this.editingLayer.addData(layer.toGeoJSON(10))
       this.updateEditingStack()
@@ -184,7 +184,9 @@ export default {
           limitMarkersToCount: 50,
           limitMarkersToViewport: true,
           panes: {
-            vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+            vertexPane: DRAWING_VERTEX_PANE.name,
+            layerPane: DRAWING_LAYER_PANE.name,
+            markerPane: DRAWING_VERTEX_PANE.name
           },
           snapDistance: 5
         })

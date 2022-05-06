@@ -3,6 +3,7 @@ import { app, protocol } from 'electron'
 import path from 'path'
 import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
 import { environment } from './lib/env/env'
+
 const gotTheLock = app.requestSingleInstanceLock()
 
 // used to indicate the .gpkg file path that was used to launch MapCache
@@ -111,7 +112,7 @@ function setupWebContentHandling () {
  * Will run migration, setup directory structure, event handlers, electron log, create the app protocol and then launch the
  * landing page.
  */
-async function start() {
+async function start () {
   setupElectronLog()
   setupEventHandlers()
   setupWebContentHandling()

@@ -2,7 +2,7 @@ import axios from 'axios'
 import fs from 'fs'
 import { Readable } from 'stream'
 
-function bufferToStream(buffer) {
+function bufferToStream (buffer) {
   let stream = new Readable()
   stream.push(buffer)
   stream.push(null)

@@ -1,15 +1,15 @@
-import {L} from '../../../lib/leaflet/vendor'
+import { L } from '../../../lib/leaflet/vendor'
 import EventBus from '../../../lib/vue/EventBus'
 import accentMarker from '../../../lib/leaflet/map/markers/marker-accent-blank-icon.png'
 import accentMarker2x from '../../../lib/leaflet/map/markers/marker-accent-blank-icon-2x.png'
 import marker from '../../../lib/leaflet/map/markers/marker-icon-blank.png'
 import marker2x from '../../../lib/leaflet/map/markers/marker-icon-blank-2x.png'
-import {getMaterialDesignIcon} from '../../../lib/util/nominatim/TypeCategoryMaterialDesignIcons'
-import {SEARCH_RESULT_POINTS_ONLY_PANE, SEARCH_RESULTS_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
-import {getDefaultIcon, getSvgMarkerIconData} from '../../../lib/util/style/BrowserStyleUtilities'
-import {getDefaultMapCacheStyle} from '../../../lib/util/style/CommonStyleUtilities'
-import {prettyifyWords} from '../../../lib/util/nominatim/NominatimUtilities'
-import {fetchImage} from '../../../lib/network/BrowserNetworkUtilities'
+import { getMaterialDesignIcon } from '../../../lib/util/nominatim/TypeCategoryMaterialDesignIcons'
+import { SEARCH_RESULT_POINTS_ONLY_PANE, SEARCH_RESULTS_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
+import { getDefaultIcon, getSvgMarkerIconData } from '../../../lib/util/style/BrowserStyleUtilities'
+import { getDefaultMapCacheStyle } from '../../../lib/util/style/CommonStyleUtilities'
+import { prettyifyWords } from '../../../lib/util/nominatim/NominatimUtilities'
+import { fetchImage } from '../../../lib/network/BrowserNetworkUtilities'
 
 export default {
   data () {
@@ -27,7 +27,8 @@ export default {
       highlightedLayer: null,
       hoveredSearchResult: null,
       hoveredSearchResultCloseTimeoutId: null,
-      searchResultClose: () => {},
+      searchResultClose: () => {
+      },
       searchResultToSave: null
     }
   },
@@ -36,7 +37,10 @@ export default {
       if (this.searchResultLayers) {
         this.searchResultLayers.nonPointFeatures.eachLayer((l) => {
           if (l.setStyle && l.feature.properties.osm_id === layer.feature.properties.osm_id) {
-            l.setStyle(highlighted ? {color: '#37A5AC', fillColor: '#37A5AC'} : {color: '#326482', fillColor: '#326482'})
+            l.setStyle(highlighted ? { color: '#37A5AC', fillColor: '#37A5AC' } : {
+              color: '#326482',
+              fillColor: '#326482'
+            })
           }
         })
       }
@@ -47,7 +51,7 @@ export default {
         this.highlightAssociatedFeature(layer, false)
       }
     },
-    highlightLayer(layer, highlight = false) {
+    highlightLayer (layer, highlight = false) {
       this.removeHighlight(this.highlightedLayer)
       this.highlightedLayer = null
       if (highlight) {
@@ -137,13 +141,21 @@ export default {
                 this.hoveredSearchResult = targetFeature
                 if (!layer.isPopupOpen()) {
                   this.$nextTick(() => {
-                    layer.bindPopup(this.$refs.searchResultPopup.$el, {minWidth: 300, closeButton: false, maxWidth: 300, maxHeight: 250, closeOnClick: false, className: 'search-popup'}).openPopup(layer, e.latlng)
+                    layer.bindPopup(this.$refs.searchResultPopup.$el, {
+                      minWidth: 300,
+                      closeButton: false,
+                      maxWidth: 300,
+                      maxHeight: 250,
+                      closeOnClick: false,
+                      className: 'search-popup'
+                    }).openPopup(layer, e.latlng)
                     this.searchResultClose = () => {
                       this.hoveredSearchResultCloseTimeoutId = setTimeout(() => {
                         this.hoveredSearchResultCloseTimeoutId = null
                         layer.closePopup()
                         layer.unbindPopup()
-                        this.searchResultClose = () => {}
+                        this.searchResultClose = () => {
+                        }
                       }, 250)
                     }
                   })

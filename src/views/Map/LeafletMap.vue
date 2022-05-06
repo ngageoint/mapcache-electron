@@ -1,36 +1,55 @@
 <template>
-  <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}" @mouseleave="mouseLeft" @mouseenter="mouseEntered">
+  <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}"
+       @mouseleave="mouseLeft" @mouseenter="mouseEntered">
     <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1, backgroundColor: mapBackground}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
-        v-model="geopackageFeatureLayerSelectionDialog"
-        max-width="450"
-        persistent
-        @keydown.esc="cancelDrawing">
-        <add-feature-to-geo-package v-if="geopackageFeatureLayerSelectionDialog" :project="project" :cancel="cancelDrawing" :active-geopackage="project.activeGeoPackage" :geopackages="geopackages" :save="confirmGeoPackageFeatureLayerSelection"></add-feature-to-geo-package>
+          v-model="geopackageFeatureLayerSelectionDialog"
+          max-width="450"
+          persistent
+          @keydown.esc="cancelDrawing">
+        <add-feature-to-geo-package v-if="geopackageFeatureLayerSelectionDialog" :project="project"
+                                    :cancel="cancelDrawing" :active-geopackage="project.activeGeoPackage"
+                                    :geopackages="geopackages"
+                                    :save="confirmGeoPackageFeatureLayerSelection"></add-feature-to-geo-package>
       </v-dialog>
       <v-dialog
-        v-model="showAddFeatureDialog"
-        max-width="500"
-        scrollable
-        persistent
-        @keydown.esc="cancelAddFeature">
-        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id" :save-new-feature="saveFeature" :geopackage-path="featureToAddGeoPackage.path" :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd" :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
+          v-model="showAddFeatureDialog"
+          max-width="500"
+          scrollable
+          persistent
+          @keydown.esc="cancelAddFeature">
+        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id"
+                        :save-new-feature="saveFeature" :geopackage-path="featureToAddGeoPackage.path"
+                        :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd"
+                        :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
       </v-dialog>
     </div>
     <div v-show="contextMenuPopup != null" id="context-menu-popup" ref="contextMenuPopup">
       <v-list dense>
-        <v-list-item dense @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
-          {{contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''}}
+        <v-list-item dense
+                     @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
+          {{
+            contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''
+          }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
-          {{contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''}}
+        <v-list-item dense
+                     @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
+          {{
+            contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''
+          }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
-          {{contextMenuCoordinate ? convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''}}
+        <v-list-item dense
+                     @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+          {{
+            contextMenuCoordinate ? convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
+          }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
-          {{contextMenuCoordinate ? convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''}}
+        <v-list-item dense
+                     @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+          {{
+            contextMenuCoordinate ? convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
+          }}
         </v-list-item>
         <v-list-item dense @click="performReverseQuery">
           What's here?
@@ -39,14 +58,17 @@
     </div>
     <v-expand-transition>
       <v-card
-        tile
-        id="feature-table-ref"
-        ref="featureTableRef"
-        v-show="showFeatureTable && !featureTablePoppedOut"
-        class="mx-auto"
-        style="max-height: 464px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
+          tile
+          id="feature-table-ref"
+          ref="featureTableRef"
+          v-show="showFeatureTable && !featureTablePoppedOut"
+          class="mx-auto"
+          style="max-height: 464px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
         <v-card-text class="pa-0 ma-0 mb-2">
-          <feature-tables :project="project" :projectId="projectId" :geopackages="geopackages" :sources="sources" :table="table" :zoomToFeature="zoomToFeature" :show-feature="showFeature" :close="hideFeatureTable" :pop-out="popOutFeatureTable" :highlight-feature="highlightGeoPackageFeature"></feature-tables>
+          <feature-tables :project="project" :projectId="projectId" :geopackages="geopackages" :sources="sources"
+                          :table="table" :zoomToFeature="zoomToFeature" :show-feature="showFeature"
+                          :close="hideFeatureTable" :pop-out="popOutFeatureTable"
+                          :highlight-feature="highlightGeoPackageFeature"></feature-tables>
         </v-card-text>
       </v-card>
     </v-expand-transition>
@@ -62,7 +84,7 @@
           <v-list-item-group dense v-model="gridSelection" mandatory>
             <v-list-item dense v-for="(item) in gridOptions" :key="item.id" :value="item.id">
               <v-list-item-content>
-                <v-list-item-title>{{item.title}}</v-list-item-title>
+                <v-list-item-title>{{ item.title }}</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
@@ -89,9 +111,12 @@
               dense>
             <v-list-item-icon class="mt-1">
               <v-btn icon @click.stop="item.zoomTo">
-                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer"
+                     width="20px" height="20px"/>
+                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
+                     height="20px"/>
+                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px"
+                     height="20px"/>
                 <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
             </v-list-item-icon>
@@ -100,7 +125,7 @@
               <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
-              <v-icon>{{mdiDragHorizontalVariant}}</v-icon>
+              <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
             </v-list-item-icon>
           </v-list-item>
         </v-list>
@@ -119,16 +144,17 @@
             <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
                 <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e)">
-                  <v-icon small>{{mdiMapOutline}}</v-icon>
+                  <v-icon small>{{ mdiMapOutline }}</v-icon>
                 </v-btn>
               </v-list-item-icon>
-              <v-list-item-title>{{item.name}}</v-list-item-title>
+              <v-list-item-title>{{ item.name }}</v-list-item-title>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
-              <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
+              <geo-t-i-f-f-troubleshooting v-if="item.missingRaster"
+                                           :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
               <v-progress-circular
-                v-if="item.id == selectedBaseMapId && connectingToBaseMap"
-                indeterminate
-                color="primary"
+                  v-if="item.id == selectedBaseMapId && connectingToBaseMap"
+                  indeterminate
+                  color="primary"
               ></v-progress-circular>
             </v-list-item>
           </v-list-item-group>
@@ -273,7 +299,9 @@
       </v-navigation-drawer>
     </v-card>
     <div v-show="false">
-      <nominatim-result-map-popup ref="searchResultPopup" :result="hoveredSearchResult" :mouseover="cancelSearchResultPopupClose" :mouseleave="searchResultClose"></nominatim-result-map-popup>
+      <nominatim-result-map-popup ref="searchResultPopup" :result="hoveredSearchResult"
+                                  :mouseover="cancelSearchResultPopupClose"
+                                  :mouseleave="searchResultClose"></nominatim-result-map-popup>
     </div>
   </div>
 </template>
@@ -353,11 +381,11 @@ import { getDefaultMapCacheStyle } from '../../lib/util/style/CommonStyleUtiliti
 import { reverseQueryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
 import LeafletGridOverlayTool from '../../lib/leaflet/map/controls/LeafletGridOverlayTool'
 import LeafletCoordinates from '../../lib/leaflet/map/controls/LeafletCoordinates'
-import {LatLng} from '../../lib/leaflet/map/grid/mgrs/wgs84/LatLng'
-import {MGRS} from '../../lib/leaflet/map/grid/mgrs/MGRS'
-import {latLng2GARS} from '../../lib/leaflet/map/grid/gars/GARS'
-import {FEATURE_TABLE_WINDOW_EVENTS} from '../FeatureTable/FeatureTableEvents'
-import {FEATURE_TABLE_ACTIONS} from '../FeatureTable/FeatureTableActions'
+import { LatLng } from '../../lib/leaflet/map/grid/mgrs/wgs84/LatLng'
+import { MGRS } from '../../lib/leaflet/map/grid/mgrs/MGRS'
+import { latLng2GARS } from '../../lib/leaflet/map/grid/gars/GARS'
+import { FEATURE_TABLE_WINDOW_EVENTS } from '../FeatureTable/FeatureTableEvents'
+import { FEATURE_TABLE_ACTIONS } from '../FeatureTable/FeatureTableActions'
 import Sortable from 'sortablejs'
 import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
 import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
@@ -416,11 +444,18 @@ export default {
   directives: {
     'sortable-list': {
       inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? { ...binding.value, handle: '.sortHandle', ghostClass: 'ghost', dragClass: 'detail-bg',
-          forceFallback : true,
-          onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
-          onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
-          onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+        Sortable.create(el, binding.value ? {
+          ...binding.value, handle: '.sortHandle', ghostClass: 'ghost', dragClass: 'detail-bg',
+          forceFallback: true,
+          onChoose: function () {
+            document.body.style.cursor = 'grabbing'
+          }, // Dragging started
+          onStart: function () {
+            document.body.style.cursor = 'grabbing'
+          }, // Dragging started
+          onUnchoose: function () {
+            document.body.style.cursor = 'default'
+          }, // Dragging started
         } : {})
       },
     },
@@ -428,7 +463,7 @@ export default {
   computed: {
     ...mapState({
       baseMapItems: state => {
-        return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
+        return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || []).map(baseMapConfig => {
           return {
             id: baseMapConfig.id,
             updateKey: 0,
@@ -443,7 +478,7 @@ export default {
         })
       },
       baseMaps: state => {
-        return  getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
+        return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
       }
     })
   },
@@ -514,7 +549,10 @@ export default {
       contextMenuCoordinate: null,
       contextMenuPopup: null,
       performingReverseQuery: false,
-      gridOptions: [{id: 0, title: 'None'}, {id: 1, title: 'XYZ'}, {id: 2, title: 'GARS'}, {id: 3, title: 'MGRS'}],
+      gridOptions: [{ id: 0, title: 'None' }, { id: 1, title: 'XYZ' }, { id: 2, title: 'GARS' }, {
+        id: 3,
+        title: 'MGRS'
+      }],
       gridSelection: 0
     }
   },
@@ -542,7 +580,7 @@ export default {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, table, featureId)
     },
     popOutFeatureTable () {
-      window.mapcache.popOutFeatureTable({projectId: this.projectId, popOut: true})
+      window.mapcache.popOutFeatureTable({ projectId: this.projectId, popOut: true })
       window.mapcache.showFeatureTableWindow(true)
     },
     hideFeatureTable () {
@@ -655,7 +693,7 @@ export default {
       }, 100)
     },
     getMapCenterAndZoom () {
-      return {center: this.map.getCenter(), zoom: this.map.getZoom()}
+      return { center: this.map.getCenter(), zoom: this.map.getZoom() }
     },
     getReorderCardOffset () {
       let yOffset = 278
@@ -773,13 +811,24 @@ export default {
       }
     },
     async saveFeature (projectId, geopackageId, tableName, feature, columnsToAdd) {
-      await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: feature, columnsToAdd: columnsToAdd})
+      await window.mapcache.addFeatureToGeoPackage({
+        projectId: projectId,
+        geopackageId: geopackageId,
+        tableName: tableName,
+        feature: feature,
+        columnsToAdd: columnsToAdd
+      })
       if (this.additionalFeatureToAdd) {
         // this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
-        await window.mapcache.addFeatureToGeoPackage({projectId: projectId, geopackageId: geopackageId, tableName: tableName, feature: this.additionalFeatureToAdd})
+        await window.mapcache.addFeatureToGeoPackage({
+          projectId: projectId,
+          geopackageId: geopackageId,
+          tableName: tableName,
+          feature: this.additionalFeatureToAdd
+        })
         this.additionalFeatureToAdd = null
       }
-      window.mapcache.notifyTab({projectId: projectId, tabId: 0})
+      window.mapcache.notifyTab({ projectId: projectId, tabId: 0 })
     },
     cancelDrawing () {
       this.$nextTick(() => {
@@ -797,7 +846,7 @@ export default {
       const self = this
       const sourceId = sourceConfiguration.id
       let source = constructLayer(sourceConfiguration)
-      self.dataSourceMapLayers[sourceId] = constructMapLayer({layer: source, maxFeatures: this.project.maxFeatures})
+      self.dataSourceMapLayers[sourceId] = constructMapLayer({ layer: source, maxFeatures: this.project.maxFeatures })
       // if it is visible, try to initialize it
       if (source.visible) {
         this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer()))
@@ -831,7 +880,7 @@ export default {
         }
       } else {
         let layer = constructLayer(baseMap.layerConfiguration)
-        self.baseMapLayers[baseMapId] = constructMapLayer({layer: layer, maxFeatures: self.project.maxFeatures})
+        self.baseMapLayers[baseMapId] = constructMapLayer({ layer: layer, maxFeatures: self.project.maxFeatures })
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
           this.setAttribution(baseMap.attribution)
@@ -839,14 +888,14 @@ export default {
         }
       }
     },
-    closePopup() {
+    closePopup () {
       this.map.removeLayer(this.contextMenuPopup)
 
     },
     convertToDms (dd, isLng) {
       const dir = dd < 0
-        ? isLng ? 'W' : 'S'
-        : isLng ? 'E' : 'N'
+          ? isLng ? 'W' : 'S'
+          : isLng ? 'E' : 'N'
 
       const absDd = Math.abs(dd)
       const deg = absDd | 0
@@ -898,7 +947,7 @@ export default {
         minZoom: geopackage.tables.tiles[tableName].minZoom,
         maxZoom: geopackage.tables.tiles[tableName].maxZoom
       })
-      let mapLayer = constructMapLayer({layer: layer})
+      let mapLayer = constructMapLayer({ layer: layer })
       if (geopackage.tables.tiles[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
         self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true))
@@ -917,7 +966,7 @@ export default {
         count: geopackage.tables.features[tableName].featureCount,
         extent: geopackage.tables.features[tableName].extent,
       })
-      let mapLayer = constructMapLayer({layer: layer, maxFeatures: this.project.maxFeatures})
+      let mapLayer = constructMapLayer({ layer: layer, maxFeatures: this.project.maxFeatures })
       if (geopackage.tables.features[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
         self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false))
@@ -1050,7 +1099,7 @@ export default {
         smoothWheelZoom: true,
         smoothSensitivity: 1
       })
-      window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: defaultZoom})
+      window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: defaultZoom })
       this.createMapPanes()
       this.createGridOverlays()
       this.setupControls()
@@ -1159,7 +1208,7 @@ export default {
       this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
         self.zoomToContent()
       }, function () {
-        window.mapcache.clearActiveLayers({projectId: self.projectId})
+        window.mapcache.clearActiveLayers({ projectId: self.projectId })
       }, function () {
         self.showLayerOrderingDialog = !self.showLayerOrderingDialog
         if (self.showLayerOrderingDialog) {
@@ -1193,7 +1242,7 @@ export default {
         drawCircleMarker: false,
         editControls: false,
       })
-      this.map.on('pm:create', ({layer}) => {
+      this.map.on('pm:create', ({ layer }) => {
         if (!this.isEditing) {
           this.createdLayer = layer
           this.displayGeoPackageFeatureLayerSelection()
@@ -1232,7 +1281,7 @@ export default {
     setupEventHandlers () {
       const checkFeatureCount = throttle(async (e) => {
         if (!this.isMapBusy()) {
-          let {feature, layer} = await this.queryForClosestFeature(e)
+          let { feature, layer } = await this.queryForClosestFeature(e)
           if (feature != null) {
             document.getElementById('map').style.cursor = 'pointer'
             await this.highlightGeoPackageFeature(layer.id, layer.isGeoPackage, layer.path, layer.tableName, feature)
@@ -1281,10 +1330,17 @@ export default {
             this.contextMenuPopup.setLatLng(e.latlng)
           } else {
             this.$nextTick(() => {
-              this.contextMenuPopup = L.popup({minWidth: 226, maxWidth: 226, maxHeight: 227, closeButton: false, className: 'search-popup', offset: L.point(113, 235)})
-                .setLatLng(e.latlng)
-                .setContent(this.$refs['contextMenuPopup'])
-                .openOn(this.map)
+              this.contextMenuPopup = L.popup({
+                minWidth: 226,
+                maxWidth: 226,
+                maxHeight: 227,
+                closeButton: false,
+                className: 'search-popup',
+                offset: L.point(113, 235)
+              })
+                  .setLatLng(e.latlng)
+                  .setContent(this.$refs['contextMenuPopup'])
+                  .openOn(this.map)
             })
             this.map.once('popupclose', () => {
               this.contextMenuPopup = null
@@ -1293,7 +1349,7 @@ export default {
         }
       })
       this.map.on('zoomend', () => {
-        window.mapcache.setMapZoom({projectId: this.project.id, mapZoom: Math.floor(this.map.getZoom())})
+        window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: Math.floor(this.map.getZoom()) })
       })
     },
     addLayersToMap () {
@@ -1305,7 +1361,7 @@ export default {
       }
     },
     createDefaultBaseMapLayer (baseMap, dark = false) {
-     return L.tileLayer(baseMap.layerConfiguration.url, {
+      return L.tileLayer(baseMap.layerConfiguration.url, {
         pane: BASE_MAP_PANE.name,
         zIndex: BASE_MAP_PANE.zIndex,
         subdomains: baseMap.layerConfiguration.subdomains || [],
@@ -1326,7 +1382,13 @@ export default {
         count: 1,
         extent: [-180, -90, 180, 90],
       })
-      return constructMapLayer({layer: layer, mapPane: BASE_MAP_PANE.name, zIndex: BASE_MAP_PANE.zIndex, maxFeatures: 5000, className: dark ? 'dark' : ''})
+      return constructMapLayer({
+        layer: layer,
+        mapPane: BASE_MAP_PANE.name,
+        zIndex: BASE_MAP_PANE.zIndex,
+        maxFeatures: 5000,
+        className: dark ? 'dark' : ''
+      })
     }
   },
   watch: {
@@ -1448,7 +1510,7 @@ export default {
       }
     },
     visible: {
-      handler() {
+      handler () {
         const self = this
         self.$nextTick(() => {
           if (self.map) {
@@ -1505,7 +1567,7 @@ export default {
           }
         })
         this.baseMapLayers[this.selectedBaseMapId].bringToBack()
-        window.mapcache.setMapRenderingOrder({projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id)})
+        window.mapcache.setMapRenderingOrder({ projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id) })
         if (layers.length > 0 || this.searchResultLayers != null) {
           this.activeLayersControl.enable(this.layerOrder.length)
         } else {
@@ -1564,7 +1626,7 @@ export default {
                 try {
                   await this.dataSourceMapLayers[sourceId].testConnection()
                 } catch (e) {
-                  window.mapcache.setSourceError({id: sourceId, error: e})
+                  window.mapcache.setSourceError({ id: sourceId, error: e })
                   valid = false
                 }
               }
@@ -1791,10 +1853,18 @@ export default {
       let boundingBox = [[extent[1], extent[0]], [extent[3], extent[2]]]
       let bounds = L.latLngBounds(boundingBox)
       bounds = bounds.pad(0.05)
-      const target = this.map._getBoundsCenterZoom(bounds, {minZoom: minZoom, maxZoom: Math.max(maxZoom, this.map.getZoom())})
+      const target = this.map._getBoundsCenterZoom(bounds, {
+        minZoom: minZoom,
+        maxZoom: Math.max(maxZoom, this.map.getZoom())
+      })
       const currentMapCenter = this.map.getCenter()
       const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
-      this.map.setView(target.center, Math.max(minZoom, target.zoom), {minZoom: minZoom, maxZoom: maxZoom, animate: true, duration: Math.min(0.5, 3.0 * distanceFactor)})
+      this.map.setView(target.center, Math.max(minZoom, target.zoom), {
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        animate: true,
+        duration: Math.min(0.5, 3.0 * distanceFactor)
+      })
     })
     EventBus.$on(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, (feature) => {
       // setup map for feature editing
@@ -1829,7 +1899,15 @@ export default {
       }
       EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
     })
-    window.mapcache.registerFeatureTableActionListener((event, {action, feature, path, table, featureId, id, isGeoPackage}) => {
+    window.mapcache.registerFeatureTableActionListener((event, {
+      action,
+      feature,
+      path,
+      table,
+      featureId,
+      id,
+      isGeoPackage
+    }) => {
       if (action === FEATURE_TABLE_ACTIONS.ZOOM_TO_FEATURE) {
         this.zoomToFeature(path, table, featureId)
       } else if (action === FEATURE_TABLE_ACTIONS.HIGHLIGHT_FEATURE) {
@@ -1860,165 +1938,197 @@ export default {
 </script>
 
 <style>
-  @import '~leaflet/dist/leaflet.css';
-  .popup {
-    display: flex;
-    flex-direction: column;
-    min-height: 16vh;
-    min-width: 30vh;
-  }
-  .popup_body {
-    flex: 1 0 8vh;
-    font-family: Roboto, sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-  }
-  .popup_header {
-    flex: 1 0 4vh;
-    font-family: Roboto, sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-  }
-  .popup_footer {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    flex: 1 0 4vh;
-  }
-  .results {
-    color: black;
-  }
+@import '~leaflet/dist/leaflet.css';
 
-  .leaflet-geosearch-bar {
-    margin-left: 10px !important;
-    margin-top: 10px !important;
-  }
-  .overlay-tooltip {
-    position: absolute;
-    display: flex;
-    width: 200px;
-    border: none;
-  }
-  .card-content {
-    overflow-y: auto;
-    max-width: 268px!important;
-    max-height: 250px;
-  }
-  .basemap-card {
-    top: 10px;
-    min-width: 250px;
-    max-width: 250px !important;
-    position: absolute !important;
-    right: 50px !important;
-    max-height: 350px !important;
-    border: 2px solid rgba(0,0,0,0.2) !important;
-  }
-  .grid-overlay-card {
-    top: 54px;
-    min-width: 250px;
-    max-width: 250px !important;
-    position: absolute !important;
-    right: 50px !important;
-    max-height: 350px !important;
-    border: 2px solid rgba(0,0,0,0.2) !important;
-  }
-  .nominatim-card {
-    top: 10px;
-    min-width: 350px;
-    max-width: 350px !important;
-    position: absolute !important;
-    left: 10px !important;
-    max-height: 350px !important;
-    border: 2px solid rgba(0,0,0,0.2) !important;
-  }
-  .feature-editing-card {
-    top: 62px !important;
-    left: 0 !important;
-    position: absolute !important;
-    border: 2px solid rgba(0,0,0,0.2) !important;
-  }
-  .reorder-card {
-    max-width: 300px !important;
-    position: absolute !important;
-    right: 50px !important;
-    max-height: 480px !important;
-    border: 2px solid rgba(0,0,0,0.2) !important;
-    ul {
-      list-style-type: none !important;
-    }
-  }
-  .layer-order-list-item {
-    min-height: 50px !important;
-    cursor: move !important;
-    background: var(--v-background-base) !important;
-  }
-  .layer-order-list-item i {
-    cursor: pointer !important;
-  }
-  .flip-list-move {
-    transition: transform 0.5s;
-  }
-  .no-move {
-    transition: transform 0s;
-  }
-  .ghost {
-    opacity: 0.5 !important;
-    background-color: var(--v-primary-lighten2) !important;
-  }
-  .leaflet-popup-content-wrapper {
-    color: var(--v-text-base) !important;
-    div {
-      color: var(--v-text-base) !important;
-    }
-  }
-  .address-control {
-    position: absolute;
-    top: 8px;
-    left: 16px;
-    z-index: 10000;
-  }
-  .search-popup .leaflet-popup {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .search-popup .leaflet-popup-content-wrapper {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .search-popup .leaflet-popup-content {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .search-popup .leaflet-popup-tip-container {
-    display: none !important;
-  }
-  .centered-label {
-    display: flex !important;
-    justify-content: center !important;
-    font-weight: bold !important;
-    text-align: center !important;
-    vertical-align: middle !important;
-    line-height: 256px !important;
-    width: 256px !important;
-  }
-  .mgrs-gzd-label {
-    border: #2e2e2e 1px solid !important;
-    background: #FFFFFFAA !important;
-  }
-  .mgrs-100km-label {
-    border: #2e2e2e 1px solid !important;
-    background: #FFFF00AA !important;
-  }
-  .darken {
-    filter: brightness(1.0) !important;
-  }
-  .pressed {
-    filter: brightness(1.2) !important;
-  }
-  .dark {
-    filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
-  }
-  .leaflet-tile-container img {
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
-  }
+.popup {
+  display: flex;
+  flex-direction: column;
+  min-height: 16vh;
+  min-width: 30vh;
+}
+
+.popup_body {
+  flex: 1 0 8vh;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.popup_header {
+  flex: 1 0 4vh;
+  font-family: Roboto, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.popup_footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  flex: 1 0 4vh;
+}
+
+.results {
+  color: black;
+}
+
+.leaflet-geosearch-bar {
+  margin-left: 10px !important;
+  margin-top: 10px !important;
+}
+
+.overlay-tooltip {
+  position: absolute;
+  display: flex;
+  width: 200px;
+  border: none;
+}
+
+.card-content {
+  overflow-y: auto;
+  max-width: 268px !important;
+  max-height: 250px;
+}
+
+.basemap-card {
+  top: 10px;
+  min-width: 250px;
+  max-width: 250px !important;
+  position: absolute !important;
+  right: 50px !important;
+  max-height: 350px !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.grid-overlay-card {
+  top: 54px;
+  min-width: 250px;
+  max-width: 250px !important;
+  position: absolute !important;
+  right: 50px !important;
+  max-height: 350px !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.nominatim-card {
+  top: 10px;
+  min-width: 350px;
+  max-width: 350px !important;
+  position: absolute !important;
+  left: 10px !important;
+  max-height: 350px !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.feature-editing-card {
+  top: 62px !important;
+  left: 0 !important;
+  position: absolute !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.reorder-card {
+  max-width: 300px !important;
+  position: absolute !important;
+  right: 50px !important;
+  max-height: 480px !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+
+ul {
+  list-style-type: none !important;
+}
+
+}
+.layer-order-list-item {
+  min-height: 50px !important;
+  cursor: move !important;
+  background: var(--v-background-base) !important;
+}
+
+.layer-order-list-item i {
+  cursor: pointer !important;
+}
+
+.flip-list-move {
+  transition: transform 0.5s;
+}
+
+.no-move {
+  transition: transform 0s;
+}
+
+.ghost {
+  opacity: 0.5 !important;
+  background-color: var(--v-primary-lighten2) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  color: var(--v-text-base) !important;
+
+div {
+  color: var(--v-text-base) !important;
+}
+
+}
+.address-control {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  z-index: 10000;
+}
+
+.search-popup .leaflet-popup {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.search-popup .leaflet-popup-content-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.search-popup .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.search-popup .leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.centered-label {
+  display: flex !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  line-height: 256px !important;
+  width: 256px !important;
+}
+
+.mgrs-gzd-label {
+  border: #2e2e2e 1px solid !important;
+  background: #FFFFFFAA !important;
+}
+
+.mgrs-100km-label {
+  border: #2e2e2e 1px solid !important;
+  background: #FFFF00AA !important;
+}
+
+.darken {
+  filter: brightness(1.0) !important;
+}
+
+.pressed {
+  filter: brightness(1.2) !important;
+}
+
+.dark {
+  filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
+}
+
+.leaflet-tile-container img {
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
+}
 </style>

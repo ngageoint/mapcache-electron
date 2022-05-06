@@ -1,4 +1,4 @@
-const letter_array = ['A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Y','Z']
+const letter_array = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 const five_minute_array = [['7', '4', '1'], ['8', '5', '2'], ['9', '6', '3']]
 
 function latLng2Name (lat, lng, rounding) {

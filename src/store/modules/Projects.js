@@ -15,49 +15,49 @@ const mutations = {
   pushProjectToProjects (state, project) {
     Vue.set(state, project.id, project)
   },
-  setProjectName (state, {project, name}) {
+  setProjectName (state, { project, name }) {
     if (state[project.id]) {
       Vue.set(state[project.id], 'name', name)
     }
   },
-  setProjectAccessed (state, {projectId}) {
+  setProjectAccessed (state, { projectId }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'lastAccessedDateTime', new Date().getTime())
     }
   },
-  setDataSourceDisplayName (state, {projectId, sourceId, displayName}) {
+  setDataSourceDisplayName (state, { projectId, sourceId, displayName }) {
     if (state[projectId]) {
       Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
     }
   },
-  addDataSources (state, {projectId, dataSources}) {
+  addDataSources (state, { projectId, dataSources }) {
     if (state[projectId]) {
       dataSources.forEach(source => {
         Vue.set(state[projectId].sources, source.id, source.config)
       })
     }
   },
-  setGeoPackage (state, {projectId, geopackage}) {
+  setGeoPackage (state, { projectId, geopackage }) {
     if (state[projectId]) {
       Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
     }
   },
-  setDataSource (state, {projectId, source}) {
+  setDataSource (state, { projectId, source }) {
     if (state[projectId]) {
       Vue.set(state[projectId].sources, source.id, source)
     }
   },
-  setProjectMaxFeatures (state, {projectId, maxFeatures}) {
+  setProjectMaxFeatures (state, { projectId, maxFeatures }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'maxFeatures', maxFeatures)
     }
   },
-  setDataSourceVisible (state, {projectId, sourceId, visible}) {
+  setDataSourceVisible (state, { projectId, sourceId, visible }) {
     if (state[projectId]) {
       Vue.set(state[projectId].sources[sourceId], 'visible', visible)
     }
   },
-  removeDataSource (state, {projectId, sourceId}) {
+  removeDataSource (state, { projectId, sourceId }) {
     if (state[projectId]) {
       Vue.delete(state[projectId].sources, sourceId)
     }
@@ -65,37 +65,37 @@ const mutations = {
   deleteProject (state, { projectId }) {
     Vue.delete(state, projectId)
   },
-  removeGeoPackage (state, {projectId, geopackageId}) {
+  removeGeoPackage (state, { projectId, geopackageId }) {
     if (state[projectId]) {
       Vue.delete(state[projectId].geopackages, geopackageId)
     }
   },
-  setZoomControlEnabled (state, {projectId, enabled}) {
+  setZoomControlEnabled (state, { projectId, enabled }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'zoomControlEnabled', enabled)
     }
   },
-  setDisplayZoomEnabled (state, {projectId, enabled}) {
+  setDisplayZoomEnabled (state, { projectId, enabled }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'displayZoomEnabled', enabled)
     }
   },
-  setDisplayAddressSearchBar (state, {projectId, enabled}) {
+  setDisplayAddressSearchBar (state, { projectId, enabled }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
     }
   },
-  setDisplayCoordinates (state, {projectId, enabled}) {
+  setDisplayCoordinates (state, { projectId, enabled }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'displayCoordinates', enabled)
     }
   },
-  setDisplayScale (state, {projectId, enabled}) {
+  setDisplayScale (state, { projectId, enabled }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'displayScale', enabled)
     }
   },
-  clearActiveLayers (state, {projectId}) {
+  clearActiveLayers (state, { projectId }) {
     if (state[projectId]) {
       const projectCopy = Object.assign({}, state[projectId])
       Object.keys(projectCopy.geopackages).forEach(key => {
@@ -114,12 +114,12 @@ const mutations = {
       Vue.set(state, projectId, projectCopy)
     }
   },
-  showToolTips (state, {projectId, show}) {
+  showToolTips (state, { projectId, show }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'showToolTips', show)
     }
   },
-  setActiveGeoPackage (state, {projectId, geopackageId}) {
+  setActiveGeoPackage (state, { projectId, geopackageId }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'activeGeoPackage', {
         geopackageId: geopackageId,
@@ -128,7 +128,7 @@ const mutations = {
       })
     }
   },
-  setActiveGeoPackageFeatureLayer (state, {projectId, geopackageId, tableName}) {
+  setActiveGeoPackageFeatureLayer (state, { projectId, geopackageId, tableName }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'activeGeoPackage', {
         geopackageId: geopackageId,
@@ -143,12 +143,12 @@ const mutations = {
     })
     Object.assign(state, getDefaultState())
   },
-  setMapRenderingOrder (state, {projectId, mapRenderingOrder}) {
+  setMapRenderingOrder (state, { projectId, mapRenderingOrder }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
     }
   },
-  migrateState (state, {migratedState}) {
+  migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
       Vue.delete(state, key)
     })
@@ -157,8 +157,8 @@ const mutations = {
 }
 
 const actions = {
-  async newProject ({ commit }, { id, name, directory, sources = {}}) {
-    return new Promise (resolve => {
+  async newProject ({ commit }, { id, name, directory, sources = {} }) {
+    return new Promise(resolve => {
       let project = {
         id: id,
         name: name || 'New Project',
@@ -182,85 +182,84 @@ const actions = {
       resolve(project.id)
     })
   },
-  setProjectAccessed ({ commit }, {projectId}) {
-    commit('setProjectAccessed', {projectId})
+  setProjectAccessed ({ commit }, { projectId }) {
+    commit('setProjectAccessed', { projectId })
   },
-  setProjectName ({ commit }, {project, name}) {
-    commit('setProjectName', {project, name})
+  setProjectName ({ commit }, { project, name }) {
+    commit('setProjectName', { project, name })
   },
-  showToolTips ({ commit }, {projectId, show}) {
-    commit('showToolTips', {projectId, show})
+  showToolTips ({ commit }, { projectId, show }) {
+    commit('showToolTips', { projectId, show })
   },
-  setDataSourceDisplayName ({ commit }, {projectId, sourceId, displayName}) {
-    commit('setDataSourceDisplayName', {projectId, sourceId, displayName})
+  setDataSourceDisplayName ({ commit }, { projectId, sourceId, displayName }) {
+    commit('setDataSourceDisplayName', { projectId, sourceId, displayName })
   },
-  addDataSources ({ commit }, {projectId, dataSources}) {
-    commit('addDataSources', {projectId, dataSources})
+  addDataSources ({ commit }, { projectId, dataSources }) {
+    commit('addDataSources', { projectId, dataSources })
   },
-  removeGeoPackage ({ commit }, {projectId, geopackageId}) {
-    commit('removeGeoPackage', {projectId, geopackageId})
+  removeGeoPackage ({ commit }, { projectId, geopackageId }) {
+    commit('removeGeoPackage', { projectId, geopackageId })
   },
-  setDataSourceVisible ({ commit }, {projectId, sourceId, visible}) {
-    commit('setDataSourceVisible', {projectId, sourceId, visible})
+  setDataSourceVisible ({ commit }, { projectId, sourceId, visible }) {
+    commit('setDataSourceVisible', { projectId, sourceId, visible })
   },
-  removeDataSource ({ commit }, {projectId, sourceId}) {
-    commit('removeDataSource', {projectId, sourceId})
+  removeDataSource ({ commit }, { projectId, sourceId }) {
+    commit('removeDataSource', { projectId, sourceId })
   },
-  removeFeatureFromDataSource ({ commit }, {projectId, source}) {
-    commit('setDataSource', {projectId, source: source})
+  removeFeatureFromDataSource ({ commit }, { projectId, source }) {
+    commit('setDataSource', { projectId, source: source })
   },
   deleteProject ({ commit }, { projectId }) {
     commit('deleteProject', { projectId })
   },
-  setProjectMaxFeatures ({ commit }, {projectId, maxFeatures}) {
-    commit('setProjectMaxFeatures', {projectId, maxFeatures})
+  setProjectMaxFeatures ({ commit }, { projectId, maxFeatures }) {
+    commit('setProjectMaxFeatures', { projectId, maxFeatures })
   },
-  setZoomControlEnabled ({ commit }, {projectId, enabled}) {
-    commit('setZoomControlEnabled', {projectId, enabled})
+  setZoomControlEnabled ({ commit }, { projectId, enabled }) {
+    commit('setZoomControlEnabled', { projectId, enabled })
   },
-  setDisplayZoomEnabled ({ commit }, {projectId, enabled}) {
-    commit('setDisplayZoomEnabled', {projectId, enabled})
+  setDisplayZoomEnabled ({ commit }, { projectId, enabled }) {
+    commit('setDisplayZoomEnabled', { projectId, enabled })
   },
-  setDisplayAddressSearchBar ({ commit }, {projectId, enabled}) {
-    commit('setDisplayAddressSearchBar', {projectId, enabled})
+  setDisplayAddressSearchBar ({ commit }, { projectId, enabled }) {
+    commit('setDisplayAddressSearchBar', { projectId, enabled })
   },
-  setDisplayCoordinates ({ commit }, {projectId, enabled}) {
-    commit('setDisplayCoordinates', {projectId, enabled})
+  setDisplayCoordinates ({ commit }, { projectId, enabled }) {
+    commit('setDisplayCoordinates', { projectId, enabled })
   },
-  setDisplayScale ({ commit }, {projectId, enabled}) {
-    commit('setDisplayScale', {projectId, enabled})
+  setDisplayScale ({ commit }, { projectId, enabled }) {
+    commit('setDisplayScale', { projectId, enabled })
   },
-  clearActiveLayers ({ commit }, {projectId}) {
-    commit('clearActiveLayers', {projectId})
+  clearActiveLayers ({ commit }, { projectId }) {
+    commit('clearActiveLayers', { projectId })
   },
-  setActiveGeoPackage ({ commit }, {projectId, geopackageId}) {
-    commit('setActiveGeoPackage', {projectId, geopackageId})
+  setActiveGeoPackage ({ commit }, { projectId, geopackageId }) {
+    commit('setActiveGeoPackage', { projectId, geopackageId })
   },
-  setActiveGeoPackageFeatureLayer ({ commit }, {projectId, geopackageId, tableName}) {
-    commit('setActiveGeoPackageFeatureLayer', {projectId, geopackageId, tableName})
+  setActiveGeoPackageFeatureLayer ({ commit }, { projectId, geopackageId, tableName }) {
+    commit('setActiveGeoPackageFeatureLayer', { projectId, geopackageId, tableName })
   },
-  async setGeoPackage ({ commit }, {projectId, geopackage}) {
-    return new Promise (resolve => {
-      commit('setGeoPackage', {projectId, geopackage})
+  async setGeoPackage ({ commit }, { projectId, geopackage }) {
+    return new Promise(resolve => {
+      commit('setGeoPackage', { projectId, geopackage })
       resolve()
     })
   },
-  setDataSource ({ commit }, {projectId, source}) {
-    commit('setDataSource', {projectId, source})
+  setDataSource ({ commit }, { projectId, source }) {
+    commit('setDataSource', { projectId, source })
   },
   resetState ({ commit }) {
     return commit('resetState')
   },
-  setMapRenderingOrder ({ commit }, {projectId, mapRenderingOrder}) {
-    commit('setMapRenderingOrder', {projectId, mapRenderingOrder})
+  setMapRenderingOrder ({ commit }, { projectId, mapRenderingOrder }) {
+    commit('setMapRenderingOrder', { projectId, mapRenderingOrder })
   },
-  migrateState ({commit}, {migratedState}) {
-    commit('migrateState', {migratedState})
+  migrateState ({ commit }, { migratedState }) {
+    commit('migrateState', { migratedState })
   }
 }
 
-const modules = {
-}
+const modules = {}
 
 export default {
   namespaced: true,

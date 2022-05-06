@@ -1,7 +1,8 @@
-import {L} from '../../vendor'
+import { L } from '../../vendor'
 
 export default class LeafletBaseMapTool extends L.Control {
   basemapFunction
+
   constructor (options, basemapFunction) {
     let mergedOptions = {
       ...{
@@ -28,7 +29,8 @@ export default class LeafletBaseMapTool extends L.Control {
     }.bind(this)
 
     this.disable = () => {
-      this._basemapLink.onclick = function () {}
+      this._basemapLink.onclick = function () {
+      }
       L.DomUtil.addClass(this._basemapLink, 'leaflet-control-disabled')
     }
 

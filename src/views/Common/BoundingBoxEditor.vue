@@ -3,43 +3,63 @@
     <v-card-text>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum latitude" value="Not set"></v-text-field>
-          <number-picker v-else :disabled="!editingDirectly" ref="minLatRef" :additional-rules="[v => (Number(v) < this.maxLatitude || 'Min latitude should be less than max latitude.')]" :autofocus="true" hint="range is -90 to 90" :number="minLatitude" label="Minimum latitude" :step="1" @update-number="(val) => { updateMinLat(val) }" @update-valid="(val) => {this.minLatValid = val}" :min="-90.0" :max="90.0" />
+          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum latitude"
+                        value="Not set"></v-text-field>
+          <number-picker v-else :disabled="!editingDirectly" ref="minLatRef"
+                         :additional-rules="[v => (Number(v) < this.maxLatitude || 'Min latitude should be less than max latitude.')]"
+                         :autofocus="true" hint="range is -90 to 90" :number="minLatitude" label="Minimum latitude"
+                         :step="1" @update-number="(val) => { updateMinLat(val) }"
+                         @update-valid="(val) => {this.minLatValid = val}" :min="-90.0" :max="90.0"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum latitude" value="Not set"></v-text-field>
-          <number-picker v-else :disabled="!editingDirectly" ref="maxLatRef" :additional-rules="[v => (Number(v) > this.minLatitude || 'Max latitude should be greater than min latitude.')]" :autofocus="false" hint="range is -90 to 90" :number="maxLatitude" label="Maximum latitude" :step="1" @update-number="updateMaxLat" @update-valid="(val) => {this.maxLatValid = val}" :min="-90.0" :max="90.0" />
+          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum latitude"
+                        value="Not set"></v-text-field>
+          <number-picker v-else :disabled="!editingDirectly" ref="maxLatRef"
+                         :additional-rules="[v => (Number(v) > this.minLatitude || 'Max latitude should be greater than min latitude.')]"
+                         :autofocus="false" hint="range is -90 to 90" :number="maxLatitude" label="Maximum latitude"
+                         :step="1" @update-number="updateMaxLat" @update-valid="(val) => {this.maxLatValid = val}"
+                         :min="-90.0" :max="90.0"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum longitude" value="Not set"></v-text-field>
-          <number-picker v-else :disabled="!editingDirectly" ref="minLongRef" :additional-rules="[v => (Number(v) < this.maxLongitude || 'Min longitude should be less than max longitude.')]" :autofocus="false" hint="range is -180 to 180" :number="minLongitude" label="Minimum longitude" :step="1" @update-number="updateMinLong" @update-valid="(val) => {this.minLonValid = val}" :min="-180.0" :max="180.0" />
+          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum longitude"
+                        value="Not set"></v-text-field>
+          <number-picker v-else :disabled="!editingDirectly" ref="minLongRef"
+                         :additional-rules="[v => (Number(v) < this.maxLongitude || 'Min longitude should be less than max longitude.')]"
+                         :autofocus="false" hint="range is -180 to 180" :number="minLongitude" label="Minimum longitude"
+                         :step="1" @update-number="updateMinLong" @update-valid="(val) => {this.minLonValid = val}"
+                         :min="-180.0" :max="180.0"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum longitude" value="Not set"></v-text-field>
-          <number-picker v-else :disabled="!editingDirectly" ref="maxLongRef" :additional-rules="[v => (Number(v) > this.minLongitude || 'Max longitude should be greater than min longitude.')]" :autofocus="false" hint="range is -180 to 180" :number="maxLongitude" label="Maximum longitude" :step="1" @update-number="updateMaxLong" @update-valid="(val) => {this.maxLonValid = val}" :min="-180.0" :max="180.0" />
+          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum longitude"
+                        value="Not set"></v-text-field>
+          <number-picker v-else :disabled="!editingDirectly" ref="maxLongRef"
+                         :additional-rules="[v => (Number(v) > this.minLongitude || 'Max longitude should be greater than min longitude.')]"
+                         :autofocus="false" hint="range is -180 to 180" :number="maxLongitude" label="Maximum longitude"
+                         :step="1" @update-number="updateMaxLong" @update-valid="(val) => {this.maxLonValid = val}"
+                         :min="-180.0" :max="180.0"/>
         </v-col>
       </v-row>
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-        v-if="!editingDirectly && !drawingBounds && !pickingGrid && boundingBox != null"
-        text
-        color="warning"
-        class="mr-2"
-        @click="reset">
+          v-if="!editingDirectly && !drawingBounds && !pickingGrid && boundingBox != null"
+          text
+          color="warning"
+          class="mr-2"
+          @click="reset">
         Reset
       </v-btn>
       <v-btn
-        v-if="editingDirectly"
-        text
-        @click="editingDirectly = false">
+          v-if="editingDirectly"
+          text
+          @click="editingDirectly = false">
         Cancel
       </v-btn>
       <v-btn
@@ -57,22 +77,22 @@
         Finish
       </v-btn>
       <v-btn
-        v-if="editingDirectly && minLatValid && minLonValid && maxLatValid && maxLonValid"
-        color="primary"
-        @click="updateBoundingBoxInput">
+          v-if="editingDirectly && minLatValid && minLonValid && maxLatValid && maxLonValid"
+          color="primary"
+          @click="updateBoundingBoxInput">
         Save
       </v-btn>
       <v-menu
-        v-if="!editingDirectly && !drawingBounds && !pickingGrid"
-        top
-        close-on-click
+          v-if="!editingDirectly && !drawingBounds && !pickingGrid"
+          top
+          close-on-click
       >
         <template v-slot:activator="{ on, attrs }">
           <v-btn
-            color="primary"
-            dark
-            v-bind="attrs"
-            v-on="on">
+              color="primary"
+              dark
+              v-bind="attrs"
+              v-on="on">
             {{ 'Edit' }}
           </v-btn>
         </template>
@@ -152,7 +172,7 @@ export default {
       return isNil(this.boundingBox) ? this.maxLat : Number(this.boundingBox[3])
     }
   },
-  beforeDestroy() {
+  beforeDestroy () {
     this.stopEditing()
   },
   methods: {
@@ -196,7 +216,7 @@ export default {
       })
     },
     setBoundingBoxToMapExtent () {
-      EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({extent}) => {
+      EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({ extent }) => {
         this.updateBoundingBox(extent)
       })
       const options = {
@@ -222,7 +242,7 @@ export default {
       })
 
       if (this.boundingBox == null) {
-        EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({extent}) => {
+        EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({ extent }) => {
           this.updateBoundingBox(extent)
           EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, extent)
         })

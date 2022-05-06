@@ -622,56 +622,64 @@ class MapCacheWindowManager {
         await this.mapcacheThreadHelper.terminate()
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.featureTableWindow)) {
         this.featureTableWindow.destroy()
         this.featureTableWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.projectWindow)) {
         this.projectWindow.destroy()
         this.projectWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.releaseNotesWindow)) {
         this.releaseNotesWindow.destroy()
         this.releaseNotesWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.userGuideWindow)) {
         this.userGuideWindow.destroy()
         this.userGuideWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.mainWindow)) {
         this.mainWindow.destroy()
         this.mainWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.loadingWindow)) {
         this.loadingWindow.destroy()
         this.loadingWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     try {
       if (!isNil(this.workerWindow)) {
         this.workerWindow.destroy()
         this.workerWindow = null
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 
   /**
@@ -680,9 +688,9 @@ class MapCacheWindowManager {
    * @param url
    * @param onFulfilled
    */
-  loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch((e) => {
-      console.error(e)
+  loadContent (window, url, onFulfilled = () => {
+  }) {
+    window.loadURL(url).then(onFulfilled).catch(() => {
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })
@@ -701,7 +709,8 @@ class MapCacheWindowManager {
       },
       show: false
     })
-    this.loadContent(this.workerWindow, workerURL, () => {})
+    this.loadContent(this.workerWindow, workerURL, () => {
+    })
   }
 
   /**
@@ -1016,7 +1025,8 @@ class MapCacheWindowManager {
     const winURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}#/feature_table/${projectId}`
       : `mapcache://./index.html/#/feature_table/${projectId}`
-    this.loadContent(this.featureTableWindow, winURL, () => {})
+    this.loadContent(this.featureTableWindow, winURL, () => {
+    })
   }
 
   /**
@@ -1048,7 +1058,7 @@ class MapCacheWindowManager {
       this.featureTableWindow = null
     }
     if (this.projectWindow) {
-      this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, {isDeleting})
+      this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, { isDeleting })
       this.launchMainWindow().then(() => {
         this.showMainWindow()
       })
@@ -1099,9 +1109,9 @@ class MapCacheWindowManager {
       {
         label: 'Edit',
         submenu: [
-          {role: 'copy'},
-          {role: 'paste'},
-          {role: 'selectall'}
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectall' }
         ]
       },
       {
@@ -1210,7 +1220,7 @@ class MapCacheWindowManager {
   /**
    * Shows devtools for all visible windows
    */
-  showAllDevTools() {
+  showAllDevTools () {
     if (this.projectWindow) {
       this.projectWindow.webContents.openDevTools()
     }
@@ -1234,7 +1244,7 @@ class MapCacheWindowManager {
   /**
    * Hides all devtools for visible windows
    */
-  hideAllDevTools() {
+  hideAllDevTools () {
     if (this.projectWindow) {
       this.projectWindow.webContents.closeDevTools()
     }

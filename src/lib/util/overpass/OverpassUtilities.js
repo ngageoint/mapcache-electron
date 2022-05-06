@@ -1,12 +1,13 @@
 import wizard from 'overpass-wizard'
-import {presets} from './iD_presets.json'
+import { presets } from './iD_presets.json'
 
 function getOverpassQuery (search) {
   let result = false
   // eslint-disable-next-line no-console
   let oldConsoleError = console.error
   // eslint-disable-next-line no-console
-  console.error = () => {}
+  console.error = () => {
+  }
   try {
     result = wizard(search, {
       comment: false,
@@ -18,7 +19,8 @@ function getOverpassQuery (search) {
       outputMode: 'recursive'
     })
     // eslint-disable-next-line no-unused-vars, no-empty
-  } catch (e) {}
+  } catch (e) {
+  }
   // try with quotes
   if (!result) {
     try {
@@ -31,7 +33,8 @@ function getOverpassQuery (search) {
         compactNWR: true,
         outputMode: 'recursive'
       })// eslint-disable-next-line no-unused-vars, no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
   }
   // eslint-disable-next-line no-console
   console.error = oldConsoleError
@@ -43,7 +46,8 @@ function getOverpassCountQuery (search) {
   // eslint-disable-next-line no-console
   let oldConsoleError = console.error
   // eslint-disable-next-line no-console
-  console.error = () => {}
+  console.error = () => {
+  }
   try {
     result = wizard(search, {
       comment: false,
@@ -55,7 +59,8 @@ function getOverpassCountQuery (search) {
       outputMode: 'recursive'
     }).replace('body', 'count').replace('skel', 'count')
     // eslint-disable-next-line no-unused-vars, no-empty
-  } catch (e) {}
+  } catch (e) {
+  }
   // try with quotes
   if (!result) {
     try {
@@ -69,7 +74,8 @@ function getOverpassCountQuery (search) {
         outputMode: 'recursive'
       }).replace('body', 'count').replace('skel', 'count')
       // eslint-disable-next-line no-unused-vars, no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
   }
   // eslint-disable-next-line no-console
   console.error = oldConsoleError

@@ -11,7 +11,15 @@ import LeafletEditable from 'leaflet-editable' // eslint-disable-line no-unused-
 import isNil from 'lodash/isNil'
 import EventBus from '../vue/EventBus'
 import { getAxiosRequestScheduler, testServiceConnection } from '../network/ServiceConnectionUtils'
-import { DEFAULT_RATE_LIMIT, DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, SERVICE_TYPE, isTimeoutError, TIMEOUT_STATUS, getAuthenticationMethod } from '../network/HttpUtilities'
+import {
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_TIMEOUT,
+  DEFAULT_RETRY_ATTEMPTS,
+  SERVICE_TYPE,
+  isTimeoutError,
+  TIMEOUT_STATUS,
+  getAuthenticationMethod
+} from '../network/HttpUtilities'
 import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
@@ -45,7 +53,7 @@ L.Map.mergeOptions({
 
   // @option smoothWheelZoom: number = 1
   // setting zoom speed
-  smoothSensitivity:1
+  smoothSensitivity: 1
 
 });
 
@@ -162,19 +170,22 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     // TODO: add in test support for WMTS
     if (this.layer.layerType === XYZ_SERVER) {
       options.subdomains = this.layer.subdomains || []
-      let {error} = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.XYZ, options)
+      let { error } = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.XYZ, options)
       if (!isNil(error) && !isTimeoutError(error) || !ignoreTimeoutError) {
         throw error
       }
     } else if (this.layer.layerType === WMS) {
       options.version = this.layer.version
-      let {serviceInfo, error} = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.WMS, options)
+      let { serviceInfo, error } = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.WMS, options)
       if (!isNil(serviceInfo)) {
         // verify that this source is still valid when compared to the service info
         const layers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
         if (layers.length !== this.layer.layers.length) {
           const missingLayers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
-          error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
+          error = {
+            status: 400,
+            statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')
+          }
         }
       }
       if (!isNil(error) && (!isTimeoutError(error) || !ignoreTimeoutError)) {
@@ -191,21 +202,21 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   setError (error) {
     if (error.status === TIMEOUT_STATUS) {
       this.error = error
-      window.mapcache.setSourceError({id: this.id, error: this.error})
+      window.mapcache.setSourceError({ id: this.id, error: this.error })
     } else if (error.response && (error.response.status >= 500 || error.response.status === 401)) {
       this.error = {
         status: error.response.status,
         statusText: error.response.statusText,
         authType: getAuthenticationMethod(error.response)
       }
-      window.mapcache.setSourceError({id: this.id, error: this.error})
+      window.mapcache.setSourceError({ id: this.id, error: this.error })
     } else if (error.request) {
       if (navigator.onLine) {
         this.error = {
           status: -1,
           statusText: 'Unable to reach server.'
         }
-        window.mapcache.setSourceError({id: this.id, error: this.error})
+        window.mapcache.setSourceError({ id: this.id, error: this.error })
       } else {
         // notify there may be a network error
         EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
@@ -293,8 +304,11 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
               if (!ret.cancelled) {
                 const cancellableTileRequest = new CancellableTileRequest()
                 cancellableTileRequests.push(cancellableTileRequest)
-                cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({dataUrl, error}) => {
-                  resolve({dataUrl, error, request})
+                cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({
+                                                                                                                                                                        dataUrl,
+                                                                                                                                                                        error
+                                                                                                                                                                      }) => {
+                  resolve({ dataUrl, error, request })
                 })
               } else {
                 resolve()
@@ -307,7 +321,7 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
               // handle results
               results.forEach(result => {
                 if (result.status === 'fulfilled') {
-                  const {dataUrl, error, request} = result.value
+                  const { dataUrl, error, request } = result.value
                   if (!error && this.dataUrlValid(dataUrl)) {
                     request.dataUrl = dataUrl
                     tiles.push(request)
@@ -431,11 +445,11 @@ L.Icon.MaterialDesignIcon = L.Icon.extend({
     iconRetinaUrl: blankMarker2x,
     iconUrl: blankMarker,
     shadowUrl: markerShadow,
-    iconSize:    [25, 41],
-    iconAnchor:  [12, 41],
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     tooltipAnchor: [16, -28],
-    shadowSize:  [41, 41],
+    shadowSize: [41, 41],
     className: '',
     prefix: 'mdi',
     glyphSvg: null,
@@ -451,7 +465,7 @@ L.Icon.MaterialDesignIcon = L.Icon.extend({
     return div
   },
 
-  _createGlyph: function() {
+  _createGlyph: function () {
     const options = this.options
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     if (options.glyphSvg != null) {
@@ -504,11 +518,11 @@ L.Icon.MaterialDesignIcon = L.Icon.extend({
 
     if (anchor) {
       div.style.marginLeft = (-anchor.x) + 'px'
-      div.style.marginTop  = (-anchor.y) + 'px'
+      div.style.marginTop = (-anchor.y) + 'px'
     }
 
     if (size) {
-      div.style.width  = size.x + 'px'
+      div.style.width = size.x + 'px'
       div.style.height = size.y + 'px'
     }
   },

@@ -1,7 +1,7 @@
 import Preprocessor from '../preprocessing/Preprocessor'
-import {getBaseUrlAndQueryParams} from '../../network/URLUtilities'
+import { getBaseUrlAndQueryParams } from '../../network/URLUtilities'
 import isNil from 'lodash/isNil'
-import {PROCESSING_STATES} from '../SourceProcessing'
+import { PROCESSING_STATES } from '../SourceProcessing'
 
 /**
  * Handles the preprocessing of a Web Feature Service. This retrieves the feature data from the service before sending to
@@ -92,7 +92,11 @@ export default class ArcGISFeatureServicePreprocessor extends Preprocessor {
       const streamId = window.mapcache.openFileStream(filePath)
       layer.filePath = filePath
       await this.getAndSaveLayerFeaturesToFile(url, layer, withCredentials, streamId)
-      statusCallback({type: PROCESSING_STATES.PREPROCESSING, message: 'Requesting data', completionPercentage: 25 * ((i + 1) / layers.length)})
+      statusCallback({
+        type: PROCESSING_STATES.PREPROCESSING,
+        message: 'Requesting data',
+        completionPercentage: 25 * ((i + 1) / layers.length)
+      })
     }
   }
 

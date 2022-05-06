@@ -49,7 +49,7 @@ async function removeUnusedFromUserDirectory (userDirectory, state) {
 
   // delete unused base map directories
   const baseMapDirectories = readdirSync(baseMapDir).map(name => path.join(baseMapDir, name))
-  const existingBaseMapDirectories = state.BaseMaps.baseMaps.filter(baseMap => ['0','1','2','3'].indexOf(baseMap.id) === -1).map(baseMap => baseMap.directory)
+  const existingBaseMapDirectories = state.BaseMaps.baseMaps.filter(baseMap => ['0', '1', '2', '3'].indexOf(baseMap.id) === -1).map(baseMap => baseMap.directory)
   difference(baseMapDirectories, existingBaseMapDirectories).forEach(directory => {
     promises.push(rmDirAsync(directory))
   })
@@ -386,12 +386,13 @@ function readFile (path) {
  * @param dir
  * @returns {boolean}
  */
-function isDirEmpty(dir) {
+function isDirEmpty (dir) {
   let isEmpty = true
   try {
     isEmpty = readdirSync(dir).length === 0
     // eslint-disable-next-line no-empty
-  } catch (e) {}
+  } catch (e) {
+  }
   return isEmpty
 }
 

@@ -7,11 +7,13 @@ const path = require('path')
 const { Worker } = require('worker_threads')
 const kTaskInfo = Symbol('kTaskInfo')
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
-const {CANCEL} = require('../../threads/mapcacheThreadRequestTypes')
+const { CANCEL } = require('../../threads/mapcacheThreadRequestTypes')
 
 
 class WorkerPoolTaskInfo extends AsyncResource {
-  constructor (task, sender, callback = () => {}, cancelCallback = () => {}) {
+  constructor (task, sender, callback = () => {
+  }, cancelCallback = () => {
+  }) {
     super('WorkerPoolTaskInfo')
     this.task = task
     this.sender = sender
@@ -40,31 +42,37 @@ class WorkerPoolTaskInfo extends AsyncResource {
 
   emitQueued () {
     if (this.sender) {
-      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.QUEUED, message: 'Queued'})
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), { type: PROCESSING_STATES.QUEUED, message: 'Queued' })
     }
   }
 
   emitProcessing () {
     if (this.sender) {
-      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.PROCESSING, message: 'Processing'})
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {
+        type: PROCESSING_STATES.PROCESSING,
+        message: 'Processing'
+      })
     }
   }
 
   emitCancelling () {
     if (this.sender) {
-      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: PROCESSING_STATES.CANCELLED, message: 'Cancelled'})
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {
+        type: PROCESSING_STATES.CANCELLED,
+        message: 'Cancelled'
+      })
     }
   }
 
   emitStatus (status, message, completionPercentage) {
     if (this.sender) {
-      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), {type: status, message, completionPercentage})
+      this.sender.send(PROCESS_SOURCE_STATUS(this.getTaskId()), { type: status, message, completionPercentage })
     }
   }
 }
 
 export default class WorkerThreadPool extends EventEmitter {
-  constructor(config, workerPath) {
+  constructor (config, workerPath) {
     super()
     this.config = config
     this.workerPath = workerPath
@@ -83,7 +91,7 @@ export default class WorkerThreadPool extends EventEmitter {
   }
 
   async addNewWorker (config) {
-    return new Promise ((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const worker = new Worker(path.resolve(this.workerPath), {
         stderr: true,
         stdout: true
@@ -103,13 +111,13 @@ export default class WorkerThreadPool extends EventEmitter {
         reject(err)
       })
       // wait for ready message
-      worker.once('message', ({error}) => {
+      worker.once('message', ({ error }) => {
         worker.removeAllListeners('error')
         worker.removeAllListeners('message')
         if (error != null) {
           reject(error)
         } else {
-          worker.on('message', ({type, message, completionPercentage, error, result}) => {
+          worker.on('message', ({ type, message, completionPercentage, error, result }) => {
             if (type === 'status') {
               worker[kTaskInfo].emitStatus(PROCESSING_STATES.PROCESSING, message, completionPercentage)
             } else {
@@ -189,7 +197,7 @@ export default class WorkerThreadPool extends EventEmitter {
           this.workers.splice(this.workers.indexOf(worker), 1)
           await worker.terminate()
         } else {
-          worker.postMessage({type: CANCEL})
+          worker.postMessage({ type: CANCEL })
         }
         worker[kTaskInfo].setCancelled()
         worker[kTaskInfo].done('Cancelled.', null)

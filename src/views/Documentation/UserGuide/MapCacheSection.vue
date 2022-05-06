@@ -1,20 +1,24 @@
 <template>
   <v-card flat class="ml-8 mt-8" style="width: 640px;">
-    <map-cache-article v-if="selectedArticle != null" :article="selectedArticle" :back="() => selectedArticle = null" :next-article-title="nextArticleTitle" :next-article="showNext"></map-cache-article>
+    <map-cache-article v-if="selectedArticle != null" :article="selectedArticle" :back="() => selectedArticle = null"
+                       :next-article-title="nextArticleTitle" :next-article="showNext"></map-cache-article>
     <v-container v-else>
       <v-row no-gutters>
         <v-col cols="12" v-for="(section, sectionIndex) of sections" :key="sectionIndex">
           <v-divider v-if="sectionIndex > 0 && !section.no_divider" class="mb-4"/>
           <v-card class="mt-0 pt-0" flat tile>
             <v-card-title class="ml-0 pl-0 mt-0 pt-0">
-              <v-icon v-if="section.icon" class="mr-4" :color="section.color">{{section.icon}}</v-icon>
-              <v-img v-if="section.image" class="mr-4" :src="section.image" style="max-width: 22px; max-height: 22px;"></v-img>
-              {{section.title}}
+              <v-icon v-if="section.icon" class="mr-4" :color="section.color">{{ section.icon }}</v-icon>
+              <v-img v-if="section.image" class="mr-4" :src="section.image"
+                     style="max-width: 22px; max-height: 22px;"></v-img>
+              {{ section.title }}
             </v-card-title>
             <v-card-text class="ml-1">
               <v-row justify="space-between">
-                <v-col class="pa-2" cols="6" v-for="(article, articleIndex) of section.articles" :order="article.order" :key="articleIndex">
-                  <li class="clickable fake-link ma-0 pa-0 link-color fs-11" v-html="article.title" @click="() => showArticle(sectionIndex, articleIndex)"></li>
+                <v-col class="pa-2" cols="6" v-for="(article, articleIndex) of section.articles" :order="article.order"
+                       :key="articleIndex">
+                  <li class="clickable fake-link ma-0 pa-0 link-color fs-11" v-html="article.title"
+                      @click="() => showArticle(sectionIndex, articleIndex)"></li>
                 </v-col>
               </v-row>
             </v-card-text>
@@ -29,7 +33,7 @@
 import MapCacheArticle from './Article/MapCacheArticle'
 
 export default {
-  components: {MapCacheArticle},
+  components: { MapCacheArticle },
   methods: {
     showArticle (sectionIdx, articleIdx) {
       this.selectedSectionIndex = sectionIdx
@@ -67,13 +71,15 @@ export default {
 </script>
 
 <style scoped>
- .fs-11 {
-   font-size: 11pt;
- }
- .link-color {
-   color: #326482;
- }
- .link-color:active {
-   color: #37A5AC;
- }
+.fs-11 {
+  font-size: 11pt;
+}
+
+.link-color {
+  color: #326482;
+}
+
+.link-color:active {
+  color: #37A5AC;
+}
 </style>

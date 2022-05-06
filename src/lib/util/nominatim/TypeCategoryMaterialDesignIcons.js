@@ -373,6 +373,7 @@ function getMaterialDesignIcon (type, category) {
   }
   return icon
 }
+
 export {
   getMaterialDesignIcon
 }

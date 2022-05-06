@@ -61,7 +61,7 @@ export default class MapcacheThreadHelper {
    */
   attachMedia (data) {
     return new Promise((resolve) => {
-      this.threadPool.addTask({id: data.id, type: REQUEST_ATTACH_MEDIA, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: REQUEST_ATTACH_MEDIA, data: data }, null, (err, result) => {
         if (err) {
           result = { error: err }
         }
@@ -80,7 +80,7 @@ export default class MapcacheThreadHelper {
     return new Promise((resolve) => {
       // set up initial directory
       const directory = data.source.directory
-      this.threadPool.addTask({id: data.id, type: REQUEST_PROCESS_SOURCE, data: data}, sender, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: REQUEST_PROCESS_SOURCE, data: data }, sender, (err, result) => {
         const isNil = require('lodash/isNil')
         if (!isNil(err)) {
           if (isNil(result)) {
@@ -104,7 +104,7 @@ export default class MapcacheThreadHelper {
             // eslint-disable-next-line no-console
             console.error('Failed to delete source directory.')
           }
-          resolve({cancelled: true})
+          resolve({ cancelled: true })
         })
       })
     })
@@ -117,13 +117,13 @@ export default class MapcacheThreadHelper {
    */
   renderTile (data) {
     return new Promise((resolve) => {
-      this.threadPool.addTask({id: data.id, type: REQUEST_RENDER, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: REQUEST_RENDER, data: data }, null, (err, result) => {
         if (err) {
           result = { error: err }
         }
         resolve(result)
       }, () => {
-        resolve({ error: 'Cancelled by user'})
+        resolve({ error: 'Cancelled by user' })
       })
     })
   }
@@ -135,7 +135,7 @@ export default class MapcacheThreadHelper {
    */
   generateGeoTIFFRaster (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: REQUEST_GEOTIFF_RASTER, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: REQUEST_GEOTIFF_RASTER, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -152,7 +152,7 @@ export default class MapcacheThreadHelper {
    */
   compileTiles (data, sender) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: REQUEST_TILE_COMPILATION, data: data}, sender, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: REQUEST_TILE_COMPILATION, data: data }, sender, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -168,7 +168,7 @@ export default class MapcacheThreadHelper {
    */
   renameGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_RENAME, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: GEOPACKAGE_TABLE_RENAME, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -184,7 +184,7 @@ export default class MapcacheThreadHelper {
    */
   deleteGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_DELETE, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: GEOPACKAGE_TABLE_DELETE, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -200,7 +200,7 @@ export default class MapcacheThreadHelper {
    */
   copyGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_COPY, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: GEOPACKAGE_TABLE_COPY, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -216,7 +216,7 @@ export default class MapcacheThreadHelper {
    */
   countGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_COUNT, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: GEOPACKAGE_TABLE_COUNT, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }
@@ -232,7 +232,7 @@ export default class MapcacheThreadHelper {
    */
   searchGeoPackageTable (data) {
     return new Promise((resolve, reject) => {
-      this.threadPool.addTask({id: data.id, type: GEOPACKAGE_TABLE_SEARCH, data: data}, null, (err, result) => {
+      this.threadPool.addTask({ id: data.id, type: GEOPACKAGE_TABLE_SEARCH, data: data }, null, (err, result) => {
         if (err) {
           reject(err)
         }

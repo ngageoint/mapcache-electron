@@ -6,7 +6,9 @@
           Layers
         </p>
         <p class="detail--text" v-if="!errored" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-          {{ configuration.layers.filter(l => l.enabled).length === 0 ? 'No layers enabled' : (configuration.layers.filter(l => l.enabled).length === configuration.layers.length ? 'All layers enabled' : (configuration.layers.filter(l => l.enabled).length + ' of ' + configuration.layers.length + ' layers enabled')) }}
+          {{
+            configuration.layers.filter(l => l.enabled).length === 0 ? 'No layers enabled' : (configuration.layers.filter(l => l.enabled).length === configuration.layers.length ? 'All layers enabled' : (configuration.layers.filter(l => l.enabled).length + ' of ' + configuration.layers.length + ' layers enabled'))
+          }}
         </p>
         <p class="detail--text" v-else :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
           {{ 'Unable to connect to server' }}
@@ -25,15 +27,22 @@
             v-for="(item) in sortedLayers"
             class="sortable-list-item"
             :key="item.name">
-          <v-list-item-icon class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">
-            <v-icon :disabled="errored">{{mdiDragHorizontalVariant}}</v-icon>
+          <v-list-item-icon class="sortHandle"
+                            style="vertical-align: middle !important; align-self: center !important;">
+            <v-icon :disabled="errored">{{ mdiDragHorizontalVariant }}</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <div v-if="item.title"><div class="list-item-title no-clamp" v-html="item.title"></div></div>
-            <div v-if="item.subtitles && item.subtitles.length > 0"><div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles" :key="i + 'service-layer-title'" v-html="title"></div></div>
+            <div v-if="item.title">
+              <div class="list-item-title no-clamp" v-html="item.title"></div>
+            </div>
+            <div v-if="item.subtitles && item.subtitles.length > 0">
+              <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
+                   :key="i + 'service-layer-title'" v-html="title"></div>
+            </div>
           </v-list-item-content>
           <v-list-item-action>
-            <v-switch :disabled="errored" :input-value="item.enabled" color="primary" @change="() => toggleLayer(item)"></v-switch>
+            <v-switch :disabled="errored" :input-value="item.enabled" color="primary"
+                      @change="() => toggleLayer(item)"></v-switch>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -82,10 +91,16 @@ export default {
           dragClass: 'detail-bg',
           handle: '.sortHandle',
           ghostClass: 'ghost',
-          forceFallback : true,
-          onChoose: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
-          onStart: function () { document.body.style.cursor = 'grabbing' }, // Dragging started
-          onUnchoose: function () { document.body.style.cursor = 'default' }, // Dragging started
+          forceFallback: true,
+          onChoose: function () {
+            document.body.style.cursor = 'grabbing'
+          }, // Dragging started
+          onStart: function () {
+            document.body.style.cursor = 'grabbing'
+          }, // Dragging started
+          onUnchoose: function () {
+            document.body.style.cursor = 'default'
+          }, // Dragging started
         } : {})
       },
     },

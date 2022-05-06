@@ -7,7 +7,7 @@ Math.degrees = function (radians) {
   return radians * 180 / Math.PI
 }
 
-function trimExtentToWGS84Max(extent) {
+function trimExtentToWGS84Max (extent) {
   if (extent) {
     const copy = extent.slice()
     copy[0] = Math.min(180.0, Math.max(-180.0, copy[0]))
@@ -20,7 +20,7 @@ function trimExtentToWGS84Max(extent) {
   }
 }
 
-function trimBboxToWGS84Max(bounds) {
+function trimBboxToWGS84Max (bounds) {
   if (bounds) {
     const copy = Object.assign({}, bounds)
     copy.minLon = Math.min(180.0, Math.max(-180.0, copy.minLon))
@@ -108,7 +108,7 @@ function tilesInExtentAtZoom (extent, z) {
   const xRange = calculateXTileRangeForExtent(extent, z)
   for (let x = xRange.min; x <= xRange.max; x++) {
     for (let y = yRange.min; y <= yRange.max; y++) {
-      tiles.push({x, y, z})
+      tiles.push({ x, y, z })
     }
   }
   return tiles

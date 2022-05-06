@@ -103,6 +103,6 @@ export default class CancellableTileRequest {
         attempts++
       }
     }
-    return {dataUrl, error}
+    return { dataUrl, error }
   }
 }

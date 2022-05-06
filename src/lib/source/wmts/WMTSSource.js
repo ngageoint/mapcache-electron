@@ -10,6 +10,7 @@ export default class WMTSSource extends Source {
     this.wmtsInfo = wmtsInfo
     this.withCredentials = withCredentials
   }
+
   async retrieveLayers (statusCallback) {
     statusCallback('Processing WMTS server', 0)
     await this.sleep(250)

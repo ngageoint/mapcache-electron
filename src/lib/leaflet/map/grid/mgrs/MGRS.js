@@ -1,5 +1,5 @@
-import {UTM} from './utm/UTM'
-import {LatLng} from './wgs84/LatLng'
+import { UTM } from './utm/UTM'
+import { LatLng } from './wgs84/LatLng'
 
 class MGRS {
   /*
@@ -35,27 +35,27 @@ class MGRS {
     this.northing = northing
   }
 
-  getZone() {
+  getZone () {
     return this.zone
   }
 
-  getBand() {
+  getBand () {
     return this.band
   }
 
-  getE100k() {
+  getE100k () {
     return this.e100k
   }
 
-  getN100k() {
+  getN100k () {
     return this.n100k
   }
 
-  getEasting() {
+  getEasting () {
     return this.easting
   }
 
-  getNorthing() {
+  getNorthing () {
     return this.northing
   }
 
@@ -123,7 +123,7 @@ class MGRS {
     return this.zone + this.band + ' ' + this.e100k + this.n100k + ' ' + this.easting + ' ' + this.northing
   }
 
-  utm() {
+  utm () {
     // get easting specified by e100k
     let col = MGRS.e100kLetters[(this.zone - 1) % 3].indexOf(this.e100k) + 1 // index+1 since A (index 0) -> 1*100e3, B (index 1) -> 2*100e3, etc.
     let e100kNum = col * 100000 // e100k in meters

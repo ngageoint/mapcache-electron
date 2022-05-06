@@ -52,13 +52,13 @@ function adjustColorForHighlight (color, amt) {
   return newColor
 }
 
-function lightenDarkenColor(col, amt) {
+function lightenDarkenColor (col, amt) {
   let usePound = false
   if (col[0] === '#') {
     col = col.slice(1)
     usePound = true
   }
-  let num = parseInt(col,16)
+  let num = parseInt(col, 16)
   let r = (num >> 16) + amt
   if (r > 255) {
     r = 255

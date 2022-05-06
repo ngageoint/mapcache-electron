@@ -13,7 +13,7 @@ const getters = {
 }
 
 const mutations = {
-  addProjectState (state, {projectId}) {
+  addProjectState (state, { projectId }) {
     Vue.set(state, projectId, {
       extents: [-53.4, -79.1, 53.64, 79.1],
       drawBounds: {},
@@ -24,16 +24,16 @@ const mutations = {
       allowNotifications: false
     })
   },
-  setProjectExtents (state, {projectId, extents}) {
+  setProjectExtents (state, { projectId, extents }) {
     state[projectId].extents = extents
   },
   deleteProject (state, { projectId }) {
     Vue.delete(state, projectId)
   },
-  setDarkTheme (state, {projectId, enabled}) {
+  setDarkTheme (state, { projectId, enabled }) {
     Vue.set(state[projectId], 'dark', enabled)
   },
-  allowNotifications (state, {projectId, allow}) {
+  allowNotifications (state, { projectId, allow }) {
     Vue.set(state[projectId], 'allowNotifications', allow)
   },
   resetState (state) {
@@ -42,26 +42,26 @@ const mutations = {
     })
     Object.assign(state, getDefaultState())
   },
-  notifyTab (state, {projectId, tabId}) {
+  notifyTab (state, { projectId, tabId }) {
     const notify = Object.assign({}, state[projectId].tabNotification || {})
     notify[tabId] = true
     Vue.set(state[projectId], 'tabNotification', notify)
   },
-  clearNotification (state, {projectId, tabId}) {
+  clearNotification (state, { projectId, tabId }) {
     const notify = Object.assign({}, state[projectId].tabNotification || {})
     notify[tabId] = false
     Vue.set(state[projectId], 'tabNotification', notify)
   },
-  clearNotifications (state, {projectId}) {
+  clearNotifications (state, { projectId }) {
     Vue.delete(state[projectId], 'tabNotification')
   },
-  setMapZoom (state, {projectId, mapZoom}) {
+  setMapZoom (state, { projectId, mapZoom }) {
     Vue.set(state[projectId], 'mapZoom', mapZoom)
   },
-  popOutFeatureTable (state, {projectId, popOut}) {
+  popOutFeatureTable (state, { projectId, popOut }) {
     Vue.set(state[projectId], 'featureTablePoppedOut', popOut)
   },
-  migrateState (state, {migratedState}) {
+  migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
       Vue.delete(state, key)
     })
@@ -73,43 +73,42 @@ const actions = {
   addProjectState ({ commit }, id) {
     commit('addProjectState', id)
   },
-  setProjectExtents ({ commit }, {projectId, extents}) {
-    commit('setProjectExtents', {projectId, extents})
+  setProjectExtents ({ commit }, { projectId, extents }) {
+    commit('setProjectExtents', { projectId, extents })
   },
   deleteProject ({ commit }, { projectId }) {
     commit('deleteProject', { projectId })
   },
-  setDarkTheme ({ commit }, {projectId, enabled}) {
-    commit('setDarkTheme', {projectId, enabled})
+  setDarkTheme ({ commit }, { projectId, enabled }) {
+    commit('setDarkTheme', { projectId, enabled })
   },
-  allowNotifications ({ commit }, {projectId, allow}) {
-    commit('allowNotifications', {projectId, allow})
+  allowNotifications ({ commit }, { projectId, allow }) {
+    commit('allowNotifications', { projectId, allow })
   },
   resetState ({ commit }) {
     return commit('resetState')
   },
-  notifyTab ({ commit }, {projectId, tabId}) {
-    return commit('notifyTab', {projectId, tabId})
+  notifyTab ({ commit }, { projectId, tabId }) {
+    return commit('notifyTab', { projectId, tabId })
   },
-  clearNotification ({ commit }, {projectId, tabId}) {
-    return commit('clearNotification', {projectId, tabId})
+  clearNotification ({ commit }, { projectId, tabId }) {
+    return commit('clearNotification', { projectId, tabId })
   },
-  clearNotifications ({ commit }, {projectId}) {
-    return commit('clearNotifications', {projectId})
+  clearNotifications ({ commit }, { projectId }) {
+    return commit('clearNotifications', { projectId })
   },
-  setMapZoom ({ commit }, {projectId, mapZoom}) {
-    return commit('setMapZoom', {projectId, mapZoom})
+  setMapZoom ({ commit }, { projectId, mapZoom }) {
+    return commit('setMapZoom', { projectId, mapZoom })
   },
-  popOutFeatureTable ({ commit }, {projectId, popOut}) {
-    commit('popOutFeatureTable', {projectId, popOut})
+  popOutFeatureTable ({ commit }, { projectId, popOut }) {
+    commit('popOutFeatureTable', { projectId, popOut })
   },
-  migrateState ({commit}, {migratedState}) {
-    commit('migrateState', {migratedState})
+  migrateState ({ commit }, { migratedState }) {
+    commit('migrateState', { migratedState })
   }
 }
 
-const modules = {
-}
+const modules = {}
 
 export default {
   namespaced: true,

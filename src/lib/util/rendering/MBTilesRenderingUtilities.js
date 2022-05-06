@@ -1,4 +1,4 @@
-import { getDb, getTile, close, getVectorTileFeaturesFromDb, drawVectorFeaturesInCanvas} from './MBTilesUtilities'
+import { getDb, getTile, close, getVectorTileFeaturesFromDb, drawVectorFeaturesInCanvas } from './MBTilesUtilities'
 
 function requestTile (tileRequest) {
   return new Promise((resolve, reject) => {

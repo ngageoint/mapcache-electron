@@ -1,5 +1,5 @@
 import { performSafeGeoPackageOperation } from './GeoPackageCommon'
-import {_getFeatureColumns, _countOfFeaturesAt} from './GeoPackageFeatureTableUtilities'
+import { _getFeatureColumns, _countOfFeaturesAt } from './GeoPackageFeatureTableUtilities'
 
 function getFeaturesForTablesAtLatLngZoom (name, id, geopackagePath, tables, latlng, zoom, isGeoPackage = true) {
   return performSafeGeoPackageOperation(geopackagePath, (gp) => {

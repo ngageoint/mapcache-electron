@@ -81,7 +81,7 @@ function getWebMercatorBoundingBoxFromXYZ (x, y, zoom) {
   minLat = Math.max((-1 * WEB_MERCATOR_HALF_WORLD_WIDTH), minLat)
   maxLat = Math.min(WEB_MERCATOR_HALF_WORLD_WIDTH, maxLat)
 
-  return {minLon, maxLon, minLat, maxLat}
+  return { minLon, maxLon, minLat, maxLat }
 }
 
 function tileIntersects (tileBboxUR, tileBboxLL, geotiffBboxUR, geotiffBboxLL) {

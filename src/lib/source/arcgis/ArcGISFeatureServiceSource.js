@@ -1,14 +1,17 @@
 import Source from '../Source'
 import path from 'path'
 import VectorLayer from '../../layer/vector/VectorLayer'
-import {streamingGeoPackageBuild} from '../../geopackage/GeoPackageFeatureTableUtilities'
+import { streamingGeoPackageBuild } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import { VECTOR } from '../../layer/LayerTypes'
-import {readJSONFile, rmFile} from '../../util/file/FileUtilities'
-import {getGeoPackageColumnsForLayer, getFeatureCollectionForLayer} from '../../util/arcgis/ArcGISFeatureServiceUtilities'
+import { readJSONFile, rmFile } from '../../util/file/FileUtilities'
+import {
+  getGeoPackageColumnsForLayer,
+  getFeatureCollectionForLayer
+} from '../../util/arcgis/ArcGISFeatureServiceUtilities'
 
 export default class ArcGISFeatureServiceSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName, layerDatum) {
-    super (id, directory, filePath)
+    super(id, directory, filePath)
     this.layers = layers
     this.sourceName = sourceName
     this.layerDatum = layerDatum
@@ -22,7 +25,7 @@ export default class ArcGISFeatureServiceSource extends Source {
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
 
-    const {addFeature, addField, done} = await streamingGeoPackageBuild(filePath, this.sourceName)
+    const { addFeature, addField, done } = await streamingGeoPackageBuild(filePath, this.sourceName)
     const fileCompleteStatusStepSize = 75 / this.layers.length
     for (let i = 0; i < this.layers.length; i++) {
       const layer = this.layers[i]

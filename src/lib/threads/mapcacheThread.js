@@ -13,7 +13,7 @@ import {
 } from '../util/canvas/CanvasUtilities'
 import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
-import { requestTile as requestXYZFileTile} from '../util/rendering/XYZFileRenderingUtilities'
+import { requestTile as requestXYZFileTile } from '../util/rendering/XYZFileRenderingUtilities'
 import { GEOTIFF, GEOPACKAGE, MBTILES, XYZ_FILE, VECTOR } from '../layer/LayerTypes'
 import {
   REQUEST_ATTACH_MEDIA,
@@ -46,7 +46,7 @@ class ExpiringGeoPackageConnection {
   expiryId = null
   styleKey = 0
 
-  constructor(filePath, expiryMs = 5000) {
+  constructor (filePath, expiryMs = 5000) {
     this.filePath = filePath
     this.expiryMs = expiryMs
   }
@@ -59,7 +59,8 @@ class ExpiringGeoPackageConnection {
           try {
             featureTile.cleanup()
             // eslint-disable-next-line no-empty
-          } catch (e) {}
+          } catch (e) {
+          }
         })
         this.featureTiles = {}
         // eslint-disable-next-line no-empty
@@ -155,7 +156,7 @@ async function processDataSource (data) {
   let dataSources = []
   let error = null
   const statusCallback = (message, completionPercentage) => {
-    parentPort.postMessage({type: 'status', message, completionPercentage })
+    parentPort.postMessage({ type: 'status', message, completionPercentage })
   }
   try {
     let createdSource = await SourceFactory.constructSource(source)
@@ -165,7 +166,7 @@ async function processDataSource (data) {
         for (let i = 0; i < layers.length; i++) {
           try {
             let layer = layers[i]
-            dataSources.push({id: layer.id, config: layer.configuration})
+            dataSources.push({ id: layer.id, config: layer.configuration })
             // eslint-disable-next-line no-unused-vars
           } catch (err) {
             // eslint-disable-next-line no-console
@@ -212,7 +213,7 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
     expiringGeoPackage.expire()
   }
   const featureTile = await expiringGeoPackage.accessFeatureTiles(data.tableName, data.maxFeatures)
-  const {x, y, z} = data.coords
+  const { x, y, z } = data.coords
   featureTile.drawTile(x, y, z).then((result) => {
     resolve(result)
   }).catch(error => {
@@ -234,7 +235,7 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
 async function requestGeoPackageTile (data, resolve, reject) {
   const expiringGeoPackage = getExpiringGeoPackageConnection(data.dbFile)
   const connection = await expiringGeoPackage.accessConnection()
-  const {x, y, z} = data.coords
+  const { x, y, z } = data.coords
   connection.xyzTile(data.tableName, x, y, z, 256, 256).then((result) => {
     resolve(result)
   }).catch(error => {
@@ -337,7 +338,12 @@ async function compileTileImage (tiles, size, sourceSrs, targetSrs, targetBounds
   if (!epsgMatches(targetSrs, sourceSrs)) {
     dataUrl = await reprojectTile({
       sourceTile: dataUrl,
-      sourceBoundingBox: {minLon: sourceBounds[0], minLat: sourceBounds[1], maxLon: sourceBounds[2], maxLat: sourceBounds[3]},
+      sourceBoundingBox: {
+        minLon: sourceBounds[0],
+        minLat: sourceBounds[1],
+        maxLon: sourceBounds[2],
+        maxLat: sourceBounds[3]
+      },
       sourceSrs: sourceSrs,
       targetSrs: targetSrs,
       targetWidth: size.x,
@@ -403,73 +409,73 @@ function searchTable (data) {
  * @returns {Promise<unknown>}
  */
 function executeTask (message) {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ac = new AbortController()
     ac.signal.addEventListener('abort', () => {
-      reject({error: 'Cancelled', result: null})
+        reject({ error: 'Cancelled', result: null })
       },
       { once: true }
     )
     currentTask.cancelTask = ac.abort
     if (message.type === REQUEST_ATTACH_MEDIA) {
       attachMedia(message.data).then((result) => {
-        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
-        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
-        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_GEOTIFF_RASTER) {
       generateGeoTIFFRasterFile(message.data).then((result) => {
-        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_TILE_COMPILATION) {
       compileTiles(message.data).then(result => {
-        resolve({error: null, result: result, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to project tile.', result: null, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to project tile.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_RENAME) {
       renameTable(message.data).then(() => {
-        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to rename table.', result: false, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to rename table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_DELETE) {
       deleteTable(message.data).then(() => {
-        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to delete table.', result: false, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to delete table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_COPY) {
       copyTable(message.data).then(() => {
-        resolve({error: null, result: true, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to copy table.', result: false, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to copy table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_COUNT) {
       countTable(message.data).then((count) => {
-        resolve({error: null, result: count, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: count, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to get table count.', result: false, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to get table count.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_SEARCH) {
       searchTable(message.data).then((results) => {
-        resolve({error: null, result: results, cancelled: ac.signal.aborted})
+        resolve({ error: null, result: results, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({error: 'Failed to search table.', result: false, cancelled: ac.signal.aborted})
+        reject({ error: 'Failed to search table.', result: false, cancelled: ac.signal.aborted })
       })
     }
   })
@@ -517,7 +523,7 @@ function startThread () {
     setMakeImageDataFunction((width, height) => {
       return new CanvasKit.ImageData(width, height)
     })
-    setReadPixelsFunction (image => {
+    setReadPixelsFunction(image => {
       return image.readPixels(0, 0, {
         width: image.width(),
         height: image.height(),
@@ -530,7 +536,7 @@ function startThread () {
       return Promise.resolve(CanvasKit.MakeImageFromEncoded(base64toUInt8Array(base64String)))
     })
     setupRequestListener()
-    parentPort.postMessage({error: null})
+    parentPort.postMessage({ error: null })
   })
 }
 
@@ -540,7 +546,7 @@ function startThread () {
 try {
   startThread()
 } catch (e) {
-  parentPort.postMessage({error: e})
+  parentPort.postMessage({ error: e })
 }
 
 

@@ -12,14 +12,15 @@ import fs from 'fs'
 const ignoredPropertyTags = []
 
 // utilities
-function parseCoord(data) {
+function parseCoord (data) {
   const out = data.split(',').map(parseFloat)
   if (out.length === 3 && out[2] === 0) {
     return out.slice(0, 2)
   }
   return out
 }
-function parseCoords(data) {
+
+function parseCoords (data) {
   data = data.trim()
   if (!data) return null
   return data.split(/[^0-9-.,]+/gm).filter(item => item.trim().length > 0).map(function (item) {
@@ -32,7 +33,7 @@ const cleanString = (val) =>
     .replace(/^[\n\r\t]+[\n\r\t]+$/g, '')
     .replace(/\\\\/g, '\\')
     .replace(/\\([r|n|t])/g, function (a, b) {
-      switch(b) {
+      switch (b) {
         case 'r':
           return '\r'
         case 'n':
@@ -84,7 +85,7 @@ const completeRing = (ring) => {
   return ring
 }
 
-function getMultiType(geoms) {
+function getMultiType (geoms) {
   let type
   let i = -1
   const len = geoms.length
@@ -164,7 +165,7 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
   const nextId = () => {
     return currentId++
   }
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     try {
       let currentTag = null
       let schemata = {}
@@ -335,14 +336,15 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
                   blue = data.substring(0, 2)
                   green = data.substring(2, 4)
                   red = data.substring(4)
-                } else  if (data.length === 8) {
+                } else if (data.length === 8) {
                   alpha = parseInt(data.substring(0, 2), 16) / 255.0
                   blue = data.substring(2, 4)
                   green = data.substring(4, 6)
                   red = data.substring(6)
                 }
                 // eslint-disable-next-line no-empty, no-unused-vars
-              } catch (e) {}
+              } catch (e) {
+              }
               if (styleMode === 'line') {
                 style.color = '#' + red + green + blue
                 style.opacity = alpha

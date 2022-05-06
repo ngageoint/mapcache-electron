@@ -20,7 +20,7 @@ export default class OverpassSource extends Source {
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
     try {
-      const {addFeature, adjustBatchSize, done} = await streamingGeoPackageBuild(filePath, this.sourceName)
+      const { addFeature, adjustBatchSize, done } = await streamingGeoPackageBuild(filePath, this.sourceName)
       await streamOverpassJsonFile(this.fileData.filePath, feature => {
         addFeature(cloneDeep(feature))
       }, this.fileData.elementsInFile, percentageComplete => {

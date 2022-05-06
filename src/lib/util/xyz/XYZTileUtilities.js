@@ -26,7 +26,7 @@ function lat2tile (lat, z) {
   return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180.0) + 1 / Math.cos(lat * Math.PI / 180.0)) / Math.PI) / 2 * Math.pow(2, zoom))
 }
 
-function trimToWebMercatorMax(boundingBox) {
+function trimToWebMercatorMax (boundingBox) {
   if (boundingBox) {
     const copy = boundingBox.slice()
     copy[0][0] = Math.max(boundingBox[0][0], -85.051128)
@@ -75,7 +75,7 @@ function calculateYTileRangeForExtent (extent, z) {
   }
 }
 
-function trimExtentToWebMercatorMax(extent) {
+function trimExtentToWebMercatorMax (extent) {
   if (extent) {
     const copy = extent.slice()
     copy[1] = Math.max(extent[1], -85.051128)
@@ -106,7 +106,7 @@ function tilesInExtentAtZoom (extent, z) {
   const xRange = calculateXTileRange(trimmedBbox, z)
   for (let x = xRange.min; x <= xRange.max; x++) {
     for (let y = yRange.min; y <= yRange.max; y++) {
-      tiles.push({x, y, z})
+      tiles.push({ x, y, z })
     }
   }
   return tiles

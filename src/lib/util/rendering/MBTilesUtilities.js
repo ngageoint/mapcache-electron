@@ -3,7 +3,7 @@ import vt from 'vector-tile'
 import pako from 'pako'
 import Protobuf from 'pbf'
 import keys from 'lodash/keys'
-import {createCanvas} from '../canvas/CanvasUtilities'
+import { createCanvas } from '../canvas/CanvasUtilities'
 
 /**
  * If format needs to be determined, it will either be jpg or png, just need to determine which one
@@ -21,11 +21,11 @@ function determineFormatFromTile (db) {
   return format
 }
 
-function getInfo(db) {
+function getInfo (db) {
   const info = {}
   var stmt = db.prepare('SELECT name, value FROM metadata')
   try {
-    stmt.all().forEach(function(row) {
+    stmt.all().forEach(function (row) {
       switch (row.name) {
         // The special "json" key/value pair allows JSON to be serialized
         // and merged into the metadata of an MBTiles based source. This
@@ -34,12 +34,13 @@ function getInfo(db) {
         case 'json':
           try {
             var jsondata = JSON.parse(row.value)
-            Object.keys(jsondata).reduce(function(memo, key) {
+            Object.keys(jsondata).reduce(function (memo, key) {
               memo[key] = memo[key] || jsondata[key]
               return memo
             }, info)
             // eslint-disable-next-line no-empty
-          } catch (err) {}
+          } catch (err) {
+          }
           break
         case 'minzoom':
         case 'maxzoom':
@@ -69,7 +70,7 @@ function getInfo(db) {
 }
 
 function getDb (filePath) {
-  return new Database(filePath, {readonly: true})
+  return new Database(filePath, { readonly: true })
 }
 
 function close (db) {
@@ -84,7 +85,7 @@ function close (db) {
   }
 }
 
-function getTile(db, z, x, y, format) {
+function getTile (db, z, x, y, format) {
   // Flip Y coordinate because MBTiles files are TMS.
   y = (1 << z) - 1 - y
 
@@ -159,8 +160,9 @@ function _drawPolygon (ctx, coordsArray, style, divisor) {
   ctx.stroke()
   ctx.restore()
 }
+
 function convertPbfToDataUrl (data, width, height) {
-  const style = {color: '#000', opacity: 1.0, width: 3.0, fillColor: '#000', fillOpacity: 0.2}
+  const style = { color: '#000', opacity: 1.0, width: 3.0, fillColor: '#000', fillOpacity: 0.2 }
   return drawVectorFeaturesInCanvas(getVectorTileFeatures(data), style, style, style, Math.min(width, height))
 }
 
@@ -235,7 +237,7 @@ function getVectorTileFeatures (data) {
   return vectorTileFeatures
 }
 
-function getZoomRange(db) {
+function getZoomRange (db) {
   const zoomRange = {
     min: 0,
     max: 20

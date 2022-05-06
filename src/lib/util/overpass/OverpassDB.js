@@ -99,7 +99,8 @@ function _setupPreparedStatements (db) {
       try {
         insertNodeStmt.run(node.id, node.lat, node.lon, JSON.stringify(node.tags), node.isInteresting ? 1 : 0, 0)
         // eslint-disable-next-line no-empty, no-unused-vars
-      } catch (e) {}
+      } catch (e) {
+      }
     }
   })
   relWaysStmt = db.prepare('SELECT way_id as id, role, tags, nodes from relation_ways where relation_id=?')
@@ -126,7 +127,8 @@ function _setupPreparedStatements (db) {
       try {
         insertWayStmt.run(way.id, JSON.stringify(way.tags), way.isInteresting ? 1 : 0, way.isPolygon ? 1 : 0, 0, JSON.stringify(nodes))
         // eslint-disable-next-line no-empty, no-unused-vars
-      } catch (e) {}
+      } catch (e) {
+      }
     }
     return !missingNode
   })
@@ -159,6 +161,7 @@ function writeWayToDb (way) {
 }
 
 const skipWayBatch = []
+
 function skipWay (wayId, batch = false) {
   if (batch) {
     skipWayBatch.push(wayId)
@@ -208,7 +211,7 @@ function writeRelationToDb (rel, interestingTagsFunction) {
             if (way.skip === 0 && member.role === 'outer' && !interestingTagsFunction(JSON.parse(way.tags), rel.tags)) {
               waysToSkip.push(member.ref)
             }
-            if (way.skip === 0  && member.role === 'inner' && !way.interesting) {
+            if (way.skip === 0 && member.role === 'inner' && !way.interesting) {
               waysToSkip.push(member.ref)
             }
           }
@@ -221,7 +224,7 @@ function writeRelationToDb (rel, interestingTagsFunction) {
       }
     }
 
-    if (outerCount === 1 && !interestingTagsFunction(rel.tags, {'type': true})) {
+    if (outerCount === 1 && !interestingTagsFunction(rel.tags, { 'type': true })) {
       waysToSkip.push(firstOuterWayId)
     }
 
@@ -233,7 +236,8 @@ function writeRelationToDb (rel, interestingTagsFunction) {
         try {
           insertRelWayStmt.run(rel.id, way.id, way.role, way.tags, way.nodes)
           // eslint-disable-next-line no-empty, no-unused-vars
-        } catch (e) {}
+        } catch (e) {
+        }
       }
     }
     while (waysToSkip.length > 0) {

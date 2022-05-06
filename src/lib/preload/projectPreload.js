@@ -97,7 +97,18 @@ import {
   addProjectState
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
-import { getOrCreateGeoPackage, getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth } from '../geopackage/GeoPackageCommon'
+import {
+  getOrCreateGeoPackage,
+  getGeoPackageExtent,
+  getBoundingBoxForTable,
+  getTables,
+  getGeoPackageFileSize,
+  getDetails,
+  isHealthy,
+  normalizeLongitude,
+  getExtentOfGeoPackageTables,
+  checkGeoPackageHealth
+} from '../geopackage/GeoPackageCommon'
 import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
 import {
   getFeatureRow,
@@ -223,7 +234,7 @@ import {
   drawVectorFeaturesInCanvas,
   getVectorTileFeatures
 } from '../util/rendering/MBTilesUtilities'
-import {showOpenDialog, showSaveDialog} from '../electron/dialog/DialogUtilities'
+import { showOpenDialog, showSaveDialog } from '../electron/dialog/DialogUtilities'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -260,19 +271,19 @@ function createBaseMapDirectory () {
 }
 
 contextBridge.exposeInMainWorld('mapcache', {
-  connect(payload) {
+  connect (payload) {
     ipcRenderer.send(IPC_EVENT_CONNECT, payload)
   },
-  notifyMain(payload) {
+  notifyMain (payload) {
     ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
   },
-  onNotifyRenderers(handler) {
+  onNotifyRenderers (handler) {
     ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
   },
-  createStorage(name) {
+  createStorage (name) {
     storage = new Store({ name: name })
   },
-  getState(key) {
+  getState (key) {
     return storage.get(key)
   },
   setupGeoPackageContext: () => {
@@ -281,7 +292,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getUserDataDirectory,
   openFileStream: (path) => {
     const id = createUniqueID()
-    fileStreams[id] = fs.createWriteStream(path, {flags: 'a'})
+    fileStreams[id] = fs.createWriteStream(path, { flags: 'a' })
     return id
   },
   appendToStream: async (streamId, data) => {
@@ -429,7 +440,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.on(BUILD_FEATURE_LAYER_STATUS(configuration.id), (event, status) => {
         statusCallback(status)
       })
-      ipcRenderer.send(BUILD_FEATURE_LAYER, {configuration: configuration})
+      ipcRenderer.send(BUILD_FEATURE_LAYER, { configuration: configuration })
     })
   },
   cancelAddFeatureLayer: (configuration) => {
@@ -439,7 +450,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.once(CANCEL_BUILD_FEATURE_LAYER_COMPLETED(configuration.id), () => {
         resolve()
       })
-      ipcRenderer.send(CANCEL_BUILD_FEATURE_LAYER, {configuration: configuration})
+      ipcRenderer.send(CANCEL_BUILD_FEATURE_LAYER, { configuration: configuration })
     })
   },
   addTileLayer: (configuration, statusCallback) => {
@@ -451,7 +462,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.on(BUILD_TILE_LAYER_STATUS(configuration.id), (event, status) => {
         statusCallback(status)
       })
-      ipcRenderer.send(BUILD_TILE_LAYER, {configuration: configuration})
+      ipcRenderer.send(BUILD_TILE_LAYER, { configuration: configuration })
     })
   },
   cancelAddTileLayer: (configuration) => {
@@ -461,11 +472,11 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.once(CANCEL_BUILD_TILE_LAYER_COMPLETED(configuration.id), () => {
         resolve()
       })
-      ipcRenderer.send(CANCEL_BUILD_TILE_LAYER, {configuration: configuration})
+      ipcRenderer.send(CANCEL_BUILD_TILE_LAYER, { configuration: configuration })
     })
   },
   cancelTileRequest: (id) => {
-    ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
+    ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
   },
   requestTile: (request) => {
     return new Promise(resolve => {
@@ -476,7 +487,7 @@ contextBridge.exposeInMainWorld('mapcache', {
     })
   },
   cancelTileCompilationRequest: (id) => {
-    ipcRenderer.send(CANCEL_TILE_COMPILATION_REQUEST, {id: id})
+    ipcRenderer.send(CANCEL_TILE_COMPILATION_REQUEST, { id: id })
     ipcRenderer.removeAllListeners(REQUEST_TILE_COMPILATION_COMPLETED(id))
   },
   requestTileCompilation: (request) => {
@@ -487,58 +498,67 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_TILE_COMPILATION, request)
     })
   },
-  renameGeoPackageTable: ({projectId, geopackageId, filePath, tableName, newTableName, type = 'feature'}) => {
+  renameGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, newTableName, type = 'feature' }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(requestId), (event, result) => {
         if (result) {
-          updateRenamedGeoPackageTable({projectId, geopackageId, tableName, newTableName, type})
+          updateRenamedGeoPackageTable({ projectId, geopackageId, tableName, newTableName, type })
         }
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_RENAME, {id: requestId, filePath, tableName: tableName, newTableName})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_RENAME, { id: requestId, filePath, tableName: tableName, newTableName })
     })
   },
-  deleteGeoPackageTable: ({projectId, geopackageId, filePath, tableName, type = 'feature', silent = false}) => {
+  deleteGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, type = 'feature', silent = false }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(requestId), (event, result) => {
         if (result && !silent) {
-          updateDeletedGeoPackageTileTable({projectId, geopackageId, tableName, type})
+          updateDeletedGeoPackageTileTable({ projectId, geopackageId, tableName, type })
         }
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_DELETE, {id: requestId, filePath, tableName})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_DELETE, { id: requestId, filePath, tableName })
     })
   },
-  copyGeoPackageTable: ({projectId, geopackageId, filePath, tableName, copyTableName, type = 'feature'}) => {
+  copyGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, copyTableName, type = 'feature' }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(requestId), (event, result) => {
         if (result.result) {
-          addCopiedGeoPackageTileTable({projectId, geopackageId, tableName, copyTableName, type})
+          addCopiedGeoPackageTileTable({ projectId, geopackageId, tableName, copyTableName, type })
         }
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, {id: requestId, filePath, tableName, copyTableName})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, { id: requestId, filePath, tableName, copyTableName })
     })
   },
-  countGeoPackageTable: ({filePath, tableName, search}) => {
+  countGeoPackageTable: ({ filePath, tableName, search }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, {result}) => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, { result }) => {
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, {id: requestId, filePath, tableName, search})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
     })
   },
-  searchGeoPackageTable: ({filePath, tableName, page, pageSize, sortBy, desc, search}) => {
+  searchGeoPackageTable: ({ filePath, tableName, page, pageSize, sortBy, desc, search }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, {result}) => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, { result }) => {
         resolve(result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {id: requestId, filePath, tableName, page, pageSize, sortBy, desc, search})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {
+        id: requestId,
+        filePath,
+        tableName,
+        page,
+        pageSize,
+        sortBy,
+        desc,
+        search
+      })
     })
   },
   registerServiceRequestCancelListener: (url, callback) => {
@@ -559,16 +579,32 @@ contextBridge.exposeInMainWorld('mapcache', {
     if (!isNil(configuration.geopackage)) {
       const oldPath = configuration.geopackage.path
       const newPath = path.join(baseMapDirectory, path.basename(oldPath))
-      await jetpack.copyAsync(oldPath, newPath, {overwrite: true})
+      await jetpack.copyAsync(oldPath, newPath, { overwrite: true })
 
       if (configuration.type === 'tile') {
         // create new geopackage and copy tile table
-        const layer = constructLayer({id: baseMapId, directory: baseMapDirectory, sourceDirectory: baseMapDirectory, filePath: newPath, sourceLayerName: configuration.tableName, layerType: 'GeoPackage'})
+        const layer = constructLayer({
+          id: baseMapId,
+          directory: baseMapDirectory,
+          sourceDirectory: baseMapDirectory,
+          filePath: newPath,
+          sourceLayerName: configuration.tableName,
+          layerType: 'GeoPackage'
+        })
         layerConfiguration = layer.configuration
         extent = await getGeoPackageExtent(newPath, configuration.tableName)
       } else {
         // create new geopackage and copy feature table
-        const layer = constructLayer({id: baseMapId, directory: baseMapDirectory, sourceDirectory: baseMapDirectory, geopackageFilePath: newPath, sourceLayerName: configuration.tableName, sourceType: 'GeoPackage', layerType: 'Vector', maxFeatures: configuration.maxFeatures})
+        const layer = constructLayer({
+          id: baseMapId,
+          directory: baseMapDirectory,
+          sourceDirectory: baseMapDirectory,
+          geopackageFilePath: newPath,
+          sourceLayerName: configuration.tableName,
+          sourceType: 'GeoPackage',
+          layerType: 'Vector',
+          maxFeatures: configuration.maxFeatures
+        })
         layerConfiguration = layer.configuration
         extent = await getBoundingBoxForTable(newPath, configuration.tableName)
       }
@@ -577,7 +613,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       layerConfiguration = cloneDeep(configuration)
       layerConfiguration.id = baseMapId
       extent = layerConfiguration.extent || [-180, -90, 180, 90]
-      await jetpack.copyAsync(layerConfiguration.directory, baseMapDirectory, {overwrite: true})
+      await jetpack.copyAsync(layerConfiguration.directory, baseMapDirectory, { overwrite: true })
       const layerDirectory = layerConfiguration.directory
       layerConfiguration.directory = baseMapDirectory
       if (!isNil(layerConfiguration.filePath)) {
@@ -649,7 +685,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   downloadBase64Image: (filePath, base64Image) => {
     return new Promise(resolve => {
-      fs.writeFile(filePath, base64Image, {encoding: 'base64'}, resolve)
+      fs.writeFile(filePath, base64Image, { encoding: 'base64' }, resolve)
     })
   },
   copyFile: (filePath, toFilePath) => {
@@ -667,7 +703,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   checkUnique,
   saveGeoPackageEditedFeature,
   showFeatureTableWindow: (forcePopupWindowToFront = false) => {
-    ipcRenderer.send(SHOW_FEATURE_TABLE_WINDOW, {force: forcePopupWindowToFront})
+    ipcRenderer.send(SHOW_FEATURE_TABLE_WINDOW, { force: forcePopupWindowToFront })
   },
   hideFeatureTableWindow: () => {
     ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW)

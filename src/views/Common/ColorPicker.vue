@@ -1,9 +1,9 @@
 <template>
   <v-sheet>
     <v-text-field
-      :label="label"
-      v-model="colorValue"
-      readonly
+        :label="label"
+        v-model="colorValue"
+        readonly
     >
       <div slot="append">
         <v-menu v-model="menu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false">
@@ -22,47 +22,47 @@
 </template>
 
 <script>
-  export default {
-    props: ['color', 'label'],
-    data () {
+export default {
+  props: ['color', 'label'],
+  data () {
+    return {
+      colorValue: this.color,
+      menu: false
+    }
+  },
+  mounted () {
+    this.setColor(this.color || '#000000')
+  },
+  methods: {
+    setColor (color) {
+      this.colorValue = color
+    }
+  },
+  computed: {
+    swatchStyle () {
+      const { colorValue, menu } = this
       return {
-        colorValue: this.color,
-        menu: false
+        backgroundColor: colorValue,
+        cursor: 'pointer',
+        height: '24px',
+        width: '24px',
+        borderRadius: menu ? '50%' : '4px',
+        transition: 'border-radius 200ms ease-in-out'
       }
-    },
-    mounted () {
-      this.setColor(this.color || '#000000')
-    },
-    methods: {
-      setColor (color) {
-        this.colorValue = color
-      }
-    },
-    computed: {
-      swatchStyle () {
-        const { colorValue, menu } = this
-        return {
-          backgroundColor: colorValue,
-          cursor: 'pointer',
-          height: '24px',
-          width: '24px',
-          borderRadius: menu ? '50%' : '4px',
-          transition: 'border-radius 200ms ease-in-out'
-        }
-      }
-    },
-    watch: {
-      colorValue (val) {
-        if (val) {
-          this.$emit('input', val)
-        }
+    }
+  },
+  watch: {
+    colorValue (val) {
+      if (val) {
+        this.$emit('input', val)
       }
     }
   }
+}
 </script>
 
 <style scoped>
-  .themed-border {
-    border: 2px solid var(--v-scroll_track-base)
-  }
+.themed-border {
+  border: 2px solid var(--v-scroll_track-base)
+}
 </style>

@@ -1,10 +1,11 @@
-
 <template>
   <v-card flat class="ml-8 mt-8" style="width: 640px;">
     <v-container>
       <v-row no-gutters>
         <p class="detail--text">
-          Welcome to MapCache — a geospatial application for creating and aggregating map content. Harnessing the power of <span class="fake-link" style="color: #326482" @click="() => open(geoPackageLink)">GeoPackage</span>, MapCache provides users with a rich set of capabilities for map making.
+          Welcome to MapCache — a geospatial application for creating and aggregating map content. Harnessing the power
+          of <span class="fake-link" style="color: #326482" @click="() => open(geoPackageLink)">GeoPackage</span>,
+          MapCache provides users with a rich set of capabilities for map making.
         </p>
       </v-row>
       <v-row no-gutters>
@@ -14,7 +15,9 @@
         <v-divider/>
       </v-row>
       <v-row no-gutters>
-        <p class="detail--text">The landing page allows the creation of a new project and access to recent projects. A project is a geospatial workspace. It provides a container for managing resources and creating map products.</p>
+        <p class="detail--text">The landing page allows the creation of a new project and access to recent projects. A
+          project is a geospatial workspace. It provides a container for managing resources and creating map
+          products.</p>
       </v-row>
       <v-row no-gutters>
         <p>
@@ -28,7 +31,8 @@
         <v-divider/>
       </v-row>
       <v-row no-gutters>
-        <p class="detail--text">The project is where you will spend the majority of your time in MapCache. This section is broken down into two parts. The sidebar and the map.</p>
+        <p class="detail--text">The project is where you will spend the majority of your time in MapCache. This section
+          is broken down into two parts. The sidebar and the map.</p>
       </v-row>
       <v-row no-gutters>
         <p>
@@ -42,7 +46,8 @@
         <v-divider/>
       </v-row>
       <v-row no-gutters>
-        <p class="detail--text">The sidebar provides easy access to data and settings. See below for an explanation of each section.</p>
+        <p class="detail--text">The sidebar provides easy access to data and settings. See below for an explanation of
+          each section.</p>
       </v-row>
       <v-row no-gutters>
         <p>
@@ -68,7 +73,7 @@
               v-for="item in sidebar_items"
               :key="item"
           >
-            <p class="detail--text mt-4">{{sidebar_item_text[sidebar_tab]}}</p>
+            <p class="detail--text mt-4">{{ sidebar_item_text[sidebar_tab] }}</p>
           </v-tab-item>
         </v-tabs-items>
       </v-row>
@@ -79,11 +84,15 @@
         <v-divider/>
       </v-row>
       <v-row no-gutters>
-        <p class="detail--text">MapCache provides a rich map experience for users. The map section provides the insight and visualization needed for building map products. Explore the world using OpenStreetMap base maps, or BYOB (bring your own base map). View your imagery and feature layers and arrange them as needed. Add content using the drawing tools.</p>
+        <p class="detail--text">MapCache provides a rich map experience for users. The map section provides the insight
+          and visualization needed for building map products. Explore the world using OpenStreetMap base maps, or BYOB
+          (bring your own base map). View your imagery and feature layers and arrange them as needed. Add content using
+          the drawing tools.</p>
       </v-row>
       <v-row no-gutters>
         <p>
-          <v-img src="/images/documentation/map_section.jpg" width="610" height="350" style="object-fit: scale-down"></v-img>
+          <v-img src="/images/documentation/map_section.jpg" width="610" height="350"
+                 style="object-fit: scale-down"></v-img>
         </p>
       </v-row>
       <v-row no-gutters>
@@ -114,8 +123,8 @@
 </template>
 
 <script>
-import {environment} from '../../../lib/env/env'
-import {mdiMagnify} from '@mdi/js'
+import { environment } from '../../../lib/env/env'
+import { mdiMagnify } from '@mdi/js'
 
 export default {
   methods: {

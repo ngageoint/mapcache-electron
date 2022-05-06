@@ -33,7 +33,7 @@ export default class CredentialsManagement {
    */
   static decrypt (encryptedValue, iv, key) {
     const decipher = crypto.createDecipheriv(CredentialsManagement.ENCRYPTION_TECHNIQUE, key, Buffer.from(iv, 'hex'))
-    return decipher.update(encryptedValue, 'hex', 'utf8') +  decipher.final()
+    return decipher.update(encryptedValue, 'hex', 'utf8') + decipher.final()
   }
 
   /**
@@ -49,7 +49,7 @@ export default class CredentialsManagement {
    * @param authString
    * @returns {number}
    */
-  static getAuthType(authString) {
+  static getAuthType (authString) {
     let credentialType = CredentialsManagement.CREDENTIAL_TYPE_NONE
     if (authString.toLowerCase() === 'basic') {
       credentialType = CredentialsManagement.CREDENTIAL_TYPE_BASIC

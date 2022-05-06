@@ -35,7 +35,8 @@ export default class XYZFileSource extends Source {
       minZoom = zoomLevels[0]
       maxZoom = zoomLevels[zoomLevels.length - 1]
       // eslint-disable-next-line no-empty
-    } catch (e) {}
+    } catch (e) {
+    }
     statusCallback('Cleaning up', 100)
     await this.sleep(250)
     return [

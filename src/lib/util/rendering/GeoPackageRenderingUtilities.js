@@ -1,20 +1,20 @@
 import { FeatureTiles, NumberFeaturesTile } from '@ngageoint/geopackage'
 import { performSafeGeoPackageOperation } from '../../geopackage/GeoPackageCommon'
 
-function requestVectorTileWithFeatureTiles(tileRequest, featureTile) {
+function requestVectorTileWithFeatureTiles (tileRequest, featureTile) {
   const {
     coords,
   } = tileRequest
-  let {x, y, z} = coords
+  let { x, y, z } = coords
   return featureTile.drawTile(x, y, z)
 }
 
-function requestImageryTileWithGeoPackage(tileRequest, gp) {
+function requestImageryTileWithGeoPackage (tileRequest, gp) {
   const {
     coords,
     tableName
   } = tileRequest
-  let {x, y, z} = coords
+  let { x, y, z } = coords
   return gp.xyzTile(tableName, x, y, z, 256, 256)
 }
 

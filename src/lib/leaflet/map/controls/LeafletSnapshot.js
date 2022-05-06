@@ -1,6 +1,7 @@
-import {L} from '../../vendor'
+import { L } from '../../vendor'
 import isNil from 'lodash/isNil'
 import domtoimage from 'dom-to-image-more'
+
 export default class LeafletSnapshot extends L.Control {
   constructor (options) {
     let mergedOptions = {
@@ -26,7 +27,8 @@ export default class LeafletSnapshot extends L.Control {
   }
 
   disable () {
-    this._link.onclick = function () {}
+    this._link.onclick = function () {
+    }
     L.DomUtil.addClass(this._link, 'leaflet-control-disabled')
   }
 
@@ -65,10 +67,14 @@ export default class LeafletSnapshot extends L.Control {
       return node.classList == null || Object.values(node.classList).indexOf('leaflet-control') === -1
     }
 
-    const png = await domtoimage.toPng(document.getElementById('map'), {width: dimensions.x, height: dimensions.y, filter: filterControls})
-    await this.loadImage(context, png, {x: 0, y: 0})
+    const png = await domtoimage.toPng(document.getElementById('map'), {
+      width: dimensions.x,
+      height: dimensions.y,
+      filter: filterControls
+    })
+    await this.loadImage(context, png, { x: 0, y: 0 })
     const base64Data = canvas.toDataURL().split(',')[1]
-    const {cancelled, filePath} = await window.mapcache.showSaveDialog({
+    const { cancelled, filePath } = await window.mapcache.showSaveDialog({
       title: 'Save screenshot',
       defaultPath: 'screenshot.png'
     })

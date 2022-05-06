@@ -6,6 +6,7 @@ const WEB_MERCATOR_HALF_WORLD_WIDTH = 20037508.342789244
 export default class Point {
   x
   y
+
   constructor (x, y) {
     this.x = x
     this.y = y

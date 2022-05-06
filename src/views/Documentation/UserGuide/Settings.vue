@@ -16,7 +16,7 @@ import MapCacheSection from './MapCacheSection'
 
 
 export default {
-  components: {MapCacheSection},
+  components: { MapCacheSection },
   data () {
     return {
       sections: [

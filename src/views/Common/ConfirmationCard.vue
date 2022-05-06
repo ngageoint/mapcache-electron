@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <v-icon color="warning" class="pr-2">{{icon ? icon : mdiInformation}}</v-icon>
+      <v-icon color="warning" class="pr-2">{{ icon ? icon : mdiInformation }}</v-icon>
       {{ title }}
     </v-card-title>
     <v-card-text>
@@ -25,32 +25,33 @@
 </template>
 
 <script>
-  import {mdiInformation} from '@mdi/js'
-  import EventBus from '../../lib/vue/EventBus'
-  export default {
-    props: {
-      id: String,
-      title: String,
-      icon: String,
-      message: String,
-      close: Function
+import { mdiInformation } from '@mdi/js'
+import EventBus from '../../lib/vue/EventBus'
+
+export default {
+  props: {
+    id: String,
+    title: String,
+    icon: String,
+    message: String,
+    close: Function
+  },
+  data () {
+    return {
+      mdiInformation
+    }
+  },
+  methods: {
+    onYes () {
+      EventBus.$emit(EventBus.EventTypes.CONFIRMATION_MESSAGE_RESPONSE(this.id), true)
+      this.close()
     },
-    data () {
-      return {
-        mdiInformation
-      }
-    },
-    methods: {
-      onYes () {
-        EventBus.$emit(EventBus.EventTypes.CONFIRMATION_MESSAGE_RESPONSE(this.id), true)
-        this.close()
-      },
-      onNo () {
-        EventBus.$emit(EventBus.EventTypes.CONFIRMATION_MESSAGE_RESPONSE(this.id), false)
-        this.close()
-      }
+    onNo () {
+      EventBus.$emit(EventBus.EventTypes.CONFIRMATION_MESSAGE_RESPONSE(this.id), false)
+      this.close()
     }
   }
+}
 </script>
 
 <style scoped>

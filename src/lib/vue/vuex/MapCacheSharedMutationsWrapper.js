@@ -1,10 +1,10 @@
 class MapCacheSharedMutationsWrapper {
-  constructor(options, store) {
+  constructor (options, store) {
     this.options = options
     this.store = store
   }
 
-  rendererProcessLogic() {
+  rendererProcessLogic () {
     // Connect renderer to main process
     window.mapcache.connect()
 

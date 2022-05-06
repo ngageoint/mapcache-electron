@@ -503,7 +503,8 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
             try {
               featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
               // eslint-disable-next-line no-unused-vars, no-empty
-            } catch (e) {}
+            } catch (e) {
+            }
           }
         }
 
@@ -607,7 +608,20 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     }
   }
 
-  return { adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, setFeatureStyle, setFeatureIcon, addIcon, setTableStyle, setTableIcon, processBatch, done }
+  return {
+    adjustBatchSize,
+    addFeature,
+    addField,
+    addMediaAttachment,
+    addStyle,
+    setFeatureStyle,
+    setFeatureIcon,
+    addIcon,
+    setTableStyle,
+    setTableIcon,
+    processBatch,
+    done
+  }
 }
 
 /**
@@ -986,6 +1000,7 @@ async function deleteFeatureRow (filePath, tableName, featureRowId) {
     return _deleteFeatureRow(gp, tableName, featureRowId)
   })
 }
+
 /**
  * Deletes feature rows
  * @param filePath
@@ -1018,7 +1033,7 @@ function _getBoundingBoxForFeature (gp, tableName, featureRowId) {
       type = feature.geometry.type
     }
   }
-  return {extent, type}
+  return { extent, type }
 }
 
 /**
@@ -1081,7 +1096,7 @@ function _getFeatureCountInBoundingBox (gp, tableName, boundingBox) {
   return gp.getFeatureDao(tableName).countInBoundingBox(new BoundingBox(boundingBox[0], boundingBox[2], boundingBox[1], boundingBox[3]), WORLD_GEODETIC_SYSTEM)
 }
 
-function _getWhereClause(featureDao, search) {
+function _getWhereClause (featureDao, search) {
   let whereClause
   if (search != null && search.length > 0) {
     const columnNames = featureDao._table.getUserColumns()._columnNames
@@ -1203,11 +1218,11 @@ function _getFeatureTablePage (gp, tableName, page, pageSize, sortBy = undefined
 
     const featureIds = features.map(f => f.id)
     const featureIdAndGeometryTypes = features.filter(f => f.geometry != null).map(f => {
-      return {id: f.id, geometryType: f.geometry.type}
+      return { id: f.id, geometryType: f.geometry.type }
     })
     const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
     const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
-    result = {features, styleAssignments, mediaCounts}
+    result = { features, styleAssignments, mediaCounts }
   }
 
 
@@ -1347,10 +1362,10 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
   if (feature.geometry != null) {
     switch (feature.geometry.type) {
       case 'Point':
-        distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, {units: 'kilometers'}) * 1000.0
+        distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, { units: 'kilometers' }) * 1000.0
         break
       case 'LineString':
-        distanceInMeters = pointToLineDistance(coordinate, feature, {units: 'kilometers'}) * 1000.0
+        distanceInMeters = pointToLineDistance(coordinate, feature, { units: 'kilometers' }) * 1000.0
         break
       case 'MultiPoint':
         // eslint-disable-next-line no-case-declarations
@@ -1418,7 +1433,7 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
         break
     }
   }
-  return {distance: distanceInMeters, isContained}
+  return { distance: distanceInMeters, isContained }
 }
 
 /**
@@ -1523,11 +1538,11 @@ function _getFeatureTablePageAtLatLngZoom (gp, tableName, page, pageSize, latlng
   }
   const featureIds = features.map(f => f.id)
   const featureIdAndGeometryTypes = features.filter(f => f.geometry != null).map(f => {
-    return {id: f.id, geometryType: f.geometry.type}
+    return { id: f.id, geometryType: f.geometry.type }
   })
   const styleAssignments = _getStyleAssignmentForFeatures(gp, tableName, featureIdAndGeometryTypes)
   const mediaCounts = _getMediaAttachmentsCounts(gp, tableName, featureIds)
-  return {features, styleAssignments, mediaCounts}
+  return { features, styleAssignments, mediaCounts }
 }
 
 /**
@@ -1816,7 +1831,7 @@ function mergeFeatureColumns (mergedColumns, featureColumns) {
       }
     })
   }
-  return {mergedColumns, nameChanges}
+  return { mergedColumns, nameChanges }
 }
 
 function _getFeatureColumns (gp, tableName) {
@@ -2050,7 +2065,7 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
       if (updatedGeometry != null) {
         const geometryData = new GeometryData()
         geometryData.setSrsId(srs.srs_id)
-        let feature = {type: 'Feature', properties: {}, geometry: updatedGeometry}
+        let feature = { type: 'Feature', properties: {}, geometry: updatedGeometry }
         if (!(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)) {
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
@@ -2092,7 +2107,20 @@ async function streamingGeoPackageBuild (fileName, tableName) {
   // create the geopackage
   let gp = await GeoPackageAPI.create(fileName)
 
-  let {adjustBatchSize, addFeature, addField, addMediaAttachment, addStyle, addIcon, setFeatureStyle, setFeatureIcon, setTableStyle, setTableIcon, processBatch, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+  let {
+    adjustBatchSize,
+    addFeature,
+    addField,
+    addMediaAttachment,
+    addStyle,
+    addIcon,
+    setFeatureStyle,
+    setFeatureIcon,
+    setTableStyle,
+    setTableIcon,
+    processBatch,
+    done
+  } = await _createFeatureTableWithFeatureStream(gp, tableName)
 
   return {
     adjustBatchSize: adjustBatchSize,

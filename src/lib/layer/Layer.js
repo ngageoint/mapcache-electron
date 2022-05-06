@@ -14,6 +14,7 @@ export default class Layer {
   sourceLayerName
   name
   displayName
+
   constructor (configuration = {}) {
     this._configuration = cloneDeep(configuration)
     this.id = this._configuration.id || createUniqueID()
@@ -37,7 +38,7 @@ export default class Layer {
     this.style = configuration.style
     this.styleKey = configuration.styleKey || 0
     this.opacity = !isNil(configuration.opacity) ? configuration.opacity : 1.0
-    this.visible = !isNil(configuration.visible) ?  configuration.visible : false
+    this.visible = !isNil(configuration.visible) ? configuration.visible : false
   }
 
   getRepaintFields () {
@@ -56,7 +57,8 @@ export default class Layer {
     }
   }
 
-  cancel () {}
+  cancel () {
+  }
 
   get configuration () {
     return {

@@ -363,7 +363,7 @@ function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20) {
             } else {
               const overlap = entryToCheck.tileSet.getOverlap(existingEntry.tileSet)
               if (!isNil(overlap)) {
-                const {nonOverlapA, nonOverlapB} = entryToCheck.tileSet.splitWith(existingEntry.tileSet, overlap)
+                const { nonOverlapA, nonOverlapB } = entryToCheck.tileSet.splitWith(existingEntry.tileSet, overlap)
 
                 const entriesToAdd = [new LayerTileSet(overlap, existingEntry.layers.concat(entryToCheck.layers))]
                 nonOverlapB.forEach(tileSet => {
@@ -589,7 +589,7 @@ function getTileCount (boundingBoxFilter, dataSources, geopackageLayers, tileSca
  * @param filter
  * @return {number[]|*}
  */
-function trimExtentToFilter(extent, filter) {
+function trimExtentToFilter (extent, filter) {
   if (extent) {
     return extentIntersection(extent, filter) || filter.slice()
   } else {
@@ -603,7 +603,8 @@ async function drawInCanvas (context, dataUrl, sx, sy, sw, sh, dx, dy, dw, dh) {
     context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
     disposeImage(image)
     // eslint-disable-next-line no-empty, no-unused-vars
-  } catch (e) {}
+  } catch (e) {
+  }
 }
 
 /**
@@ -649,7 +650,7 @@ async function stitchTileData (canvas, tiles, targetSize, targetExtent) {
       const dw = Math.max(0, Math.min(targetSize.x, Math.round((targetUnitsPerPixel.x * (intersection[2] - targetExtent[0])) - dx)))
       const dh = Math.max(0, Math.min(targetSize.y, Math.round(targetUnitsPerPixel.y * (targetExtent[3] - intersection[1]) - dy)))
 
-      await drawInCanvas (context, tile.dataUrl, sx, sy, sw, sh, dx, dy, dw, dh)
+      await drawInCanvas(context, tile.dataUrl, sx, sy, sw, sh, dx, dy, dw, dh)
     }
   }
   const dataUrl = canvas.toDataURL()

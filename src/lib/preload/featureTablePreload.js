@@ -2,7 +2,7 @@ import log from 'electron-log'
 import Store from 'electron-store'
 import path from 'path'
 import { ipcRenderer, contextBridge } from 'electron'
-import {SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType} from '@ngageoint/geopackage'
+import { SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType } from '@ngageoint/geopackage'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
   getFeatureColumns,
@@ -41,19 +41,19 @@ contextBridge.exposeInMainWorld('log', log.functions)
 let storage
 
 contextBridge.exposeInMainWorld('mapcache', {
-  connect(payload) {
+  connect (payload) {
     ipcRenderer.send(IPC_EVENT_CONNECT, payload)
   },
-  notifyMain(payload) {
+  notifyMain (payload) {
     ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
   },
-  onNotifyRenderers(handler) {
+  onNotifyRenderers (handler) {
     ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
   },
-  createStorage(name) {
+  createStorage (name) {
     storage = new Store({ name: name })
   },
-  getState(key) {
+  getState (key) {
     return storage.get(key)
   },
   setupGeoPackageContext: () => {
@@ -72,22 +72,31 @@ contextBridge.exposeInMainWorld('mapcache', {
   sendFeatureTableAction: (action) => {
     ipcRenderer.send(FEATURE_TABLE_ACTION, action)
   },
-  countGeoPackageTable: ({filePath, tableName, search}) => {
+  countGeoPackageTable: ({ filePath, tableName, search }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, result) => {
         resolve(result.result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, {id: requestId, filePath, tableName, search})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
     })
   },
-  searchGeoPackageTable: ({filePath, tableName, page, pageSize, sortBy, desc, search}) => {
+  searchGeoPackageTable: ({ filePath, tableName, page, pageSize, sortBy, desc, search }) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, result) => {
         resolve(result.result)
       })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {id: requestId, filePath, tableName, page, pageSize, sortBy, desc, search})
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {
+        id: requestId,
+        filePath,
+        tableName,
+        page,
+        pageSize,
+        sortBy,
+        desc,
+        search
+      })
     })
   },
   updateGeoPackageFeatureTableColumnOrder,

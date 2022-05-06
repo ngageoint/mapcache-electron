@@ -105,13 +105,18 @@ export default class WMTSLayer extends NetworkTileLayer {
         url = layer.resource.template
       }
 
-      const {tileMatrixSet} = WMTSLayer.getLayerTileMatrixInfo(this.wmtsInfo, layer)
+      const { tileMatrixSet } = WMTSLayer.getLayerTileMatrixInfo(this.wmtsInfo, layer)
       const srs = tileMatrixSet.supportedCRS
 
       const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, srs)
 
       // determine tile matrices that have coverage for the request
-      const tileMatricesWithCoverage = tileMatrixSet.tileMatrix.filter(({tileMatrixMinX, tileMatrixMinY, tileMatrixMaxX, tileMatrixMaxY}) => {
+      const tileMatricesWithCoverage = tileMatrixSet.tileMatrix.filter(({
+                                                                          tileMatrixMinX,
+                                                                          tileMatrixMinY,
+                                                                          tileMatrixMaxX,
+                                                                          tileMatrixMaxY
+                                                                        }) => {
         // check if this tile matrix contains the request extent
         return extentIntersection([tileMatrixMinX, tileMatrixMinY, tileMatrixMaxX, tileMatrixMaxY], [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat]) != null
       })

@@ -1,8 +1,8 @@
 <template>
   <svg height="25" width="25" v-if="geometryType === 1">
     <circle cx="12.5" cy="12.5" r="2.5" :stroke="color"
-          :fill="color"
-          stroke-width="3px"></circle>
+            :fill="color"
+            stroke-width="3px"></circle>
   </svg>
   <svg height="25" width="25" v-else-if="geometryType === 2">
     <polyline points="5,20 20,15, 5,10, 20,5" :stroke="color"
@@ -58,12 +58,12 @@
   </svg>
 </template>
 <script>
-  export default {
-    props: {
-      geometryType: Number,
-      color: String,
-      fillColor: String,
-      fillOpacity: Number
-    }
+export default {
+  props: {
+    geometryType: Number,
+    color: String,
+    fillColor: String,
+    fillOpacity: Number
   }
+}
 </script>

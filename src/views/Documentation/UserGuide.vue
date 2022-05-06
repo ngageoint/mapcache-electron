@@ -72,10 +72,10 @@ import GettingStarted from './UserGuide/GettingStarted'
 import UsingMapCache from './UserGuide/UsingMapCache'
 import Settings from './UserGuide/Settings'
 import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions'
-import {mdiChevronUp} from '@mdi/js'
+import { mdiChevronUp } from '@mdi/js'
 
 export default {
-  components: {FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache},
+  components: { FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache },
   data () {
     return {
       mdiChevronUp,
@@ -97,7 +97,7 @@ export default {
       this.fab = top > 20
     },
     toTop () {
-      document.getElementById('scroll-target').scrollTo({top: 0, behavior: 'smooth'})
+      document.getElementById('scroll-target').scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 }

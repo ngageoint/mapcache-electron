@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { getExtraResourcesDirectory } from '../file/FileUtilities'
-import {hashCode} from './CommonStyleUtilities'
+import { hashCode } from './CommonStyleUtilities'
 
 function generateColor () {
   return ('#' + crypto.randomBytes(32).toString('hex').slice(0, 6)).toUpperCase()

@@ -1,9 +1,10 @@
-import {L} from '../../vendor'
+import { L } from '../../vendor'
 
 export default class LeafletActiveLayersTools extends L.Control {
   zoomToActiveLayers
   clearActiveLayers
   reorderLayers
+
   constructor (options, zoomToActiveLayers, clearActiveLayers, reorderLayers) {
     let mergedOptions = {
       ...{
@@ -47,17 +48,20 @@ export default class LeafletActiveLayersTools extends L.Control {
 
     this.disable = () => {
       if (zoomEnabled) {
-        this._zoomLink.onclick = function () {}
+        this._zoomLink.onclick = function () {
+        }
         L.DomUtil.addClass(this._zoomLink, 'leaflet-control-disabled')
       }
 
       if (clearEnabled) {
-        this._clearLink.onclick = function () {}
+        this._clearLink.onclick = function () {
+        }
         L.DomUtil.addClass(this._clearLink, 'leaflet-control-disabled')
       }
 
       if (reorderEnabled) {
-        this._reorderLink.onclick = function () {}
+        this._reorderLink.onclick = function () {
+        }
         L.DomUtil.addClass(this._reorderLink, 'leaflet-control-disabled')
       }
     }

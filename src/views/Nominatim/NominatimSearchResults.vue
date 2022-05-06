@@ -1,5 +1,6 @@
 <template>
-  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult" :back="deselectResult"></nominatim-result-details>
+  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult"
+                            :back="deselectResult"></nominatim-result-details>
   <v-sheet v-else class="mapcache-sheet background">
     <v-toolbar
         dark
@@ -7,10 +8,14 @@
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
+      <v-btn icon @click="back">
+        <v-icon large>{{ mdiChevronLeft }}</v-icon>
+      </v-btn>
       <v-toolbar-title>Search results</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn icon @click="clearResults"><v-icon>{{mdiClose}}</v-icon></v-btn>
+      <v-btn icon @click="clearResults">
+        <v-icon>{{ mdiClose }}</v-icon>
+      </v-btn>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-virtual-scroll
@@ -32,7 +37,10 @@
           >
             <v-list-item-content>
               <v-list-item-title class="mb-2">{{ item.properties.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ prettyifyWords(item.properties.type, true) + ' • ' + prettyifyWords(item.properties.category, true) }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{
+                  prettyifyWords(item.properties.type, true) + ' • ' + prettyifyWords(item.properties.category, true)
+                }}
+              </v-list-item-subtitle>
               <v-list-item-subtitle>{{ prettyifyAddress(item.properties) }}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-avatar
@@ -47,15 +55,16 @@
               ></v-img>
             </v-list-item-avatar>
           </v-list-item>
-          <v-divider  v-if="item.type !== 'END'"></v-divider>
+          <v-divider v-if="item.type !== 'END'"></v-divider>
           <div v-if="item.type === 'END'">
             <div v-if="!noMoreResults && results.featureCollection.features.length % 10 === 0">
-              <search-result-skelton :key="'top_search_skeleton'" v-observe-visibility="visibilityChanged"></search-result-skelton>
+              <search-result-skelton :key="'top_search_skeleton'"
+                                     v-observe-visibility="visibilityChanged"></search-result-skelton>
               <search-result-skelton v-for="i in 9" :key="i + '_search_skeleton'"></search-result-skelton>
             </div>
             <v-list-item three-line v-else>
               <v-list-item-content>
-                <v-row class="detail--text" no-gutters justify="center">{{'No more results...' }}</v-row>
+                <v-row class="detail--text" no-gutters justify="center">{{ 'No more results...' }}</v-row>
               </v-list-item-content>
             </v-list-item>
           </div>
@@ -81,13 +90,13 @@
 <script>
 import EventBus from '../../lib/vue/EventBus'
 import NominatimResultDetails from '../Nominatim/NominatimResultDetails'
-import {prettyifyAddress, prettyifyWords, queryWithRequestObject} from '../../lib/util/nominatim/NominatimUtilities'
-import {mdiChevronLeft, mdiContentSave, mdiClose} from '@mdi/js'
+import { prettyifyAddress, prettyifyWords, queryWithRequestObject } from '../../lib/util/nominatim/NominatimUtilities'
+import { mdiChevronLeft, mdiContentSave, mdiClose } from '@mdi/js'
 import SearchResultSkelton from './SearchResultSkelton'
 import isEqual from 'lodash/isEqual'
 
 export default {
-  components: {SearchResultSkelton, NominatimResultDetails},
+  components: { SearchResultSkelton, NominatimResultDetails },
   props: {
     project: Object,
     results: Object,
@@ -112,7 +121,7 @@ export default {
       this.deselectResult()
     })
   },
-  beforeDestroy() {
+  beforeDestroy () {
     EventBus.$off([EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, EventBus.EventTypes.DESELECT_NOMINATIM_SEARCH_RESULT])
   },
   watch: {

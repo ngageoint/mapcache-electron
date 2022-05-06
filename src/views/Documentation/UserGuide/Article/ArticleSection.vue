@@ -16,7 +16,8 @@
       </p>
     </v-row>
     <v-row no-gutters v-if="video">
-      <video controls style="margin-left: 26px;" width="560" controlsList="nodownload nofullscreen noremoteplayback" muted disablepictureinpicture>
+      <video controls style="margin-left: 26px;" width="560" controlsList="nodownload nofullscreen noremoteplayback"
+             muted disablepictureinpicture>
         <source :src="video" type="video/webm">
       </video>
     </v-row>
@@ -27,7 +28,7 @@
 import Tip from './Tip'
 
 export default {
-  components: {Tip},
+  components: { Tip },
   props: {
     title: String,
     note: String,
@@ -40,5 +41,7 @@ export default {
 </script>
 
 <style scoped>
-video:focus { outline:none; }
+video:focus {
+  outline: none;
+}
 </style>

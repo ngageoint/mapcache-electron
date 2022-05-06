@@ -4,7 +4,7 @@ import { XYZ_SERVER } from '../../layer/LayerTypes'
 
 export default class XYZSource extends Source {
   constructor (id, directory, filePath, subdomains = [], sourceName, withCredentials = false, minZoom, maxZoom, extent, srs) {
-    super (id, directory, filePath)
+    super(id, directory, filePath)
     this.subdomains = subdomains
     this.sourceName = sourceName
     this.withCredentials = withCredentials

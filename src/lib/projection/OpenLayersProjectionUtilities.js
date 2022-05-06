@@ -1,9 +1,16 @@
 import proj4 from 'proj4'
-import {getCode, getDef} from './ProjectionUtilities'
-import { addProjection, get, addCoordinateTransforms, addEquivalentProjections, createSafeCoordinateTransform } from 'ol-format-node/proj'
+import { getCode, getDef } from './ProjectionUtilities'
+import {
+  addProjection,
+  get,
+  addCoordinateTransforms,
+  addEquivalentProjections,
+  createSafeCoordinateTransform
+} from 'ol-format-node/proj'
 import { get as getTransform } from 'ol-format-node/proj/transforms'
 import Projection from 'ol-format-node/proj/Projection'
 import { assign } from 'ol-format-node/obj'
+
 function defineProjection (name) {
   const code = getCode(name)
   if (code !== -1) {
@@ -49,8 +56,8 @@ function addTransformation (from, to) {
     } else {
       // Reset axis because OpenLayers always uses x, y axis order
       const transform = proj4(
-        assign({}, def1, {axis: undefined}),
-        assign({}, def2, {axis: undefined})
+        assign({}, def1, { axis: undefined }),
+        assign({}, def2, { axis: undefined })
       )
       addCoordinateTransforms(
         proj1,

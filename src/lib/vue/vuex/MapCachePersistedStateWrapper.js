@@ -9,12 +9,12 @@ const STORAGE_KEY = 'state'
  * MapCachePersistedStateWrapper really just handles importing initial state. it will not actually call set state on changes
  */
 class MapCachePersistedStateWrapper {
-  constructor(options, store) {
+  constructor (options, store) {
     this.options = options
     this.store = store
   }
 
-  loadOptions() {
+  loadOptions () {
     this.options.storageKey = STORAGE_KEY
     if (!this.options.throttle) {
       this.options.throttle = SET_STATE_THROTTLE
@@ -22,7 +22,7 @@ class MapCachePersistedStateWrapper {
     window.mapcache.createStorage(STORAGE_NAME)
   }
 
-  loadFilter(filter, name) {
+  loadFilter (filter, name) {
     if (!filter) {
       return null
     } else if (filter instanceof Array) {
@@ -34,18 +34,18 @@ class MapCachePersistedStateWrapper {
     }
   }
 
-  filterInArray(list) {
+  filterInArray (list) {
     return (mutation) => {
       return list.includes(mutation.type)
     }
   }
 
-  combineMerge(target, source, options) {
+  combineMerge (target, source, options) {
     const emptyTarget = (value) => (Array.isArray(value) ? [] : {})
     const clone = (value, options) => merge(emptyTarget(value), value, options)
     const destination = target.slice()
 
-    source.forEach(function(e, i) {
+    source.forEach(function (e, i) {
       if (typeof destination[i] === "undefined") {
         const cloneRequested = options.clone !== false
         const shouldClone = cloneRequested && options.isMergeableObject(e)
@@ -60,7 +60,7 @@ class MapCachePersistedStateWrapper {
     return destination
   }
 
-  loadInitialState() {
+  loadInitialState () {
     let state = window.mapcache.getState(this.options.storageKey)
     if (state) {
       const mergedState = merge(this.store.state, state, { arrayMerge: this.combineMerge })

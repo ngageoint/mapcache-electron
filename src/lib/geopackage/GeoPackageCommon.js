@@ -34,7 +34,7 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
         }
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
-        result = {error: error}
+        result = { error: error }
         // eslint-disable-next-line no-console
         console.error('Failed to perform GeoPackage operation')
       }
@@ -43,12 +43,12 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
         gp = undefined
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
-        result = {error: e}
+        result = { error: e }
         // eslint-disable-next-line no-console
         console.error('Failed to close GeoPackage')
       }
     } else {
-      result = {error: 'File does not exist'}
+      result = { error: 'File does not exist' }
       // eslint-disable-next-line no-console
       console.error('File does not exist')
     }
@@ -270,7 +270,7 @@ function _getInternalTableInformation (gp) {
         minZoom: tileDao.minZoom,
         maxZoom: tileDao.maxZoom,
         extent: _getBoundingBoxForTable(gp, table),
-        tileExtent:  _calculateTrueExtentForTileTable(gp, table),
+        tileExtent: _calculateTrueExtentForTileTable(gp, table),
         description: 'An image layer with ' + count + ' tiles',
         styleKey: 0
       }
@@ -605,7 +605,7 @@ async function sleep (timeMs) {
   })
 }
 
-function prettyPrintMs(milliseconds) {
+function prettyPrintMs (milliseconds) {
   const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24))
   let msRemaining = milliseconds - days * (1000 * 60 * 60 * 24)
   const hours = Math.floor(msRemaining / (1000 * 60 * 60))

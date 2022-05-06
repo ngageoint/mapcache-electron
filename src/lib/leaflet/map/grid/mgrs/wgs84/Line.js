@@ -8,11 +8,11 @@ export default class Line {
     this.p2 = p2;
   }
 
-  addPoint(point) {
+  addPoint (point) {
     this.points.add(point);
   }
 
-  getPoints() {
+  getPoints () {
     return this.points
   }
 }

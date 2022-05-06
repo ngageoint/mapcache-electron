@@ -1,12 +1,14 @@
 <template>
   <v-sheet class="mapcache-sheet">
     <v-toolbar
-      dark
-      color="main"
-      flat
-      class="sticky-toolbar"
+        dark
+        color="main"
+        flat
+        class="sticky-toolbar"
     >
-      <v-btn icon @click="back"><v-icon large>{{mdiChevronLeft}}</v-icon></v-btn>
+      <v-btn icon @click="back">
+        <v-icon large>{{ mdiChevronLeft }}</v-icon>
+      </v-btn>
       <v-toolbar-title>{{ result.properties.name }}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -23,11 +25,13 @@
           <v-row class="pb-2" no-gutters justify="space-between">
             <v-col>
               <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{result.properties.display_name}}
+                {{ result.properties.display_name }}
               </p>
             </v-col>
             <v-col cols="1">
-              <v-btn color="primary" icon @click="zoomTo"><v-icon>{{mdiMagnify}}</v-icon></v-btn>
+              <v-btn color="primary" icon @click="zoomTo">
+                <v-icon>{{ mdiMagnify }}</v-icon>
+              </v-btn>
             </v-col>
           </v-row>
           <v-row v-if="result.properties.country_name != null" class="pb-2" no-gutters justify="space-between">
@@ -36,7 +40,7 @@
                 Regional name
               </p>
               <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{result.properties.country_name}}
+                {{ result.properties.country_name }}
               </p>
             </v-col>
           </v-row>
@@ -46,7 +50,9 @@
                 Category
               </p>
               <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{ prettyifyWords(result.properties.type, true) + ' • ' + prettyifyWords(result.properties.category, true) }}
+                {{
+                  prettyifyWords(result.properties.type, true) + ' • ' + prettyifyWords(result.properties.category, true)
+                }}
               </p>
             </v-col>
           </v-row>
@@ -65,8 +71,10 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Website
               </p>
-              <p class="fake-link allowselect" :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(result.properties.website)">
-                {{result.properties.website}}
+              <p class="fake-link allowselect"
+                 :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 @click="() => open(result.properties.website)">
+                {{ result.properties.website }}
               </p>
             </v-col>
           </v-row>
@@ -75,8 +83,10 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Wikipedia
               </p>
-              <p class="fake-link allowselect" :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => open(getWikiUrl(result.properties.wikipedia))">
-                {{result.properties.wikipedia}}
+              <p class="fake-link allowselect"
+                 :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 @click="() => open(getWikiUrl(result.properties.wikipedia))">
+                {{ result.properties.wikipedia }}
               </p>
             </v-col>
           </v-row>
@@ -86,7 +96,7 @@
                 Attribution
               </p>
               <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{result.properties.attribution}}
+                {{ result.properties.attribution }}
               </p>
             </v-col>
           </v-row>
@@ -102,7 +112,7 @@
             v-bind="attrs"
             v-on="on"
             @click="saveFeature">
-          <v-icon>{{mdiContentSave}}</v-icon>
+          <v-icon>{{ mdiContentSave }}</v-icon>
         </v-btn>
       </template>
       <span>Save</span>
@@ -111,56 +121,56 @@
 </template>
 
 <script>
-import {mdiChevronLeft, mdiContentSave, mdiMagnify} from '@mdi/js'
+import { mdiChevronLeft, mdiContentSave, mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
-import {prettyifyWords, prettyifyAddress} from '../../lib/util/nominatim/NominatimUtilities'
+import { prettyifyWords, prettyifyAddress } from '../../lib/util/nominatim/NominatimUtilities'
 
 export default {
   props: {
-      project: Object,
-      result: Object,
-      back: Function
+    project: Object,
+    result: Object,
+    back: Function
+  },
+  data () {
+    return {
+      mdiChevronLeft: mdiChevronLeft,
+      mdiContentSave: mdiContentSave,
+      mdiMagnify: mdiMagnify,
+      fab: false,
+    }
+  },
+  methods: {
+    prettyifyWords,
+    prettyifyAddress,
+    open (link) {
+      window.mapcache.openExternal(link)
     },
-    data () {
-      return {
-        mdiChevronLeft: mdiChevronLeft,
-        mdiContentSave: mdiContentSave,
-        mdiMagnify: mdiMagnify,
-        fab: false,
-      }
+    getWikiUrl (wiki) {
+      const parts = wiki.split(':')
+      return 'https://' + parts[0] + '.wikipedia.com/wiki/' + parts[1]
     },
-    methods: {
-      prettyifyWords,
-      prettyifyAddress,
-      open (link) {
-        window.mapcache.openExternal(link)
-      },
-      getWikiUrl (wiki) {
-        const parts = wiki.split(':')
-        return 'https://' + parts[0] + '.wikipedia.com/wiki/' + parts[1]
-      },
-      getIcon () {
-        let icon = null
-        if (this.result.properties && this.result.properties.icon) {
-          icon = this.result.properties.icon
-        }
-        return icon
-      },
-      getImage () {
-        let image = null
-        if (this.result.properties && this.result.properties.image != null) {
-          image = this.result.properties.image
-        }
-        return image
-      },
-      saveFeature () {
-        EventBus.$emit(EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT, this.result, this.result.properties.image)
-      },
-      zoomTo () {
-        EventBus.$emit(EventBus.EventTypes.ZOOM_TO, this.result.bbox, 0, 18)
+    getIcon () {
+      let icon = null
+      if (this.result.properties && this.result.properties.icon) {
+        icon = this.result.properties.icon
       }
+      return icon
+    },
+    getImage () {
+      let image = null
+      if (this.result.properties && this.result.properties.image != null) {
+        image = this.result.properties.image
+      }
+      return image
+    },
+    saveFeature () {
+      EventBus.$emit(EventBus.EventTypes.SAVE_NOMINATIM_SEARCH_RESULT, this.result, this.result.properties.image)
+    },
+    zoomTo () {
+      EventBus.$emit(EventBus.EventTypes.ZOOM_TO, this.result.bbox, 0, 18)
     }
   }
+}
 </script>
 
 <style scoped>

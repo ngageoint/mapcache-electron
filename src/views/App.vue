@@ -5,9 +5,9 @@
 </template>
 
 <script>
-  export default {
-    name: 'MapCache'
-  }
+export default {
+  name: 'MapCache'
+}
 </script>
 
 <style>

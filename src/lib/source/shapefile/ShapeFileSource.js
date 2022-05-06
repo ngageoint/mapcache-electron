@@ -32,7 +32,7 @@ export default class ShapeFileSource extends Source {
     let fileName = name + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
 
-    const {addFeature, done} = await streamingGeoPackageBuild(filePath, name)
+    const { addFeature, done } = await streamingGeoPackageBuild(filePath, name)
 
     const notifyStepSize = Math.ceil(featureCollection.features.length / 10)
     for (let i = 0; i < featureCollection.features.length; i++) {
@@ -43,7 +43,7 @@ export default class ShapeFileSource extends Source {
       }
     }
 
-    const {count, extent} = await done()
+    const { count, extent } = await done()
     statusCallback('Cleaning up', 100)
     await this.sleep(250)
     return [

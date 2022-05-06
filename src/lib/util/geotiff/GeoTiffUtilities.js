@@ -16,7 +16,7 @@ function getMaxForDataType (bitsPerSample) {
 
 function getModelTypeName (modelTypeCode) {
   let modelTypeName
-  switch(modelTypeCode) {
+  switch (modelTypeCode) {
     case 0:
       modelTypeName = 'undefined'
       break
@@ -34,9 +34,9 @@ function getModelTypeName (modelTypeCode) {
       break
     default:
       if (modelTypeCode < 32767) {
-        modelTypeName= 'GeoTIFF Reserved Codes'
-      } else if (modelTypeCode>32767) {
-        modelTypeName= 'Private User Implementations'
+        modelTypeName = 'GeoTIFF Reserved Codes'
+      } else if (modelTypeCode > 32767) {
+        modelTypeName = 'Private User Implementations'
       }
       break
   }
@@ -58,19 +58,19 @@ function getCRSForGeoTiff (image) {
   if (isNil(image.getGeoKeys())) {
     throw new Error('Unable to determine CRS for GeoTIFF. Missing GeoKeys.')
   }
-  if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTModelTypeGeoKey') === false) {
+  if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'GTModelTypeGeoKey') === false) {
     crs = 0
-  } else if (getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey ) === 'ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
+  } else if (getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'ModelTypeGeographic' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'GeographicTypeGeoKey')) {
     crs = image.getGeoKeys()['GeographicTypeGeoKey']
   } else {
-    if (getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'ModelTypeProjected' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'ProjectedCSTypeGeoKey')) {
+    if (getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'ModelTypeProjected' && Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'ProjectedCSTypeGeoKey')) {
       crs = image.getGeoKeys()['ProjectedCSTypeGeoKey']
     } else if (getModelTypeName(image.getGeoKeys().GTModelTypeGeoKey) === 'user-defined') {
-      if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'ProjectedCSTypeGeoKey')) {
+      if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'ProjectedCSTypeGeoKey')) {
         crs = image.getGeoKeys()['ProjectedCSTypeGeoKey']
-      } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GeographicTypeGeoKey')) {
+      } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'GeographicTypeGeoKey')) {
         crs = image.getGeoKeys()['GeographicTypeGeoKey']
-      } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(),'GTCitationGeoKey') && image.getGeoKeys()['GTCitationGeoKey'].search("WGS_1984_Web_Mercator_Auxiliary_Sphere") !== -1) {
+      } else if (Object.prototype.hasOwnProperty.call(image.getGeoKeys(), 'GTCitationGeoKey') && image.getGeoKeys()['GTCitationGeoKey'].search("WGS_1984_Web_Mercator_Auxiliary_Sphere") !== -1) {
         crs = WEB_MERCATOR_CODE
       }
     }
@@ -85,7 +85,7 @@ function getCRSForGeoTiff (image) {
  * @param bitsPerSample
  * @returns {((byteOffset: number) => number)|((byteOffset: number, littleEndian?: boolean) => number)}
  */
-function getReaderForSample(sampleIndex, sampleFormat, bitsPerSample) {
+function getReaderForSample (sampleIndex, sampleFormat, bitsPerSample) {
   const format = sampleFormat ? sampleFormat[sampleIndex] : 1
   switch (format) {
     case 1: // unsigned integer data

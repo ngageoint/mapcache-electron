@@ -43,7 +43,7 @@ async function getImageBufferFromCanvas (canvas) {
     if (hasTransparentPixels(canvas)) {
       try {
         return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
-          plugins: [imageminPngquant({speed: 8, quality: [0.5, 0.8]})]
+          plugins: [imageminPngquant({ speed: 8, quality: [0.5, 0.8] })]
         })
         // return Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64')
         // eslint-disable-next-line no-unused-vars
@@ -299,7 +299,7 @@ async function buildTileLayer (configuration, statusCallback) {
             const layer = sortedLayers[i]
             if (layers.indexOf(layer.id) !== -1) {
               tilePromises.push(new Promise((resolve, reject) => {
-                layer.renderTile(createUniqueID(), {x, y, z}, {x: tileSize, y: tileSize}, (err, result) => {
+                layer.renderTile(createUniqueID(), { x, y, z }, { x: tileSize, y: tileSize }, (err, result) => {
                   if (err) {
                     reject(err)
                   } else if (!isNil(result)) {
@@ -373,13 +373,15 @@ async function buildTileLayer (configuration, statusCallback) {
       try {
         await deleteGeoPackageTable(configuration.path, configuration.table)
         // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e) {
+      }
       status.message = 'Failed to build tile layer'
       status.error = error.message
       statusCallback(status)
     }
   }, true)
 }
+
 export {
   buildTileLayer
 }

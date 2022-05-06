@@ -11,89 +11,123 @@ const SHOW_PROJECT = 'show-project'
 const CLOSE_PROJECT = 'close-project'
 const CLOSING_PROJECT_WINDOW = 'closing-project-window'
 const PROCESS_SOURCE = 'process-source'
+
 function PROCESS_SOURCE_COMPLETED (id) {
   return 'process-source-completed-' + id
 }
+
 const CANCEL_PROCESS_SOURCE = 'cancel-process-source'
+
 function CANCEL_PROCESS_SOURCE_COMPLETED (id) {
   return 'cancel-process-source-completed-' + id
 }
+
 const BUILD_FEATURE_LAYER = 'build-feature-layer'
 const CANCEL_BUILD_FEATURE_LAYER = 'cancel-build-feature-layer'
 const BUILD_TILE_LAYER = 'build-tile-layer'
 const CANCEL_BUILD_TILE_LAYER = 'cancel-build-tile-layer'
 const ATTACH_MEDIA = 'attach-media'
+
 function ATTACH_MEDIA_COMPLETED (id) {
   return 'attach-media-completed-' + id
 }
+
 const REQUEST_TILE = 'request-tile'
+
 function REQUEST_TILE_COMPLETED (id) {
   return 'request-tile-completed-' + id
 }
+
 const CANCEL_TILE_REQUEST = 'cancel-tile-request'
 const GENERATE_GEOTIFF_RASTER_FILE = 'generate-geotiff-raster-file'
+
 function GENERATE_GEOTIFF_RASTER_FILE_COMPLETED (id) {
   return 'generate-geotiff-raster-file-completed-' + id
 }
+
 const REQUEST_TILE_COMPILATION = 'request-tile-compilation'
+
 function REQUEST_TILE_COMPILATION_COMPLETED (id) {
   return 'request-tile-compilation-completed-' + id
 }
+
 const REQUEST_GEOPACKAGE_TABLE_RENAME = 'request-geopackage-table-rename'
+
 function REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED (id) {
   return 'request-geopackage-table-rename-completed-' + id
 }
+
 const REQUEST_GEOPACKAGE_TABLE_COPY = 'request-geopackage-table-copy'
+
 function REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED (id) {
   return 'request-geopackage-table-copy-completed-' + id
 }
+
 const REQUEST_GEOPACKAGE_TABLE_DELETE = 'request-geopackage-table-delete'
+
 function REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED (id) {
   return 'request-geopackage-table-delete-completed-' + id
 }
+
 const REQUEST_GEOPACKAGE_TABLE_COUNT = 'request-geopackage-table-count'
+
 function REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED (id) {
   return 'request-geopackage-table-count-completed-' + id
 }
+
 const REQUEST_GEOPACKAGE_TABLE_SEARCH = 'request-geopackage-table-search'
+
 function REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED (id) {
   return 'request-geopackage-table-search-completed-' + id
 }
+
 const CANCEL_TILE_COMPILATION_REQUEST = 'cancel-tile-compilation-request'
 const WORKER_READY = 'worker-ready'
 const CANCEL_SERVICE_REQUEST = 'cancel-service-request'
 const WORKER_BUILD_TILE_LAYER = 'worker-build-tile-layer'
+
 function BUILD_TILE_LAYER_COMPLETED (id) {
   return 'build-tile-layer-completed-' + id
 }
+
 function BUILD_TILE_LAYER_STATUS (id) {
   return 'build-tile-layer-status-' + id
 }
+
 function WORKER_BUILD_TILE_LAYER_COMPLETED (id) {
   return 'worker-build-tile-layer-completed_' + id
 }
+
 function WORKER_BUILD_TILE_LAYER_STATUS (id) {
   return 'worker-build-tile-layer-status-' + id
 }
+
 function CANCEL_BUILD_TILE_LAYER_COMPLETED (id) {
   return 'cancel-build-tile-layer-completed-' + id
 }
+
 const WORKER_BUILD_FEATURE_LAYER = 'worker-build-feature-layer'
+
 function BUILD_FEATURE_LAYER_COMPLETED (id) {
   return 'build-feature-layer-completed-' + id
 }
+
 function BUILD_FEATURE_LAYER_STATUS (id) {
   return 'build-feature-layer-status-' + id
 }
+
 function WORKER_BUILD_FEATURE_LAYER_COMPLETED (id) {
   return 'worker-build-feature-layer-completed-' + id
 }
+
 function WORKER_BUILD_FEATURE_LAYER_STATUS (id) {
   return 'worker-build-feature-layer-status-' + id
 }
+
 function CANCEL_BUILD_FEATURE_LAYER_COMPLETED (id) {
   return 'cancel-build-feature-layer-completed-' + id
 }
+
 function PROCESS_SOURCE_STATUS (id) {
   return 'process-source-status-' + id
 }

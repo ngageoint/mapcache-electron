@@ -16,7 +16,7 @@ const promises = {}
  * @returns {Promise<*>}
  */
 async function getUserCredentialsForUrl (details, authInfo, webContents) {
-  const url = [authInfo.host, authInfo.port ].join(':')
+  const url = [authInfo.host, authInfo.port].join(':')
   // already requesting credentials for url,
   if (!promises[url]) {
     promises[url] = new Promise((resolve, reject) => {

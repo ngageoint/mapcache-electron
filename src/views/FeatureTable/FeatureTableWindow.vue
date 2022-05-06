@@ -1,17 +1,20 @@
 <template>
-  <feature-tables v-if="project != null" id="feature-table-view" show-items-per-page :project="project" :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :table="table" :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn" :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-tables>
+  <feature-tables v-if="project != null" id="feature-table-view" show-items-per-page :project="project"
+                  :projectId="project.id" :geopackages="project.geopackages" :sources="project.sources" :table="table"
+                  :zoomToFeature="zoomToFeature" :close="closeFeatureTable" :pop-in="popIn"
+                  :highlight-feature="highlightFeature" :show-feature="showFeature"></feature-tables>
 </template>
 
 <script>
 import FeatureTables from './FeatureTables'
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
-import {FEATURE_TABLE_WINDOW_EVENTS} from './FeatureTableEvents'
-import {FEATURE_TABLE_ACTIONS} from './FeatureTableActions'
+import { FEATURE_TABLE_WINDOW_EVENTS } from './FeatureTableEvents'
+import { FEATURE_TABLE_ACTIONS } from './FeatureTableActions'
 
 export default {
   name: 'FeatureTableWindow',
-  components: {FeatureTables},
+  components: { FeatureTables },
   computed: {
     ...mapState({
       project (state) {
@@ -86,7 +89,7 @@ export default {
       }
     },
     popIn () {
-      window.mapcache.popOutFeatureTable({projectId: this.project.id, popOut: false})
+      window.mapcache.popOutFeatureTable({ projectId: this.project.id, popOut: false })
       window.mapcache.hideFeatureTableWindow()
     },
     zoomToFeature (path, table, featureId) {
@@ -119,7 +122,7 @@ export default {
   },
   watch: {
     darkTheme: {
-      handler(newValue) {
+      handler (newValue) {
         this.$nextTick(() => {
           this.$vuetify.theme.dark = newValue
         })
@@ -127,13 +130,13 @@ export default {
     }
   },
   mounted () {
-    window.mapcache.registerFeatureTableEventListener((e, {event, args}) => {
+    window.mapcache.registerFeatureTableEventListener((e, { event, args }) => {
       if (event === FEATURE_TABLE_WINDOW_EVENTS.DISPLAY_ALL_TABLE_FEATURES) {
         this.displayFeaturesForTable(args.id, args.tableName, args.isGeoPackage)
       }
     })
   },
-  beforeDestroy() {
+  beforeDestroy () {
     window.mapcache.hideFeatureTableWindow()
   }
 }

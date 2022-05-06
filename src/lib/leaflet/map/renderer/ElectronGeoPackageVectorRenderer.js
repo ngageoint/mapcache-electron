@@ -5,7 +5,7 @@ import ElectronTileRenderer from './ElectronTileRenderer'
  * GeoPackage Vector Renderer
  */
 export default class ElectronGeoPackageVectorRenderer extends ElectronTileRenderer {
-  constructor(layer, isElectron) {
+  constructor (layer, isElectron) {
     super(layer, isElectron)
     this.performBoundaryCheck = false
   }

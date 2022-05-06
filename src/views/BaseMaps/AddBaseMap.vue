@@ -1,20 +1,21 @@
 <template>
   <v-sheet class="mapcache-sheet">
     <v-toolbar
-      color="main"
-      dark
-      flat
-      class="sticky-toolbar"
+        color="main"
+        dark
+        flat
+        class="sticky-toolbar"
     >
       <v-toolbar-title>Add base map</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content">
       <v-card>
         <v-card-text class="pb-0">
-          <v-stepper v-model="step" non-linear vertical class="background" :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
+          <v-stepper v-model="step" non-linear vertical class="background"
+                     :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
             <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => baseMapNameValid]" color="primary">
               Name the base map
-              <small class="pt-1">{{baseMapName}}</small>
+              <small class="pt-1">{{ baseMapName }}</small>
             </v-stepper-step>
             <v-stepper-content step="1">
               <v-card flat tile>
@@ -24,11 +25,11 @@
                 <v-card-text>
                   <v-form v-on:submit.prevent ref="baseMapNameForm" v-model="baseMapNameValid">
                     <v-text-field
-                      autofocus
-                      v-model="baseMapName"
-                      :rules="baseMapNameRules"
-                      label="Layer name"
-                      required
+                        autofocus
+                        v-model="baseMapName"
+                        :rules="baseMapNameRules"
+                        label="Layer name"
+                        required
                     ></v-text-field>
                   </v-form>
                 </v-card-text>
@@ -50,15 +51,19 @@
                     <v-list-item-group mandatory v-model="selectedLayer">
                       <template v-for="(item, i) in layers">
                         <v-list-item
-                          two-line
-                          :key="`layer-${i}`"
-                          :value="i">
+                            two-line
+                            :key="`layer-${i}`"
+                            :value="i">
                           <v-list-item-icon style="margin-top: 12px;">
                             <v-btn icon @click.stop="item.zoomTo">
-                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                              <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark"
+                                   src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark"
+                                   src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
+                                   src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                              <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png"
+                                   alt="Feature layer" width="20px" height="20px"/>
                             </v-btn>
                           </v-list-item-icon>
                           <v-list-item-content>
@@ -66,7 +71,8 @@
                             <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
                           </v-list-item-content>
                           <v-list-item-action>
-                            <data-source-troubleshooting v-if="item.source && item.error" :source="item.source" :project-id="project.id"></data-source-troubleshooting>
+                            <data-source-troubleshooting v-if="item.source && item.error" :source="item.source"
+                                                         :project-id="project.id"></data-source-troubleshooting>
                           </v-list-item-action>
                         </v-list-item>
                       </template>
@@ -92,7 +98,7 @@
                   Select a background color for your tile
                 </v-card-subtitle>
                 <v-card-text>
-                  <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile background" />
+                  <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile background"/>
                 </v-card-text>
               </v-card>
             </v-stepper-content>
@@ -101,15 +107,15 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            text
-            @click="close">
+              text
+              @click="close">
             Cancel
           </v-btn>
           <v-btn
-            :disabled="!baseMapNameValid || layers.length === 0 || step !== '3'"
-            text
-            color="primary"
-            @click="save">
+              :disabled="!baseMapNameValid || layers.length === 0 || step !== '3'"
+              text
+              color="primary"
+              @click="save">
             Save
           </v-btn>
         </v-card-actions>
@@ -125,126 +131,126 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import ColorPicker from '../Common/ColorPicker'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
-import {zoomToGeoPackageTable, zoomToSource} from '../../lib/leaflet/map/ZoomUtilities'
+import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
 
 export default {
-    components: {
-      DataSourceTroubleshooting,
-      ColorPicker
-    },
-    props: {
-      baseMaps: Array,
-      project: Object,
-      close: Function
-    },
-    asyncComputed: {
-      layers: {
-        async get () {
-          let items = []
-          const sources = values(this.project.sources)
-          for (let i = 0; i < sources.length; i++) {
-            let source = sources[i]
-            items.push({
-              id: source.id,
-              source: source,
-              error: source.error,
-              name: source.displayName ? source.displayName : source.name,
-              title: source.displayName ? source.displayName : source.name,
-              subtitle: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
-              isGeoPackage: false,
-              type: source.pane === 'vector' ? 'feature' : 'tile',
-              zoomTo: debounce((e) => {
-                e.stopPropagation()
-                zoomToSource(source)
-              }, 100)
-            })
-          }
-          const geopackages = values(this.project.geopackages)
-          for (let i = 0; i < geopackages.length; i++) {
-            const geopackage = geopackages[i]
-            if (await window.mapcache.isHealthy(geopackage)) {
-              const tiles = keys(geopackage.tables.tiles)
-              for (let j = 0; j < tiles.length; j++) {
-                const table = tiles[j]
-                items.push({
-                  id: geopackage.id + '_' + table,
-                  geopackageId: geopackage.id,
-                  name: table,
-                  tableName: table,
-                  title: geopackage.name,
-                  subtitle: table,
-                  type: 'tile',
-                  isGeoPackage: true,
-                  zoomTo: debounce((e) => {
-                    e.stopPropagation()
-                    zoomToGeoPackageTable(geopackage, table)
-                  }, 100)
-                })
-              }
-              const features = keys(geopackage.tables.features)
-              for (let j = 0; j < features.length; j++) {
-                const table = features[j]
-                items.push({
-                  id: geopackage.id + '_' + table,
-                  geopackageId: geopackage.id,
-                  name: table,
-                  tableName: table,
-                  title: geopackage.name,
-                  subtitle: table,
-                  type: 'feature',
-                  isGeoPackage: true,
-                  zoomTo: debounce((e) => {
-                    e.stopPropagation()
-                    zoomToGeoPackageTable(geopackage, table)
-                  }, 100)
-                })
-              }
+  components: {
+    DataSourceTroubleshooting,
+    ColorPicker
+  },
+  props: {
+    baseMaps: Array,
+    project: Object,
+    close: Function
+  },
+  asyncComputed: {
+    layers: {
+      async get () {
+        let items = []
+        const sources = values(this.project.sources)
+        for (let i = 0; i < sources.length; i++) {
+          let source = sources[i]
+          items.push({
+            id: source.id,
+            source: source,
+            error: source.error,
+            name: source.displayName ? source.displayName : source.name,
+            title: source.displayName ? source.displayName : source.name,
+            subtitle: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
+            isGeoPackage: false,
+            type: source.pane === 'vector' ? 'feature' : 'tile',
+            zoomTo: debounce((e) => {
+              e.stopPropagation()
+              zoomToSource(source)
+            }, 100)
+          })
+        }
+        const geopackages = values(this.project.geopackages)
+        for (let i = 0; i < geopackages.length; i++) {
+          const geopackage = geopackages[i]
+          if (await window.mapcache.isHealthy(geopackage)) {
+            const tiles = keys(geopackage.tables.tiles)
+            for (let j = 0; j < tiles.length; j++) {
+              const table = tiles[j]
+              items.push({
+                id: geopackage.id + '_' + table,
+                geopackageId: geopackage.id,
+                name: table,
+                tableName: table,
+                title: geopackage.name,
+                subtitle: table,
+                type: 'tile',
+                isGeoPackage: true,
+                zoomTo: debounce((e) => {
+                  e.stopPropagation()
+                  zoomToGeoPackageTable(geopackage, table)
+                }, 100)
+              })
+            }
+            const features = keys(geopackage.tables.features)
+            for (let j = 0; j < features.length; j++) {
+              const table = features[j]
+              items.push({
+                id: geopackage.id + '_' + table,
+                geopackageId: geopackage.id,
+                name: table,
+                tableName: table,
+                title: geopackage.name,
+                subtitle: table,
+                type: 'feature',
+                isGeoPackage: true,
+                zoomTo: debounce((e) => {
+                  e.stopPropagation()
+                  zoomToGeoPackageTable(geopackage, table)
+                }, 100)
+              })
             }
           }
-          return items
-        },
-        default: []
-      }
-    },
-    data () {
-      return {
-        step: 1,
-        baseMapNameValid: true,
-        baseMapName: 'New base map',
-        baseMapNameRules: [
-          v => !!v || 'Base map name is required',
-          v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'
-        ],
-        baseMapToDelete: null,
-        deleteBaseMapDialog: false,
-        addBaseMapDialog: false,
-        selectedLayer: 0,
-        backgroundColor: '#DDDDDD'
-      }
-    },
-    methods: {
-      ...mapActions({
-        editBaseMap: 'BaseMaps/editBaseMap',
-      }),
-      save () {
-        let configuration = {}
-        let layer = this.layers[this.selectedLayer]
-        if (layer.isGeoPackage) {
-          configuration.geopackage = this.project.geopackages[layer.geopackageId]
-          configuration.tableName = layer.tableName
-          configuration.type = layer.type
-          configuration.maxFeatures = this.project.maxFeatures
-        } else {
-          configuration = this.project.sources[layer.id]
         }
-        window.mapcache.saveBaseMap(this.baseMapName, configuration, this.backgroundColor).then((baseMap) => {
-          window.mapcache.addBaseMap(baseMap)
-          this.close()
-        })
+        return items
+      },
+      default: []
+    }
+  },
+  data () {
+    return {
+      step: 1,
+      baseMapNameValid: true,
+      baseMapName: 'New base map',
+      baseMapNameRules: [
+        v => !!v || 'Base map name is required',
+        v => this.baseMaps.map(baseMap => baseMap.name).indexOf(v) === -1 || 'Base map name must be unique'
+      ],
+      baseMapToDelete: null,
+      deleteBaseMapDialog: false,
+      addBaseMapDialog: false,
+      selectedLayer: 0,
+      backgroundColor: '#DDDDDD'
+    }
+  },
+  methods: {
+    ...mapActions({
+      editBaseMap: 'BaseMaps/editBaseMap',
+    }),
+    save () {
+      let configuration = {}
+      let layer = this.layers[this.selectedLayer]
+      if (layer.isGeoPackage) {
+        configuration.geopackage = this.project.geopackages[layer.geopackageId]
+        configuration.tableName = layer.tableName
+        configuration.type = layer.type
+        configuration.maxFeatures = this.project.maxFeatures
+      } else {
+        configuration = this.project.sources[layer.id]
       }
+      window.mapcache.saveBaseMap(this.baseMapName, configuration, this.backgroundColor).then((baseMap) => {
+        window.mapcache.addBaseMap(baseMap)
+        this.close()
+      })
     }
   }
+}
 </script>
 
 <style scoped>

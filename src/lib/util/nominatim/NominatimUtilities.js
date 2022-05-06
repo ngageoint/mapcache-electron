@@ -1,6 +1,6 @@
 import keys from 'lodash/keys'
-import {OpenStreetMapProvider} from 'leaflet-geosearch'
-import {environment} from '../../env/env'
+import { OpenStreetMapProvider } from 'leaflet-geosearch'
+import { environment } from '../../env/env'
 import pointOnFeature from '@turf/point-on-feature'
 
 async function queryNominatim (query, bbox = null, idsToIgnore = []) {
@@ -94,11 +94,11 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
     requestObject.polygon_geojson = 1
     const searchUrl = `${environment.nominatimUrl}/search`
     const reverseUrl = `${environment.nominatimUrl}/reverse`
-    const provider = new OpenStreetMapProvider({searchUrl, reverseUrl})
+    const provider = new OpenStreetMapProvider({ searchUrl, reverseUrl })
     let url = provider.getUrl(reverse ? provider.reverseUrl : provider.searchUrl, requestObject)
     let controller = new AbortController()
     let id = setTimeout(() => controller.abort(), timeout)
-    let request = await fetch(url, {signal: controller.signal})
+    let request = await fetch(url, { signal: controller.signal })
     const featureCollection = await request.json()
     clearTimeout(id)
 
@@ -111,7 +111,7 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
     controller = new AbortController()
     id = setTimeout(() => controller.abort(), timeout)
     url = provider.getUrl(provider.searchUrl, pointRequestObject)
-    request = await fetch(url, {signal: controller.signal})
+    request = await fetch(url, { signal: controller.signal })
     const featureCollectionPointsOnly = await request.json()
     clearTimeout(id)
 
@@ -127,7 +127,7 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
           if (wikiImageMap[countryCode] == null) {
             wikiImageMap[countryCode] = []
           }
-          wikiImageMap[countryCode].push({osm_id: feature.properties.osm_id, title: parts[1]})
+          wikiImageMap[countryCode].push({ osm_id: feature.properties.osm_id, title: parts[1] })
         }
       }
       if (feature.properties.extratags) {
@@ -167,10 +167,11 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
       let wikiRes = null
       if (environment.wikipediaUrl != null) {
         try {
-          const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') +  '&prop=pageimages&format=json&pithumbsize=500', {signal: controller.signal})
+          const wikiReq = await fetch(environment.wikipediaUrl.replace('{cc}', countryCode) + '/w/api.php?action=query&titles=' + titles.join('|') + '&prop=pageimages&format=json&pithumbsize=500', { signal: controller.signal })
           wikiRes = await wikiReq.json()
           // eslint-disable-next-line no-empty, no-unused-vars
-        } catch (e) {}
+        } catch (e) {
+        }
       }
       clearTimeout(id)
       if (wikiRes != null) {
@@ -186,9 +187,15 @@ async function queryWithRequestObject (requestObject, reverse = false, timeout =
       }
     }
 
-    return {requestObject, featureCollection, fitMapToData: true, reverse: reverse}
+    return { requestObject, featureCollection, fitMapToData: true, reverse: reverse }
   } catch (e) {
-    return {requestObject, featureCollection: {type: 'FeatureCollection', features: []}, fitMapToData: false, reverse: reverse, error: 'Failed to retrieve data.'}
+    return {
+      requestObject,
+      featureCollection: { type: 'FeatureCollection', features: [] },
+      fitMapToData: false,
+      reverse: reverse,
+      error: 'Failed to retrieve data.'
+    }
   }
 }
 

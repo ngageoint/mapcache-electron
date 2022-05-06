@@ -1,4 +1,5 @@
 import Vue from 'vue'
+
 const state = {
   version: '-1'
 }
@@ -16,7 +17,7 @@ const mutations = {
 }
 
 const actions = {
-  setVersion ({commit}, version) {
+  setVersion ({ commit }, version) {
     commit('setVersion', version)
   }
 }

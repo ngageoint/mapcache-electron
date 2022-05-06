@@ -32,6 +32,7 @@ function getMetersPerUnit (name) {
   }
   return metersPerUnit
 }
+
 function getUnits (name) {
   let units = null
   const def = getDef(getCode(name))
@@ -158,7 +159,12 @@ proj4.defs(WORLD_GEODETIC_SYSTEM_CRS, getDef(WORLD_GEODETIC_SYSTEM_CODE))
 function convertToWebMercator (extent) {
   let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
   let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
-  return {minLon: filterLowerLeft[0], maxLon: filterUpperRight[0], minLat: filterLowerLeft[1], maxLat: filterUpperRight[1]}
+  return {
+    minLon: filterLowerLeft[0],
+    maxLon: filterUpperRight[0],
+    minLat: filterLowerLeft[1],
+    maxLat: filterUpperRight[1]
+  }
 }
 
 export {

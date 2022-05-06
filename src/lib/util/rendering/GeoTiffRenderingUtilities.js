@@ -18,7 +18,7 @@ const maxByteValue = 255
  * @returns {Promise<any>}
  */
 function requestTile (tileRequest) {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const {
       rasterFile,
       redBand,
@@ -55,7 +55,7 @@ function requestTile (tileRequest) {
       coords
     } = tileRequest
 
-    const {x, y, z} = coords
+    const { x, y, z } = coords
     const fd = fs.openSync(rasterFile, 'r')
     const size = fs.statSync(rasterFile).size
     let canvas
@@ -166,9 +166,12 @@ function requestTile (tileRequest) {
             let greenBandDataTypeMax = maxByteValue
             let blueBandDataTypeMax = maxByteValue
 
-            let setR = () => {}
-            let setG = () => {}
-            let setB = () => {}
+            let setR = () => {
+            }
+            let setG = () => {
+            }
+            let setB = () => {
+            }
             let setA = (position) => targetData[position + 3] = 255
             if (redBand > 0) {
               redBandDataTypeMax = getMaxForDataType(bitsPerSample[redBand - 1])

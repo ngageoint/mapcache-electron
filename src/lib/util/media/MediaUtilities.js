@@ -74,13 +74,13 @@ function getMediaObjectURL (media) {
   let blob
   if (media) {
     if (isChromeMimeSupported(media.contentType)) {
-      blob = new Blob([media.data], {type: media.contentType})
+      blob = new Blob([media.data], { type: media.contentType })
       result.type = media.contentType
     }
   }
 
   if (isNil(blob)) {
-    blob = new Blob(["<html lang='en'><body><div style='height: 100%; display: flex;'><div style='width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0;'><p><h2>Preview unavailable.</h2></p></div></div></body></html>"], {type: 'text/html'})
+    blob = new Blob(["<html lang='en'><body><div style='height: 100%; display: flex;'><div style='width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0;'><p><h2>Preview unavailable.</h2></p></div></div></body></html>"], { type: 'text/html' })
   }
   result.src = URL.createObjectURL(blob)
   return result

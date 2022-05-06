@@ -11,6 +11,7 @@ import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedM
 import Vuex from 'vuex'
 import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
+
 Vue.directive('observe-visibility', ObserveVisibility)
 
 Object.assign(console, window.log)
@@ -21,7 +22,7 @@ let createStore = () => {
   return new Vuex.Store({
     modules,
     plugins: [
-      createMapCachePersistedStateWrapper({throttle: 100}),
+      createMapCachePersistedStateWrapper({ throttle: 100 }),
       createMapCacheSharedMutationsWrapper(),
     ],
     strict: true
@@ -36,7 +37,7 @@ if (window.mapcache != null) {
 
   if (window.mapcache.createStorage != null) {
     let storeAttempts = 0
-    while (store == null && storeAttempts < 3){
+    while (store == null && storeAttempts < 3) {
       try {
         store = createStore()
         // eslint-disable-next-line no-unused-vars

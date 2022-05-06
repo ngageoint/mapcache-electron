@@ -1,7 +1,7 @@
-import {L} from '../../../lib/leaflet/vendor'
+import { L } from '../../../lib/leaflet/vendor'
 import EventBus from '../../../lib/vue/EventBus'
-import {OVERLAY_PANE_FEATURES} from '../../../lib/leaflet/map/panes/MapPanes'
-import {adjustColorForHighlight} from '../../../lib/util/style/CommonStyleUtilities'
+import { OVERLAY_PANE_FEATURES } from '../../../lib/leaflet/map/panes/MapPanes'
+import { adjustColorForHighlight } from '../../../lib/util/style/CommonStyleUtilities'
 
 export default {
   data () {
@@ -101,12 +101,30 @@ export default {
 
             this.hoveredFeature.eachLayer((layer) => {
               if (layer.feature.geometry.type !== 'Point' && layer.feature.geometry.type !== 'MultiPoint') {
-                layer.setStyle({color: newOutlineColor, opacity: newOpacity, fillColor: newFillColor, weight: newWeight, fillOpacity: newFillOpacity})
+                layer.setStyle({
+                  color: newOutlineColor,
+                  opacity: newOpacity,
+                  fillColor: newFillColor,
+                  weight: newWeight,
+                  fillOpacity: newFillOpacity
+                })
                 layer.on('mousedown', () => {
-                  layer.setStyle({color: pressedOutlineColor, opacity: newOpacity, fillColor: pressedFillColor, weight: newWeightMouseDown, fillOpacity: newFillOpacity})
+                  layer.setStyle({
+                    color: pressedOutlineColor,
+                    opacity: newOpacity,
+                    fillColor: pressedFillColor,
+                    weight: newWeightMouseDown,
+                    fillOpacity: newFillOpacity
+                  })
                 })
                 layer.on('mouseup', () => {
-                  layer.setStyle({color: newOutlineColor, opacity: newOpacity, fillColor: newFillColor, weight: newWeight, fillOpacity: newFillOpacity})
+                  layer.setStyle({
+                    color: newOutlineColor,
+                    opacity: newOpacity,
+                    fillColor: newFillColor,
+                    weight: newWeight,
+                    fillOpacity: newFillOpacity
+                  })
                 })
               }
               layer.on('click', () => {

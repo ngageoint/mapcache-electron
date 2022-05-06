@@ -8,7 +8,7 @@ export default class ElectronTileRenderer {
   cancelTileRequest
   tileIntersects
 
-  constructor(layer, isElectron = false) {
+  constructor (layer, isElectron = false) {
     this.layer = layer
     if (isElectron) {
       const { ipcRenderer } = require('electron')
@@ -23,7 +23,7 @@ export default class ElectronTileRenderer {
       }
 
       this.cancelTileRequest = (id) => {
-        ipcRenderer.send(CANCEL_TILE_REQUEST, {id: id})
+        ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
       }
 
       const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')

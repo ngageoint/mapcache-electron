@@ -5,14 +5,22 @@
     </v-card-title>
     <v-card-text>
       <v-card-subtitle>
-        Specify an existing GeoPackage or create a new one. Then you will be able to select a feature layer from that GeoPackage or create a new one.
+        Specify an existing GeoPackage or create a new one. Then you will be able to select a feature layer from that
+        GeoPackage or create a new one.
       </v-card-subtitle>
       <v-row no-gutters justify="start" align="baseline" class="ml-4 mr-4">
-        <v-col cols="11"><v-select :disabled="geopackageItems.length === 0" :label="geopackageItems.length > 0 ? 'Select a GeoPackage' : 'No GeoPackages exist, add a new one'" class="ml-2 mr-2" clearable v-model="geoPackageModel" :items="geopackageItems" persistent-hint hint="To create a new GeoPackage, press the + button."></v-select></v-col>
+        <v-col cols="11">
+          <v-select :disabled="geopackageItems.length === 0"
+                    :label="geopackageItems.length > 0 ? 'Select a GeoPackage' : 'No GeoPackages exist, add a new one'"
+                    class="ml-2 mr-2" clearable v-model="geoPackageModel" :items="geopackageItems" persistent-hint
+                    hint="To create a new GeoPackage, press the + button."></v-select>
+        </v-col>
         <v-col cols="1">
           <v-tooltip right :disabled="!project.showToolTips">
             <template v-slot:activator="{ on, attrs }">
-              <v-btn icon @click="addGeoPackage" v-bind="attrs" v-on="on"><v-icon color="primary">{{mdiPlus}}</v-icon></v-btn>
+              <v-btn icon @click="addGeoPackage" v-bind="attrs" v-on="on">
+                <v-icon color="primary">{{ mdiPlus }}</v-icon>
+              </v-btn>
             </template>
             <span>Create GeoPackage</span>
           </v-tooltip>
@@ -20,12 +28,18 @@
       </v-row>
       <v-row v-if="!addFeatureLayerMode" no-gutters justify="start" align="baseline" class="ml-4 mr-4 mt-4">
         <v-col cols="11">
-          <v-select clearable :disabled="geoPackageModel == null || featureLayers.length === 0" :label="featureLayers.length > 0 ? 'Select a feature layer' : 'No feature layers exist, add a new one'" class="ml-2 mr-2" v-model="featureTableModel" :items="featureLayers" persistent-hint hint="To create a new feature layer, press the + button."></v-select>
+          <v-select clearable :disabled="geoPackageModel == null || featureLayers.length === 0"
+                    :label="featureLayers.length > 0 ? 'Select a feature layer' : 'No feature layers exist, add a new one'"
+                    class="ml-2 mr-2" v-model="featureTableModel" :items="featureLayers" persistent-hint
+                    hint="To create a new feature layer, press the + button."></v-select>
         </v-col>
         <v-col cols="1">
           <v-tooltip right :disabled="!project.showToolTips">
             <template v-slot:activator="{ on, attrs }">
-              <v-btn :disabled="geoPackageModel == null" icon @click="enableAddFeatureLayerMode" v-bind="attrs" v-on="on"><v-icon color="primary">{{mdiPlus}}</v-icon></v-btn>
+              <v-btn :disabled="geoPackageModel == null" icon @click="enableAddFeatureLayerMode" v-bind="attrs"
+                     v-on="on">
+                <v-icon color="primary">{{ mdiPlus }}</v-icon>
+              </v-btn>
             </template>
             <span>Add feature layer</span>
           </v-tooltip>
@@ -34,13 +48,17 @@
       <v-row v-else no-gutters justify="start" align="baseline" class="ml-4 mr-4 mt-4">
         <v-col cols="10">
           <v-form v-on:submit.prevent v-model="newFeatureNameValid">
-            <v-text-field v-model="newFeatureTableName" :disabled="geoPackageModel == null" class="ml-2 mr-2" label="Type in feature layer name" :rules="featureTableRules"></v-text-field>
+            <v-text-field v-model="newFeatureTableName" :disabled="geoPackageModel == null" class="ml-2 mr-2"
+                          label="Type in feature layer name" :rules="featureTableRules"></v-text-field>
           </v-form>
         </v-col>
         <v-col cols="1">
           <v-tooltip right :disabled="!project.showToolTips">
             <template v-slot:activator="{ on, attrs }">
-              <v-btn :disabled="geoPackageModel == null" icon @click="addFeatureLayerMode = false" v-bind="attrs" v-on="on"><v-icon>{{mdiClose}}</v-icon></v-btn>
+              <v-btn :disabled="geoPackageModel == null" icon @click="addFeatureLayerMode = false" v-bind="attrs"
+                     v-on="on">
+                <v-icon>{{ mdiClose }}</v-icon>
+              </v-btn>
             </template>
             <span>Cancel</span>
           </v-tooltip>
@@ -48,7 +66,10 @@
         <v-col cols="1">
           <v-tooltip right :disabled="!project.showToolTips">
             <template v-slot:activator="{ on, attrs }">
-              <v-btn @click="handleAddFeatureLayer" :disabled="geoPackageModel == null || !newFeatureNameValid" icon v-bind="attrs" v-on="on"><v-icon color="primary">{{mdiCheck}}</v-icon></v-btn>
+              <v-btn @click="handleAddFeatureLayer" :disabled="geoPackageModel == null || !newFeatureNameValid" icon
+                     v-bind="attrs" v-on="on">
+                <v-icon color="primary">{{ mdiCheck }}</v-icon>
+              </v-btn>
             </template>
             <span>Save feature layer</span>
           </v-tooltip>
@@ -60,7 +81,8 @@
       <v-btn text @click="cancel">
         Cancel
       </v-btn>
-      <v-btn text color="primary" :disabled="!featureTableValid" @click="() => save(geoPackageModel, featureTableModel)">
+      <v-btn text color="primary" :disabled="!featureTableValid"
+             @click="() => save(geoPackageModel, featureTableModel)">
         Add feature
       </v-btn>
     </v-card-actions>
@@ -86,7 +108,7 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import {mdiPlus, mdiClose, mdiCheck} from '@mdi/js'
+import { mdiPlus, mdiClose, mdiCheck } from '@mdi/js'
 
 export default {
   props: {
@@ -146,13 +168,13 @@ export default {
     addGeoPackage () {
       window.mapcache.showSaveDialog({
         title: 'New GeoPackage',
-      }).then(({canceled, filePath}) => {
+      }).then(({ canceled, filePath }) => {
         if (!canceled && !isNil(filePath)) {
           if (!filePath.endsWith('.gpkg')) {
             filePath = filePath + '.gpkg'
           }
           if (!window.mapcache.fileExists(filePath)) {
-            window.mapcache.addGeoPackage({projectId: this.project.id, filePath: filePath}).then((geopackageId) => {
+            window.mapcache.addGeoPackage({ projectId: this.project.id, filePath: filePath }).then((geopackageId) => {
               if (geopackageId != null) {
                 this.lastAddedGeoPackageId = geopackageId
               }
@@ -167,13 +189,18 @@ export default {
       this.addFeatureLayer(this.newFeatureTableName.trim())
     },
     addFeatureLayer (tableName) {
-      window.mapcache.addFeatureTableToGeoPackage({projectId: this.project.id, geopackageId: this.geoPackageModel, tableName: tableName, featureCollection: { type: 'FeatureCollection', features: []}}).then(() => {
+      window.mapcache.addFeatureTableToGeoPackage({
+        projectId: this.project.id,
+        geopackageId: this.geoPackageModel,
+        tableName: tableName,
+        featureCollection: { type: 'FeatureCollection', features: [] }
+      }).then(() => {
         this.featureTableModel = tableName
         this.addFeatureLayerMode = false
         this.newFeatureTableName = ''
       })
     },
-    updateFeatureLayers(geopackageId) {
+    updateFeatureLayers (geopackageId) {
       this.featureLayers = this.getFeatureLayerItemsForGeoPackageId(geopackageId)
     },
     enableAddFeatureLayerMode () {

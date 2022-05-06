@@ -1,4 +1,4 @@
-import {SERVICE_TYPE} from '../../network/HttpUtilities'
+import { SERVICE_TYPE } from '../../network/HttpUtilities'
 import ArcGISFeatureServicePreprocessor from '../arcgis/ArcGISFeatureServicePreprocessor'
 import WebFeatureServicePreProcessor from '../wfs/WebFeatureServicePreProcessor'
 import OverpassPreProcessor from '../overpass/OverpassPreProcessor'

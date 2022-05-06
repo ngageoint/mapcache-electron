@@ -141,7 +141,8 @@ function getServiceProvider (capabilities) {
     serviceProvider.providerName = service[WMTS_TAGS.PROVIDER_NAME] ? service[WMTS_TAGS.PROVIDER_NAME][0] : ''
     try {
       serviceProvider.providerSite = service[WMTS_TAGS.PROVIDER_SITE] ? service[WMTS_TAGS.PROVIDER_SITE][0][WMTS_TAGS.DOLLAR_SIGN]['xlink:href'] : ''
-    } catch (e) {}
+    } catch (e) {
+    }
     serviceProvider.serviceContact = getServiceContact(service)
   }
   return serviceProvider
@@ -194,6 +195,7 @@ function getSupportedTileMatrixSets (l) {
   }
   return tmsList
 }
+
 function getBoundingBox (set) {
   let boundingBox
   let boundingBoxCRS
@@ -212,7 +214,7 @@ function getBoundingBox (set) {
       boundingBox[3] = parseFloat(upperCorner[1])
     }
   }
-  return {boundingBox, boundingBoxCRS}
+  return { boundingBox, boundingBoxCRS }
 }
 
 function convertCRSToEPSGCode (crs) {
@@ -271,7 +273,7 @@ function getTileMatrixSet (capabilities) {
       const tileMatrixSet = {}
       tileMatrixSet.identifier = set[WMTS_TAGS.IDENTIFIER] ? set[WMTS_TAGS.IDENTIFIER][0] : ''
       tileMatrixSet.supportedCRS = set[WMTS_TAGS.SUPPORTED_CRS] ? set[WMTS_TAGS.SUPPORTED_CRS][0] : ''
-      const {boundingBox, boundingBoxCRS} = getBoundingBox(set)
+      const { boundingBox, boundingBoxCRS } = getBoundingBox(set)
       if (boundingBox != null && boundingBoxCRS != null) {
         tileMatrixSet.boundingBox = boundingBox
         tileMatrixSet.boundingBoxCRS = boundingBoxCRS
@@ -293,7 +295,7 @@ function getResourceURL (layer, isHttps = false) {
       type: r[WMTS_TAGS.RESOURCE_TYPE],
       template: r[WMTS_TAGS.RESOURCE_TEMPLATE],
     }
-    if (isHttps && resource.template && resource.template.indexOf('https') === -1 ) {
+    if (isHttps && resource.template && resource.template.indexOf('https') === -1) {
       resource.template = resource.template.replace('http', 'https')
     }
   }
@@ -417,7 +419,7 @@ function getRecommendedEpsg (srsList) {
 
 // get the GetCapabilities URL
 function getWMTSCapabilitiesURL (wmtsUrl) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmtsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmtsUrl)
   queryParams['request'] = 'GetCapabilities'
   queryParams['version'] = '1.0.0'
   queryParams['service'] = 'WMTS'
@@ -425,7 +427,7 @@ function getWMTSCapabilitiesURL (wmtsUrl) {
 }
 
 function getBaseURL (wmtsUrl) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmtsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmtsUrl)
   if (queryParams['request']) {
     delete queryParams['request']
   }
@@ -449,7 +451,7 @@ function getTileRequestURL (wmtsUrl, layer, format, tileMatrixSet, tileMatrix, t
       .replace('{TileRow}', tileRow)
       .replace('{TileCol}', tileCol)
   } else {
-    let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmtsUrl)
+    let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmtsUrl)
     queryParams['service'] = 'WMTS'
     queryParams['request'] = 'GetTile'
     queryParams['version'] = '1.0.0'

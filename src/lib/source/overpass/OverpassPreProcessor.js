@@ -1,8 +1,9 @@
 import Preprocessor from '../preprocessing/Preprocessor'
-import {PROCESSING_STATES} from '../SourceProcessing'
+import { PROCESSING_STATES } from '../SourceProcessing'
 import EventBus from '../../vue/EventBus'
-import {mdiSteering} from '@mdi/js'
-import {METHOD} from '../../network/HttpUtilities'
+import { mdiSteering } from '@mdi/js'
+import { METHOD } from '../../network/HttpUtilities'
+
 /**
  * Handles the preprocessing of an Overpass request. This retrieves the feature data from the service before sending to
  * the server to be turned into a geopackage feature table.
@@ -26,13 +27,13 @@ export default class OverpassPreProcessor extends Preprocessor {
    * @param dp Number of decimal places to display.
    * @return Formatted string.
    */
-  humanFileSize(bytes, dp= 1) {
+  humanFileSize (bytes, dp = 1) {
     if (Math.abs(bytes) < 1024) {
       return bytes + ' B'
     }
     const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     let u = -1
-    const r = 10**dp;
+    const r = 10 ** dp;
 
     do {
       bytes /= 1024
@@ -76,7 +77,7 @@ export default class OverpassPreProcessor extends Preprocessor {
       if (error != null) {
         // check if error has to do with memory limit
         if (error.indexOf('RAM') !== 0) {
-          throw new Error ('Request too large. Try reducing the area of your request.')
+          throw new Error('Request too large. Try reducing the area of your request.')
         } else {
           throw new Error(error)
         }
@@ -104,7 +105,7 @@ export default class OverpassPreProcessor extends Preprocessor {
         throw new Error('User cancelled.')
       }
     }
-    return {bbox, count}
+    return { bbox, count }
   }
 
   elementCounter (string) {
@@ -173,7 +174,11 @@ export default class OverpassPreProcessor extends Preprocessor {
     await this.performQueryAndSaveToFile(query, streamId, elementsRead => {
       if (elementsRead / count > currentPercentage) {
         currentPercentage += stepSize
-        statusCallback({type: PROCESSING_STATES.PREPROCESSING, message: 'Downloading data', completionPercentage: 25 * currentPercentage})
+        statusCallback({
+          type: PROCESSING_STATES.PREPROCESSING,
+          message: 'Downloading data',
+          completionPercentage: 25 * currentPercentage
+        })
       }
     })
     return {
@@ -188,7 +193,7 @@ export default class OverpassPreProcessor extends Preprocessor {
    * @returns {*}
    */
   async preprocess (statusCallback) {
-    statusCallback({type: PROCESSING_STATES.PREPROCESSING, message: 'Requesting data', completionPercentage: 0})
+    statusCallback({ type: PROCESSING_STATES.PREPROCESSING, message: 'Requesting data', completionPercentage: 0 })
     this.source.fileData = await this.getAndSaveOverpassDataFile(statusCallback)
     return this.source
   }

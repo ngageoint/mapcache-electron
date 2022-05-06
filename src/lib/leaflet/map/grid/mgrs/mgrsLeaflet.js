@@ -1,5 +1,5 @@
 import merge from 'lodash/merge'
-import {zonesWithin} from './gzd/GZDZones'
+import { zonesWithin } from './gzd/GZDZones'
 
 function generateGridStyle (color = '#000', labelColor = '#000', opacity = 1.0, weight = 1) {
   return {
@@ -69,7 +69,7 @@ function defaultGridOptions (isDark = false) {
       maxZoom: 20,
       showLabel: true,
       gridLabelClassName: 'mgrs-gzd-label',
-      ...generateGridStyle(isDark ? '#FF4444ff' : 'red', isDark ? '#FF4444ff' : 'red',0.5,2.0)
+      ...generateGridStyle(isDark ? '#FF4444ff' : 'red', isDark ? '#FF4444ff' : 'red', 0.5, 2.0)
     },
     one_hundred_km: {
       minZoom: 6,
@@ -77,7 +77,7 @@ function defaultGridOptions (isDark = false) {
       precision: 100000,
       showLabel: true,
       gridLabelClassName: 'mgrs-100km-label',
-      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000ff', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000ff', '#000000ff', 0.5, 1.0)
     },
     ten_km: {
       minZoom: 10,
@@ -85,7 +85,7 @@ function defaultGridOptions (isDark = false) {
       precision: 10000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5, 1.0)
     },
     one_km: {
       minZoom: 13,
@@ -93,7 +93,7 @@ function defaultGridOptions (isDark = false) {
       precision: 1000,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5, 1.0)
     },
     one_hundred_meter: {
       minZoom: 16,
@@ -101,7 +101,7 @@ function defaultGridOptions (isDark = false) {
       precision: 100,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5, 1.0)
     },
     ten_meter: {
       minZoom: 19,
@@ -109,7 +109,7 @@ function defaultGridOptions (isDark = false) {
       precision: 10,
       showLabel: false,
       gridLabelClassName: '',
-      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5,1.0)
+      ...generateGridStyle(isDark ? '#ddddddaa' : '#000000aa', '#000000ff', 0.5, 1.0)
     }
   }
 }
@@ -249,7 +249,7 @@ function setupMGRSGrid (L) {
       const blocks = []
       const labelMarkers = []
       zones.forEach(zone => {
-        const {polygons, labels} = zone.polygonsAndLabelsInBounds(bounds, precision)
+        const { polygons, labels } = zone.polygonsAndLabelsInBounds(bounds, precision)
         polygons.forEach(polygon => {
           const latLngs = polygon.geometry.coordinates[0].map(coord => {
             return L.latLng(coord[1], coord[0])
@@ -280,7 +280,7 @@ function setupMGRSGrid (L) {
           })
         }
       })
-      return {blocks, labels: labelMarkers}
+      return { blocks, labels: labelMarkers }
 
     },
   })

@@ -40,6 +40,7 @@ function isXYZ (url) {
   const zIndex = url.toLowerCase().indexOf('{z}')
   return zIndex > -1 && zIndex < xIndex && xIndex < yIndex
 }
+
 function requiresSubdomains (url) {
   return url.toLowerCase().indexOf('{s}') > -1
 }

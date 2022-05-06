@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import {
   OPEN_EXTERNAL,
 } from '../electron/ipc/MapCacheIPC'
-import {environment} from '../env/env'
+import { environment } from '../env/env'
 
 const allowedOpenExternalLinks = []
 if (environment.geopackageUrl != null) {

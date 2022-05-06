@@ -47,7 +47,7 @@ const mutations = {
     })
     Object.assign(state, getDefaultState())
   },
-  migrateState (state, {migratedState}) {
+  migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
       Vue.delete(state, key)
     })
@@ -68,8 +68,8 @@ const actions = {
   resetState ({ commit }) {
     return commit('resetState')
   },
-  migrateState ({commit}, {migratedState}) {
-    commit('migrateState', {migratedState})
+  migrateState ({ commit }, { migratedState }) {
+    commit('migrateState', { migratedState })
   }
 }
 

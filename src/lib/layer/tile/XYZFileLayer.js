@@ -3,7 +3,7 @@ import { XYZ_FILE } from '../LayerTypes'
 
 export default class XYZFileLayer extends TileLayer {
   constructor (configuration = {}) {
-    super (configuration)
+    super(configuration)
     this.minZoom = configuration.minZoom
     this.maxZoom = configuration.maxZoom
   }

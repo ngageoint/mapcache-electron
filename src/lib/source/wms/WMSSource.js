@@ -10,6 +10,7 @@ export default class WMSSource extends Source {
     this.format = format
     this.withCredentials = withCredentials
   }
+
   async retrieveLayers (statusCallback) {
     statusCallback('Processing WMS server', 0)
     await this.sleep(250)

@@ -1,6 +1,6 @@
 import Preprocessor from '../preprocessing/Preprocessor'
-import {getLayerOutputFormat, getFeatureRequestURL} from '../../util/geoserver/GeoServiceUtilities'
-import {PROCESSING_STATES} from '../../../lib/source/SourceProcessing'
+import { getLayerOutputFormat, getFeatureRequestURL } from '../../util/geoserver/GeoServiceUtilities'
+import { PROCESSING_STATES } from '../../../lib/source/SourceProcessing'
 import { COLON_DELIMITER, WORLD_GEODETIC_SYSTEM_CODE } from '../../projection/ProjectionConstants'
 
 /**
@@ -81,7 +81,11 @@ export default class WebFeatureServicePreProcessor extends Preprocessor {
       const streamId = window.mapcache.openFileStream(filePath)
       layer.filePath = filePath
       await this.getAndSaveLayerFeaturesToFile(url, layer, outputFormat, srs, withCredentials, streamId)
-      statusCallback({type: PROCESSING_STATES.PREPROCESSING, message: 'Requesting data', completionPercentage: 25 * ((i + 1) / layers.length)})
+      statusCallback({
+        type: PROCESSING_STATES.PREPROCESSING,
+        message: 'Requesting data',
+        completionPercentage: 25 * ((i + 1) / layers.length)
+      })
     }
   }
 

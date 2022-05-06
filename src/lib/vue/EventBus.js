@@ -1,6 +1,6 @@
 // event-bus.js
 import Vue from 'vue'
-import {createUniqueID} from '../util/UniqueIDUtilities'
+import { createUniqueID } from '../util/UniqueIDUtilities'
 
 const EventBus = new Vue()
 
@@ -43,7 +43,7 @@ EventBus.EventTypes = Events
  * @return {Promise<unknown>}
  */
 EventBus.requestUserConfirmation = (title, message, icon) => {
-  return new Promise (resolve => {
+  return new Promise(resolve => {
     const id = createUniqueID()
     EventBus.$on(Events.CONFIRMATION_MESSAGE_RESPONSE(id), (approved) => {
       resolve(approved)

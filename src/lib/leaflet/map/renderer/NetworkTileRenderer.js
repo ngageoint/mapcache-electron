@@ -42,7 +42,10 @@ export default class NetworkTileRenderer {
       const { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } = require('../../../util/tile/TileBoundingBoxUtils')
       this.getWebMercatorBoundingBoxFromXYZ = getWebMercatorBoundingBoxFromXYZ
       this.tileIntersectsXYZ = tileIntersectsXYZ
-      const { reprojectWebMercatorBoundingBox, convertToWebMercator } = require('../../../projection/ProjectionUtilities')
+      const {
+        reprojectWebMercatorBoundingBox,
+        convertToWebMercator
+      } = require('../../../projection/ProjectionUtilities')
       this.reprojectWebMercatorBoundingBox = reprojectWebMercatorBoundingBox
       this.convertToWebMercator = convertToWebMercator
       this.ipcRenderer = require('electron').ipcRenderer
@@ -63,21 +66,21 @@ export default class NetworkTileRenderer {
   setError (error) {
     if (error.status === TIMEOUT_STATUS) {
       this.error = error
-      window.mapcache.setSourceError({id: this.layer.id, error: this.error})
+      window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
     } else if (error.response && (error.response.status >= 400)) {
       this.error = {
         status: error.response.status,
         statusText: error.response.statusText,
         authType: getAuthenticationMethod(error.response)
       }
-      window.mapcache.setSourceError({id: this.layer.id, error: this.error})
+      window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
     } else if (error.request) {
       if (navigator.onLine) {
         this.error = {
           status: -1,
           statusText: 'Unable to reach server.'
         }
-        window.mapcache.setSourceError({id: this.layer.id, error: this.error})
+        window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
       } else {
         // notify there may be a network error
         EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
@@ -104,7 +107,7 @@ export default class NetworkTileRenderer {
         window.mapcache.requestTileCompilation(request).then(result => {
           resolve(result.base64Image)
         }).catch(error => {
-          reject (error)
+          reject(error)
         })
       }
     })
@@ -129,7 +132,7 @@ export default class NetworkTileRenderer {
       callback(this.error, null)
     } else {
       try {
-        let {x, y, z} = coords
+        let { x, y, z } = coords
         if (!this.tileIntersectsXYZ(x, y, z, this.layer.extent)) {
           rendered = true
           callback(null, null)
@@ -153,7 +156,10 @@ export default class NetworkTileRenderer {
           requests.forEach(request => {
             promises.push(new Promise(resolve => {
               const cancellableTileRequest = new CancellableTileRequest(this.isElectron)
-              cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials, size).then(({ dataUrl, error }) => {
+              cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeoutMs, this.layer.withCredentials, size).then(({
+                                                                                                                                                                        dataUrl,
+                                                                                                                                                                        error
+                                                                                                                                                                      }) => {
                 resolve({ dataUrl, error, request })
               })
             }))
@@ -164,7 +170,7 @@ export default class NetworkTileRenderer {
           // handle results
           results.forEach(result => {
             if (result.status === 'fulfilled') {
-              const {dataUrl, error, request} = result.value
+              const { dataUrl, error, request } = result.value
               if (!error && this.dataUrlValid(dataUrl)) {
                 request.dataUrl = dataUrl
                 tiles.push(request)

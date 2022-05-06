@@ -1,6 +1,6 @@
 import axios from 'axios'
 import isNil from 'lodash/isNil'
-import {isAuthenticationErrorResponse, isNotFoundError, USER_CANCELLED_MESSAGE} from './HttpUtilities'
+import { isAuthenticationErrorResponse, isNotFoundError, USER_CANCELLED_MESSAGE } from './HttpUtilities'
 
 /**
  * Cancellable Service Request allows a user to cancel an ongoing request.

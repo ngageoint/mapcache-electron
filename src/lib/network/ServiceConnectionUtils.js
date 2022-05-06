@@ -2,7 +2,13 @@ import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
 import { getBaseUrlAndQueryParams } from './URLUtilities'
-import { getGetCapabilitiesURL, getWMSInfo, getWFSInfo, WMS_VERSIONS, WFS_VERSIONS } from '../util/geoserver/GeoServiceUtilities'
+import {
+  getGetCapabilitiesURL,
+  getWMSInfo,
+  getWFSInfo,
+  WMS_VERSIONS,
+  WFS_VERSIONS
+} from '../util/geoserver/GeoServiceUtilities'
 import { generateUrlForTile, fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
 import CancellableServiceRequest from './CancellableServiceRequest'
 import AxiosRequestScheduler from './AxiosRequestScheduler'
@@ -20,7 +26,7 @@ import {
   isNotFoundError
 } from './HttpUtilities'
 import { parseStringPromise } from 'xml2js'
-import {getWMTSCapabilitiesURL, getWMTSInfo} from '../util/wmts/WMTSUtilities'
+import { getWMTSCapabilitiesURL, getWMTSInfo } from '../util/wmts/WMTSUtilities'
 
 /**
  * These functions handles connections to supported GIS services
@@ -107,9 +113,9 @@ async function testWebMapTileServiceConnection (serviceUrl, options) {
         wmtsInfo: wmtsInfo
       }
       if (wmtsInfo.serviceIdentification != null) {
-       if (wmtsInfo.serviceIdentification.title != null) {
-         serviceInfo.title = wmtsInfo.serviceIdentification.title
-       }
+        if (wmtsInfo.serviceIdentification.title != null) {
+          serviceInfo.title = wmtsInfo.serviceIdentification.title
+        }
         if (wmtsInfo.serviceIdentification.abstract != null) {
           serviceInfo.abstract = wmtsInfo.serviceIdentification.abstract
         }
@@ -123,7 +129,7 @@ async function testWebMapTileServiceConnection (serviceUrl, options) {
     } else {
       error = 'No response.'
     }
-    return {serviceInfo, error, withCredentials}
+    return { serviceInfo, error, withCredentials }
   })
 
   serviceInfo = result.serviceInfo
@@ -132,8 +138,9 @@ async function testWebMapTileServiceConnection (serviceUrl, options) {
   } else if (isNil(error) || error.status < 0) {
     error = result.error
   }
-  return {serviceInfo, error, withCredentials}
+  return { serviceInfo, error, withCredentials }
 }
+
 /**
  * Tests a WMS connection
  * @param serviceUrl
@@ -171,7 +178,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       } else {
         error = 'No response.'
       }
-      return {serviceInfo, error, withCredentials}
+      return { serviceInfo, error, withCredentials }
     })
     serviceInfo = result.serviceInfo
     if (!isNil(serviceInfo)) {
@@ -184,7 +191,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       break
     }
   }
-  return {serviceInfo, error, withCredentials}
+  return { serviceInfo, error, withCredentials }
 }
 
 /**
@@ -221,7 +228,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
         unsupportedServiceLayers: []
       }
       withCredentials = cancellableServiceRequest.requiredCredentials()
-      return {serviceInfo, error, withCredentials}
+      return { serviceInfo, error, withCredentials }
     })
     serviceInfo = result.serviceInfo
     if (!isNil(serviceInfo)) {
@@ -234,7 +241,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
       break
     }
   }
-  return {serviceInfo, error, withCredentials}
+  return { serviceInfo, error, withCredentials }
 }
 
 async function testXYZin4326 (serviceUrl, subdomains, options) {
@@ -330,7 +337,7 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
       }
       requiredCredentials = cancellableServiceRequest.requiredCredentials()
     }
-    return {serviceInfo, error, withCredentials: requiredCredentials}
+    return { serviceInfo, error, withCredentials: requiredCredentials }
   })
 }
 
@@ -365,10 +372,20 @@ async function testArcGISFeatureServiceConnection (serviceUrl, options) {
       if (!isNil(layer.parentLayerId) && layer.parentLayerId !== -1) {
         subtitles.push(layer.name)
       }
-      return {id: layer.id, name: layer.name, title: title, subtitles: subtitles, arcGIS: true, version: response.data.currentVersion, geometryType: layer.geometryType, minScale: layer.minScale, maxScale: layer.maxScale}
+      return {
+        id: layer.id,
+        name: layer.name,
+        title: title,
+        subtitles: subtitles,
+        arcGIS: true,
+        version: response.data.currentVersion,
+        geometryType: layer.geometryType,
+        minScale: layer.minScale,
+        maxScale: layer.maxScale
+      }
     })
     serviceInfo.unsupportedServiceLayers = []
-    return {serviceInfo, error, withCredentials: cancellableServiceRequest.requiredCredentials()}
+    return { serviceInfo, error, withCredentials: cancellableServiceRequest.requiredCredentials() }
   })
 }
 
@@ -380,7 +397,7 @@ async function testArcGISFeatureServiceConnection (serviceUrl, options) {
  * @returns {Promise<Object>}
  */
 async function testServiceConnection (serviceUrl, serviceType, options) {
-  let result = {serviceInfo: undefined, error: undefined, withCredentials: undefined}
+  let result = { serviceInfo: undefined, error: undefined, withCredentials: undefined }
   try {
     // validate url
     if (!isNil(serviceUrl) && !isEmpty(serviceUrl) && !isNil(serviceType) && serviceType !== -1) {
@@ -397,16 +414,22 @@ async function testServiceConnection (serviceUrl, serviceType, options) {
         case SERVICE_TYPE.WMTS:
           result = testWebMapTileServiceConnection(serviceUrl, options)
           break
-       case SERVICE_TYPE.ARCGIS_FS:
+        case SERVICE_TYPE.ARCGIS_FS:
           result = testArcGISFeatureServiceConnection(serviceUrl, options)
           break
         default:
-          result = {serviceInfo: undefined, error: {status: -1, statusText: 'Service not supported. Supported services include WMS, WFS, XYZ, WMTS and ArcGIS FS'}}
+          result = {
+            serviceInfo: undefined,
+            error: {
+              status: -1,
+              statusText: 'Service not supported. Supported services include WMS, WFS, XYZ, WMTS and ArcGIS FS'
+            }
+          }
           break
       }
     }
   } catch (e) {
-    result = {serviceInfo: undefined, error: {status: -1, statusText: e}}
+    result = { serviceInfo: undefined, error: { status: -1, statusText: e } }
   }
   return result
 }
@@ -442,7 +465,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
     if (!isNil(timeout) && timeout > 0) {
       options.timeout = timeout
     }
-    let {serviceInfo, error, withCredentials} = await testServiceConnection(source.filePath, serviceType, options)
+    let { serviceInfo, error, withCredentials } = await testServiceConnection(source.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true
       // verify that this source is still valid when compared to the service info
@@ -450,7 +473,10 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
         const layers = source.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
         if (layers.length !== source.layers.length) {
           const missingLayers = source.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
-          error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
+          error = {
+            status: 400,
+            statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')
+          }
           valid = false
         }
       }
@@ -459,7 +485,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
         sourceClone.error = undefined
         sourceClone.visible = true
         sourceClone.withCredentials = withCredentials
-        updateDataSource({projectId: projectId, source: sourceClone})
+        updateDataSource({ projectId: projectId, source: sourceClone })
         success = true
       }
     }
@@ -467,7 +493,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
       let sourceClone = cloneDeep(source)
       sourceClone.error = error
       sourceClone.visible = false
-      updateDataSource({projectId: projectId, source: sourceClone})
+      updateDataSource({ projectId: projectId, source: sourceClone })
     }
   }
   return success
@@ -497,7 +523,11 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
     if (!isNil(baseMap.layerConfiguration.withCredentials)) {
       options.withCredentials = baseMap.layerConfiguration.withCredentials
     }
-    let {serviceInfo, error, withCredentials} = await testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
+    let {
+      serviceInfo,
+      error,
+      withCredentials
+    } = await testServiceConnection(baseMap.layerConfiguration.filePath, serviceType, options)
     if (!isNil(serviceInfo)) {
       let valid = true
       // verify that this baseMap is still valid when compared to the service info
@@ -505,7 +535,10 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
         const layers = baseMap.layerConfiguration.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
         if (layers.length !== baseMap.layerConfiguration.layers.length) {
           const missingLayers = baseMap.layerConfiguration.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
-          error = {status: 400, statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')}
+          error = {
+            status: 400,
+            statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')
+          }
           valid = false
         }
       }

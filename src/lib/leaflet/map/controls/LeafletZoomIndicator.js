@@ -1,4 +1,4 @@
-import {L} from '../../vendor'
+import { L } from '../../vendor'
 
 export default class LeafletZoomIndicator extends L.Control {
   constructor (options) {

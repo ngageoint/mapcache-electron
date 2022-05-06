@@ -1,4 +1,12 @@
-import { BoundingBox, FeatureTableStyles, GeometryType, GeoPackage, GeoPackageDataType, IconTable, MediaTable } from '@ngageoint/geopackage'
+import {
+  BoundingBox,
+  FeatureTableStyles,
+  GeometryType,
+  GeoPackage,
+  GeoPackageDataType,
+  IconTable,
+  MediaTable
+} from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import { performSafeGeoPackageOperation, sleep, deleteGeoPackageTable } from './GeoPackageCommon'
 import {
@@ -56,7 +64,7 @@ function getUserFriendlyColumnTypeName (dataType) {
  * @param addField
  * @returns {Promise<{targetColumns: {}, tableColumnMapping: {}}>}
  */
-async function  addTargetColumns (layers, addField) {
+async function addTargetColumns (layers, addField) {
   // determine the target table's columns
   const targetColumns = {}
   const tableColumnMapping = {}
@@ -132,7 +140,7 @@ async function  addTargetColumns (layers, addField) {
     })
   }
 
-  return {targetColumns, tableColumnMapping}
+  return { targetColumns, tableColumnMapping }
 }
 
 /**
@@ -204,7 +212,20 @@ async function buildFeatureLayer (configuration, statusCallback) {
       await sleep(1000)
 
       // start streaming build for tableName
-      const {adjustBatchSize, addField, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, addMediaAttachment, setTableStyle, setTableIcon, processBatch, done} = await _createFeatureTableWithFeatureStream(gp, tableName)
+      const {
+        adjustBatchSize,
+        addField,
+        addFeature,
+        addStyle,
+        addIcon,
+        setFeatureStyle,
+        setFeatureIcon,
+        addMediaAttachment,
+        setTableStyle,
+        setTableIcon,
+        processBatch,
+        done
+      } = await _createFeatureTableWithFeatureStream(gp, tableName)
 
       statusCallback('Merging and adding fields', 10.0)
       currentStatusPercentage = 10.0
@@ -227,7 +248,7 @@ async function buildFeatureLayer (configuration, statusCallback) {
       const isSingleLayer = layers.length === 1
 
       // merge columns from source tables and add them to target table
-      const {tableColumnMapping} = await addTargetColumns(layers, addField)
+      const { tableColumnMapping } = await addTargetColumns(layers, addField)
 
       // get feature counts
       const tableFeatureCountMap = await getTableFeatureCounts(layers, boundingBoxFilter)
@@ -392,7 +413,7 @@ async function buildFeatureLayer (configuration, statusCallback) {
               const targetId = addFeature(feature)
 
               // query for media and add
-              mediaRelations.forEach(({mediaTable, mappingDao}) => {
+              mediaRelations.forEach(({ mediaTable, mappingDao }) => {
                 const mappings = mappingDao.queryByBaseId(sourceId)
                 for (let mapping of mappings) {
                   const sourceMediaRowId = mapping.related_id
@@ -480,7 +501,8 @@ async function buildFeatureLayer (configuration, statusCallback) {
       try {
         await deleteGeoPackageTable(configuration.path, configuration.table)
         // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e) {
+      }
       statusCallback('Failed to build feature layer', 100, error.message)
       await sleep(2000)
     }

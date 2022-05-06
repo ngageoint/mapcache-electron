@@ -181,6 +181,6 @@ export default class GridZoneDesignator {
       }
     }
 
-    return {polygons, labels}
+    return { polygons, labels }
   }
 }

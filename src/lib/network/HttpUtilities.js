@@ -25,7 +25,7 @@ const TIMEOUT_MESSAGE = 'Operation timed out.'
 const TIMEOUT_STATUS = -2
 const USER_CANCELLED_STATUS = -3
 
-function getAuthType(authString) {
+function getAuthType (authString) {
   let credentialType = CREDENTIAL_TYPE_NONE
   if (authString.toLowerCase() === 'basic') {
     credentialType = CREDENTIAL_TYPE_BASIC
@@ -40,7 +40,7 @@ function getAuthType(authString) {
  * @param serviceType
  * @returns {string}
  */
-function getServiceName(serviceType) {
+function getServiceName (serviceType) {
   let serviceName = 'Unknown'
 
   switch (serviceType) {
@@ -66,7 +66,7 @@ function getServiceName(serviceType) {
   return serviceName
 }
 
-function getServiceType(serviceName) {
+function getServiceType (serviceName) {
   let serviceType = -1
   if (serviceName === 'WMS') {
     serviceType = SERVICE_TYPE.WMS
@@ -76,7 +76,7 @@ function getServiceType(serviceName) {
     serviceType = SERVICE_TYPE.XYZ
   } else if (serviceName === 'WMTS') {
     serviceType = SERVICE_TYPE.WMTS
-  }  else if (serviceName === 'ArcGIS FS') {
+  } else if (serviceName === 'ArcGIS FS') {
     serviceType = SERVICE_TYPE.ARCGIS_FS
   }
   return serviceType
@@ -154,15 +154,16 @@ function isTimeoutError (error) {
  * @param error
  * @returns {boolean}
  */
-function isMapCacheTimeoutError(error) {
+function isMapCacheTimeoutError (error) {
   return !isNil(error) && !isNil(error.message) && error.message.toLowerCase().indexOf('timeout') !== -1
 }
+
 /**
  * Tests if error is a mapcache timeout (this timeout occurs when a response from the server has not been reached after waiting a user specified amount of time)
  * @param error
  * @returns {boolean}
  */
-function isMapCacheUserCancellationError(error) {
+function isMapCacheUserCancellationError (error) {
   return !isNil(error) && !isNil(error.message) && error.message === USER_CANCELLED_MESSAGE
 }
 

@@ -14,6 +14,7 @@ import {
   WORKER_BUILD_TILE_LAYER_STATUS,
   WORKER_READY
 } from '../electron/ipc/MapCacheIPC'
+
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
@@ -37,7 +38,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   addListeners: () => {
     ipcRenderer.on(WORKER_BUILD_FEATURE_LAYER, (e, data) => {
       const statusCallback = (message, progress, error) => {
-        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_STATUS(data.taskId), {message, progress, error})
+        ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_STATUS(data.taskId), { message, progress, error })
       }
       buildFeatureLayer(data.configuration, statusCallback).then((result) => {
         ipcRenderer.send(WORKER_BUILD_FEATURE_LAYER_COMPLETED(data.taskId), result)

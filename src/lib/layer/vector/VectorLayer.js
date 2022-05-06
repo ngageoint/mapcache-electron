@@ -43,7 +43,7 @@ export default class VectorLayer extends Layer {
     }
   }
 
-  getRepaintFields() {
+  getRepaintFields () {
     return ['count'].concat(super.getRepaintFields())
   }
 

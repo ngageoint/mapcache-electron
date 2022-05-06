@@ -1,12 +1,12 @@
 import fs from 'fs'
-import {chain} from 'stream-chain'
-import {parser} from 'stream-json'
-import {pick} from 'stream-json/filters/Pick'
-import {streamArray} from 'stream-json/streamers/StreamArray'
+import { chain } from 'stream-chain'
+import { parser } from 'stream-json'
+import { pick } from 'stream-json/filters/Pick'
+import { streamArray } from 'stream-json/streamers/StreamArray'
 import path from 'path'
 import polygonConfiguration from './polygon_features.json'
 import rewind from '@mapbox/geojson-rewind'
-import {rmFile} from '../file/FileUtilities'
+import { rmFile } from '../file/FileUtilities'
 import {
   getOrCreateDb,
   addNodeToBatch,
@@ -179,7 +179,7 @@ function _isPolygonFeature (tags) {
  */
 function join (ways) {
   const _first = arr => arr[0]
-  const _last  = arr => arr[arr.length - 1]
+  const _last = arr => arr[arr.length - 1]
   const _fitTogether = (n1, n2) => n1 != null && n2 != null && n1.id === n2.id
   // stolen from iD/relation.js
   let joined = [], current, first, last, i, how, what;
@@ -188,23 +188,23 @@ function join (ways) {
     joined.push(current)
     while (ways.length && !_fitTogether(_first(current), _last(current))) {
       first = _first(current)
-      last  = _last(current)
+      last = _last(current)
       for (i = 0; i < ways.length; i++) {
         what = ways[i].nodes
         if (_fitTogether(last, _first(what))) {
-          how  = current.push
+          how = current.push
           what = what.slice(1)
           break
         } else if (_fitTogether(last, _last(what))) {
-          how  = current.push
+          how = current.push
           what = what.slice(0, -1).reverse()
           break
         } else if (_fitTogether(first, _last(what))) {
-          how  = current.unshift
+          how = current.unshift
           what = what.slice(0, -1)
           break
         } else if (_fitTogether(first, _first(what))) {
-          how  = current.unshift
+          how = current.unshift
           what = what.slice(1).reverse()
           break
         } else {
@@ -241,7 +241,7 @@ function _constructPointFeature (node) {
  * @return {boolean}
  * @private
  */
-function _hasInterestingTags(t, ignore_tags) {
+function _hasInterestingTags (t, ignore_tags) {
   if (typeof ignore_tags !== "object") {
     ignore_tags = {}
   }
@@ -267,7 +267,7 @@ function _constructMultiLineString (db, rel) {
     _internal_ways_array.pop()
   }
 
-  relationWayIterator (db, rel, (way) => {
+  relationWayIterator(db, rel, (way) => {
     _internal_ways_array.push(way)
   })
 
@@ -342,7 +342,7 @@ function _constructMultiLineString (db, rel) {
  * @return {{geometry: {coordinates: *[][], type: string}, id: string, type: string, properties: {}}|{geometry: {coordinates: *[], type: string}, id: string, type: string, properties: {}}}
  * @private
  */
-function _constructMultiPolygon(db, rel) {
+function _constructMultiPolygon (db, rel) {
   // clean these up
   while (_internal_outer_ways_array.length > 0) {
     _internal_outer_ways_array.pop()
@@ -365,7 +365,7 @@ function _constructMultiPolygon(db, rel) {
   let mp_type = 'relation'
   let mp_tags = rel.tags
   // determine if it is a simple multi polygon or not
-  const simpleMP = outerCount === 1 && !_hasInterestingTags(rel.tags, {'type': true})
+  const simpleMP = outerCount === 1 && !_hasInterestingTags(rel.tags, { 'type': true })
   if (simpleMP) {
     mp_id = _internal_outer_ways_array[0].id
     mp_type = 'way'
@@ -634,7 +634,7 @@ function processWays (db, featureCallback) {
  * @return {boolean|*}
  * @private
  */
-function _convertToGeoJSON(db, featureCallback) {
+function _convertToGeoJSON (db, featureCallback) {
   processNodes(db, featureCallback)
   processRelations(db, featureCallback)
   processWays(db, featureCallback)
@@ -695,6 +695,7 @@ function setup () {
   _internal_inner_ways_array = []
   _internal_ways_array = []
 }
+
 function cleanup () {
   coordinatePool = undefined
   coordinateArrayPool = undefined
@@ -718,7 +719,7 @@ function cleanup () {
  * @param adjustBatchSize (set the batch size for better processing speed)
  * @return {Promise<unknown>}
  */
-async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile, completionPercentageCallback, adjustBatchSize) {
+async function streamOverpassJsonFile (filePath, featureCallback, elementsInFile, completionPercentageCallback, adjustBatchSize) {
   const dbFile = path.join(path.dirname(filePath), 'osm.db')
   const db = getOrCreateDb(dbFile)
 
@@ -728,13 +729,14 @@ async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile,
   let featuresProcessed = 0
 
 
-  async function streamType (type, onElement, done = () => {}) {
+  async function streamType (type, onElement, done = () => {
+  }) {
     return new Promise((resolve, reject) => {
       const stream = fs.createReadStream(filePath)
       const pipeline = chain([
         stream,
         parser(),
-        pick({filter: 'elements'}),
+        pick({ filter: 'elements' }),
         streamArray()
       ])
       pipeline.on('error', err => {
@@ -770,7 +772,8 @@ async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile,
       closeDb(db)
       rmFile(dbFile)
       // eslint-disable-next-line no-empty, no-unused-vars
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 
   try {
@@ -792,7 +795,7 @@ async function streamOverpassJsonFile(filePath, featureCallback, elementsInFile,
 
     await streamType('relation', (data) => {
       const value = removeUninterestingData(data.value)
-      value.isInteresting = _hasInterestingTags(value.tags, {type: true})
+      value.isInteresting = _hasInterestingTags(value.tags, { type: true })
       writeRelationToDb(value, _hasInterestingTags)
     })
 

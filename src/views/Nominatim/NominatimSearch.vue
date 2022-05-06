@@ -25,7 +25,7 @@
                       icon
                       :color="applyViewBox ? 'primary' : ''"
                       @click="toggleViewBoxFilter">
-                    <v-icon>{{applyViewBox ? '$mapFilterOn' : '$mapFilterOff'}}</v-icon>
+                    <v-icon>{{ applyViewBox ? '$mapFilterOn' : '$mapFilterOff' }}</v-icon>
                   </v-btn>
                 </template>
                 <span>Restrict search to visible area of map</span>
@@ -33,7 +33,10 @@
               <v-divider inset vertical style="margin-bottom: 8px;"></v-divider>
               <v-tooltip right :disabled="!project.showToolTips">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn :disabled="disableSearch" v-bind="attrs" v-on="on" class="ml-1" style="margin-right: -8px;" color="primary" icon @click="runSearch"><v-icon>{{ mdiMagnify }}</v-icon></v-btn>
+                  <v-btn :disabled="disableSearch" v-bind="attrs" v-on="on" class="ml-1" style="margin-right: -8px;"
+                         color="primary" icon @click="runSearch">
+                    <v-icon>{{ mdiMagnify }}</v-icon>
+                  </v-btn>
                 </template>
                 <span>Search</span>
               </v-tooltip>
@@ -48,7 +51,7 @@
 <script>
 import { mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
-import {queryNominatim} from '../../lib/util/nominatim/NominatimUtilities'
+import { queryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
 
 export default {
   name: 'NominatimSearch',
@@ -111,7 +114,7 @@ export default {
     })
     EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
   },
-  beforeDestroy() {
+  beforeDestroy () {
     EventBus.$off([EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS])
   }
 }

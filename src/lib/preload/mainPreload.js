@@ -21,7 +21,7 @@ import {
   SHOW_PROJECT
 } from '../electron/ipc/MapCacheIPC'
 import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
-import {environment} from '../env/env'
+import { environment } from '../env/env'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -45,19 +45,19 @@ contextBridge.exposeInMainWorld('log', log.functions)
 let storage
 
 contextBridge.exposeInMainWorld('mapcache', {
-  connect(payload) {
+  connect (payload) {
     ipcRenderer.send(IPC_EVENT_CONNECT, payload)
   },
-  notifyMain(payload) {
+  notifyMain (payload) {
     ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
   },
-  onNotifyRenderers(handler) {
+  onNotifyRenderers (handler) {
     ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
   },
-  createStorage(name) {
+  createStorage (name) {
     storage = new Store({ name: name })
   },
-  getState(key) {
+  getState (key) {
     return storage.get(key)
   },
   getUserDataDirectory,

@@ -21,7 +21,7 @@ export default class WFSSource extends Source {
     let fileName = this.sourceName + '.gpkg'
     let filePath = path.join(layerDirectory, fileName)
 
-    const {addFeature, done} = await streamingGeoPackageBuild(filePath, this.sourceName)
+    const { addFeature, done } = await streamingGeoPackageBuild(filePath, this.sourceName)
     const fileCompleteStatusStepSize = 75 / this.layers.length
     for (let i = 0; i < this.layers.length; i++) {
       const layer = this.layers[i]

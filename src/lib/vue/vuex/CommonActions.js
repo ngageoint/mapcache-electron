@@ -1,8 +1,8 @@
 import store from '../../../store'
 import { rmDirAsync } from '../../util/file/FileUtilities'
 
-function setDataSourceVisible ({projectId, sourceId, visible}) {
-  return store.dispatch('Projects/setDataSourceVisible', {projectId, sourceId, visible})
+function setDataSourceVisible ({ projectId, sourceId, visible }) {
+  return store.dispatch('Projects/setDataSourceVisible', { projectId, sourceId, visible })
 }
 
 async function deleteProject (project) {

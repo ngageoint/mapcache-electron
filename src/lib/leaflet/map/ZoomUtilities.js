@@ -36,7 +36,7 @@ async function getZoomToOptionsForGeoPackageTable (geopackage, table) {
     extent = geopackage.tables.features[table].extent
   }
   if (extent == null) {
-   extent =  await window.mapcache.getBoundingBoxForTable(geopackage.path, table)
+    extent = await window.mapcache.getBoundingBoxForTable(geopackage.path, table)
   }
   return {
     extent,
@@ -53,22 +53,22 @@ function zoomToExtent (extent, minZoom = 0, maxZoom = 20) {
 
 
 function zoomToSource (dataSource) {
-  const {extent, minZoom, maxZoom} = getZoomToOptionsForDataSource(dataSource)
+  const { extent, minZoom, maxZoom } = getZoomToOptionsForDataSource(dataSource)
   zoomToExtent(extent, minZoom, maxZoom)
 }
 
 function zoomToBaseMap (baseMap) {
-  const {extent, minZoom, maxZoom} = getZoomToOptionsForBaseMap(baseMap)
+  const { extent, minZoom, maxZoom } = getZoomToOptionsForBaseMap(baseMap)
   zoomToExtent(extent, minZoom, maxZoom)
 }
 
 async function zoomToGeoPackageTable (geopackage, table) {
-  const {extent, minZoom, maxZoom} = await getZoomToOptionsForGeoPackageTable(geopackage, table)
+  const { extent, minZoom, maxZoom } = await getZoomToOptionsForGeoPackageTable(geopackage, table)
   zoomToExtent(extent, minZoom, maxZoom)
 }
 
 async function zoomToGeoPackageFeature (path, table, featureId) {
-  window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function ({extent, type}) {
+  window.mapcache.getBoundingBoxForFeature(path, table, featureId).then(function ({ extent, type }) {
     zoomToExtent(extent, 0, type === 'Point' ? 16 : 18)
   })
 }

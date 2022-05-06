@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">{{mdiPencil}}</v-icon>
+      <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
       Edit zoom levels
     </v-card-title>
     <v-card-text>
@@ -10,10 +10,16 @@
       </v-card-subtitle>
       <v-container>
         <v-row no-gutters>
-          <number-picker ref="minZoom" :number="Number(minZoom)" @update-valid="(valid) => {this.editedMinZoomValid = valid}" @update-number="(val) => {this.editedMinZoom = val}" label="Minimum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+          <number-picker ref="minZoom" :number="Number(minZoom)"
+                         @update-valid="(valid) => {this.editedMinZoomValid = valid}"
+                         @update-number="(val) => {this.editedMinZoom = val}" label="Minimum zoom" :min="Number(0)"
+                         :max="Number(20)" :step="Number(1)"/>
         </v-row>
         <v-row no-gutters>
-          <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-valid="(valid) => {this.editedMaxZoomValid = valid}" @update-number="(val) => {this.editedMaxZoom = val}" label="Maximum zoom" :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+          <number-picker ref="maxZoom" :number="Number(maxZoom)"
+                         @update-valid="(valid) => {this.editedMaxZoomValid = valid}"
+                         @update-number="(val) => {this.editedMaxZoom = val}" label="Maximum zoom" :min="Number(0)"
+                         :max="Number(20)" :step="Number(1)"/>
         </v-row>
       </v-container>
     </v-card-text>
@@ -42,31 +48,31 @@ import {
 import NumberPicker from './NumberPicker'
 
 export default {
-    props: {
-      close: Function,
-      saveZoomRange: Function,
-      minZoom: Number,
-      maxZoom: Number
-    },
-    components: {
-      NumberPicker
-    },
-    data () {
-      return {
-        mdiPencil,
-        editZoomLevelsDialog: true,
-        editedMinZoom: this.minZoom,
-        editedMaxZoom: this.maxZoom,
-        editedMinZoomValid: true,
-        editedMaxZoomValid: true
-      }
-    },
-    methods: {
-      updateLayerZoomRange () {
-        this.saveZoomRange(this.editedMinZoom, this.editedMaxZoom)
-      }
+  props: {
+    close: Function,
+    saveZoomRange: Function,
+    minZoom: Number,
+    maxZoom: Number
+  },
+  components: {
+    NumberPicker
+  },
+  data () {
+    return {
+      mdiPencil,
+      editZoomLevelsDialog: true,
+      editedMinZoom: this.minZoom,
+      editedMaxZoom: this.maxZoom,
+      editedMinZoomValid: true,
+      editedMaxZoomValid: true
+    }
+  },
+  methods: {
+    updateLayerZoomRange () {
+      this.saveZoomRange(this.editedMinZoom, this.editedMaxZoom)
     }
   }
+}
 </script>
 
 <style scoped>

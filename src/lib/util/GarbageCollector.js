@@ -1,5 +1,5 @@
 export function tryCollect () {
-    if (global.gc) {
-        global.gc()
-    }
+  if (global.gc) {
+    global.gc()
+  }
 }

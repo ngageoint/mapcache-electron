@@ -1,5 +1,6 @@
 <template>
-  <v-card flat class="pa-0 ma-0 rounded-lg" v-if="result != null" @click="showFeatureDetails" @mouseover="mouseover" @mouseleave="mouseleave">
+  <v-card flat class="pa-0 ma-0 rounded-lg" v-if="result != null" @click="showFeatureDetails" @mouseover="mouseover"
+          @mouseleave="mouseleave">
     <v-img
         v-if="getImage() != null"
         height="104"
@@ -7,22 +8,33 @@
     ></v-img>
     <v-row no-gutters>
       <v-col cols="9">
-        <v-card-title style="font-size: 16px;" :class="getImage() != null ? ' mt-0 pt-2 pb-0 mb-0' : 'pt-2 mt-0 pb-0 mb-0'">{{ result.properties.name }}</v-card-title>
-        <v-card-subtitle style="font-size: 11px; line-height: 12px;" class="pt-0 mt-0 pb-0 mb-0">{{ prettyifyWords(result.properties.type, true) + ' • ' + prettyifyWords(result.properties.category, true) }}</v-card-subtitle>
-        <v-card-subtitle style="font-size: 11px; line-height: 12px;" class="pt-0 mt-0">{{ prettyifyAddress(result.properties) }}</v-card-subtitle>
+        <v-card-title style="font-size: 16px;"
+                      :class="getImage() != null ? ' mt-0 pt-2 pb-0 mb-0' : 'pt-2 mt-0 pb-0 mb-0'">
+          {{ result.properties.name }}
+        </v-card-title>
+        <v-card-subtitle style="font-size: 11px; line-height: 12px;" class="pt-0 mt-0 pb-0 mb-0">
+          {{ prettyifyWords(result.properties.type, true) + ' • ' + prettyifyWords(result.properties.category, true) }}
+        </v-card-subtitle>
+        <v-card-subtitle style="font-size: 11px; line-height: 12px;" class="pt-0 mt-0">
+          {{ prettyifyAddress(result.properties) }}
+        </v-card-subtitle>
       </v-col>
       <v-col class="mt-2" style="margin-left: -8px;">
-        <v-btn color="primary" icon @click="zoomTo"><v-icon>{{ mdiMagnify }}</v-icon></v-btn>
-        <v-btn color="primary" icon @click="saveFeature"><v-icon>{{ mdiContentSaveOutline }}</v-icon></v-btn>
+        <v-btn color="primary" icon @click="zoomTo">
+          <v-icon>{{ mdiMagnify }}</v-icon>
+        </v-btn>
+        <v-btn color="primary" icon @click="saveFeature">
+          <v-icon>{{ mdiContentSaveOutline }}</v-icon>
+        </v-btn>
       </v-col>
     </v-row>
   </v-card>
 </template>
 
 <script>
-import {mdiContentSaveOutline, mdiMagnify} from '@mdi/js'
+import { mdiContentSaveOutline, mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
-import {prettyifyAddress, prettyifyWords} from '../../lib/util/nominatim/NominatimUtilities'
+import { prettyifyAddress, prettyifyWords } from '../../lib/util/nominatim/NominatimUtilities'
 
 export default {
   props: {

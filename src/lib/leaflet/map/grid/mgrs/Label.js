@@ -13,15 +13,15 @@ class Label {
     this.zoneNumber = zoneNumber
   }
 
-  getName() {
+  getName () {
     return this.name
   }
 
-  getCenter() {
+  getCenter () {
     return this.center
   }
 
-  getBoundingBox() {
+  getBoundingBox () {
     return this.boundingBox
   }
 }

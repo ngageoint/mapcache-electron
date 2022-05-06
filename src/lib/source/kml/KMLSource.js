@@ -127,7 +127,15 @@ export default class KMLSource extends Source {
       const { layerId, layerDirectory } = this.createLayerDirectory()
       let fileName = name + '.gpkg'
       let filePath = path.join(layerDirectory, fileName)
-      const {adjustBatchSize, addFeature, addStyle, addIcon, setFeatureStyle, setFeatureIcon, done} = await streamingGeoPackageBuild(filePath, name)
+      const {
+        adjustBatchSize,
+        addFeature,
+        addStyle,
+        addIcon,
+        setFeatureStyle,
+        setFeatureIcon,
+        done
+      } = await streamingGeoPackageBuild(filePath, name)
 
       adjustBatchSize(featureCount)
 
@@ -187,7 +195,10 @@ export default class KMLSource extends Source {
           currentStep += notifyStepSize
         }
         featuresAdded++
-      }, () => {}, () => {}, () => {})
+      }, () => {
+      }, () => {
+      }, () => {
+      })
 
       const { extent, count } = await done()
 
@@ -213,7 +224,11 @@ export default class KMLSource extends Source {
         groundOverlay.name = 'Ground Overlay #' + i
       }
       const geotiffLayer = await convertGroundOverlayToGeotiffLayer(groundOverlay, kmlDirectory, tmpDir, () => {
-        return { layerId: createUniqueID(), layerDirectory: createNextAvailableLayerDirectory(this.directory), sourceDirectory: this.directory}
+        return {
+          layerId: createUniqueID(),
+          layerDirectory: createNextAvailableLayerDirectory(this.directory),
+          sourceDirectory: this.directory
+        }
       })
       if (geotiffLayer != null) {
         layers.push(geotiffLayer)

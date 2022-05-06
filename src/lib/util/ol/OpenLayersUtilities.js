@@ -1,6 +1,6 @@
 import { addTransformation } from '../../projection/OpenLayersProjectionUtilities'
 import isNil from 'lodash/isNil'
-import {getLayerOutputFormat, isGeoJSON, isGML3, isGML32, isGML2} from '../geoserver/GeoServiceUtilities'
+import { getLayerOutputFormat, isGeoJSON, isGML3, isGML32, isGML2 } from '../geoserver/GeoServiceUtilities'
 import GeoJSON from 'ol-format-node/format/GeoJSON'
 import WFS from 'ol-format-node/format/WFS'
 import GML32 from 'ol-format-node/format/GML32'
@@ -41,11 +41,11 @@ function convertWFSToGeoJSON (layer, layerData) {
   if (isGeoJSON(outputFormat)) {
     features = new GeoJSON().readFeatures(JSON.parse(layerData), options)
   } else if (isGML32(outputFormat)) {
-    features = new WFS({gmlFormat: new GML32(), version: layer.version}).readFeatures(layerData, options)
+    features = new WFS({ gmlFormat: new GML32(), version: layer.version }).readFeatures(layerData, options)
   } else if (isGML3(outputFormat)) {
-    features = new WFS({gmlFormat: new GML3(), version: layer.version}).readFeatures(layerData, options)
+    features = new WFS({ gmlFormat: new GML3(), version: layer.version }).readFeatures(layerData, options)
   } else if (isGML2(outputFormat)) {
-    features = new WFS({gmlFormat: new GML2(), version: layer.version}).readFeatures(layerData, options)
+    features = new WFS({ gmlFormat: new GML2(), version: layer.version }).readFeatures(layerData, options)
   } else {
     throw new Error('Service in unsupported WFS format: ' + outputFormat)
   }

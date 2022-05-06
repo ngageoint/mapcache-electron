@@ -10,7 +10,7 @@ import { CanvasKitCanvasAdapter } from '@ngageoint/geopackage'
 import { mapcache } from '../../../package.json'
 import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
 import { DEFAULT_TIMEOUT, DEFAULT_RETRY_ATTEMPTS, NO_LIMIT } from '../../lib/network/HttpUtilities'
-import {CONTAINS_V4_REGEX, V4_REGEX} from '../../lib/util/UniqueIDUtilities'
+import { CONTAINS_V4_REGEX, V4_REGEX } from '../../lib/util/UniqueIDUtilities'
 import {
   clearUserDirectory,
   createNextAvailableLayerDirectory,
@@ -23,7 +23,7 @@ import {
 import { getInternalTableInformation } from '../../lib/geopackage/GeoPackageCommon'
 import { PROJECT_DIRECTORY_IDENTIFIER, BASEMAP_DIRECTORY_IDENTIFIER } from '../../lib/util/file/FileConstants'
 import GeoTIFFSource from '../../lib/source/geotiff/GeoTIFFSource'
-import {GEOTIFF, VECTOR, MBTILES, WMS, isRemote} from '../../lib/layer/LayerTypes'
+import { GEOTIFF, VECTOR, MBTILES, WMS, isRemote } from '../../lib/layer/LayerTypes'
 import { WEB_MERCATOR } from '../../lib/projection/ProjectionConstants'
 
 /**
@@ -38,7 +38,7 @@ export async function runMigration (forceReset = false) {
     2: async function (state) {
       // setup initial state for tabNotification, mapZoom, and preview layer
       keys(state.UIState).forEach(projectId => {
-        state.UIState[projectId].tabNotification = {0: false, 1: false, 2: false}
+        state.UIState[projectId].tabNotification = { 0: false, 1: false, 2: false }
         state.UIState[projectId].mapZoom = 3
         state.UIState[projectId].previewLayer = null
       })
@@ -210,7 +210,7 @@ export async function runMigration (forceReset = false) {
       // iterate over basemaps and update them accordingly
       for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
         const baseMap = state.BaseMaps.baseMaps[i]
-        if (['0','1','2','3'].indexOf(baseMap.id) !== -1) {
+        if (['0', '1', '2', '3'].indexOf(baseMap.id) !== -1) {
           continue
         }
         // move base map contents to new directory
@@ -312,10 +312,10 @@ export async function runMigration (forceReset = false) {
       }
       if (success) {
         await Promise.all([
-          store.dispatch('UIState/migrateState', {migratedState: state.UIState}),
-          store.dispatch('URLs/migrateState', {migratedState: state.URLs}),
-          store.dispatch('BaseMaps/migrateState', {migratedState: state.BaseMaps}),
-          store.dispatch('Projects/migrateState', {migratedState: state.Projects}),
+          store.dispatch('UIState/migrateState', { migratedState: state.UIState }),
+          store.dispatch('URLs/migrateState', { migratedState: state.URLs }),
+          store.dispatch('BaseMaps/migrateState', { migratedState: state.BaseMaps }),
+          store.dispatch('Projects/migrateState', { migratedState: state.Projects }),
           store.dispatch('Version/setVersion', installationVersion),
           removeUnusedFromUserDirectory(app.getPath('userData'), state)])
       }

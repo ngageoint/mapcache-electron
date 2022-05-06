@@ -4,13 +4,15 @@
  */
 export default class Preprocessor {
   source
-  constructor(source) {
+
+  constructor (source) {
     this.source = Object.assign({}, source)
   }
 
   preprocess () {
 
   }
+
   cancel () {
 
   }

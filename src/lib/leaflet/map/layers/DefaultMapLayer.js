@@ -31,7 +31,8 @@ export default class DefaultMapLayer {
           let northEast = L.latLng(layer.extent[3], layer.extent[2])
           options.bounds = L.latLngBounds(southWest, northEast)
           // eslint-disable-next-line no-empty
-        } catch (e) {}
+        } catch (e) {
+        }
       }
     }
 

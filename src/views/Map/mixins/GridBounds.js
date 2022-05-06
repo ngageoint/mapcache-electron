@@ -1,6 +1,6 @@
-import {L} from '../../../lib/leaflet/vendor'
+import { L } from '../../../lib/leaflet/vendor'
 import EventBus from '../../../lib/vue/EventBus'
-import {GRID_SELECTION_PANE} from '../../../lib/leaflet/map/panes/MapPanes'
+import { GRID_SELECTION_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 
 export default {
   data () {
@@ -74,12 +74,12 @@ export default {
               }
             },
             interactive: true,
-            twenty_degree: {...style},
-            ten_degree: {...style},
-            five_degree: {...style},
-            thirty_minute: {...style},
-            fifteen_minute: {...style},
-            five_minute: {...style},
+            twenty_degree: { ...style },
+            ten_degree: { ...style },
+            five_degree: { ...style },
+            thirty_minute: { ...style },
+            fifteen_minute: { ...style },
+            five_minute: { ...style },
           }
         })
         this.gridLayer.addTo(this.map)
@@ -115,12 +115,12 @@ export default {
               }
             },
             interactive: true,
-            gzd: {...style},
-            one_hundred_km: {...style},
-            ten_km: {...style},
-            one_km: {...style},
-            one_hundred_meter: {...style},
-            ten_meter: {...style}
+            gzd: { ...style },
+            one_hundred_km: { ...style },
+            ten_km: { ...style },
+            one_km: { ...style },
+            one_hundred_meter: { ...style },
+            ten_meter: { ...style }
           }
         })
         this.gridLayer.addTo(this.map)
@@ -170,7 +170,7 @@ export default {
       }
     })
   },
-  beforeDestroy() {
+  beforeDestroy () {
     EventBus.$off([EventBus.EventTypes.GRID_BOUNDING_BOX, EventBus.EventTypes.GRID_BOUNDING_BOX_STOP])
     this.cancelGridPicking()
   }

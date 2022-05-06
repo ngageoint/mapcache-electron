@@ -7,7 +7,7 @@ function requestTile (tileRequest) {
       coords,
       filePath
     } = tileRequest
-    let {x, y, z} = coords
+    let { x, y, z } = coords
     let tileData = null
     const tileFile = path.join(filePath, z.toString(), x.toString(), y.toString() + '.png')
     jetpack.existsAsync(tileFile).then(exists => {

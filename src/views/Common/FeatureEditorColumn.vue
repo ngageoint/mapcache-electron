@@ -1,9 +1,11 @@
 <template>
   <div>
-    <v-text-field :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue" :rules="rules"></v-text-field>
-    <v-row style="height: 50px !important; margin-right: 6px !important;" class="align-center" no-gutters align="center" justify="space-between" v-else-if="dataType === BOOLEAN">
+    <v-text-field :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue"
+                  :rules="rules"></v-text-field>
+    <v-row style="height: 50px !important; margin-right: 6px !important;" class="align-center" no-gutters align="center"
+           justify="space-between" v-else-if="dataType === BOOLEAN">
       <v-col>
-        <v-list-item-subtitle>{{lowerCaseName}}</v-list-item-subtitle>
+        <v-list-item-subtitle>{{ lowerCaseName }}</v-list-item-subtitle>
       </v-col>
       <v-switch class="pa-0" color="primary" v-model="editedValue" hide-details></v-switch>
     </v-row>
@@ -79,67 +81,68 @@
         </v-menu>
       </v-col>
     </v-row>
-    <v-text-field :label="lowerCaseName" clearable type="number" v-else v-model="editedValue" :rules="rules"></v-text-field>
+    <v-text-field :label="lowerCaseName" clearable type="number" v-else v-model="editedValue"
+                  :rules="rules"></v-text-field>
   </div>
 </template>
 
 <script>
-import {mdiCalendar, mdiClock} from '@mdi/js'
+import { mdiCalendar, mdiClock } from '@mdi/js'
 
 export default {
-    props: {
-      index: Number,
-      updateColumnProperty: Function,
-      value: [String, Number, Date, Boolean],
-      timeValue: [String, Object, Date],
-      dateValue: [String, Object, Date],
-      showTime: Boolean,
-      showDate: Boolean,
-      name: String,
-      rules: Array,
-      lowerCaseName: String,
-      dataType: Number
-    },
-    data () {
-      return {
-        mdiCalendar: mdiCalendar,
-        mdiClock: mdiClock,
-        TEXT: window.mapcache.GeoPackageDataType.TEXT,
-        FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
-        BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,
-        DATETIME: window.mapcache.GeoPackageDataType.DATETIME,
-        DATE: window.mapcache.GeoPackageDataType.DATE,
-        dateMenu: false,
-        timeMenu: false,
+  props: {
+    index: Number,
+    updateColumnProperty: Function,
+    value: [String, Number, Date, Boolean],
+    timeValue: [String, Object, Date],
+    dateValue: [String, Object, Date],
+    showTime: Boolean,
+    showDate: Boolean,
+    name: String,
+    rules: Array,
+    lowerCaseName: String,
+    dataType: Number
+  },
+  data () {
+    return {
+      mdiCalendar: mdiCalendar,
+      mdiClock: mdiClock,
+      TEXT: window.mapcache.GeoPackageDataType.TEXT,
+      FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
+      BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,
+      DATETIME: window.mapcache.GeoPackageDataType.DATETIME,
+      DATE: window.mapcache.GeoPackageDataType.DATE,
+      dateMenu: false,
+      timeMenu: false,
+    }
+  },
+  computed: {
+    editedValue: {
+      get () {
+        return this.value
+      },
+      set (value) {
+        this.updateColumnProperty(value, 'value', this.index)
       }
     },
-    computed: {
-      editedValue: {
-        get () {
-          return this.value
-        },
-        set (value) {
-          this.updateColumnProperty(value, 'value', this.index)
-        }
+    editedTimeValue: {
+      get () {
+        return this.timeValue
       },
-      editedTimeValue: {
-        get () {
-          return this.timeValue
-        },
-        set (value) {
-          this.updateColumnProperty(value, 'timeValue', this.index)
-        }
+      set (value) {
+        this.updateColumnProperty(value, 'timeValue', this.index)
+      }
+    },
+    editedDateValue: {
+      get () {
+        return this.dateValue
       },
-      editedDateValue: {
-        get () {
-          return this.dateValue
-        },
-        set (value) {
-          this.updateColumnProperty(value, 'dateValue', this.index)
-        }
+      set (value) {
+        this.updateColumnProperty(value, 'dateValue', this.index)
       }
     }
   }
+}
 </script>
 
 <style scoped>

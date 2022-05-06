@@ -17,18 +17,20 @@
             <h4 class="ml-4 mb-3">Release notes</h4>
           </v-row>
           <v-row v-for="item in releaseNotes" :key="item.title" no-gutters>
-            <p class="fake-link allowselect ml-8 mt-1" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}" @click="() => scrollToElement(item.title)">
-              {{item.title}}
+            <p class="fake-link allowselect ml-8 mt-1"
+               :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+               @click="() => scrollToElement(item.title)">
+              {{ item.title }}
             </p>
           </v-row>
         </v-col>
         <v-col cols="8" class="overflow-y-auto pt-4 pb-8" style="height: calc(100vh - 114px)">
           <v-row v-for="item in releaseNotes" :key="item.title" no-gutters :ref="item.title">
-            <v-col cols="12" no-gutters class="mt-4" >
-              <h3>{{item.title}}</h3>
+            <v-col cols="12" no-gutters class="mt-4">
+              <h3>{{ item.title }}</h3>
             </v-col>
             <v-col cols="12" no-gutters class="mb-4">
-              <h5>{{item.releaseDate}}</h5>
+              <h5>{{ item.releaseDate }}</h5>
             </v-col>
             <v-col cols="12">
               <v-row v-if="item.bugFixes && item.bugFixes.length > 0" no-gutters class="mb-4">
@@ -37,7 +39,7 @@
                 </v-col>
                 <ul>
                   <li v-for="(fix, i) in item.bugFixes" :key="i">
-                    {{fix}}
+                    {{ fix }}
                   </li>
                 </ul>
               </v-row>
@@ -49,7 +51,7 @@
                 </v-col>
                 <ul>
                   <li v-for="(feature, i) in item.newFeatures" :key="i">
-                    {{feature}}
+                    {{ feature }}
                   </li>
                 </ul>
               </v-row>
@@ -61,7 +63,7 @@
                 </v-col>
                 <ul>
                   <li v-for="(sec, i) in item.security" :key="i">
-                    {{sec}}
+                    {{ sec }}
                   </li>
                 </ul>
               </v-row>
@@ -76,7 +78,7 @@
 <script>
 
 export default {
-  data() {
+  data () {
     return {
       releaseNotes: [
         {
@@ -317,7 +319,7 @@ export default {
     scrollToElement (version) {
       const el = this.$refs[version][0]
       if (el) {
-        el.scrollIntoView({behavior: 'smooth'})
+        el.scrollIntoView({ behavior: 'smooth' })
       }
     }
   }

@@ -61,11 +61,12 @@ function getBoundingBoxFromWMSLayer (layer) {
     if (!isNil(layer['LatLonBoundingBox'])) {
       bbox = layer['LatLonBoundingBox'][0]['$']
       extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
-    } else if (!isNil(layer['EX_GeographicBoundingBox'])){
+    } else if (!isNil(layer['EX_GeographicBoundingBox'])) {
       bbox = layer['EX_GeographicBoundingBox'][0]
       extent = [Number(bbox['westBoundLongitude']), Number(bbox['southBoundLatitude']), Number(bbox['eastBoundLongitude']), Number(bbox['northBoundLatitude'])]
     }
-  } catch (e) {}
+  } catch (e) {
+  }
   return extent
 }
 
@@ -120,8 +121,14 @@ function getWMSLayers (layer, version, titles = [], availableSrs = [], parentExt
       let title = null
       let name = null
       let srs = getSRSForWMSLayer(l, availableSrs)
-      try { title = layer['Title'][0] } catch (e) {}
-      try { name = layer['Name'][0] } catch (e) {}
+      try {
+        title = layer['Title'][0]
+      } catch (e) {
+      }
+      try {
+        name = layer['Name'][0]
+      } catch (e) {
+      }
       if (isNil(title) || isEmpty(title)) {
         title = name
       }
@@ -138,21 +145,36 @@ function getWMSLayers (layer, version, titles = [], availableSrs = [], parentExt
     const layerTitles = titles.slice()
     const supportedProjections = availableSrs.concat(getSRSForWMSLayer(layer, availableSrs))
     extent = getBoundingBoxFromWMSLayer(layer) || parentExtent.slice()
-    try { title = layer['Title'][0] } catch (e) {}
-    try { name = layer['Name'][0] } catch (e) {}
+    try {
+      title = layer['Title'][0]
+    } catch (e) {
+    }
+    try {
+      name = layer['Name'][0]
+    } catch (e) {
+    }
     if (!isNil(title) && !isEmpty(title)) {
       layerTitles.push(title)
     } else if (!isNil(name) && !isEmpty(name)) {
       layerTitles.push(name)
     }
-    layers.push({name, title: layerTitles[0], subtitles: layerTitles.length > 1 ? layerTitles.slice(1) : [], extent, wms: true, version, srs: getRecommendedSrs(supportedProjections), supportedProjections: supportedProjections})
+    layers.push({
+      name,
+      title: layerTitles[0],
+      subtitles: layerTitles.length > 1 ? layerTitles.slice(1) : [],
+      extent,
+      wms: true,
+      version,
+      srs: getRecommendedSrs(supportedProjections),
+      supportedProjections: supportedProjections
+    })
   }
   return layers
 }
 
 // get the GetCapabilities URL
 function getGetCapabilitiesURL (wmsUrl, version, service) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmsUrl)
   queryParams['request'] = 'GetCapabilities'
   queryParams['version'] = version
   queryParams['service'] = service
@@ -161,7 +183,7 @@ function getGetCapabilitiesURL (wmsUrl, version, service) {
 
 // get the GetCapabilities URL
 function getWFSLayerCountURL (wfsUrl, version, layer) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wfsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wfsUrl)
   if (queryParams['service']) {
     delete queryParams['service']
   }
@@ -178,7 +200,7 @@ function getWFSLayerCountURL (wfsUrl, version, layer) {
 }
 
 function getBaseURL (wmsUrl) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmsUrl)
   if (queryParams['request']) {
     delete queryParams['request']
   }
@@ -190,6 +212,7 @@ function getBaseURL (wmsUrl) {
   }
   return generateUrlWithQueryParams(baseUrl, queryParams)
 }
+
 /**
  * Parses WMS info
  * @param serviceUrl
@@ -222,7 +245,8 @@ async function getWMSInfo (serviceUrl, json, version, withCredentials) {
           const contactInformation = service['ContactInformation'][0]['ContactPersonPrimary'][0]
           wmsInfo.contactName = contactInformation['ContactPerson'][0]
           wmsInfo.contactOrg = contactInformation['ContactOrganization'][0]
-        } catch (error) {}
+        } catch (error) {
+        }
       }
       const wmsCapability = capabilities['Capability']
       if (!isNil(wmsCapability)) {
@@ -342,7 +366,8 @@ function getWFSInfo (json, version) {
           wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
           wfsInfo.abstract = service['Abstract'][0]
         }
-      } catch (error) {}
+      } catch (error) {
+      }
       try {
         const capability = json['WFS_Capabilities']['Capability'][0]['Request'][0]
         if (!isNil(capability) && !isNil(capability['GetFeature'])) {
@@ -376,7 +401,8 @@ function getWFSInfo (json, version) {
             }
           }
         }
-      } catch (error) {}
+      } catch (error) {
+      }
       for (const layer of json['WFS_Capabilities']['FeatureTypeList'][0]['FeatureType']) {
         const bbox = layer['LatLongBoundingBox'][0]['$']
         const extent = [Number(bbox['minx']), Number(bbox['miny']), Number(bbox['maxx']), Number(bbox['maxy'])]
@@ -390,7 +416,17 @@ function getWFSInfo (json, version) {
         }
         let defaultSRS = !isNil(layer['SRS']) ? layer['SRS'][0] : ''
         const otherSRS = []
-        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats})
+        layers.push({
+          name,
+          title: title,
+          subtitles: [],
+          extent,
+          wfs: true,
+          defaultSRS: defaultSRS,
+          otherSRS: otherSRS,
+          version: version,
+          outputFormats
+        })
       }
     } else if (!isNil(json['wfs:WFS_Capabilities'])) {
       let outputFormats = ['application/json']
@@ -403,7 +439,8 @@ function getWFSInfo (json, version) {
           wfsInfo.contactOrg = contactInformation['ContactOrganization'][0]
           wfsInfo.abstract = service['Abstract'][0]
         }
-      } catch (error) {}
+      } catch (error) {
+      }
       try {
         const operationMetadata = json['wfs:WFS_Capabilities']['ows:OperationsMetadata'][0]
         if (!isNil(operationMetadata)) {
@@ -415,7 +452,8 @@ function getWFSInfo (json, version) {
             }
           }
         }
-      } catch (error) {}
+      } catch (error) {
+      }
       const capabilites = json['wfs:WFS_Capabilities']
       let featureTypeList
       if (!isNil(capabilites['wfs:FeatureTypeList'])) {
@@ -441,7 +479,17 @@ function getWFSInfo (json, version) {
         if (isNil(title) || isEmpty(title)) {
           title = name
         }
-        layers.push({name, title: title, subtitles: [], extent, wfs: true, defaultSRS: defaultSRS, otherSRS: otherSRS, version: version, outputFormats})
+        layers.push({
+          name,
+          title: title,
+          subtitles: [],
+          extent,
+          wfs: true,
+          defaultSRS: defaultSRS,
+          otherSRS: otherSRS,
+          version: version,
+          outputFormats
+        })
       }
     }
     // eslint-disable-next-line no-unused-vars
@@ -454,7 +502,7 @@ function getWFSInfo (json, version) {
 }
 
 function getTileRequestURL (wmsUrl, layers, width, height, bbox, srs, version, format) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wmsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wmsUrl)
   if (queryParams['service']) {
     delete queryParams['service']
   }
@@ -473,7 +521,7 @@ function getTileRequestURL (wmsUrl, layers, width, height, bbox, srs, version, f
 }
 
 function getFeatureRequestURL (wfsUrl, layer, outputFormat, referenceSystemName, version) {
-  let {baseUrl, queryParams} = getBaseUrlAndQueryParams(wfsUrl)
+  let { baseUrl, queryParams } = getBaseUrlAndQueryParams(wfsUrl)
   if (queryParams['service']) {
     delete queryParams['service']
   }

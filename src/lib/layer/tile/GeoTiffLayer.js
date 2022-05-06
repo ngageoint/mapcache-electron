@@ -48,40 +48,40 @@ export default class GeoTiffLayer extends TileLayer {
 
   update (configuration) {
     super.update(configuration)
-    this.alphaBand =  configuration.alphaBand
-    this.bandOptions =  configuration.bandOptions
-    this.bitsPerSample =  configuration.bitsPerSample
-    this.blueBand =  configuration.blueBand
-    this.blueBandMin =  configuration.blueBandMin
-    this.blueBandMax =  configuration.blueBandMax
-    this.bytesPerSample =  configuration.bytesPerSample
-    this.colorMap =  configuration.colorMap
-    this.enableGlobalNoDataValue =  configuration.enableGlobalNoDataValue
-    this.globalNoDataValue =  configuration.globalNoDataValue
-    this.grayScaleColorGradient =  configuration.grayScaleColorGradient
-    this.grayBand =  configuration.grayBand
-    this.grayBandMin =  configuration.grayBandMin
-    this.grayBandMax =  configuration.grayBandMax
-    this.greenBand =  configuration.greenBand
-    this.greenBandMin =  configuration.greenBandMin
-    this.greenBandMax =  configuration.greenBandMax
-    this.imageHeight =  configuration.imageHeight
-    this.imageOrigin =  configuration.imageOrigin
-    this.imageResolution =  configuration.imageResolution
-    this.imageWidth =  configuration.imageWidth
+    this.alphaBand = configuration.alphaBand
+    this.bandOptions = configuration.bandOptions
+    this.bitsPerSample = configuration.bitsPerSample
+    this.blueBand = configuration.blueBand
+    this.blueBandMin = configuration.blueBandMin
+    this.blueBandMax = configuration.blueBandMax
+    this.bytesPerSample = configuration.bytesPerSample
+    this.colorMap = configuration.colorMap
+    this.enableGlobalNoDataValue = configuration.enableGlobalNoDataValue
+    this.globalNoDataValue = configuration.globalNoDataValue
+    this.grayScaleColorGradient = configuration.grayScaleColorGradient
+    this.grayBand = configuration.grayBand
+    this.grayBandMin = configuration.grayBandMin
+    this.grayBandMax = configuration.grayBandMax
+    this.greenBand = configuration.greenBand
+    this.greenBandMin = configuration.greenBandMin
+    this.greenBandMax = configuration.greenBandMax
+    this.imageHeight = configuration.imageHeight
+    this.imageOrigin = configuration.imageOrigin
+    this.imageResolution = configuration.imageResolution
+    this.imageWidth = configuration.imageWidth
     this.layerType = GEOTIFF
-    this.littleEndian =  configuration.littleEndian
-    this.paletteBand =  configuration.paletteBand
-    this.photometricInterpretation =  configuration.photometricInterpretation
-    this.rasterFile =  configuration.rasterFile
-    this.redBand =  configuration.redBand
-    this.redBandMin =  configuration.redBandMin
-    this.redBandMax =  configuration.redBandMax
-    this.renderingMethod =  configuration.renderingMethod
-    this.sampleFormat =  configuration.sampleFormat
-    this.samplesPerPixel =  configuration.samplesPerPixel
-    this.srs =  configuration.srs
-    this.stretchToMinMax =  configuration.stretchToMinMax
+    this.littleEndian = configuration.littleEndian
+    this.paletteBand = configuration.paletteBand
+    this.photometricInterpretation = configuration.photometricInterpretation
+    this.rasterFile = configuration.rasterFile
+    this.redBand = configuration.redBand
+    this.redBandMin = configuration.redBandMin
+    this.redBandMax = configuration.redBandMax
+    this.renderingMethod = configuration.renderingMethod
+    this.sampleFormat = configuration.sampleFormat
+    this.samplesPerPixel = configuration.samplesPerPixel
+    this.srs = configuration.srs
+    this.stretchToMinMax = configuration.stretchToMinMax
     if (!isNil(this.renderer)) {
       this.renderer.layer = this
     }
@@ -91,7 +91,7 @@ export default class GeoTiffLayer extends TileLayer {
    * Fields that when changed will require the map to repaint
    * @returns {string[]}
    */
-  getRepaintFields() {
+  getRepaintFields () {
     return ['renderingMethod', 'redBand', 'redBandMin', 'redBandMax', 'greenBand', 'greenBandMin', 'greenBandMax', 'blueBand', 'blueBandMin', 'blueBandMax', 'grayScaleColorGradient', 'grayBand', 'grayBandMin', 'grayBandMax', 'alphaBand', 'paletteBand', 'globalNoDataValue', 'enableGlobalNoDataValue', 'stretchToMinMax'].concat(super.getRepaintFields())
   }
 

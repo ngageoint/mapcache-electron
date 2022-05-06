@@ -57,8 +57,12 @@ export default class AxiosRequestScheduler {
   schedule (config, resolve, reject) {
     let request = {
       config: config,
-      resolve: () => {resolve(config)},
-      reject: () => {reject(axios.Cancel)},
+      resolve: () => {
+        resolve(config)
+      },
+      reject: () => {
+        reject(axios.Cancel)
+      },
       cancelled: false
     }
     this.requestQueue.push(request)

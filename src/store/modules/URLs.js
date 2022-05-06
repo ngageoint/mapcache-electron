@@ -34,10 +34,10 @@ const mutations = {
       }
     }
   },
-  editUrl (state, {oldUrl, newUrl}) {
+  editUrl (state, { oldUrl, newUrl }) {
     for (var i = 0; i < state.savedUrls.length; i++) {
       if (state.savedUrls[i].url === oldUrl) {
-        state.savedUrls.splice(i, 1, {url: newUrl})
+        state.savedUrls.splice(i, 1, { url: newUrl })
       }
     }
   },
@@ -47,7 +47,7 @@ const mutations = {
     })
     Object.assign(state, getDefaultState())
   },
-  migrateState (state, {migratedState}) {
+  migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
       Vue.delete(state, key)
     })
@@ -62,14 +62,14 @@ const actions = {
   removeUrl ({ commit }, url) {
     commit('removeUrl', url)
   },
-  editUrl ({ commit }, {oldUrl, newUrl}) {
-    commit('editUrl', {oldUrl, newUrl})
+  editUrl ({ commit }, { oldUrl, newUrl }) {
+    commit('editUrl', { oldUrl, newUrl })
   },
   resetState ({ commit }) {
     return commit('resetState')
   },
-  migrateState ({commit}, {migratedState}) {
-    commit('migrateState', {migratedState})
+  migrateState ({ commit }, { migratedState }) {
+    commit('migrateState', { migratedState })
   }
 }
 

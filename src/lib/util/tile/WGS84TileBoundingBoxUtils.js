@@ -17,7 +17,7 @@ function getTilesForExtentAtZoom (extent, zoom) {
   for (let x = xRange.min; x <= xRange.max; x++) {
     for (let y = yRange.min; y <= yRange.max; y++) {
       tiles.push({
-        coords: {x, y, z: zoom},
+        coords: { x, y, z: zoom },
         extent: tileExtentCalculator(x, y, zoom)
       })
     }
