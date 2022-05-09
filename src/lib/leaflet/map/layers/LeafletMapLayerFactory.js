@@ -12,5 +12,5 @@ export function constructMapLayer (options) {
   const maxFeatures = options.maxFeatures
   const zIndex = options.zIndex || 401
   const className = options.className
-  return isRemote(layer) ? NetworkMapLayer.constructMapLayer(layer, mapPane) : DefaultMapLayer.constructMapLayer(layer, mapPane, maxFeatures, className, zIndex)
+  return isRemote(layer) ? NetworkMapLayer.constructMapLayer(layer, mapPane, className) : DefaultMapLayer.constructMapLayer(layer, mapPane, maxFeatures, className, zIndex)
 }

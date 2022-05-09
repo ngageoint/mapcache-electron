@@ -332,7 +332,7 @@ import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { constructLayer } from '../../lib/layer/LayerFactory'
 import { getDefaultBaseMaps, getOfflineBaseMapId } from '../../lib/util/basemaps/BaseMapUtilities'
-import { isRemote } from '../../lib/layer/LayerTypes'
+import { isRemote, XYZ_SERVER } from '../../lib/layer/LayerTypes'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import {
   GRID_SELECTION_PANE,
@@ -1365,14 +1365,26 @@ export default {
       }
     },
     createDefaultBaseMapLayer (baseMap, dark = false) {
-      return L.tileLayer(baseMap.layerConfiguration.url, {
-        pane: BASE_MAP_PANE.name,
-        zIndex: BASE_MAP_PANE.zIndex,
+      let layer = constructLayer({
+        id: baseMap.id,
+        filePath: baseMap.layerConfiguration.url,
+        sourceType: 'XYZ',
+        sourceLayerName: 'basemap',
+        layerType: XYZ_SERVER,
         subdomains: baseMap.layerConfiguration.subdomains || [],
         attribution: baseMap.layerConfiguration.attribution || '',
+        styleKey: 0,
+        count: 1,
+        extent: [-180, -90, 180, 90],
+      })
+      return constructMapLayer({
+        layer: layer,
+        mapPane: BASE_MAP_PANE.name,
+        zIndex: BASE_MAP_PANE.zIndex,
+        maxFeatures: 5000,
+        className: dark ? 'dark' : '',
         minZoom: 0,
         maxZoom: 20,
-        className: dark ? 'dark' : ''
       })
     },
     createOfflineBaseMapLayer (baseMap, dark = false) {

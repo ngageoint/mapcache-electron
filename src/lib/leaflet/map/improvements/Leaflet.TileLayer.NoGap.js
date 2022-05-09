@@ -8,14 +8,7 @@
  */
 export default function (L) {
   L.TileLayer.mergeOptions({
-    // @option keepBuffer
-    // The amount of tiles outside the visible map area to be kept in the stitched
-    // `TileLayer`.
-
-    // @option dumpToCanvas: Boolean = true
-    // Whether to dump loaded tiles to a `<canvas>` to prevent some rendering
-    // artifacts. (Disabled by default in IE)
-    dumpToCanvas: L.Browser.canvas && !L.Browser.ie,
+    dumpToCanvas: L.Browser.canvas,
   })
 
   L.TileLayer.include({
@@ -35,24 +28,25 @@ export default function (L) {
     _onCreateLevel: function (level) {
       if (this.options.dumpToCanvas) {
         level.canvas = L.DomUtil.create(
-          "canvas",
-          "leaflet-tile-container leaflet-zoom-animated",
+          'canvas',
+          'leaflet-tile-container leaflet-zoom-animated',
           this._container
         )
-        level.ctx = level.canvas.getContext("2d")
+        level.canvas.crossOrigin = 'Anonymous'
+        level.ctx = level.canvas.getContext('2d')
         this._resetCanvasSize(level)
       }
     },
 
     _removeTile: function (key) {
       if (this.options.dumpToCanvas) {
-        var tile = this._tiles[key]
-        var level = this._levels[tile.coords.z]
-        var tileSize = this.getTileSize()
+        const tile = this._tiles[key]
+        const level = this._levels[tile.coords.z]
+        const tileSize = this.getTileSize()
 
         if (level) {
           // Where in the canvas should this tile go?
-          var offset = L.point(tile.coords.x, tile.coords.y)
+          const offset = L.point(tile.coords.x, tile.coords.y)
             .subtract(level.canvasRange.min)
             .scaleBy(this.getTileSize())
 
@@ -64,7 +58,7 @@ export default function (L) {
     },
 
     _resetCanvasSize: function (level) {
-      var buff = this.options.keepBuffer,
+      const buff = this.options.keepBuffer,
         pixelBounds = this._getTiledPixelBounds(this._map.getCenter()),
         tileRange = this._pxBoundsToTileRange(pixelBounds),
         tileSize = this.getTileSize()
@@ -72,12 +66,13 @@ export default function (L) {
       tileRange.min = tileRange.min.subtract([buff, buff]) // This adds the no-prune buffer
       tileRange.max = tileRange.max.add([buff + 1, buff + 1])
 
-      var pixelRange = L.bounds(
+      const pixelRange = L.bounds(
           tileRange.min.scaleBy(tileSize),
           tileRange.max.add([1, 1]).scaleBy(tileSize) // This prevents an off-by-one when checking if tiles are inside
         ),
-        mustRepositionCanvas = false,
         neededSize = pixelRange.max.subtract(pixelRange.min)
+
+      let mustRepositionCanvas = false
 
       // Resize the canvas, if needed, and only to make it bigger.
       if (
@@ -88,57 +83,31 @@ export default function (L) {
         // To keep it, dump the pixels to another canvas, then display it on
         // top. This could be done with getImageData/putImageData, but that
         // would break for tainted canvases (in non-CORS tilesets)
-        var oldSize = { x: level.canvas.width, y: level.canvas.height }
+        const oldSize = { x: level.canvas.width, y: level.canvas.height }
         // console.info('Resizing canvas from ', oldSize, 'to ', neededSize)
 
-        var tmpCanvas = L.DomUtil.create("canvas")
-        tmpCanvas.style.width = (tmpCanvas.width = oldSize.x) + "px"
-        tmpCanvas.style.height = (tmpCanvas.height = oldSize.y) + "px"
-        tmpCanvas.getContext("2d").drawImage(level.canvas, 0, 0)
-        // var data = level.ctx.getImageData(0, 0, oldSize.x, oldSize.y)
+        const tmpCanvas = L.DomUtil.create('canvas')
+        tmpCanvas.crossOrigin = 'Anonymous'
+        tmpCanvas.style.width = (tmpCanvas.width = oldSize.x) + 'px'
+        tmpCanvas.style.height = (tmpCanvas.height = oldSize.y) + 'px'
+        tmpCanvas.getContext('2d').drawImage(level.canvas, 0, 0)
 
-        level.canvas.style.width = (level.canvas.width = neededSize.x) + "px"
-        level.canvas.style.height = (level.canvas.height = neededSize.y) + "px"
+        // const data = level.ctx.getImageData(0, 0, oldSize.x, oldSize.y)
+
+        level.canvas.style.width = (level.canvas.width = neededSize.x) + 'px'
+        level.canvas.style.height = (level.canvas.height = neededSize.y) + 'px'
         level.ctx.drawImage(tmpCanvas, 0, 0)
-        // level.ctx.putImageData(data, 0, 0, 0, 0, oldSize.x, oldSize.y)
       }
 
       // Translate the canvas contents if it's moved around
       if (level.canvasRange) {
-        var offset = level.canvasRange.min
+        const offset = level.canvasRange.min
           .subtract(tileRange.min)
           .scaleBy(this.getTileSize())
-
-        // 			console.info('Offsetting by ', offset)
-
-        if (!L.Browser.safari) {
-          // By default, canvases copy things "on top of" existing pixels, but we want
-          // this to *replace* the existing pixels when doing a drawImage() call.
-          // This will also clear the sides, so no clearRect() calls are needed to make room
-          // for the new tiles.
-          level.ctx.globalCompositeOperation = "copy"
-          level.ctx.drawImage(level.canvas, offset.x, offset.y)
-          level.ctx.globalCompositeOperation = "source-over"
-        } else {
-          // Safari clears the canvas when copying from itself :-(
-          if (!this._tmpCanvas) {
-            var t = (this._tmpCanvas = L.DomUtil.create("canvas"))
-            t.width = level.canvas.width
-            t.height = level.canvas.height
-            this._tmpContext = t.getContext("2d")
-          }
-          this._tmpContext.clearRect(
-            0,
-            0,
-            level.canvas.width,
-            level.canvas.height
-          )
-          this._tmpContext.drawImage(level.canvas, 0, 0)
-          level.ctx.clearRect(0, 0, level.canvas.width, level.canvas.height)
-          level.ctx.drawImage(this._tmpCanvas, offset.x, offset.y)
-        }
-
-        mustRepositionCanvas = true // Wait until new props are set
+        level.ctx.globalCompositeOperation = 'copy'
+        level.ctx.drawImage(level.canvas, offset.x, offset.y)
+        level.ctx.globalCompositeOperation = 'source-over'
+        mustRepositionCanvas = true
       }
 
       level.canvasRange = tileRange
@@ -169,7 +138,7 @@ export default function (L) {
       if (!level.canvasOrigin) {
         return
       }
-      var scale = this._map.getZoomScale(zoom, level.zoom),
+      const scale = this._map.getZoomScale(zoom, level.zoom),
         translate = level.canvasOrigin
           .multiplyBy(scale)
           .subtract(this._map._getNewPixelOrigin(center, zoom))
@@ -194,8 +163,8 @@ export default function (L) {
       try {
         this.dumpPixels(tile.coords, tile.el)
       } catch (ex) {
-        return this.fire("tileerror", {
-          error: "Could not copy tile pixels: " + ex,
+        return this.fire('tileerror', {
+          error: 'Could not copy tile pixels: ' + ex,
           tile: tile,
           coods: tile.coords,
         })
@@ -204,7 +173,7 @@ export default function (L) {
       // If dumping the pixels was successful, then hide the tile.
       // Do not remove the tile itself, as it is needed to check if the whole
       // level (and its canvas) should be removed (via level.el.children.length)
-      tile.el.style.display = "none"
+      tile.el.style.display = 'none'
     },
 
     // @section Extension methods
@@ -217,7 +186,7 @@ export default function (L) {
     // same size as the `tileSize` option for the layer. Has no effect if `dumpToCanvas`
     // is `false`.
     dumpPixels: function (coords, imageSource) {
-      var level = this._levels[coords.z],
+      const level = this._levels[coords.z],
         tileSize = this.getTileSize()
 
       if (!level.canvasRange || !this.options.dumpToCanvas) {
@@ -232,7 +201,7 @@ export default function (L) {
       }
 
       // Where in the canvas should this tile go?
-      var offset = L.point(coords.x, coords.y)
+      const offset = L.point(coords.x, coords.y)
         .subtract(level.canvasRange.min)
         .scaleBy(this.getTileSize())
 
