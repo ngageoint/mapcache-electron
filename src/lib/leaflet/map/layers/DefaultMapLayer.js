@@ -12,7 +12,9 @@ export default class DefaultMapLayer {
       pane: mapPane,
       zIndex: zIndex,
       maxFeatures: maxFeatures,
-      className: className
+      className: className,
+      minZoom: 0,
+      maxZoom: 20
     }
 
     if (isRemote(layer)) {
