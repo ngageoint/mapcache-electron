@@ -82,6 +82,25 @@ export default {
     return {
       releaseNotes: [
         {
+          title: 'MapCache 1.4.0',
+          releaseDate: 'TBD',
+          bugFixes: [
+            'Vuex file writing bug seen on windows virtual machines.'
+          ],
+          newFeatures: [
+            'Update to Electron v18.',
+            'Update to GeoPackage v4.1.0.',
+            'Nominatim/Overpass URL Adjustment.',
+            'Support for preloaded data sources.',
+            'Dynamic WMS/WMTS data sources.',
+            'Support for XYZ tile services using EPSG:4326 tile set.',
+            'Option to set bounding box to visual extent of the map.',
+            'Improved drawing/editing tools (including vertex snapping).',
+            'Map snapshot.',
+            'Smooth map zooming.'
+          ],
+        },
+        {
           title: 'MapCache 1.3.1',
           releaseDate: 'Mar. 21, 2022',
           bugFixes: [
