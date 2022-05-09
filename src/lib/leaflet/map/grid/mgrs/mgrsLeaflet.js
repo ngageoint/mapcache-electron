@@ -181,7 +181,7 @@ function setupMGRSGrid (L) {
       this.clearLayers()
       let blocks = []
       let labels = []
-      let zoom = this._map.getZoom()
+      let zoom = Math.floor(this._map.getZoom())
       const bounds = toExtent(this._map.getBounds())
       let zones = zonesWithin(bounds, this.options.gridOptions.onlyInterestingZones)
 

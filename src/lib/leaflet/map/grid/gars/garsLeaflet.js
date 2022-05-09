@@ -205,7 +205,7 @@ function setupGARSGrid (L) {
       this.eachLayer(this.removeLayer, this)
 
       let blocks = []
-      let zoom = this._map.getZoom()
+      let zoom = Math.floor(this._map.getZoom())
       const garsLabelFn = (lat, lng, increment, options) => {
         let label = null
         if (options.showLabel) {
