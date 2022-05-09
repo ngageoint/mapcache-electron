@@ -30,11 +30,11 @@ import { setupXYZGrid } from './map/grid/xyz/xyz'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import initSmoothWheel from './map/improvements/Leaflet.SmoothWheelZoom'
-import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap'
+// import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap'
 import { WEB_MERCATOR, WEB_MERCATOR_CODE } from '../projection/ProjectionConstants'
 
 initSmoothWheel(L)
-tileLayerNoGap(L)
+// tileLayerNoGap(L)
 
 delete L.Icon.Default.prototype._getIconUrl
 
