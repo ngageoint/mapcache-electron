@@ -236,7 +236,8 @@ async function requestGeoPackageTile (data, resolve, reject) {
   const expiringGeoPackage = getExpiringGeoPackageConnection(data.dbFile)
   const connection = await expiringGeoPackage.accessConnection()
   const { x, y, z } = data.coords
-  connection.xyzTile(data.tableName, x, y, z, 256, 256).then((result) => {
+
+  connection.xyzTile(data.tableName, x, y, z, data.width, data.height).then((result) => {
     resolve(result)
   }).catch(error => {
     // eslint-disable-next-line no-console
@@ -245,6 +246,7 @@ async function requestGeoPackageTile (data, resolve, reject) {
   }).finally(() => {
     expiringGeoPackage.finished()
   })
+
 }
 
 /**

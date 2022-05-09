@@ -171,6 +171,7 @@ import { mapState } from 'vuex'
 import EditTextModal from '../Common/EditTextModal'
 import { mdiPlus, mdiTrashCan, mdiTrashCanOutline, mdiPackageVariant } from '@mdi/js'
 import { environment } from '../../lib/env/env'
+import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
 
 export default {
   components: { EditTextModal },
@@ -278,10 +279,11 @@ export default {
     },
     createPreloadedDataSources (directory) {
       const sources = {}
-      environment.preloadedDataSources.forEach(source => {
+      environment.preloadedDataSources.forEach(preloadedSource => {
+        const source = Object.assign({}, preloadedSource)
         const sourceDirectory = window.mapcache.createSourceDirectory(directory)
-        const { layerId, layerDirectory } = window.mapcache.createNextAvailableLayerDirectory(sourceDirectory)
-        source.id = layerId
+        const layerDirectory = window.mapcache.createNextAvailableLayerDirectory(sourceDirectory)
+        source.id = createUniqueID()
         source.directory = layerDirectory
         source.sourceDirectory = sourceDirectory
         sources[source.id] = source
