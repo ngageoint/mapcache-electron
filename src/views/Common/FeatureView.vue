@@ -179,7 +179,7 @@
                       }}</span>
                     <span
                         v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{
-                        getHumanReadableDate(featureViewData.feature.properties[column.name])
+                        getHumanReadableDate(featureViewData.feature.properties[column.name], column.dataType === DATE)
                       }}</span>
                     <span v-else>{{ featureViewData.feature.properties[column.name] }}</span>
                   </p>
@@ -447,10 +447,10 @@ export default {
         console.error('Failed to save changes.')
       }
     },
-    getHumanReadableDate (dateString) {
+    getHumanReadableDate (dateString, dateOnly = false) {
       if (dateString != null) {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' }
-        return new Date(dateString).toLocaleTimeString(undefined, options)
+        const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'utc' }
+        return dateOnly ? new Date(dateString).toLocaleDateString(undefined, options) : new Date(dateString).toLocaleTimeString(undefined, options)
       } else {
         return ''
       }
