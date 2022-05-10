@@ -1089,7 +1089,7 @@ class MapCacheWindowManager {
             this.mainWindow.destroy()
             this.mainWindow = null
           }
-        }, 1000)
+        }, 250)
       })
       // eslint-disable-next-line no-unused-vars
     } catch (e) {

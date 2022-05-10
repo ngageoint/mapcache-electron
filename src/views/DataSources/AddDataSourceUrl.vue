@@ -206,9 +206,9 @@
                 <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">
                   {{ 'Layers from the ArcGIS feature service to import.' }}
                 </v-card-subtitle>
-                <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-1">
+                <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-4">
                   <v-virtual-scroll
-                      class="pt-4 pl-2 pr-2 ma-0 mt-8"
+                      class="pa-0 ma-0 detail-bg"
                       :items="serviceLayers"
                       :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
                       :item-height="getHeightFromServiceLayers(serviceLayers)"
@@ -223,17 +223,16 @@
                             class="detail-bg"
                             :key="`service-layer-${i}`"
                             :value="item"
-                            link
                             @click="() => {item.active = !item.active}"
                         >
                           <template v-slot:default="{ active }">
                             <v-list-item-content>
                               <div v-if="item.title">
-                                <div class="list-item-title no-clamp" v-html="item.title"></div>
+                                <div class="list-item-title" v-html="item.title" :title="item.title"></div>
                               </div>
                               <div v-if="item.subtitles && item.subtitles.length > 0">
                                 <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                                     :key="i + 'service-layer-title'" v-html="title"></div>
+                                     :key="i + 'service-layer-title'" v-html="title" :title="title"></div>
                               </div>
                             </v-list-item-content>
                             <v-list-item-action>
@@ -476,11 +475,11 @@ export default {
         })
       })
     },
-
     getHeightFromServiceLayers (serviceLayers) {
       let height = 48
       let maxSubs = 0
       serviceLayers.forEach(layer => {
+        height = Math.max(height, 38 + Math.ceil(layer.title.length / 3))
         if (layer.subtitles) {
           maxSubs = Math.max(maxSubs, layer.subtitles.length)
         }
@@ -820,14 +819,12 @@ ul {
 .list-item-title {
   font-size: .8125rem;
   font-weight: 500;
-  line-height: 1rem;
   color: var(--v-text-base)
 }
 
 .list-item-subtitle {
   font-size: .8125rem;
   font-weight: 400;
-  line-height: 1rem;
   color: var(--v-detail-base)
 }
 </style>

@@ -1,6 +1,12 @@
 import { addTransformation } from '../../projection/OpenLayersProjectionUtilities'
 import isNil from 'lodash/isNil'
-import { getLayerOutputFormat, isGeoJSON, isGML3, isGML32, isGML2 } from '../geoserver/GeoServiceUtilities'
+import {
+  getLayerOutputFormat,
+  isGeoJSON,
+  isGML3,
+  isGML32,
+  isGML2
+} from '../geoserver/GeoServiceUtilities'
 import GeoJSON from 'ol-format-node/format/GeoJSON'
 import WFS from 'ol-format-node/format/WFS'
 import GML32 from 'ol-format-node/format/GML32'
@@ -29,6 +35,7 @@ function convertWFSToGeoJSON (layer, layerData) {
     srs = otherSrs
   }
   const options = {}
+
   // if data is already in 4326, no need to specify a projection
   if (!srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) {
     addTransformation(srs, WORLD_GEODETIC_SYSTEM)
@@ -38,10 +45,18 @@ function convertWFSToGeoJSON (layer, layerData) {
 
   let featureCollection
   let features = {}
+
   if (isGeoJSON(outputFormat)) {
     features = new GeoJSON().readFeatures(JSON.parse(layerData), options)
   } else if (isGML32(outputFormat)) {
     features = new WFS({ gmlFormat: new GML32(), version: layer.version }).readFeatures(layerData, options)
+    // if no features were returned, try using gml3 with the response
+    if (features == null || features.length === 0) {
+      try {
+        features = new WFS({ gmlFormat: new GML3() }).readFeatures(layerData, options)
+        // eslint-disable-next-line no-empty, no-unused-vars
+      } catch (e) {}
+    }
   } else if (isGML3(outputFormat)) {
     features = new WFS({ gmlFormat: new GML3(), version: layer.version }).readFeatures(layerData, options)
   } else if (isGML2(outputFormat)) {

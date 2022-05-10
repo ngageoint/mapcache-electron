@@ -26,7 +26,7 @@ const WFS_VERSIONS = {
 }
 
 const supportedImageFormats = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/bmp', 'image/webp']
-const supportedWFSResponseFormats = ['application/json', 'json', 'geojson', 'gml32', 'text/xml; subtype=gml/3.2', 'gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1', 'gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2']
+const supportedWFSResponseFormats = ['application/json', 'json', 'geojson', 'application/json; subtype=geojson', 'gml32', 'text/xml; subtype=gml/3.2', 'gml3', 'text/xml; subtype=gml/3.1', 'text/xml; subtype=gml/3.1.1', 'gml2', 'text/xml; subtype=gml/2', 'text/xml; subtype=gml/2.1.2']
 
 function getBoundingBoxForWMSRequest (bbox, version, srs) {
   if (srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE) && version === WMS_VERSIONS.V1_3_0) {
@@ -309,7 +309,7 @@ async function testGetMapFor3857 (wmsUrl, layers, version, format, withCredentia
 }
 
 function isGeoJSON (fmt) {
-  return ['application/json', 'json', 'geojson'].indexOf(fmt.toLowerCase()) !== -1
+  return ['application/json', 'json', 'geojson', 'application/json; subtype=geojson'].indexOf(fmt.toLowerCase()) !== -1
 }
 
 function isGML32 (fmt) {
@@ -466,7 +466,7 @@ function getWFSInfo (json, version) {
         const lowerCorner = bbox['ows:LowerCorner'][0].split(' ')
         const upperCorner = bbox['ows:UpperCorner'][0].split(' ')
         if (!isNil(layer['OutputFormats'])) {
-          outputFormats = layer['OutputFormats'].map(format => format['Format'][0])
+          outputFormats = layer['OutputFormats'][0]['Format']
         }
         const extent = [Number(lowerCorner[0]), Number(lowerCorner[1]), Number(upperCorner[0]), Number(upperCorner[1])]
         const name = !isNil(layer['wfs:Name']) ? layer['wfs:Name'][0] : layer['Name'][0]
