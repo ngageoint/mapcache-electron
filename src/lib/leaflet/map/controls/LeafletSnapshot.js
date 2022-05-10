@@ -16,12 +16,15 @@ export default class LeafletSnapshot extends L.Control {
 
   onAdd (map) {
     this.map = map
+    const snapShotIcon = `<svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M20,4H16.83L15,2H9L7.17,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6A2,2 0 0,0 20,4M20,18H4V6H8.05L9.88,4H14.12L15.95,6H20V18M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15Z" /></svg>`
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
     this._link = L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
     this._link.title = 'Map Screenshot'
-    this._link.innerHTML = `<svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M20,4H16.83L15,2H9L7.17,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6A2,2 0 0,0 20,4M20,18H4V6H8.05L9.88,4H14.12L15.95,6H20V18M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15Z" /></svg>`
+    this._link.innerHTML = snapShotIcon
     this._link.onclick = async () => {
+      this._link.innerHTML = `<div role="progressbar" aria-valuemin="0" aria-valuemax="100" class="v-progress-circular v-progress-circular--visible v-progress-circular--indeterminate" style="height: 30px; width: 30px; margin-left: 1px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="21.904761904761905 21.904761904761905 43.80952380952381 43.80952380952381" style="transform: rotate(0deg); width:20px; height:20px; margin-left: 4px;"><circle fill="transparent" cx="43.80952380952381" cy="43.80952380952381" r="20" stroke-width="3.8095238095238093" stroke-dasharray="125.664" stroke-dashoffset="125.66370614359172px" class="v-progress-circular__overlay"></circle></svg><div class="v-progress-circular__info"></div></div>`
       await this.printMap(this.map)
+      this._link.innerHTML = snapShotIcon
     }
     return container
   }
