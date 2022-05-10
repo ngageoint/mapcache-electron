@@ -688,8 +688,7 @@ class MapCacheWindowManager {
    * @param url
    * @param onFulfilled
    */
-  loadContent (window, url, onFulfilled = () => {
-  }) {
+  loadContent (window, url, onFulfilled = () => {}) {
     window.loadURL(url).then(onFulfilled).catch(() => {
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
@@ -1082,15 +1081,15 @@ class MapCacheWindowManager {
         if (geopackageIds != null || filePaths != null) {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
         }
-        this.projectWindow.show()
         this.setupCertificateAuth()
         setTimeout(() => {
+          this.projectWindow.show()
           if (!isNil(this.mainWindow)) {
             this.mainWindow.hide()
             this.mainWindow.destroy()
             this.mainWindow = null
           }
-        }, 250)
+        }, 1000)
       })
       // eslint-disable-next-line no-unused-vars
     } catch (e) {

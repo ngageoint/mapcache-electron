@@ -32,7 +32,6 @@ export default function (L) {
           'leaflet-tile-container leaflet-zoom-animated',
           this._container
         )
-        level.canvas.crossOrigin = 'Anonymous'
         level.ctx = level.canvas.getContext('2d')
         this._resetCanvasSize(level)
       }
@@ -87,7 +86,6 @@ export default function (L) {
         // console.info('Resizing canvas from ', oldSize, 'to ', neededSize)
 
         const tmpCanvas = L.DomUtil.create('canvas')
-        tmpCanvas.crossOrigin = 'Anonymous'
         tmpCanvas.style.width = (tmpCanvas.width = oldSize.x) + 'px'
         tmpCanvas.style.height = (tmpCanvas.height = oldSize.y) + 'px'
         tmpCanvas.getContext('2d').drawImage(level.canvas, 0, 0)
