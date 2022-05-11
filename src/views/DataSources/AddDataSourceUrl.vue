@@ -518,9 +518,7 @@ export default {
         this.connected = true
         this.serviceLayers = serviceInfo.serviceLayers || []
         this.serviceInfo = serviceInfo
-        if (this.serviceInfo.is4326 != null) {
-          this.xyzProjection = this.serviceInfo.is4326 ? WORLD_GEODETIC_SYSTEM : WEB_MERCATOR
-        }
+        this.xyzProjection = WEB_MERCATOR
         this.withCredentials = withCredentials
       }
     },
