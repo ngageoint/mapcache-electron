@@ -85,7 +85,8 @@ export default {
           title: 'MapCache 1.4.0',
           releaseDate: 'TBD',
           bugFixes: [
-            'Vuex file writing bug seen on windows virtual machines.'
+            'Vuex file writing bug seen on windows virtual machines.',
+            'Date format in feature view.'
           ],
           newFeatures: [
             'Update to Electron v18.',
