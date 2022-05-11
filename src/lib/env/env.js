@@ -25,30 +25,7 @@ const environment = {
   geopackageUrl: 'https://geopackage.org',
   geopackageLibrariesUrl: 'https://ngageoint.github.io/GeoPackage',
   eventkitUrl: 'https://eventkit.gs.mil',
-  preloadedDataSources: [
-    // {
-    //   filePath: 'http://localhost:8080/geoserver/wms',
-    //   layers: [],
-    //   sourceLayerName: 'GeoServer',
-    //   visible: false,
-    //   layerType: 'WMS',
-    //   withCredentials: false,
-    //   minZoom: 0,
-    //   maxZoom: 20,
-    //   extent: [-180, -90, 180, 90],
-    //   srs: 'EPSG:4326',
-    //   name: 'GeoServer',
-    //   displayName: 'GeoServer',
-    //   style: {},
-    //   format: 'image/png',
-    //   styleKey: 0,
-    //   opacity: 1,
-    //   pane: 'tile',
-    //   rateLimit: 50,
-    //   retryAttempts: 3,
-    //   timeoutMs: 5000
-    // }
-  ]
+  preloadedDataSources: []
 }
 
 export {
