@@ -79,6 +79,12 @@ function defineProjection (name, definition = null) {
   }
 }
 
+function correctRoundingErrors (bounds) {
+  bounds.minLat = Math.round((bounds.minLat + Number.EPSILON) * 100000000000) / 100000000000
+  bounds.minLon = Math.round((bounds.minLon + Number.EPSILON) * 100000000000) / 100000000000
+  bounds.maxLat = Math.round((bounds.maxLat + Number.EPSILON) * 100000000000) / 100000000000
+  bounds.maxLon = Math.round((bounds.maxLon + Number.EPSILON) * 100000000000) / 100000000000
+}
 
 /**
  * Converts an EPSG:3857 bounding box into the provided spatial reference system.
@@ -132,6 +138,8 @@ function reprojectWebMercatorBoundingBox (minLon, maxLon, minLat, maxLat, srs, d
   if (srs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) {
     bounds = trimBboxToWGS84Max(bounds)
   }
+
+  correctRoundingErrors(bounds)
 
   return bounds
 }

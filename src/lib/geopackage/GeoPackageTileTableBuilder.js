@@ -183,9 +183,10 @@ async function buildTileLayer (configuration, statusCallback) {
 
       // converts an extent in 4326 to 3857
       const convertToWebMercator = (extent) => {
-        let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
-        let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
-        return new BoundingBox(filterLowerLeft[0], filterUpperRight[0], filterLowerLeft[1], filterUpperRight[1])
+        let trimmedExtent = trimExtentToWebMercatorMax(extent)
+        let filterLowerLeft = wgs84ToWebMercator.forward([trimmedExtent[0], trimmedExtent[1]])
+        let filterUpperRight = wgs84ToWebMercator.forward([trimmedExtent[2], trimmedExtent[3]])
+        return [filterLowerLeft[0], filterLowerLeft[1], filterUpperRight[0], filterUpperRight[1]]
       }
 
       // Determine the filtered extents for each layer at each zoom level. The drawing overlap width/height may increase this range.
@@ -284,12 +285,13 @@ async function buildTileLayer (configuration, statusCallback) {
 
         const clippingMap = {}
         for (let i = 0; i < layers.length; i++) {
-          const filteredExtent = layerZoomExtentMap[z][layers[i]]
-          const minX = Math.min(tileSize, Math.max(0, getX(filteredExtent.minLongitude, Math.floor) - 1))
-          const maxX = Math.max(0, Math.min(tileSize, getX(filteredExtent.maxLongitude, Math.ceil) + 1))
-          const minY = Math.min(tileSize, Math.max(0, getY(filteredExtent.maxLatitude, Math.ceil) - 1))
-          const maxY = Math.max(0, Math.min(tileSize, getY(filteredExtent.minLatitude, Math.floor) + 1))
-          clippingMap[layers[i]] = [minX, minY, maxX - minX, maxY - minY]
+          const layerId = layers[i]
+          const filteredExtent = layerZoomExtentMap[z][layerId]
+          const minX = Math.min(tileSize, Math.max(0, getX(filteredExtent[0], Math.floor) - 1))
+          const maxX = Math.max(0, Math.min(tileSize, getX(filteredExtent[2], Math.ceil) + 1))
+          const minY = Math.min(tileSize, Math.max(0, getY(filteredExtent[3], Math.ceil) - 1))
+          const maxY = Math.max(0, Math.min(tileSize, getY(filteredExtent[1], Math.floor) + 1))
+          clippingMap[layerId] = [minX, minY, maxX - minX, maxY - minY]
         }
 
         await new Promise((resolve, reject) => {
@@ -348,6 +350,7 @@ async function buildTileLayer (configuration, statusCallback) {
             resolve()
           })
         })
+
         buffer = await getImageBufferFromCanvas(canvas)
         if (buffer != null) {
           tileRow.resetId()

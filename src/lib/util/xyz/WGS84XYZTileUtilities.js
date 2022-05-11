@@ -167,15 +167,15 @@ function tilesPerWGS84LatSide(zoom) {
 }
 
 function tilesPerWGS84LonSide(zoom) {
-  return 2 * tilesPerSideWithZoom(zoom)
+  return 2.0 * tilesPerSideWithZoom(zoom)
 }
 
 function tileSizeLatPerWGS84Side(tilesPerLat) {
-  return (2 * WGS84_HALF_WORLD_LAT_HEIGHT) / tilesPerLat
+  return (2.0 * WGS84_HALF_WORLD_LAT_HEIGHT) / tilesPerLat
 }
 
 function tileSizeLonPerWGS84Side(tilesPerLon) {
-  return (2 * WGS84_HALF_WORLD_LON_WIDTH) / tilesPerLon
+  return (2.0 * WGS84_HALF_WORLD_LON_WIDTH) / tilesPerLon
 }
 
 function getTileGridWGS84 (extent, zoom) {
@@ -185,17 +185,17 @@ function getTileGridWGS84 (extent, zoom) {
   const tileSizeLat = tileSizeLatPerWGS84Side(tilesPerLat)
   const tileSizeLon = tileSizeLonPerWGS84Side(tilesPerLon)
 
-  let minX = Math.round((extent[0] + WGS84_HALF_WORLD_LON_WIDTH) / tileSizeLon)
+  let minX = Math.floor((extent[0] + WGS84_HALF_WORLD_LON_WIDTH) / tileSizeLon)
   let tempMaxX = (extent[2] + WGS84_HALF_WORLD_LON_WIDTH) / tileSizeLon
-  let maxX = Math.round(tempMaxX)
+  let maxX = Math.ceil(tempMaxX)
   if (tempMaxX % 1 === 0) {
     maxX--
   }
   maxX = Math.min(maxX, tilesPerLon - 1)
 
-  let minY = Math.round(((extent[3] - WGS84_HALF_WORLD_LAT_HEIGHT) * -1) / tileSizeLat)
+  let minY = Math.floor(((extent[3] - WGS84_HALF_WORLD_LAT_HEIGHT) * -1) / tileSizeLat)
   let tempMaxY = ((extent[1] - WGS84_HALF_WORLD_LAT_HEIGHT) * -1) / tileSizeLat
-  let maxY = Math.round(tempMaxY)
+  let maxY = Math.ceil(tempMaxY)
   if (tempMaxY % 1 === 0) {
     maxY--
   }
@@ -205,14 +205,13 @@ function getTileGridWGS84 (extent, zoom) {
 }
 
 /**
- * 4326 bounds are -180, -90, 180, 90
+ * Get tiles for an extent and zoom
  * @param extent
  * @param zoom
  */
 function getTilesForExtentAtZoom (extent, zoom) {
   const tiles = []
   const tileGrid = getTileGridWGS84(extent, zoom)
-
   for (let x = tileGrid.minX; x <= tileGrid.maxX; x++) {
     for (let y = tileGrid.minY; y <= tileGrid.maxY; y++) {
       tiles.push({

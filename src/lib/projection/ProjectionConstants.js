@@ -16,32 +16,32 @@ const COLON_DELIMITER = ':'
 /**
  * Web Mercator Latitude Range
  */
-const WEB_MERCATOR_MAX_LAT_RANGE = 85.0511287798066;
+const WEB_MERCATOR_MAX_LAT_RANGE = 85.0511287798066
 
 /**
  * Web Mercator Latitude Range
  */
-const WEB_MERCATOR_MIN_LAT_RANGE = -85.05112877980659;
+const WEB_MERCATOR_MIN_LAT_RANGE = -85.05112877980659
 
 /**
  * Half the world distance in either direction
  */
-const WEB_MERCATOR_HALF_WORLD_WIDTH = 20037508.342789244;
+const WEB_MERCATOR_HALF_WORLD_WIDTH = 20037508.342789244
 
 /**
  * Half the world longitude width for WGS84
  */
-const WGS84_HALF_WORLD_LON_WIDTH = 180.0;
+const WGS84_HALF_WORLD_LON_WIDTH = 180.0
 
 /**
  * Half the world latitude height for WGS84
  */
-const WGS84_HALF_WORLD_LAT_HEIGHT = 90.0;
+const WGS84_HALF_WORLD_LAT_HEIGHT = 90.0
 
 /**
  * Web mercator precision
  */
-const WEB_MERCATOR_PRECISION = 0.0000000001;
+const WEB_MERCATOR_PRECISION = 0.0000000001
 
 
 export {
