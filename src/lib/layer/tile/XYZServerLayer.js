@@ -54,7 +54,8 @@ export default class XYZServerLayer extends NetworkTileLayer {
     // this xyz server is in 4326, so we should request data appropriately
     if (this.srs === WORLD_GEODETIC_SYSTEM) {
       // need to get coords in 4326 for the projectedBoundingBox
-      const zoom = coords.z
+      // adjust zoom to better match resolution
+      const zoom = Math.max(0, coords.z - 1)
       const tiles = getTilesForExtentAtZoom([projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat], zoom)
       tiles.forEach((tile) => {
         requests.push({
