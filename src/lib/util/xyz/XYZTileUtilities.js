@@ -7,6 +7,16 @@ Math.degrees = function (radians) {
   return radians * 180 / Math.PI
 }
 
+/**
+ * Tiles per side with zoom
+ * @param zoom
+ * @returns {number}
+ */
+function tilesPerSideWithZoom (zoom) {
+  return Math.pow(2, zoom)
+}
+
+
 function tile2lon (x, z) {
   return (x / Math.pow(2, z) * 360 - 180)
 }
@@ -231,5 +241,6 @@ export {
   fixXYZTileServerUrlForLeaflet,
   getIntersection,
   tilesInExtentAtZoom,
-  getClippingRegion
+  getClippingRegion,
+  tilesPerSideWithZoom
 }

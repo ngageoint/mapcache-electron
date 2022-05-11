@@ -1,7 +1,7 @@
 import NetworkTileLayer from './NetworkTileLayer'
 import { generateUrlForTile } from '../../util/xyz/XYZTileUtilities'
 import { XYZ_SERVER } from '../LayerTypes'
-import { getTilesForExtentAtZoom } from '../../util/tile/WGS84TileBoundingBoxUtils'
+import { getTilesForExtentAtZoom } from '../../util/xyz/WGS84XYZTileUtilities'
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../projection/ProjectionConstants'
 
 export default class XYZServerLayer extends NetworkTileLayer {
@@ -76,7 +76,6 @@ export default class XYZServerLayer extends NetworkTileLayer {
         tileSRS: this.srs
       })
     }
-
     return requests
   }
 }

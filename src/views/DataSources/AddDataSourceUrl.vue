@@ -151,8 +151,7 @@
                   {{ error.statusText ? error.statusText : error }}</h4>
                 <div v-if="selectedServiceType === 2 && connected">
                   <v-card-subtitle class="pl-0">
-                    Specify the projection. {{ WEB_MERCATOR_DISPLAY_TEXT }} is more commonly the projection used for XYZ
-                    tile services.
+                    Specify the XYZ tile service's projection. <br><small>Note: {{ WEB_MERCATOR_DISPLAY_TEXT }} is more commonly used.</small>
                   </v-card-subtitle>
                   <v-radio-group
                       v-model="xyzProjection"

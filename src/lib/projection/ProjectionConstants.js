@@ -6,11 +6,43 @@ const WEB_MERCATOR_CODE = 3857
 const WORLD_GEODETIC_SYSTEM_CODE = 4326
 const WORLD_GEODETIC_SYSTEM_CRS_CODE = 84
 
-const WEB_MERCATOR_DISPLAY_TEXT = 'EPSG:3857 (Web Mercator)'
-const WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT = 'EPSG:4326 (World Geodetic System 1984)'
+const WEB_MERCATOR_DISPLAY_TEXT = 'Web Mercator (EPSG:3857)'
+const WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT = 'Plate Carrée (EPSG:4326)'
 
 const EPSG = 'EPSG'
 const COLON_DELIMITER = ':'
+
+
+/**
+ * Web Mercator Latitude Range
+ */
+const WEB_MERCATOR_MAX_LAT_RANGE = 85.0511287798066;
+
+/**
+ * Web Mercator Latitude Range
+ */
+const WEB_MERCATOR_MIN_LAT_RANGE = -85.05112877980659;
+
+/**
+ * Half the world distance in either direction
+ */
+const WEB_MERCATOR_HALF_WORLD_WIDTH = 20037508.342789244;
+
+/**
+ * Half the world longitude width for WGS84
+ */
+const WGS84_HALF_WORLD_LON_WIDTH = 180.0;
+
+/**
+ * Half the world latitude height for WGS84
+ */
+const WGS84_HALF_WORLD_LAT_HEIGHT = 90.0;
+
+/**
+ * Web mercator precision
+ */
+const WEB_MERCATOR_PRECISION = 0.0000000001;
+
 
 export {
   WEB_MERCATOR,
@@ -22,5 +54,11 @@ export {
   WEB_MERCATOR_DISPLAY_TEXT,
   WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT,
   EPSG,
-  COLON_DELIMITER
+  COLON_DELIMITER,
+  WEB_MERCATOR_PRECISION,
+  WEB_MERCATOR_MIN_LAT_RANGE,
+  WEB_MERCATOR_HALF_WORLD_WIDTH,
+  WEB_MERCATOR_MAX_LAT_RANGE,
+  WGS84_HALF_WORLD_LON_WIDTH,
+  WGS84_HALF_WORLD_LAT_HEIGHT
 }

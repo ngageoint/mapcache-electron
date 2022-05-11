@@ -2,19 +2,9 @@ import { wgs84ToWebMercator } from '../../projection/ProjectionUtilities'
 import bbox from '@turf/bbox'
 import intersect from '@turf/intersect'
 import isNil from 'lodash/isNil'
+import { tilesPerSideWithZoom } from '../xyz/XYZTileUtilities'
 
 const WEB_MERCATOR_HALF_WORLD_WIDTH = wgs84ToWebMercator.forward([180, 0])[0]
-
-/**
- *  Get the tiles per side, width and height, at the zoom level
- *
- *  @param zoom zoom level
- *
- *  @return number tiles per side
- */
-function tilesPerSideWithZoom (zoom) {
-  return Math.pow(2, zoom)
-}
 
 function tileIntersectsXYZ (x, y, z, extent) {
   let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
@@ -68,13 +58,12 @@ function intersection (boundingBoxA, boundingBoxB) {
  *  @return Object web mercator bounding box
  */
 function getWebMercatorBoundingBoxFromXYZ (x, y, zoom) {
-  var tilesPerSide = tilesPerSideWithZoom(zoom)
-  var tileSize = tileSizeWithTilesPerSide(tilesPerSide)
-
-  var minLon = (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH) + (x * tileSize)
-  var maxLon = (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH) + ((x + 1) * tileSize)
-  var minLat = WEB_MERCATOR_HALF_WORLD_WIDTH - ((y + 1) * tileSize)
-  var maxLat = WEB_MERCATOR_HALF_WORLD_WIDTH - (y * tileSize)
+  const tilesPerSide = tilesPerSideWithZoom(zoom)
+  const tileSize = tileSizeWithTilesPerSide(tilesPerSide)
+  let minLon = (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH) + (x * tileSize)
+  let maxLon = (-1 * WEB_MERCATOR_HALF_WORLD_WIDTH) + ((x + 1) * tileSize)
+  let minLat = WEB_MERCATOR_HALF_WORLD_WIDTH - ((y + 1) * tileSize)
+  let maxLat = WEB_MERCATOR_HALF_WORLD_WIDTH - (y * tileSize)
 
   minLon = Math.max((-1 * WEB_MERCATOR_HALF_WORLD_WIDTH), minLon)
   maxLon = Math.min(WEB_MERCATOR_HALF_WORLD_WIDTH, maxLon)
@@ -106,11 +95,10 @@ function tileIntersects (tileBboxUR, tileBboxLL, geotiffBboxUR, geotiffBboxLL) {
 
 export {
   WEB_MERCATOR_HALF_WORLD_WIDTH,
-  tilesPerSideWithZoom,
   tileSizeWithTilesPerSide,
   getBoundingBoxFromExtents,
   intersection,
   getWebMercatorBoundingBoxFromXYZ,
   tileIntersects,
-  tileIntersectsXYZ
+  tileIntersectsXYZ,
 }
