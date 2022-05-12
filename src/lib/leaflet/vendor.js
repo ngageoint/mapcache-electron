@@ -20,7 +20,7 @@ import {
   TIMEOUT_STATUS,
   getAuthenticationMethod
 } from '../network/HttpUtilities'
-import { XYZ_SERVER, WMS } from '../layer/LayerTypes'
+import { XYZ_SERVER, WMS, WMTS } from '../layer/LayerTypes'
 import CancellableTileRequest from '../network/CancellableTileRequest'
 import { constructRenderer } from './map/renderer/RendererFactory'
 import { getClippingRegion } from '../util/xyz/XYZTileUtilities'
@@ -179,6 +179,23 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
     } else if (this.layer.layerType === WMS) {
       options.version = this.layer.version
       let { serviceInfo, error } = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.WMS, options)
+      if (!isNil(serviceInfo)) {
+        // verify that this source is still valid when compared to the service info
+        const layers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)
+        if (layers.length !== this.layer.layers.length) {
+          const missingLayers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) === -1)
+          error = {
+            status: 400,
+            statusText: 'The following layer' + (missingLayers.length > 1 ? 's' : '') + ' no longer exist: ' + missingLayers.join(', ')
+          }
+        }
+      }
+      if (!isNil(error) && (!isTimeoutError(error) || !ignoreTimeoutError)) {
+        throw error
+      }
+    } else if (this.layer.layerType === WMTS) {
+      options.version = this.layer.version
+      let { serviceInfo, error } = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.WMTS, options)
       if (!isNil(serviceInfo)) {
         // verify that this source is still valid when compared to the service info
         const layers = this.layer.layers.filter(layer => serviceInfo.serviceLayers.find(l => l.name === layer) !== -1)

@@ -364,10 +364,12 @@ export default {
         copyTableName: this.copiedTable,
         type: 'tile'
       }).then(() => {
-        this.copying = false
         this.$nextTick(() => {
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Tile layer copied', 'primary')
         })
+      }).finally(() => {
+        this.copying = false
+        this.copyDialog = false
       })
     },
     deleteTable () {

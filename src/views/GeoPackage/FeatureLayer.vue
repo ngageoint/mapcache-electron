@@ -760,11 +760,12 @@ export default {
         copyTableName: this.copiedTable,
         type: 'feature'
       }).then(() => {
-        this.copying = false
         this.$nextTick(() => {
-          this.copyDialog = false
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Feature layer copied', 'primary')
         })
+      }).finally(() => {
+        this.copying = false
+        this.copyDialog = false
       })
     },
     deleteTable () {
