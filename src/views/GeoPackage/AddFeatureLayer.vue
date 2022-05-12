@@ -306,6 +306,7 @@ import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomU
 import { mdiDragHorizontalVariant } from '@mdi/js'
 import Sortable from 'sortablejs'
 import EventBus from '../../lib/vue/EventBus'
+import throttle from 'lodash/throttle'
 
 export default {
   components: {
@@ -441,14 +442,15 @@ export default {
         })
       } else {
         this.processing = true
-        window.mapcache.addFeatureLayer(this.configuration, (status) => {
+        const handleStatus = throttle((status) => {
           if (!this.done) {
             this.status = status
             if (this.status.progress != null) {
-              this.status.progress = parseFloat(this.status.progress).toFixed(1)
+              this.status.progress = parseFloat(parseFloat(this.status.progress).toFixed(1))
             }
           }
-        }).then(() => {
+        }, 100)
+        window.mapcache.addFeatureLayer(this.configuration, handleStatus).then(() => {
           this.done = true
           window.mapcache.synchronizeGeoPackage({ projectId: this.project.id, geopackageId: this.geopackage.id })
           if (this.status == null || this.status.error == null) {
