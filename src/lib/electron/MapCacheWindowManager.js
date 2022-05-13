@@ -988,9 +988,8 @@ class MapCacheWindowManager {
             this.featureTableWindow.setFullScreen(true)
           } else if (this.isFeatureTableWindowMaximized) {
             this.featureTableWindow.maximize()
-          } else {
-            this.featureTableWindow.show()
           }
+          this.featureTableWindow.show()
         }
       } else {
         this.featureTableWindowState.unmanage(this.featureTableWindow)
@@ -1101,7 +1100,6 @@ class MapCacheWindowManager {
    */
   showProject (projectId, geopackageIds, filePaths) {
     try {
-      this.projectWindowContentLoaded = false
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
@@ -1112,15 +1110,14 @@ class MapCacheWindowManager {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
         }
         this.setupCertificateAuth()
-        this.projectWindowContentLoaded = true
         setTimeout(() => {
           if (this.projectWindowFullScreen) {
             this.projectWindow.setFullScreen(true)
           } else if (this.projectWindowMaximized) {
             this.projectWindow.maximize()
-          } else {
-            this.projectWindow.show()
           }
+          this.projectWindow.show()
+
           if (!isNil(this.mainWindow)) {
             this.mainWindow.hide()
             this.mainWindow.destroy()
