@@ -55,6 +55,7 @@
         <v-row no-gutters justify="space-between" class="ma-2">
           <v-text-field
               class="ml-2 pt-0"
+              autofocus
               v-model="search"
               :append-icon="mdiMagnify"
               label="Search"

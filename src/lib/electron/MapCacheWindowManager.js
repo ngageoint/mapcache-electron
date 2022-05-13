@@ -896,8 +896,14 @@ class MapCacheWindowManager {
       defaultWidth: 1200,
       defaultHeight: windowHeight,
       file: 'project-page.json',
-      path: path.join(app.getPath('userData'), 'window_state')
+      path: path.join(app.getPath('userData'), 'window_state'),
+      fullScreen: false,
+      maximize: false
     })
+
+    // track state, this will determine how we show
+    this.projectWindowMaximized = this.projectWindowState.isMaximized
+    this.projectWindowFullScreen = this.projectWindowState.isFullScreen
 
     this.projectWindow = new BrowserWindow({
       title: 'MapCache',
@@ -928,7 +934,7 @@ class MapCacheWindowManager {
           this.projectWindow.send(UNDO)
         }
       })
-    });
+    })
 
     this.projectWindow.on('blur', () => {
       globalShortcut.unregister('CommandOrControl+Shift+Z')
@@ -977,10 +983,27 @@ class MapCacheWindowManager {
     if (this.featureTableWindow) {
       if (show) {
         if (force || !this.featureTableWindow.isVisible()) {
-          this.featureTableWindow.show()
+          this.featureTableWindowState.manage(this.featureTableWindow)
+          if (this.isFeatureTableWindowFullScreen) {
+            this.featureTableWindow.setFullScreen(true)
+          } else if (this.isFeatureTableWindowMaximized) {
+            this.featureTableWindow.maximize()
+          } else {
+            this.featureTableWindow.show()
+          }
         }
       } else {
-        this.featureTableWindow.hide()
+        this.featureTableWindowState.unmanage(this.featureTableWindow)
+        this.isFeatureTableWindowFullScreen = this.featureTableWindowState.isFullScreen
+        this.isFeatureTableWindowMaximized = this.featureTableWindowState.isMaximized
+        if (this.isFeatureTableWindowFullScreen) {
+          this.featureTableWindow.once('leave-full-screen', () => {
+            this.featureTableWindow.hide()
+          })
+          this.featureTableWindow.setFullScreen(false)
+        } else {
+          this.featureTableWindow.hide()
+        }
       }
     }
   }
@@ -995,8 +1018,11 @@ class MapCacheWindowManager {
       defaultWidth: 650,
       defaultHeight: windowHeight,
       file: 'feature-table-page.json',
-      path: path.join(app.getPath('userData'), 'window_state')
+      path: path.join(app.getPath('userData'), 'window_state'),
+      fullScreen: false,
+      maximize: false
     })
+
     this.featureTableWindow = new BrowserWindow({
       title: 'MapCache feature table',
       webPreferences: {
@@ -1010,16 +1036,19 @@ class MapCacheWindowManager {
       minHeight: windowHeight,
       minWidth: 650
     })
-    this.featureTableWindowState.manage(this.featureTableWindow)
+    this.isFeatureTableWindowFullScreen = this.featureTableWindowState.isFullScreen
+    this.isFeatureTableWindowMaximized = this.featureTableWindowState.isMaximized
+
     this.featureTableWindow.on('close', (event) => {
       if (this.closingProjectWindow) {
-        this.closingProjectWindow = false
         this.featureTableWindow = null
       } else {
-        this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
         this.showHideFeatureTableWindow(false)
         event.preventDefault()
       }
+    })
+    this.featureTableWindow.on('hide', () => {
+      this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
     })
     const winURL = process.env.WEBPACK_DEV_SERVER_URL
       ? `${process.env.WEBPACK_DEV_SERVER_URL}#/feature_table/${projectId}`
@@ -1072,6 +1101,7 @@ class MapCacheWindowManager {
    */
   showProject (projectId, geopackageIds, filePaths) {
     try {
+      this.projectWindowContentLoaded = false
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
       const winURL = process.env.WEBPACK_DEV_SERVER_URL
@@ -1082,8 +1112,15 @@ class MapCacheWindowManager {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
         }
         this.setupCertificateAuth()
+        this.projectWindowContentLoaded = true
         setTimeout(() => {
-          this.projectWindow.show()
+          if (this.projectWindowFullScreen) {
+            this.projectWindow.setFullScreen(true)
+          } else if (this.projectWindowMaximized) {
+            this.projectWindow.maximize()
+          } else {
+            this.projectWindow.show()
+          }
           if (!isNil(this.mainWindow)) {
             this.mainWindow.hide()
             this.mainWindow.destroy()
