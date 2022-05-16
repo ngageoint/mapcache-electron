@@ -74,9 +74,9 @@
       <template v-slot:item="{ item, headers, index, isSelected, select }">
         <tr class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)"
             @mouseover="() => handleHover(item)" @mouseleave="() => handleMouseLeave(item)">
-          <td class="text-start text-truncate"
-              :style="{maxWidth: '150px', minWidth: (header.value === 'attachments' || header.value === 'data-table-select') ? '16px' : ((getTextWidth(item.text, '12pt Roboto') + 48) + 'px')}"
-              v-for="header of headers" :key="index + '_' + header.value">
+          <td v-for="header of headers" :key="index + '_' + header.value"
+              class="text-start text-truncate"
+              :style="{maxWidth: header.maxWidth, minWidth: (header.value === 'attachments' || header.value === 'data-table-select') ? '16px' : header.minWidth}">
             <div v-if="header.value === 'attachments'">
               {{ item.attachments > 0 ? item.attachments : null }}
             </div>
@@ -190,7 +190,7 @@ export default {
     },
     headers () {
       let headers = [
-        { text: 'attachments', value: 'attachments', sortable: false, class: 'ignore-elements' }
+        { text: 'attachments', value: 'attachments', sortable: false, class: 'ignore-elements', minWidth: '16px', maxWidth: '16px' }
       ]
       let columnOrder = null
       if (this.isGeoPackage && this.geopackage.tables.features[this.table.tableName] != null && this.geopackage.tables.features[this.table.tableName].columnOrder != null) {
@@ -202,11 +202,14 @@ export default {
       }
       const tableHeaders = []
       columnOrder.forEach(column => {
-        this.headerColumnNameMapping[column.toLowerCase() + '_table'] = column.toLowerCase()
+        const lowerCaseName = column.toLowerCase()
+        this.headerColumnNameMapping[lowerCaseName + '_table'] = lowerCaseName
         tableHeaders.push({
-          text: column.toLowerCase(),
-          value: column.toLowerCase() + '_table',
-          class: 'sortHandle'
+          text: lowerCaseName,
+          value: lowerCaseName + '_table',
+          class: 'sortHandle',
+          minWidth: (this.getTextWidth(lowerCaseName, '12pt Roboto') + 48) + 'px',
+          maxWidth: Math.max(this.getTextWidth(lowerCaseName, '12pt Roboto') + 48, 150) + 'px'
         })
       })
       headers = headers.concat(tableHeaders)
