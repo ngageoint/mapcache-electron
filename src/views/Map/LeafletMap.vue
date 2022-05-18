@@ -1087,7 +1087,7 @@ export default {
       this.map.addControl(this.attributionControl)
     },
     initializeMap () {
-      const defaultCenter = [39.658748, -104.843165]
+      const defaultCenter = /*[39.658748, -104.843165]*/[40.809118, 61.614383]
       const defaultZoom = 3
       this.map = L.map('map', {
         editable: true,
@@ -1147,7 +1147,7 @@ export default {
     },
     performReverseQuery () {
       const self = this
-      const zoom = self.map.getZoom()
+      const zoom = Math.round(self.map.getZoom())
       self.closePopup()
       self.performingReverseQuery = true
       document.getElementById('map').style.cursor = 'wait'
