@@ -1,6 +1,5 @@
 import { createCanvas, makeImage } from '../canvas/CanvasUtilities'
-import blankMarker2x from '../../leaflet/map/markers/marker-icon-blank-2x.png'
-import markerIcon from '../../leaflet/map/markers/marker-icon.png'
+import { marker, blankMarker2x } from '../../leaflet/markers'
 import { base64toUInt8Array } from '../Base64Utilities'
 
 /**
@@ -22,7 +21,7 @@ function getSvgDataUrl (d) {
 async function getDefaultIcon (iconName = 'New Icon', description = '') {
   const canvas = createCanvas(25, 41)
   const context = canvas.getContext('2d')
-  context.drawImage(await makeImage(markerIcon), 0, 0)
+  context.drawImage(await makeImage(marker), 0, 0)
   return {
     width: 25,
     height: 41,

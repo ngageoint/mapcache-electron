@@ -700,7 +700,7 @@ export default {
       return { center: this.map.getCenter(), zoom: this.map.getZoom() }
     },
     getReorderCardOffset () {
-      let yOffset = 278
+      let yOffset = 320
       if (!this.project.zoomControlEnabled) {
         yOffset -= 74
       }

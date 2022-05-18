@@ -71,7 +71,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Website
               </p>
-              <p class="fake-link allowselect"
+              <p class="fake-link allowselect wrap"
                  :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(result.properties.website)">
                 {{ result.properties.website }}
@@ -83,7 +83,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Wikipedia
               </p>
-              <p class="fake-link allowselect"
+              <p class="fake-link allowselect wrap"
                  :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(getWikiUrl(result.properties.wikipedia))">
                 {{ result.properties.wikipedia }}
@@ -174,4 +174,10 @@ export default {
 </script>
 
 <style scoped>
+.wrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
 </style>

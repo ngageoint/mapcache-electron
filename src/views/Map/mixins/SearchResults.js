@@ -1,22 +1,19 @@
 import { L } from '../../../lib/leaflet/vendor'
 import EventBus from '../../../lib/vue/EventBus'
-import accentMarker from '../../../lib/leaflet/map/markers/marker-accent-blank-icon.png'
-import accentMarker2x from '../../../lib/leaflet/map/markers/marker-accent-blank-icon-2x.png'
-import marker from '../../../lib/leaflet/map/markers/marker-icon-blank.png'
-import marker2x from '../../../lib/leaflet/map/markers/marker-icon-blank-2x.png'
 import { getMaterialDesignIcon } from '../../../lib/util/nominatim/TypeCategoryMaterialDesignIcons'
 import { SEARCH_RESULT_POINTS_ONLY_PANE, SEARCH_RESULTS_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 import { getDefaultIcon, getSvgMarkerIconData } from '../../../lib/util/style/BrowserStyleUtilities'
 import { getDefaultMapCacheStyle } from '../../../lib/util/style/CommonStyleUtilities'
 import { prettyifyWords } from '../../../lib/util/nominatim/NominatimUtilities'
 import { fetchImage } from '../../../lib/network/BrowserNetworkUtilities'
+import { blankMarker, blankMarker2x, accentMarker, accentMarker2x } from '../../../lib/leaflet/markers'
 
 export default {
   data () {
     return {
       defaultIcon: (glyph) => L.icon.materialDesignIcon({
-        iconUrl: marker,
-        iconRetinaUrl: marker2x,
+        iconUrl: blankMarker,
+        iconRetinaUrl: blankMarker2x,
         glyphSvg: glyph
       }),
       accentIcon: (glyph) => L.icon.materialDesignIcon({

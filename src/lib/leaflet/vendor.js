@@ -1,10 +1,8 @@
 import L from 'leaflet'
 // hack so that leaflet's images work after going through webpack
-import marker from './map/markers/marker-icon.png'
-import marker2x from './map/markers/marker-icon-2x.png'
+import { marker, marker2x, blankMarker, blankMarker2x } from './markers'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import blankMarker from '../leaflet/map/markers/marker-icon-blank.png'
-import blankMarker2x from '../leaflet/map/markers/marker-icon-blank-2x.png'
+
 import LeafletEditable from 'leaflet-editable' // eslint-disable-line no-unused-vars
 // import LeafletDraw from 'leaflet-draw' // eslint-disable-line no-unused-vars
 // import 'leaflet-draw/dist/leaflet.draw.css'
@@ -516,14 +514,14 @@ L.Icon.MaterialDesignIcon = L.Icon.extend({
   },
 
   _setIconStyles: function (div, name) {
-    var options = this.options
-    var sizeOption = options[name + 'Size']
+    let options = this.options
+    let sizeOption = options[name + 'Size']
 
     if (typeof sizeOption === 'number') {
       sizeOption = [sizeOption, sizeOption]
     }
 
-    var size = L.point(sizeOption),
+    let size = L.point(sizeOption),
       anchor = L.point(name === 'shadow' && options.shadowAnchor || options.iconAnchor ||
         size && size.divideBy(2, true))
 

@@ -372,7 +372,7 @@
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 URL
               </p>
-              <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
+              <p class="allowselect" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
                 {{ source.filePath }}
               </p>
             </v-col>
