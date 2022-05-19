@@ -53,7 +53,7 @@ export default class LeafletCoordinates extends L.Control {
     const container = L.DomUtil.create('div', 'leaflet-control leaflet-coordinates-control')
     this._link = L.DomUtil.create('span', 'leaflet-coordinates', container)
     this.coordinate = map.getCenter()
-    this.zoom = map.getZoom()
+    this.zoom = Math.floor(map.getZoom())
 
     map.on('mousemove', function (event) {
       this.coordinate = event.latlng
@@ -61,8 +61,8 @@ export default class LeafletCoordinates extends L.Control {
     }.bind(this))
 
     map.on('zoomend', function () {
-      this.zoom = map.getZoom()
-      this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, this.coordinateType, map.getZoom()))
+      this.zoom = Math.floor(map.getZoom())
+      this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, this.coordinateType, this.zoom))
     }.bind(this))
 
     this.updateCoordinateText(LeafletCoordinates.getCoordinateText(this.coordinate, this.coordinateType, this.zoom))

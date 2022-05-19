@@ -57,7 +57,7 @@
           </v-list-item>
           <v-divider v-if="item.type !== 'END'"></v-divider>
           <div v-if="item.type === 'END'">
-            <div v-if="!noMoreResults && results.featureCollection.features.length % 10 === 0">
+            <div v-if="!noMoreResults && results.featureCollection.features.length % 15 === 0">
               <search-result-skelton :key="'top_search_skeleton'"
                                      v-observe-visibility="visibilityChanged"></search-result-skelton>
               <search-result-skelton v-for="i in 9" :key="i + '_search_skeleton'"></search-result-skelton>

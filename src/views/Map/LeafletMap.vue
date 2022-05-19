@@ -680,7 +680,7 @@ export default {
             }
           }
         }
-        return await window.mapcache.getClosestFeature(layers, this.map.wrapLatLng(e.latlng), this.map.getZoom())
+        return await window.mapcache.getClosestFeature(layers, this.map.wrapLatLng(e.latlng), Math.floor(this.map.getZoom()))
       }
     },
     convertLatLng2GARS (lat, lng, label = false) {
@@ -1147,7 +1147,7 @@ export default {
     },
     performReverseQuery () {
       const self = this
-      const zoom = Math.round(self.map.getZoom())
+      const zoom = Math.floor(self.map.getZoom())
       self.closePopup()
       self.performingReverseQuery = true
       document.getElementById('map').style.cursor = 'wait'
@@ -1860,7 +1860,7 @@ export default {
       bounds = bounds.pad(0.05)
       const target = this.map._getBoundsCenterZoom(bounds, {
         minZoom: minZoom,
-        maxZoom: Math.max(maxZoom, this.map.getZoom())
+        maxZoom: Math.max(maxZoom, Math.floor(this.map.getZoom()))
       })
       const currentMapCenter = this.map.getCenter()
       const distanceFactor = Math.max(Math.abs(target.center.lat - currentMapCenter.lat) / 180.0, Math.abs(target.center.lng - currentMapCenter.lng) / 360.0)
@@ -1899,7 +1899,7 @@ export default {
         bounds = bounds.pad(-0.1)
       }
       const details = {
-        zoom: this.map.getZoom(),
+        zoom: Math.floor(this.map.getZoom()),
         extent: [bounds.getSouthWest().lng, bounds.getSouthWest().lat, bounds.getNorthEast().lng, bounds.getNorthEast().lat]
       }
       EventBus.$emit(EventBus.EventTypes.RESPONSE_MAP_DETAILS, details)
