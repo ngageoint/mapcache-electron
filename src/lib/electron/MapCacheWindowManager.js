@@ -198,10 +198,7 @@ class MapCacheWindowManager {
 
     const origin = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
 
-    // if auth was enabled, be sure to add response header allow for auth to occur
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      let headers = details.responseHeaders
-
+    const fixHeaders = (headers) => {
       // protect against servers without required cors headers
       if (isNil(headers['Access-Control-Allow-Origin'])) {
         headers['Access-Control-Allow-Origin'] = headers['access-control-allow-origin']
@@ -219,6 +216,13 @@ class MapCacheWindowManager {
 
       headers['Access-Control-Allow-Credentials'] = 'true'
       delete headers['access-control-allow-credentials']
+    }
+
+    // if auth was enabled, be sure to add response header allow for auth to occur
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      let headers = details.responseHeaders
+
+      fixHeaders(headers)
 
       callback({
         responseHeaders: headers

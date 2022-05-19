@@ -219,10 +219,17 @@ export default {
         this.searchResultToSave.pointFeature.style = { icon: icon }
       }
       if (image != null) {
-        const attachment = await fetchImage(image)
-        this.searchResultToSave.feature.attachment = attachment
-        if (this.searchResultToSave.pointFeature != null) {
-          this.searchResultToSave.pointFeature.attachment = attachment
+        let attachment
+        try {
+          attachment = await fetchImage(image)
+        } catch (e) {
+          console.error('Unable to fetch image')
+        }
+        if (attachment != null) {
+          this.searchResultToSave.feature.attachment = attachment
+          if (this.searchResultToSave.pointFeature != null) {
+            this.searchResultToSave.pointFeature.attachment = attachment
+          }
         }
       }
       this.displayGeoPackageFeatureLayerSelection()

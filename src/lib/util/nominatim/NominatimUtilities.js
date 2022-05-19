@@ -11,7 +11,7 @@ async function queryNominatim (url, query, bbox = null, idsToIgnore = []) {
     addressdetails: 1,
     extratags: 1,
     namedetails: 1,
-    limit: 10,
+    limit: 15,
     exclude_place_ids: idsToIgnore
   }
   if (bbox) {
