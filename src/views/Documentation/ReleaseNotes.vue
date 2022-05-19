@@ -86,7 +86,8 @@ export default {
           releaseDate: 'TBD',
           bugFixes: [
             'Vuex file writing bug seen on windows virtual machines.',
-            'Date format in feature view.'
+            'Date format in feature view.',
+            'Fix for shapefile zip with multiple shapefiles.'
           ],
           newFeatures: [
             'Update to Electron v18.',

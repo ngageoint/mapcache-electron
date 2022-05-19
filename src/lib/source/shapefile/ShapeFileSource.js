@@ -12,54 +12,74 @@ export default class ShapeFileSource extends Source {
     if (!await jetpack.existsAsync(this.filePath)) {
       throw new Error('.shp file not found in zip file\'s root directory.')
     }
-    let featureCollection = {
-      type: 'FeatureCollection',
-      features: []
-    }
+
+    let featureCollections = []
 
     statusCallback('Parsing shapefile', 0)
     await this.sleep(250)
 
     if (path.extname(this.filePath) === '.zip') {
-      featureCollection = await shp.parseZip(jetpack.read(this.filePath, 'buffer'))
+      const result = await shp.parseZip(jetpack.read(this.filePath, 'buffer'))
+      if (result.length == null) {
+        featureCollections.push(result)
+      } else {
+        featureCollections = result
+      }
     } else {
-      featureCollection.features = shp.parseShp(jetpack.read(this.filePath, 'buffer'))
+      featureCollections.push({
+        type: 'FeatureCollection',
+        features: shp.parseShp(jetpack.read(this.filePath, 'buffer')),
+        fileName: name
+      })
     }
 
     statusCallback('Storing features', 50)
+    const totalFeatures = featureCollections.map(featureCollection => featureCollection.features.length).reduce((previousValue, currentValue) => previousValue + currentValue, 0)
+    const notifyStepSize = Math.ceil(totalFeatures / 10)
+    const vectorLayers = []
+    let featuresAdded = 0
 
-    const { layerId, layerDirectory } = this.createLayerDirectory()
-    let fileName = name + '.gpkg'
-    let filePath = path.join(layerDirectory, fileName)
+    for (let idx = 0; idx < featureCollections.length; idx++) {
+      const featureCollection = featureCollections[idx]
+      const features = featureCollection.features
+      const layerName = featureCollection.fileName || name
 
-    const { addFeature, done } = await streamingGeoPackageBuild(filePath, name)
+      const { layerId, layerDirectory } = this.createLayerDirectory()
+      let fileName = layerName + '.gpkg'
+      let filePath = path.join(layerDirectory, fileName)
 
-    const notifyStepSize = Math.ceil(featureCollection.features.length / 10)
-    for (let i = 0; i < featureCollection.features.length; i++) {
-      addFeature(featureCollection.features[i])
-      if (((i + 1) % notifyStepSize) === 0) {
-        statusCallback('Storing features', 50 + Math.floor(50 * ((i + 1) / featureCollection.features.length)))
-        await this.sleep(150)
+      const { addFeature, done } = await streamingGeoPackageBuild(filePath, layerName)
+
+      for (let i = 0; i < features.length; i++) {
+        const feature = features[i]
+        delete features[i].geometry.bbox
+        addFeature(feature)
+        featuresAdded++
+        if ((featuresAdded % notifyStepSize) === 0) {
+          statusCallback('Storing features', 50 + Math.floor(50 * featuresAdded / totalFeatures))
+          await this.sleep(150)
+        }
       }
-    }
 
-    const { count, extent } = await done()
-    statusCallback('Cleaning up', 100)
-    await this.sleep(250)
-    return [
-      new VectorLayer({
+      const { count, extent } = await done()
+
+      vectorLayers.push(new VectorLayer({
         id: layerId,
         layerType: VECTOR,
         directory: layerDirectory,
         sourceDirectory: this.directory,
-        name: name,
+        name: layerName,
         geopackageFilePath: filePath,
         sourceFilePath: this.filePath,
-        sourceLayerName: name,
+        sourceLayerName: layerName,
         sourceType: 'ShapeFile',
         count: count,
         extent: extent
-      })
-    ]
+      }))
+    }
+
+    statusCallback('Cleaning up', 100)
+    await this.sleep(250)
+    return vectorLayers
   }
 }
