@@ -21,14 +21,16 @@ export default {
       }
       this.isDrawingBounds = false
     },
-    enableBoundingBoxDrawing (boundingBoxFilter) {
+    enableBoundingBoxDrawing (boundingBoxFilter, zoom) {
       let bounds = L.latLngBounds(boundingBoxFilter)
       this.drawBoundsMode = 0
       this.r = L.rectangle(bounds, { pane: DRAWING_LAYER_PANE.name })
       this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
       this.r.addTo(this.map)
       this.toggleBoundsEdit()
-      this.map.fitBounds(boundingBoxFilter)
+      if (zoom) {
+        this.map.fitBounds(boundingBoxFilter)
+      }
       const self = this
       this.r.on('editable:vertex:dragend', () => {
         let sw = this.r.getBounds().getSouthWest()
@@ -90,7 +92,7 @@ export default {
     }
   },
   mounted () {
-    EventBus.$on(EventBus.EventTypes.DRAW_BOUNDING_BOX, (id, boundingBox) => {
+    EventBus.$on(EventBus.EventTypes.DRAW_BOUNDING_BOX, (id, boundingBox, zoom = true) => {
       // in case grid is enabled, let's disable it
       EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX_STOP)
       if (this.drawBoundsId != null) {
@@ -102,7 +104,7 @@ export default {
       if (!isNil(bbox)) {
         bbox = [[boundingBox[1], boundingBox[0]], [boundingBox[3], boundingBox[2]]]
       }
-      this.enableBoundingBoxDrawing(bbox)
+      this.enableBoundingBoxDrawing(bbox, zoom)
     })
 
     EventBus.$on(EventBus.EventTypes.DRAW_BOUNDING_BOX_STOP, () => {

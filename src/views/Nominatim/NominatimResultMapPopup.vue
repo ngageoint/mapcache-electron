@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="pa-0 ma-0 rounded-lg" v-if="result != null" @click="showFeatureDetails" @mouseover="mouseover"
+  <v-card flat class="pa-0 ma-0 rounded-lg" v-if="result != null" @click="showFeatureDetails" @mousemove.prevent.stop @mouseover="mouseover"
           @mouseleave="mouseleave">
     <v-img
         v-if="getImage() != null"
