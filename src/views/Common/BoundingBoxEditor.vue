@@ -244,7 +244,7 @@ export default {
       if (this.boundingBox == null) {
         EventBus.$once(EventBus.EventTypes.RESPONSE_MAP_DETAILS, ({ extent }) => {
           this.updateBoundingBox(extent)
-          EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, extent)
+          EventBus.$emit(EventBus.EventTypes.DRAW_BOUNDING_BOX, this.id, extent, false)
         })
         const options = {
           padBounds: true

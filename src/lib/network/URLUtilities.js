@@ -12,7 +12,7 @@ function getBaseUrlAndQueryParams (url) {
   const params = query.split('&')
   params.forEach(param => {
     const [key, value] = param.split('=')
-    queryObject[key] = value
+    queryObject[key.toLowerCase()] = value
   })
   return {
     baseUrl: baseUrl,
