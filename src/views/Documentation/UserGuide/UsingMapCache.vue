@@ -573,7 +573,7 @@ export default {
                 },
                 {
                   paragraph: `Click on the&nbsp;<strong>Add layer</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button at the bottom of the view. This will present two options, one for creating a feature layer&nbsp;<img src="/images/polygon.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;and the other for creating a tile layer&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;. Click on the&nbsp;<strong>Add tile layer</strong>&nbsp;<img src="/images/colored_layers.png" style="max-width: 22px; max-height: 22px; margin-bottom: -5px;"/>&nbsp;option.`,
-                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_022.jpg'
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_02.jpg'
                 },
                 {
                   paragraph: `The step-by-step guide will now be displayed. Start by entering the name for the tile layer.`,
