@@ -30,6 +30,14 @@ function _imageDataEqual (data1, data2) {
   return equal
 }
 
+/**
+ * Adds or sets the style for a feature
+ * @param gp
+ * @param feature
+ * @param rowId
+ * @param tableName
+ * @private
+ */
 function _addOrSetStyleForFeature (gp, feature, rowId, tableName) {
   if (!isNil(feature.style)) {
     const featureTableStyles = _addStyleExtensionForTable(gp, tableName)

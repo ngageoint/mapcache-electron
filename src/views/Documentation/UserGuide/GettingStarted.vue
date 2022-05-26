@@ -21,7 +21,7 @@
       </v-row>
       <v-row no-gutters>
         <p>
-          <v-img src="/images/documentation/landing_page.jpg" width="610"></v-img>
+          <v-img src="/images/documentation/getting_started/image_01.jpg" width="610"></v-img>
         </p>
       </v-row>
       <v-row no-gutters class="mt-8">
@@ -36,7 +36,7 @@
       </v-row>
       <v-row no-gutters>
         <p>
-          <v-img src="/images/documentation/project.jpg" width="610"></v-img>
+          <v-img src="/images/documentation/getting_started/image_02.jpg" width="610"></v-img>
         </p>
       </v-row>
       <v-row no-gutters class="mt-8">
@@ -51,7 +51,7 @@
       </v-row>
       <v-row no-gutters>
         <p>
-          <v-img src="/images/documentation/sidebar_info.jpg" width="610"></v-img>
+          <v-img src="/images/documentation/getting_started/image_03.jpg" width="610"></v-img>
         </p>
       </v-row>
       <v-row no-gutters>
@@ -91,7 +91,7 @@
       </v-row>
       <v-row no-gutters>
         <p>
-          <v-img src="/images/documentation/map_section.jpg" width="610" height="350"
+          <v-img src="/images/documentation/getting_started/image_04.jpg" width="610" height="350"
                  style="object-fit: scale-down"></v-img>
         </p>
       </v-row>

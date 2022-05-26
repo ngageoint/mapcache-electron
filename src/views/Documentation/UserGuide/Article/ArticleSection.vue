@@ -16,8 +16,7 @@
       </p>
     </v-row>
     <v-row no-gutters v-if="video">
-      <video controls style="margin-left: 26px;" width="560" controlsList="nodownload nofullscreen noremoteplayback"
-             muted disablepictureinpicture>
+      <video controls style="margin-left: 26px;" width="560" controlsList="nodownload nofullscreen noremoteplayback" muted disablepictureinpicture>
         <source :src="video" type="video/webm">
       </video>
     </v-row>

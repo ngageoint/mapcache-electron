@@ -99,6 +99,17 @@ export default {
     toTop () {
       document.getElementById('scroll-target').scrollTo({ top: 0, behavior: 'smooth' })
     }
+  },
+  mounted () {
+    document.getElementById('scroll-target').scrollTo({ left: 0, top: 0 })
+    this.loaded = true
+  },
+  watch: {
+    tab: {
+      handler () {
+        document.getElementById('scroll-target').scrollTo({ left: 0, top: 0 })
+      }
+    }
   }
 }
 </script>

@@ -10,7 +10,10 @@ import {
   mdiMapOutline,
   mdiTrashCanOutline,
   mdiPencil,
-  mdiPalette, mdiPlus, mdiMinus
+  mdiPalette,
+  mdiPlus,
+  mdiMinus,
+  mdiCloudBraces
 } from '@mdi/js'
 import MapCacheSection from './MapCacheSection'
 
@@ -32,7 +35,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, toggle the&nbsp;<strong>Theme</strong>&nbsp;switch to enable dark mode.`,
-                  image: '/images/documentation/settings_articles/toggle_theme.jpg'
+                  image: '/images/documentation/settings/general/article_01/image_01.jpg'
                 }
               ],
             },
@@ -43,7 +46,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, toggle the&nbsp;<strong>Notifications</strong>&nbsp;switch to enable or disable system notifications.`,
-                  image: '/images/documentation/settings_articles/system_notifications.jpg',
+                  image: '/images/documentation/settings/general/article_02/image_01.jpg',
                   note: 'The system’s (i.e. Mac, Windows, Linux) notifications will also need to be enabled for MapCache notifications to display properly.'
                 }
               ],
@@ -55,77 +58,77 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, toggle the&nbsp;<strong>Tooltips</strong>&nbsp;switch to disable tooltips.`,
-                  image: '/images/documentation/settings_articles/toggle_tooltips.jpg'
+                  image: '/images/documentation/settings/general/article_03/image_01.jpg'
                 }
               ],
             },
             {
-              order: 1,
+              order: 6,
               title: `<strong>Manage</strong>&nbsp;saved urls`,
               introduction: 'Any data source imported using a url will be saved for future use. Saved urls are available for use in each project. The saved urls can be managed by navigating to the settings section.',
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, click on&nbsp;<strong>Saved urls</strong>&nbsp;.`,
-                  image: '/images/documentation/settings_articles/manage_urls.jpg'
+                  image: '/images/documentation/settings/general/article_04/image_01.jpg'
                 },
                 {
                   paragraph: `A dialog will appear providing options for managing the saved urls.`,
-                  image: '/images/documentation/settings_articles/manage_url_dialog.jpg'
+                  image: '/images/documentation/settings/general/article_04/image_02.jpg'
                 },
                 {
                   title: '<strong>Add</strong>&nbsp;url',
                   paragraph: `Click the&nbsp;<strong>Add url</strong>&nbsp;button in the dialog and a dialog will appear. Enter a url and click the&nbsp;<strong>Add</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/add_url.jpg',
+                  image: '/images/documentation/settings/general/article_04/image_03.jpg',
                   divider: true
                 },
                 {
                   title: '<strong>Edit</strong>&nbsp;url',
                   paragraph: `Click the&nbsp;<strong>Edit</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear. Enter the updated url and click the&nbsp;<strong>Save</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/edit_url.jpg',
+                  image: '/images/documentation/settings/general/article_04/image_04.jpg',
                   divider: true
                 },
                 {
                   title: '<strong>Delete</strong>&nbsp;url',
                   paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear. Confirm by clicking the&nbsp;<strong>Delete</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/delete_url.jpg',
+                  image: '/images/documentation/settings/general/article_04/image_05.jpg',
                   note: 'A deleted url will no longer appear when adding a new data source from a url.',
                   divider: true
                 }
               ],
             },
             {
-              order: 3,
+              order: 1,
               title: `<strong>Manage</strong>&nbsp;base maps`,
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, click on&nbsp;<strong>Base maps</strong>&nbsp;.`,
-                  image: '/images/documentation/settings_articles/manage_base map.jpg'
+                  image: '/images/documentation/settings/general/article_05/image_01.jpg'
                 },
                 {
                   paragraph: `A list of base maps will be displayed, which can be managed, as well as a create new base map button.`,
-                  image: '/images/documentation/settings_articles/base_map_list.jpg'
+                  image: '/images/documentation/settings/general/article_05/image_02.jpg'
                 },
                 {
                   title: '<strong>Add</strong>&nbsp;base map',
                   paragraph: `Watch the following video on adding a base map. `,
-                  video: '/images/documentation/settings_articles/add_base_map.webm',
+                  video: '/images/documentation/settings/general/article_05/video_01.webm',
                   note: 'Base maps are available across all projects.'
                 },
                 {
                   title: '<strong>Manage</strong>&nbsp;base map',
                   paragraph: `To view information about a base map, or make changes to it, click on its associated entry in the list.`,
-                  image: '/images/documentation/settings_articles/base_map_view.jpg'
+                  image: '/images/documentation/settings/general/article_05/image_03.jpg'
                 },
                 {
                   paragraph: `This view provides several actions that include renaming, styling and removing the base map.`,
-                  image: '/images/documentation/settings_articles/base_map_actions.jpg',
+                  image: '/images/documentation/settings/general/article_05/image_04.jpg',
                   tabItems: [
                     {
                       title: 'Rename',
                       section: {
                         title: '<strong>Rename</strong>&nbsp;a base map.',
                         paragraph: `To rename a base map, click on the&nbsp;<strong>Rename</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPencil}"></path></svg>&nbsp;button and a dialog will appear. Enter the desired name and click the&nbsp;<strong>Rename</strong>&nbsp;button to save the change.`,
-                        image: '/images/documentation/settings_articles/base_map_rename.jpg'
+                        image: '/images/documentation/settings/general/article_05/image_05.jpg'
                       }
                     },
                     {
@@ -133,7 +136,15 @@ export default {
                       section: {
                         title: 'Style a base map.',
                         paragraph: `Depending on the type of base map, there will be several ways to adjust the style. The most common of these are adjusting the background color and adjusting the opacity. To make an adjustment to the opacity, start by clicking on the&nbsp;<strong>Style</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPalette}"></path></svg>&nbsp;button. This will display the style management view and allow for adjustments, as shown below.`,
-                        image: '/images/documentation/settings_articles/base_map_style.jpg'
+                        image: '/images/documentation/settings/general/article_05/image_06.jpg'
+                      }
+                    },
+                    {
+                      title: 'Network',
+                      section: {
+                        title: 'Edit network settings.',
+                        paragraph: `To edit the network settings of the base map, click on the&nbsp;<strong>Network</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCloudBraces}"></path></svg>&nbsp;button and a dialog will appear. Adjust the network settings and Click&nbsp;<strong>Save</strong>&nbsp;to confirm the changes.`,
+                        image: '/images/documentation/settings/general/article_05/image_07.jpg'
                       }
                     },
                     {
@@ -141,13 +152,43 @@ export default {
                       section: {
                         title: 'Remove a base map.',
                         paragraph: `To remove a base map, click on the&nbsp;<strong>Remove</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a dialog will appear. Click&nbsp;<strong>Remove</strong>&nbsp;to confirm.`,
-                        image: '/images/documentation/settings_articles/base_map_remove.jpg'
+                        image: '/images/documentation/settings/general/article_05/image_08.jpg'
                       }
                     }],
                   tabHeight: 500
                 },
               ],
             },
+            {
+              order: 3,
+              title: `<strong>Adjust</strong>&nbsp;the nominatim url`,
+              introduction: 'This setting allows the user to specify a different nominatim url. Though unlikely needed to be changed, this is made available if you have a specific OpenStreetMap nominatim server you wish to target.',
+              sections: [
+                {
+                  paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, click on the&nbsp;<strong>Nominatim URL</strong>&nbsp;button.`,
+                  image: '/images/documentation/settings/general/article_06/image_01.jpg'
+                },
+                {
+                  paragraph: `Once the url has been adjusted, click on the&nbsp;<strong>Save</strong>&nbsp;button.`,
+                  image: '/images/documentation/settings/general/article_06/image_02.jpg'
+                }
+              ],
+            },
+            {
+              order: 5,
+              title: `<strong>Adjust</strong>&nbsp;the overpass url`,
+              introduction: 'This setting allows the user to specify a different overpass interpreter url. Though unlikely needed to be changed, this is made available if you have a specific OpenStreetMap overpass server you wish to target.',
+              sections: [
+                {
+                  paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>General</strong>, click on the&nbsp;<strong>Overpass URL</strong>&nbsp;button.`,
+                  image: '/images/documentation/settings/general/article_07/image_01.jpg'
+                },
+                {
+                  paragraph: `Once the url has been adjusted, click on the&nbsp;<strong>Save</strong>&nbsp;button.`,
+                  image: '/images/documentation/settings/general/article_07/image_02.jpg'
+                }
+              ],
+            }
           ]
         },
         {
@@ -162,7 +203,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Zoom control</strong>&nbsp;switch to hide it form the map.`,
-                  image: '/images/documentation/settings_articles/zoom_control.jpg'
+                  image: '/images/documentation/settings/map/article_01/image_01.jpg'
                 }
               ],
             },
@@ -173,7 +214,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Display current zoom</strong>&nbsp;switch to hide it from the map.`,
-                  image: '/images/documentation/settings_articles/current_zoom.jpg'
+                  image: '/images/documentation/settings/map/article_02/image_01.jpg'
                 }
               ],
             },
@@ -184,7 +225,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Address search</strong>&nbsp;switch to hide it from the map.`,
-                  image: '/images/documentation/settings_articles/address_search.jpg'
+                  image: '/images/documentation/settings/map/article_03/image_01.jpg'
                 }
               ],
             },
@@ -195,7 +236,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Display coordinates</strong>&nbsp;switch to hide them from the map.`,
-                  image: '/images/documentation/settings_articles/coordinates.jpg'
+                  image: '/images/documentation/settings/map/article_04/image_01.jpg'
                 }
               ],
             },
@@ -206,7 +247,7 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Display scale</strong>&nbsp;switch to hide it from the map.`,
-                  image: '/images/documentation/settings_articles/scale.jpg'
+                  image: '/images/documentation/settings/map/article_05/image_01.jpg'
                 }
               ],
             },
@@ -218,11 +259,11 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, click on the&nbsp;<strong>Max features</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/max_features.jpg'
+                  image: '/images/documentation/settings/map/article_06/image_01.jpg'
                 },
                 {
                   paragraph: `Once the max features have been adjusted, click on the&nbsp;<strong>Save</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/adjust_max_features.jpg'
+                  image: '/images/documentation/settings/map/article_06/image_02.jpg'
                 }
               ],
             },
@@ -240,11 +281,11 @@ export default {
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Project</strong>, click on&nbsp;<strong>Rename project</strong>&nbsp;and a confirmation dialog will apppear.`,
-                  image: '/images/documentation/settings_articles/rename_project.jpg'
+                  image: '/images/documentation/settings/project/article_01/image_01.jpg'
                 },
                 {
                   paragraph: `Enter the desired project name and click the&nbsp;<strong>Rename</strong>&nbsp;button.`,
-                  image: '/images/documentation/settings_articles/rename_confirmation.jpg'
+                  image: '/images/documentation/settings/project/article_01/image_02.jpg'
                 }
               ],
             },
@@ -256,19 +297,19 @@ export default {
               sections: [
                 {
                   paragraph: `First, In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Project</strong>, click on&nbsp;<strong>Delete project</strong>&nbsp;and a confirmation dialog will appear.`,
-                  image: '/images/documentation/settings_articles/delete_project.jpg'
+                  image: '/images/documentation/settings/project/article_02/image_01.jpg'
                 },
                 {
                   paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;button to confirm the deletion of the project.`,
-                  image: '/images/documentation/settings_articles/confirm_delete_project.jpg'
+                  image: '/images/documentation/settings/project/article_02/image_02.jpg'
                 },
                 {
                   paragraph: `Second, a project can be removed from the landing page. Click on the trash can&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiTrashCanOutline}"></path></svg>&nbsp;button and a confirmation dialog will appear.`,
-                  image: '/images/documentation/settings_articles/delete_project_lp.jpg'
+                  image: '/images/documentation/settings/project/article_02/image_03.jpg'
                 },
                 {
                   paragraph: `Click the&nbsp;<strong>Delete</strong>&nbsp;button to confirm the deletion of the project.`,
-                  image: '/images/documentation/settings_articles/confirm_delete_project_lp.jpg'
+                  image: '/images/documentation/settings/project/article_02/image_04.jpg'
                 },
               ],
             },
