@@ -48,6 +48,7 @@ if (window.mapcache != null) {
     }
 
     if (store == null) {
+      // eslint-disable-next-line no-console
       console.error('Unable to create vuex store. Exiting.')
       process.exit(0)
     }

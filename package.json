@@ -109,7 +109,8 @@
     "webpack-bundle-analyzer": "4.5.0"
   },
   "resolutions": {
-    "@electron/universal": "1.2.1"
+    "@electron/universal": "1.2.1",
+    "bindings": "git://github.com/caldwellc/node-bindings.git#master"
   },
   "contributors": [
     {

@@ -222,7 +222,9 @@ export default {
         let attachment
         try {
           attachment = await fetchImage(image)
+          // eslint-disable-next-line no-unused-vars
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error('Unable to fetch image')
         }
         if (attachment != null) {
