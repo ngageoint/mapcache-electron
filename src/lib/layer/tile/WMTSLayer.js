@@ -5,18 +5,16 @@ import {
   getTileIndices,
   getTileRequestURL,
 } from '../../util/wmts/WMTSUtilities'
-import NetworkTileLayer from './NetworkTileLayer'
 import { WMTS } from '../LayerTypes'
 import { extentIntersection } from '../../util/tile/TileUtilities'
-import cloneDeep from 'lodash/cloneDeep'
+import MultiLayerNetworkTileLayer from './MultiLayerNetworkTileLayer'
 
-export default class WMTSLayer extends NetworkTileLayer {
+export default class WMTSLayer extends MultiLayerNetworkTileLayer {
   constructor (configuration = {}) {
     super(configuration)
     this.layers = configuration.layers
     this.wmtsInfo = configuration.wmtsInfo
     this.url = this.filePath
-    this.extent = WMTSLayer.getExtentForLayers(configuration.layers)
   }
 
   get configuration () {
@@ -44,36 +42,6 @@ export default class WMTSLayer extends NetworkTileLayer {
     const tileMatrixSet = supportedTileMatrixSets.find(tms => tms.supportedCRS === preferredTileMatrixSetSrs)
     const srs = getRecommendedEpsg(supportedTileMatrixSetSrsList)
     return { tileMatrixSet, srs }
-  }
-
-  static getExtentForLayers (layers) {
-    let extent = [-180, -90, 180, 90]
-    let layersToReview = layers.filter(layer => layer.enabled)
-    if (layersToReview.length === 0) {
-      layersToReview = layers
-    }
-    layersToReview = layersToReview.filter(layer => layer.extent != null)
-
-    if (layersToReview.length > 0) {
-      extent = cloneDeep(layersToReview[0].extent)
-
-      layersToReview.slice(1).forEach(layer => {
-        if (layer.extent[0] < extent[0]) {
-          extent[0] = layer.extent[0]
-        }
-        if (layer.extent[1] < extent[1]) {
-          extent[1] = layer.extent[1]
-        }
-        if (layer.extent[2] > extent[2]) {
-          extent[2] = layer.extent[2]
-        }
-        if (layer.extent[3] > extent[3]) {
-          extent[3] = layer.extent[3]
-        }
-      })
-    }
-
-    return extent
   }
 
   /**
