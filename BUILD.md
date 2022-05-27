@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 16.13.0
+* Install Node 16.13.2
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64
@@ -13,13 +13,12 @@
 ### Mac
 * Install Xcode 11.3 or greater
 * Install homebrew
-* Install python
-* Install node-canvas dependencies
-  * brew install pkg-config cairo pango libpng jpeg giflib librsvg
+* Install python 2.7
+  * export PYTHON_PATH=/path/to/python2.7
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.13.0
+  * nvm install 16.13.2
 * Install Yarn
   * npm install yarn -g
 
@@ -30,7 +29,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.13.0
+  * nvm install 16.13.2
 * Install Yarn
   * npm install yarn -g
 
@@ -47,13 +46,10 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.13.0
+  * nvm install 16.13.2
 * Install Yarn
   * npm install yarn -g
-
-### yarn.lock adjustments:
-* bindings@^1.5.0 does not work in electron, so it has been updated to use: 'git://github.com/caldwellc/node-bindings.git#master' which provides a fix for undefined filename errors
-
+  
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:
 1. Update node's max old space size
