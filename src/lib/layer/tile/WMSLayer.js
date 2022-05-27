@@ -35,6 +35,7 @@ export default class WMSLayer extends NetworkTileLayer {
     if (layersToReview.length === 0) {
       layersToReview = layers
     }
+    layersToReview = layersToReview.filter(layer => layer.extent != null)
 
     if (layersToReview.length === 0) {
       return [-180, -90, 180, 90]

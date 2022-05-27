@@ -282,6 +282,39 @@ export async function runMigration (forceReset = false) {
         state.Projects[projectId].displayCoordinates = true
         state.Projects[projectId].displayScale = true
       }
+    },
+    10: async function (state) {
+      // remove any existing credentials
+      const projectKeys = keys(state.Projects)
+      for (let i = 0; i < projectKeys.length; i++) {
+        const project = state.Projects[projectKeys[i]]
+        const sKeys = keys(project.sources)
+        for (let j = 0; j < sKeys.length; j++) {
+          let sourceId = sKeys[j]
+          let source = project.sources[sourceId]
+          if (source.layerType === 'WMS') {
+            source.layers = []
+          } else if (source.layerType === 'WMTS') {
+            source.layers = []
+            delete source.layer
+          }
+        }
+      }
+
+      for (let i = 0; i < state.BaseMaps.baseMaps.length; i++) {
+        const baseMap = state.BaseMaps.baseMaps[i]
+        if (['0', '1', '2', '3'].indexOf(baseMap.id) !== -1) {
+          continue
+        }
+        if (baseMap.layerConfiguration != null) {
+          if (baseMap.layerConfiguration.layerType === 'WMS') {
+            baseMap.layerConfiguration.layers = []
+          } else if (baseMap.layerConfiguration.layerType === 'WMTS') {
+            baseMap.layerConfiguration.layers = []
+            delete baseMap.layerConfiguration.layer
+          }
+        }
+      }
     }
   }
 
