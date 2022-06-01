@@ -411,10 +411,10 @@ function searchTable (data) {
  * @returns {Promise<unknown>}
  */
 function executeTask (message) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const ac = new AbortController()
     ac.signal.addEventListener('abort', () => {
-        reject({ error: 'Cancelled', result: null })
+        resolve({ error: 'Cancelled', result: null })
       },
       { once: true }
     )
@@ -423,62 +423,64 @@ function executeTask (message) {
       attachMedia(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_GEOTIFF_RASTER) {
       generateGeoTIFFRasterFile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === REQUEST_TILE_COMPILATION) {
       compileTiles(message.data).then(result => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to project tile.', result: null, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to project tile.', result: null, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_RENAME) {
       renameTable(message.data).then(() => {
         resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to rename table.', result: false, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to rename table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_DELETE) {
       deleteTable(message.data).then(() => {
         resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to delete table.', result: false, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to delete table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_COPY) {
       copyTable(message.data).then(() => {
         resolve({ error: null, result: true, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to copy table.', result: false, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to copy table.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_COUNT) {
       countTable(message.data).then((count) => {
         resolve({ error: null, result: count, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to get table count.', result: false, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to get table count.', result: false, cancelled: ac.signal.aborted })
       })
     } else if (message.type === GEOPACKAGE_TABLE_SEARCH) {
       searchTable(message.data).then((results) => {
         resolve({ error: null, result: results, cancelled: ac.signal.aborted })
       }).catch(() => {
-        reject({ error: 'Failed to search table.', result: false, cancelled: ac.signal.aborted })
+        resolve({ error: 'Failed to search table.', result: false, cancelled: ac.signal.aborted })
       })
+    } else {
+      resolve({ error: 'Unsupported message type: ' + message.type, result: false, cancelled: ac.signal.aborted })
     }
   })
 
@@ -497,10 +499,6 @@ function setupRequestListener () {
       executeTask(message).then((post) => {
         if (!post.cancelled) {
           parentPort.postMessage(post)
-        }
-      }).catch((post) => {
-        if (!post.cancelled) {
-          parentPort.postMessage({ error: post.error, result: false })
         }
       }).finally(() => {
         delete currentTask.cancelTask
