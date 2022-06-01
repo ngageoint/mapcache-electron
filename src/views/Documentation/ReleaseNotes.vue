@@ -83,7 +83,7 @@ export default {
       releaseNotes: [
         {
           title: 'MapCache 1.4.0',
-          releaseDate: 'TBD',
+          releaseDate: 'Jun. 1, 2022',
           bugFixes: [
             'Vuex file writing bug seen on windows virtual machines.',
             'Date format in feature view.',
