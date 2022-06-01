@@ -116,14 +116,15 @@ export default class MapcacheThreadHelper {
    * @returns {Promise<unknown>}
    */
   renderTile (data) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.threadPool.addTask({ id: data.id, type: REQUEST_RENDER, data: data }, null, (err, result) => {
         if (err) {
-          result = { error: err }
+          reject({ error: err })
+        } else {
+          resolve(result)
         }
-        resolve(result)
       }, () => {
-        resolve({ error: 'Cancelled by user' })
+        reject({ error: 'Cancelled by user' })
       })
     })
   }

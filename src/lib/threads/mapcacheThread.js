@@ -414,7 +414,7 @@ function executeTask (message) {
   return new Promise((resolve) => {
     const ac = new AbortController()
     ac.signal.addEventListener('abort', () => {
-        resolve({ error: 'Cancelled', result: null })
+        resolve({ error: 'Cancelled', result: null, cancelled: true })
       },
       { once: true }
     )
@@ -499,6 +499,8 @@ function setupRequestListener () {
       executeTask(message).then((post) => {
         if (!post.cancelled) {
           parentPort.postMessage(post)
+        } else {
+          parentPort.postMessage({ error: 'Cancelled', result: false })
         }
       }).catch(() => {
         parentPort.postMessage({ error: 'Failure', result: false })
