@@ -500,6 +500,8 @@ function setupRequestListener () {
         if (!post.cancelled) {
           parentPort.postMessage(post)
         }
+      }).catch(() => {
+        parentPort.postMessage({ error: 'Failure', result: false })
       }).finally(() => {
         delete currentTask.cancelTask
       })
