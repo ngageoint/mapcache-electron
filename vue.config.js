@@ -162,19 +162,14 @@ module.exports = {
               arch: [
                 "universal"
               ]
-            },
-            {
-              target: "pkg",
-              arch: [
-                "universal"
-              ]
             }
           ],
           icon: "buildResources/icon.icns",
           hardenedRuntime : true,
           gatekeeperAssess: false,
           entitlements: "buildResources/entitlements.mac.plist",
-          entitlementsInherit: "buildResources/entitlements.mac.plist"
+          entitlementsInherit: "buildResources/entitlements.mac.plist",
+          artifactName: "${productName}.${version}.${ext}"
         },
         mas: {
           category: "public.app-category.productivity",
@@ -189,12 +184,6 @@ module.exports = {
           target: [
             {
               target: "dmg",
-              arch: [
-                "universal"
-              ]
-            },
-            {
-              target: "pkg",
               arch: [
                 "universal"
               ]
