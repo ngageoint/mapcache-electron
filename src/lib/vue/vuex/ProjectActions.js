@@ -115,6 +115,10 @@ function showToolTips ({ projectId, show }) {
   store.dispatch('Projects/showToolTips', { projectId, show })
 }
 
+function setMapProjection ({ projectId, mapProjection }) {
+  store.dispatch('Projects/setMapProjection', { projectId, mapProjection })
+}
+
 function setDataSourceDisplayName ({ projectId, sourceId, displayName }) {
   store.dispatch('Projects/setDataSourceDisplayName', { projectId, sourceId, displayName })
 }
@@ -911,5 +915,6 @@ export {
   allowNotifications,
   addProjectState,
   setNominatimUrl,
-  setOverpassUrl
+  setOverpassUrl,
+  setMapProjection
 }

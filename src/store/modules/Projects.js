@@ -119,6 +119,11 @@ const mutations = {
       Vue.set(state[projectId], 'showToolTips', show)
     }
   },
+  setMapProjection (state, { projectId, mapProjection }) {
+    if (state[projectId]) {
+      Vue.set(state[projectId], 'mapProjection', mapProjection)
+    }
+  },
   setActiveGeoPackage (state, { projectId, geopackageId }) {
     if (state[projectId]) {
       Vue.set(state[projectId], 'activeGeoPackage', {
@@ -190,6 +195,9 @@ const actions = {
   },
   showToolTips ({ commit }, { projectId, show }) {
     commit('showToolTips', { projectId, show })
+  },
+  setMapProjection ({ commit }, { projectId, mapProjection }) {
+    commit('setMapProjection', { projectId, mapProjection })
   },
   setDataSourceDisplayName ({ commit }, { projectId, sourceId, displayName }) {
     commit('setDataSourceDisplayName', { projectId, sourceId, displayName })

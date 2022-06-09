@@ -1,5 +1,5 @@
 import {
-  getBoundingBoxFromIndices,
+  getBoundingBoxFromIndices, getEPSGCode,
   getRecommendedEpsg,
   getRecommendedSrs,
   getTileIndices,
@@ -8,6 +8,7 @@ import {
 import { WMTS } from '../LayerTypes'
 import { extentIntersection } from '../../util/tile/TileUtilities'
 import MultiLayerNetworkTileLayer from './MultiLayerNetworkTileLayer'
+import { COLON_DELIMITER, WEB_MERCATOR_CODE, WORLD_GEODETIC_SYSTEM_CODE } from '../../projection/ProjectionConstants'
 
 export default class WMTSLayer extends MultiLayerNetworkTileLayer {
   constructor (configuration = {}) {
@@ -35,10 +36,10 @@ export default class WMTSLayer extends MultiLayerNetworkTileLayer {
     this.extent = WMTSLayer.getExtentForLayers(configuration.layers)
   }
 
-  static getLayerTileMatrixInfo (wmtsInfo, layer) {
+  static getLayerTileMatrixInfo (wmtsInfo, layer, preferredCrsCode = WEB_MERCATOR_CODE) {
     const supportedTileMatrixSets = wmtsInfo.tileMatrixSet.filter(tms => layer.tileMatrixSets.findIndex(set => set.identifier === tms.identifier) !== -1)
     const supportedTileMatrixSetSrsList = supportedTileMatrixSets.map(tms => tms.supportedCRS)
-    const preferredTileMatrixSetSrs = getRecommendedSrs(supportedTileMatrixSetSrsList)
+    const preferredTileMatrixSetSrs = getRecommendedSrs(supportedTileMatrixSetSrsList, preferredCrsCode)
     const tileMatrixSet = supportedTileMatrixSets.find(tms => tms.supportedCRS === preferredTileMatrixSetSrs)
     const srs = getRecommendedEpsg(supportedTileMatrixSetSrsList)
     return { tileMatrixSet, srs }
@@ -58,18 +59,15 @@ export default class WMTSLayer extends MultiLayerNetworkTileLayer {
 
   /**
    * Returns a request object containing a list of network requests to make
-   * @param webMercatorBoundingBox
+   * @param boundingBox
    * @param coords
    * @param size
+   * @param crs
    * @param projectedBoundingBoxFunction
    * @return
    */
-  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBoxFunction) {
+  getTileRequestData (boundingBox, coords, size, crs, projectedBoundingBoxFunction) {
     let requests = []
-
-    // need to check desired resolution in a couple way due to potential configuration differences
-    const desiredResolutionMeters = this.getWebMercatorPixelSpan(coords.z, Math.max(size.x, size.y), 'meters')
-    const desiredResolutionDegrees = this.getWebMercatorPixelSpan(coords.z, Math.max(size.x, size.y), 'degrees')
 
     this.layers.filter(l => l.enabled).reverse().forEach(layer => {
       let url = this.url
@@ -77,10 +75,17 @@ export default class WMTSLayer extends MultiLayerNetworkTileLayer {
         url = layer.resource.template
       }
 
-      const { tileMatrixSet } = WMTSLayer.getLayerTileMatrixInfo(this.wmtsInfo, layer)
+      const { tileMatrixSet } = WMTSLayer.getLayerTileMatrixInfo(this.wmtsInfo, layer, getEPSGCode(crs))
       const srs = tileMatrixSet.supportedCRS
 
-      const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, srs)
+      const projectedBoundingBox = projectedBoundingBoxFunction(boundingBox, srs)
+
+
+      const zoom = srs.endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE) && crs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE) ? coords.z : Math.min(20, coords.z + 1)
+      // need to check desired resolution in a couple way due to potential configuration differences
+      const desiredResolutionMeters = this.getWebMercatorPixelSpan(zoom, Math.max(size.x, size.y), 'meters')
+      const desiredResolutionDegrees = this.getWebMercatorPixelSpan(zoom, Math.max(size.x, size.y), 'degrees')
+
 
       // determine tile matrices that have coverage for the request
       const tileMatricesWithCoverage = tileMatrixSet.tileMatrix.filter(({

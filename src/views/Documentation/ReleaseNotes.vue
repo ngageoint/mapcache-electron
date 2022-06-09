@@ -82,6 +82,19 @@ export default {
     return {
       releaseNotes: [
         {
+          title: 'MapCache 1.5.0',
+          releaseDate: 'TBD',
+          bugFixes: [
+            'Fix for decimal zoom levels in tile creation.',
+            'Fix for MAGE KMZ exports not importing.',
+            'Grid no longer rendered over context menu.'
+          ],
+          newFeatures: [
+            'Support a 4326 leaflet map.',
+            'Create 4326 GeoPackage tile layer.'
+          ],
+        },
+        {
           title: 'MapCache 1.4.0',
           releaseDate: 'Jun. 1, 2022',
           bugFixes: [

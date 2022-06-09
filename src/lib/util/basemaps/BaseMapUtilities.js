@@ -11,11 +11,15 @@ function getDefaultBaseMaps () {
     return {
       id: idxString,
       name: baseMap.name,
+      url: baseMap.url,
+      pcUrl: baseMap.pcUrl,
       layerConfiguration: {
         id: idxString,
         url: baseMap.url,
+        pcUrl: baseMap.pcUrl,
         attribution: baseMap.attribution,
         filePath: baseMap.url,
+        pcFilePath: baseMap.pcUrl,
         sourceLayerName: baseMap.name,
         visible: false,
         styleKey: 0,

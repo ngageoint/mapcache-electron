@@ -30,6 +30,12 @@ export default {
     }
   },
   methods: {
+    resetSearchResults () {
+      if (this.searchResultLayers != null) {
+        this.map.addLayer(this.searchResultLayers.nonPointFeatures)
+        this.map.addLayer(this.searchResultLayers.pointFeatures)
+      }
+    },
     highlightAssociatedFeature (layer, highlighted = false) {
       if (this.searchResultLayers) {
         this.searchResultLayers.nonPointFeatures.eachLayer((l) => {

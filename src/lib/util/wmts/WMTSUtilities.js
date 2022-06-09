@@ -374,14 +374,21 @@ function getRecommendedFormat (formats) {
 /**
  * Selects a recommended SRS for MapCache, otherwise, uses the first in the list.
  * @param srsList
+ * @param preferredCrsCode
  * @returns {string|*}
  */
-function getRecommendedSrs (srsList) {
+function getRecommendedSrs (srsList, preferredCrsCode = WEB_MERCATOR_CODE) {
+
+  const preferredSrsIndex = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + preferredCrsCode))
+
   const index3857 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE))
   const index4326 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE))
   const indexCRS84 = srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CRS_CODE))
   const epsgIndex = srsList.findIndex(crs => crs.toUpperCase().indexOf(EPSG) !== -1)
-  if (index3857 !== -1) {
+
+  if (preferredSrsIndex !== -1) {
+    return srsList[preferredSrsIndex]
+  } else if (index3857 !== -1) {
     return srsList[index3857]
   } else if (index4326 !== -1) {
     return srsList[index4326]

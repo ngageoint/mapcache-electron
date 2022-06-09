@@ -26,7 +26,7 @@ export default class ZipSource extends Source {
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Failed to retrieve shape file layer.')
+        console.error('Failed to retrieve kml file data.')
       }
     } else if (!isNil(shapeFile)) {
       try {

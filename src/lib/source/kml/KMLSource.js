@@ -5,7 +5,7 @@ import VectorLayer from '../../layer/vector/VectorLayer'
 import { createUniqueID } from '../../util/UniqueIDUtilities'
 import { streamingGeoPackageBuild } from '../../geopackage/GeoPackageFeatureTableUtilities'
 import { convertGroundOverlayToGeotiffLayer, rotateImage } from '../../util/kml/KMLUtilities'
-import { getDefaultIcon } from '../../util/style/NodeStyleUtilities'
+import { getDefaultKMLIcon } from '../../util/style/NodeStyleUtilities'
 import { createDirectory, createNextAvailableLayerDirectory, rmDirAsync } from '../../util/file/FileUtilities'
 import { VECTOR } from '../../layer/LayerTypes'
 import { getRemoteImage } from '../../network/NetworkRequestUtils'
@@ -43,9 +43,22 @@ export default class KMLSource extends Source {
         const scale = kmlIconStyle.scale || 1.0
         const dataUrl = 'data:image/' + path.extname(iconFile).substring(1) + ';base64,' + fs.readFileSync(iconFile).toString('base64')
         const image = await makeImage(dataUrl)
-        const width = scale * image.width()
-        const height = scale * image.height()
+        let width = scale * image.width()
+        let height = scale * image.height()
         disposeImage(image)
+
+        // adjust icon sizing to prevent large images from being saved
+        let aspectRatio = width / height
+        const maxSize = 48
+        if (width > maxSize) {
+          width = maxSize
+          height = width / aspectRatio
+        }
+        if (height > maxSize) {
+          height = maxSize
+          width = height * aspectRatio
+        }
+
         let anchorU = 0.5
         let anchorV = 0.5
         if (kmlIconStyle.anchor_x != null) {
@@ -66,6 +79,13 @@ export default class KMLSource extends Source {
             anchorV = kmlIconStyle.anchor_y.value
           }
         }
+
+        // if no anchor is specified but the height is greater than the width by more than a pixel, set the anchor to the bottom center
+        if (kmlIconStyle.anchor_x == null && kmlIconStyle.anchor_y == null && (height - width > 1)) {
+          anchorU = 0.5
+          anchorV = 1.0
+        }
+
         icon = {
           contentType: 'image/' + path.extname(iconFile).substring(1),
           data: fs.readFileSync(iconFile),
@@ -83,7 +103,7 @@ export default class KMLSource extends Source {
     }
 
     if (icon == null) {
-      icon = getDefaultIcon('Default')
+      icon = getDefaultKMLIcon('Default')
     }
 
     return icon
@@ -111,8 +131,10 @@ export default class KMLSource extends Source {
     const styles = {}
     const styleMaps = {}
     let featureCount = 0
+    const refsToAdd = {}
 
-    await streamKml(this.filePath, () => {
+    await streamKml(this.filePath, (feature) => {
+      refsToAdd[feature.styleId] = true
       featureCount++
     }, groundOverlay => {
       groundOverlays.push(groundOverlay)
@@ -121,6 +143,7 @@ export default class KMLSource extends Source {
     }, styleMap => {
       styleMaps[styleMap.id] = styleMap
     })
+
     const featureStatusMax = 100 - groundOverlays.length
 
     if (featureCount > 0) {
@@ -134,6 +157,7 @@ export default class KMLSource extends Source {
         addIcon,
         setFeatureStyle,
         setFeatureIcon,
+        setTableIcon,
         done
       } = await streamingGeoPackageBuild(filePath, name)
 
@@ -142,28 +166,54 @@ export default class KMLSource extends Source {
       // iterate over styles/icons and add them to the geopackage
       const styleIdMap = {}
       const iconIdMap = {}
-      const styleIds = Object.keys(styles)
       let iconFileNameCount = 1
-      for (let i = 0; i < styleIds.length; i++) {
-        const styleId = styleIds[i]
-        const style = styles[styleId]
-        if (style.hasIcon) {
-          try {
-            const icon = await this.generateIconFromKmlIconStyle(style.icon, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount)
-            if (icon != null) {
-              iconIdMap[styleId] = addIcon(icon)
-              iconFileNameCount++
+
+      const getOrAddIcon = async (iconId) => {
+        let insertedIconId = iconIdMap[iconId]
+        if (insertedIconId == null) {
+          const style = styles[iconId]
+          if (style != null && style.hasIcon) {
+            try {
+              const icon = await this.generateIconFromKmlIconStyle(style.icon, kmlDirectory, tmpDir, 'icon_' + iconFileNameCount)
+              if (icon != null) {
+                insertedIconId = addIcon(icon)
+                iconIdMap[iconId] = insertedIconId
+                iconFileNameCount++
+              }
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Failed to generate icon.')
             }
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to generate icon.')
           }
         }
-
-        if (style.hasLine || style.hasPoly) {
-          style.name = style.id
-          styleIdMap[styleId] = addStyle(style)
+        return insertedIconId
+      }
+      const getOrAddStyle = (styleId) => {
+        let insertedStyleId = styleIdMap[styleId]
+        if (insertedStyleId == null) {
+          const style = styles[styleId]
+          if (style != null && !style.hasIcon && (style.hasLine || style.hasPoly)) {
+            style.name = style.id
+            insertedStyleId = addStyle(style)
+            styleIdMap[styleId] = insertedStyleId
+          }
         }
+        return insertedStyleId
+      }
+
+      // add default kml point style
+      const defaultStyle = getDefaultKMLIcon('Default')
+      const defaultStyleId = addIcon(defaultStyle)
+      setTableIcon(defaultStyleId, 'Point')
+      setTableIcon(defaultStyleId, 'MultiPoint')
+
+      const refKeys = Object.keys(refsToAdd)
+      for (let i = 0; i < refKeys.length; i++) {
+        let styleRef = refKeys[i]
+        while (styleMaps[styleRef] != null) {
+          styleRef = styleMaps[styleRef].normal
+        }
+        await getOrAddIcon(styleRef)
       }
 
       const notifyStepSize = 0.01
@@ -172,21 +222,26 @@ export default class KMLSource extends Source {
       await streamKml(this.filePath, (feature) => {
         let styleRef = feature.styleId
         delete feature.styleId
+
         const featureRowId = addFeature(feature)
+
+        // there is a style, icons will already have been added, but not styles
         if (styleRef != null) {
           // if ref is for a map, select the normal style reference
-          const styleRefs = [styleRef]
           while (styleMaps[styleRef] != null) {
             styleRef = styleMaps[styleRef].normal
-            styleRefs.push(styleRef)
           }
-          // check if it is a style or icon
-          if ((feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint') && iconIdMap[styleRef] != null) {
+
+          if (feature.geometry.type === 'Point' || feature.geometry.type === 'MultiPoint' && iconIdMap[styleRef] != null) {
             const iconRowId = iconIdMap[styleRef]
-            setFeatureIcon(featureRowId, feature.geometry.type, iconRowId)
-          } else if (styleIdMap[styleRef] != null) {
-            const styleRowId = styleIdMap[styleRef]
-            setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
+            if (iconRowId != null) {
+              setFeatureIcon(featureRowId, feature.geometry.type, iconRowId)
+            }
+          } else {
+            const styleRowId = getOrAddStyle(styleRef)
+            if (styleRowId != null) {
+              setFeatureStyle(featureRowId, feature.geometry.type, styleRowId)
+            }
           }
         }
 

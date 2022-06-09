@@ -1444,7 +1444,7 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
  */
 function determineMinDistanceBasedOnZoom (latitude, zoom) {
   const EARTH_RADIUS_METERS = 6378137.0
-  return Math.abs(Math.PI * 2.0 * EARTH_RADIUS_METERS * Math.cos(latitude) / Math.pow(2.0, zoom + 8)) * 6
+  return Math.abs(Math.PI * 2.0 * EARTH_RADIUS_METERS * Math.cos(latitude) / Math.pow(2.0, zoom + 8)) * 10
 }
 
 /**
@@ -1469,25 +1469,27 @@ async function _getClosestFeature (layers, latlng, zoom) {
     const layer = layers[lId]
     await performSafeGeoPackageOperation(layer.path, (gp) => {
       const featureDao = gp.getFeatureDao(layer.tableName)
-      const srs = featureDao.srs
-      const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
-      const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
-      const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
-      const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
-      const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
-      const coordinate = [latlng.lng, latlng.lat]
-      for (let i = 0; i < rows.length; i++) {
-        const featureRow = featureDao.getRow(rows[i])
-        const featureId = featureRow.id
-        const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
-        feature.type = 'Feature'
-        feature.id = featureId
+      if (featureDao.featureTableIndex != null && featureDao.featureTableIndex.isIndexed()) {
+        const srs = featureDao.srs
+        const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
+        const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+        const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+        const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
+        const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
+        const coordinate = [latlng.lng, latlng.lat]
+        for (let i = 0; i < rows.length; i++) {
+          const featureRow = featureDao.getRow(rows[i])
+          const featureId = featureRow.id
+          const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+          feature.type = 'Feature'
+          feature.id = featureId
 
-        const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
-        if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
-          closestFeature = feature
-          closestDistance = distanceResult.distance
-          closestLayer = layer
+          const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
+          if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
+            closestFeature = feature
+            closestDistance = distanceResult.distance
+            closestLayer = layer
+          }
         }
       }
     })

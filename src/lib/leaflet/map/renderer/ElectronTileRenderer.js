@@ -1,3 +1,5 @@
+import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../../projection/ProjectionConstants'
+
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
  */
@@ -28,12 +30,21 @@ export default class ElectronTileRenderer {
 
       const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')
       const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
-      this.tileIntersects = (x, y, z, extent) => {
-        let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
-        // assumes projection from 3857 to 4326
-        let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
-        let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
-        return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
+      const { getWGS84ExtentFromXYZ } = require('../../../util/xyz/WGS84XYZTileUtilities')
+
+      this.tileIntersects = (x, y, z, crs, extent) => {
+        if (crs === WEB_MERCATOR) {
+          let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
+          // assumes projection from 3857 to 4326
+          let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
+          let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
+          return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
+        } else if (crs === WORLD_GEODETIC_SYSTEM) {
+          let tileExtent = getWGS84ExtentFromXYZ(x, y, z)
+          return tileIntersects([tileExtent[2], tileExtent[3]], [tileExtent[0], tileExtent[1]], [extent[2], extent[3]], [extent[0], extent[1]])
+        } else {
+          return false
+        }
       }
     } else {
       this.requestTile = window.mapcache.requestTile
@@ -54,12 +65,13 @@ export default class ElectronTileRenderer {
     this.cancelTileRequest(requestId)
   }
 
-  getTileRequest (requestId, coords, size) {
+  getTileRequest (requestId, coords, size, crs) {
     return {
       id: requestId,
       coords: coords,
       width: size.x,
-      height: size.y
+      height: size.y,
+      crs: crs
     }
   }
 
@@ -68,15 +80,16 @@ export default class ElectronTileRenderer {
    * @param requestId
    * @param coords
    * @param size
+   * @param crs
    * @param callback
    * @returns {Promise<void>}
    * @override
    */
-  async renderTile (requestId, coords, size, callback) {
-    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, this.layer.extent)) {
+  async renderTile (requestId, coords, size, crs, callback) {
+    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent)) {
       callback(null, null)
     } else {
-      this.requestTile(this.getTileRequest(requestId, coords, size)).then((result) => {
+      this.requestTile(this.getTileRequest(requestId, coords, size, crs)).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)

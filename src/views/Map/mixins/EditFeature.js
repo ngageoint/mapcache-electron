@@ -47,6 +47,14 @@ export default {
     getEditingLayer () {
       return this.editingLayer
     },
+    updateMapWithEditedFeature () {
+      if (this.editingLayer != null) {
+        this.editingLayer.addTo(this.map)
+        this.map.on('pm:create', this.addFeature)
+        this.map.on('pm:drawstart', this.drawStart)
+        this.map.on('pm:drawend', this.drawEnd)
+      }
+    },
     editFeature (editingFeature) {
       this.stopEditing()
       this.isEditing = true
@@ -61,7 +69,7 @@ export default {
       this.editingLayer = L.geoJSON(featureCollection, {
         pane: DRAWING_LAYER_PANE.name,
         zIndex: DRAWING_LAYER_PANE.zIndex,
-      }).addTo(this.map)
+      })
 
       // setup redo/undo stack
       this.editingStack = [cloneDeep(editingFeature)]
@@ -71,9 +79,7 @@ export default {
       window.mapcache.unregisterRedoListeners()
       window.mapcache.registerUndoListener(this.undoEdit)
       window.mapcache.registerRedoListener(this.redoEdit)
-      this.map.on('pm:create', this.addFeature)
-      this.map.on('pm:drawstart', this.drawStart)
-      this.map.on('pm:drawend', this.drawEnd)
+      this.updateMapWithEditedFeature()
     },
     getUpdatedFeature () {
       const updatedFeature = cloneDeep(this.feature)

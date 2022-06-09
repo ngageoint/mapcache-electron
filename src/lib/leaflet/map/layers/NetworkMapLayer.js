@@ -5,7 +5,7 @@ import isNil from 'lodash/isNil'
  * NetworkMapLayer is a leaflet map layer that allows for some general networking safety precautions, established by the map layer
  */
 export default class NetworkMapLayer {
-  static constructMapLayer (layer, mapPane = 'overlayPane', className) {
+  static constructMapLayer (layer, mapPane = 'overlayPane', className, crs) {
     let southWest = L.latLng(layer.extent[1], layer.extent[0])
     let northEast = L.latLng(layer.extent[3], layer.extent[2])
     let bounds = L.latLngBounds(southWest, northEast)
@@ -19,7 +19,8 @@ export default class NetworkMapLayer {
       opacity: !isNil(layer.opacity) ? layer.opacity : 1.0,
       minZoom: layer.minZoom || 0,
       maxZoom: layer.maxZoom || 20,
-      className: className
+      className: className,
+      crs: crs
     }
     if (!isNil(layer.layers)) {
       options.layers = layer.layers.join()

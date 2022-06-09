@@ -60,7 +60,7 @@ function lat2tile (lat, z) {
 }
 
 
-function calculateXTileRangeForExtent (extent, z) {
+function calculateWGS84XTileRangeForExtent (extent, z) {
   const zoom = Number(z)
   const trimmedExtent = trimExtentToWGS84Max(extent)
   const west = long2tile(trimmedExtent[0], zoom)
@@ -71,7 +71,7 @@ function calculateXTileRangeForExtent (extent, z) {
   }
 }
 
-function calculateYTileRangeForExtent (extent, z) {
+function calculateWGS84YTileRangeForExtent (extent, z) {
   const zoom = Number(z)
   const trimmedExtent = trimExtentToWGS84Max(extent)
   const south = lat2tile(trimmedExtent[1], zoom)
@@ -82,7 +82,7 @@ function calculateYTileRangeForExtent (extent, z) {
   }
 }
 
-function tileBboxCalculator (x, y, z) {
+function wgs84TileBboxCalculator (x, y, z) {
   x = Number(x)
   y = Number(y)
   z = Number(z)
@@ -111,8 +111,8 @@ function tileExtentCalculator (x, y, z) {
 function tilesInExtentAtZoom (extent, z) {
   z = Number(z)
   const tiles = []
-  const yRange = calculateYTileRangeForExtent(extent, z)
-  const xRange = calculateXTileRangeForExtent(extent, z)
+  const yRange = calculateWGS84YTileRangeForExtent(extent, z)
+  const xRange = calculateWGS84XTileRangeForExtent(extent, z)
   for (let x = xRange.min; x <= xRange.max; x++) {
     for (let y = yRange.min; y <= yRange.max; y++) {
       tiles.push({ x, y, z })
@@ -125,8 +125,8 @@ function tileCountInExtent (extent, minZoom, maxZoom) {
   let tiles = 0
   for (let z = minZoom; z <= maxZoom; z++) {
     const zoom = Number(z)
-    const yRange = calculateYTileRangeForExtent(extent, zoom)
-    const xRange = calculateXTileRangeForExtent(extent, zoom)
+    const yRange = calculateWGS84YTileRangeForExtent(extent, zoom)
+    const xRange = calculateWGS84XTileRangeForExtent(extent, zoom)
     tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
   }
   return tiles
@@ -136,8 +136,8 @@ function tileCountInExtentForZoomLevels (extent, zoomLevels) {
   let tiles = 0
   zoomLevels.forEach(z => {
     const zoom = Number(z)
-    const yRange = calculateYTileRangeForExtent(extent, zoom)
-    const xRange = calculateXTileRangeForExtent(extent, zoom)
+    const yRange = calculateWGS84YTileRangeForExtent(extent, zoom)
+    const xRange = calculateWGS84XTileRangeForExtent(extent, zoom)
     tiles += (1 + yRange.max - yRange.min) * (1 + xRange.max - xRange.min)
   })
   return tiles
@@ -228,9 +228,9 @@ export {
   long2tile,
   tile2lat,
   tile2lon,
-  calculateXTileRangeForExtent,
-  calculateYTileRangeForExtent,
-  tileBboxCalculator,
+  calculateWGS84XTileRangeForExtent,
+  calculateWGS84YTileRangeForExtent,
+  wgs84TileBboxCalculator,
   tileCountInExtent,
   tileCountInExtentForZoomLevels,
   tilesInExtentAtZoom,

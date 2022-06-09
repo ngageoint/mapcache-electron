@@ -3,15 +3,24 @@ import bbox from '@turf/bbox'
 import intersect from '@turf/intersect'
 import isNil from 'lodash/isNil'
 import { tilesPerSideWithZoom } from '../xyz/XYZTileUtilities'
+import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../projection/ProjectionConstants'
+import { getWGS84ExtentFromXYZ } from '../xyz/WGS84XYZTileUtilities'
 
 const WEB_MERCATOR_HALF_WORLD_WIDTH = wgs84ToWebMercator.forward([180, 0])[0]
 
-function tileIntersectsXYZ (x, y, z, extent) {
-  let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
-  // assumes projection from 3857 to 4326
-  let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
-  let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
-  return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
+function tileIntersectsXYZ (x, y, z, crs, extent) {
+  if (crs === WEB_MERCATOR) {
+    let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
+    // assumes projection from 3857 to 4326
+    let tileUpperRight = wgs84ToWebMercator.inverse([tileBbox.maxLon, tileBbox.maxLat])
+    let tileLowerLeft = wgs84ToWebMercator.inverse([tileBbox.minLon, tileBbox.minLat])
+    return tileIntersects(tileUpperRight, tileLowerLeft, [extent[2], extent[3]], [extent[0], extent[1]])
+  } else if (crs === WORLD_GEODETIC_SYSTEM) {
+    let tileExtent = getWGS84ExtentFromXYZ(x, y, z)
+    return tileIntersects([tileExtent[2], tileExtent[3]], [tileExtent[0], tileExtent[1]], [extent[2], extent[3]], [extent[0], extent[1]])
+  } else {
+    return false
+  }
 }
 
 /**

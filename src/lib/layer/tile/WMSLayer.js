@@ -13,6 +13,7 @@ export default class WMSLayer extends MultiLayerNetworkTileLayer {
     this.format = configuration.format || 'image/png'
     this.version = configuration.version
     this.srs = configuration.srs || WEB_MERCATOR
+    this.supportedProjections = this.layers.flatMap(l => l.supportedProjections)
   }
 
   get configuration () {
@@ -23,7 +24,7 @@ export default class WMSLayer extends MultiLayerNetworkTileLayer {
         version: this.version,
         layers: this.layers,
         formats: this.formats,
-        srs: this.srs
+        srs: this.srs,
       }
     }
   }
@@ -38,25 +39,30 @@ export default class WMSLayer extends MultiLayerNetworkTileLayer {
 
   /**
    * Gets tile request data
-   * @param webMercatorBoundingBox
+   * @param boundingBox
    * @param coords
    * @param size
+   * @param crs
    * @param projectedBoundingBoxFunction
    * @returns {*[]}
    */
-  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBoxFunction) {
-    const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, this.srs)
-    const bbox = getBoundingBoxForWMSRequest(projectedBoundingBox, this.version, this.srs)
+  getTileRequestData (boundingBox, coords, size, crs, projectedBoundingBoxFunction) {
+    let srs = this.srs
+    if (this.supportedProjections.indexOf(crs) !== -1) {
+      srs = crs
+    }
+    const projectedBoundingBox = projectedBoundingBoxFunction(boundingBox, srs)
+    const bbox = getBoundingBoxForWMSRequest(projectedBoundingBox, this.version, srs)
     const layers = this.layers.filter(l => l.enabled).map(l => l.name).reverse()
     const requests = []
     if (layers.length > 0) {
       requests.push({
-        url: getTileRequestURL(this.filePath, layers, size.x, size.y, bbox, this.srs, this.version, this.format),
+        url: getTileRequestURL(this.filePath, layers, size.x, size.y, bbox, srs, this.version, this.format),
         width: size.x,
         height: size.y,
         tileBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
         imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
-        tileSRS: this.srs
+        tileSRS: srs
       })
     }
     return requests

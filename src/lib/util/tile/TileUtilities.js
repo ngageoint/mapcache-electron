@@ -10,7 +10,13 @@ import {
   calculateYTileRangeForExtent,
   tileBboxCalculator
 } from '../xyz/XYZTileUtilities'
+import {
+  calculateWGS84XTileRangeForExtent,
+  calculateWGS84YTileRangeForExtent,
+  wgs84TileBboxCalculator
+} from '../xyz/WGS84XYZTileUtilities'
 import { disposeImage, makeImage } from '../canvas/CanvasUtilities'
+import { WEB_MERCATOR } from '../../projection/ProjectionConstants'
 
 /**
  * A tile set with a specified set of layers
@@ -281,27 +287,31 @@ function getZoomTileMatrixCount (matrices) {
  * @param zoom
  * @param extent
  * @param drawOverlap
+ * @param projection
+ * @param size
  * @return {TileSet}
  */
-function getTileSetForExtent (zoom, extent, drawOverlap = null) {
+function getTileSetForExtent (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: 256, y: 256}) {
   // reduce the extent just in case it lies on a tile boundary
+  const isWebMercator = projection === WEB_MERCATOR
   const epsilon = 0.00000001
   const epsilonReducedExtent = [extent[0] + epsilon, extent[1] + epsilon, extent[2] - epsilon, extent[3] - epsilon]
-  let x = calculateXTileRangeForExtent(epsilonReducedExtent, zoom)
-  let y = calculateYTileRangeForExtent(epsilonReducedExtent, zoom)
+  let x = isWebMercator ? calculateXTileRangeForExtent(epsilonReducedExtent, zoom) : calculateWGS84XTileRangeForExtent(epsilonReducedExtent, zoom)
+  let y = isWebMercator ? calculateYTileRangeForExtent(epsilonReducedExtent, zoom) : calculateWGS84YTileRangeForExtent(epsilonReducedExtent, zoom)
 
   if (!isNil(drawOverlap)) {
-    const lowerLeftBounds = tileBboxCalculator(x.min, y.min, zoom)
-    const upperRightBounds = tileBboxCalculator(x.max, y.max, zoom)
-    const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / 256.0
-    const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / 256.0
-    const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / 256.0
+    const lowerLeftBounds = isWebMercator ? tileBboxCalculator(x.min, y.min, zoom) : wgs84TileBboxCalculator(x.min, y.min, zoom)
+    const upperRightBounds = isWebMercator ? tileBboxCalculator(x.max, y.max, zoom) : wgs84TileBboxCalculator(x.max, y.max, zoom)
+    const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / size.x
+    const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / size.y
+    const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / size.y
     extent[0] = Math.max(-180.0, extent[0] - pixelWidthInDegrees * drawOverlap.width)
-    extent[1] = Math.max(-85.051128, extent[1] - lowerPixelHeightInDegrees * drawOverlap.height)
+    extent[1] = Math.max(projection === WEB_MERCATOR ? -85.051128 : -90.0, extent[1] - lowerPixelHeightInDegrees * drawOverlap.height)
     extent[2] = Math.min(180.0, extent[2] + pixelWidthInDegrees * drawOverlap.width)
-    extent[3] = Math.min(85.051128, extent[3] + upperPixelHeightInDegrees * drawOverlap.height)
-    x = calculateXTileRangeForExtent(extent, zoom)
-    y = calculateYTileRangeForExtent(extent, zoom)
+    extent[3] = Math.min(projection === WEB_MERCATOR ? 85.051128 : 90.0, extent[3] + upperPixelHeightInDegrees * drawOverlap.height)
+    x = isWebMercator ? calculateXTileRangeForExtent(extent, zoom) : calculateWGS84XTileRangeForExtent(extent, zoom)
+    y = isWebMercator ? calculateYTileRangeForExtent(extent, zoom) : calculateWGS84YTileRangeForExtent(extent, zoom)
+
   }
   return new TileSet(x.min, x.max, y.min, y.max, zoom)
 }
@@ -311,9 +321,11 @@ function getTileSetForExtent (zoom, extent, drawOverlap = null) {
  * @param zoom
  * @param extent
  * @param drawOverlap
+ * @param projection
+ * @param size
  * @return {*}
  */
-function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null) {
+function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: 256, y: 256}) {
   const expandedExtent = extent.slice()
   const epsilonReducedExtent = [extent[0] + epsilon, extent[1] + epsilon, extent[2] - epsilon, extent[3] - epsilon]
   let x = calculateXTileRangeForExtent(epsilonReducedExtent, zoom)
@@ -321,13 +333,13 @@ function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null) {
   if (!isNil(drawOverlap)) {
     const lowerLeftBounds = tileBboxCalculator(x.min, y.min, zoom)
     const upperRightBounds = tileBboxCalculator(x.max, y.max, zoom)
-    const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / 256.0
-    const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / 256.0
-    const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / 256.0
+    const pixelWidthInDegrees = (lowerLeftBounds.east - lowerLeftBounds.west) / size.x
+    const upperPixelHeightInDegrees = (upperRightBounds.north - upperRightBounds.south) / size.y
+    const lowerPixelHeightInDegrees = (lowerLeftBounds.north - lowerLeftBounds.south) / size.y
     expandedExtent[0] = Math.max(-180.0, extent[0] - pixelWidthInDegrees * drawOverlap.width)
-    expandedExtent[1] = Math.max(-85.051128, extent[1] - lowerPixelHeightInDegrees * drawOverlap.height)
+    expandedExtent[1] = Math.max(projection === WEB_MERCATOR ? -85.051128 : -90.0, extent[1] - lowerPixelHeightInDegrees * drawOverlap.height)
     expandedExtent[2] = Math.min(180.0, extent[2] + pixelWidthInDegrees * drawOverlap.width)
-    expandedExtent[3] = Math.min(85.051128, extent[3] + upperPixelHeightInDegrees * drawOverlap.height)
+    expandedExtent[3] = Math.min(projection === WEB_MERCATOR ? 85.051128 : 90.0, extent[3] + upperPixelHeightInDegrees * drawOverlap.height)
   }
   return expandedExtent
 }
@@ -337,9 +349,11 @@ function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null) {
  * @param filteredExtents
  * @param minZoom
  * @param maxZoom
+ * @param projection
+ * @param size
  * @return {{}}
  */
-function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20) {
+function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20, projection = WEB_MERCATOR, size) {
   const matrices = {}
   if (filteredExtents.length !== 0) {
     for (let z = minZoom; z <= maxZoom; z++) {
@@ -347,7 +361,7 @@ function getZoomTileMatrix (filteredExtents, minZoom = 0, maxZoom = 20) {
 
       // iterate over each layer
       filteredExtents.filter(layer => layer.minZoom <= z && layer.maxZoom >= z && layer.zoomExtentMap[z] != null).forEach(layer => {
-        let entriesToCheck = [new LayerTileSet(getTileSetForExtent(z, layer.zoomExtentMap[z].slice(), layer.drawOverlap), [layer.id])]
+        let entriesToCheck = [new LayerTileSet(getTileSetForExtent(z, layer.zoomExtentMap[z].slice(), layer.drawOverlap, projection, size), [layer.id])]
 
         for (let i = 0; i < entriesToCheck.length; i++) {
           let entryToCheck = entriesToCheck[i]
@@ -499,13 +513,15 @@ async function iterateTilesInMatrix (tileMatrix, tileCallback) {
  * @param extent
  * @param filter
  * @param drawOverlap
+ * @param projection
+ * @param size
  * @return {{}}
  */
-function getZoomExtentMap (minZoom, maxZoom, extent, filter, drawOverlap) {
+function getZoomExtentMap (minZoom, maxZoom, extent, filter, drawOverlap, projection, size) {
   const zoomExtentMap = {}
   for (let i = minZoom; i <= maxZoom; i++) {
     if (drawOverlap != null) {
-      zoomExtentMap[i] = extentIntersection(getExpandedExtentForDrawOverlap(i, extent, drawOverlap), filter)
+      zoomExtentMap[i] = extentIntersection(getExpandedExtentForDrawOverlap(i, extent, drawOverlap, projection, size), filter)
     } else {
       zoomExtentMap[i] = extentIntersection(extent, filter)
     }
@@ -521,12 +537,14 @@ function getZoomExtentMap (minZoom, maxZoom, extent, filter, drawOverlap) {
  * @param tileScalingEnabled
  * @param minZoom
  * @param maxZoom
+ * @param projection
+ * @param size
  * @return {*}
  */
-function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled = false, minZoom = 0, maxZoom = 20) {
+function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled = false, minZoom = 0, maxZoom = 20, projection, size) {
   let zoomTileMatrix = {}
   if (!isNil(minZoom) && !isNil(maxZoom) && !isNil(boundingBoxFilter)) {
-    const trimmedBoundingBoxFilter = trimExtentToWebMercatorMax(boundingBoxFilter)
+    const trimmedBoundingBoxFilter = projection === WEB_MERCATOR ? trimExtentToWebMercatorMax(boundingBoxFilter) : boundingBoxFilter
     // filtered extents represents the bounding box
     let filteredExtents = dataSources.map(dataSource => {
       const minZoom = dataSource.minZoom || 0
@@ -534,7 +552,7 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
       return {
         id: dataSource.id,
         drawOverlap: dataSource.drawOverlap,
-        zoomExtentMap: getZoomExtentMap(minZoom, maxZoom, dataSource.extent, trimmedBoundingBoxFilter, dataSource.drawOverlap),
+        zoomExtentMap: getZoomExtentMap(minZoom, maxZoom, dataSource.extent, trimmedBoundingBoxFilter, dataSource.drawOverlap, projection, size),
         minZoom: minZoom,
         maxZoom: maxZoom
       }
@@ -545,7 +563,7 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
         data = {
           id: geopackageLayer.geopackage.id + '_' + geopackageLayer.table,
           drawOverlap: geopackageLayer.drawOverlap,
-          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter, geopackageLayer.drawOverlap),
+          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.features[geopackageLayer.table].extent, trimmedBoundingBoxFilter, geopackageLayer.drawOverlap, projection, size),
           minZoom: 0,
           maxZoom: 20
         }
@@ -554,14 +572,14 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
         const maxZoom = geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].maxZoom || 20
         data = {
           id: geopackageLayer.geopackage.id + '_' + geopackageLayer.table,
-          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent, trimmedBoundingBoxFilter, null),
+          zoomExtentMap: getZoomExtentMap(0, 20, geopackageLayer.geopackage.tables.tiles[geopackageLayer.table].extent, trimmedBoundingBoxFilter, null, projection, size),
           minZoom: minZoom,
           maxZoom: maxZoom,
         }
       }
       return data
     }))
-    zoomTileMatrix = getZoomTileMatrix(filteredExtents, minZoom, maxZoom)
+    zoomTileMatrix = getZoomTileMatrix(filteredExtents, minZoom, maxZoom, projection, size)
     if (tileScalingEnabled) {
       applyTileScalingToZoomTileMatrix(zoomTileMatrix)
     }
@@ -577,10 +595,12 @@ function getTileMatrix (boundingBoxFilter, dataSources, geopackageLayers, tileSc
  * @param tileScalingEnabled
  * @param minZoom
  * @param maxZoom
+ * @param projection
+ * @param size
  * @return {number}
  */
-function getTileCount (boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled, minZoom = 0, maxZoom = 20) {
-  return getZoomTileMatrixCount(getTileMatrix(boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled, minZoom, maxZoom))
+function getTileCount (boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled, minZoom = 0, maxZoom = 20, projection, size) {
+  return getZoomTileMatrixCount(getTileMatrix(boundingBoxFilter, dataSources, geopackageLayers, tileScalingEnabled, minZoom, maxZoom, projection, size))
 }
 
 /**

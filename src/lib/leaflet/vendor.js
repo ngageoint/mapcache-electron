@@ -30,11 +30,11 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import initSmoothWheel from './map/improvements/Leaflet.SmoothWheelZoom'
 import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap'
 
-import { WEB_MERCATOR, WEB_MERCATOR_CODE } from '../projection/ProjectionConstants'
+import { ProjectionConstants } from '@ngageoint/geopackage'
+import { getWGS84BoundingBoxFromXYZ } from '../util/xyz/WGS84XYZTileUtilities'
 
 initSmoothWheel(L)
 tileLayerNoGap(L)
-
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -68,6 +68,7 @@ L.TileLayer.MapCacheLayer = L.TileLayer.extend({
     this.maxFeatures = options.maxFeatures
     this.className = options.className || ''
     this.outstandingTileRequests = {}
+    this.crs = options.crs ? options.crs.code : L.CRS.EPSG3857.code
 
     const renderer = constructRenderer(this.layer, false)
     if (renderer.updateMaxFeatures != null) {
@@ -104,7 +105,7 @@ L.TileLayer.MapCacheLayer = L.TileLayer.extend({
     tile.alt = ''
     tile.setAttribute('role', 'presentation')
     const size = this.getTileSize()
-    this.layer.renderTile(requestId, coords, size, (err, base64Image) => {
+    this.layer.renderTile(requestId, coords, size, this.crs, (err, base64Image) => {
       if (!isNil(err)) {
         doneWrapper(err, tile)
       } else if (base64Image != null) {
@@ -142,10 +143,11 @@ L.TileLayer.MapCacheLayer = L.TileLayer.extend({
 L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
   initialize: function (options) {
     this.originalOptions = options
+    this.crs = options.crs ? options.crs.code : L.CRS.EPSG3857.code
     L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
     this.outstandingTileRequests = {}
     this.layer = options.layer
-    this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
+    this.layerBounds = this.crs === ProjectionConstants.EPSG_3857 ? window.mapcache.convertToWebMercator(this.layer.extent) : this.layer.extent.slice()
     this.id = options.layer.id
     this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
     this.timeout = !isNil(this.layer.timeoutMs) ? this.layer.timeoutMs : DEFAULT_TIMEOUT
@@ -160,14 +162,12 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
         delete this.outstandingTileRequests[event.tile.requestId]
       }
     })
-    this.srs = WEB_MERCATOR
   },
   async testConnection (ignoreTimeoutError = true) {
     const options = {
       timeout: this.timeout,
       withCredentials: this.layer.withCredentials
     }
-    // TODO: add in test support for WMTS
     if (this.layer.layerType === XYZ_SERVER) {
       options.subdomains = this.layer.subdomains || []
       let { error } = await testServiceConnection(this.layer.filePath, SERVICE_TYPE.XYZ, options)
@@ -300,14 +300,14 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
       } else {
         const size = this.getTileSize()
         // get web mercator bounding box
-        const webMercatorBoundingBox = window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+        const boundingBox = this.crs === ProjectionConstants.EPSG_3857 ? window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
         // get tile requests
-        let requests = this.layer.getTileRequestData(webMercatorBoundingBox, coords, size, (bbox, srs) => {
+        let requests = this.layer.getTileRequestData(boundingBox, coords, size, this.crs, (bbox, srs) => {
           let projectedBoundingBox
-          if (srs.endsWith(WEB_MERCATOR_CODE)) {
+          if (srs === this.crs) {
             projectedBoundingBox = bbox
           } else {
-            projectedBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, srs)
+            projectedBoundingBox = window.mapcache.reprojectBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, this.crs, srs)
           }
           return projectedBoundingBox
         })
@@ -347,8 +347,8 @@ L.TileLayer.MapCacheRemoteLayer = L.TileLayer.extend({
               })
               if (tiles.length > 0 && !ret.cancelled) {
                 ret.compileRequestSent = true
-                const clippingRegion = getClippingRegion(webMercatorBoundingBox, this.webMercatorLayerBounds)
-                this.compileTiles(requestId, tiles, size, clippingRegion, this.srs, webMercatorBoundingBox).then(dataUrl => {
+                const clippingRegion = getClippingRegion(boundingBox, this.layerBounds)
+                this.compileTiles(requestId, tiles, size, clippingRegion, this.crs, boundingBox).then(dataUrl => {
                   this.loadImage(dataUrl, coords, tile, resolve, reject)
                 })
               } else {

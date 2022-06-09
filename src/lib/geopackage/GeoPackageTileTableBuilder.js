@@ -11,7 +11,6 @@ import {
 } from './GeoPackageCommon'
 import { constructLayer } from '../layer/LayerFactory'
 import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
-import { TileBoundingBoxUtils } from '@ngageoint/geopackage'
 import {
   createCanvas,
   isBlank,
@@ -31,7 +30,14 @@ import {
   trimExtentToFilter
 } from '../util/tile/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
-import { WEB_MERCATOR_CODE, WORLD_GEODETIC_SYSTEM_CODE } from '../projection/ProjectionConstants'
+import {
+  COLON_DELIMITER,
+  WEB_MERCATOR,
+  WEB_MERCATOR_CODE,
+  WORLD_GEODETIC_SYSTEM_CODE
+} from '../projection/ProjectionConstants'
+import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
+import { getWebMercatorBoundingBoxFromXYZ } from '../util/tile/TileBoundingBoxUtils'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
@@ -69,7 +75,7 @@ async function buildTileLayer (configuration, statusCallback) {
   return performSafeGeoPackageOperation(configuration.path, async (gp) => {
     const buildStart = new Date().getTime()
 
-    const tileSize = 256.0
+    const size = configuration.size
 
     const status = {
       message: 'Starting...',
@@ -80,6 +86,8 @@ async function buildTileLayer (configuration, statusCallback) {
       const throttleStatusCallback = throttle(statusCallback, 250)
 
       const tableName = configuration.table
+      const projection = configuration.targetProjection || WEB_MERCATOR
+      const isWebMercator = projection.endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE)
 
       throttleStatusCallback(status)
 
@@ -91,7 +99,6 @@ async function buildTileLayer (configuration, statusCallback) {
       status.message = 'Preparing layers...'
 
       throttleStatusCallback(status)
-
 
       let layersPrepared = 0
       const numberOfLayers = configuration.sourceLayers.length + configuration.geopackageLayers.length
@@ -155,7 +162,7 @@ async function buildTileLayer (configuration, statusCallback) {
       }
 
       // get the tile matrix and estimated number of tiles
-      const tileMatrix = getTileMatrix(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScalingEnabled, configuration.minZoom, configuration.maxZoom)
+      const tileMatrix = getTileMatrix(configuration.boundingBoxFilter, configuration.sourceLayers, configuration.geopackageLayers, configuration.tileScalingEnabled, configuration.minZoom, configuration.maxZoom, projection, configuration.size)
       const estimatedNumberOfTiles = getZoomTileMatrixCount(tileMatrix)
 
       // determine the zoom level extents for the data, tracking the overall extent
@@ -195,16 +202,16 @@ async function buildTileLayer (configuration, statusCallback) {
         const trimmedExtent = trimExtentToFilter(layer.extent, configuration.boundingBoxFilter)
         if (layer.drawOverlap != null) {
           for (let i = minZoom; i <= maxZoom; i++) {
-            const expandedExtent = getExpandedExtentForDrawOverlap(i, trimmedExtent, layer.drawOverlap)
-            layerZoomExtentMap[i][layer.id] = convertToWebMercator(expandedExtent)
+            const expandedExtent = getExpandedExtentForDrawOverlap(i, trimmedExtent, layer.drawOverlap, projection)
+            layerZoomExtentMap[i][layer.id] = isWebMercator ? convertToWebMercator(expandedExtent) : expandedExtent.slice()
             if (i === maxZoom) {
               updateTotalExtent(expandedExtent)
             }
           }
         } else {
-          const webMercatorExtent = convertToWebMercator(trimmedExtent)
+          const layerZoomExtent = isWebMercator ? convertToWebMercator(trimmedExtent) : trimmedExtent.slice()
           for (let i = minZoom; i <= maxZoom; i++) {
-            layerZoomExtentMap[i][layer.id] = webMercatorExtent
+            layerZoomExtentMap[i][layer.id] = layerZoomExtent
           }
         }
       })
@@ -216,16 +223,16 @@ async function buildTileLayer (configuration, statusCallback) {
         const trimmedExtent = trimExtentToFilter(extent, configuration.boundingBoxFilter)
         if (layer.drawOverlap != null) {
           for (let i = minZoom; i <= maxZoom; i++) {
-            const expandedExtent = getExpandedExtentForDrawOverlap([i], trimmedExtent, layer.drawOverlap)
-            layerZoomExtentMap[i][layerId] = convertToWebMercator(expandedExtent)
+            const expandedExtent = getExpandedExtentForDrawOverlap([i], trimmedExtent, layer.drawOverlap, projection)
+            layerZoomExtentMap[i][layerId] = isWebMercator ? convertToWebMercator(expandedExtent) : expandedExtent.slice()
             if (i === maxZoom) {
               updateTotalExtent(expandedExtent)
             }
           }
         } else {
-          const webMercatorExtent = convertToWebMercator(trimmedExtent)
+          const layerZoomExtent = isWebMercator ? convertToWebMercator(trimmedExtent) : trimmedExtent.slice()
           for (let i = minZoom; i <= maxZoom; i++) {
-            layerZoomExtentMap[i][layerId] = webMercatorExtent
+            layerZoomExtentMap[i][layerId] = layerZoomExtent
           }
         }
       })
@@ -238,13 +245,20 @@ async function buildTileLayer (configuration, statusCallback) {
       }
 
       // set the contents bounds to the intersection of the filter and the merged extent of the data (i.e., if the merged extent is within the filter, minimize it to the intersection)
-      totalExtent = trimExtentToWebMercatorMax(totalExtent)
+      totalExtent = isWebMercator ? trimExtentToWebMercatorMax(totalExtent) : trimExtentToWGS84Max(totalExtent)
 
       const contentsBounds = new BoundingBox(totalExtent[0], totalExtent[2], totalExtent[1], totalExtent[3])
       const contentsSrsId = WORLD_GEODETIC_SYSTEM_CODE
-      const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
 
-      await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, WEB_MERCATOR_CODE, minZoom, maxZoom)
+      if (isWebMercator) {
+        const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
+        const matrixSrsId = WEB_MERCATOR_CODE
+        await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, matrixSrsId, minZoom, maxZoom)
+      } else {
+        const matrixSetBounds = new BoundingBox(-180.0, 180, -90, 90)
+        const matrixSrsId = WORLD_GEODETIC_SYSTEM_CODE
+        await gp.createStandardWGS84TileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, matrixSrsId, minZoom, maxZoom)
+      }
 
       const tileDao = gp.getTileDao(tableName)
       const tileRow = tileDao.newRow()
@@ -267,30 +281,33 @@ async function buildTileLayer (configuration, statusCallback) {
       let tilesAdded = 0
       let timeStart = new Date().getTime()
 
+      const boundingBoxFromXYZFunction = isWebMercator ? getWebMercatorBoundingBoxFromXYZ : getWGS84BoundingBoxFromXYZ
+
       await iterateTilesInMatrix(tileMatrix, async (z, x, y, layers) => {
         // setup canvas that we will draw each layer into
-        let canvas = createCanvas(tileSize, tileSize)
+        let canvas = createCanvas(size.x, size.y)
         let buffer
         let ctx = canvas.getContext('2d')
-        const tileBounds = TileBoundingBoxUtils.getWebMercatorBoundingBoxFromXYZ(x, y, z)
-        const tileWidth = tileBounds.width
-        const tileHeight = tileBounds.height
+        const tileBounds = boundingBoxFromXYZFunction(x, y, z)
+        const tileWidth = tileBounds.maxLon - tileBounds.minLon
+        const tileHeight = tileBounds.maxLat - tileBounds.minLat
+
 
         const getX = (lng, mathFunc) => {
-          return mathFunc(tileSize / tileWidth * (lng - tileBounds.minLongitude))
+          return mathFunc(size.x / tileWidth * (lng - tileBounds.minLon))
         }
         const getY = (lat, mathFunc) => {
-          return mathFunc(tileSize / tileHeight * (tileBounds.maxLatitude - lat))
+          return mathFunc(size.y / tileHeight * (tileBounds.maxLat - lat))
         }
 
         const clippingMap = {}
         for (let i = 0; i < layers.length; i++) {
           const layerId = layers[i]
           const filteredExtent = layerZoomExtentMap[z][layerId]
-          const minX = Math.min(tileSize, Math.max(0, getX(filteredExtent[0], Math.floor) - 1))
-          const maxX = Math.max(0, Math.min(tileSize, getX(filteredExtent[2], Math.ceil) + 1))
-          const minY = Math.min(tileSize, Math.max(0, getY(filteredExtent[3], Math.ceil) - 1))
-          const maxY = Math.max(0, Math.min(tileSize, getY(filteredExtent[1], Math.floor) + 1))
+          const minX = Math.min(size.x, Math.max(0, getX(filteredExtent[0], Math.floor) - 1))
+          const maxX = Math.max(0, Math.min(size.x, getX(filteredExtent[2], Math.ceil) + 1))
+          const minY = Math.min(size.y, Math.max(0, getY(filteredExtent[3], Math.ceil) - 1))
+          const maxY = Math.max(0, Math.min(size.y, getY(filteredExtent[1], Math.floor) + 1))
           clippingMap[layerId] = [minX, minY, maxX - minX, maxY - minY]
         }
 
@@ -301,7 +318,7 @@ async function buildTileLayer (configuration, statusCallback) {
             const layer = sortedLayers[i]
             if (layers.indexOf(layer.id) !== -1) {
               tilePromises.push(new Promise((resolve, reject) => {
-                layer.renderTile(createUniqueID(), { x, y, z }, { x: tileSize, y: tileSize }, (err, result) => {
+                layer.renderTile(createUniqueID(), { x, y, z }, { x: size.x, y: size.y }, projection, (err, result) => {
                   if (err) {
                     reject(err)
                   } else if (!isNil(result)) {

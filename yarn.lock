@@ -1072,10 +1072,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@ngageoint/geopackage@4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.1.0.tgz#93d9d85be3600087874f34ceb13279887c2dfeb8"
-  integrity sha512-6iq5M/ygPYlk8egH0/3R6BS1FMGpQhIUXLCeP4nlDcMFbc1lX83Jy6hTQa/lvcm4dc4rSxZsnm901WkmFR1Wvg==
+"@ngageoint/geopackage@4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.2.0.tgz#38733af7d0dd7dc3b52de05d06c2fe3929289131"
+  integrity sha512-u2O3q3USNmqStOx9pnCDaoM0iyIWOyae/qh4dYN/yLfTnimWGieN1z6ZgtQu8jaPhGdNG2DILQYa8ss2lb/I6A==
   dependencies:
     "@turf/bbox" "6.3.0"
     "@turf/boolean-clockwise" "6.5.0"
@@ -1094,7 +1094,7 @@
     lodash "4.17.21"
     proj4 "2.7.2"
     reproject "1.2.5"
-    rtree-sql.js "1.0.0"
+    rtree-sql.js "1.7.0"
     simplify-js "1.2.4"
     webworkify "1.5.0"
     wkx "0.4.8"
@@ -10482,10 +10482,10 @@ roarr@^2.15.3:
     semver-compare "^1.0.0"
     sprintf-js "^1.1.2"
 
-rtree-sql.js@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/rtree-sql.js/-/rtree-sql.js-1.0.0.tgz#dc333e5887ab059e9cc37093c98f147b2e096f41"
-  integrity sha512-2ISdbYUyUmOU757K8g/vBBp45MUoolAUV2v7bMm0LxI5wdEIESz1ExutcEMjdQ/gp4zcofGjEa/0FBL1P9rXAg==
+rtree-sql.js@1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/rtree-sql.js/-/rtree-sql.js-1.7.0.tgz#e713e2ca65298a4442a42975de6b7802e61d3fbc"
+  integrity sha512-hue7klBnBrM6pvUPSnXNNgA0yN9FIjmhb8QveVY9q5h/3b//Cd8jaafUE0Ty89fuiamaLEHRw8eQq8mTn6Df5Q==
 
 run-async@^2.4.0:
   version "2.4.1"

@@ -288,7 +288,7 @@
                 URL
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
-                {{ baseMap.url || configuration.filePath }}
+                {{ url }}
               </p>
             </v-col>
           </v-row>
@@ -409,6 +409,9 @@ export default {
     },
     rasterMissing () {
       return window.mapcache.isRasterMissing(this.baseMap.layerConfiguration || {})
+    },
+    url () {
+      return this.project.mapProjection === 3857 ? this.baseMap.url : this.baseMap.pcUrl
     }
   },
   data () {

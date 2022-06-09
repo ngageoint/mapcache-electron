@@ -104,6 +104,25 @@ function getRecommendedSrs (srsList) {
 }
 
 /**
+ * Gets standard supported projections such as web mercator, wgs84 and crs84.
+ * @param srsList
+ * @returns {string|*}
+ */
+function getStandardSupportedProjections (srsList) {
+  const supportedProjections = []
+  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE)) !== -1) {
+    supportedProjections.push(WEB_MERCATOR)
+  }
+  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) !== -1) {
+    supportedProjections.push(WORLD_GEODETIC_SYSTEM)
+  }
+  if (srsList.findIndex(crs => crs.toUpperCase().endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CRS_CODE)) !== -1) {
+    supportedProjections.push(WORLD_GEODETIC_SYSTEM_CRS)
+  }
+  return supportedProjections
+}
+
+/**
  * Gets layers for wms
  * @param layer
  * @param version
@@ -158,6 +177,7 @@ function getWMSLayers (layer, version, titles = [], availableSrs = [], parentExt
     } else if (!isNil(name) && !isEmpty(name)) {
       layerTitles.push(name)
     }
+
     layers.push({
       name,
       title: layerTitles[0],
@@ -166,7 +186,7 @@ function getWMSLayers (layer, version, titles = [], availableSrs = [], parentExt
       wms: true,
       version,
       srs: getRecommendedSrs(supportedProjections),
-      supportedProjections: supportedProjections
+      supportedProjections: getStandardSupportedProjections(supportedProjections)
     })
   }
   return layers

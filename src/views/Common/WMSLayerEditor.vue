@@ -173,7 +173,8 @@ export default {
               enabled: sourceLayer != null ? sourceLayer.enabled : false,
               srs: serviceLayer.srs,
               version: serviceLayer.version,
-              extent: serviceLayer.extent
+              extent: serviceLayer.extent,
+              supportedProjections: serviceLayer.supportedProjections
             }
           }).sort((a, b) => {
             return this.configuration.layers.findIndex(l => l.name === a.name) - this.configuration.layers.findIndex(l => l.name === b.name)

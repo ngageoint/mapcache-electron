@@ -574,7 +574,8 @@ export default {
               extent: layer.extent,
               enabled: false,
               version: layer.version,
-              srs: layer.srs
+              srs: layer.srs,
+              supportedProjections: layer.supportedProjections
             }
           })
           sourceToProcess.format = this.serviceInfo.format

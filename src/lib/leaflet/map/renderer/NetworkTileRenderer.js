@@ -14,7 +14,9 @@ import {
   REQUEST_TILE_COMPILATION,
   REQUEST_TILE_COMPILATION_COMPLETED
 } from '../../../electron/ipc/MapCacheIPC'
-import { WEB_MERCATOR, WEB_MERCATOR_CODE } from '../../../projection/ProjectionConstants'
+import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
+import { ProjectionConstants } from '@ngageoint/geopackage'
+import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
 
 /**
  * This tile layer includes network connection settings such as timeout, retry attempts and number of requests per second (rate limit)
@@ -43,20 +45,21 @@ export default class NetworkTileRenderer {
       this.getWebMercatorBoundingBoxFromXYZ = getWebMercatorBoundingBoxFromXYZ
       this.tileIntersectsXYZ = tileIntersectsXYZ
       const {
-        reprojectWebMercatorBoundingBox,
+        reprojectBoundingBox,
         convertToWebMercator
       } = require('../../../projection/ProjectionUtilities')
-      this.reprojectWebMercatorBoundingBox = reprojectWebMercatorBoundingBox
+      this.reprojectBoundingBox = reprojectBoundingBox
       this.convertToWebMercator = convertToWebMercator
       this.ipcRenderer = require('electron').ipcRenderer
     } else {
       this.createUniqueID = window.mapcache.createUniqueID
       this.getWebMercatorBoundingBoxFromXYZ = window.mapcache.getWebMercatorBoundingBoxFromXYZ
       this.tileIntersectsXYZ = window.mapcache.tileIntersectsXYZ
-      this.reprojectWebMercatorBoundingBox = window.mapcache.reprojectWebMercatorBoundingBox
+      this.reprojectBoundingBox = window.mapcache.reprojectBoundingBox
       this.convertToWebMercator = window.mapcache.convertToWebMercator
     }
-    this.webMercatorLayerBounds = this.convertToWebMercator(this.layer.extent)
+    this.layerBounds3857 = this.convertToWebMercator(this.layer.extent)
+    this.layerBounds4326 = this.layer.extent.slice()
   }
 
   setLayer (layer) {
@@ -123,29 +126,31 @@ export default class NetworkTileRenderer {
    * @param requestId
    * @param coords
    * @param size
+   * @param crs
    * @param callback
    * @returns {Promise<void>}
    */
-  async renderTile (requestId, coords, size, callback) {
+  async renderTile (requestId, coords, size, crs, callback) {
     let rendered = false
+    const layerBounds = crs === WEB_MERCATOR ? this.layerBounds3857 : this.layerBounds4326
     if (!isNil(this.error)) {
       callback(this.error, null)
     } else {
       try {
         let { x, y, z } = coords
-        if (!this.tileIntersectsXYZ(x, y, z, this.layer.extent)) {
+        if (!this.tileIntersectsXYZ(x, y, z, crs, this.layer.extent)) {
           rendered = true
           callback(null, null)
           return
         }
-        const webMercatorBoundingBox = this.getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        const boundingBox = crs === ProjectionConstants.EPSG_3857 ? this.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
         // get tile requests
-        let requests = this.layer.getTileRequestData(webMercatorBoundingBox, coords, size, (bbox, srs) => {
+        let requests = this.layer.getTileRequestData(boundingBox, coords, size, crs, (bbox, srs) => {
           let projectedBoundingBox
-          if (srs.endsWith(WEB_MERCATOR_CODE)) {
+          if (srs === crs) {
             projectedBoundingBox = bbox
           } else {
-            projectedBoundingBox = this.reprojectWebMercatorBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, srs)
+            projectedBoundingBox = this.reprojectBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, crs, srs)
           }
           return projectedBoundingBox
         })
@@ -178,7 +183,7 @@ export default class NetworkTileRenderer {
             }
           })
           if (tiles.length > 0) {
-            const dataUrl = await this.compileTiles(requestId, tiles, size, getClippingRegion(webMercatorBoundingBox, this.webMercatorLayerBounds), WEB_MERCATOR, webMercatorBoundingBox)
+            const dataUrl = await this.compileTiles(requestId, tiles, size, getClippingRegion(boundingBox, layerBounds), crs, boundingBox)
             rendered = true
             callback(null, dataUrl)
           }

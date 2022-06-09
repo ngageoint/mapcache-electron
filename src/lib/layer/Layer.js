@@ -49,9 +49,9 @@ export default class Layer {
     this.renderer = renderer
   }
 
-  async renderTile (requestId, coords, size, callback) {
+  async renderTile (requestId, coords, size, crs, callback) {
     if (this.renderer) {
-      this.renderer.renderTile(requestId, coords, size, callback)
+      this.renderer.renderTile(requestId, coords, size, crs, callback)
     } else {
       callback('Renderer not set...', null)
     }

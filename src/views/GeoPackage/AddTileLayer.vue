@@ -187,7 +187,7 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
+        <v-stepper-step editable :complete="step > 5" step="5" color="primary">
           Order layers
           <small
               class="pt-1">{{
@@ -235,8 +235,40 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5"
-                        :rules="[() => (boundingBoxFilter || Number(step) < 6) && (!isEditingBoundingBox() || (Number(step) === 5))]"
+        <v-stepper-step editable :complete="step > 5" step="5" color="primary">
+          Set layer's projection
+          <small
+              class="pt-1">{{
+              targetProjection
+            }}</small>
+        </v-stepper-step>
+        <v-stepper-content step="5">
+          <v-card flat tile>
+            <v-card-subtitle>
+              Specify the layer's target projection. <br><small>Note: {{ WEB_MERCATOR_DISPLAY_TEXT }} is recommended for mobile maps.</small>
+            </v-card-subtitle>
+            <v-card-text>
+              <v-radio-group
+                  v-model="targetProjection"
+                  mandatory
+              >
+                <v-radio
+                    :label=WEB_MERCATOR_DISPLAY_TEXT
+                    :value=WEB_MERCATOR
+                ></v-radio>
+                <v-radio
+                    :label=WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
+                    :value=WORLD_GEODETIC_SYSTEM
+                ></v-radio>
+              </v-radio-group>
+            </v-card-text>
+          </v-card>
+          <v-btn text color="primary" @click="step = 6">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 6" step="6"
+                        :rules="[() => (boundingBoxFilter || Number(step) < 6) && (!isEditingBoundingBox() || (Number(step) === 6))]"
                         color="primary">
           Specify bounding box
           <small
@@ -244,7 +276,7 @@
               isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box set' : 'Bounding box not set')
             }}</small>
         </v-stepper-step>
-        <v-stepper-content step="5">
+        <v-stepper-content step="6">
           <v-card flat tile>
             <v-card-subtitle>
               Provide a bounding box to restrict content from the selected data sources and GeoPackage feature layers
@@ -256,14 +288,14 @@
           <v-btn
               text
               color="primary"
-              @click="step = 6">
+              @click="step = 7">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 6" step="6" color="primary" :rules="[() => areZoomsValid()]">
+        <v-stepper-step editable :complete="step > 7" step="7" color="primary" :rules="[() => areZoomsValid()]">
           Specify zoom levels
         </v-stepper-step>
-        <v-stepper-content step="6">
+        <v-stepper-content step="7">
           <v-card flat tile>
             <v-card-subtitle>
               Specify the minimum and maximum zoom levels.
@@ -284,14 +316,14 @@
           <v-btn
               text
               color="primary"
-              @click="step = 7">
+              @click="step = 8">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 7" step="7" color="primary">
+        <v-stepper-step editable :complete="step > 8" step="8" color="primary">
           Enable tile scaling
         </v-stepper-step>
-        <v-stepper-content step="7">
+        <v-stepper-content step="8">
           <v-card flat tile>
             <v-card-subtitle>
               Tile scaling reduces the number of tiles by searching for tiles at nearby zoom levels and scaling them.
@@ -325,14 +357,14 @@
           <v-btn
               text
               color="primary"
-              @click="step = 8">
+              @click="step = 9">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable step="8" color="primary">
+        <v-stepper-step editable step="9" color="primary">
           Summary
         </v-stepper-step>
-        <v-stepper-content step="8">
+        <v-stepper-content step="9">
           <v-card-text class="ma-0 pa-0">
             <p v-if="(dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0"
                class="warning-text">At least one layer is required for import.</p>
@@ -367,7 +399,7 @@
         </v-btn>
         <v-btn
             v-if="!done && !processing"
-            :disabled="Number(step) !== 8 || !boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)"
+            :disabled="Number(step) !== 9 || !boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)"
             color="primary"
             text
             @click.stop="addTileLayer">
@@ -392,6 +424,11 @@ import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomU
 import { getTileCount } from '../../lib/util/tile/TileUtilities'
 import Sortable from 'sortablejs'
 import { mdiDragHorizontalVariant } from '@mdi/js'
+import {
+  WEB_MERCATOR,
+  WEB_MERCATOR_DISPLAY_TEXT, WORLD_GEODETIC_SYSTEM,
+  WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
+} from '../../lib/projection/ProjectionConstants'
 
 export default {
   props: {
@@ -452,6 +489,11 @@ export default {
       cancelling: false,
       internalRenderingOrder: [],
       boundingBoxFilter: null,
+      targetProjection: WEB_MERCATOR,
+      WEB_MERCATOR_DISPLAY_TEXT,
+      WEB_MERCATOR,
+      WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT,
+      WORLD_GEODETIC_SYSTEM
     }
   },
   methods: {
@@ -527,7 +569,9 @@ export default {
         minZoom: this.minZoom,
         maxZoom: this.maxZoom,
         tileScalingEnabled: this.scalingEnabled,
-        renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id)
+        renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id),
+        targetProjection: this.targetProjection,
+        size: {x: 256, y: 256}
       }
 
       window.mapcache.addTileLayer(this.configuration, (status) => {
@@ -605,7 +649,7 @@ export default {
       let tiles = 0
       if (this.areZoomsValid()) {
         try {
-          tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom)
+          tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom, this.targetProjection, {x: 256, y: 256})
         } catch (e) {
           tiles = 0
         }
@@ -788,7 +832,7 @@ export default {
     this.$nextTick(() => {
       this.$refs.layerNameForm.validate()
     })
-    const mapZoom = isNil(this.mapZoom) ? 3 : this.mapZoom
+    const mapZoom = Math.floor(isNil(this.mapZoom) ? 3 : this.mapZoom)
     this.minZoom = Math.min(20, Math.max(0, mapZoom))
     this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
   }

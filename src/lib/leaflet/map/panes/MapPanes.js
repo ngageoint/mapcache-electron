@@ -30,7 +30,7 @@ const DRAWING_VERTEX_PANE = {
 
 const GRID_SELECTION_PANE = {
   name: 'gridSelectionPane',
-  zIndex: 800
+  zIndex: 660
 }
 
 export {

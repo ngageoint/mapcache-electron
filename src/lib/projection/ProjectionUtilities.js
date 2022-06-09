@@ -144,6 +144,60 @@ function reprojectWebMercatorBoundingBox (minLon, maxLon, minLat, maxLat, srs, d
   return bounds
 }
 
+function reprojectBoundingBox (minLongitude, maxLongitude, minLatitude, maxLatitude, sourceSrs, targetSrs, density = 21) {
+  let minLon = minLongitude
+  let minLat = minLatitude
+  let maxLon = maxLongitude
+  let maxLat = maxLatitude
+  if (sourceSrs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE) && targetSrs.endsWith(COLON_DELIMITER + WEB_MERCATOR_CODE)) {
+    minLat = Math.max(-85.051128, minLat)
+    maxLat = Math.min(85.051128, maxLat)
+  }
+  const converter = getConverter(sourceSrs, targetSrs)
+  const xStep = (maxLon - minLon) / density
+  const yStep = (maxLat - minLat) / density
+  const steps = density + 1
+  let projected
+  const xArray = []
+  const yArray = []
+  for (let i = 0; i < steps; i++) {
+    // left boundary
+    projected = converter.forward([minLon, maxLat - i * yStep])
+    xArray.push(projected[0])
+    yArray.push(projected[1])
+
+    // bottom boundary
+    projected = converter.forward([minLon + i * xStep, minLat])
+    xArray.push(projected[0])
+    yArray.push(projected[1])
+
+    // right boundary
+    projected = converter.forward([maxLon, minLat + i * yStep])
+    xArray.push(projected[0])
+    yArray.push(projected[1])
+
+    // top boundary
+    projected = converter.forward([maxLon - i * xStep, maxLat])
+    xArray.push(projected[0])
+    yArray.push(projected[1])
+  }
+
+  let bounds = {
+    minLon: Math.min(...xArray),
+    maxLon: Math.max(...xArray),
+    minLat: Math.min(...yArray),
+    maxLat: Math.max(...yArray)
+  }
+
+  if (targetSrs.endsWith(COLON_DELIMITER + WORLD_GEODETIC_SYSTEM_CODE)) {
+    bounds = trimBboxToWGS84Max(bounds)
+  }
+
+  correctRoundingErrors(bounds)
+
+  return bounds
+}
+
 function getConverter (from, to) {
   if (from && !proj4.defs(from)) {
     defineProjection(from)
@@ -185,5 +239,6 @@ export {
   reprojectWebMercatorBoundingBox,
   getMetersPerUnit,
   convertToWebMercator,
-  epsgMatches
+  epsgMatches,
+  reprojectBoundingBox
 }

@@ -13,6 +13,11 @@ export default {
     }
   },
   methods: {
+    addDrawBoundsToMap () {
+      if (this.r != null) {
+        this.r.addTo(this.map)
+      }
+    },
     disableBoundingBoxDrawing () {
       if (this.r && this.map) {
         this.stopDrawBoundsMode()
@@ -26,11 +31,11 @@ export default {
       this.drawBoundsMode = 0
       this.r = L.rectangle(bounds, { pane: DRAWING_LAYER_PANE.name })
       this.r.setStyle(getDefaultLeafletOverlayStyleForMapCache())
-      this.r.addTo(this.map)
       this.toggleBoundsEdit()
       if (zoom) {
         this.map.fitBounds(boundingBoxFilter)
       }
+      this.addDrawBoundsToMap()
       const self = this
       this.r.on('editable:vertex:dragend', () => {
         let sw = this.r.getBounds().getSouthWest()

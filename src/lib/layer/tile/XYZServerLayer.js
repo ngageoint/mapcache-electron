@@ -1,8 +1,11 @@
 import NetworkTileLayer from './NetworkTileLayer'
-import { generateUrlForTile } from '../../util/xyz/XYZTileUtilities'
+import { generateUrlForTile, tilesInExtentAtZoom, trimExtentToWebMercatorMax } from '../../util/xyz/XYZTileUtilities'
 import { XYZ_SERVER } from '../LayerTypes'
-import { getTilesForExtentAtZoom } from '../../util/xyz/WGS84XYZTileUtilities'
-import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../projection/ProjectionConstants'
+import {
+  getTilesForExtentAtZoom,
+  getWGS84ExtentFromXYZ
+} from '../../util/xyz/WGS84XYZTileUtilities'
+import { WEB_MERCATOR } from '../../projection/ProjectionConstants'
 
 export default class XYZServerLayer extends NetworkTileLayer {
   constructor (configuration = {}) {
@@ -41,33 +44,18 @@ export default class XYZServerLayer extends NetworkTileLayer {
 
   /**
    * Gets the tile url for this service
-   * @param webMercatorBoundingBox
+   * @param boundingBox
    * @param coords
    * @param size
+   * @param crs
    * @param projectedBoundingBoxFunction
    */
-  getTileRequestData (webMercatorBoundingBox, coords, size, projectedBoundingBoxFunction) {
-    const projectedBoundingBox = projectedBoundingBoxFunction(webMercatorBoundingBox, this.srs)
-
+  getTileRequestData (boundingBox, coords, size, crs, projectedBoundingBoxFunction) {
+    const projectedBoundingBox = projectedBoundingBoxFunction(boundingBox, this.srs)
     const requests = []
 
-    // this xyz server is in 4326, so we should request data appropriately
-    if (this.srs === WORLD_GEODETIC_SYSTEM) {
-      // need to get coords in 4326 for the projectedBoundingBox
-      // adjust zoom to better match resolution
-      const zoom = Math.max(0, coords.z - 1)
-      const tiles = getTilesForExtentAtZoom([projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat], zoom)
-      tiles.forEach((tile) => {
-        requests.push({
-          url: this.getTileUrl(tile.coords),
-          width: size.x,
-          height: size.y,
-          tileBounds: tile.extent,
-          imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
-          tileSRS: this.srs
-        })
-      })
-    } else {
+    // source tiles are in same projection as request
+    if (this.srs === crs) {
       requests.push({
         url: this.getTileUrl(coords),
         width: size.x,
@@ -76,6 +64,37 @@ export default class XYZServerLayer extends NetworkTileLayer {
         imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
         tileSRS: this.srs
       })
+    } else {
+      if (crs === WEB_MERCATOR) {
+        const zoom = Math.max(0, coords.z - 1)
+        const tiles = getTilesForExtentAtZoom([projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat], zoom)
+        tiles.forEach((tile) => {
+          requests.push({
+            url: this.getTileUrl(tile.coords),
+            width: size.x,
+            height: size.y,
+            tileBounds: tile.extent,
+            imageBounds: [projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat],
+            tileSRS: this.srs
+          })
+        })
+      } else {
+        const zoom = Math.min(20, coords.z + 1)
+        const extent = getWGS84ExtentFromXYZ(coords.x, coords.y, coords.z)
+        const tiles = tilesInExtentAtZoom([[extent[1], extent[0]], [extent[3], extent[2]]], zoom)
+        const webMercatorExtent = window.mapcache.convertToWebMercator(trimExtentToWebMercatorMax(extent))
+        tiles.forEach((tile) => {
+          const tileWebMercatorBounds = window.mapcache.getWebMercatorBoundingBoxFromXYZ(tile.x, tile.y, tile.z)
+          requests.push({
+            url: this.getTileUrl(tile),
+            width: size.x,
+            height: size.y,
+            tileBounds: [tileWebMercatorBounds.minLon, tileWebMercatorBounds.minLat, tileWebMercatorBounds.maxLon, tileWebMercatorBounds.maxLat],
+            imageBounds: [webMercatorExtent.minLon, webMercatorExtent.minLat, webMercatorExtent.maxLon, webMercatorExtent.maxLat],
+            tileSRS: this.srs
+          })
+        })
+      }
     }
     return requests
   }

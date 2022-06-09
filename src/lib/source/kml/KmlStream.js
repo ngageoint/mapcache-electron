@@ -196,462 +196,486 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
       })
 
       saxStream.on('opentag', (tag) => {
-        currentTag = tag
-        switch (tag.name) {
-          case 'style':
-            style = {
-              id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
+        try {
+          currentTag = tag
+          if (tag != null) {
+            switch (tag.name) {
+              case 'style':
+                style = {
+                  id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
+                }
+                return
+              case 'stylemap':
+                styleMap = {
+                  id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
+                }
+                return
+              case 'pair':
+                pair = {}
+                return
+              case 'hotspot':
+                if (icon) {
+                  icon.anchor_x = {
+                    value: tag.attributes.x,
+                    mode: tag.attributes.xunits
+                  }
+                  icon.anchor_y = {
+                    value: tag.attributes.y,
+                    mode: tag.attributes.yunits
+                  }
+                }
+                return
+              case 'linestyle':
+                styleMode = 'line'
+                if (style != null) {
+                  style.hasLine = true
+                }
+                return
+              case 'polystyle':
+                styleMode = 'poly'
+                if (style != null) {
+                  style.hasPoly = true
+                }
+                return
+              case 'iconstyle':
+                styleMode = 'icon'
+                if (style != null) {
+                  style.hasIcon = true
+                }
+                icon = {}
+                return
+              case 'groundoverlay':
+                groundOverlay = {}
+                return
+              case 'simplefield':
+                if (tag.attributes != null) {
+                  headers[tag.attributes.name] = field = {
+                    type: tag.attributes.type
+                  }
+                }
+                return
+              case 'schemadata':
+                headers = schemata[tag.attributes.schemaurl]
+                return
+              case 'schema':
+                headers = schemata['#' + tag.attributes.id] = {}
+                return
+              case 'placemark':
+                props = {}
+                inPlacemark = true
+                return
+              case 'folder':
+                folder = {}
+                return
+              case 'data':
+                if (tag.attributes != null) {
+                  exData = {
+                    name: tag.attributes.name
+                  }
+                }
+                return
+              case 'point':
+                geom = {}
+                geom.type = 'Point'
+                geoMode = 'point'
+                return
+              case 'linestring':
+                geom = {}
+                geom.type = 'LineString'
+                geoMode = 'linestring'
+                return
+              case 'polygon':
+                geom = {}
+                geom.type = 'Polygon'
+                geom.coordinates = []
+                geoMode = 'poly'
+                return
+              case 'outerboundaryis':
+                geoMode = 'outerbounds'
+                return
+              case 'innerboundaryis':
+                geoMode = 'innerbounds'
+                return
+              case 'multigeometry':
+                if (isMulti) {
+                  allGeoms.push(geoms)
+                }
+                isMulti++
+                geoms = []
+                return
             }
-            return
-          case 'stylemap':
-            styleMap = {
-              id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
-            }
-            return
-          case 'pair':
-            pair = {}
-            return
-          case 'hotspot':
-            if (icon) {
-              icon.anchor_x = {
-                value: tag.attributes.x,
-                mode: tag.attributes.xunits
-              }
-              icon.anchor_y = {
-                value: tag.attributes.y,
-                mode: tag.attributes.yunits
-              }
-            }
-            return
-          case 'linestyle':
-            styleMode = 'line'
-            if (style != null) {
-              style.hasLine = true
-            }
-            return
-          case 'polystyle':
-            styleMode = 'poly'
-            if (style != null) {
-              style.hasPoly = true
-            }
-            return
-          case 'iconstyle':
-            styleMode = 'icon'
-            if (style != null) {
-              style.hasIcon = true
-            }
-            icon = {}
-            return
-          case 'groundoverlay':
-            groundOverlay = {}
-            return
-          case 'simplefield':
-            headers[tag.attributes.name] = field = {
-              type: tag.attributes.type
-            }
-            return
-          case 'schemadata':
-            headers = schemata[tag.attributes.schemaurl]
-            return
-          case 'schema':
-            headers = schemata['#' + tag.attributes.id] = {}
-            return
-          case 'placemark':
-            props = {}
-            inPlacemark = true
-            return
-          case 'folder':
-            folder = {}
-            return
-          case 'data':
-            exData = {
-              name: tag.attributes.name
-            }
-            return
-          case 'point':
-            geom = {}
-            geom.type = 'Point'
-            geoMode = 'point'
-            return
-          case 'linestring':
-            geom = {}
-            geom.type = 'LineString'
-            geoMode = 'linestring'
-            return
-          case 'polygon':
-            geom = {}
-            geom.type = 'Polygon'
-            geom.coordinates = []
-            geoMode = 'poly'
-            return
-          case 'outerboundaryis':
-            geoMode = 'outerbounds'
-            return
-          case 'innerboundaryis':
-            geoMode = 'innerbounds'
-            return
-          case 'multigeometry':
-            if (isMulti) {
-              allGeoms.push(geoms)
-            }
-            isMulti++
-            geoms = []
-            return
+          }
+          // eslint-disable-next-line no-unused-vars
+        } catch (e) {
+          console.debug('Failure during the handling of opentag event.')
         }
       })
       saxStream.on('text', (data) => {
-        if (!data.trim()) return
-        switch (currentTag.name) {
-          case 'key':
-            if (pair != null) {
-              pair.key = data
-            }
-            return
-          case 'color':
-            if (groundOverlay != null) {
-              try {
-                groundOverlay.alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
-                // eslint-disable-next-line no-unused-vars
-              } catch (e) {
-                groundOverlay.alpha = 1.0
+        try {
+          if (!data.trim() || !currentTag) return
+          switch (currentTag.name) {
+            case 'key':
+              if (pair != null) {
+                pair.key = data
               }
-            } else if (style != null) {
-              let alpha = 1.0
-              let blue = '00'
-              let green = '00'
-              let red = '00'
-              try {
-                if (data.length === 3) {
-                  alpha = 1.0
-                  blue = data.substring(0, 1) + data.substring(0, 1)
-                  green = data.substring(1, 2) + data.substring(1, 2)
-                  red = data.substring(2) + data.substring(2)
-                } else if (data.length === 4) {
-                  alpha = parseInt(data.substring(0, 1) + data.substring(0, 1), 16) / 255
-                  blue = data.substring(1, 2) + data.substring(1, 2)
-                  green = data.substring(2, 3) + data.substring(2, 3)
-                  red = data.substring(3) + data.substring(3)
-                } else if (data.length === 6) {
-                  alpha = 1.0
-                  blue = data.substring(0, 2)
-                  green = data.substring(2, 4)
-                  red = data.substring(4)
-                } else if (data.length === 8) {
-                  alpha = parseInt(data.substring(0, 2), 16) / 255.0
-                  blue = data.substring(2, 4)
-                  green = data.substring(4, 6)
-                  red = data.substring(6)
+              return
+            case 'color':
+              if (groundOverlay != null) {
+                try {
+                  groundOverlay.alpha = Math.round(parseInt(data.substring(0, 2), 16) / 255)
+                  // eslint-disable-next-line no-unused-vars
+                } catch (e) {
+                  groundOverlay.alpha = 1.0
                 }
-                // eslint-disable-next-line no-empty, no-unused-vars
-              } catch (e) {
+              } else if (style != null) {
+                let alpha = 1.0
+                let blue = '00'
+                let green = '00'
+                let red = '00'
+                try {
+                  if (data.length === 3) {
+                    alpha = 1.0
+                    blue = data.substring(0, 1) + data.substring(0, 1)
+                    green = data.substring(1, 2) + data.substring(1, 2)
+                    red = data.substring(2) + data.substring(2)
+                  } else if (data.length === 4) {
+                    alpha = parseInt(data.substring(0, 1) + data.substring(0, 1), 16) / 255
+                    blue = data.substring(1, 2) + data.substring(1, 2)
+                    green = data.substring(2, 3) + data.substring(2, 3)
+                    red = data.substring(3) + data.substring(3)
+                  } else if (data.length === 6) {
+                    alpha = 1.0
+                    blue = data.substring(0, 2)
+                    green = data.substring(2, 4)
+                    red = data.substring(4)
+                  } else if (data.length === 8) {
+                    alpha = parseInt(data.substring(0, 2), 16) / 255.0
+                    blue = data.substring(2, 4)
+                    green = data.substring(4, 6)
+                    red = data.substring(6)
+                  }
+                  // eslint-disable-next-line no-empty, no-unused-vars
+                } catch (e) {
+                }
+                if (styleMode === 'line') {
+                  style.color = '#' + red + green + blue
+                  style.opacity = alpha
+                } else if (styleMode === 'poly') {
+                  style.fillColor = '#' + red + green + blue
+                  style.fillOpacity = alpha
+                }
               }
-              if (styleMode === 'line') {
-                style.color = '#' + red + green + blue
-                style.opacity = alpha
-              } else if (styleMode === 'poly') {
-                style.fillColor = '#' + red + green + blue
-                style.fillOpacity = alpha
+              return
+            case 'fill':
+              if (styleMode === 'poly') {
+                fillStyle = data
               }
-            }
-            return
-          case 'fill':
-            if (styleMode === 'poly') {
-              fillStyle = data
-            }
-            return
-          case 'outline':
-            if (styleMode === 'poly') {
-              outlineStyle = data
-            }
-            return
-          case 'width':
-            if (style != null && styleMode === 'line') {
-              style.width = parseFloat(data)
-            }
-            return
-          case 'name':
-            if (groundOverlay != null) {
-              groundOverlay.name = data
-            } else if (inPlacemark) {
-              props.name = data
-            }
-            return
-          case 'scale':
-            if (icon != null && icon.scale == null) {
-              icon.scale = parseFloat(data)
-            }
-            return
-          case 'heading':
-            if (icon != null) {
-              icon.heading = data
-            }
-            return
-          case 'href':
-            if (groundOverlay != null) {
-              groundOverlay.href = data
-            }
-            if (icon != null && styleMode === 'icon') {
-              icon.href = data
-            }
-            return
-          case 'rotation':
-            if (groundOverlay != null) {
-              groundOverlay.rotation = parseFloat(data)
-            }
-            return
-          case 'north':
-            if (groundOverlay != null) {
-              groundOverlay.north = parseFloat(data)
-            }
-            return
-          case 'south':
-            if (groundOverlay != null) {
-              groundOverlay.south = parseFloat(data)
-            }
-            return
-          case 'east':
-            if (groundOverlay != null) {
-              groundOverlay.east = parseFloat(data)
-            }
-            return
-          case 'west':
-            if (groundOverlay != null) {
-              groundOverlay.west = parseFloat(data)
-            }
-            return
-          case 'simpledata':
-            handleData(currentTag.attributes.name, data, props, headers)
-            return
-          case 'value':
-            if (exData) {
-              exData.value = data
-            }
-            return
-          case 'displayname':
-            if (exData) {
-              exData.displayName = data
-            } else if (field) {
-              field.displayName = data
-            }
-            return
-          case 'coordinates':
-            coordsText += data
-            return
-          case 'styleurl':
-            hasStyleUrl = inPlacemark
-            if (pair != null) {
-              pair.styleUrl = data
-            } else {
-              styleId = data
-            }
-            return
+              return
+            case 'outline':
+              if (styleMode === 'poly') {
+                outlineStyle = data
+              }
+              return
+            case 'width':
+              if (style != null && styleMode === 'line') {
+                style.width = parseFloat(data)
+              }
+              return
+            case 'name':
+              if (groundOverlay != null) {
+                groundOverlay.name = data
+              } else if (inPlacemark && props != null) {
+                props.name = data
+              }
+              return
+            case 'scale':
+              if (icon != null && icon.scale == null) {
+                icon.scale = parseFloat(data)
+              }
+              return
+            case 'heading':
+              if (icon != null) {
+                icon.heading = data
+              }
+              return
+            case 'href':
+              if (groundOverlay != null) {
+                groundOverlay.href = data
+              }
+              if (icon != null && styleMode === 'icon') {
+                icon.href = data
+              }
+              return
+            case 'rotation':
+              if (groundOverlay != null) {
+                groundOverlay.rotation = parseFloat(data)
+              }
+              return
+            case 'north':
+              if (groundOverlay != null) {
+                groundOverlay.north = parseFloat(data)
+              }
+              return
+            case 'south':
+              if (groundOverlay != null) {
+                groundOverlay.south = parseFloat(data)
+              }
+              return
+            case 'east':
+              if (groundOverlay != null) {
+                groundOverlay.east = parseFloat(data)
+              }
+              return
+            case 'west':
+              if (groundOverlay != null) {
+                groundOverlay.west = parseFloat(data)
+              }
+              return
+            case 'simpledata':
+              if (currentTag.attributes) {
+                handleData(currentTag.attributes.name, data, props, headers)
+              }
+              return
+            case 'value':
+              if (exData) {
+                exData.value = data
+              }
+              return
+            case 'displayname':
+              if (exData) {
+                exData.displayName = data
+              } else if (field) {
+                field.displayName = data
+              }
+              return
+            case 'coordinates':
+              coordsText += data
+              return
+            case 'styleurl':
+              hasStyleUrl = inPlacemark
+              if (pair != null) {
+                pair.styleUrl = data
+              } else {
+                styleId = data
+              }
+              return
+          }
+
+          if (ignoredPropertyTags.includes(currentTag.name)) return
+
+          // any tag not handled that is a child of placemark or a folder should be added as a property!
+          if (folder && !props) folder[currentTag.name] = data
+          if (props) props[currentTag.name] = data
+          // eslint-disable-next-line no-unused-vars
+        } catch (e) {
+          console.debug('Failure during the handling of text event.')
         }
-
-        if (ignoredPropertyTags.includes(currentTag.name)) return
-
-        // any tag not handled that is a child of placemark or a folder should be added as a property!
-        if (folder && !props) folder[currentTag.name] = data
-        if (props) props[currentTag.name] = data
       })
       saxStream.on('closetag', (tag) => {
-        currentTag = null
-        let multigeoms, type, thing
-        switch (tag) {
-          case 'pair':
-            if (pair.key === 'normal') {
-              styleMap.normal = pair.styleUrl || pair.style.id
-            } else {
-              styleMap.highlight = pair.styleUrl || pair.style.id
-            }
-            pair = null
-            return
-          case 'style':
-            if (style != null && !hasStyleUrl) {
-              if (fillStyle === 0 && style.fillOpacity != null) {
-                style.fillOpacity = 0.0
+        try {
+          currentTag = null
+          let multigeoms, type, thing
+          switch (tag) {
+            case 'pair':
+              if (pair.key === 'normal') {
+                styleMap.normal = pair.styleUrl || pair.style.id
+              } else {
+                styleMap.highlight = pair.styleUrl || pair.style.id
               }
-              if (outlineStyle === 0 && style.opacity != null) {
-                style.opacity = 0.0
-              }
-              if (style.width == null) {
-                style.width = 2.0
-              }
-              if (icon != null) {
-                style.icon = icon
-              }
-              if (pair != null) {
-                pair.style = style
-              }
-              if (inPlacemark) {
-                styleId = style.id
-              }
-              if (style.hasLine || style.hasPoly) {
-                if (style.fillOpacity == null) {
+              pair = null
+              return
+            case 'style':
+              if (style != null && !hasStyleUrl) {
+                if (fillStyle === 0 && style.fillOpacity != null) {
                   style.fillOpacity = 0.0
                 }
-                if (style.fillColor == null) {
-                  style.fillColor = '#000000'
+                if (outlineStyle === 0 && style.opacity != null) {
+                  style.opacity = 0.0
                 }
-                if (style.opacity == null) {
-                  style.opacity = 1.0
+                if (style.width == null) {
+                  style.width = 2.0
                 }
-                if (style.color == null) {
-                  style.color = '#000000'
+                if (icon != null) {
+                  style.icon = icon
                 }
+                if (pair != null) {
+                  pair.style = style
+                }
+                if (inPlacemark) {
+                  styleId = style.id
+                }
+                if (style.hasLine || style.hasPoly) {
+                  if (style.fillOpacity == null) {
+                    style.fillOpacity = 0.0
+                  }
+                  if (style.fillColor == null) {
+                    style.fillColor = '#000000'
+                  }
+                  if (style.opacity == null) {
+                    style.opacity = 1.0
+                  }
+                  if (style.color == null) {
+                    style.color = '#000000'
+                  }
+                }
+                onStyle(style)
               }
-              onStyle(style)
-            }
-            style = null
-            icon = null
-            return
-          case 'stylemap':
-            if (inPlacemark) {
-              styleId = styleMap.id
-            }
-            onStyleMap(styleMap)
-            styleMap = null
-            return
-          case 'linestyle':
-            styleMode = null
-            return
-          case 'polystyle':
-            styleMode = null
-            return
-          case 'coordinates':
-            if (geoMode === 'point') {
-              geom.coordinates = parseCoord(coordsText)
-            } else if (geoMode === 'linestring') {
-              geom.coordinates = parseCoords(coordsText)
-            } else if (geoMode === 'outerbounds') {
-              thing = parseCoords(coordsText)
-              if (thing) {
-                geom.coordinates.unshift(completeRing(setWinding(thing)))
-              }
-            } else if (geoMode === 'innerbounds') {
-              thing = parseCoords(coordsText)
-              if (thing) {
-                geom.coordinates.push(completeRing(setWinding(thing, true)))
-              }
-            }
-            coordsText = ''
-            return
-          case 'groundoverlay':
-            onGroundOverlay(groundOverlay)
-            groundOverlay = null
-            return
-          case 'folder':
-            folder = null
-            return
-          case 'placemark':
-            inPlacemark = false
-            // eslint-disable-next-line no-case-declarations
-            const out = {
-              type: 'Feature',
-              properties: props,
-              geometry: null
-            }
-            if (styleId != null) {
-              out.styleId = styleId.trim()
-              styleId = null
-            }
-            if (geom && geom.type) {
-              out.geometry = Object.assign({}, geom)
-            }
-            geom = null
-            props = null
-            if (out.geometry) {
-              onFeature(out)
-            }
-            hasStyleUrl = false
-            return
-          case 'schemadata':
-          case 'schema':
-            headers = null
-            return
-          case 'simplefield':
-            field = null
-            return
-          case 'data':
-            if (!exData || !props || !exData.value) {
+              style = null
+              icon = null
               return
-            }
-            if (exData.displayName) {
-              props[exData.displayName] = exData.value
-            } else if (exData.name) {
-              props[exData.name] = exData.value
-            }
-            exData = null
-            return
-          case 'point':
-          case 'linestring':
-          case 'polygon':
-            geoMode = null
-            if (isMulti) {
-              geoms.push(geom)
+            case 'stylemap':
+              if (inPlacemark) {
+                styleId = styleMap.id
+              }
+              onStyleMap(styleMap)
+              styleMap = null
+              return
+            case 'linestyle':
+              styleMode = null
+              return
+            case 'polystyle':
+              styleMode = null
+              return
+            case 'coordinates':
+              if (geoMode === 'point') {
+                geom.coordinates = parseCoord(coordsText)
+              } else if (geoMode === 'linestring') {
+                geom.coordinates = parseCoords(coordsText)
+              } else if (geoMode === 'outerbounds') {
+                thing = parseCoords(coordsText)
+                if (thing) {
+                  geom.coordinates.unshift(completeRing(setWinding(thing)))
+                }
+              } else if (geoMode === 'innerbounds') {
+                thing = parseCoords(coordsText)
+                if (thing) {
+                  geom.coordinates.push(completeRing(setWinding(thing, true)))
+                }
+              }
+              coordsText = ''
+              return
+            case 'groundoverlay':
+              onGroundOverlay(groundOverlay)
+              groundOverlay = null
+              return
+            case 'folder':
+              folder = null
+              return
+            case 'placemark':
+              inPlacemark = false
+              // eslint-disable-next-line no-case-declarations
+              const out = {
+                type: 'Feature',
+                properties: props,
+                geometry: null
+              }
+              if (styleId != null) {
+                out.styleId = styleId.trim()
+                styleId = null
+              }
+              if (geom && geom.type) {
+                out.geometry = Object.assign({}, geom)
+              }
               geom = null
-            }
-            return
-          case 'outerboundaryis':
-          case 'innerboundaryis':
-            geoMode = 'poly'
-            return
-          case 'multigeometry':
-            isMulti--
-            multigeoms = geoms
-            geoms = null
-            if (isMulti) {
-              geoms = allGeoms.pop()
-            }
-            if (multigeoms.length === 0) {
+              props = null
+              if (out.geometry) {
+                onFeature(out)
+              }
+              hasStyleUrl = false
               return
-            }
-            if (multigeoms.length === 1) {
-              geom = multigeoms[0]
+            case 'schemadata':
+            case 'schema':
+              headers = null
+              return
+            case 'simplefield':
+              field = null
+              return
+            case 'data':
+              if (!exData || !props || !exData.value) {
+                return
+              }
+              if (exData.displayName) {
+                props[exData.displayName] = exData.value
+              } else if (exData.name) {
+                props[exData.name] = exData.value
+              }
+              exData = null
+              return
+            case 'point':
+            case 'linestring':
+            case 'polygon':
+              geoMode = null
               if (isMulti) {
                 geoms.push(geom)
                 geom = null
               }
               return
-            }
-            type = getMultiType(multigeoms)
-            if (type === 'mixed') {
-              geom = {
-                type: 'GeometryCollection',
-                geometries: multigeoms
+            case 'outerboundaryis':
+            case 'innerboundaryis':
+              geoMode = 'poly'
+              return
+            case 'multigeometry':
+              isMulti--
+              multigeoms = geoms
+              geoms = null
+              if (isMulti) {
+                geoms = allGeoms.pop()
               }
-            } else if (type === 'Point') {
-              geom = {
-                type: 'MultiPoint',
-                coordinates: getThings(multigeoms)
+              if (multigeoms.length === 0) {
+                return
               }
-            } else if (type === 'LineString') {
-              geom = {
-                type: 'MultiLineString',
-                coordinates: getThings(multigeoms)
+              if (multigeoms.length === 1) {
+                geom = multigeoms[0]
+                if (isMulti) {
+                  geoms.push(geom)
+                  geom = null
+                }
+                return
               }
-            } else if (type === 'Polygon') {
-              geom = {
-                type: 'MultiPolygon',
-                coordinates: getThings(multigeoms)
+              type = getMultiType(multigeoms)
+              if (type === 'mixed') {
+                geom = {
+                  type: 'GeometryCollection',
+                  geometries: multigeoms
+                }
+              } else if (type === 'Point') {
+                geom = {
+                  type: 'MultiPoint',
+                  coordinates: getThings(multigeoms)
+                }
+              } else if (type === 'LineString') {
+                geom = {
+                  type: 'MultiLineString',
+                  coordinates: getThings(multigeoms)
+                }
+              } else if (type === 'Polygon') {
+                geom = {
+                  type: 'MultiPolygon',
+                  coordinates: getThings(multigeoms)
+                }
+              } else if (type === 'GeometryCollection') {
+                geom = {
+                  type: 'GeometryCollection',
+                  geometries: mergeGeoms(multigeoms)
+                }
+              } else if (type.slice(0, 5) === 'Multi') {
+                geom = {
+                  type: type,
+                  coordinates: mergeCoords(multigeoms)
+                }
               }
-            } else if (type === 'GeometryCollection') {
-              geom = {
-                type: 'GeometryCollection',
-                geometries: mergeGeoms(multigeoms)
+              if (isMulti) {
+                geoms.push(geom)
+                geom = null
               }
-            } else if (type.slice(0, 5) === 'Multi') {
-              geom = {
-                type: type,
-                coordinates: mergeCoords(multigeoms)
-              }
-            }
-            if (isMulti) {
-              geoms.push(geom)
-              geom = null
-            }
-            return
+              return
+          }
+          // eslint-disable-next-line no-unused-vars
+        } catch (e) {
+          console.debug('Failure during the handling of the closetag event.')
         }
       })
+
       const fileStream = fs.createReadStream(filePath)
       saxStream.on('error', (e) => {
         fileStream.close()

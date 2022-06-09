@@ -8,7 +8,9 @@ import { trimExtentToWebMercatorMax } from '../xyz/XYZTileUtilities'
 import { getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../geotiff/GeoTiffUtilities'
 import { disposeCanvas, createCanvas, makeImageData } from '../canvas/CanvasUtilities'
 import keys from 'lodash/keys'
-import { COLON_DELIMITER, EPSG, WEB_MERCATOR } from '../../projection/ProjectionConstants'
+import { COLON_DELIMITER, EPSG } from '../../projection/ProjectionConstants'
+import { ProjectionConstants } from '@ngageoint/geopackage'
+import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../xyz/WGS84XYZTileUtilities'
 
 const maxByteValue = 255
 
@@ -52,7 +54,8 @@ function requestTile (tileRequest) {
       height,
       imageOrigin,
       imageResolution,
-      coords
+      coords,
+      crs
     } = tileRequest
 
     const { x, y, z } = coords
@@ -66,16 +69,27 @@ function requestTile (tileRequest) {
       const imageData = makeImageData(width, height)
 
       let targetData = imageData.data
-      let tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
-      let tileUpperRightBuffered = wgs84ToWebMercator.inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
-      let tileLowerLeftBuffered = wgs84ToWebMercator.inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])
-      const fullExtent = trimExtentToWebMercatorMax(extent)
+
+      let tileBbox, tileUpperRightBuffered, tileLowerLeftBuffered, fullExtent, ll, ur
+      if (crs === ProjectionConstants.EPSG_3857) {
+        tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
+        tileUpperRightBuffered = wgs84ToWebMercator.inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
+        tileLowerLeftBuffered = wgs84ToWebMercator.inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])
+        fullExtent = trimExtentToWebMercatorMax(extent)
+        ur = wgs84ToWebMercator.forward([fullExtent[2], fullExtent[3]])
+        ll = wgs84ToWebMercator.forward([fullExtent[0], fullExtent[1]])
+      } else {
+        tileBbox = getWGS84BoundingBoxFromXYZ(x, y, z)
+        tileUpperRightBuffered = [tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)]
+        tileLowerLeftBuffered = [tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)]
+        fullExtent = trimExtentToWGS84Max(extent)
+        ur = [fullExtent[2], fullExtent[3]]
+        ll =[fullExtent[0], fullExtent[1]]
+      }
 
       // if layer does not overlap with tile request, return an empty tile
       if (tileIntersects(tileUpperRightBuffered, tileLowerLeftBuffered, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
-        const transform = getConverter(EPSG + COLON_DELIMITER + srs, WEB_MERCATOR)
-        const ur = wgs84ToWebMercator.forward([fullExtent[2], fullExtent[3]])
-        const ll = wgs84ToWebMercator.forward([fullExtent[0], fullExtent[1]])
+        const transform = getConverter(EPSG + COLON_DELIMITER + srs, crs)
 
         // get intersection of request and source data, this is in 3857
         const intersection = intersect(bboxPolygon([ll[0], ll[1], ur[0], ur[1]]), bboxPolygon([tileBbox.minLon, tileBbox.minLat, tileBbox.maxLon, tileBbox.maxLat]))

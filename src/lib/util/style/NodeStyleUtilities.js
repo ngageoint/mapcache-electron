@@ -22,6 +22,20 @@ function getDefaultIcon (iconName = 'New Icon', description = '') {
   }
 }
 
+function getDefaultKMLIcon (iconName = 'New Icon', description = '') {
+  return {
+    width: 48,
+    height: 48,
+    anchorU: 0.3125,
+    anchorV: 0.9375,
+    name: iconName,
+    description: description,
+    contentType: 'image/png',
+    // eslint-disable-next-line no-undef
+    data: fs.readFileSync(path.join(getExtraResourcesDirectory(), 'ylw-pushpin.png'))
+  }
+}
+
 function getOverpassDefaultStyle (featureCollection) {
   let layerStyle = {
     features: {},
@@ -146,5 +160,6 @@ function getOverpassDefaultStyle (featureCollection) {
 export {
   getOverpassDefaultStyle,
   getDefaultIcon,
-  generateColor
+  generateColor,
+  getDefaultKMLIcon
 }

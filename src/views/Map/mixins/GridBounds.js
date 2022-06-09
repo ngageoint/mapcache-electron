@@ -5,15 +5,39 @@ import { GRID_SELECTION_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 export default {
   data () {
     return {
-      gridBoundsId: null
+      gridBoundsId: null,
+      currentType: null
     }
   },
   methods: {
+    setupGridBoundsSelection () {
+      if (this.currentType != null) {
+        this.enableGridSelection(this.currentType)
+        if (this.gridOverlayControl) {
+          this.gridOverlayControl.disable()
+          this.garsGridOverlay.remove()
+          this.mgrsGridOverlay.remove()
+          this.xyzGridOverlay.remove()
+          this.showGridSelection = false
+          this.gridSelection = 0
+        }
+        if (this.coordinateControl) {
+          if (this.currentType === 0) {
+            this.coordinateControl.setCoordinateType('XYZ')
+          } else if (this.currentType === 1) {
+            this.coordinateControl.setCoordinateType('GARS')
+          } else if (this.currentType === 2) {
+            this.coordinateControl.setCoordinateType('MGRS')
+          }
+        }
+      }
+    },
     disableGridSelection () {
       if (this.gridLayer && this.map) {
         this.gridLayer.remove()
         this.gridLayer = null
       }
+      this.currentType = null
     },
     fixLongitude (lng) {
       while (lng > 180.0) {
@@ -141,24 +165,8 @@ export default {
         EventBus.$emit(EventBus.EventTypes.GRID_BOUNDING_BOX_CANCELLED(this.gridBoundsId))
       }
       this.gridBoundsId = id
-      this.enableGridSelection(type)
-      if (this.gridOverlayControl) {
-        this.gridOverlayControl.disable()
-        this.garsGridOverlay.remove()
-        this.mgrsGridOverlay.remove()
-        this.xyzGridOverlay.remove()
-        this.showGridSelection = false
-        this.gridSelection = 0
-      }
-      if (this.coordinateControl) {
-        if (type === 0) {
-          this.coordinateControl.setCoordinateType('XYZ')
-        } else if (type === 1) {
-          this.coordinateControl.setCoordinateType('GARS')
-        } else if (type === 2) {
-          this.coordinateControl.setCoordinateType('MGRS')
-        }
-      }
+      this.currentType = type
+      this.setupGridBoundsSelection()
     })
     EventBus.$on(EventBus.EventTypes.GRID_BOUNDING_BOX_STOP, () => {
       this.cancelGridPicking()

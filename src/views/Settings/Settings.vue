@@ -154,6 +154,16 @@
           style="padding-bottom: 0;"
       >
         <v-subheader>Map</v-subheader>
+        <v-list-item>
+          <v-list-item-content>
+            <v-list-item-title>Projection</v-list-item-title>
+            <v-list-item-subtitle>Adjust the map's projection</v-list-item-subtitle>
+            <v-radio-group hide-details dense class="ml-2 mt-2 pt-0" v-model="mapProjection" :value="mapProjection" row>
+              <v-radio dense label="Web Mercator (EPSG:3857)" :value="3857"></v-radio>
+              <v-radio dense label="Plate Carrée (EPSG:4326)" :value="4326"></v-radio>
+            </v-radio-group>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item-group
             v-model="settings"
             multiple
@@ -276,6 +286,7 @@ import { mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTr
 import EventBus from '../../lib/vue/EventBus'
 import { mapState } from 'vuex'
 import { environment } from '../../lib/env/env'
+import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
 
 export default {
   props: {
@@ -319,6 +330,14 @@ export default {
       },
       set (val) {
         window.mapcache.showToolTips({ projectId: this.project.id, show: val })
+      }
+    },
+    mapProjection: {
+      get () {
+        return this.project.mapProjection || WEB_MERCATOR_CODE
+      },
+      set (val) {
+        window.mapcache.setMapProjection({ projectId: this.project.id, mapProjection: val })
       }
     },
     notifications: {

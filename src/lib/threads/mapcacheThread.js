@@ -1,15 +1,17 @@
 import { parentPort } from 'worker_threads'
-import { CanvasKitCanvasAdapter, FeatureTiles, GeoPackageAPI, NumberFeaturesTile } from '@ngageoint/geopackage'
 import {
-  createCanvas,
-  makeImageData,
+  BoundingBox,
+  CanvasKitCanvasAdapter,
+  FeatureTiles,
+  GeoPackageAPI,
+  GeoPackageTileRetriever,
+  NumberFeaturesTile
+} from '@ngageoint/geopackage'
+import {
   setCreateCanvasFunction,
   setMakeImageDataFunction,
-  disposeCanvas,
   setMakeImageFunction,
   setReadPixelsFunction,
-  makeImage,
-  disposeImage
 } from '../util/canvas/CanvasUtilities'
 import { requestTile as requestGeoTIFFTile } from '../util/rendering/GeoTiffRenderingUtilities'
 import { requestTile as requestMBTilesTile } from '../util/rendering/MBTilesRenderingUtilities'
@@ -27,13 +29,12 @@ import {
   GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL
 } from './mapcacheThreadRequestTypes'
 import path from 'path'
-import { reproject } from '../projection/ReprojectionUtilities'
 import { base64toUInt8Array } from '../util/Base64Utilities'
 import { copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable } from '../geopackage/GeoPackageCommon'
 import { getFeatureCount, getFeatureTablePage } from '../geopackage/GeoPackageFeatureTableUtilities'
-import groupBy from 'lodash/groupBy'
-import { clipImage, stitchTileData } from '../util/tile/TileUtilities'
-import { epsgMatches } from '../projection/ProjectionUtilities'
+import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
+import { tileExtentCalculator } from '../util/xyz/WGS84XYZTileUtilities'
+import { compileTiles } from '../util/tile/TileCompilationUtilities'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -214,7 +215,14 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
   }
   const featureTile = await expiringGeoPackage.accessFeatureTiles(data.tableName, data.maxFeatures)
   const { x, y, z } = data.coords
-  featureTile.drawTile(x, y, z).then((result) => {
+  const crs = data.crs
+  let tilePromise
+  if (crs === WEB_MERCATOR) {
+    tilePromise = featureTile.drawTile(x, y, z)
+  } else {
+    tilePromise = featureTile.draw4326Tile(x, y, z)
+  }
+  tilePromise.then((result) => {
     resolve(result)
   }).catch(error => {
     // eslint-disable-next-line no-console
@@ -236,8 +244,19 @@ async function requestGeoPackageTile (data, resolve, reject) {
   const expiringGeoPackage = getExpiringGeoPackageConnection(data.dbFile)
   const connection = await expiringGeoPackage.accessConnection()
   const { x, y, z } = data.coords
+  const crs = data.crs
 
-  connection.xyzTile(data.tableName, x, y, z, data.width, data.height).then((result) => {
+  let tilePromise
+  if (crs === WEB_MERCATOR) {
+    tilePromise = connection.xyzTile(data.tableName, x, y, z, data.width, data.height)
+  } else {
+    const bounds = tileExtentCalculator(x, y, z)
+    const tileDao = connection.getTileDao(data.tableName)
+    const retriever = new GeoPackageTileRetriever(tileDao, data.width, data.height)
+    tilePromise = retriever.getTileWithBounds(new BoundingBox(bounds[0], bounds[2], bounds[1], bounds[3]), WORLD_GEODETIC_SYSTEM)
+  }
+
+  tilePromise.then((result) => {
     resolve(result)
   }).catch(error => {
     // eslint-disable-next-line no-console
@@ -304,85 +323,6 @@ async function generateGeoTIFFRasterFile (data) {
   const rasterFile = path.join(path.dirname(filePath), 'data.bin')
   await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
   return rasterFile
-}
-
-/**
- * Handles a reprojection request
- * @param data
- * @returns {ArrayBufferLike}
- */
-async function reprojectTile (data) {
-  const { targetWidth, targetHeight } = data
-  const canvas = createCanvas(targetWidth, targetHeight)
-  const imageData = makeImageData(targetWidth, targetHeight)
-  await reproject(data, imageData)
-  canvas.getContext('2d').putImageData(imageData, 0, 0)
-  const result = canvas.toDataURL()
-  disposeCanvas(canvas)
-  return result
-}
-
-/**
- * Returns an image after compiling all the tiles for a given srs
- * @param tiles
- * @param size
- * @param sourceSrs
- * @param targetSrs
- * @param targetBounds
- * @param clippingRegion
- * @param canvas
- * @returns {Promise<HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap>}
- */
-async function compileTileImage (tiles, size, sourceSrs, targetSrs, targetBounds, clippingRegion, canvas) {
-  const sourceBounds = tiles[0].imageBounds
-  let dataUrl = await stitchTileData(canvas, tiles, size, sourceBounds)
-  // check if this tile needs reprojected
-  if (!epsgMatches(targetSrs, sourceSrs)) {
-    dataUrl = await reprojectTile({
-      sourceTile: dataUrl,
-      sourceBoundingBox: {
-        minLon: sourceBounds[0],
-        minLat: sourceBounds[1],
-        maxLon: sourceBounds[2],
-        maxLat: sourceBounds[3]
-      },
-      sourceSrs: sourceSrs,
-      targetSrs: targetSrs,
-      targetWidth: size.x,
-      targetHeight: size.y,
-      targetBoundingBox: targetBounds
-    })
-  }
-  dataUrl = await clipImage(canvas, dataUrl, clippingRegion, size)
-  return makeImage(dataUrl)
-}
-
-/**
- * Handles a tile compilation request (WMS, WMTS, XYZ)
- * @param data
- * @returns {Promise<string>}
- * */
-async function compileTiles (data) {
-  const { tiles, size, clippingRegion, targetSrs, targetBounds } = data
-  const canvas = createCanvas(size.x, size.y)
-  const context = canvas.getContext('2d')
-  const srsTilesMap = groupBy(tiles, tile => tile.tileSRS)
-  const promises = Object.keys(srsTilesMap).map(sourceSrs => {
-    const tilesForSrs = srsTilesMap[sourceSrs]
-    return compileTileImage(tilesForSrs, size, sourceSrs, targetSrs, targetBounds, clippingRegion, canvas)
-  })
-  const results = await Promise.allSettled(promises)
-  context.clearRect(0, 0, size.x, size.y)
-  results.forEach(result => {
-    if (result.status === 'fulfilled') {
-      const image = result.value
-      context.drawImage(image, 0, 0, size.x, size.y)
-      disposeImage(image)
-    }
-  })
-  const result = canvas.toDataURL()
-  disposeCanvas(canvas)
-  return result
 }
 
 function renameTable (data) {

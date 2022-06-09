@@ -94,7 +94,7 @@ import {
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
   updateDataSourceColumnOrder, allowNotifications,
-  addProjectState, setNominatimUrl, setOverpassUrl
+  addProjectState, setNominatimUrl, setOverpassUrl, setMapProjection
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
 import {
@@ -169,7 +169,7 @@ import {
   reprojectWebMercatorBoundingBox,
   getMetersPerUnit,
   getUnits,
-  convertToWebMercator
+  convertToWebMercator, reprojectBoundingBox
 } from '../projection/ProjectionUtilities'
 import { GEOTIFF } from '../layer/LayerTypes'
 import {
@@ -720,6 +720,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   encryptPassword: CredentialsManagement.encrypt,
   getDefaultIcon,
   reprojectWebMercatorBoundingBox,
+  reprojectBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
     POINT: GeometryType.POINT,
@@ -810,6 +811,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   setNominatimUrl,
   setOverpassUrl,
   showToolTips,
+  setMapProjection,
   allowNotifications,
   setDataSourceDisplayName,
   addDataSources,

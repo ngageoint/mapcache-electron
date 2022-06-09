@@ -330,6 +330,7 @@ import FeatureEditor from '../Common/FeatureEditor'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
+import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
 import { constructLayer } from '../../lib/layer/LayerFactory'
 import { getDefaultBaseMaps, getOfflineBaseMapId } from '../../lib/util/basemaps/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
@@ -344,11 +345,7 @@ import {
   DRAWING_LAYER_PANE
 } from '../../lib/leaflet/map/panes/MapPanes'
 import {
-  mdiAlert,
-  mdiClose,
-  mdiContentCopy,
   mdiMapOutline,
-  mdiMagnify,
   mdiDragHorizontalVariant,
   mdiVectorPolylineEdit,
   mdiReload,
@@ -358,7 +355,6 @@ import {
   mdiPencil,
   mdiRedo,
   mdiUndo,
-  mdiCog,
   mdiMapMarker,
   mdiVectorPolyline,
   mdiVectorRectangle,
@@ -484,7 +480,12 @@ export default {
       baseMaps: state => {
         return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
       }
-    })
+    }),
+    mapProjection: {
+      get () {
+        return this.project.mapProjection || WEB_MERCATOR_CODE
+      }
+    }
   },
   components: {
     AddFeatureToGeoPackage,
@@ -497,17 +498,9 @@ export default {
   },
   data () {
     return {
-      disableSearch: false,
-      mapBounds: [-180, -90, 180, 90],
-      consecutiveClicks: 0,
-      mdiCog,
       mdiReload,
       mdiEraser,
-      mdiAlert,
       mdiVectorPolylineEdit,
-      mdiClose,
-      mdiMagnify,
-      mdiContentCopy,
       mdiMapOutline,
       mdiDragHorizontalVariant,
       mdiContentCut,
@@ -520,6 +513,9 @@ export default {
       mdiVectorRectangle,
       mdiVectorPolygon,
       mdiShapePlus,
+      disableSearch: false,
+      mapBounds: [-180, -90, 180, 90],
+      consecutiveClicks: 0,
       baseMapLayers: {},
       offlineBaseMapId: getOfflineBaseMapId(),
       defaultBaseMapIds: getDefaultBaseMaps().map(bm => bm.id),
@@ -553,14 +549,50 @@ export default {
       contextMenuCoordinate: null,
       contextMenuPopup: null,
       performingReverseQuery: false,
-      gridOptions: [{ id: 0, title: 'None' }, { id: 1, title: 'XYZ' }, { id: 2, title: 'GARS' }, {
-        id: 3,
-        title: 'MGRS'
-      }],
-      gridSelection: 0
+      gridOptions: [{ id: 0, title: 'None' }, { id: 1, title: 'XYZ' }, { id: 2, title: 'GARS' }, { id: 3, title: 'MGRS' }],
+      gridSelection: 0,
+      closeContextMenuTimeoutId: null
     }
   },
   methods: {
+    resetMap () {
+      const centerAndZoom = this.getMapCenterAndZoom()
+      this.updateGrid(0)
+      this.map.remove()
+      const oldLayerOrder = this.layerOrder.slice()
+      this.layerOrder = []
+      this.initializeMap(centerAndZoom)
+      this.addLayersToMap()
+      this.layerOrder = oldLayerOrder
+      this.updateGrid(this.gridSelection)
+      this.setupGridBoundsSelection()
+      this.resetSearchResults()
+      this.updateMapWithEditedFeature()
+      this.addDrawBoundsToMap()
+    },
+    updateGrid (gridId) {
+      if (gridId === 0) {
+        this.garsGridOverlay.remove()
+        this.mgrsGridOverlay.remove()
+        this.xyzGridOverlay.remove()
+        this.coordinateControl.setCoordinateType('LatLng')
+      } else if (gridId === 1) {
+        this.garsGridOverlay.remove()
+        this.mgrsGridOverlay.remove()
+        this.xyzGridOverlay.addTo(this.map)
+        this.coordinateControl.setCoordinateType('XYZ')
+      } else if (gridId === 2) {
+        this.xyzGridOverlay.remove()
+        this.mgrsGridOverlay.remove()
+        this.garsGridOverlay.addTo(this.map)
+        this.coordinateControl.setCoordinateType('GARS')
+      } else if (gridId === 3) {
+        this.garsGridOverlay.remove()
+        this.xyzGridOverlay.remove()
+        this.mgrsGridOverlay.addTo(this.map)
+        this.coordinateControl.setCoordinateType('MGRS')
+      }
+    },
     enableDrawingLinks () {
       this.map.pm.Toolbar.addControls({
         position: 'topright',
@@ -850,7 +882,7 @@ export default {
       const self = this
       const sourceId = sourceConfiguration.id
       let source = constructLayer(sourceConfiguration)
-      self.dataSourceMapLayers[sourceId] = constructMapLayer({ layer: source, maxFeatures: this.project.maxFeatures })
+      self.dataSourceMapLayers[sourceId] = constructMapLayer({ layer: source, maxFeatures: this.project.maxFeatures, crs: this.getMapProjection()})
       // if it is visible, try to initialize it
       if (source.visible) {
         this.addLayerToMap(map, this.dataSourceMapLayers[sourceId], generateLayerOrderItemForSource(this.dataSourceMapLayers[sourceId].getLayer()))
@@ -884,7 +916,7 @@ export default {
         }
       } else {
         let layer = constructLayer(baseMap.layerConfiguration)
-        self.baseMapLayers[baseMapId] = constructMapLayer({ layer: layer, maxFeatures: self.project.maxFeatures })
+        self.baseMapLayers[baseMapId] = constructMapLayer({ layer: layer, maxFeatures: self.project.maxFeatures, crs: this.getMapProjection() })
         if (self.selectedBaseMapId === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
           this.setAttribution(baseMap.attribution)
@@ -894,7 +926,6 @@ export default {
     },
     closePopup () {
       this.map.removeLayer(this.contextMenuPopup)
-
     },
     convertToDms (dd, isLng) {
       const dir = dd < 0
@@ -951,7 +982,7 @@ export default {
         minZoom: geopackage.tables.tiles[tableName].minZoom,
         maxZoom: geopackage.tables.tiles[tableName].maxZoom
       })
-      let mapLayer = constructMapLayer({ layer: layer })
+      let mapLayer = constructMapLayer({ layer: layer, crs: this.getMapProjection() })
       if (geopackage.tables.tiles[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
         self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, true))
@@ -970,7 +1001,7 @@ export default {
         count: geopackage.tables.features[tableName].featureCount,
         extent: geopackage.tables.features[tableName].extent,
       })
-      let mapLayer = constructMapLayer({ layer: layer, maxFeatures: this.project.maxFeatures })
+      let mapLayer = constructMapLayer({ layer: layer, maxFeatures: this.project.maxFeatures, crs: this.getMapProjection() })
       if (geopackage.tables.features[tableName].visible) {
         self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
         self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false))
@@ -1086,9 +1117,9 @@ export default {
       }
       this.map.addControl(this.attributionControl)
     },
-    initializeMap () {
-      const defaultCenter = /*[39.658748, -104.843165]*/[40.809118, 61.614383]
-      const defaultZoom = 3
+    initializeMap (centerAndZoom) {
+      const defaultCenter = centerAndZoom ? centerAndZoom.center : [40.809118, 61.614383]
+      const defaultZoom = centerAndZoom ? centerAndZoom.zoom : 3
       this.map = L.map('map', {
         editable: true,
         attributionControl: false,
@@ -1101,9 +1132,10 @@ export default {
         maxZoom: 20,
         scrollWheelZoom: false,
         smoothWheelZoom: true,
-        smoothSensitivity: 1
+        smoothSensitivity: 1,
+        crs: this.getMapProjection()
       })
-      window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: defaultZoom })
+      window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: Math.floor(defaultZoom) })
       this.createMapPanes()
       this.createGridOverlays()
       this.setupControls()
@@ -1342,10 +1374,25 @@ export default {
                 className: 'search-popup',
                 offset: L.point(113, 235)
               })
-                  .setLatLng(e.latlng)
-                  .setContent(this.$refs['contextMenuPopup'])
-                  .openOn(this.map)
+              .setLatLng(e.latlng)
+              .setContent(this.$refs['contextMenuPopup'])
+              .openOn(this.map)
+
+              const startCloseContextMenuTimer = () => {
+                this.closeContextMenuTimeoutId = setTimeout(() => {
+                  this.closeContextMenuTimeoutId = null
+                  this.map.closePopup()
+                }, 250)
+              }
+
+              const cancelCloseContextMenuTimer = () => {
+                clearTimeout(this.closeContextMenuTimeoutId)
+              }
+
+              L.DomEvent.on(this.contextMenuPopup._container, 'mouseover', cancelCloseContextMenuTimer)
+              L.DomEvent.on(this.contextMenuPopup._container, 'mouseout', startCloseContextMenuTimer)
             })
+
             this.map.once('popupclose', () => {
               this.contextMenuPopup = null
             })
@@ -1365,7 +1412,7 @@ export default {
       }
     },
     createDefaultBaseMapLayer (baseMap, dark = false) {
-      return new L.TileLayer(baseMap.layerConfiguration.url, {
+      return new L.TileLayer(this.mapProjection === WEB_MERCATOR_CODE ? baseMap.layerConfiguration.url : baseMap.layerConfiguration.pcUrl, {
         pane: BASE_MAP_PANE.name,
         zIndex: BASE_MAP_PANE.zIndex,
         subdomains: baseMap.layerConfiguration.subdomains || [],
@@ -1373,8 +1420,12 @@ export default {
         minZoom: 0,
         maxZoom: 20,
         className: dark ? 'dark' : '',
-        crossOrigin: 'Anonymous'
+        crossOrigin: 'Anonymous',
+        crs: this.getMapProjection()
       })
+    },
+    getMapProjection() {
+      return this.mapProjection === WEB_MERCATOR_CODE ? L.CRS.EPSG3857 : L.CRS.EPSG4326
     },
     createOfflineBaseMapLayer (baseMap, dark = false) {
       let layer = constructLayer({
@@ -1392,11 +1443,17 @@ export default {
         mapPane: BASE_MAP_PANE.name,
         zIndex: BASE_MAP_PANE.zIndex,
         maxFeatures: 5000,
-        className: dark ? 'dark' : ''
+        className: dark ? 'dark' : '',
+        crs: this.getMapProjection()
       })
     }
   },
   watch: {
+    mapProjection: {
+      handler () {
+        this.resetMap()
+      }
+    },
     featureTablePoppedOut: {
       handler (value) {
         if (this.lastShowFeatureTableEvent != null) {
@@ -1406,27 +1463,7 @@ export default {
     },
     gridSelection: {
       handler (newValue) {
-        if (newValue === 0) {
-          this.garsGridOverlay.remove()
-          this.mgrsGridOverlay.remove()
-          this.xyzGridOverlay.remove()
-          this.coordinateControl.setCoordinateType('LatLng')
-        } else if (newValue === 1) {
-          this.garsGridOverlay.remove()
-          this.mgrsGridOverlay.remove()
-          this.xyzGridOverlay.addTo(this.map)
-          this.coordinateControl.setCoordinateType('XYZ')
-        } else if (newValue === 2) {
-          this.xyzGridOverlay.remove()
-          this.mgrsGridOverlay.remove()
-          this.garsGridOverlay.addTo(this.map)
-          this.coordinateControl.setCoordinateType('GARS')
-        } else if (newValue === 3) {
-          this.garsGridOverlay.remove()
-          this.xyzGridOverlay.remove()
-          this.mgrsGridOverlay.addTo(this.map)
-          this.coordinateControl.setCoordinateType('MGRS')
-        }
+        this.updateGrid(newValue)
       }
     },
     baseMaps: {
