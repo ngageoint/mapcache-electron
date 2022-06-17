@@ -35,6 +35,7 @@ import { getFeatureCount, getFeatureTablePage } from '../geopackage/GeoPackageFe
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
 import { tileExtentCalculator } from '../util/xyz/WGS84XYZTileUtilities'
 import { compileTiles } from '../util/tile/TileCompilationUtilities'
+import { DEFAULT_TILE_SIZE } from '../util/tile/TileConstants'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -97,8 +98,9 @@ class ExpiringGeoPackageConnection {
   async accessFeatureTiles (tableName, maxFeatures) {
     if (this.featureTiles[tableName] == null) {
       const geoPackageConnection = await this.accessConnection()
-      this.featureTiles[tableName] = new FeatureTiles(geoPackageConnection.getFeatureDao(tableName), 256, 256)
+      this.featureTiles[tableName] = new FeatureTiles(geoPackageConnection.getFeatureDao(tableName), DEFAULT_TILE_SIZE, DEFAULT_TILE_SIZE)
       this.featureTiles[tableName].maxFeaturesPerTile = maxFeatures
+      this.featureTiles[tableName].scale = 1.0
       this.featureTiles[tableName].simplifyTolerance = 1.0
       this.featureTiles[tableName].maxFeaturesTileDraw = new NumberFeaturesTile()
     } else {
@@ -183,6 +185,7 @@ async function processDataSource (data) {
     }
     // eslint-disable-next-line no-unused-vars
   } catch (e) {
+    console.error(e)
     // eslint-disable-next-line no-console
     console.error('Failed to process data source.')
     error = e
@@ -225,6 +228,7 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
   tilePromise.then((result) => {
     resolve(result)
   }).catch(error => {
+    console.error(error)
     // eslint-disable-next-line no-console
     console.error('Failed to render tile.')
     reject(error)
@@ -322,6 +326,7 @@ async function generateGeoTIFFRasterFile (data) {
   const image = await GeoTIFFSource.getImage(geotiff)
   const rasterFile = path.join(path.dirname(filePath), 'data.bin')
   await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
+  geotiff.close()
   return rasterFile
 }
 

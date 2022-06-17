@@ -98,7 +98,7 @@
           >
             <v-card-text class="pa-0" style="height: calc(100% - 50px);">
               <iframe v-if="!loadingContent && model === i" class="iframe" :id="i + '-iframe'" :src="contentSrc"
-                      frameborder="0" seamless width="100%" height="100%" style="display: none;"></iframe>
+                      frameborder="0" seamless width="100%" height="100%" style="display: none;" sandbox></iframe>
             </v-card-text>
           </v-card>
         </v-carousel-item>

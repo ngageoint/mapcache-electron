@@ -31,9 +31,9 @@
             @click="() => item.click(item)"
         >
           <v-list-item-content>
-            <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-html="item.name"></v-list-item-title>
-            <v-list-item-subtitle v-html="item.featureLayersText"></v-list-item-subtitle>
-            <v-list-item-subtitle v-html="item.tileLayersText"></v-list-item-subtitle>
+            <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
+            <v-list-item-subtitle v-text="item.featureLayersText"></v-list-item-subtitle>
+            <v-list-item-subtitle v-text="item.tileLayersText"></v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.health.missing">
             <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage">

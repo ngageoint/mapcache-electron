@@ -48,7 +48,8 @@ export default class ElectronGeoTiffRenderer extends ElectronTileRenderer {
       littleEndian: this.layer.littleEndian,
       imageWidth: this.layer.imageWidth,
       imageHeight: this.layer.imageHeight,
-      colorMap: this.layer.colorMap
+      colorMap: this.layer.colorMap,
+      projection: this.layer.projection
     })
   }
 }

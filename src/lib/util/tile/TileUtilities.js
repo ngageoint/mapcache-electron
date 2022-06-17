@@ -17,6 +17,7 @@ import {
 } from '../xyz/WGS84XYZTileUtilities'
 import { disposeImage, makeImage } from '../canvas/CanvasUtilities'
 import { WEB_MERCATOR } from '../../projection/ProjectionConstants'
+import { DEFAULT_TILE_SIZE } from './TileConstants'
 
 /**
  * A tile set with a specified set of layers
@@ -291,7 +292,7 @@ function getZoomTileMatrixCount (matrices) {
  * @param size
  * @return {TileSet}
  */
-function getTileSetForExtent (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: 256, y: 256}) {
+function getTileSetForExtent (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE}) {
   // reduce the extent just in case it lies on a tile boundary
   const isWebMercator = projection === WEB_MERCATOR
   const epsilon = 0.00000001
@@ -325,7 +326,7 @@ function getTileSetForExtent (zoom, extent, drawOverlap = null, projection = WEB
  * @param size
  * @return {*}
  */
-function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: 256, y: 256}) {
+function getExpandedExtentForDrawOverlap (zoom, extent, drawOverlap = null, projection = WEB_MERCATOR, size = {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE}) {
   const expandedExtent = extent.slice()
   const epsilonReducedExtent = [extent[0] + epsilon, extent[1] + epsilon, extent[2] - epsilon, extent[3] - epsilon]
   let x = calculateXTileRangeForExtent(epsilonReducedExtent, zoom)

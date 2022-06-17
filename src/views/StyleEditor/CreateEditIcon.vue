@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card class="betterRendering">
     <v-dialog
         v-model="deleteDialog"
         max-width="350"
@@ -29,6 +29,48 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog
+        v-model="anchorDialog"
+        max-width="350"
+        persistent
+        @keydown.esc="anchorDialog = false">
+      <v-card style="overflow: hidden;">
+        <v-card-title>
+          <v-icon color="primary" class="pr-2">{{ mdiAnchor }}</v-icon>
+          Set anchor position
+        </v-card-title>
+        <v-card-text style="overflow: hidden;">
+          Click on the icon to set the anchor point or type it in. The icon's anchor point will be positioned at the feature's geographical location.
+          <v-row justify="center" style="overflow: hidden;">
+            <v-img id="create-edit-icon" v-observe-visibility="imageVisibilityChanged" @click="handleAnchorChange" class="ma-4 clickable" contain :max-width="displayWidth" :max-height="displayHeight" :src="iconUrl"></v-img>
+          </v-row>
+          <v-icon id="create-edit-icon-anchor" v-show="anchorLeft !== 0 && anchorTop !== 0 && anchorVValid && anchorVValid" color="red" :style="{position: 'fixed', top: anchorTop, left: anchorLeft}">{{mdiTargetVariant}}</v-icon>
+          <v-row>
+            <v-col class="pl-2 pr-2" cols="6">
+              <number-picker :number="anchorU" :min="0.0" :max="1.0" :step="0.05" label="Horizontal anchor %" @update-number="(val) => {this.anchorU = val}" @update-valid="(val) => {this.anchorUValid = val}"></number-picker>
+            </v-col>
+            <v-col class="pr-2" cols="6">
+              <number-picker :number="anchorV" :min="0.0" :max="1.0" :step="0.05" label="Vertical anchor %" @update-number="(val) => {this.anchorV = val}" @update-valid="(val) => {this.anchorVValid = val}"></number-picker>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+              text
+              @click="acceptAnchorUpdates">
+            Close
+          </v-btn>
+          <v-btn
+              :disabled="iconRow != null && iconRow.anchorU === anchorU && iconRow.anchorV === anchorV"
+              color="red"
+              text
+              @click="resetAnchor">
+            Reset
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-card-title>{{ isNew ? 'Create icon' : 'Edit icon' }}</v-card-title>
     <v-card-text>
       <v-form v-on:submit.prevent v-model="formValid">
@@ -39,7 +81,7 @@
                 <v-row no-gutters justify="center" style="height: 100%;">
                   <v-col align-self="center">
                     <v-row no-gutters justify="center" class="pa-0 mx-auto">
-                      <img class="icon" :src="iconUrl"/>
+                      <img class="square-icon" :src="iconUrl"/>
                     </v-row>
                     <v-row no-gutters justify="center" class="pa-0 mx-auto">
                       Browse...
@@ -80,7 +122,7 @@
         </v-row>
         <v-row no-gutters class="pt-2">
           <v-col cols="5">
-            <v-select v-model="anchorSelection" :items="anchorLocations" label="Anchor" dense/>
+            <v-btn text @click="anchorDialog = true"><v-icon>{{ mdiAnchor }}</v-icon>&nbsp;Set anchor</v-btn>
           </v-col>
         </v-row>
       </v-form>
@@ -113,9 +155,12 @@
 <script>
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import { mdiLink, mdiLinkOff, mdiTrashCan } from '@mdi/js'
+import { mdiLink, mdiLinkOff, mdiTrashCan, mdiTargetVariant, mdiAnchor } from '@mdi/js'
+import NumberPicker from '../Common/NumberPicker'
+import debounce from 'lodash/debounce'
 
 export default {
+  components: { NumberPicker },
   props: {
     id: String,
     tableName: String,
@@ -137,15 +182,23 @@ export default {
       mdiTrashCan: mdiTrashCan,
       mdiLink: mdiLink,
       mdiLinkOff: mdiLinkOff,
+      mdiTargetVariant,
+      mdiAnchor,
       formValid: true,
       name: this.iconRow.name,
       data: this.iconRow.data,
       width: this.iconRow.width,
       height: this.iconRow.height,
+      anchor: null,
       anchorU: this.iconRow.anchorU,
       anchorV: this.iconRow.anchorV,
+      anchorTop: 0,
+      anchorLeft: 0,
       contentType: this.iconRow.contentType,
       description: this.iconRow.description,
+      anchorDialog: false,
+      anchorUValid: true,
+      anchorVValid: true,
       deleteDialog: false,
       aspectRatioLock: true,
       isNew: isNil(this.iconRow.id),
@@ -166,36 +219,58 @@ export default {
     }
   },
   computed: {
-    anchorSelection: {
-      get () {
-        return this.getAnchorLocation(this.anchorU, this.anchorV)
-      },
-      set (value) {
-        let result = this.getAnchorUV(value)
-        this.anchorU = result.anchorU
-        this.anchorV = result.anchorV
-      }
-    },
     iconUrl: {
       get () {
         return 'data:' + this.contentType + ';base64,' + this.data.toString('base64')
       }
     },
-    anchorLocations () {
-      let anchorLocations = []
-      anchorLocations.push({ text: 'Bottom center', value: 0 })
-      anchorLocations.push({ text: 'Bottom left', value: 1 })
-      anchorLocations.push({ text: 'Bottom right', value: 2 })
-      anchorLocations.push({ text: 'Top center', value: 3 })
-      anchorLocations.push({ text: 'Top left', value: 4 })
-      anchorLocations.push({ text: 'Top right', value: 5 })
-      anchorLocations.push({ text: 'Center', value: 6 })
-      anchorLocations.push({ text: 'Center left', value: 7 })
-      anchorLocations.push({ text: 'Center right', value: 8 })
-      return anchorLocations
+    displayWidth: {
+      get () {
+        return this.width >= this.height ? 128 : Math.ceil(this.width / this.height * 128)
+      }
+    },
+    displayHeight: {
+      get () {
+        return this.height >= this.width ? 128 : Math.ceil(this.height / this.width * 128)
+      }
     }
   },
+  mounted () {
+    this.debounceUpdateAnchorPosition = debounce(this.updateAnchorPosition, 50)
+  },
   methods: {
+    resetAnchor () {
+      this.anchorU = this.iconRow.anchorU
+      this.anchorV = this.iconRow.anchorV
+    },
+    acceptAnchorUpdates () {
+      this.anchorDialog = false
+      this.$nextTick(() => {
+        this.anchorUValid = true
+        this.anchorVValid = true
+        this.anchorTop = 0
+        this.anchorLeft = 0
+      })
+    },
+    handleAnchorChange (e) {
+      const width = this.displayWidth
+      const height = this.displayHeight
+      const image = document.getElementById('create-edit-icon-anchor')
+      if (image != null) {
+        const rect = image.getBoundingClientRect()
+        this.anchorU = Math.min(1, Math.max(0, Number(((e.clientX - rect.left) / width).toFixed(3))))
+        this.anchorV = Math.min(1, Math.max(0, Number(((e.clientY - rect.top) / height).toFixed(3))))
+      }
+    },
+    updateAnchorPosition () {
+      const image = document.getElementById('create-edit-icon')
+      const anchor = document.getElementById('create-edit-icon-anchor')
+      const rect = image.getBoundingClientRect()
+      if (rect != null && anchor != null) {
+        this.anchorLeft = Math.round(rect.left + (this.displayWidth * this.anchorU) - 12) + 'px'
+        this.anchorTop = Math.round(rect.top + (this.displayHeight * this.anchorV) - 12) + 'px'
+      }
+    },
     handleKeyDown: (e) => {
       if (e.keyCode === 69) {
         e.stopPropagation()
@@ -262,66 +337,14 @@ export default {
       }
       this.close()
     },
-    getAnchorUV (anchorLocation) {
-      let result = {}
-      if (anchorLocation === 0) {
-        result.anchorU = 0.5
-        result.anchorV = 1.0
-      } else if (anchorLocation === 1) {
-        result.anchorU = 0
-        result.anchorV = 1.0
-      } else if (anchorLocation === 2) {
-        result.anchorU = 1.0
-        result.anchorV = 1.0
-      } else if (anchorLocation === 3) {
-        result.anchorU = 0.5
-        result.anchorV = 0
-      } else if (anchorLocation === 4) {
-        result.anchorU = 0
-        result.anchorV = 0
-      } else if (anchorLocation === 5) {
-        result.anchorU = 1.0
-        result.anchorV = 0
-      } else if (anchorLocation === 6) {
-        result.anchorU = 0.5
-        result.anchorV = 0.5
-      } else if (anchorLocation === 7) {
-        result.anchorU = 0
-        result.anchorV = 0.5
-      } else if (anchorLocation === 8) {
-        result.anchorU = 1.0
-        result.anchorV = 0.5
+    imageVisibilityChanged (isVisible) {
+      if (isVisible) {
+        setTimeout(() => {
+          if (this.anchorDialog) {
+            this.debounceUpdateAnchorPosition()
+          }
+        }, 500)
       }
-      return result
-    },
-    getAnchorLocation (anchorU, anchorV) {
-      let anchorLoc = 0
-      if (anchorU === 0) {
-        if (anchorV === 0) {
-          anchorLoc = 4
-        } else if (anchorV === 0.5) {
-          anchorLoc = 7
-        } else if (anchorV === 1) {
-          anchorLoc = 1
-        }
-      } else if (anchorU === 0.5) {
-        if (anchorV === 0) {
-          anchorLoc = 3
-        } else if (anchorV === 0.5) {
-          anchorLoc = 6
-        } else if (anchorV === 1) {
-          anchorLoc = 0
-        }
-      } else if (anchorU === 1) {
-        if (anchorV === 0) {
-          anchorLoc = 5
-        } else if (anchorV === 0.5) {
-          anchorLoc = 8
-        } else if (anchorV === 1) {
-          anchorLoc = 2
-        }
-      }
-      return anchorLoc
     },
     getIconClick () {
       window.mapcache.showOpenDialog({
@@ -351,16 +374,31 @@ export default {
           }
         }
       })
-    }
+    },
+  },
+  watch: {
+    anchorU: {
+      handler () {
+        this.debounceUpdateAnchorPosition()
+      }
+    },
+    anchorV: {
+      handler () {
+        this.debounceUpdateAnchorPosition()
+      }
+    },
   }
 }
 </script>
 
 <style>
-.icon {
+.square-icon {
   width: 48px;
   height: 48px;
   display: block;
   object-fit: contain;
+}
+.betterRendering {
+  image-rendering: crisp-edges;
 }
 </style>

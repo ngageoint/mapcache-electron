@@ -10,6 +10,7 @@ import {
   WORLD_GEODETIC_SYSTEM, WORLD_GEODETIC_SYSTEM_CODE,
   WORLD_GEODETIC_SYSTEM_CRS, WORLD_GEODETIC_SYSTEM_CRS_CODE
 } from '../../projection/ProjectionConstants'
+import { DEFAULT_TILE_SIZE } from '../tile/TileConstants'
 
 const WMS_VERSIONS = {
   V1_3_0: '1.3.0',
@@ -314,7 +315,7 @@ async function getWMSInfo (serviceUrl, json, version, withCredentials) {
  */
 async function testGetMapFor3857 (wmsUrl, layers, version, format, withCredentials) {
   let webMercatorSupport
-  const url = getTileRequestURL(wmsUrl, layers, 256, 256, [-20026376.39, -20048966.10, 20026376.39, 20048966.10], WEB_MERCATOR, version, format)
+  const url = getTileRequestURL(wmsUrl, layers, DEFAULT_TILE_SIZE, DEFAULT_TILE_SIZE, [-20026376.39, -20048966.10, 20026376.39, 20048966.10], WEB_MERCATOR, version, format)
   try {
     const response = await axios({
       url: url,

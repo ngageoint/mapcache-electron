@@ -2,17 +2,16 @@ import fs from 'fs'
 import bbox from '@turf/bbox'
 import bboxPolygon from '@turf/bbox-polygon'
 import intersect from '@turf/intersect'
-import { wgs84ToWebMercator, getConverter } from '../../projection/ProjectionUtilities'
+import { wgs84ToWebMercator, getConverter, defineProjection } from '../../projection/ProjectionUtilities'
 import { getWebMercatorBoundingBoxFromXYZ, tileIntersects } from '../tile/TileBoundingBoxUtils'
 import { trimExtentToWebMercatorMax } from '../xyz/XYZTileUtilities'
-import { getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../geotiff/GeoTiffUtilities'
+import { MAX_BYTE_VALUE, getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../geotiff/GeoTiffUtilities'
 import { disposeCanvas, createCanvas, makeImageData } from '../canvas/CanvasUtilities'
 import keys from 'lodash/keys'
 import { COLON_DELIMITER, EPSG } from '../../projection/ProjectionConstants'
 import { ProjectionConstants } from '@ngageoint/geopackage'
 import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../xyz/WGS84XYZTileUtilities'
 
-const maxByteValue = 255
 
 /**
  * Requests a tile from the decompressed binary data file representing a geotiff
@@ -55,12 +54,22 @@ function requestTile (tileRequest) {
       imageOrigin,
       imageResolution,
       coords,
-      crs
+      crs,
+      projection
     } = tileRequest
 
     const { x, y, z } = coords
     const fd = fs.openSync(rasterFile, 'r')
     const size = fs.statSync(rasterFile).size
+
+    let epsgString = srs
+    if (typeof epsgString !== 'string' || !epsgString.startsWith(EPSG)) {
+      epsgString = EPSG + COLON_DELIMITER + srs
+    }
+    if (projection != null) {
+      defineProjection(epsgString, projection)
+    }
+
     let canvas
     // create an image to store
     try {
@@ -84,12 +93,12 @@ function requestTile (tileRequest) {
         tileLowerLeftBuffered = [tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)]
         fullExtent = trimExtentToWGS84Max(extent)
         ur = [fullExtent[2], fullExtent[3]]
-        ll =[fullExtent[0], fullExtent[1]]
+        ll = [fullExtent[0], fullExtent[1]]
       }
 
       // if layer does not overlap with tile request, return an empty tile
       if (tileIntersects(tileUpperRightBuffered, tileLowerLeftBuffered, [fullExtent[2], fullExtent[3]], [fullExtent[0], fullExtent[1]])) {
-        const transform = getConverter(EPSG + COLON_DELIMITER + srs, crs)
+        const transform = getConverter(epsgString, crs)
 
         // get intersection of request and source data, this is in 3857
         const intersection = intersect(bboxPolygon([ll[0], ll[1], ur[0], ur[1]]), bboxPolygon([tileBbox.minLon, tileBbox.minLat, tileBbox.maxLon, tileBbox.maxLat]))
@@ -120,12 +129,12 @@ function requestTile (tileRequest) {
 
               let setG = grayScaleColorGradient === 0 ? (
                 stretchToMinMax ? (position, sample) => {
-                  const value = maxByteValue - stretchValue(g(sample), grayBandMin, grayBandMax)
+                  const value = MAX_BYTE_VALUE - stretchValue(g(sample), grayBandMin, grayBandMax)
                   targetData[position] = value
                   targetData[position + 1] = value
                   targetData[position + 2] = value
                 } : (position, sample) => {
-                  const value = maxByteValue - g(sample) / grayBandDataTypeMax * maxByteValue
+                  const value = MAX_BYTE_VALUE - g(sample) / grayBandDataTypeMax * MAX_BYTE_VALUE
                   targetData[position] = value
                   targetData[position + 1] = value
                   targetData[position + 2] = value
@@ -137,13 +146,13 @@ function requestTile (tileRequest) {
                   targetData[position + 1] = value
                   targetData[position + 2] = value
                 } : (position, sample) => {
-                  const value = g(sample) / grayBandDataTypeMax * maxByteValue
+                  const value = g(sample) / grayBandDataTypeMax * MAX_BYTE_VALUE
                   targetData[position] = value
                   targetData[position + 1] = value
                   targetData[position + 2] = value
                 }
               )
-              let setA = (position) => targetData[position + 3] = 255
+              let setA = (position) => targetData[position + 3] = MAX_BYTE_VALUE
 
               let a
               if (alphaBand > 0) {
@@ -176,9 +185,9 @@ function requestTile (tileRequest) {
           } else if (renderingMethod === 1) {
             // RGB rendering
             let r, g, b, a
-            let redBandDataTypeMax = maxByteValue
-            let greenBandDataTypeMax = maxByteValue
-            let blueBandDataTypeMax = maxByteValue
+            let redBandDataTypeMax = MAX_BYTE_VALUE
+            let greenBandDataTypeMax = MAX_BYTE_VALUE
+            let blueBandDataTypeMax = MAX_BYTE_VALUE
 
             let setR = () => {
             }
@@ -186,21 +195,21 @@ function requestTile (tileRequest) {
             }
             let setB = () => {
             }
-            let setA = (position) => targetData[position + 3] = 255
+            let setA = (position) => targetData[position + 3] = MAX_BYTE_VALUE
             if (redBand > 0) {
               redBandDataTypeMax = getMaxForDataType(bitsPerSample[redBand - 1])
               r = (sample) => sample[redBand - 1]
-              setR = stretchToMinMax ? (position, sample) => targetData[position] = stretchValue(r(sample), redBandMin, redBandMax) : (position, sample) => targetData[position] = r(sample) / redBandDataTypeMax * maxByteValue
+              setR = stretchToMinMax ? (position, sample) => targetData[position] = stretchValue(r(sample), redBandMin, redBandMax) : (position, sample) => targetData[position] = r(sample) / redBandDataTypeMax * MAX_BYTE_VALUE
             }
             if (greenBand > 0) {
               greenBandDataTypeMax = getMaxForDataType(bitsPerSample[greenBand - 1])
               g = (sample) => sample[greenBand - 1]
-              setG = stretchToMinMax ? (position, sample) => targetData[position + 1] = stretchValue(g(sample), greenBandMin, greenBandMax) : (position, sample) => targetData[position + 1] = g(sample) / greenBandDataTypeMax * maxByteValue
+              setG = stretchToMinMax ? (position, sample) => targetData[position + 1] = stretchValue(g(sample), greenBandMin, greenBandMax) : (position, sample) => targetData[position + 1] = g(sample) / greenBandDataTypeMax * MAX_BYTE_VALUE
             }
             if (blueBand > 0) {
               blueBandDataTypeMax = getMaxForDataType(bitsPerSample[blueBand - 1])
               b = (sample) => sample[blueBand - 1]
-              setB = stretchToMinMax ? (position, sample) => targetData[position + 2] = stretchValue(b(sample), blueBandMin, blueBandMax) : (position, sample) => targetData[position + 2] = b(sample) / blueBandDataTypeMax * maxByteValue
+              setB = stretchToMinMax ? (position, sample) => targetData[position + 2] = stretchValue(b(sample), blueBandMin, blueBandMax) : (position, sample) => targetData[position + 2] = b(sample) / blueBandDataTypeMax * MAX_BYTE_VALUE
             }
             if (alphaBand > 0) {
               a = (sample) => sample[alphaBand - 1]
@@ -255,13 +264,13 @@ function requestTile (tileRequest) {
                     if (colorMapLength == null || colorMapLength <= 0) {
                       colorMapLength = keys(colorMap).length
                     }
-                    targetData[position] = colorMap[mapIndex] / 65535 * maxByteValue
-                    targetData[position + 1] = colorMap[mapIndex + colorMapLength / 3] / 65535 * maxByteValue
-                    targetData[position + 2] = colorMap[mapIndex + colorMapLength / 3 * 2] / 65535 * maxByteValue
+                    targetData[position] = colorMap[mapIndex] / 65535 * MAX_BYTE_VALUE
+                    targetData[position + 1] = colorMap[mapIndex + colorMapLength / 3] / 65535 * MAX_BYTE_VALUE
+                    targetData[position + 2] = colorMap[mapIndex + colorMapLength / 3 * 2] / 65535 * MAX_BYTE_VALUE
                     if (a) {
                       targetData[position + 3] = a(sample)
                     } else {
-                      targetData[position + 3] = 255
+                      targetData[position + 3] = MAX_BYTE_VALUE
                     }
                   }
                 }
@@ -287,7 +296,7 @@ function requestTile (tileRequest) {
                   targetData[position] = (y + (1.40200 * (cr - 0x80)))
                   targetData[position + 1] = (y - (0.34414 * (cb - 0x80)) - (0.71414 * (cr - 0x80)))
                   targetData[position + 2] = (y + (1.77200 * (cb - 0x80)))
-                  targetData[position + 3] = 255
+                  targetData[position + 3] = MAX_BYTE_VALUE
                 }
               }
             }
@@ -309,10 +318,10 @@ function requestTile (tileRequest) {
                   const m = sample[1]
                   const y = sample[2]
                   const k = sample[3]
-                  targetData[position] = 255 * ((255 - c) / 256) * ((255 - k) / 256)
-                  targetData[position + 1] = 255 * ((255 - m) / 256) * ((255 - k) / 256)
-                  targetData[position + 2] = 255 * ((255 - y) / 256) * ((255 - k) / 256)
-                  targetData[position + 3] = 255
+                  targetData[position] = MAX_BYTE_VALUE * ((MAX_BYTE_VALUE - c) / (MAX_BYTE_VALUE + 1)) * ((MAX_BYTE_VALUE - k) / (MAX_BYTE_VALUE + 1))
+                  targetData[position + 1] = MAX_BYTE_VALUE * ((MAX_BYTE_VALUE - m) / (MAX_BYTE_VALUE + 1)) * ((MAX_BYTE_VALUE - k) / (MAX_BYTE_VALUE + 1))
+                  targetData[position + 2] = MAX_BYTE_VALUE * ((MAX_BYTE_VALUE - y) / (MAX_BYTE_VALUE + 1)) * ((MAX_BYTE_VALUE - k) / (MAX_BYTE_VALUE + 1))
+                  targetData[position + 3] = MAX_BYTE_VALUE
                 }
               }
             }
@@ -351,10 +360,10 @@ function requestTile (tileRequest) {
                   r = (r > 0.0031308) ? ((1.055 * (r ** (1 / 2.4))) - 0.055) : 12.92 * r
                   g = (g > 0.0031308) ? ((1.055 * (g ** (1 / 2.4))) - 0.055) : 12.92 * g
                   b = (b > 0.0031308) ? ((1.055 * (b ** (1 / 2.4))) - 0.055) : 12.92 * b
-                  targetData[position] = Math.max(0, Math.min(1, r)) * 255
-                  targetData[position + 1] = Math.max(0, Math.min(1, g)) * 255
-                  targetData[position + 2] = Math.max(0, Math.min(1, b)) * 255
-                  targetData[position + 3] = 255
+                  targetData[position] = Math.max(0, Math.min(1, r)) * MAX_BYTE_VALUE
+                  targetData[position + 1] = Math.max(0, Math.min(1, g)) * MAX_BYTE_VALUE
+                  targetData[position + 2] = Math.max(0, Math.min(1, b)) * MAX_BYTE_VALUE
+                  targetData[position + 3] = MAX_BYTE_VALUE
                 }
               }
             }

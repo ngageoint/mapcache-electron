@@ -4,6 +4,7 @@ import pako from 'pako'
 import Protobuf from 'pbf'
 import keys from 'lodash/keys'
 import { createCanvas } from '../canvas/CanvasUtilities'
+import { DEFAULT_TILE_SIZE } from '../tile/TileConstants'
 
 /**
  * If format needs to be determined, it will either be jpg or png, just need to determine which one
@@ -166,7 +167,7 @@ function convertPbfToDataUrl (data, width, height) {
   return drawVectorFeaturesInCanvas(getVectorTileFeatures(data), style, style, style, Math.min(width, height))
 }
 
-function drawVectorFeaturesInCanvas (vectorTileFeatures, pointStyle, lineStyle, polygonStyle, divisor = 256.0) {
+function drawVectorFeaturesInCanvas (vectorTileFeatures, pointStyle, lineStyle, polygonStyle, divisor = DEFAULT_TILE_SIZE) {
   const canvas = createCanvas(divisor, divisor)
   const ctx = canvas.getContext('2d')
 

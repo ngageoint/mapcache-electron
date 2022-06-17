@@ -468,9 +468,9 @@
                   </v-list-item-icon>
                   <v-list-item-content>
                     <v-list-item-title :title="tableFields[column].name"
-                                       v-html="tableFields[column].name"></v-list-item-title>
+                                       v-text="tableFields[column].name"></v-list-item-title>
                     <v-list-item-subtitle :title="tableFields[column].type"
-                                          v-html="tableFields[column].type"></v-list-item-subtitle>
+                                          v-text="tableFields[column].type"></v-list-item-subtitle>
                   </v-list-item-content>
                   <v-list-item-icon class="sortHandle">
                     <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>

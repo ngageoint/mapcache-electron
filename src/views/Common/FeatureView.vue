@@ -172,16 +172,11 @@
                     {{ column.name }}
                   </p>
                   <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    <span v-if="column.dataType === TEXT">{{ featureViewData.feature.properties[column.name] }}</span>
-                    <span
-                        v-else-if="column.dataType === BOOLEAN">{{
-                        featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false'
-                      }}</span>
-                    <span
-                        v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{
-                        getHumanReadableDate(featureViewData.feature.properties[column.name], column.dataType === DATE)
-                      }}</span>
-                    <span v-else>{{ featureViewData.feature.properties[column.name] }}</span>
+                    <iframe sandbox v-if="column.dataType === TEXT && isHtml(featureViewData.feature.properties[column.name])" @load="adjustFrameStyle" :id="column.name.toLowerCase() + '-iframe'" class="background regular--text force-text" style="border-radius: 4px; width: 100%; overflow: auto !important;" :src="getSourceObject(featureViewData.feature.properties[column.name])" frameborder="0" seamless></iframe>
+                    <span class="allowselect" v-else-if="column.dataType === TEXT" v-text="featureViewData.feature.properties[column.name]"></span>
+                    <span class="allowselect" v-else-if="column.dataType === BOOLEAN">{{featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false' }}</span>
+                    <span class="allowselect" v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{getHumanReadableDate(featureViewData.feature.properties[column.name], column.dataType === DATE) }}</span>
+                    <span class="allowselect" v-else>{{ featureViewData.feature.properties[column.name] }}</span>
                   </p>
                 </v-col>
               </v-row>
@@ -243,6 +238,8 @@ import { zoomToGeoPackageFeature } from '../../lib/leaflet/map/ZoomUtilities'
 import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
 import MediaAttachments from './MediaAttachments'
 import EventBus from '../../lib/vue/EventBus'
+import isNil from 'lodash/isNil'
+import { mapState } from 'vuex'
 
 export default {
   components: { MediaAttachments, EditFeatureStyleAssignment, GeometryStyleSvg, FeatureEditorColumn },
@@ -294,26 +291,27 @@ export default {
       styleAssignment: null,
       attachmentDialogFullScreen: false,
       showFeatureMediaAttachments: false,
-      attachments: []
+      attachments: [],
+      iframeCSSMap: {}
     }
+  },
+  computed: {
+    ...mapState({
+      darkTheme (state) {
+        let isDark = false
+        const projectId = this.$route.params.id
+        let project = state.UIState[projectId]
+        if (!isNil(project)) {
+          isDark = project.dark
+        }
+        return isDark
+      }
+    })
   },
   asyncComputed: {
     featureViewData: {
       async get () {
-        const featureViewData = await window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
-        featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => featureViewData.feature.properties[column.name] != null).length > 0 : false
-        if (this.isGeoPackage &&
-            this.object.tables.features[this.tableName] != null &&
-            this.object.tables.features[this.tableName].columnOrder != null &&
-            featureViewData.editableColumns != null &&
-            featureViewData.editableColumns.length > 0) {
-          const columnOrder = this.object.tables.features[this.tableName].columnOrder
-          featureViewData.editableColumns.sort((a, b) => {
-            return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
-          })
-        }
-        featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
-        return featureViewData
+        return this.getFeatureViewData()
       },
       default: {
         editableColumns: [],
@@ -355,9 +353,47 @@ export default {
         })
       },
       deep: true
+    },
+    darkTheme: {
+      handler () {
+        Object.keys(this.iframeCSSMap).forEach(key => {
+          this.iframeCSSMap[key].innerText = 'body {overflow-x: hidden !important; color: ' + (this.$vuetify.theme.dark ? this.$vuetify.theme.themes.dark.text : this.$vuetify.theme.themes.light.text) + ';}'
+        })
+      }
     }
   },
   methods: {
+    async getFeatureViewData () {
+      const featureViewData = await window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
+      featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => featureViewData.feature.properties[column.name] != null).length > 0 : false
+      if (this.isGeoPackage &&
+          this.object.tables.features[this.tableName] != null &&
+          this.object.tables.features[this.tableName].columnOrder != null &&
+          featureViewData.editableColumns != null &&
+          featureViewData.editableColumns.length > 0) {
+        const columnOrder = this.object.tables.features[this.tableName].columnOrder
+        featureViewData.editableColumns.sort((a, b) => {
+          return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+        })
+      }
+      featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
+      return featureViewData
+    },
+    adjustFrameStyle (e) {
+      if (e.target.contentDocument != null) {
+        const css = document.createElement('style')
+        const styles = 'body {overflow-x: hidden !important; color: ' + (this.$vuetify.theme.dark ? this.$vuetify.theme.themes.dark.text : this.$vuetify.theme.themes.light.text) + ';}'
+        css.appendChild(document.createTextNode(styles))
+        e.target.contentDocument.head.appendChild(css)
+        this.iframeCSSMap[e.target.id] = css
+      }
+    },
+    isHtml (text) {
+      return text.indexOf('<html') !== -1 && text.indexOf('html>') !== -1
+    },
+    getSourceObject (text) {
+      return URL.createObjectURL(new Blob([text.replace('<a ', '<span ').replace('/a>', '/span>')], { type: 'text/html' }))
+    },
     closeView () {
       this.disableEdit()
       this.back()
@@ -418,8 +454,11 @@ export default {
       })
     },
     disableEdit () {
-      this.editing = false
-      EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, false)
+      this.getFeatureViewData().then(data => {
+        this.featureViewData = data
+        this.editing = false
+        EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, false)
+      })
     },
     async saveChanges () {
       try {
@@ -466,5 +505,4 @@ export default {
 </script>
 
 <style scoped>
-
 </style>

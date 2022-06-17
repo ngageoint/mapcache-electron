@@ -138,7 +138,7 @@ import {
   getFeatureImageObjectUrl,
   getAllAttachments,
   getImageAttachments,
-  getVideoAttachments,
+  getVideoAttachments, downloadAttachment,
 } from '../geopackage/GeoPackageMediaUtilities'
 import {
   getStyleItemsForFeature,
@@ -708,14 +708,20 @@ contextBridge.exposeInMainWorld('mapcache', {
   hideFeatureTableWindow: () => {
     ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW)
   },
-  registerHideFeatureTableWindowListener: (listener) => {
-    ipcRenderer.on(HIDE_FEATURE_TABLE_WINDOW, listener)
-  },
   sendFeatureTableEvent: (event) => {
     ipcRenderer.send(FEATURE_TABLE_EVENT, event)
   },
   registerFeatureTableActionListener: (listener) => {
     ipcRenderer.on(FEATURE_TABLE_ACTION, listener)
+  },
+  registerHideFeatureTableWindowListener: (listener) => {
+    ipcRenderer.on(HIDE_FEATURE_TABLE_WINDOW, listener)
+  },
+  unregisterFeatureTableActionListener: () => {
+    ipcRenderer.removeAllListeners(FEATURE_TABLE_ACTION)
+  },
+  unregisterHideFeatureTableWindowListener: () => {
+    ipcRenderer.removeAllListeners(HIDE_FEATURE_TABLE_WINDOW)
   },
   encryptPassword: CredentialsManagement.encrypt,
   getDefaultIcon,
@@ -900,6 +906,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   deleteFeatureIdsFromDataSource,
   getFeatureStyleOrIcon,
   popOutFeatureTable,
+  downloadAttachment,
   registerUndoListener: (listener) => {
     ipcRenderer.on(UNDO, listener)
   },

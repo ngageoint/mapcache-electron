@@ -40,6 +40,7 @@ export default class GeoTiffLayer extends TileLayer {
   samplesPerPixel
   srs
   stretchToMinMax
+  projection
 
   constructor (configuration = {}) {
     super(configuration)
@@ -82,6 +83,7 @@ export default class GeoTiffLayer extends TileLayer {
     this.samplesPerPixel = configuration.samplesPerPixel
     this.srs = configuration.srs
     this.stretchToMinMax = configuration.stretchToMinMax
+    this.projection = configuration.projection
     if (!isNil(this.renderer)) {
       this.renderer.layer = this
     }
@@ -132,7 +134,8 @@ export default class GeoTiffLayer extends TileLayer {
         sampleFormat: this.sampleFormat,
         samplesPerPixel: this.samplesPerPixel,
         srs: this.srs,
-        stretchToMinMax: this.stretchToMinMax
+        stretchToMinMax: this.stretchToMinMax,
+        projection: this.projection
       }
     }
   }

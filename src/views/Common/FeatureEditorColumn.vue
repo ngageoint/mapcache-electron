@@ -1,7 +1,6 @@
 <template>
   <div>
-    <v-text-field :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue"
-                  :rules="rules"></v-text-field>
+    <v-textarea class="editable-text-area" no-resize rows="1" auto-grow :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue" :rules="rules"></v-textarea>
     <v-row style="height: 50px !important; margin-right: 6px !important;" class="align-center" no-gutters align="center"
            justify="space-between" v-else-if="dataType === BOOLEAN">
       <v-col>
@@ -145,5 +144,11 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.editable-text-area::v-deep {
+  textarea {
+    max-height: 10rem;
+    overflow: auto;
+  }
+}
 </style>

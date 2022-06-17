@@ -27,26 +27,22 @@
     </div>
     <div v-show="contextMenuPopup != null" id="context-menu-popup" ref="contextMenuPopup">
       <v-list dense>
-        <v-list-item dense
-                     @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
+        <v-list-item dense @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
           {{
             contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''
           }}
         </v-list-item>
-        <v-list-item dense
-                     @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
+        <v-list-item dense @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
           {{
             contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''
           }}
         </v-list-item>
-        <v-list-item dense
-                     @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+        <v-list-item dense @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
           {{
             contextMenuCoordinate ? convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
           }}
         </v-list-item>
-        <v-list-item dense
-                     @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+        <v-list-item dense @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
           {{
             contextMenuCoordinate ? convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
           }}
@@ -318,6 +314,7 @@ import isEqual from 'lodash/isEqual'
 import difference from 'lodash/difference'
 import pick from 'lodash/pick'
 import throttle from 'lodash/throttle'
+import circle from '@turf/circle'
 import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import DrawBounds from './mixins/DrawBounds'
@@ -593,15 +590,14 @@ export default {
         this.coordinateControl.setCoordinateType('MGRS')
       }
     },
-    enableDrawingLinks () {
+    enableGeomanToolbar () {
       this.map.pm.Toolbar.addControls({
         position: 'topright',
-        drawCircle: false,
         drawCircleMarker: false,
         editControls: false
       })
     },
-    disableDrawingLinks () {
+    disableGeomanToolbar () {
       this.map.pm.Toolbar.removeControls()
 
     },
@@ -721,7 +717,7 @@ export default {
     convertLatLng2MGRS (lat, lng, label = false) {
       return (label ? 'MGRS - ' : '') + MGRS.from(new LatLng(lat, lng)).toString()
     },
-    copyText (text) {
+    copyText (text = '') {
       window.mapcache.copyToClipboard(text)
       this.closePopup()
       setTimeout(() => {
@@ -754,6 +750,9 @@ export default {
         this.layerOrder.splice(index, 1)
       }
     },
+    generateCircularFeature (latLng, properties, radiusInMeters) {
+      return  circle(latLng, radiusInMeters, {steps: 128, units: 'meters', properties: properties})
+    },
     async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
       const geopackage = this.geopackages[geoPackageId]
       this.geopackageFeatureLayerSelectionDialog = false
@@ -767,8 +766,10 @@ export default {
         feature = this.createdLayer.toGeoJSON()
         feature.id = window.mapcache.createUniqueID()
         if (!isNil(this.createdLayer._mRadius)) {
-          feature.properties.radius = this.createdLayer._mRadius
+          // feature.properties.radius = this.createdLayer._mRadius
+          feature = this.generateCircularFeature(feature.geometry.coordinates, feature.properties, this.createdLayer._mRadius)
         }
+
         if (feature.geometry.type === 'Point') {
           feature.style = {
             icon: await getDefaultIcon('Default', 'Default icon for MapCache')
@@ -1121,19 +1122,19 @@ export default {
       const defaultCenter = centerAndZoom ? centerAndZoom.center : [40.809118, 61.614383]
       const defaultZoom = centerAndZoom ? centerAndZoom.zoom : 3
       this.map = L.map('map', {
-        editable: true,
         attributionControl: false,
+        center: defaultCenter,
         editOptions: {
           zIndex: 502,
         },
-        center: defaultCenter,
         zoom: defaultZoom,
         minZoom: 2,
         maxZoom: 20,
         scrollWheelZoom: false,
         smoothWheelZoom: true,
         smoothSensitivity: 1,
-        crs: this.getMapProjection()
+        crs: this.getMapProjection(),
+        detectRetina: window.devicePixelRatio > 1
       })
       window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: Math.floor(defaultZoom) })
       this.createMapPanes()
@@ -1222,6 +1223,35 @@ export default {
         this.geopackageFeatureLayerSelectionDialog = true
       })
     },
+    setupLeafletGeoman () {
+      this.map.pm.setGlobalOptions({
+        continueDrawing: false,
+        allowSelfIntersection: true,
+        panes: {
+          vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
+        },
+        snapDistance: 5
+      })
+      this.map.pm.addControls({
+        position: 'topright',
+        drawCircleMarker: false,
+        editControls: false,
+        drawText: false,
+      })
+
+      this.map.on('pm:create', ({ layer }) => {
+        if (!this.isEditing) {
+          this.createdLayer = layer
+          this.displayGeoPackageFeatureLayerSelection()
+        }
+      })
+      this.map.on('pm:drawstart', () => {
+        this.isDrawing = true
+      })
+      this.map.on('pm:drawend', () => {
+        this.isDrawing = false
+      })
+    },
     setupControls () {
       const self = this
       // create controls
@@ -1264,32 +1294,8 @@ export default {
       this.map.addControl(this.scaleControl)
       this.map.addControl(this.coordinateControl)
       this.map.addControl(this.activeLayersControl)
-      this.map.pm.setGlobalOptions({
-        continueDrawing: false,
-        allowSelfIntersection: true,
-        panes: {
-          vertexPane: DRAWING_VERTEX_PANE.name, layerPane: DRAWING_LAYER_PANE.name, markerPane: DRAWING_VERTEX_PANE.name
-        },
-        snapDistance: 5
-      })
-      this.map.pm.addControls({
-        position: 'topright',
-        drawCircle: false,
-        drawCircleMarker: false,
-        editControls: false,
-      })
-      this.map.on('pm:create', ({ layer }) => {
-        if (!this.isEditing) {
-          this.createdLayer = layer
-          this.displayGeoPackageFeatureLayerSelection()
-        }
-      })
-      this.map.on('pm:drawstart', () => {
-        this.isDrawing = true
-      })
-      this.map.on('pm:drawend', () => {
-        this.isDrawing = false
-      })
+
+      this.setupLeafletGeoman()
 
       // hide controls that are disabled by the user
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
@@ -1358,7 +1364,6 @@ export default {
       this.map.on('mouseout', () => {
         this.removeGeoPackageFeatureHighlight()
       })
-
       this.map.on('contextmenu', e => {
         if (!this.isEditing) {
           this.contextMenuCoordinate = e.latlng
@@ -1421,7 +1426,7 @@ export default {
         maxZoom: 20,
         className: dark ? 'dark' : '',
         crossOrigin: 'Anonymous',
-        crs: this.getMapProjection()
+        crs: this.getMapProjection(),
       })
     },
     getMapProjection() {
@@ -1577,10 +1582,10 @@ export default {
       handler (newValue) {
         if (newValue) {
           this.snapshotControl.disable()
-          this.disableDrawingLinks()
+          this.disableGeomanToolbar()
         } else {
           this.snapshotControl.enable()
-          this.enableDrawingLinks()
+          this.enableGeomanToolbar()
         }
       }
     },
@@ -1588,10 +1593,10 @@ export default {
       handler (newValue) {
         if (newValue) {
           this.snapshotControl.disable()
-          this.disableDrawingLinks()
+          this.disableGeomanToolbar()
         } else {
           this.snapshotControl.enable()
-          this.enableDrawingLinks()
+          this.enableGeomanToolbar()
         }
       }
     },
@@ -1832,10 +1837,12 @@ export default {
     project: {
       async handler (updatedProject) {
         let self = this
-        updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
-        updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
-        updatedProject.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
-        updatedProject.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
+        if (this.map != null) {
+          updatedProject.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
+          updatedProject.displayZoomEnabled ? this.displayZoomControl.getContainer().style.display = '' : this.displayZoomControl.getContainer().style.display = 'none'
+          updatedProject.displayCoordinates ? this.coordinateControl.getContainer().style.display = '' : this.coordinateControl.getContainer().style.display = 'none'
+          updatedProject.displayScale ? this.scaleControl.getContainer().style.display = '' : this.scaleControl.getContainer().style.display = 'none'
+        }
 
         // max features setting changed
         if (updatedProject.maxFeatures !== this.maxFeatures) {
@@ -1877,9 +1884,9 @@ export default {
         }
         this.maxFeatures = updatedProject.maxFeatures
         if (isNil(updatedProject.boundingBoxFilterEditing) || updatedProject.boundingBoxFilterEditing !== 'manual') {
-          this.enableDrawingLinks()
+          this.enableGeomanToolbar()
         } else {
-          this.disableDrawingLinks()
+          this.disableGeomanToolbar()
         }
 
         this.manualBoundingBoxDialog = !isNil(updatedProject.boundingBoxFilterEditing) && updatedProject.boundingBoxFilterEditing === 'manual'
@@ -1889,6 +1896,9 @@ export default {
   },
   mounted: function () {
     this.maxFeatures = this.project.maxFeatures
+    this.registerResizeObserver()
+    this.initializeMap()
+    this.addLayersToMap()
     EventBus.$on(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload => this.displayFeaturesForTable(payload.id, payload.tableName, payload.isGeoPackage, true))
     EventBus.$on(EventBus.EventTypes.REORDER_MAP_LAYERS, this.reorderMapLayers)
     EventBus.$on(EventBus.EventTypes.ZOOM_TO, (extent, minZoom = 0, maxZoom = 20) => {
@@ -1961,12 +1971,11 @@ export default {
     window.mapcache.registerHideFeatureTableWindowListener(() => {
       this.lastShowFeatureTableEvent = null
     })
-    this.registerResizeObserver()
-    this.initializeMap()
-    this.addLayersToMap()
   },
   beforeDestroy: function () {
     EventBus.$off([EventBus.EventTypes.REQUEST_MAP_DETAILS, EventBus.EventTypes.SHOW_FEATURE_TABLE, EventBus.EventTypes.REORDER_MAP_LAYERS, EventBus.EventTypes.ZOOM_TO, EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY])
+    window.mapcache.unregisterFeatureTableActionListener()
+    window.mapcache.unregisterHideFeatureTableWindowListener()
   },
   beforeUpdate: function () {
     const self = this
@@ -2172,5 +2181,11 @@ div {
 
 .leaflet-tile-container img {
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
+}
+.leaflet-popup-tip {
+  pointer-events: auto;
+}
+.leaflet-popup-tip-container {
+  pointer-events: auto;
 }
 </style>

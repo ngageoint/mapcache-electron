@@ -33,11 +33,11 @@
           </v-list-item-icon>
           <v-list-item-content>
             <div v-if="item.name">
-              <div class="list-item-title no-clamp" v-html="item.name"></div>
+              <div class="list-item-title no-clamp" v-text="item.name"></div>
             </div>
             <div v-if="item.subtitles && item.subtitles.length > 0">
               <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                   :key="i + 'service-layer-title'" v-html="title"></div>
+                   :key="i + 'service-layer-title'" v-text="title"></div>
             </div>
           </v-list-item-content>
           <v-list-item-action>

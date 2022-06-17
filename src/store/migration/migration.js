@@ -129,6 +129,7 @@ export async function runMigration (forceReset = false) {
           source.sampleFormat = sampleFormat
           source.bytesPerSample = bytesPerSample
           source.visible = false
+          geotiff.close()
         } else if (source.layerType === VECTOR) {
           delete source['styleAssignment']
           delete source['iconAssignment']

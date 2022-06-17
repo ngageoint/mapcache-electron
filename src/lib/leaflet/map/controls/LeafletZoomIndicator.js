@@ -1,4 +1,6 @@
 import { L } from '../../vendor'
+import debounce from 'lodash/debounce'
+import throttle from 'lodash/throttle'
 
 export default class LeafletZoomIndicator extends L.Control {
   constructor (options) {
@@ -12,14 +14,22 @@ export default class LeafletZoomIndicator extends L.Control {
     super(mergedOptions)
   }
 
-  onAdd (map) {
-    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
-    this._link = L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
-    this._link.innerHTML = Math.floor(map.getZoom())
-    map.on('zoomend', () => {
-      this._link.innerHTML = Math.floor(map.getZoom())
-    }, this)
+  updateIndicator (map) {
+    this._link.innerHTML = map.getZoom().toFixed(1)
+  }
 
+  onAdd (map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+    this._link = L.DomUtil.create('a', 'leaflet-control-zoom-indicator', container)
+    this.updateIndicator(map)
+    const debounceUpdateIndicator = debounce(() => {
+      this.updateIndicator(map)
+    }, 50)
+    const throttleUpdateIndicator = throttle(() => {
+      this.updateIndicator(map)
+    }, 50)
+    map.on('zoom', throttleUpdateIndicator)
+    map.on('zoomEnd', debounceUpdateIndicator)
     return container
   }
 }

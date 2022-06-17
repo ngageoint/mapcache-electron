@@ -1,0 +1,5 @@
+const DEFAULT_TILE_SIZE = 256
+
+export {
+  DEFAULT_TILE_SIZE
+}

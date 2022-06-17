@@ -17,8 +17,11 @@ export default class ZipSource extends Source {
     const zipEntries = zip.getEntries()
     const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
     const shapeFile = zipFileNames.find(file => file.endsWith('.shp'))
+    const prjFile = zipFileNames.find(file => file.endsWith('.prj'))
+    const tifFile = zipFileNames.find(file => file.endsWith('.tif'))
     const kmlFile = zipFileNames.find(file => file.endsWith('.kml'))
     const xyzImageFile = zipFileNames.find(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null)
+
     if (!isNil(kmlFile)) {
       try {
         kmzSource = new KMZSource(this.id, this.directory, this.filePath)
@@ -28,12 +31,13 @@ export default class ZipSource extends Source {
         // eslint-disable-next-line no-console
         console.error('Failed to retrieve kml file data.')
       }
-    } else if (!isNil(shapeFile)) {
+    } else if (!isNil(shapeFile) || !isNil(prjFile) || !isNil(tifFile)) {
       try {
         shapeFileSource = new ShapeFileSource(this.id, this.directory, this.filePath)
         layers = await shapeFileSource.retrieveLayers(statusCallback)
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
+        console.error(e)
         // eslint-disable-next-line no-console
         console.error('Failed to retrieve shape file layer.')
       }

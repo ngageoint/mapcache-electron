@@ -429,6 +429,7 @@ import {
   WEB_MERCATOR_DISPLAY_TEXT, WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
 } from '../../lib/projection/ProjectionConstants'
+import { DEFAULT_TILE_SIZE } from '../../lib/util/tile/TileConstants'
 
 export default {
   props: {
@@ -571,7 +572,7 @@ export default {
         tileScalingEnabled: this.scalingEnabled,
         renderingOrder: this.sortedLayers.map(sortedLayer => sortedLayer.id),
         targetProjection: this.targetProjection,
-        size: {x: 256, y: 256}
+        size: {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE}
       }
 
       window.mapcache.addTileLayer(this.configuration, (status) => {
@@ -649,7 +650,7 @@ export default {
       let tiles = 0
       if (this.areZoomsValid()) {
         try {
-          tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom, this.targetProjection, {x: 256, y: 256})
+          tiles = getTileCount(this.boundingBoxFilter, dataSources, geopackageLayers, this.scalingEnabled, this.minZoom, this.maxZoom, this.targetProjection, {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE})
         } catch (e) {
           tiles = 0
         }

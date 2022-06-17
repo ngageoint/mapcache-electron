@@ -18,10 +18,6 @@ export default class GeoTIFFSource extends Source {
     return geotiff.getImage()
   }
 
-  static closeGeoTIFF (geotiff) {
-    geotiff.close()
-  }
-
   static getImageData (image) {
     const imageOrigin = image.getOrigin()
     const imageResolution = image.getResolution()
@@ -83,6 +79,14 @@ export default class GeoTIFFSource extends Source {
       }
     }
     fs.closeSync(fd)
+  }
+
+  static async determineSrs (filePath) {
+    const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
+    const image = await GeoTIFFSource.getImage(geotiff)
+    let { srs } = GeoTIFFSource.getImageData(image)
+    geotiff.close()
+    return srs
   }
 
 
@@ -205,9 +209,7 @@ export default class GeoTIFFSource extends Source {
     const maxCoord = transform.inverse([bbox[2], bbox[3]])
     const extent = [Math.max(-180, minCoord[0]), Math.max(-90, minCoord[1]), Math.min(180, maxCoord[0]), Math.min(90, maxCoord[1])]
 
-    GeoTIFFSource.closeGeoTIFF(geotiff)
-
-    return new GeoTiffLayer({
+    const layer =  new GeoTiffLayer({
       alphaBand: alphaBand,
       bandOptions: bandOptions,
       bitsPerSample: bitsPerSample,
@@ -247,10 +249,14 @@ export default class GeoTIFFSource extends Source {
       samplesPerPixel: samplesPerPixel,
       sourceDirectory: sourceDirectory,
       sourceLayerName: name,
-      srs: srs,
+      srs: epsgString,
       stretchToMinMax: stretchToMinMax,
       visible: false
     })
+
+    geotiff.close()
+
+    return layer
   }
 
   async retrieveLayers (statusCallback) {
@@ -259,7 +265,6 @@ export default class GeoTIFFSource extends Source {
     let filePath = path.join(layerDirectory, path.basename(this.filePath))
     await jetpack.copyAsync(this.filePath, filePath)
     const name = path.basename(this.filePath, path.extname(this.filePath))
-    const geotiffLayer = await GeoTIFFSource.createGeoTiffLayer(filePath, name, layerId, layerDirectory, this.directory, statusCallback)
-    return [geotiffLayer]
+    return [await GeoTIFFSource.createGeoTiffLayer(filePath, name, layerId, layerDirectory, this.directory, statusCallback)]
   }
 }

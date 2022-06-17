@@ -29,10 +29,9 @@
               </v-btn>
             </v-list-item-icon>
             <v-list-item-content>
-              <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}"
-                                 v-html="item.name"></v-list-item-title>
-              <v-list-item-subtitle v-if="item.type != null" v-html="item.type"></v-list-item-subtitle>
-              <v-list-item-subtitle v-if="item.subtitle != null" v-html="item.subtitle"></v-list-item-subtitle>
+              <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
+              <v-list-item-subtitle v-if="item.type != null" v-text="item.type"></v-list-item-subtitle>
+              <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">

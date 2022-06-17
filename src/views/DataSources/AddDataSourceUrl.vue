@@ -227,11 +227,11 @@
                           <template v-slot:default="{ active }">
                             <v-list-item-content>
                               <div v-if="item.title">
-                                <div class="list-item-title" v-html="item.title" :title="item.title"></div>
+                                <div class="list-item-title" v-text="item.title" :title="item.title"></div>
                               </div>
                               <div v-if="item.subtitles && item.subtitles.length > 0">
                                 <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                                     :key="i + 'service-layer-title'" v-html="title" :title="title"></div>
+                                     :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
                               </div>
                             </v-list-item-content>
                             <v-list-item-action>

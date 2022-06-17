@@ -190,6 +190,8 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
       let styleMap = null
       let pair = null
       let inPlacemark = false
+      let inDescription = false
+      let description = ''
       let hasStyleUrl = false
       const saxStream = sax.createStream(false, {
         lowercase: true
@@ -200,6 +202,9 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
           currentTag = tag
           if (tag != null) {
             switch (tag.name) {
+              case 'description':
+                inDescription = true
+                return
               case 'style':
                 style = {
                   id: '#' + (tag.attributes.id != null ? tag.attributes.id : nextId())
@@ -314,6 +319,11 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
         try {
           if (!data.trim() || !currentTag) return
           switch (currentTag.name) {
+            case 'description':
+              if (inDescription) {
+                description = data
+              }
+              return
             case 'key':
               if (pair != null) {
                 pair.key = data
@@ -476,6 +486,12 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
           currentTag = null
           let multigeoms, type, thing
           switch (tag) {
+            case 'description':
+              inDescription = false
+              if (inPlacemark) {
+                props.description = description
+              }
+              return
             case 'pair':
               if (pair.key === 'normal') {
                 styleMap.normal = pair.styleUrl || pair.style.id
@@ -674,6 +690,12 @@ function streamKml (filePath, onFeature, onGroundOverlay, onStyle, onStyleMap) {
         } catch (e) {
           console.debug('Failure during the handling of the closetag event.')
         }
+      })
+      saxStream.on('opencdata', () => {
+        description = ''
+      })
+      saxStream.on('cdata', (data) => {
+        description += data
       })
 
       const fileStream = fs.createReadStream(filePath)

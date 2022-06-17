@@ -1,5 +1,6 @@
 import { FeatureTiles, NumberFeaturesTile } from '@ngageoint/geopackage'
 import { performSafeGeoPackageOperation } from '../../geopackage/GeoPackageCommon'
+import { DEFAULT_TILE_SIZE } from '../tile/TileConstants'
 
 function requestVectorTileWithFeatureTiles (tileRequest, featureTile) {
   const {
@@ -15,7 +16,7 @@ function requestImageryTileWithGeoPackage (tileRequest, gp) {
     tableName
   } = tileRequest
   let { x, y, z } = coords
-  return gp.xyzTile(tableName, x, y, z, 256, 256)
+  return gp.xyzTile(tableName, x, y, z, DEFAULT_TILE_SIZE, DEFAULT_TILE_SIZE)
 }
 
 function requestVectorTile (tileRequest) {
@@ -27,11 +28,11 @@ function requestVectorTile (tileRequest) {
     } = tileRequest
     performSafeGeoPackageOperation(dbFile, async (gp) => {
       const featureDao = gp.getFeatureDao(tableName)
-      const featureTiles = new FeatureTiles(featureDao, 256, 256)
+      const featureTiles = new FeatureTiles(featureDao, DEFAULT_TILE_SIZE, DEFAULT_TILE_SIZE)
+      featureTiles.scale = 1.0
       featureTiles.cacheGeometries = false
       featureTiles.maxFeaturesPerTile = maxFeatures
       featureTiles.maxFeaturesTileDraw = new NumberFeaturesTile()
-      // featureTiles.drawOverlapsWithPixels = 256
       const tile = await requestVectorTileWithFeatureTiles(tileRequest, featureTiles)
       featureTiles.cleanup()
       return tile

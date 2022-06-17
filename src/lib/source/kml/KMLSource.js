@@ -155,6 +155,7 @@ export default class KMLSource extends Source {
         addFeature,
         addStyle,
         addIcon,
+        addMediaAttachment,
         setFeatureStyle,
         setFeatureIcon,
         setTableIcon,
@@ -219,11 +220,35 @@ export default class KMLSource extends Source {
       const notifyStepSize = 0.01
       let currentStep = 0.0
       let featuresAdded = 0
+
+      const storeAttachmentsInDescription = (featureRowId, html) => {
+        var regex = /href="(.*?)"/gi
+        var link
+
+        while ((link = regex.exec(html)) !== null) {
+          html.replace(link[1], '')
+          if (!link[1].startsWith('http')) {
+            const relativePath = path.join(kmlDirectory, link[1])
+            addMediaAttachment(featureRowId, relativePath)
+          }
+        }
+
+        return html
+      }
       await streamKml(this.filePath, (feature) => {
         let styleRef = feature.styleId
         delete feature.styleId
 
         const featureRowId = addFeature(feature)
+
+        // check for CDATA description that contains relative file paths (we should store off those attachments if possible
+        if (feature.properties.description != null) {
+          try {
+            storeAttachmentsInDescription(featureRowId, feature.properties.description)
+          } catch (e) {
+            console.error(e)
+          }
+        }
 
         // there is a style, icons will already have been added, but not styles
         if (styleRef != null) {

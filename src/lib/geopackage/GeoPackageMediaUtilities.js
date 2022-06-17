@@ -285,7 +285,7 @@ function _addMedia (gp, mediaDao, media) {
   } else {
     buffer = jetpack.read(media, 'buffer')
     contentType = getMimeType(media)
-    if (contentType === false) {
+    if (contentType === false || contentType == null) {
       contentType = 'application/octet-stream'
     }
   }

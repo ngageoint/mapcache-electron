@@ -1215,6 +1215,7 @@ function _getFeatureStyleMapping (gp, tableName, checkForTableStyles = true, fea
 function _getStyleDrawOverlap (gp, tableName) {
   const featureDao = gp.getFeatureDao(tableName)
   const featureTiles = new FeatureTiles(featureDao)
+  featureTiles.scale = 1.0
   return { width: featureTiles.widthOverlap, height: featureTiles.heightOverlap }
 }
 

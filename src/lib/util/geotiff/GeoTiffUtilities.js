@@ -3,11 +3,10 @@ import isNil from 'lodash/isNil'
 import { slice } from '../file/FileUtilities'
 import { WEB_MERCATOR_CODE } from '../../projection/ProjectionConstants'
 
-const maxByteValue = 255
-
+const MAX_BYTE_VALUE = 255
 
 function getMaxForDataType (bitsPerSample) {
-  let max = 255
+  let max = MAX_BYTE_VALUE
   if (bitsPerSample === 16) {
     max = 65535
   }
@@ -153,11 +152,11 @@ function getSample (fd, offset = 0, sampleBytes, bitsPerSample, reader, littleEn
  * @returns {number}
  */
 function stretchValue (value, min, max) {
-  let stretchedValue = (value - min) / (max - min) * maxByteValue
+  let stretchedValue = (value - min) / (max - min) * MAX_BYTE_VALUE
   if (stretchedValue < 0) {
     stretchedValue = 0
-  } else if (stretchedValue > maxByteValue) {
-    stretchedValue = maxByteValue
+  } else if (stretchedValue > MAX_BYTE_VALUE) {
+    stretchedValue = MAX_BYTE_VALUE
   }
   return stretchedValue
 }
@@ -169,5 +168,6 @@ export {
   getReaderForSample,
   getSample,
   readRasters,
-  stretchValue
+  stretchValue,
+  MAX_BYTE_VALUE
 }
