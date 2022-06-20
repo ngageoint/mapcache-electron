@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import GridZoneDesignator from './GridZoneDesignator'
 import { fixLongitude } from '../MGRS'
 
@@ -107,6 +108,248 @@ const latitudeGZDZones = {
   W: [64.0, 72.0],
   X: [72.0, 84.0],
 }
+
+/**
+ * Min zone number in Svalbard grid zones
+ */
+const MIN_SVALBARD_ZONE_NUMBER = 31
+
+/**
+ * Max zone number in Svalbard grid zones
+ */
+const MAX_SVALBARD_ZONE_NUMBER = 37
+
+/**
+ * Band letter in Svalbard grid zones
+ */
+const SVALBARD_BAND_LETTER = 'X'
+
+/**
+ * Min zone number in Norway grid zones
+ */
+const MIN_NORWAY_ZONE_NUMBER = 31
+
+/**
+ * Max zone number in Norway grid zones
+ */
+const MAX_NORWAY_ZONE_NUMBER = 32
+
+/**
+ * Band letter in Norway grid zones
+ */
+const NORWAY_BAND_LETTER = 'V'
+
+/**
+ * Minimum grid zone number
+ */
+const MIN_ZONE_NUMBER = 1
+
+/**
+ * Maximum grid zone number
+ */
+const MAX_ZONE_NUMBER = 60
+
+/**
+ * Grid zone width
+ */
+const ZONE_WIDTH = 6.0
+
+/**
+ * Minimum grid band letter
+ */
+const MIN_BAND_LETTER = 'C'
+
+/**
+ * Maximum grid band letter
+ */
+const MAX_BAND_LETTER = 'X'
+
+/**
+ * Minimum longitude
+ */
+const MIN_LON = -180.0
+
+/**
+ * Maximum longitude
+ */
+const MAX_LON = 180.0
+
+/**
+ * Minimum latitude
+ */
+const MIN_LAT = -80.0
+
+/**
+ * Maximum latitude
+ */
+const MAX_LAT = 84.0
+
+/**
+ * Number of bands
+ */
+const NUM_BANDS = 20
+
+/**
+ * Grid band height for all by but the {@link #MAX_BAND_LETTER}
+ */
+const BAND_HEIGHT = 8.0
+
+/**
+ * Grid band height for the {@link #MAX_BAND_LETTER}
+ */
+const MAX_BAND_HEIGHT = 12.0
+
+/**
+ * Get the zone number of the longitude
+ *
+ * @param longitude longitude in degrees
+ * @param eastern true for eastern number on edges, false for western
+ * @return zone number
+ */
+function getZoneNumber (longitude, eastern = true) {
+  // Normalize the longitude if needed
+  if (longitude < MIN_LON || longitude > MAX_LON) {
+    longitude = (longitude - MIN_LON) % (2 * MAX_LON) + MIN_LON
+  }
+
+  // Determine the zone
+  let zoneValue = (longitude - MIN_LON) / ZONE_WIDTH
+  let zoneNumber = 1 + Math.floor(zoneValue)
+
+  // Handle western edge cases and 180.0
+  if (!eastern) {
+    if (zoneNumber > 1 && zoneValue % 1.0 === 0.0) {
+      zoneNumber--
+    }
+  } else if (zoneNumber > MAX_ZONE_NUMBER) {
+    zoneNumber--
+  }
+
+  return zoneNumber
+}
+
+function getBandLetter (latitude, northern) {
+  // Bound the latitude if needed
+  if (latitude < MIN_LAT) {
+    latitude = MIN_LAT
+  } else if (latitude > MAX_LAT) {
+    latitude = MAX_LAT
+  }
+
+  let bandValue = (latitude - MIN_LAT) / BAND_HEIGHT
+  let bands = Math.floor(bandValue)
+
+  // Handle 80.0 to 84.0 and southern edge cases
+  if (bands >= NUM_BANDS) {
+    bands--
+  } else if (!northern && bands > 0 && bandValue % 1.0 === 0.0) {
+    bands--
+  }
+
+  // Handle skipped 'I' and 'O' letters
+  if (bands > 10) {
+    bands += 2
+  } else if (bands > 5) {
+    bands++
+  }
+  return String.fromCharCode(MIN_BAND_LETTER.charCodeAt(0) + bands)
+}
+
+/**
+ * Is the zone number and band letter a SVALBARD
+ * 
+ * @param zoneNumber zone number
+ * @param bandLetter band letter
+ * @return true if a Svalbard GZD
+ */
+function isSvalbard (zoneNumber, bandLetter) {
+  return isSvalbardLetter(bandLetter) && isSvalbardZone(zoneNumber)
+}
+
+/**
+ * Is the band letter a Svalbard GZD (X)
+ * 
+ * @param bandLetter band letter
+ * @return true if a Svalbard GZD
+ */
+function isSvalbardLetter (bandLetter) {
+  return bandLetter === SVALBARD_BAND_LETTER
+}
+
+/**
+ * Is the zone number a Svalbard GZD (31 - 37)
+ * @param zoneNumber zone number
+ * @return true if a Svalbard GZD
+ */
+function isSvalbardZone (zoneNumber) {
+  return zoneNumber >= MIN_SVALBARD_ZONE_NUMBER && zoneNumber <= MAX_SVALBARD_ZONE_NUMBER
+}
+
+/**
+ * Get the Svalbard zone number from the longitude
+ * 
+ * @param longitude longitude
+ * @return zone number
+ */
+function getSvalbardZone (longitude) {
+  const minimumLongitude = longitudeGZDZones[MIN_SVALBARD_ZONE_NUMBER][0]
+  const zoneValue = MIN_SVALBARD_ZONE_NUMBER + ((longitude - minimumLongitude) / ZONE_WIDTH)
+  let zone = Math.round(zoneValue)
+  if (zone % 2 === 0) {
+    zone--
+  }
+  return zone
+}
+
+/**
+ * Is the zone number and band letter a Norway GZD (31V or 32V)
+ * 
+ * @param zoneNumber zone number
+ * @param bandLetter band letter
+ * @return true if a Norway GZD
+ */
+function isNorway (zoneNumber, bandLetter) {
+  return isNorwayLetter(bandLetter) && isNorwayZone(zoneNumber)
+}
+
+/**
+ * Is the band letter a Norway GZD (V)
+ * 
+ * @param bandLetter band letter
+ * @return true if a Norway GZD band letter
+ */
+function isNorwayLetter (bandLetter) {
+  return bandLetter === NORWAY_BAND_LETTER;
+}
+
+
+
+/**
+ * Is the zone number a Norway GZD (31 or 32)
+ * @param zoneNumber zone number
+ * @return true if a Norway GZD zone number
+ */
+function isNorwayZone (zoneNumber) {
+  return zoneNumber >= MIN_NORWAY_ZONE_NUMBER && zoneNumber <= MAX_NORWAY_ZONE_NUMBER
+}
+
+
+/**
+ * Get the Norway zone number from the longitude
+ * 
+ * @param longitude longitude
+ * @return zone number
+ */
+  function getNorwayZone (longitude) {
+    const minimumLongitude = longitudeGZDZones[MIN_NORWAY_ZONE_NUMBER][0]
+    let zone = MIN_NORWAY_ZONE_NUMBER
+    if (longitude >= minimumLongitude + (ZONE_WIDTH / 2.0)) {
+      zone++
+    }
+    return zone
+  }
+
+
 
 /**
  * Tests if ranges overlap
@@ -222,5 +465,15 @@ function zonesWithin (bbox, interestingOnly = false) {
 }
 
 export {
-  zonesWithin
+  zonesWithin,
+  isNorway,
+  isNorwayLetter,
+  isNorwayZone,
+  getNorwayZone,
+  isSvalbard,
+  isSvalbardLetter,
+  isSvalbardZone,
+  getSvalbardZone,
+  getBandLetter,
+  getZoneNumber
 }

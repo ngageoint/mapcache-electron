@@ -193,7 +193,7 @@ function setupMGRSGrid (L) {
       }
 
       if (zoom >= this.options.gridOptions.one_hundred_km.minZoom && zoom <= this.options.gridOptions.one_hundred_km.maxZoom) {
-        let result = this.getGridZoneDesignatorPolygons(zones, bounds, this.options.gridOptions.one_hundred_km.precision, this.options.gridOptions.one_hundred_km, zoom > 6)
+        let result = this.getGridZoneDesignatorPolygons(zones, bounds, this.options.gridOptions.one_hundred_km.precision, this.options.gridOptions.one_hundred_km, zoom > 5)
         blocks = blocks.concat(result.blocks)
         labels = labels.concat(result.labels)
       }

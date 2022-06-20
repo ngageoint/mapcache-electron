@@ -87,7 +87,8 @@ export default {
           bugFixes: [
             'Fix for decimal zoom levels in tile creation.',
             'Fix for MAGE KMZ exports not importing.',
-            'Grid no longer rendered over context menu.'
+            'Grid no longer rendered over context menu.',
+            'Fixed MGRS conversion errors in special regions.'
           ],
           newFeatures: [
             'Support a 4326 leaflet map.',
