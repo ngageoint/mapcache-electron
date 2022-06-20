@@ -166,15 +166,22 @@
           </v-row>
           <v-row v-if="!editing" no-gutters class="pl-4 pr-4 pt-2 detail-bg">
             <v-col>
-              <v-row no-gutters :key="'editor-' + column.name" v-for="(column) in featureViewData.editableColumns">
+              <v-row no-gutters :key="'col-view-' + index" v-for="(column, index) in featureViewData.editableColumns">
                 <v-col v-if="featureViewData.feature.properties[column.name] != null" class="pb-2">
                   <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     {{ column.name }}
                   </p>
-                  <p class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                    <iframe sandbox v-if="column.dataType === TEXT && isHtml(featureViewData.feature.properties[column.name])" @load="adjustFrameStyle" :id="column.name.toLowerCase() + '-iframe'" class="background regular--text force-text" style="border-radius: 4px; width: 100%; overflow: auto !important;" :src="getSourceObject(featureViewData.feature.properties[column.name])" frameborder="0" seamless></iframe>
-                    <span class="allowselect" v-else-if="column.dataType === TEXT" v-text="featureViewData.feature.properties[column.name]"></span>
-                    <span class="allowselect" v-else-if="column.dataType === BOOLEAN">{{featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false' }}</span>
+                  <div v-if="column.dataType === TEXT">
+                    <div :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                      <span v-if="featureViewData.feature.properties[column.name] != null && isHtml(featureViewData.feature.properties[column.name])" :class="column.showMore ? 'regular--text allowselect' : 'show-less-text regular--text allowselect'" v-html="$sanitize(featureViewData.feature.properties[column.name], transformHtml)"></span>
+                      <span v-else :class="column.showMore ? 'regular--text allowselect' : 'show-less-text regular--text allowselect'" v-text="featureViewData.feature.properties[column.name]"></span>
+                    </div>
+                    <div v-if="featureViewData.feature.properties[column.name] != null && featureViewData.feature.properties[column.name].length > 100 && column.showMore != null" class="show-more">
+                      <span class="clickable-text" @click="column.showMore = !column.showMore ">{{column.showMore ? 'Show less...' : 'Show more...'}}</span>
+                    </div>
+                  </div>
+                  <p v-else class="regular--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                    <span class="allowselect" v-if="column.dataType === BOOLEAN">{{featureViewData.feature.properties[column.name] === 1 ? 'true' : 'false' }}</span>
                     <span class="allowselect" v-else-if="column.dataType === DATE || column.dataType === DATETIME">{{getHumanReadableDate(featureViewData.feature.properties[column.name], column.dataType === DATE) }}</span>
                     <span class="allowselect" v-else>{{ featureViewData.feature.properties[column.name] }}</span>
                   </p>
@@ -192,7 +199,7 @@
                 </span>
               <v-form v-on:submit.prevent v-model="formValid">
                 <v-list style="width: 100%">
-                  <v-list-item :key="'editor-' + column.name" v-for="(column, index) in featureViewData.editableColumns"
+                  <v-list-item :key="'edit-view-' + index" v-for="(column, index) in featureViewData.editableColumns"
                                class="ma-0 pa-0">
                     <v-list-item-content class="ma-0 pa-0">
                       <feature-editor-column :id="column.name + '_' + index" v-bind="column"
@@ -231,6 +238,7 @@ import {
   mdiPalette,
   mdiContentCopy
 } from '@mdi/js'
+import {isHtml} from '../../lib/util/html/HTMLUtilities'
 import cloneDeep from 'lodash/cloneDeep'
 import FeatureEditorColumn from './FeatureEditorColumn'
 import GeometryStyleSvg from './GeometryStyleSvg'
@@ -292,7 +300,21 @@ export default {
       attachmentDialogFullScreen: false,
       showFeatureMediaAttachments: false,
       attachments: [],
-      iframeCSSMap: {}
+      iframeCSSMap: {},
+      transformHtml: {
+        allowedTags: this.$sanitize.defaults.allowedTags.concat([ 'label' ]),
+        allowedAttributes: {
+          'p': ['style', 'class'],
+          'span': ['style', 'class'],
+          'label': ['style', 'class'],
+        },
+        transformTags: {
+          'a': this.$sanitize.simpleTransform('span', {class: 'regular--text'}, false),
+          'p': this.$sanitize.simpleTransform('p', {class: 'regular--text'}, false),
+          'span': this.$sanitize.simpleTransform('span', {class: 'detail--text'}, false),
+          'label': this.$sanitize.simpleTransform('label', { style: 'margin-right: 4px !important;', class: 'regular--text' }, false)
+        }
+      }
     }
   },
   computed: {
@@ -354,15 +376,9 @@ export default {
       },
       deep: true
     },
-    darkTheme: {
-      handler () {
-        Object.keys(this.iframeCSSMap).forEach(key => {
-          this.iframeCSSMap[key].innerText = 'body {overflow-x: hidden !important; color: ' + (this.$vuetify.theme.dark ? this.$vuetify.theme.themes.dark.text : this.$vuetify.theme.themes.light.text) + ';}'
-        })
-      }
-    }
   },
   methods: {
+    isHtml,
     async getFeatureViewData () {
       const featureViewData = await window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
       featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => featureViewData.feature.properties[column.name] != null).length > 0 : false
@@ -378,21 +394,6 @@ export default {
       }
       featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
       return featureViewData
-    },
-    adjustFrameStyle (e) {
-      if (e.target.contentDocument != null) {
-        const css = document.createElement('style')
-        const styles = 'body {overflow-x: hidden !important; color: ' + (this.$vuetify.theme.dark ? this.$vuetify.theme.themes.dark.text : this.$vuetify.theme.themes.light.text) + ';}'
-        css.appendChild(document.createTextNode(styles))
-        e.target.contentDocument.head.appendChild(css)
-        this.iframeCSSMap[e.target.id] = css
-      }
-    },
-    isHtml (text) {
-      return text.indexOf('<html') !== -1 && text.indexOf('html>') !== -1
-    },
-    getSourceObject (text) {
-      return URL.createObjectURL(new Blob([text.replace('<a ', '<span ').replace('/a>', '/span>')], { type: 'text/html' }))
     },
     closeView () {
       this.disableEdit()
@@ -505,4 +506,13 @@ export default {
 </script>
 
 <style scoped>
+.show-more {
+  padding: 10px 0;
+  text-align: center;
+}
+.show-less-text {
+  max-height: 40px !important;
+  display: inline-block !important;
+  overflow: hidden !important;
+}
 </style>

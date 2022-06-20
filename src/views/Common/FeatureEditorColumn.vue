@@ -150,5 +150,8 @@ export default {
     max-height: 10rem;
     overflow: auto;
   }
+  textarea::-webkit-scrollbar {
+    width: 0 !important;
+  }
 }
 </style>

@@ -24,6 +24,20 @@
     cursor: pointer;
 }
 
+.clickable-text {
+    cursor: pointer;
+}
+
+.clickable-text:hover {
+    cursor: pointer;
+    opacity: 0.75;
+}
+
+.clickable-text:active {
+    cursor: pointer;
+    opacity: 0.9;
+}
+
 .v-input--selection-controls {
     margin-top: 0;
 }

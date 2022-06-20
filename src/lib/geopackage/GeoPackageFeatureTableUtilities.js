@@ -1935,7 +1935,7 @@ function getEditableColumnObject (column, properties) {
     lowerCaseName: column.name.toLowerCase(),
     dataType: column.dataType,
     index: column.index,
-    isUnique: column.unique
+    isUnique: column.unique,
   }
   let value = properties[column.name]
   if (value === undefined || value === null) {
@@ -1998,6 +1998,9 @@ function getEditableColumnObject (column, properties) {
     // if (column.unique) {
     //   columnObject.rules.push(v => window.mapcache.checkUnique(filePath, tableName, column.name, v) || column.name + ' must be a unique value')
     // }
+  }
+  if (column.dataType === GeoPackageDataType.TEXT) {
+    columnObject.showMore = false
   }
   return columnObject
 }

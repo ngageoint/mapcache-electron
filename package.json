@@ -63,6 +63,7 @@
     "pbf": "3.2.1",
     "proj4": "2.7.5",
     "reproject": "1.2.6",
+    "sanitize-html": "^2.7.0",
     "sax": "1.2.4",
     "shpjs": "4.0.2",
     "sortablejs": "^1.14.0",

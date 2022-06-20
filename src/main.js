@@ -2,6 +2,7 @@ import Vue from 'vue'
 import App from './views/App.vue'
 import router from './router'
 import AsyncComputed from 'vue-async-computed'
+import sanitizeHTML from 'sanitize-html'
 import vuetify from './lib/vue/vuetify/vuetify.js' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
@@ -12,11 +13,14 @@ import Vuex from 'vuex'
 import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
 
+
 Vue.directive('observe-visibility', ObserveVisibility)
 
 Object.assign(console, window.log)
 
 Vue.use(Vuex)
+
+Vue.prototype.$sanitize = sanitizeHTML
 
 let createStore = () => {
   return new Vuex.Store({
