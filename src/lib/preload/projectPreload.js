@@ -93,7 +93,7 @@ import {
   addStyleExtensionForTable,
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder, allowNotifications,
+  allowNotifications,
   addProjectState, setNominatimUrl, setOverpassUrl, setMapProjection
 } from '../vue/vuex/ProjectActions'
 import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
@@ -698,7 +698,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   getGeoPackageEditableColumnsForFeature,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder,
   getFeatureViewData,
   checkUnique,
   saveGeoPackageEditedFeature,

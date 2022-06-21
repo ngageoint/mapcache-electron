@@ -13,7 +13,6 @@ import {
   deleteFeatureIdsFromDataSource,
   deleteFeatureIdsFromGeoPackage,
   popOutFeatureTable,
-  updateDataSourceColumnOrder,
   updateGeoPackageFeatureTableColumnOrder
 } from '../vue/vuex/ProjectActions'
 import {
@@ -143,7 +142,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   // functions needed for feature table
   getFeatureColumns,
   getFeatureTablePage,
-  updateDataSourceColumnOrder,
   // functions needed for media attachments
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,

@@ -316,7 +316,7 @@ export async function runMigration (forceReset = false) {
           }
         }
       }
-    }
+    },
   }
 
   let success = true

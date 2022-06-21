@@ -136,7 +136,7 @@
                 GeoPackage
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                {{ geopackage.name }}
+                {{ object.displayName ? object.name : object.displayName }}
               </p>
             </v-col>
           </v-row>
@@ -172,7 +172,12 @@ import { mdiChevronLeft, mdiPencil, mdiTrashCan } from '@mdi/js'
 export default {
   props: {
     projectId: String,
-    geopackage: Object,
+    isGeoPackage: {
+      type: Boolean,
+      default: false
+    },
+    id: String,
+    object: Object,
     tableName: String,
     column: Object,
     columnNames: Array,
@@ -199,7 +204,8 @@ export default {
       this.renameDialog = false
       window.mapcache.renameGeoPackageFeatureTableColumn({
         projectId: this.projectId,
-        geopackageId: this.geopackage.id,
+        id: this.id,
+        isGeoPackage: this.isGeoPackage,
         tableName: this.tableName,
         oldColumnName: this.column.name,
         newColumnName: this.renamedColumn
@@ -210,7 +216,8 @@ export default {
       this.deleteDialog = false
       window.mapcache.deleteGeoPackageFeatureTableColumn({
         projectId: this.projectId,
-        geopackageId: this.geopackage.id,
+        id: this.id,
+        isGeoPackage: this.isGeoPackage,
         tableName: this.tableName,
         columnName: this.column.name
       })

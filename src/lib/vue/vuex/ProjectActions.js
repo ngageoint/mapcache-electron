@@ -123,7 +123,13 @@ function setDataSourceDisplayName ({ projectId, sourceId, displayName }) {
   store.dispatch('Projects/setDataSourceDisplayName', { projectId, sourceId, displayName })
 }
 
-function addDataSources ({ projectId, dataSources }) {
+async function addDataSources ({ projectId, dataSources }) {
+  for (let i = 0; i < dataSources.length; i++) {
+    const source = dataSources[i]
+    if (source.config.geopackageFilePath != null) {
+      source.table = await getGeoPackageFeatureTableForApp(source.config.geopackageFilePath, source.config.sourceLayerName)
+    }
+  }
   store.dispatch('Projects/addDataSources', { projectId, dataSources })
 }
 
@@ -240,55 +246,95 @@ function updateRenamedGeoPackageTable ({ projectId, geopackageId, tableName, new
   store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
 }
 
-async function renameGeoPackageFeatureTableColumn ({
-                                                     projectId,
-                                                     geopackageId,
-                                                     tableName,
-                                                     oldColumnName,
-                                                     newColumnName
-                                                   }) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  await performSafeGeoPackageOperation(filePath, (gp) => {
-    _renameGeoPackageFeatureTableColumn(gp, tableName, oldColumnName, newColumnName)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    if (existingTable != null && existingTable.columnOrder != null) {
-      const oldColumnIdx = existingTable.columnOrder.indexOf(oldColumnName.toLowerCase())
-      if (oldColumnIdx !== -1) {
-        existingTable.columnOrder.splice(oldColumnIdx, 1, newColumnName.toLowerCase())
+async function renameGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, oldColumnName, newColumnName }) {
+  if (isGeoPackage) {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
+    const existingTable = geopackage.tables.features[tableName]
+    const filePath = geopackage.path
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _renameGeoPackageFeatureTableColumn(gp, tableName, oldColumnName, newColumnName)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      updateGeoPackageFileInfo(geopackage)
+      if (existingTable != null && existingTable.columnOrder != null) {
+        const oldColumnIdx = existingTable.columnOrder.indexOf(oldColumnName.toLowerCase())
+        if (oldColumnIdx !== -1) {
+          existingTable.columnOrder.splice(oldColumnIdx, 1, newColumnName.toLowerCase())
+        }
       }
-    }
-    updateExistingTable(existingTable, tableInfo, true, true)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+      updateExistingTable(existingTable, tableInfo, true, true)
+      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+    })
+  } else {
+    const source = cloneDeep(store.state.Projects[projectId].sources[id])
+    const filePath = source.geopackageFilePath
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _renameGeoPackageFeatureTableColumn(gp, tableName, oldColumnName, newColumnName)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      if (source.table == null) {
+        source.table = tableInfo
+      }
+      if (source.table.columnOrder != null) {
+        const oldColumnIdx = source.table.columnOrder.indexOf(oldColumnName.toLowerCase())
+        if (oldColumnIdx !== -1) {
+          source.table.columnOrder.splice(oldColumnIdx, 1, newColumnName.toLowerCase())
+        }
+      }
+      updateExistingTable(source.table, tableInfo, true, true)
+      store.dispatch('Projects/setDataSource', { projectId, source })
+    })
+  }
 }
 
-async function deleteGeoPackageFeatureTableColumn ({ projectId, geopackageId, tableName, columnName }) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  await performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo, true, true)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+async function deleteGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, columnName }) {
+  if (isGeoPackage) {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
+    const existingTable = geopackage.tables.features[tableName]
+    const filePath = geopackage.path
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      updateGeoPackageFileInfo(geopackage)
+      updateExistingTable(existingTable, tableInfo, true, true)
+      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+    })
+  } else {
+    const source = cloneDeep(store.state.Projects[projectId].sources[id])
+    const filePath = source.geopackageFilePath
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      if (source.table == null) {
+        source.table = tableInfo
+      } else {
+        updateExistingTable(source.table, tableInfo, true, true)
+      }
+      store.dispatch('Projects/setDataSource', { projectId, source })
+    })
+  }
 }
 
-async function addGeoPackageFeatureTableColumn ({ projectId, geopackageId, tableName, columnName, columnType }) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  await performSafeGeoPackageOperation(filePath, (gp) => {
-    _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo, true, true)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+async function addGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, columnName, columnType }) {
+  if (isGeoPackage) {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
+    const existingTable = geopackage.tables.features[tableName]
+    const filePath = geopackage.path
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      updateGeoPackageFileInfo(geopackage)
+      updateExistingTable(existingTable, tableInfo, true, true)
+      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+    })
+  } else {
+    const source = cloneDeep(store.state.Projects[projectId].sources[id])
+    const filePath = source.geopackageFilePath
+    await performSafeGeoPackageOperation(filePath, (gp) => {
+      _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
+      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
+      source.table = updateExistingTable(source.table || {}, tableInfo, true, true)
+      store.dispatch('Projects/setDataSource', { projectId, source })
+    })
+  }
 }
 
 function removeDataSource ({ projectId, sourceId }) {
@@ -462,7 +508,7 @@ function updateExistingTable (table, tableInfo, updateStyleKey = true, updateCol
   table.extent = tableInfo.extent
   table.description = tableInfo.description
   if (updateStyleKey) {
-    table.styleKey = table.styleKey + 1
+    table.styleKey = table.styleKey != null ? table.styleKey + 1 : 0
   }
   table.indexed = tableInfo.indexed
   if (updateColumnOrder) {
@@ -492,24 +538,27 @@ async function addFeatureToGeoPackage ({ projectId, geopackageId, tableName, fea
   })
 }
 
-async function updateGeoPackageFeatureTableColumnOrder ({ projectId, geopackageId, tableName, columnOrder }) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  if (existingTable != null) {
-    const tableInfo = await getGeoPackageFeatureTableForApp(geopackage.path, tableName)
+async function updateGeoPackageFeatureTableColumnOrder ({ projectId, id, isGeoPackage, tableName, columnOrder }) {
+  if (isGeoPackage) {
+    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
+    const existingTable = geopackage.tables.features[tableName]
+    const filePath = geopackage.path
+    const tableInfo = await getGeoPackageFeatureTableForApp(filePath, tableName)
     if (tableInfo != null) {
       existingTable.columnOrder = validateColumnOrder(columnOrder, tableInfo.columnOrder)
       store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
     }
-  }
-}
-
-async function updateDataSourceColumnOrder ({ projectId, sourceId, columnOrder }) {
-  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
-  const tableInfo = await getGeoPackageFeatureTableForApp(source.geopackageFilePath, source.sourceLayerName)
-  if (tableInfo != null) {
-    source.columnOrder = validateColumnOrder(columnOrder, tableInfo.columnOrder)
-    store.dispatch('Projects/setDataSource', { projectId, source })
+  } else {
+    const source = cloneDeep(store.state.Projects[projectId].sources[id])
+    const filePath = source.geopackageFilePath
+    const tableInfo = await getGeoPackageFeatureTableForApp(filePath, tableName)
+    if (tableInfo != null) {
+      if (source.table == null) {
+        source.table = tableInfo
+      }
+      source.table.columnOrder = validateColumnOrder(columnOrder, tableInfo.columnOrder)
+      store.dispatch('Projects/setDataSource', { projectId, source })
+    }
   }
 }
 
@@ -554,9 +603,17 @@ function deleteFeatureIdsFromDataSource ({ projectId, sourceId, featureIds }) {
   const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
   const filePath = sourceCopy.geopackageFilePath
   performSafeGeoPackageOperation(filePath, (gp) => {
-    const numberDeleted = _deleteFeatureRows(gp, sourceCopy.sourceLayerName, featureIds)
-    sourceCopy.extent = _getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
-    sourceCopy.count = sourceCopy.count - numberDeleted
+    _deleteFeatureRows(gp, sourceCopy.sourceLayerName, featureIds)
+    const tableInfo = _getGeoPackageFeatureTableForApp(gp, sourceCopy.sourceLayerName)
+    if (tableInfo != null) {
+      if (sourceCopy.table == null) {
+        sourceCopy.table = tableInfo
+      } else {
+        updateExistingTable(sourceCopy.table, tableInfo)
+      }
+      sourceCopy.extent = sourceCopy.table.extent
+      sourceCopy.count = sourceCopy.table.count
+    }
     store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
   })
 }
@@ -565,9 +622,17 @@ function removeFeatureFromDataSource ({ projectId, sourceId, featureId }) {
   const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
   const filePath = sourceCopy.geopackageFilePath
   performSafeGeoPackageOperation(filePath, (gp) => {
-    const numberDeleted = _deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
-    sourceCopy.extent = _getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
-    sourceCopy.count = sourceCopy.count - numberDeleted
+    _deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
+    const tableInfo = _getGeoPackageFeatureTableForApp(gp, sourceCopy.sourceLayerName)
+    if (tableInfo != null) {
+      if (sourceCopy.table == null) {
+        sourceCopy.table = tableInfo
+      } else {
+        updateExistingTable(sourceCopy.table, tableInfo)
+      }
+      sourceCopy.extent = sourceCopy.table.extent
+      sourceCopy.count = sourceCopy.table.count
+    }
     store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
   })
 }
@@ -911,7 +976,6 @@ export {
   deleteFeatureIdsFromDataSource,
   popOutFeatureTable,
   updateGeoPackageFeatureTableColumnOrder,
-  updateDataSourceColumnOrder,
   allowNotifications,
   addProjectState,
   setNominatimUrl,

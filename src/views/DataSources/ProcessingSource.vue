@@ -183,9 +183,10 @@ export default {
           }
         }
         setTimeout(() => {
-          window.mapcache.addDataSources({ projectId: self.project.id, dataSources: result.dataSources })
-          self.$nextTick(() => {
-            self.onComplete()
+          window.mapcache.addDataSources({ projectId: self.project.id, dataSources: result.dataSources }).then(() => {
+            self.$nextTick(() => {
+              self.onComplete()
+            })
           })
         }, 1000)
       } else {

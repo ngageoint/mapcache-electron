@@ -195,8 +195,8 @@ export default {
       let columnOrder = null
       if (this.isGeoPackage && this.geopackage.tables.features[this.table.tableName] != null && this.geopackage.tables.features[this.table.tableName].columnOrder != null) {
         columnOrder = this.geopackage.tables.features[this.table.tableName].columnOrder
-      } else if (!this.isGeoPackage && this.source && this.source.columnOrder != null) {
-        columnOrder = this.source.columnOrder
+      } else if (!this.isGeoPackage && this.source && this.source.table && this.source.table.columnOrder != null) {
+        columnOrder = this.source.table.columnOrder
       } else {
         columnOrder = this.table.columns._columns.filter(column => !column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id').map(column => column.name.toLowerCase())
       }
@@ -308,20 +308,13 @@ export default {
       headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
       // remove the checkbox and attachments
       headersTmp.splice(0, 2)
-      if (this.isGeoPackage) {
-        window.mapcache.updateGeoPackageFeatureTableColumnOrder({
-          projectId: this.projectId,
-          geopackageId: this.id,
-          tableName: this.table.tableName,
-          columnOrder: headersTmp
-        })
-      } else {
-        window.mapcache.updateDataSourceColumnOrder({
-          projectId: this.projectId,
-          sourceId: this.id,
-          columnOrder: headersTmp
-        })
-      }
+      window.mapcache.updateGeoPackageFeatureTableColumnOrder({
+        projectId: this.projectId,
+        id: this.id,
+        isGeoPackage: this.isGeoPackage,
+        tableName: this.table.tableName,
+        columnOrder: headersTmp
+      })
       this.tableKey++
     },
     async getSearchCount (search) {

@@ -3,6 +3,15 @@
                 :projectId="project.id" :geopackage-path="source.geopackageFilePath" :id="source.id"
                 :tableName="source.sourceLayerName" :feature-id="displayFeature.featureId" :object="source"
                 :back="hideFeature"/>
+  <feature-layer-field v-else-if="showFeatureLayerField"
+                       :tableName="source.sourceLayerName"
+                       :projectId="project.id"
+                       :id="source.id"
+                       :object="source"
+                       :column="featureLayerField"
+                       :columnNames="featureLayerColumnNames"
+                       :back="hideFeatureLayerField"
+                       :renamed="featureLayerFieldRenamed"/>
   <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
@@ -456,6 +465,9 @@
           <w-m-t-s-layer-editor v-if="source.layerType === 'WMTS'" class="mt-4" :error="source.error"
                                 :configuration="source" :update-configuration="updateSource"
                                 :set-error="setSourceError"></w-m-t-s-layer-editor>
+          <v-row class="pb-2" no-gutters v-if="source.geopackageFilePath != null">
+            <feature-layer-fields :id="source.id" :project-id="project.id" :project="project" :table-name="source.sourceLayerName" :object="source" :field-clicked="showFieldManagementView"></feature-layer-fields>
+          </v-row>
         </v-col>
       </v-row>
     </v-sheet>
@@ -495,6 +507,8 @@ import { zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import FeatureView from '../Common/FeatureView'
 import WMSLayerEditor from '../Common/WMSLayerEditor'
 import WMTSLayerEditor from '../Common/WMTSLayerEditor'
+import FeatureLayerFields from '../Common/GeoPackageFeatureLayer/FeatureLayerFields'
+import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField'
 
 export default {
   props: {
@@ -512,6 +526,8 @@ export default {
     displayFeature: Object,
   },
   components: {
+    FeatureLayerField,
+    FeatureLayerFields,
     WMSLayerEditor,
     WMTSLayerEditor,
     FeatureView,
@@ -567,10 +583,27 @@ export default {
       rateLimitValid: true,
       timeoutValid: true,
       retryAttemptsValid: true,
-      editZoomLevelsDialog: false
+      editZoomLevelsDialog: false,
+      showFeatureLayerField: false,
+      featureLayerField: null,
+      featureLayerColumnNames: []
     }
   },
   methods: {
+    showFieldManagementView (field, columnNames) {
+      this.featureLayerField = field
+      this.showFeatureLayerField = true
+      this.featureLayerColumnNames = columnNames
+    },
+    hideFeatureLayerField () {
+      this.showFeatureLayerField = false
+      this.featureLayerField = null
+    },
+    featureLayerFieldRenamed (name) {
+      const index = this.featureLayerColumnNames.indexOf(this.featureLayerField.name)
+      this.featureLayerColumnNames.splice(index, 1, name)
+      this.featureLayerField.name = name
+    },
     hideFeature () {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
     },
@@ -702,4 +735,7 @@ export default {
 </script>
 
 <style scoped>
+.btn-background {
+  background-color: var(--v-main_active_background-base) !important;
+}
 </style>
