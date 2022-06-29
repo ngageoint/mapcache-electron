@@ -611,8 +611,8 @@ function deleteFeatureIdsFromDataSource ({ projectId, sourceId, featureIds }) {
       } else {
         updateExistingTable(sourceCopy.table, tableInfo)
       }
-      sourceCopy.extent = sourceCopy.table.extent
-      sourceCopy.count = sourceCopy.table.count
+      sourceCopy.extent = tableInfo.extent
+      sourceCopy.count = tableInfo.featureCount
     }
     store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
   })
@@ -630,8 +630,8 @@ function removeFeatureFromDataSource ({ projectId, sourceId, featureId }) {
       } else {
         updateExistingTable(sourceCopy.table, tableInfo)
       }
-      sourceCopy.extent = sourceCopy.table.extent
-      sourceCopy.count = sourceCopy.table.count
+      sourceCopy.extent = tableInfo.extent
+      sourceCopy.count = tableInfo.featureCount
     }
     store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
   })

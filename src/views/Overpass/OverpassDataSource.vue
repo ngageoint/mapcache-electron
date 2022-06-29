@@ -37,50 +37,105 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 2" step="2" :rules="[() => overpassGeneratedQueryValid || step < 3]"
-                        color="primary">
-          Specify overpass search term
-          <small v-if="!overpassGeneratedQueryValid && step > 2" class="pt-1">Search term not set</small>
+        <v-stepper-step editable :complete="step > 2" step="2" :rules="[() => contentSelection === 0 || overpassGeneratedQueryValid || step < 3]" color="primary">
+          Specify content to download
+          <small class="pt-1">{{contentSelection === 0 ? 'Category' : 'Search'}}</small>
         </v-stepper-step>
         <v-stepper-content step="2" class="mt-0 pt-0">
-          <v-card flat tile>
-            <v-card-subtitle class="mt-0 pt-0">
-              Specify the overpass search term. Leave this field blank to retrieve all features that overlap with the
+          <v-card-subtitle class="mt-0 pt-0">
+            Select a method for specifying content.
+          </v-card-subtitle>
+          <v-btn-toggle borderless dense v-model="contentSelection" class="pt-2 pb-4 pl-4" mandatory>
+            <v-btn width="136">
+              Category
+            </v-btn>
+            <v-btn width="136">
+              Search
+            </v-btn>
+          </v-btn-toggle>
+          <v-card v-if="contentSelection === 0" flat tile>
+            <v-card-subtitle class="mt-0 pt-0 pb-6">
+              Select categories to download. Leave this field blank to retrieve all features within the
               bounding box.
             </v-card-subtitle>
-            <v-card-subtitle class="pt-2 pl-4">
-              Examples of valid search terms are:
-              <ul style="list-style-type: circle;">
-                <li>
-                  Fire Hydrant
-                </li>
-                <li>
-                  highway=* and type:way
-                </li>
-                <li>
-                  tourism=museum in Vienna
-                </li>
-              </ul>
+            <v-card-text>
+              <v-autocomplete
+                  @change="searchInput = ''"
+                  v-model="categorySelection"
+                  :items="categories"
+                  label="Categories"
+                  auto-select-first
+                  multiple
+                  clearable
+                  :search-input.sync="searchInput"
+              >
+                <template v-slot:selection="{ item, index }">
+                  <v-chip v-if="index === 0">
+                    <span>{{ item }}</span>
+                  </v-chip>
+                  <span
+                      v-if="index === 1"
+                      class="grey--text text-caption"
+                  >
+                    &nbsp;+{{ categorySelection.length - 1 }}&nbsp;{{ categorySelection.length - 1 === 1 ?  'other' : 'others'}}&nbsp;&nbsp;
+                  </span>
+                </template>
+              </v-autocomplete>
+            </v-card-text>
+          </v-card>
+          <v-card v-else flat tile>
+            <v-card-subtitle class="mt-0 pt-0 pb-6">
+              Specify the overpass search term. Leave this field blank to retrieve all features within the bounding box.
             </v-card-subtitle>
             <v-card-text>
               <v-form v-on:submit.prevent ref="urlForm" v-model="overpassGeneratedQueryValid">
                 <v-row no-gutters justify="space-between">
                   <v-text-field
-                      autofocus
                       v-model="overpassSearchTerm"
                       :rules="overpassSearchRules"
                       label="Overpass search term"
-                      required></v-text-field>
+                      required
+                      :hint="hintText"
+                      persistent-hint
+                      clearable
+                  ></v-text-field>
                 </v-row>
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 3">
+          <v-btn class="mb-2" text color="primary" @click="step = 3" :disabled="contentSelection === 1 && !overpassGeneratedQueryValid">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 3" step="3"
-                        :rules="[() => (overpassBoundingBox || Number(step) < 4) && (!isEditingBoundingBox() || (Number(step) === 3))]"
+        <v-stepper-step editable :complete="step > 3" step="3" color="primary" :disabled="queryLocked" style="width: 100% !important;">
+          <v-row no-gutters justify="space-between" style="width: 312px !important;">
+            <v-col cols="10">
+              Modify query<br>
+              <small class="pt-1">For advanced users</small>
+            </v-col>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn :disabled="step !== '3'" icon v-bind="attrs" v-on="on" :color="queryLocked ? 'red' : 'secondary'" @click="queryLocked = !queryLocked"><v-icon>{{queryLocked ? mdiLock : mdiLockOpen}}</v-icon></v-btn>
+              </template>
+              <span>{{queryLocked ? 'Unlock' : 'Lock'}}</span>
+            </v-tooltip>
+          </v-row>
+        </v-stepper-step>
+        <v-stepper-content step="3" :disabled="queryLocked">
+          <v-card flat tile>
+            <v-card-subtitle class="pb-0 mb-0 mt-0 pt-0">
+              Click the lock button to make edits to the auto-generated query.
+            </v-card-subtitle>
+            <v-card-text class="mt-0 pt-0 pr-0">
+              <v-textarea label="Overpass query" :rows="3" :disabled="queryLocked" v-model="overpassQuery"></v-textarea>
+            </v-card-text>
+          </v-card>
+          <v-btn class="mb-2" text color="primary" @click="step = 4">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :complete="step > 4" step="4"
+                        :rules="[() => (overpassBoundingBox || Number(step) < 5) && (!isEditingBoundingBox() || (Number(step) === 4))]"
                         color="primary">
           Specify bounding box
           <small
@@ -88,7 +143,7 @@
               isEditingBoundingBox() ? 'Editing bounding box' : (overpassBoundingBox ? 'Bounding box set' : 'Bounding box not set')
             }}</small>
         </v-stepper-step>
-        <v-stepper-content step="3">
+        <v-stepper-content step="4">
           <v-card flat tile>
             <v-card-subtitle>
               Restrict your Overpass query to a specified area on the map.
@@ -100,19 +155,22 @@
                 area over 10 square miles may take several minutes to process.</b>
             </v-card-subtitle>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 4">
+          <v-btn class="mb-2" text color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :step="4" color="primary">
+        <v-stepper-step editable :step="5" color="primary">
           Summary
         </v-stepper-step>
-        <v-stepper-content :step="4">
+        <v-stepper-content :step="5" :rules="[() => (overpassBoundingBox || !isEditingBoundingBox() || overpassGeneratedQueryValid || step < 5)]">
           <v-card flat tile>
-            <v-card-text>
+            <v-card-text v-if="overpassGeneratedQueryValid">
               Data retrieved using the OSM Overpass API
               <b>{{ this.overpassSearchTerm !== '' ? ('for the search term ' + this.overpassSearchTerm) : '' }}</b> will
               be imported as the <b>{{ dataSourceName }}</b> data source.
+            </v-card-text>
+            <v-card-text v-else>
+              The search term and/or query is not valid. Please adjust your search term or query before continuing.
             </v-card-text>
           </v-card>
         </v-stepper-content>
@@ -142,12 +200,15 @@
 <script>
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
-import { mdiTrashCan, mdiSteering } from '@mdi/js'
+import { mdiTrashCan, mdiSteering, mdiLock, mdiLockOpen } from '@mdi/js'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
 import {
-  getOverpassQuery,
-  bboxOnlyQuery,
-  OVERPASS_SQ_MI_LIMIT, bboxOnlyQueryCount, getOverpassCountQuery,
+  getOverpassQueryFilter,
+  getOverpassQueryFilterFromTags,
+  generateQueryFromFilter,
+  defaultQuery,
+  OVERPASS_SQ_MI_LIMIT,
+  tagLookup
 } from '../../lib/util/overpass/OverpassUtilities'
 import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import { environment } from '../../lib/env/env'
@@ -168,22 +229,30 @@ export default {
       }
     }),
     importReady () {
-      return this.step === 4 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
+      return this.step === 5 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
     }
   },
   data () {
     return {
+      hintText: 'Examples: "Fire Hydrant", "highway=* and type:way", and "tourism=museum in Vienna"',
+      searchInput: '',
+      queryLocked: true,
+      contentSelection: 0,
+      categories: Object.keys(tagLookup),
+      categorySelection: [],
       overpassBoundingBox: undefined,
       overpassSearchTerm: '',
-      overpassQuery: '',
-      mdiTrashCan: mdiTrashCan,
-      mdiSteering: mdiSteering,
+      overpassQuery: defaultQuery,
+      mdiTrashCan,
+      mdiSteering,
+      mdiLock,
+      mdiLockOpen,
       step: 1,
       dataSourceNameValid: true,
       overpassGeneratedQueryValid: true,
       dataSourceName: 'Data source',
       dataSourceNameRules: [v => !!v || 'Data source name is required'],
-      overpassSearchRules: [v => (v != null && v.trim().length === 0) || getOverpassQuery(v) !== false || 'Unable to determine overpass query. Please modify your search term.'],
+      overpassSearchRules: [v => !v || v.trim().length === 0 || getOverpassQueryFilter(v) !== false || 'Unable to determine overpass query. Please modify your search term.'],
       valid: false,
       menuProps: {
         closeOnClick: true,
@@ -205,14 +274,12 @@ export default {
     },
     async addLayer () {
       const id = window.mapcache.createUniqueID()
-      let query = this.overpassSearchTerm == null || this.overpassSearchTerm.trim().length === 0 ? bboxOnlyQuery : getOverpassQuery(this.overpassSearchTerm)
-      let queryCount = this.overpassSearchTerm == null || this.overpassSearchTerm.trim().length === 0 ? bboxOnlyQueryCount : getOverpassCountQuery(this.overpassSearchTerm)
       let sourceToProcess = {
         id: id,
         directory: window.mapcache.createSourceDirectory(this.project.directory),
         url: this.overpassUrl,
-        query: query,
-        queryCount: queryCount,
+        query: generateQueryFromFilter(this.overpassQuery, this.overpassBoundingBox),
+        queryCount: generateQueryFromFilter(this.overpassQuery, this.overpassBoundingBox, true),
         bbox: this.overpassBoundingBox,
         serviceType: SERVICE_TYPE.OVERPASS,
         name: this.dataSourceName
@@ -248,9 +315,28 @@ export default {
     })
   },
   watch: {
-    overpassSearchTerm: {
+    step: {
       handler () {
-        this.overpassQuery = null
+        this.queryLocked = true
+      }
+    },
+    contentSelection: {
+      handler (newValue) {
+        if (newValue === 0) {
+          this.overpassQuery = this.categorySelection != null && this.categorySelection.length > 0 ? getOverpassQueryFilterFromTags(this.categorySelection) : defaultQuery
+        } else {
+          this.overpassQuery = getOverpassQueryFilter(this.overpassSearchTerm) || defaultQuery
+        }
+      }
+    },
+    categorySelection: {
+      handler (newValue) {
+        this.overpassQuery = newValue != null && newValue.length > 0 ? getOverpassQueryFilterFromTags(newValue) : defaultQuery
+      }
+    },
+    overpassSearchTerm: {
+      handler (newValue) {
+        this.overpassQuery = getOverpassQueryFilter(newValue) || defaultQuery
       }
     },
     overpassBoundingBox: {

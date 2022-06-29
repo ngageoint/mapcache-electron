@@ -114,7 +114,7 @@
               <v-icon>{{ mdiSteering }}</v-icon>
             </v-btn>
           </template>
-          <span>Download features with Overpass</span>
+          <span>Download OpenStreetMap features with Overpass</span>
         </v-tooltip>
       </v-speed-dial>
     </v-sheet>

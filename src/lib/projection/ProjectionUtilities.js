@@ -12,6 +12,7 @@ import {
   WORLD_GEODETIC_SYSTEM_CRS
 } from './ProjectionConstants'
 import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
+import isEqual from 'lodash/isEqual'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
@@ -229,6 +230,26 @@ function convertToWebMercator (extent) {
   }
 }
 
+function isWebMercator(proj) {
+  if (typeof proj === 'string') {
+    return proj.toUpperCase() === WEB_MERCATOR;
+  } else {
+    return this.convertersMatch(this.getEPSGConverter(WEB_MERCATOR_CODE), proj);
+  }
+}
+
+function isWGS84(proj) {
+  if (typeof proj === 'string') {
+    return proj.toUpperCase() === WORLD_GEODETIC_SYSTEM;
+  } else {
+    return this.convertersMatch(this.getEPSGConverter(WORLD_GEODETIC_SYSTEM_CODE), proj);
+  }
+}
+
+function convertersMatch(converterA, converterB) {
+  return isEqual(converterA.oProj, converterB.oProj);
+}
+
 export {
   getCode,
   getDef,
@@ -240,5 +261,8 @@ export {
   getMetersPerUnit,
   convertToWebMercator,
   epsgMatches,
-  reprojectBoundingBox
+  reprojectBoundingBox,
+  isWebMercator,
+  isWGS84,
+  convertersMatch
 }

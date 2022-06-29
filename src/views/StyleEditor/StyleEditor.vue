@@ -81,30 +81,30 @@
               </v-row>
             </v-list-item-content>
           </template>
-          <v-list-item
-              v-for="style in styleListItems.items"
-              :key="style.id"
-              link
-              @click="() => showStyleEditor(style)"
-          >
-            <v-list-item-content>
-              <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="8">
-                  <v-list-item-title v-text="style.name"></v-list-item-title>
-                </v-col>
-                <v-col>
-                  <v-row no-gutters justify="end" align="center" class="mr-5">
-                    <geometry-style-svg :geometry-type="1" :color="style.color" :fill-color="style.fillColor"
-                                        :fill-opacity="style.fillOpacity"/>
-                    <geometry-style-svg :geometry-type="2" :color="style.color" :fill-color="style.fillColor"
-                                        :fill-opacity="style.fillOpacity"/>
-                    <geometry-style-svg :geometry-type="3" :color="style.color" :fill-color="style.fillColor"
-                                        :fill-opacity="style.fillOpacity"/>
+          <v-virtual-scroll
+              :bench="10"
+              :items="styleListItems.items"
+              :height="Math.min(288, styleListItems.items.length * 48)"
+              item-height="48">
+            <template v-slot:default="{ item }">
+              <v-list-item style="padding-left: 72px !important;" :key="item.id" @click="() => showStyleEditor(item)">
+                <v-list-item-content>
+                  <v-row no-gutters justify="space-between" align="center">
+                    <v-col cols="8">
+                      <v-list-item-title v-text="item.name"></v-list-item-title>
+                    </v-col>
+                    <v-col>
+                      <v-row no-gutters justify="end" align="center" class="mr-5">
+                        <geometry-style-svg :geometry-type="1" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
+                        <geometry-style-svg :geometry-type="2" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
+                        <geometry-style-svg :geometry-type="3" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
+                      </v-row>
+                    </v-col>
                   </v-row>
-                </v-col>
-              </v-row>
-            </v-list-item-content>
-          </v-list-item>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-virtual-scroll>
           <v-list-item key="add-style-item">
             <v-row no-gutters justify="space-between" align="center">
               <span>{{ styleListItems.hint ? 'No styles found' : '' }}</span>
@@ -129,25 +129,28 @@
               </v-row>
             </v-list-item-content>
           </template>
-          <v-list-item
-              v-for="icon in iconListItems.items"
-              :key="icon.id"
-              link
-              @click="() => showIconEditor(icon)"
-          >
-            <v-list-item-content>
-              <v-row no-gutters justify="space-between" align="center">
-                <v-col cols="8">
-                  <v-list-item-title v-text="icon.name"></v-list-item-title>
-                </v-col>
-                <v-col>
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <img class="icon-box" :src="icon.url"/>
+          <v-virtual-scroll
+              :bench="10"
+              :items="iconListItems.items"
+              :height="Math.min(288, iconListItems.items.length * 48)"
+              item-height="48">
+            <template v-slot:default="{ item }">
+              <v-list-item style="padding-left: 72px !important;" :key="item.id" @click="() => showIconEditor(item)">
+                <v-list-item-content>
+                  <v-row no-gutters justify="space-between" align="center">
+                    <v-col cols="8">
+                      <v-list-item-title v-text="item.name"></v-list-item-title>
+                    </v-col>
+                    <v-col>
+                      <v-row no-gutters justify="end" class="mr-5">
+                        <img class="icon-box" :src="item.url"/>
+                      </v-row>
+                    </v-col>
                   </v-row>
-                </v-col>
-              </v-row>
-            </v-list-item-content>
-          </v-list-item>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-virtual-scroll>
           <v-list-item key="add-icon-item">
             <v-row no-gutters justify="space-between" align="center">
               <span>{{ iconListItems.hint ? 'No icons found' : '' }}</span>
@@ -196,7 +199,8 @@
                 </v-col>
                 <v-col cols="4" v-if="assignment.style">
                   <v-row no-gutters justify="end" class="mr-5">
-                    <geometry-style-svg :geometry-type="assignment.geometryType" :color="assignment.style.color"
+                    <geometry-style-svg :geometry-type="assignment.geometryType"
+                                        :color="assignment.style.color"
                                         :fill-color="assignment.style.fillColor"
                                         :fill-opacity="assignment.style.fillOpacity"/>
                   </v-row>

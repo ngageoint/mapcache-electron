@@ -55,6 +55,7 @@ import {
   WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
+import { convertersMatch } from '../projection/ProjectionUtilities'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
@@ -222,6 +223,13 @@ const GEOMETRY_PROPERTY = 'geometry_property'
  * @returns {Promise<void>}
  */
 async function _createFeatureTable (gp, tableName, featureCollection) {
+  // get 4326 spatial ref system or create it
+  let wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+  if (wgs84SpatialReferenceSystem == null) {
+    gp.spatialReferenceSystemDao.createWgs84()
+    wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+  }
+
   // create basic 4326 feature table
   let geometryColumns = new GeometryColumns()
   geometryColumns.table_name = tableName
@@ -238,7 +246,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
   const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
   const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
-  gp.createFeatureTable(tableName, geometryColumns, columns, bb, WORLD_GEODETIC_SYSTEM_CODE)
+  gp.createFeatureTable(tableName, geometryColumns, columns, bb, wgs84SpatialReferenceSystem.srs_id)
   const featureDao = gp.getFeatureDao(tableName)
 
   // add feature style extension
@@ -327,10 +335,17 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
     id: true,
     geometry: true
   }
+
+  let wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+  if (wgs84SpatialReferenceSystem == null) {
+    gp.spatialReferenceSystemDao.createWgs84()
+    wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+  }
+
   const columns = []
   columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-  gp.createFeatureTable(tableName, geometryColumns, columns, undefined, WORLD_GEODETIC_SYSTEM_CODE)
+  gp.createFeatureTable(tableName, geometryColumns, columns, undefined, wgs84SpatialReferenceSystem.srs_id)
   await _indexFeatureTable(gp, tableName)
   const featureDao = gp.getFeatureDao(tableName)
   const srs = featureDao.srs;
@@ -1409,8 +1424,10 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
         }
         break
       case 'Polygon':
-        isContained = booleanPointInPolygon(coordinate, feature)
-        distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
+        if (feature.geometry.coordinates != null && feature.geometry.coordinates.length > 0) {
+          isContained = booleanPointInPolygon(coordinate, feature)
+          distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
+        }
         break
       case 'MultiPolygon':
         // eslint-disable-next-line no-case-declarations
@@ -1597,51 +1614,6 @@ function _getAllFeaturesAsGeoJSON (gp, tableName) {
 async function getAllFeaturesAsGeoJSON (filePath, tableName) {
   return performSafeGeoPackageOperation(filePath, (gp) => {
     return _getAllFeaturesAsGeoJSON(gp, tableName)
-  })
-}
-
-/**
- * Gets all features in a table
- * @param gp
- * @param tableName
- * @param srsId
- * @param boundingBox
- * @returns {any[]}
- */
-function _getAllFeatureRowsIn4326 (gp, tableName, srsId, boundingBox) {
-  const featureDao = gp.getFeatureDao(tableName)
-  const srs = featureDao.srs
-  const projectionNeeded = srs.organization.toUpperCase() + COLON_DELIMITER + srs.srs_id !== WORLD_GEODETIC_SYSTEM
-  let each
-  if (!isNil(boundingBox) && !isNil(featureDao.featureTableIndex) && featureDao.isIndexed()) {
-    each = featureDao.featureTableIndex.queryWithBoundingBox(boundingBox, WORLD_GEODETIC_SYSTEM)
-  } else {
-    each = featureDao.queryForEach()
-  }
-  const featureRows = []
-  for (let row of each) {
-    if (!isNil(row)) {
-      const featureRow = featureDao.getRow(row)
-      if (projectionNeeded) {
-        featureRow.geometry.setGeometry(projectGeometryTo4326(featureRow.geometry, srs))
-      }
-      featureRows.push(featureRow)
-    }
-  }
-  return featureRows
-}
-
-/**
- * Gets all features in a table
- * @param filePath
- * @param tableName
- * @param srsId
- * @param boundingBox
- * @returns {Promise<any>}
- */
-async function getAllFeatureRowsIn4326 (filePath, tableName, srsId, boundingBox) {
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    return _getAllFeatureRowsIn4326(gp, tableName, srsId, boundingBox)
   })
 }
 
@@ -2190,8 +2162,6 @@ export {
   getFeatureCountInBoundingBox,
   _getAllFeaturesAsGeoJSON,
   getAllFeaturesAsGeoJSON,
-  _getAllFeatureRowsIn4326,
-  getAllFeatureRowsIn4326,
   _getAllFeatureRows,
   getAllFeatureRows,
   _getFeatureRow,

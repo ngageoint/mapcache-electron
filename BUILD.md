@@ -57,9 +57,11 @@ Once you have set up a development environment, these steps will let you build a
    (win: `set NODE_OPTIONS=-max-old-space-size=8192`)
 2. Download the code:  
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
-3. Install dependencies:  
+3. Fix git:// error:  
+`git config --global url."https://".insteadOf git://`
+5. Install dependencies:  
 `yarn`
-4. Run:  
+6. Run:  
 `yarn electron:serve` (run locally in development mode)
 
 # Cleaning MapCache Desktop

@@ -88,11 +88,14 @@ export default {
             'Fix for decimal zoom levels in tile creation.',
             'Fix for MAGE KMZ exports not importing.',
             'Grid no longer rendered over context menu.',
-            'Fixed MGRS conversion errors in special regions.'
+            'Fixed MGRS conversion errors in special regions.',
+            'Fix for error with too many styles/icons and styles with null values.',
+            'Ensure that bounds is set to edit mode when first displayed.'
           ],
           newFeatures: [
             'Support a 4326 leaflet map.',
-            'Create 4326 GeoPackage tile layer.'
+            'Create 4326 GeoPackage tile layer.',
+            'Added Overpass categories and ability to manually edit the query\'s filter.'
           ],
         },
         {

@@ -92,20 +92,18 @@ export default class OverpassPreProcessor extends Preprocessor {
 
   /**
    * Gets the query bounding box and performs a size check
-   * @param bbox
    * @param alert
-   * @return {Promise<{bbox, count}>}
+   * @return {Promise<number>}
    */
-  async getQueryBoundingBox (bbox, alert = false) {
-    const queryCount = this.source.queryCount.replace('{{bbox}}', [bbox[1], bbox[0], bbox[3], bbox[2]].join(','))
-    const count = await this.performQueryCount(queryCount, undefined, false)
+  async checkQuerySize (alert = false) {
+    const count = await this.performQueryCount(this.source.queryCount, undefined, false)
     if (alert && count > this.QUERY_WARNING_COUNT) {
       const approved = await EventBus.requestUserConfirmation('Overpass download confirmation', 'The response contains ' + count.toLocaleString() + ' results. Would you like to continue with the import?', mdiSteering)
       if (!approved) {
         throw new Error('User cancelled.')
       }
     }
-    return { bbox, count }
+    return count
   }
 
   elementCounter (string) {
@@ -156,23 +154,22 @@ export default class OverpassPreProcessor extends Preprocessor {
   }
 
   async getAndSaveOverpassDataFile (statusCallback) {
-    const queryObj = await this.getQueryBoundingBox(this.source.bbox, true)
-    if (!this.cancelled && queryObj.count > 0) {
-      return await this.getAndSaveOverpassDataToTemp(queryObj, statusCallback)
+    const size = await this.checkQuerySize(true)
+    if (!this.cancelled && size > 0) {
+      return await this.getAndSaveOverpassDataToTemp(size, statusCallback)
     } else {
       return null
     }
   }
 
-  async getAndSaveOverpassDataToTemp (queryObj, statusCallback) {
+  async getAndSaveOverpassDataToTemp (size, statusCallback) {
     const filePath = window.mapcache.generateJsonFilePath(this.source.directory, window.mapcache.createUniqueID())
     const streamId = window.mapcache.openFileStream(filePath)
-    const query = this.source.query.replace('{{bbox}}', [queryObj.bbox[1], queryObj.bbox[0], queryObj.bbox[3], queryObj.bbox[2]].join(','))
-    const count = queryObj.count
+    const query = this.source.query
     let stepSize = .05
     let currentPercentage = 0
     await this.performQueryAndSaveToFile(query, streamId, elementsRead => {
-      if (elementsRead / count > currentPercentage) {
+      if (elementsRead / size > currentPercentage) {
         currentPercentage += stepSize
         statusCallback({
           type: PROCESSING_STATES.PREPROCESSING,
@@ -183,7 +180,7 @@ export default class OverpassPreProcessor extends Preprocessor {
     })
     return {
       filePath,
-      elementsInFile: count
+      elementsInFile: size
     }
   }
 

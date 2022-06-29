@@ -7,12 +7,14 @@ import { rmFile } from '../../util/file/FileUtilities'
 import { existsSync } from 'fs'
 import { streamOverpassJsonFile } from '../../util/overpass/OverpassStreamParser'
 import cloneDeep from 'lodash/cloneDeep'
+import { clipFeature } from '../../util/geojson/GeoJSONUtilities'
 
 export default class OverpassSource extends Source {
-  constructor (id, directory, filePath, sourceName, fileData) {
+  constructor (id, directory, filePath, sourceName, fileData, clippingBounds = null) {
     super(id, directory, filePath)
     this.sourceName = sourceName
     this.fileData = fileData
+    this.clippingBounds = clippingBounds
   }
 
   async retrieveLayers (statusCallback) {
@@ -22,7 +24,14 @@ export default class OverpassSource extends Source {
     try {
       const { addFeature, adjustBatchSize, done } = await streamingGeoPackageBuild(filePath, this.sourceName)
       await streamOverpassJsonFile(this.fileData.filePath, feature => {
-        addFeature(cloneDeep(feature))
+        if (this.clippingBounds) {
+          const clippedFeature = clipFeature(cloneDeep(feature), this.clippingBounds)
+          if (clippedFeature != null && clippedFeature.geometry != null && clippedFeature.geometry.coordinates != null && clippedFeature.geometry.coordinates.length > 0) {
+            addFeature(clippedFeature)
+          }
+        } else {
+          addFeature(cloneDeep(feature))
+        }
       }, this.fileData.elementsInFile, percentageComplete => {
         statusCallback('Parsing and storing features', 25 + Math.floor(75 * percentageComplete))
       }, adjustBatchSize)

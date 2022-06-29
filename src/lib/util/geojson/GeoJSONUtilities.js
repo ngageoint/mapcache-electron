@@ -1,6 +1,28 @@
 import isNil from 'lodash/isNil'
 import isNaN from 'lodash/isNaN'
 import uniq from 'lodash/uniq'
+import bboxClip from '@turf/bbox-clip'
+import bbox from '@turf/bbox'
+import bboxPolygon from '@turf/bbox-polygon'
+import intersect from '@turf/intersect'
+
+/**
+ * Returns a clipped feature. Will return null of there is no intersection between the bounds and the feature
+ * @param feature
+ * @param clippingBounds
+ * @returns {Feature<LineString, {}> | Feature<MultiLineString, {}> | Feature<Polygon, {}> | Feature<MultiPolygon, {}>}
+ */
+function clipFeature (feature, clippingBounds) {
+  let clippedFeature = null
+  try {
+    const featureBounds = bbox(feature)
+    if (intersect(bboxPolygon(featureBounds), bboxPolygon(clippingBounds))) {
+      clippedFeature = bboxClip(feature, clippingBounds)
+    }
+    // eslint-disable-next-line no-empty, no-unused-vars
+  } catch (e) {}
+  return clippedFeature
+}
 
 function isRectangle (geometry) {
   let isRect = false
@@ -193,5 +215,6 @@ export {
   isRectangle,
   flattenFeature,
   explodeFlattenedFeature,
-  isValid
+  isValid,
+  clipFeature
 }

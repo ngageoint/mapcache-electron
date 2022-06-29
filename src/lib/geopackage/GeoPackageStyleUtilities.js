@@ -274,13 +274,16 @@ function _getFeatureStyleOrIcon (gp, tableName, rowId) {
     const style = featureTableStyles.getFeatureStyleExtension().getStyle(tableName, rowId, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()), false)
     if (style != null) {
       result.style = {
-        color: style.getHexColor(),
-        opacity: style.getOpacity(),
-        fillColor: style.getFillHexColor(),
-        fillOpacity: style.getFillOpacity(),
-        width: style.getWidth(),
+        color: style.getHexColor() || '#000000',
+        opacity: style.getOpacity() || 1.0,
+        fillColor: style.getFillHexColor() || '#000000',
+        fillOpacity: style.getFillOpacity() || 1.0,
+        width: style.getWidth() || 1.0,
         name: style.getName(),
         description: style.getDescription()
+      }
+      if (style.getFillHexColor() == null) {
+        result.style.fillOpacity = 0.0
       }
     }
   }
@@ -304,13 +307,16 @@ function _getFeatureStyleOrIcon (gp, tableName, rowId) {
       const tableStyle = featureTableStyles.getFeatureStyleExtension().getTableStyle(tableName, isNil(feature) ? null : GeometryType.fromName(feature.geometryType.toUpperCase()))
       if (tableStyle != null) {
         result.style = {
-          color: tableStyle.getHexColor(),
-          opacity: tableStyle.getOpacity(),
-          fillColor: tableStyle.getFillHexColor(),
-          fillOpacity: tableStyle.getFillOpacity(),
-          width: tableStyle.getWidth(),
+          color: tableStyle.getHexColor() || '#000000',
+          opacity: tableStyle.getOpacity() || 1.0,
+          fillColor: tableStyle.getFillHexColor() || '#000000',
+          fillOpacity: tableStyle.getFillOpacity() || 1.0,
+          width: tableStyle.getWidth() || 1.0,
           name: tableStyle.getName(),
           description: tableStyle.getDescription()
+        }
+        if (tableStyle.getFillHexColor() == null) {
+          result.style.fillOpacity = 0.0
         }
       } else {
         // use default
@@ -412,11 +418,14 @@ function _getStyleRows (gp, tableName) {
         id: result.id,
         name: result.name,
         description: result.description,
-        color: result.color,
-        opacity: result.opacity,
-        fillColor: result.fill_color,
-        fillOpacity: result.fill_opacity,
+        color: result.color || '#000000',
+        opacity: result.opacity || 1.0,
+        fillColor: result.fill_color || '#000000',
+        fillOpacity: result.fill_opacity || 1.0,
         width: result.width
+      }
+      if (result.fill_color == null) {
+        styleRows[result.id].fillOpacity = 0.0
       }
     })
   }
@@ -1248,10 +1257,10 @@ function determineAssignment (gp, tableName, geometryType) {
       id: style.id,
       name: style.getName(),
       description: style.getDescription(),
-      color: style.getHexColor(),
-      opacity: style.getOpacity(),
-      fillColor: style.getFillHexColor(),
-      fillOpacity: style.getFillOpacity(),
+      color: style.getHexColor() || '#000000',
+      opacity: style.getOpacity() || 1.0,
+      fillColor: style.getFillHexColor() || '#000000',
+      fillOpacity: style.getFillOpacity() || (style.getFillHexColor() == null ? 0.0 : 1.0),
       width: style.getWidth()
     }
   }

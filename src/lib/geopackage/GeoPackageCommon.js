@@ -34,6 +34,7 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
         }
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
+        console.error(error)
         result = { error: error }
         // eslint-disable-next-line no-console
         console.error('Failed to perform GeoPackage operation')
@@ -71,7 +72,7 @@ function _getBoundingBoxForTable (gp, tableName) {
   if (!isNil(contents) && !isNil(contents.min_x) && !isNil(contents.min_y) && !isNil(contents.max_x) && !isNil(contents.max_y)) {
     bbox = new BoundingBox(contents.min_x, contents.max_x, contents.min_y, contents.max_y)
     srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
-    projection = EPSG + COLON_DELIMITER + contents.srs_id
+    projection = srs.projection
     if (
       srs.definition &&
       srs.definition !== 'undefined' &&
@@ -209,7 +210,7 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
     // need to convert to 4326 if not already in 4326
     const contents = gp.getTableContents(tableName)
     const srs = gp.spatialReferenceSystemDao.queryForId(contents.srs_id)
-    const projection = EPSG + COLON_DELIMITER + contents.srs_id
+    const projection = srs.projection
     if (
       !isNil(tableBounds) &&
       srs.definition &&
@@ -232,7 +233,7 @@ function projectGeometryTo4326 (geometry, srs) {
   let projectedGeometry = geometry.geometry
   if (geometry && !geometry.empty && geometry.geometry) {
     let geoJsonGeom = geometry.geometry.toGeoJSON()
-    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.organization.toUpperCase() + COLON_DELIMITER + srs.srs_id, WORLD_GEODETIC_SYSTEM)
+    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.projection, WORLD_GEODETIC_SYSTEM)
     projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
   }
   return projectedGeometry
@@ -275,6 +276,7 @@ function _getInternalTableInformation (gp) {
         styleKey: 0
       }
     } catch (e) {
+      console.error(e)
       // eslint-disable-next-line no-console
       console.error('Unable to process tile table: ' + table)
       tables.unsupported.push(table)

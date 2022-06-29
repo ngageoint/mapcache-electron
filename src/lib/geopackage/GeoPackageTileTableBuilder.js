@@ -31,7 +31,7 @@ import {
 } from '../util/tile/TileUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import {
-  COLON_DELIMITER,
+  COLON_DELIMITER, EPSG,
   WEB_MERCATOR,
   WEB_MERCATOR_CODE,
   WORLD_GEODETIC_SYSTEM_CODE
@@ -51,7 +51,6 @@ async function getImageBufferFromCanvas (canvas) {
         return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
           plugins: [imageminPngquant({ speed: 8, quality: [0.5, 0.8] })]
         })
-        // return Buffer.from(canvas.toDataURL('image/png').split(',')[1], 'base64')
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -247,16 +246,32 @@ async function buildTileLayer (configuration, statusCallback) {
       // set the contents bounds to the intersection of the filter and the merged extent of the data (i.e., if the merged extent is within the filter, minimize it to the intersection)
       totalExtent = isWebMercator ? trimExtentToWebMercatorMax(totalExtent) : trimExtentToWGS84Max(totalExtent)
 
+      // todo: check if contents projection exists
+      // todo: check if matrix projection exists
+
+
+      let webMercatorSpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WEB_MERCATOR_CODE)
+      if (webMercatorSpatialReferenceSystem == null) {
+        gp.spatialReferenceSystemDao.createWebMercator()
+        webMercatorSpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WEB_MERCATOR_CODE)
+      }
+
+      let wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+      if (wgs84SpatialReferenceSystem == null) {
+        gp.spatialReferenceSystemDao.createWgs84()
+        wgs84SpatialReferenceSystem = gp.spatialReferenceSystemDao.getByOrganizationAndCoordSysId(EPSG, WORLD_GEODETIC_SYSTEM_CODE)
+      }
+
       const contentsBounds = new BoundingBox(totalExtent[0], totalExtent[2], totalExtent[1], totalExtent[3])
-      const contentsSrsId = WORLD_GEODETIC_SYSTEM_CODE
+      const contentsSrsId = wgs84SpatialReferenceSystem.srs_id
 
       if (isWebMercator) {
         const matrixSetBounds = new BoundingBox(-20037508.342789244, 20037508.342789244, -20037508.342789244, 20037508.342789244)
-        const matrixSrsId = WEB_MERCATOR_CODE
+        const matrixSrsId = webMercatorSpatialReferenceSystem.srs_id
         await gp.createStandardWebMercatorTileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, matrixSrsId, minZoom, maxZoom)
       } else {
         const matrixSetBounds = new BoundingBox(-180.0, 180, -90, 90)
-        const matrixSrsId = WORLD_GEODETIC_SYSTEM_CODE
+        const matrixSrsId = wgs84SpatialReferenceSystem.srs_id
         await gp.createStandardWGS84TileTable(tableName, contentsBounds, contentsSrsId, matrixSetBounds, matrixSrsId, minZoom, maxZoom)
       }
 
