@@ -1,7 +1,5 @@
 <template>
-  <add-base-map v-if="addBaseMapDialog" :base-maps="baseMaps" :project="project"
-                :close="() => {addBaseMapDialog = false}"></add-base-map>
-  <base-map v-else-if="selectedBaseMap !== null && selectedBaseMap !== undefined" :project="project"
+  <base-map v-if="selectedBaseMap !== null && selectedBaseMap !== undefined" :project="project"
             :base-map="selectedBaseMap" :base-maps="baseMaps" :back="hideBaseMap"></base-map>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
@@ -86,7 +84,6 @@ import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
-import AddBaseMap from './AddBaseMap'
 import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
 import { mdiChevronLeft, mdiMapOutline } from '@mdi/js'
@@ -94,12 +91,12 @@ import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
+import EventBus from '../../lib/vue/EventBus'
 
 export default {
   components: {
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
-    AddBaseMap,
     BaseMap
   },
   props: {
@@ -155,8 +152,8 @@ export default {
     }
   },
   methods: {
-    async showAddBaseMapDialog () {
-      this.addBaseMapDialog = true
+    showAddBaseMapDialog () {
+      EventBus.$emit(EventBus.EventTypes.CREATE_BASE_MAP)
     },
     showBaseMap (baseMapId) {
       this.selectedBaseMap = this.baseMaps.find(baseMap => baseMap.id === baseMapId)

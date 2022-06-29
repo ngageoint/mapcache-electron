@@ -346,10 +346,10 @@
             </v-col>
           </v-row>
           <w-m-s-layer-editor v-if="configuration.layerType === 'WMS'" class="mt-4" :configuration="configuration"
-                              :error="baseMap.error" :update-configuration="updateConfiguration"
+                              :error="baseMap.error" :update-configuration="updateConfiguration" :project="project"
                               :set-error="setBaseMapError"></w-m-s-layer-editor>
           <w-m-t-s-layer-editor v-if="configuration.layerType === 'WMTS'" class="mt-4" :configuration="configuration"
-                                :error="baseMap.error" :update-configuration="updateConfiguration"
+                                :error="baseMap.error" :update-configuration="updateConfiguration" :project="project"
                                 :set-error="setBaseMapError"></w-m-t-s-layer-editor>
         </v-col>
       </v-row>

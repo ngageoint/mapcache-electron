@@ -245,9 +245,8 @@ export default class KMLSource extends Source {
         if (feature.properties.description != null) {
           try {
             storeAttachmentsInDescription(featureRowId, feature.properties.description)
-          } catch (e) {
-            console.error(e)
-          }
+            // eslint-disable-next-line no-empty, no-unused-vars
+          } catch (e) {}
         }
 
         // there is a style, icons will already have been added, but not styles

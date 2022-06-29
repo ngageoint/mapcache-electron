@@ -80,7 +80,7 @@
         </v-list>
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
-        <v-col class="content-panel" v-show="tabId >= 0">
+        <v-col class="content-panel" v-show="tabId != null">
           <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"
                         :display-feature="displayFeature" :allow-notifications="allowNotifications"></geo-packages>
           <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project"
@@ -436,7 +436,7 @@ export default {
       }
     }
   },
-  mounted: function () {
+  mounted () {
     let uistate = this.getUIStateByProjectId(this.project.id)
     if (!uistate) {
       window.mapcache.addProjectState({ projectId: this.project.id })
@@ -523,11 +523,23 @@ export default {
       this.alertColor = color
       this.showAlertMessage = true
     })
+    EventBus.$on(EventBus.EventTypes.CREATE_BASE_MAP, () => {
+      this.tabId = 2
+    })
   },
   beforeDestroy () {
     window.removeEventListener('online', this.onLineListener)
     window.removeEventListener('offline', this.offLineListener)
-    EventBus.$off([EventBus.EventTypes.NETWORK_ERROR, EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS, EventBus.EventTypes.CONFIRMATION_MESSAGE, EventBus.EventTypes.SHOW_FEATURE, EventBus.EventTypes.ALERT_MESSAGE, EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT])
+    EventBus.$off([
+      EventBus.EventTypes.NETWORK_ERROR,
+      EventBus.EventTypes.NOMINATIM_SEARCH_RESULTS,
+      EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS,
+      EventBus.EventTypes.CONFIRMATION_MESSAGE,
+      EventBus.EventTypes.SHOW_FEATURE,
+      EventBus.EventTypes.ALERT_MESSAGE,
+      EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT,
+      EventBus.EventTypes.CREATE_BASE_MAP
+    ])
     window.mapcache.removeClosingProjectWindowListener()
     window.mapcache.removeSelectClientCertificateListener()
     window.mapcache.removeRequestClientCredentialsListener()

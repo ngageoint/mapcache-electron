@@ -459,10 +459,10 @@
               </p>
             </v-col>
           </v-row>
-          <w-m-s-layer-editor v-if="source.layerType === 'WMS'" class="mt-4" :error="source.error"
+          <w-m-s-layer-editor v-if="source.layerType === 'WMS'" class="mt-4" :error="source.error" :project="project"
                               :configuration="source" :update-configuration="updateSource"
                               :set-error="setSourceError"></w-m-s-layer-editor>
-          <w-m-t-s-layer-editor v-if="source.layerType === 'WMTS'" class="mt-4" :error="source.error"
+          <w-m-t-s-layer-editor v-if="source.layerType === 'WMTS'" class="mt-4" :error="source.error" :project="project"
                                 :configuration="source" :update-configuration="updateSource"
                                 :set-error="setSourceError"></w-m-t-s-layer-editor>
           <v-row class="pb-2" no-gutters v-if="source.geopackageFilePath != null">

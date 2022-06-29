@@ -1,5 +1,6 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <base-maps v-if="baseMapsDialog" :project="project" :back="() => { baseMapsDialog = false }"/>
+  <add-base-map v-if="addBaseMapDialog" :base-maps="baseMaps" :project="project" :close="() => {addBaseMapDialog = false}"></add-base-map>
+  <base-maps v-else-if="baseMapsDialog" :project="project" :back="() => { baseMapsDialog = false }"/>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
@@ -287,6 +288,8 @@ import EventBus from '../../lib/vue/EventBus'
 import { mapState } from 'vuex'
 import { environment } from '../../lib/env/env'
 import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
+import AddBaseMap from '../BaseMaps/AddBaseMap'
+import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
 
 export default {
   props: {
@@ -302,6 +305,7 @@ export default {
     back: Function
   },
   components: {
+    AddBaseMap,
     BaseMaps,
     SavedUrls,
     EditTextModal,
@@ -314,6 +318,9 @@ export default {
       },
       overpassUrl: state => {
         return state.URLs.overpassUrl || environment.overpassUrl
+      },
+      baseMaps: state => {
+        return getDefaultBaseMaps().concat(state.BaseMaps.baseMaps || [])
       }
     }),
     darkTheme: {
@@ -431,7 +438,8 @@ export default {
         v => !!v || 'Url is required',
         v => window.mapcache.isUrlValid(v) || 'Invalid url',
       ],
-      projectNameRules: [v => !!v || 'Project name is required.']
+      projectNameRules: [v => !!v || 'Project name is required.'],
+      addBaseMapDialog: false
     }
   },
   methods: {
@@ -485,6 +493,15 @@ export default {
         }, 100)
       })
     }
+  },
+  mounted () {
+    EventBus.$on(EventBus.EventTypes.CREATE_BASE_MAP, () => {
+      this.baseMapsDialog = true
+      this.addBaseMapDialog = true
+    })
+  },
+  beforeDestroy () {
+    EventBus.$off(EventBus.EventTypes.CREATE_BASE_MAP)
   }
 }
 </script>

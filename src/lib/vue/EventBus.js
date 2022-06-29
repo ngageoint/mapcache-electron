@@ -31,6 +31,7 @@ const Events = {
   GRID_BOUNDING_BOX_STOP: 'pick-grid-stop',
   GRID_BOUNDING_BOX_CANCELLED: (id) => 'pick-grid-cancelled-' + id,
   BOUNDING_BOX_UPDATED: (id) => 'bounding-box-updated-' + id,
+  CREATE_BASE_MAP: 'create-base-map',
 }
 
 EventBus.EventTypes = Events

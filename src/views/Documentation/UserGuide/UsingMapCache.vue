@@ -812,7 +812,7 @@ export default {
                         title: `Adding OpenStreetMap data using the Overpass API`,
                         paragraph: `Click on the&nbsp;<strong>Download features with Overpass</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiSteering}"></path></svg>&nbsp;button and watch the guided process shown in the video below.`,
                         video: '/images/documentation/using_mapcache/data_source/article_02/video_03.webm',
-                        note: 'This service is not meant to download large areas of data. The Overpass API will prevent excessively large downloads. If a larger area is needed, visit https://planet.openstreetmap.org/ for more information.'
+                        note: 'This service is not meant to download large areas of data. The Overpass API will prevent excessively large downloads. If a larger area is needed, visit https://planet.openstreetmap.org/ for more information.',
                       }
                     }],
                   tabHeight: 600
@@ -821,6 +821,21 @@ export default {
             },
             {
               order: 4,
+              title: `<strong>Import</strong>&nbsp;features with&nbsp;<strong>Overpass</strong>`,
+              introduction: `OpenStreetMap provides a rich, community-driven, base map, which is used by default in MapCache. Many features, used to defined boundaries, roads, and buildings, are the same ones users tend to draw on the map. Before spending time clicking tens or hundreds of points on the map, give the Overpass import a try.`,
+              sections: [
+                {
+                  paragraph: `In the&nbsp;<strong>Data sources</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersOutline}"></path></svg>&nbsp;section, click the&nbsp;<strong>Add data source</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiLayersPlus}"></path></svg>&nbsp;button and then click on the&nbsp;<strong>Download OpenStreetMap features with Overpass</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiSteering}"></path></svg>&nbsp;button`,
+                  image: '/images/documentation/using_mapcache/data_source/article_03/image_01.jpg'
+                },
+                {
+                  paragraph: `Depending on the type of the data source, different functionality will be available. The image below shows the options for a feature layer.`,
+                  image: '/images/documentation/using_mapcache/data_source/article_03/image_02.jpg'
+                }
+              ],
+            },
+            {
+              order: 6,
               title: `<strong>Manage</strong>&nbsp;a data source`,
               introduction: `Need to style a data source, view the features, or even delete it? Accessing the data source management view will provide this functionality and more.`,
               sections: [
@@ -835,7 +850,7 @@ export default {
               ],
             },
             {
-              order: 6,
+              order: 8,
               title: `<strong>Rename</strong>&nbsp;a data source`,
               sections: [
                 {

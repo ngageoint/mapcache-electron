@@ -185,7 +185,6 @@ async function processDataSource (data) {
     }
     // eslint-disable-next-line no-unused-vars
   } catch (e) {
-    console.error(e)
     // eslint-disable-next-line no-console
     console.error('Failed to process data source.')
     error = e
@@ -228,7 +227,6 @@ async function requestGeoPackageVectorTile (data, resolve, reject) {
   tilePromise.then((result) => {
     resolve(result)
   }).catch(error => {
-    console.error(error)
     // eslint-disable-next-line no-console
     console.error('Failed to render tile.')
     reject(error)

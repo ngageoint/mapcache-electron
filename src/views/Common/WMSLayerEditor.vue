@@ -81,7 +81,8 @@ export default {
     },
     error: Object,
     updateConfiguration: Function,
-    setError: Function
+    setError: Function,
+    project: Object
   },
   directives: {
     'sortable-list': {
@@ -183,7 +184,9 @@ export default {
           const configuration = cloneDeep(this.configuration)
           configuration.layers = this.sortedRenderingLayers
           configuration.extent = WMSLayer.getExtentForLayers(configuration.layers)
-          this._updateConfiguration(configuration)
+          if (this.project.sources[configuration.id] != null) {
+            this._updateConfiguration(configuration)
+          }
         } else if (result.error) {
           this.loaded = true
           this.setError(result.error)

@@ -181,7 +181,9 @@ export default {
           const configuration = cloneDeep(this.configuration)
           configuration.layers = this.sortedRenderingLayers
           configuration.wmtsInfo = this.wmtsInfo
-          this._updateConfiguration(configuration)
+          if (this.project.sources[configuration.id] != null) {
+            this._updateConfiguration(configuration)
+          }
         } else if (result.error) {
           this.loaded = true
           this.setError(result.error)

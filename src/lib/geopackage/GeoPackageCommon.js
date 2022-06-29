@@ -34,7 +34,6 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
         }
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
-        console.error(error)
         result = { error: error }
         // eslint-disable-next-line no-console
         console.error('Failed to perform GeoPackage operation')
@@ -276,7 +275,6 @@ function _getInternalTableInformation (gp) {
         styleKey: 0
       }
     } catch (e) {
-      console.error(e)
       // eslint-disable-next-line no-console
       console.error('Unable to process tile table: ' + table)
       tables.unsupported.push(table)

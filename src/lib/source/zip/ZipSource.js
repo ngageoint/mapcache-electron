@@ -37,7 +37,6 @@ export default class ZipSource extends Source {
         layers = await shapeFileSource.retrieveLayers(statusCallback)
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
-        console.error(e)
         // eslint-disable-next-line no-console
         console.error('Failed to retrieve shape file layer.')
       }
