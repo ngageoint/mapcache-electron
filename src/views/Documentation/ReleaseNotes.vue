@@ -90,7 +90,8 @@ export default {
             'Grid no longer rendered over context menu.',
             'Fixed MGRS conversion errors in special regions.',
             'Fix for error with too many styles/icons and styles with null values.',
-            'Ensure that bounds is set to edit mode when first displayed.'
+            'Ensure that bounds is set to edit mode when first displayed.',
+            'Fix for shapefile features without geometry error.'
           ],
           newFeatures: [
             'Support a 4326 leaflet map.',

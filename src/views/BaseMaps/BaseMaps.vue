@@ -74,7 +74,7 @@
           </v-btn>
         </div>
       </template>
-      <span>{{ projectLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add base map' }}</span>
+      <span>{{ projectLayerCount === 0 ? 'No layers found' : 'Add base map' }}</span>
     </v-tooltip>
   </v-sheet>
 </template>

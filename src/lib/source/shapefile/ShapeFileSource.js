@@ -26,7 +26,7 @@ export default class ShapeFileSource extends Source {
       const zip = new AdmZip(this.filePath)
       const zipEntries = zip.getEntries()
       // determine number of shape files
-      shapefiles = zipEntries.filter(zipEntry => zipEntry.entryName.endsWith('.shp')).length
+      shapefiles = zipEntries.filter(zipEntry => zipEntry.entryName.endsWith('.shp') && zipEntry.entryName.indexOf('__MACOSX') === -1).length
 
       // prepare the geotiff files
       geotiffs = zipEntries.filter(zipEntry => zipEntry.entryName.endsWith('.tif') && zipEntry.entryName.indexOf('__MACOSX') === -1).map(entry => {
@@ -50,6 +50,7 @@ export default class ShapeFileSource extends Source {
     }
 
     const expectedLayers = geotiffs.length + shapefiles
+
     const stepSize = 100.0 / expectedLayers
 
     if (geotiffs.length > 0) {
@@ -105,42 +106,49 @@ export default class ShapeFileSource extends Source {
         const notifyStepSize = Math.ceil(totalFeatures / 10)
         let featuresAdded = 0
 
+        let layerName = null
         for (let idx = 0; idx < featureCollections.length; idx++) {
-          const featureCollection = featureCollections[idx]
-          const features = featureCollection.features
-          const layerName = featureCollection.fileName || name
+          try {
+            const featureCollection = featureCollections[idx]
+            const features = featureCollection.features
+            layerName = featureCollection.fileName || name
 
-          const { layerId, layerDirectory } = this.createLayerDirectory()
-          let fileName = layerName + '.gpkg'
-          let filePath = path.join(layerDirectory, fileName)
+            const { layerId, layerDirectory } = this.createLayerDirectory()
+            let fileName = layerName + '.gpkg'
+            let filePath = path.join(layerDirectory, fileName)
 
-          const { addFeature, done } = await streamingGeoPackageBuild(filePath, layerName)
+            const { addFeature, done } = await streamingGeoPackageBuild(filePath, layerName)
 
-          for (let i = 0; i < features.length; i++) {
-            const feature = features[i]
-            delete features[i].geometry.bbox
-            addFeature(feature)
-            featuresAdded++
-            if ((featuresAdded % notifyStepSize) === 0) {
-              statusCallback('Storing features', (stepSize * (idx + geotiffs.length)) + (stepSize * (featuresAdded / totalFeatures)))
+            for (let i = 0; i < features.length; i++) {
+              const feature = features[i]
+              if (feature.geometry != null) {
+                delete features[i].geometry.bbox
+                addFeature(feature)
+              }
+              featuresAdded++
+              if ((featuresAdded % notifyStepSize) === 0) {
+                statusCallback('Storing features', (stepSize * (idx + geotiffs.length)) + (stepSize * (featuresAdded / totalFeatures)))
+              }
             }
+
+            const { count, extent } = await done()
+
+            layers.push(new VectorLayer({
+              id: layerId,
+              layerType: VECTOR,
+              directory: layerDirectory,
+              sourceDirectory: this.directory,
+              name: layerName,
+              geopackageFilePath: filePath,
+              sourceFilePath: this.filePath,
+              sourceLayerName: layerName,
+              sourceType: 'ShapeFile',
+              count: count,
+              extent: extent
+            }))
+          } catch (e) {
+            console.error('Error processing shapefile layer: ' + layerName)
           }
-
-          const { count, extent } = await done()
-
-          layers.push(new VectorLayer({
-            id: layerId,
-            layerType: VECTOR,
-            directory: layerDirectory,
-            sourceDirectory: this.directory,
-            name: layerName,
-            geopackageFilePath: filePath,
-            sourceFilePath: this.filePath,
-            sourceLayerName: layerName,
-            sourceType: 'ShapeFile',
-            count: count,
-            extent: extent
-          }))
         }
       }
     }

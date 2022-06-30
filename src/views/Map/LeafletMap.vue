@@ -133,7 +133,7 @@
           <p class="mb-0 pa-0">Base maps</p>
           <v-tooltip left :disabled="!project.showToolTips">
             <template v-slot:activator="{ on }">
-              <div v-on="on" style="margin-top: -4px !important;">
+              <div v-on="on" style="margin-top: -3px !important;">
                 <v-btn :disabled="projectLayerCount === 0" @click="createNewBaseMap" color="primary" icon>
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                        preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="24" height="24">
@@ -147,7 +147,7 @@
                 </v-btn>
               </div>
             </template>
-            <span>{{ projectLayerCount === 0 ? 'No data sources or GeoPackage layers found' : 'Add base map' }}</span>
+            <span>{{ projectLayerCount === 0 ? 'No layers found' : 'Add base map' }}</span>
           </v-tooltip>
         </v-row>
       </v-card-title>
@@ -159,7 +159,7 @@
           <v-list-item-group v-model="selectedBaseMapId" mandatory>
             <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
               <v-list-item-icon style="margin-right: 16px;">
-                <v-btn style="width: 24px; height: 24px;" icon @click.stop="(e) => item.zoomTo(e)">
+                <v-btn small icon @click.stop="(e) => item.zoomTo(e)">
                   <v-icon small>{{ mdiMapOutline }}</v-icon>
                 </v-btn>
               </v-list-item-icon>
@@ -506,7 +506,7 @@ export default {
     },
     projectLayerCount: {
       get () {
-        return Object.keys(this.sources).length
+        return keys(this.project.geopackages).reduce((accumulator, geopackage) => accumulator + keys(this.project.geopackages[geopackage].tables.features).length + keys(this.project.geopackages[geopackage].tables.tiles).length, 0) + Object.values(this.project.sources).length
       }
     }
   },

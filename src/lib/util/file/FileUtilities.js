@@ -319,7 +319,7 @@ function createDirectory (directory) {
 
 function toHumanReadable (sizeInBytes) {
   const i = Math.floor(Math.log(sizeInBytes) / Math.log(1024))
-  return (sizeInBytes / Math.pow(1024, i)).toFixed(2) + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
+  return (sizeInBytes / Math.pow(1024, i)).toFixed(1) + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
 }
 
 function getFileSizeInBytes (filePath) {

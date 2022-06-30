@@ -28,7 +28,6 @@ import polygonToLine from '@turf/polygon-to-line'
 import moment from 'moment'
 import {
   performSafeGeoPackageOperation,
-  projectGeometryTo4326,
   getQueryBoundingBoxForCoordinateAndZoom,
   _calculateTrueExtentForFeatureTable
 } from './GeoPackageCommon'
@@ -514,7 +513,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
         featureRow.geometry = geometryData
         for (const propertyKey in feature.properties) {
-          if (Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
+          if (propertyKey !== 'id' && Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
             try {
               featureRow.setValueWithColumnName(propertyKey, feature.properties[propertyKey])
               // eslint-disable-next-line no-unused-vars, no-empty
@@ -529,7 +528,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         // after inserting, unset the values
         for (const propertyKey in feature.properties) {
           if (Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
-            featureRow.values[propertyKey] = undefined;
+            featureRow.values[propertyKey] = undefined
           }
         }
 
@@ -549,65 +548,69 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
   }
 
   const addFeature = (feature) => {
-    // handle geometry property
-    if (feature.properties.geometry) {
-      if (!definedColumnNames[GEOMETRY_PROPERTY]) {
-        definedColumnNames[GEOMETRY_PROPERTY] = true
-        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.properties.geometry)))
-      }
-      feature.properties.geometry_property = feature.properties.geometry
-      delete feature.properties.geometry
-    }
-
-    // handle id property
-    if (feature.id || feature.properties.id) {
-      if (!definedColumnNames[ID_PROPERTY]) {
-        definedColumnNames[ID_PROPERTY] = true
-        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), ID_PROPERTY, GeoPackageDataType.TEXT))
-      }
-      feature.properties[ID_PROPERTY] = feature.id || feature.properties.id
-      delete feature.id
-      delete feature.properties.id
-    }
-
-    // iterate over feature's property and add any new ones
-    keys(feature.properties).forEach(key => {
-      // add missing fields
-      if (!definedColumnNames[key.toLowerCase()]) {
-        definedColumnNames[key.toLowerCase()] = true
-        featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
+    try {
+      // handle geometry property
+      if (feature.properties.geometry) {
+        if (!definedColumnNames[GEOMETRY_PROPERTY]) {
+          definedColumnNames[GEOMETRY_PROPERTY] = true
+          featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.properties.geometry)))
+        }
+        feature.properties.geometry_property = feature.properties.geometry
+        delete feature.properties.geometry
       }
 
-      // object correction
-      if (isObject(feature.properties[key])) {
-        feature.properties[key] = JSON.stringify(feature.properties[key])
+      // handle id property
+      if (feature.id || feature.properties.id) {
+        if (!definedColumnNames[ID_PROPERTY]) {
+          definedColumnNames[ID_PROPERTY] = true
+          featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), ID_PROPERTY, GeoPackageDataType.TEXT))
+        }
+        feature.properties[ID_PROPERTY] = feature.id || feature.properties.id
+        delete feature.id
+        delete feature.properties.id
       }
 
-      // date correction
-      const dataType = featureDao.table.columns.getColumn(key).getDataType()
-      if (dataType === GeoPackageDataType.DATETIME || dataType === GeoPackageDataType.DATE) {
-        if (feature.properties[key] == null) {
-          delete feature.properties[key]
-        } else {
-          try {
-            feature.properties[key] = moment.utc(feature.properties[key]).toDate()
-            // eslint-disable-next-line no-unused-vars
-          } catch (e) {
+      // iterate over feature's property and add any new ones
+      keys(feature.properties).forEach(key => {
+        // add missing fields
+        if (!definedColumnNames[key.toLowerCase()]) {
+          definedColumnNames[key.toLowerCase()] = true
+          featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), key, getDataTypeForValue(feature.properties[key])))
+        }
+
+        // object correction
+        if (isObject(feature.properties[key])) {
+          feature.properties[key] = JSON.stringify(feature.properties[key])
+        }
+
+        // date correction
+        const dataType = featureDao.table.columns.getColumn(key).getDataType()
+        if (dataType === GeoPackageDataType.DATETIME || dataType === GeoPackageDataType.DATE) {
+          if (feature.properties[key] == null) {
             delete feature.properties[key]
+          } else {
+            try {
+              feature.properties[key] = moment.utc(feature.properties[key]).toDate()
+              // eslint-disable-next-line no-unused-vars
+            } catch (e) {
+              delete feature.properties[key]
+            }
           }
         }
+      })
+
+      // push feature onto the batch
+      batch.push(feature)
+
+      // reached batch limit, execute a batch insert
+      if (batch.length >= batchSize) {
+        processBatch()
       }
-    })
 
-    // push feature onto the batch
-    batch.push(feature)
-
-    // reached batch limit, execute a batch insert
-    if (batch.length >= batchSize) {
-      processBatch()
+      return featureIndex++
+    } catch (e) {
+      return -1
     }
-
-    return featureIndex++
   }
 
   const done = async () => {
