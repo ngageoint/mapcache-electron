@@ -2,6 +2,7 @@ import { L } from '../../../lib/leaflet/vendor'
 import cloneDeep from 'lodash/cloneDeep'
 import { DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
 import { flattenFeature, explodeFlattenedFeature } from '../../../lib/util/geojson/GeoJSONUtilities'
+import isNil from 'lodash/isNil'
 
 const MODES = {
   EDIT: 0,
@@ -13,6 +14,7 @@ const MODES = {
   DRAW_LINE: 6,
   DRAW_RECTANGLE: 7,
   DRAW_POLYGON: 8,
+  DRAW_CIRCLE: 9,
 }
 
 export default {
@@ -32,7 +34,14 @@ export default {
   methods: {
     addFeature ({ layer }) {
       this.map.removeLayer(layer)
-      this.editingLayer.addData(layer.toGeoJSON(10))
+
+      let geojson = layer.toGeoJSON(10)
+      if (!isNil(layer._mRadius)) {
+        // feature.properties.radius = this.createdLayer._mRadius
+        geojson = this.generateCircularFeature(geojson.geometry.coordinates, geojson.properties, layer._mRadius)
+      }
+
+      this.editingLayer.addData(geojson)
       this.updateEditingStack()
       this.stopMode()
     },
@@ -61,7 +70,6 @@ export default {
       this.id = editingFeature.id
       this.feature = cloneDeep(editingFeature)
       this.feature.type = 'Feature'
-
       const featureCollection = {
         type: 'FeatureCollection',
         features: flattenFeature(this.feature).filter(feature => feature.geometry != null)
@@ -85,6 +93,7 @@ export default {
       const updatedFeature = cloneDeep(this.feature)
       if (this.editingLayer != null) {
         const features = this.editingLayer.getLayers().map(layer => {
+          console.log(layer.feature)
           let feature = cloneDeep(layer.feature)
           if (feature != null && feature.geometry != null) {
             if (feature.geometry.type === 'Point') {
@@ -314,6 +323,17 @@ export default {
         this.mode = MODES.DRAW_POLYGON
       }
     },
+    toggleDrawCircle () {
+      if (this.mode === MODES.DRAW_CIRCLE) {
+        this.stopMode()
+      } else {
+        this.stopMode()
+        this.map.pm.enableDraw('Circle', {
+          snappable: true
+        })
+        this.mode = MODES.DRAW_CIRCLE
+      }
+    },
     resetMode (mode) {
       if (mode != null) {
         switch (mode) {
@@ -352,6 +372,10 @@ export default {
           case MODES.DRAW_POLYGON:
             this.toggleDrawPolygon()
             this.toggleDrawPolygon()
+            break
+          case MODES.DRAW_CIRCLE:
+            this.toggleDrawCircle()
+            this.toggleDrawCircle()
             break
         }
       }

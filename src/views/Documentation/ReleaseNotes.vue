@@ -96,7 +96,8 @@ export default {
           newFeatures: [
             'Support a 4326 leaflet map.',
             'Create 4326 GeoPackage tile layer.',
-            'Added Overpass categories and ability to manually edit the query\'s filter.'
+            'Added Overpass categories and ability to manually edit the query\'s filter.',
+            'Extract GeoTIFFs from shapefiles.'
           ],
         },
         {

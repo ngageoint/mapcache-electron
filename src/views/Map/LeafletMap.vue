@@ -273,6 +273,12 @@
                 </v-list-item-icon>
                 <v-list-item-title>Polygon</v-list-item-title>
               </v-list-item>
+              <v-list-item link @click="toggleDrawCircle" :value="9">
+                <v-list-item-icon>
+                  <v-icon>{{ mdiCircleOutline }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Circle</v-list-item-title>
+              </v-list-item>
             </v-list-item-group>
           </v-list-group>
         </v-list>
@@ -377,7 +383,8 @@ import {
   mdiVectorRectangle,
   mdiVectorPolygon,
   mdiShapePlus,
-  mdiPlus
+  mdiPlus,
+  mdiCircleOutline
 } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {
@@ -521,6 +528,7 @@ export default {
   },
   data () {
     return {
+      mdiCircleOutline,
       mdiReload,
       mdiEraser,
       mdiVectorPolylineEdit,
@@ -781,7 +789,7 @@ export default {
       }
     },
     generateCircularFeature (latLng, properties, radiusInMeters) {
-      return  circle(latLng, radiusInMeters, {steps: 128, units: 'meters', properties: properties})
+      return circle(latLng, radiusInMeters, {steps: 128, units: 'meters', properties: properties})
     },
     async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
       const geopackage = this.geopackages[geoPackageId]
