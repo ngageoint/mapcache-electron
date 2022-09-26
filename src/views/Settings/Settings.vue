@@ -240,11 +240,6 @@
             </template>
           </v-list-item>
         </v-list-item-group>
-      </v-list>
-      <v-list
-          two-line
-          style="padding-top: 0;"
-      >
         <v-list-item @click="toggleEditMaxFeaturesDialog">
           <v-list-item-content style="padding-right: 12px;">
             <v-list-item-title>Max features</v-list-item-title>

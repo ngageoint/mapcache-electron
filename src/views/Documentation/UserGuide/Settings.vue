@@ -198,6 +198,17 @@ export default {
           articles: [
             {
               order: 0,
+              title: `<strong>Change</strong>&nbsp;map projection`,
+              introduction: `MapCache supports displaying vector and imagery data in two projections.&nbsp;<strong>Web Mercator (EPSG:3857)</strong>&nbsp;and&nbsp;<strong>Plate Carrée (EPSG:4326)</strong>.`,
+              sections: [
+                {
+                  paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, select the&nbsp;<strong>Map projection</strong>&nbsp;you wish to use.`,
+                  image: '/images/documentation/settings/map/article_07/image_01.jpg'
+                }
+              ],
+            },
+            {
+              order: 2,
               title: `<strong>Hide</strong>&nbsp;zoom controls`,
               introduction: `The zoom control provides&nbsp;<strong>Zoom in</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPlus}"></path></svg>and&nbsp;<strong>Zoom out</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiMinus}"></path></svg>&nbsp;buttons for adjusting the zoom level of the map. However, some users will only need to use their mouse wheel or track pad gestures for adjusting the zoom level on the map, rather than the zoom control. Follow the instructions below to hide the zoom control from the map.`,
               sections: [
@@ -208,7 +219,7 @@ export default {
               ],
             },
             {
-              order: 2,
+              order: 4,
               title: `<strong>Hide</strong>&nbsp;current zoom`,
               introduction: 'This control provides insight into the map\'s current zoom level. This is helpful in making decisions when creating new layers. However, if this is not needed, it can be hidden. Follow the instructions below to hide the current zoom.',
               sections: [
@@ -219,7 +230,7 @@ export default {
               ],
             },
             {
-              order: 4,
+              order: 6,
               title: `<strong>Hide</strong>&nbsp;the address search`,
               introduction: 'The address search requires network access to use. If you are in a disconnected environment or simply do not wish to have the search bar displayed, follow the instructions below to hide it.',
               sections: [

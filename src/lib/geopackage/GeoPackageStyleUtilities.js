@@ -69,6 +69,31 @@ function _addOrSetStyleForFeature (gp, feature, rowId, tableName) {
         featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, geometryType)
       }
     }
+    // else if (feature.isRangeRing) {
+    //   // handle setting center point style
+    //   const pointStyle = feature.style.pointStyle
+    //   const existingStyles = featureTableStyles.getStyleDao().queryForAll()
+    //   // if there is an existing style that matches the style i'm adding, use it, otherwise create a new style and assign it to the feature
+    //   let existingStyleId = existingStyles.findIndex(style => style.color === pointStyle.color && style.opacity === pointStyle.opacity && style.fill_color === pointStyle.fillColor && style.fill_opacity === pointStyle.fillOpacity && style.width === pointStyle.width)
+    //   if (existingStyleId !== -1) {
+    //     const existingStyle = existingStyles[existingStyleId]
+    //     featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName('POINT'))
+    //   } else {
+    //     const styleId = _createStyleRow(gp, tableName, pointStyle)
+    //     featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName('POINT'))
+    //   }
+    //   // handle setting line style
+    //   const lineStyle = feature.style.lineStyle
+    //   // if there is an existing style that matches the style i'm adding, use it, otherwise create a new style and assign it to the feature
+    //   existingStyleId = existingStyles.findIndex(style => style.color === lineStyle.color && style.opacity === lineStyle.opacity && style.fill_color === lineStyle.fillColor && style.fill_opacity === lineStyle.fillOpacity && style.width === lineStyle.width)
+    //   if (existingStyleId !== -1) {
+    //     const existingStyle = existingStyles[existingStyleId]
+    //     featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, existingStyle.id, GeometryType.fromName('LINESTRING'))
+    //   } else {
+    //     const styleId = _createStyleRow(gp, tableName, lineStyle)
+    //     featureTableStyles.getFeatureStyleExtension().insertStyleMapping(featureTableStyles.getStyleMappingDao(), rowId, styleId, GeometryType.fromName('LINESTRING'))
+    //   }
+    // }
   }
 }
 

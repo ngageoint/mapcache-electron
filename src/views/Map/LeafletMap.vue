@@ -177,6 +177,7 @@
         </v-list>
       </v-card-text>
     </v-card>
+    <range-ring v-if="showRangeRingTool" :map="map" :close="cancelRangeRingTool" :save-feature="saveRangeRingFeature"></range-ring>
     <v-card v-if="project.displayAddressSearchBar" outlined class="nominatim-card ma-0 pa-0 transparent">
       <nominatim-search :project="project" :map-bounds="mapBounds" :disable-search="disableSearch"/>
     </v-card>
@@ -340,7 +341,6 @@ import isEqual from 'lodash/isEqual'
 import difference from 'lodash/difference'
 import pick from 'lodash/pick'
 import throttle from 'lodash/throttle'
-import circle from '@turf/circle'
 import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
 import DrawBounds from './mixins/DrawBounds'
@@ -351,6 +351,7 @@ import FeatureTables from '../FeatureTable/FeatureTables'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
 import FeatureEditor from '../Common/FeatureEditor'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
+import LeafletRangeRingControl from '../../lib/leaflet/map/controls/LeafletRangeRingControl'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
@@ -384,7 +385,8 @@ import {
   mdiVectorPolygon,
   mdiShapePlus,
   mdiPlus,
-  mdiCircleOutline
+  mdiCircleOutline,
+  mdiTrashCanOutline
 } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import {
@@ -398,7 +400,10 @@ import NominatimSearch from '../Nominatim/NominatimSearch'
 import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup'
 import SearchResult from './mixins/SearchResults'
 import { getDefaultIcon } from '../../lib/util/style/BrowserStyleUtilities'
-import { getDefaultMapCacheStyle } from '../../lib/util/style/CommonStyleUtilities'
+import {
+  getDefaultMapCacheStyle,
+  getDefaultRangeRingLineStyle
+} from '../../lib/util/style/CommonStyleUtilities'
 import { reverseQueryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
 import LeafletGridOverlayTool from '../../lib/leaflet/map/controls/LeafletGridOverlayTool'
 import LeafletCoordinates from '../../lib/leaflet/map/controls/LeafletCoordinates'
@@ -411,6 +416,8 @@ import Sortable from 'sortablejs'
 import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
 import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
 import { environment } from '../../lib/env/env'
+import RangeRing from './RangeRing'
+import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -518,6 +525,7 @@ export default {
     }
   },
   components: {
+    RangeRing,
     AddFeatureToGeoPackage,
     NominatimResultMapPopup,
     NominatimSearch,
@@ -528,6 +536,8 @@ export default {
   },
   data () {
     return {
+      map: null,
+      mdiTrashCanOutline,
       mdiCircleOutline,
       mdiReload,
       mdiEraser,
@@ -583,7 +593,8 @@ export default {
       performingReverseQuery: false,
       gridOptions: [{ id: 0, title: 'None' }, { id: 1, title: 'XYZ' }, { id: 2, title: 'GARS' }, { id: 3, title: 'MGRS' }],
       gridSelection: 0,
-      closeContextMenuTimeoutId: null
+      closeContextMenuTimeoutId: null,
+      showRangeRingTool: false
     }
   },
   methods: {
@@ -637,7 +648,6 @@ export default {
     },
     disableGeomanToolbar () {
       this.map.pm.Toolbar.removeControls()
-
     },
     mouseEntered () {
       this.cursorInside = true
@@ -788,9 +798,6 @@ export default {
         this.layerOrder.splice(index, 1)
       }
     },
-    generateCircularFeature (latLng, properties, radiusInMeters) {
-      return circle(latLng, radiusInMeters, {steps: 128, units: 'meters', properties: properties})
-    },
     async confirmGeoPackageFeatureLayerSelection (geoPackageId, featureTable) {
       const geopackage = this.geopackages[geoPackageId]
       this.geopackageFeatureLayerSelectionDialog = false
@@ -801,20 +808,23 @@ export default {
       let feature = null
       let additionalFeature = null
       if (this.createdLayer != null) {
-        feature = this.createdLayer.toGeoJSON()
+        feature = this.createdLayer.toGeoJSON ? this.createdLayer.toGeoJSON() : this.createdLayer
         feature.id = window.mapcache.createUniqueID()
         if (!isNil(this.createdLayer._mRadius)) {
-          // feature.properties.radius = this.createdLayer._mRadius
-          feature = this.generateCircularFeature(feature.geometry.coordinates, feature.properties, this.createdLayer._mRadius)
+          feature = generateCircularFeature(feature.geometry.coordinates, feature.properties, this.createdLayer._mRadius)
         }
 
         if (feature.geometry.type === 'Point') {
           feature.style = {
             icon: await getDefaultIcon('Default', 'Default icon for MapCache')
           }
-        } else {
+        } else if (!feature.isRangeRing) {
           feature.style = {
             style: getDefaultMapCacheStyle()
+          }
+        } else if (feature.isRangeRing) {
+          feature.style = {
+            style: getDefaultRangeRingLineStyle()
           }
         }
         // normalize longitudes for drawings
@@ -908,10 +918,10 @@ export default {
     cancelDrawing () {
       this.$nextTick(() => {
         this.geopackageFeatureLayerSelectionDialog = false
-        if (this.createdLayer != null) {
+        if (this.createdLayer != null && this.createdLayer instanceof L.Layer) {
           this.map.removeLayer(this.createdLayer)
-          this.createdLayer = null
         }
+        this.createdLayer = null
       })
     },
     zoomToFeature (path, table, featureId) {
@@ -1261,6 +1271,10 @@ export default {
         this.geopackageFeatureLayerSelectionDialog = true
       })
     },
+    saveRangeRingFeature (feature) {
+      this.createdLayer = feature
+      this.displayGeoPackageFeatureLayerSelection()
+    },
     setupLeafletGeoman () {
       this.map.pm.setGlobalOptions({
         continueDrawing: false,
@@ -1278,7 +1292,7 @@ export default {
       })
 
       this.map.on('pm:create', ({ layer }) => {
-        if (!this.isEditing) {
+        if (!this.isEditing && !this.showRangeRingTool) {
           this.createdLayer = layer
           this.displayGeoPackageFeatureLayerSelection()
         }
@@ -1307,6 +1321,13 @@ export default {
           self.showBaseMapSelection = false
         }
       })
+      this.leafletRangeRingControl = new LeafletRangeRingControl({}, function () {
+        self.showRangeRingTool = true
+        self.showLayerOrderingDialog = false
+        self.showBaseMapSelection = false
+        self.showGridSelection = false
+        self.disableGeomanToolbar()
+      })
       this.displayZoomControl = new LeafletZoomIndicator()
       this.snapshotControl = new LeafletSnapshot()
       this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
@@ -1334,6 +1355,8 @@ export default {
       this.map.addControl(this.activeLayersControl)
 
       this.setupLeafletGeoman()
+
+      this.map.addControl(this.leafletRangeRingControl)
 
       // hide controls that are disabled by the user
       this.project.zoomControlEnabled ? this.map.zoomControl.getContainer().style.display = '' : this.map.zoomControl.getContainer().style.display = 'none'
@@ -1489,6 +1512,11 @@ export default {
         className: dark ? 'dark' : '',
         crs: this.getMapProjection()
       })
+    },
+    cancelRangeRingTool () {
+      this.showRangeRingTool = false
+      this.leafletRangeRingControl.enable()
+      this.enableGeomanToolbar()
     }
   },
   watch: {
@@ -1621,9 +1649,11 @@ export default {
         if (newValue) {
           this.snapshotControl.disable()
           this.disableGeomanToolbar()
+          this.leafletRangeRingControl.disable()
         } else {
           this.snapshotControl.enable()
           this.enableGeomanToolbar()
+          this.leafletRangeRingControl.enable()
         }
       }
     },
@@ -1632,9 +1662,11 @@ export default {
         if (newValue) {
           this.snapshotControl.disable()
           this.disableGeomanToolbar()
+          this.leafletRangeRingControl.disable()
         } else {
           this.snapshotControl.enable()
           this.enableGeomanToolbar()
+          this.leafletRangeRingControl.enable()
         }
       }
     },

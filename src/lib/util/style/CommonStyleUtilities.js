@@ -10,6 +10,30 @@ function getDefaultMapCacheStyle () {
   }
 }
 
+function getDefaultRangeRingPointStyle () {
+  return {
+    color: '#ff0000',
+    opacity: 1.0,
+    fillColor: '#ff0000',
+    fillOpacity: 0.0,
+    width: 3.0,
+    name: 'Range Ring Point Style',
+    description: ''
+  }
+}
+
+function getDefaultRangeRingLineStyle () {
+  return {
+    color: '#326482',
+    opacity: 1.0,
+    fillColor: '#326482',
+    fillOpacity: 0.0,
+    width: 3.0,
+    name: 'Range Ring Line Style',
+    description: ''
+  }
+}
+
 function getNewStyle () {
   return {
     color: '#000000',
@@ -93,5 +117,7 @@ export {
   hashCode,
   lightenDarkenColor,
   adjustColorForHighlight,
-  getNewStyle
+  getNewStyle,
+  getDefaultRangeRingPointStyle,
+  getDefaultRangeRingLineStyle
 }

@@ -184,7 +184,7 @@ export default {
       return Math.ceil(this.searchCount / this.options.itemsPerPage)
     },
     tableHeight () {
-      const tableOnly = Math.min(this.tableEntries.length, this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
+      const tableOnly = Math.min(Math.max(this.tableEntries.length, 1), this.options.itemsPerPage) * this.itemHeight + this.headerHeight + this.scrollBarHeight
       const windowAreaAvailable = this.windowHeight - 168
       return Math.min(tableOnly, windowAreaAvailable)
     },

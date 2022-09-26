@@ -1464,7 +1464,7 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
  */
 function determineMinDistanceBasedOnZoom (latitude, zoom) {
   const EARTH_RADIUS_METERS = 6378137.0
-  return Math.abs(Math.PI * 2.0 * EARTH_RADIUS_METERS * Math.cos(latitude) / Math.pow(2.0, zoom + 8)) * 6
+  return Math.abs(Math.PI * 2.0 * EARTH_RADIUS_METERS * Math.cos(latitude) / Math.pow(2.0, zoom + 8)) * 10
 }
 
 /**
