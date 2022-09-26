@@ -894,7 +894,7 @@ class MapCacheWindowManager {
    * Launches the project window
    */
   launchProjectWindow () {
-    const windowHeight = 700 + (isWin ? 20 : 0)
+    const windowHeight = 824 + (isWin ? 20 : 0)
 
     this.projectWindowState = windowStateKeeper({
       defaultWidth: 1200,

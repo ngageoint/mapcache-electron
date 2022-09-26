@@ -136,7 +136,7 @@ export default {
           const distance = sortedDistances[i]
           differences.push(Math.abs(distance - prevDistance))
         }
-        distance = sortedDistances[sortedDistances.length - 1] + Math.round(differences.reduce((a, b) => {
+        distance = sortedDistances[sortedDistances.length - 1] + (differences.reduce((a, b) => {
           return a + b
         }, 0) / differences.length)
       }
