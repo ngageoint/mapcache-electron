@@ -22,6 +22,9 @@
           <v-progress-linear class="mt-4" :indeterminate="status.progress === -1"
                              :value="status.error ? 100 : status.progress"
                              :color="status.error ? 'warning' : 'primary'"></v-progress-linear>
+          <v-card-subtitle class="red--text" v-if="status.warning">
+            {{ status.warning }}  
+          </v-card-subtitle>
         </v-card-text>
         <v-card-actions class="mt-8">
           <v-spacer></v-spacer>

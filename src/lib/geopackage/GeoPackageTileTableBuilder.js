@@ -397,6 +397,12 @@ async function buildTileLayer (configuration, statusCallback) {
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
         status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nApprox. time remaining: ' + prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
+
+        if(averageTimePerTile > 2000 && tilesAdded > 10) {
+          status.warning = "Downloads from this data source are taking a long time.  " +
+          "Either your connection is poor or the server's performance is slow."
+        }
+
         throttleStatusCallback(status)
       })
 
