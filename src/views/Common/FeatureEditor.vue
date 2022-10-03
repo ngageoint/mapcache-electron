@@ -97,6 +97,7 @@ export default {
     geopackagePath: String,
     id: String,
     tableName: String,
+    object: Object,
     columns: Object,
     feature: Object,
     close: Function,
@@ -130,7 +131,18 @@ export default {
   asyncComputed: {
     editableColumns: {
       async get () {
-        return window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
+        const editableColumns = await window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
+        if (this.isGeoPackage &&
+            this.object.tables.features[this.tableName] != null &&
+            this.object.tables.features[this.tableName].columnOrder != null &&
+            editableColumns != null &&
+            editableColumns.length > 0) {
+          const columnOrder = this.object.tables.features[this.tableName].columnOrder
+          editableColumns.sort((a, b) => {
+            return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+          })
+        }
+        return editableColumns
       },
       default: []
     }

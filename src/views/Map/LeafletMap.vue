@@ -20,6 +20,7 @@
           persistent
           @keydown.esc="cancelAddFeature">
         <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id"
+                        :object="project.geopackages[featureToAddGeoPackage.id]"
                         :save-new-feature="saveFeature" :geopackage-path="featureToAddGeoPackage.path"
                         :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd"
                         :close="cancelAddFeature" :is-geo-package="true"></feature-editor>
