@@ -4,6 +4,10 @@
       <v-col>
         <p :style="{fontSize: '16px', fontWeight: '500', marginBottom: '0px'}">
           Layers
+          <v-progress-circular class="pl-2" size="24" color="primary" v-if="!loaded" indeterminate></v-progress-circular>
+        </p>
+        <p class="detail--text" v-if="!loaded" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+          {{ 'Retrieving layer details' }}
         </p>
         <p class="detail--text" v-if="!errored" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
           {{
@@ -158,6 +162,7 @@ export default {
       this.sortedRenderingLayers = []
       const options = {}
       options.version = this.configuration.version
+      options.withCredentials = this.configuration.withCredentials || false
       testServiceConnection(this.configuration.filePath, SERVICE_TYPE.WMTS, options).then(result => {
         if (!isNil(result.serviceInfo)) {
           this.wmtsInfo = result.serviceInfo.wmtsInfo
@@ -181,6 +186,7 @@ export default {
           const configuration = cloneDeep(this.configuration)
           configuration.layers = this.sortedRenderingLayers
           configuration.wmtsInfo = this.wmtsInfo
+          configuration.error = undefined
           if (this.project.sources[configuration.id] != null) {
             this._updateConfiguration(configuration)
           }

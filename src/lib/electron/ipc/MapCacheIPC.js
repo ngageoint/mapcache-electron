@@ -144,6 +144,10 @@ const HIDE_FEATURE_TABLE_WINDOW = 'hide-feature-table-window'
 const FEATURE_TABLE_EVENT = 'feature-table-event'
 const FEATURE_TABLE_ACTION = 'feature-table-action'
 
+const WEB_VIEW_AUTH_REQUEST = 'web-view-auth-request'
+const WEB_VIEW_AUTH_RESPONSE = 'web-view-auth-response'
+const WEB_VIEW_AUTH_CANCEL = 'web-view-auth-cancel'
+
 const LAUNCH_WITH_GEOPACKAGE_FILES = 'launch-with-geopackage-files'
 const LOAD_OR_DISPLAY_GEOPACKAGES = 'load-or-display-geopackages'
 
@@ -167,6 +171,7 @@ const MAIN_CHANNELS = [
   WORKER_READY,
   LAUNCH_USER_GUIDE
 ]
+
 const WORKER_CHANNELS = [
   PROCESS_SOURCE,
   CANCEL_PROCESS_SOURCE,
@@ -259,5 +264,8 @@ export {
   LAUNCH_USER_GUIDE,
   SEND_WINDOW_TO_FRONT,
   UNDO,
-  REDO
+  REDO,
+  WEB_VIEW_AUTH_REQUEST,
+  WEB_VIEW_AUTH_RESPONSE,
+  WEB_VIEW_AUTH_CANCEL
 }

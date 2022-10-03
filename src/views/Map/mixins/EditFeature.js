@@ -93,7 +93,6 @@ export default {
       const updatedFeature = cloneDeep(this.feature)
       if (this.editingLayer != null) {
         const features = this.editingLayer.getLayers().map(layer => {
-          console.log(layer.feature)
           let feature = cloneDeep(layer.feature)
           if (feature != null && feature.geometry != null) {
             if (feature.geometry.type === 'Point') {

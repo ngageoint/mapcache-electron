@@ -210,7 +210,8 @@ export default {
             {
               order: 2,
               title: `<strong>Hide</strong>&nbsp;zoom controls`,
-              introduction: `The zoom control provides&nbsp;<strong>Zoom in</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPlus}"></path></svg>and&nbsp;<strong>Zoom out</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiMinus}"></path></svg>&nbsp;buttons for adjusting the zoom level of the map. However, some users will only need to use their mouse wheel or track pad gestures for adjusting the zoom level on the map, rather than the zoom control. Follow the instructions below to hide the zoom control from the map.`,
+              introduction: `The zoom control provides&nbsp;<strong>Zoom in</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiPlus}"></path></svg>and&nbsp;<strong>Zoom out</strong><svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiMinus}"></path></svg>&nbsp;buttons for adjusting the zoom level of the map. However, some users will only need to use their mouse wheel or tra
+ck pad gestures for adjusting the zoom level on the map, rather than the zoom control. Follow the instructions below to hide the zoom control from the map.`,
               sections: [
                 {
                   paragraph: `In the&nbsp;<strong>Settings</strong>&nbsp;<svg width="24px" height="24" style="margin-bottom: -6px;"><path d="${mdiCogOutline}"></path></svg>&nbsp;section, under&nbsp;<strong>Map</strong>, toggle the&nbsp;<strong>Zoom control</strong>&nbsp;switch to hide it form the map.`,

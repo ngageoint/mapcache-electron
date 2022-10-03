@@ -429,7 +429,7 @@ async function testServiceConnection (serviceUrl, serviceType, options) {
       }
     }
   } catch (e) {
-    result = { serviceInfo: undefined, error: { status: -1, statusText: e } }
+    result = { serviceInfo: undefined, error: { status: e.status || -1, statusText: e.message || e } }
   }
   return result
 }
