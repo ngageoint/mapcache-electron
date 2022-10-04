@@ -75,7 +75,7 @@ export default class CancellableServiceRequest {
     if (this.withCredentials && allowAuthInBrowserWindow && isHTMLResponse) {
       await window.mapcache.sendWebViewAuthRequest(url)
       response = await this.request(url, false)
-      error = null;
+      error = null
     }
 
     if (!isNil(error) || isHTMLResponse) {

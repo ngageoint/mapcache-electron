@@ -187,7 +187,7 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5" color="primary">
+        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
           Order layers
           <small
               class="pt-1">{{

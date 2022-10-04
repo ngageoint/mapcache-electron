@@ -1758,6 +1758,11 @@ export default {
               if (this.lastShowFeatureTableEvent != null && !this.lastShowFeatureTableEvent.isGeoPackage && this.lastShowFeatureTableEvent.id === sourceId) {
                 await this.displayFeaturesForTable(this.lastShowFeatureTableEvent.id, this.lastShowFeatureTableEvent.tableName, this.lastShowFeatureTableEvent.isGeoPackage)
               }
+            } else {
+              const existingLayerOrderItem = this.layerOrder.find(item => item.id === sourceId)
+              if (existingLayerOrderItem != null) {
+                existingLayerOrderItem.title = newConfig.displayName ? newConfig.displayName : newConfig.name
+              }
             }
           }
         })
