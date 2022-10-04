@@ -1151,6 +1151,11 @@ class MapCacheWindowManager {
    */
   closeProject (isDeleting = false) {
     MapCacheWindowManager.disableCertificateAuth()
+    if (this.webViewAuth != null) {
+      this.webViewAuth.finish()
+      this.webViewAuth = null
+      this.webViewURLs = {}
+    }
     if (this.featureTableWindow) {
       this.closingProjectWindow = true
       this.featureTableWindow.hide()

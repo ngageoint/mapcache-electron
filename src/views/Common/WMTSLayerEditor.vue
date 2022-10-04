@@ -85,7 +85,8 @@ export default {
     },
     error: Object,
     updateConfiguration: Function,
-    setError: Function
+    setError: Function,
+    project: Object
   },
   directives: {
     'sortable-list': {
@@ -177,7 +178,8 @@ export default {
               srs: tileMatrixSet.supportedCRS,
               tileMatrixSets: serviceLayer.tileMatrixSets,
               identifier: serviceLayer.identifier,
-              resource: serviceLayer.resource
+              resource: serviceLayer.resource,
+              style: serviceLayer.style
             }
           }).sort((a, b) => {
             return this.configuration.layers.findIndex(l => l.name === a.name) - this.configuration.layers.findIndex(l => l.name === b.name)
