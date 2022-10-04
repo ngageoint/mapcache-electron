@@ -530,7 +530,7 @@ function getTileRequestURL (wmsUrl, layers, width, height, bbox, srs, version, f
   queryParams['service'] = 'WMS'
   queryParams['request'] = 'GetMap'
   queryParams['version'] = version
-  queryParams['layers'] = layers.join()
+  queryParams['layers'] = layers.sort().join()
   queryParams['width'] = width
   queryParams['height'] = height
   queryParams['format'] = format
