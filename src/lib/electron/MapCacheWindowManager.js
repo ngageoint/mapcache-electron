@@ -217,7 +217,6 @@ class MapCacheWindowManager {
         }
       }
       const headers = details.requestHeaders
-
       callback({
         requestHeaders: headers
       })
@@ -825,7 +824,8 @@ class MapCacheWindowManager {
       this.mainWindow = new BrowserWindow({
         title: 'MapCache',
         webPreferences: {
-          preload: path.join(__dirname, 'mainPreload.js')
+          preload: path.join(__dirname, 'mainPreload.js'),
+          partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
         },
         show: false,
         x: this.mainWindowState.x,
@@ -1098,7 +1098,8 @@ class MapCacheWindowManager {
     this.featureTableWindow = new BrowserWindow({
       title: 'MapCache feature table',
       webPreferences: {
-        preload: path.join(__dirname, 'featureTablePreload.js')
+        preload: path.join(__dirname, 'featureTablePreload.js'),
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
       },
       show: false,
       x: this.featureTableWindowState.x,

@@ -89,7 +89,7 @@ function getServiceType (serviceName) {
  */
 function getAuthenticationMethod (response) {
   let authType = CREDENTIAL_TYPE_NONE
-  if (response.headers && response.headers['www-authenticate']) {
+  if (response && response.headers && response.headers['www-authenticate']) {
     authType = getAuthType(response.headers['www-authenticate'].split(' ')[0])
   }
   return authType

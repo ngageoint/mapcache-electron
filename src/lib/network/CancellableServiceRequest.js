@@ -38,10 +38,10 @@ export default class CancellableServiceRequest {
   /**
    * Will request the url and return the response.
    * @param url
-   * @param allowAuthInBrowserWindow
+   * @param allowWebViewAuth
    * @returns <any>
    */
-  async request (url, allowAuthInBrowserWindow = true) {
+  async request (url, allowWebViewAuth = true) {
     let response
     let error
     const self = this
@@ -68,11 +68,13 @@ export default class CancellableServiceRequest {
     } finally {
       window.mapcache.unregisterServiceRequestCancelListener(url)
     }
-
-    const isHTMLResponse = response.headers['content-type'].indexOf('text/html') !== -1
+    let isHTMLResponse = false
+    if (response && response.headers) {
+      isHTMLResponse = response.headers['content-type'].indexOf('text/html') !== -1
+    }
 
     // if the response contains html, we are going to assume it got redirected to an html page that handles auth. We will let electron know we need an AuthWebView to complete the interaction.
-    if (this.withCredentials && allowAuthInBrowserWindow && isHTMLResponse) {
+    if (this.withCredentials && allowWebViewAuth && isHTMLResponse) {
       await window.mapcache.sendWebViewAuthRequest(url)
       response = await this.request(url, false)
       error = null
