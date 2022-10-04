@@ -53,12 +53,14 @@ async function getUserCredentialsForUrl (details, authInfo, webContents) {
  * @param callback The callback to call on certificate selection.
  * @param webContents The WebContents instance requesting a certificate.
  */
-function getClientCredentials (details, authInfo, callback, webContents) {
+function getClientCredentials (details, authInfo, callback, webContents, internalCallback = () => {}) {
   getUserCredentialsForUrl(details, authInfo, webContents).then((credentials) => {
     if (credentials) {
       callback(credentials.username, CredentialsManagement.decrypt(credentials.password, credentials.iv, credentials.key))
+      internalCallback()
     } else {
       callback()
+      internalCallback('No credentials provided.')
     }
   }).catch((err) => {
     // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
@@ -67,6 +69,7 @@ function getClientCredentials (details, authInfo, callback, webContents) {
     // eslint-disable-next-line no-console
     console.error(`Client credentials input failed: ${reason}`)
     callback()
+    internalCallback(`Client credentials input failed: ${reason}`)
   })
 }
 

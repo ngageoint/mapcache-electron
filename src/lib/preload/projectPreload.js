@@ -226,9 +226,14 @@ import {
   LAUNCH_USER_GUIDE,
   SEND_WINDOW_TO_FRONT,
   UNDO,
-  REDO, CANCEL_TILE_COMPILATION_REQUEST, REQUEST_TILE_COMPILATION_COMPLETED, REQUEST_TILE_COMPILATION,
+  REDO,
+  CANCEL_TILE_COMPILATION_REQUEST,
+  REQUEST_TILE_COMPILATION_COMPLETED,
+  REQUEST_TILE_COMPILATION,
+  WEB_VIEW_AUTH_REQUEST,
+  WEB_VIEW_AUTH_RESPONSE, WEB_VIEW_AUTH_CANCEL,
 } from '../electron/ipc/MapCacheIPC'
-import { getOverpassQuery } from '../util/overpass/OverpassUtilities'
+import { getOverpassQueryFilter } from '../util/overpass/OverpassUtilities'
 import {
   convertPbfToDataUrl,
   drawVectorFeaturesInCanvas,
@@ -254,7 +259,7 @@ log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs'
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 
-// if a user cancels inputting credentials, we will need to force a cancel of the the request
+// if a user cancels inputting credentials, we will need to force a cancel of the request
 const cancelRequestURLToCallbackMap = {}
 ipcRenderer.on(CANCEL_SERVICE_REQUEST, (event, url) => {
   if (cancelRequestURLToCallbackMap[url]) {
@@ -265,6 +270,9 @@ ipcRenderer.on(CANCEL_SERVICE_REQUEST, (event, url) => {
 let fileStreams = {}
 
 let storage
+
+let webViewAuthListener = null
+let webViewAuthResponseListener = null
 
 function createBaseMapDirectory () {
   return createNextAvailableBaseMapDirectory(getUserDataDirectory())
@@ -279,6 +287,33 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   onNotifyRenderers (handler) {
     ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
+  },
+  registerAuthRequestListener(listener) {
+    webViewAuthListener = listener
+  },
+  registerAuthResponseListener(listener) {
+    webViewAuthResponseListener = listener
+  },
+  cancelWebViewAuthRequest () {
+    ipcRenderer.send(WEB_VIEW_AUTH_CANCEL)
+  },
+  async sendWebViewAuthRequest (url) {
+    return new Promise((resolve, reject) => {
+      if (webViewAuthListener != null) {
+        webViewAuthListener(url)
+      }
+      ipcRenderer.send(WEB_VIEW_AUTH_REQUEST, url)
+      ipcRenderer.on(WEB_VIEW_AUTH_RESPONSE, (event, response) => {
+        if (webViewAuthResponseListener != null) {
+          webViewAuthResponseListener()
+        }
+        if (response && response.error) {
+          reject(response.error)
+        } else {
+          resolve()
+        }
+      })
+    })
   },
   createStorage (name) {
     storage = new Store({ name: name })
@@ -881,7 +916,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   getBoundingBoxForFeature,
   getMediaObjectUrl,
   getStyleDrawOverlap,
-  getOverpassQuery,
+  getOverpassQueryFilter,
   getLayerColumns,
   getEditableColumnObject,
   getFeatureCount,

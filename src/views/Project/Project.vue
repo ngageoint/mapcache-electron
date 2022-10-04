@@ -1,5 +1,6 @@
 <template>
   <v-layout id="project" class="project-holder ma-0 pa-0">
+    <web-view-dialog :key="authKey" v-if="authUrl != null" :width="600" :url="authUrl" :cancel="cancelAuthRequest"></web-view-dialog>
     <v-dialog
         v-model="closingDialog"
         persistent
@@ -162,10 +163,13 @@ import { mdiCogOutline, mdiLayersOutline, mdiPackageVariant, mdiMagnify } from '
 import { SUPPORTED_FILE_EXTENSIONS_WITH_DOT } from '../../lib/util/file/FileConstants'
 import NominatimSearchResults from '../Nominatim/NominatimSearchResults'
 import ConfirmationCard from '../Common/ConfirmationCard'
+import WebViewDialog from '../Common/WebViewDialog'
 
 export default {
   data () {
     return {
+      authUrl: null,
+      authKey: 0,
       mdiPackageVariant: mdiPackageVariant,
       mdiLayersOutline: mdiLayersOutline,
       mdiCogOutline: mdiCogOutline,
@@ -282,6 +286,7 @@ export default {
     })
   },
   components: {
+    WebViewDialog,
     ConfirmationCard,
     NominatimSearchResults,
     BasicAuth,
@@ -292,6 +297,10 @@ export default {
     CertAuth
   },
   methods: {
+    cancelAuthRequest () {
+      this.authUrl = null
+      window.mapcache.cancelWebViewAuthRequest()
+    },
     handleSearchResults (data) {
       if (this.tabs.length === 3) {
         this.tabs.splice(2, 0, { tabId: 3, text: 'Search', icon: mdiMagnify })
@@ -437,6 +446,13 @@ export default {
     }
   },
   mounted () {
+    window.mapcache.registerAuthRequestListener((url) => {
+      this.authUrl = url
+      this.authKey = this.authKey++
+    })
+    window.mapcache.registerAuthResponseListener(() => {
+      this.authUrl = null
+    })
     let uistate = this.getUIStateByProjectId(this.project.id)
     if (!uistate) {
       window.mapcache.addProjectState({ projectId: this.project.id })

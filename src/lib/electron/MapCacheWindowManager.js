@@ -69,9 +69,10 @@ import {
   UNDO,
   REQUEST_TILE_COMPILATION,
   REQUEST_TILE_COMPILATION_COMPLETED,
-  CANCEL_TILE_COMPILATION_REQUEST
+  CANCEL_TILE_COMPILATION_REQUEST, WEB_VIEW_AUTH_REQUEST, WEB_VIEW_AUTH_CANCEL
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
+import WebViewAuth from './auth/WebViewAuth'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -81,6 +82,8 @@ const isProduction = process.env.NODE_ENV === 'production'
  * MapCacheWindowManager manages all interactions with browser windows
  */
 class MapCacheWindowManager {
+  static MAPCACHE_SESSION_PARTITION = 'persist:mapcache'
+
   mainWindow
   projectWindow
   loadingWindow
@@ -96,12 +99,13 @@ class MapCacheWindowManager {
   quitFromParent = false
   forceClose = false
   store
+  webViewAuth
 
   // request tracking
   requests = {}
 
-  // userCredentialRequestInProgress
-  userCredentialRequestInProgress = false
+  // track web view url requests
+  webViewURLs = {}
 
   setupGlobalShortcuts () {
     globalShortcut.register('CommandOrControl+Shift+S', () => {
@@ -113,14 +117,37 @@ class MapCacheWindowManager {
     })
 
     if (!isProduction) {
-      globalShortcut.register('CommandOrControl+Shift+C', () => {
-        session.defaultSession.clearAuthCache()
+      globalShortcut.register('CommandOrControl+Shift+C', async () => {
+        await this.clearSessionCache()
       })
     }
 
     globalShortcut.register('CommandOrControl+Shift+L', () => {
       shell.showItemInFolder(path.join(app.getPath('userData'), 'logs', 'mapcache.log'))
     })
+  }
+
+  async clearSessionCache () {
+    const session = this.getMapCacheSession()
+    await session.clearCache()
+    await session.clearAuthCache()
+    await session.clearStorageData()
+  }
+
+  /**
+   * Returns the Session used by MapCache
+   * @returns {Electron.Session}
+   */
+  getMapCacheSession () {
+    return session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
+  }
+
+  /**
+   * Gets the MapCache session name
+   * @returns {string}
+   */
+  getMapCacheSessionName () {
+    return MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
   }
 
   /**
@@ -180,7 +207,7 @@ class MapCacheWindowManager {
    */
   setupWebRequestWorkflow () {
     // before sending headers, if it is marked with the auth enabled header, store the id of the request
-    session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    this.getMapCacheSession().webRequest.onBeforeSendHeaders((details, callback) => {
       if (!isNil(this.requests[details.id])) {
         this.requests[details.id].redirectURLs.push(details.url)
       } else {
@@ -219,7 +246,7 @@ class MapCacheWindowManager {
     }
 
     // if auth was enabled, be sure to add response header allow for auth to occur
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    this.getMapCacheSession().webRequest.onHeadersReceived((details, callback) => {
       let headers = details.responseHeaders
 
       fixHeaders(headers)
@@ -229,13 +256,13 @@ class MapCacheWindowManager {
       })
     })
 
-    session.defaultSession.webRequest.onBeforeRedirect((details) => {
+    this.getMapCacheSession().webRequest.onBeforeRedirect((details) => {
       if (!isNil(this.requests[details.id]) && !isNil(this.requests[details.id].redirectURLs)) {
         this.requests[details.id].redirectURLs.push(details.redirectURL)
       }
     })
 
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    this.getMapCacheSession().setPermissionRequestHandler((webContents, permission, callback) => {
       const url = webContents.getURL()
       // Verify URL is from localhost server or custom protocol
       if (!url.startsWith('http://localhost') && !url.startsWith('mapcache://')) {
@@ -247,11 +274,17 @@ class MapCacheWindowManager {
     })
 
     // once completed, we need to delete the map's id to prevent memory leak
-    session.defaultSession.webRequest.onCompleted(details => {
+    this.getMapCacheSession().webRequest.onCompleted(details => {
+      if (this.webViewAuth != null) {
+        this.webViewAuth.onWebRequestCompleted(details)
+      }
       delete this.requests[details.id]
     })
 
-    session.defaultSession.webRequest.onErrorOccurred(details => {
+    this.getMapCacheSession().webRequest.onErrorOccurred(details => {
+      if (this.webViewAuth != null) {
+        this.webViewAuth.onWebRequestErrored(details)
+      }
       delete this.requests[details.id]
     })
   }
@@ -276,6 +309,31 @@ class MapCacheWindowManager {
     this.store = require('../../store')
   }
 
+  setupAuthWebViewHandler () {
+    // track a webview was created, this is typically due to an auth page that needs to be displayed
+    let src = null;
+    app.on('web-contents-created', (event, contents) => {
+      // do not allow web views to be attached, mapcache should not request any web views
+      contents.on('will-attach-webview', (webViewEvent, webPreferences, params) => {
+        // Strip away preload scripts if unused or verify their location is legitimate
+        delete webPreferences.preload
+        // Disable Node.js integration
+        webPreferences.nodeIntegration = false
+        src = params.src
+        // verify
+        if (this.webViewURLs[src] == null) {
+          event.preventDefault();
+        } else {
+          delete this.webViewURLs[src]
+        }
+      })
+
+      contents.on('did-attach-webview', (event, webContents) => {
+        this.webViewAuth = new WebViewAuth(webContents, this.projectWindow, src)
+      })
+    })
+  }
+
   /**
    * Starts the app and returns once the main window has loaded
    * @return {Promise<unknown>}
@@ -286,6 +344,7 @@ class MapCacheWindowManager {
       this.setupGlobalShortcuts()
       this.setupWebRequestWorkflow()
       this.registerEventHandlers()
+      this.setupAuthWebViewHandler()
       Promise.all([this.registerWorkerThreads(), this.launchMainWindow()]).then(() => {
         this.showMainWindow()
         resolve()
@@ -473,7 +532,6 @@ class MapCacheWindowManager {
       BrowserWindow.fromWebContents(event.sender).show()
     })
 
-
     ipcMain.on(GET_APP_VERSION, (event) => {
       event.returnValue = app.getVersion()
     })
@@ -609,6 +667,16 @@ class MapCacheWindowManager {
     ipcMain.on(LAUNCH_USER_GUIDE, () => {
       this.launchUserGuideWindow()
     })
+
+    ipcMain.on(WEB_VIEW_AUTH_REQUEST, (event, url) => {
+      this.webViewURLs[url] = url
+    })
+    ipcMain.on(WEB_VIEW_AUTH_CANCEL, () => {
+      if (this.webViewAuth != null) {
+        this.webViewAuth.userCancel()
+        this.webViewAuth = null
+      }
+    })
   }
 
   /**
@@ -708,7 +776,8 @@ class MapCacheWindowManager {
       : 'mapcache://./index.html/#/worker'
     this.workerWindow = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, 'workerPreload.js')
+        preload: path.join(__dirname, 'workerPreload.js'),
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
       },
       show: false
     })
@@ -894,7 +963,7 @@ class MapCacheWindowManager {
    * Launches the project window
    */
   launchProjectWindow () {
-    const windowHeight = 700 + (isWin ? 20 : 0)
+    const windowHeight = 824 + (isWin ? 20 : 0)
 
     this.projectWindowState = windowStateKeeper({
       defaultWidth: 1200,
@@ -912,7 +981,9 @@ class MapCacheWindowManager {
     this.projectWindow = new BrowserWindow({
       title: 'MapCache',
       webPreferences: {
-        preload: path.join(__dirname, 'projectPreload.js')
+        preload: path.join(__dirname, 'projectPreload.js'),
+        webviewTag: true,
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
       },
       show: false,
       x: this.projectWindowState.x,
@@ -971,10 +1042,8 @@ class MapCacheWindowManager {
 
     // login will only be done via the project window.
     this.projectWindow.webContents.on('login', (event, details, authInfo, callback) => {
-      if (details.firstAuthAttempt) {
-        event.preventDefault()
-        getClientCredentials(details, authInfo, callback, this.projectWindow.webContents)
-      }
+      event.preventDefault()
+      getClientCredentials(details, authInfo, callback, this.projectWindow.webContents)
     })
   }
 

@@ -100,12 +100,6 @@ function setupWebContentHandling () {
       return { action: 'deny' }
     })
   })
-  app.on('web-contents-created', (event, contents) => {
-    // do not allow web views to be attached, mapcache should not request any web views
-    contents.on('will-attach-webview', (event) => {
-      event.preventDefault()
-    })
-  })
 }
 
 /**

@@ -5,6 +5,19 @@ import bboxClip from '@turf/bbox-clip'
 import bbox from '@turf/bbox'
 import bboxPolygon from '@turf/bbox-polygon'
 import intersect from '@turf/intersect'
+import circle from '@turf/circle'
+
+/**
+ * Generates a circular polygon feature with a specified number of vertices
+ * @param latLng
+ * @param properties
+ * @param radiusInMeters
+ * @param steps
+ * @returns {Feature<Polygon, Properties>}
+ */
+function generateCircularFeature (latLng, properties, radiusInMeters, steps = 128) {
+  return circle(latLng, radiusInMeters, {steps: steps, units: 'meters', properties: properties})
+}
 
 /**
  * Returns a clipped feature. Will return null of there is no intersection between the bounds and the feature
@@ -210,6 +223,7 @@ function flattenFeature (feature) {
 }
 
 export {
+  generateCircularFeature,
   coordinatesEqual,
   isCoordinateValid,
   isRectangle,

@@ -252,14 +252,13 @@ export default {
         this.anchorLeft = 0
       })
     },
-    handleAnchorChange (e) {
+    handleAnchorChange (event) {
       const width = this.displayWidth
       const height = this.displayHeight
       const image = document.getElementById('create-edit-icon-anchor')
       if (image != null) {
-        const rect = image.getBoundingClientRect()
-        this.anchorU = Math.min(1, Math.max(0, Number(((e.clientX - rect.left) / width).toFixed(3))))
-        this.anchorV = Math.min(1, Math.max(0, Number(((e.clientY - rect.top) / height).toFixed(3))))
+        this.anchorU = Math.min(1, Math.max(0, Number((event.offsetX / width).toFixed(3))))
+        this.anchorV = Math.min(1, Math.max(0, Number((event.offsetY / height).toFixed(3))))
       }
     },
     updateAnchorPosition () {

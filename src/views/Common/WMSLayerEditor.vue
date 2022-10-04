@@ -4,8 +4,12 @@
       <v-col>
         <p :style="{fontSize: '16px', fontWeight: '500', marginBottom: '0px'}">
           Layers
+          <v-progress-circular class="pl-2" size="24" color="primary" v-if="!loaded" indeterminate></v-progress-circular>
         </p>
-        <p class="detail--text" v-if="!errored" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+        <p class="detail--text" v-if="!loaded" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+          {{ 'Retrieving layer details' }}
+        </p>
+        <p class="detail--text" v-else-if="!errored" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
           {{
             configuration.layers.filter(l => l.enabled).length === 0 ? 'No layers enabled' : (configuration.layers.filter(l => l.enabled).length === configuration.layers.length ? 'All layers enabled' : (configuration.layers.filter(l => l.enabled).length + ' of ' + configuration.layers.length + ' layers enabled'))
           }}
@@ -163,6 +167,7 @@ export default {
       this.sortedRenderingLayers = []
       const options = {}
       options.version = this.configuration.version
+      options.withCredentials = this.configuration.withCredentials || false
       testServiceConnection(this.configuration.filePath, SERVICE_TYPE.WMS, options).then(result => {
         if (!isNil(result.serviceInfo)) {
           this.sortedRenderingLayers = result.serviceInfo.serviceLayers.map(serviceLayer => {
@@ -184,6 +189,7 @@ export default {
           const configuration = cloneDeep(this.configuration)
           configuration.layers = this.sortedRenderingLayers
           configuration.extent = WMSLayer.getExtentForLayers(configuration.layers)
+          configuration.error = undefined
           if (this.project.sources[configuration.id] != null) {
             this._updateConfiguration(configuration)
           }

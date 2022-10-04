@@ -1,0 +1,266 @@
+<template>
+  <v-card outlined class="range-ring-card">
+    <v-card-title>
+      <v-btn color="primary" class="pr-2" icon @click="zoomToRangeRing"><v-icon>{{mdiCircleMultipleOutline}}</v-icon></v-btn>
+      Range rings
+    </v-card-title>
+    <v-card-subtitle>Specify the center of your ranged rings, then add rings.</v-card-subtitle>
+    <v-card-text class="pb-2 overflow-y-auto" style="height: 248px !important;">
+      <v-card-subtitle class="ma-0 pb-4 pl-0">Center point</v-card-subtitle>
+      <v-row no-gutters justify="space-between">
+        <v-col cols="5">
+          <v-text-field class="pr-2" dense hide-details type="number" label="Latitude" v-model="rangeRingCenter.lat"></v-text-field>
+        </v-col>
+        <v-col cols="5">
+          <v-text-field class="pr-2" dense hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
+        </v-col>
+        <v-col offset="1" cols="1">
+          <v-btn icon @click="drawRangeRingCenterPoint"><v-icon>{{mdiMapMarker}}</v-icon></v-btn>
+        </v-col>
+      </v-row>
+      <v-card-subtitle class="ma-0 pb-4 pl-0">Rings</v-card-subtitle>
+      <v-row no-gutters justify="space-between">
+        <v-col cols="10">
+          <v-select dense label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
+        </v-col>
+        <v-col offset="1" cols="1">
+          <v-btn @click="addRingDistance" icon><v-icon>{{mdiPlus}}</v-icon></v-btn>
+        </v-col>
+      </v-row>
+      <v-row no-gutters>
+        <v-list style="width: 100% !important;" class="ma-0 pa-0">
+          <v-list-item style="width: 100% !important;" class="ma-0 pa-0" v-for="(item, i) in ringDistances" :key="i">
+            <v-row no-gutters justify="space-between" align-content="center">
+              <v-col cols="10">
+                <v-text-field hide-details dense type="number" v-model="item.distance" :min="0"></v-text-field>
+              </v-col>
+              <v-col offset="1" cols="1">
+                <v-btn @click="() => deleteRingDistance(i)" icon><v-icon>{{mdiTrashCanOutline}}</v-icon></v-btn>
+              </v-col>
+            </v-row>
+          </v-list-item>
+        </v-list>
+      </v-row>
+    </v-card-text>
+    <v-divider/>
+    <v-card-actions>
+      <v-spacer/>
+      <v-btn text @click="cancel" color="warning">Cancel</v-btn>
+      <v-btn @click="saveRangeRingFeature" text color="primary">Save</v-btn>
+    </v-card-actions>
+  </v-card>
+</template>
+
+<script>
+import { L } from '../../lib/leaflet/vendor'
+import { convertLength } from '@turf/helpers'
+import { DRAWING_LAYER_PANE } from '../../lib/leaflet/map/panes/MapPanes'
+import { mdiPlus, mdiTrashCanOutline, mdiMapMarker, mdiCircleMultipleOutline } from '@mdi/js'
+import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
+
+export default {
+  props: {
+    map: Object,
+    saveFeature: Function,
+    close: Function
+  },
+  data () {
+    return {
+      mdiPlus,
+      mdiTrashCanOutline,
+      mdiMapMarker,
+      mdiCircleMultipleOutline,
+      rangeRingCenter: { lat: 0.0, lon: 0.0 },
+      ringMapLayers: [],
+      ringCenterLayer: null,
+      distanceUnits: [{text: 'Feet', value: 'feet'}, {text: 'Miles', value: 'miles'}, {text: 'Meters',  value: 'meters'}, {text: 'Kilometers', value: 'kilometers'}],
+      distanceUnit: 'miles',
+      ringDistances: []
+    }
+  },
+  methods: {
+    zoomToRangeRing () {
+      if (this.ringMapLayers.length > 0) {
+        const mapLayer = this.ringMapLayers.sort((a, b) => a.options.distance - b.options.distance)[this.ringDistances.length - 1]
+        this.map.fitBounds(mapLayer.getBounds().pad(0.5));
+      } else {
+        this.map.fitBounds(L.latLngBounds(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon)).pad(0.5), {maxZoom: 14});
+      }
+    },
+    cancel () {
+      if (this.ringCenterLayer != null) {
+        this.map.removeLayer(this.ringCenterLayer)
+      }
+      this.ringMapLayers.forEach(mapLayer => {
+        this.map.removeLayer(mapLayer)
+      })
+      this.close()
+    },
+    saveRangeRingFeature () {
+      const feature = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'MultiLineString',
+          coordinates: this.ringDistances.sort((a, b) => a.distance - b.distance).map(ring => {
+            return this.getRadiusFeature(ring.distance, this.distanceUnit).geometry.coordinates[0]
+          })
+        },
+        isRangeRing: true
+      }
+      this.saveFeature(feature)
+      this.cancel()
+    },
+    convertDistance (value, sourceUnit, targetUnit) {
+      return convertLength(value, sourceUnit, targetUnit)
+    },
+    drawRangeRingCenterPoint () {
+      this.map.pm.enableDraw('Marker', {
+        snappable: true,
+      })
+    },
+    getRadiusFeature (distance, units) {
+      return generateCircularFeature([this.rangeRingCenter.lon, this.rangeRingCenter.lat], {distance: distance, units: units}, this.convertDistance(distance, units, 'meters'), 128)
+    },
+    getDistancePattern () {
+      let distance = null
+      if (this.ringDistances.length === 0) {
+        distance = 1
+      } else if (this.ringDistances.length === 1) {
+        distance = this.ringDistances[0].distance * 2.0
+      } else if (this.ringDistances.length > 1) {
+        let differences = []
+        const sortedDistances = this.ringDistances.map(ring => ring.distance).sort((a, b) => a - b)
+        for (let i = 1; i < sortedDistances.length; i++) {
+          const prevDistance = sortedDistances[i - 1]
+          const distance = sortedDistances[i]
+          differences.push(Math.abs(distance - prevDistance))
+        }
+        distance = sortedDistances[sortedDistances.length - 1] + (differences.reduce((a, b) => {
+          return a + b
+        }, 0) / differences.length)
+      }
+      return distance
+    },
+    addRingDistance () {
+      const distance = this.getDistancePattern() || 1
+      const ringLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
+        radius: this.convertDistance(distance, this.distanceUnit, 'meters'),
+        pane: DRAWING_LAYER_PANE.name,
+        zIndex: DRAWING_LAYER_PANE.zIndex,
+        distance: distance,
+        fill: false
+      })
+      this.ringMapLayers.push(ringLayer)
+      ringLayer.addTo(this.map)
+      this.ringDistances.push({
+        distance: distance
+      })
+    },
+    deleteRingDistance (index) {
+      const layerToDelete = this.ringMapLayers.splice(index, 1)[0]
+      this.map.removeLayer(layerToDelete)
+      this.ringDistances.splice(index, 1)
+    },
+    redrawRings () {
+      for (let i = 0; i < this.ringMapLayers.length; i++) {
+        const ringMapLayer = this.ringMapLayers[i]
+        this.map.removeLayer(ringMapLayer)
+        const newRingMapLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
+          radius: this.convertDistance(this.ringDistances[i].distance, this.distanceUnit, 'meters'),
+          pane: DRAWING_LAYER_PANE.name,
+          zIndex: DRAWING_LAYER_PANE.zIndex,
+          distance: this.ringDistances[i].distance,
+          fill: false
+        })
+        newRingMapLayer.addTo(this.map)
+        this.ringMapLayers[i] = newRingMapLayer
+      }
+    }
+  },
+  mounted () {
+    this.handlePlacemarkSetting = ({ layer }) => {
+      const feature = layer.toGeoJSON()
+      this.map.removeLayer(layer)
+      this.rangeRingCenter.lat = feature.geometry.coordinates[1]
+      this.rangeRingCenter.lon = feature.geometry.coordinates[0]
+    }
+    this.map.on('pm:create', this.handlePlacemarkSetting)
+    this.ringCenterLayer = L.circleMarker(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
+      color: '#FF0000',
+      radius: 1
+    })
+    this.handleDrawStart = ({ workingLayer }) => {
+      workingLayer.setLatLng(this.map.getCenter())
+    }
+    this.map.on('pm:drawstart', this.handleDrawStart)
+    this.ringCenterLayer.addTo(this.map)
+    this.addRingDistance()
+  },
+  beforeDestroy () {
+    this.map.off('pm:create', this.handlePlacemarkSetting)
+    this.map.off('pm:drawstart', this.handleDrawStart)
+  },
+  watch: {
+    ringDistances: {
+      handler () {
+        this.ringDistances.forEach(ringDistance => {
+          ringDistance.distance = Number(ringDistance.distance)
+        })
+        if (this.ringDistances.length === this.ringMapLayers.length) {
+          for (let i = 0; i < this.ringDistances.length; i++) {
+            const ringDistance = Number(this.ringDistances[i].distance)
+            const featureDistance = Number(this.ringMapLayers[i].options.distance)
+            if (ringDistance !== featureDistance) {
+              this.map.removeLayer(this.ringMapLayers[i])
+              const ringLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
+                radius: this.convertDistance(ringDistance, this.distanceUnit, 'meters'),
+                pane: DRAWING_LAYER_PANE.name,
+                zIndex: DRAWING_LAYER_PANE.zIndex,
+                distance: ringDistance,
+                fill: false
+              })
+              ringLayer.addTo(this.map)
+              this.ringMapLayers[i] = ringLayer
+            }
+          }
+        }
+      },
+      deep: true
+    },
+    rangeRingCenter: {
+      handler (newValue) {
+        if (newValue != null) {
+          if (this.ringCenterLayer != null) {
+            this.map.removeLayer(this.ringCenterLayer)
+          }
+          this.ringCenterLayer = L.circleMarker(L.latLng(newValue.lat, newValue.lon), {
+            color: '#FF0000',
+            radius: 1
+          })
+          this.ringCenterLayer.addTo(this.map)
+          this.redrawRings()
+        }
+      },
+      deep: true
+    },
+    distanceUnit: {
+      handler () {
+        this.redrawRings()
+      }
+    },
+  }
+}
+</script>
+
+<style scoped>
+.range-ring-card {
+  top: 364px;
+  min-width: 348px;
+  max-width: 348px !important;
+  position: absolute !important;
+  right: 50px !important;
+  max-height: 450px !important;
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
+</style>
