@@ -1,4 +1,3 @@
-import { ProjectionConstants } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import {
   DEFAULT_RATE_LIMIT,
@@ -13,6 +12,7 @@ import EventBus from '../../../vue/EventBus'
 import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
 import CancellableTileRequest from '../../../network/CancellableTileRequest'
 import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
+import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
 
 /**
  * The map cache networking map layer is a wrapper for WMS/XYZ and other services
@@ -25,7 +25,7 @@ export default function (L) {
       L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
       this.outstandingTileRequests = {}
       this.layer = options.layer
-      this.layerBounds = this.crs === ProjectionConstants.EPSG_3857 ? window.mapcache.convertToWebMercator(this.layer.extent) : this.layer.extent.slice()
+      this.layerBounds = this.crs === WEB_MERCATOR ? window.mapcache.convertToWebMercator(this.layer.extent) : this.layer.extent.slice()
       this.id = options.layer.id
       this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
       this.timeout = !isNil(this.layer.timeoutMs) ? this.layer.timeoutMs : DEFAULT_TIMEOUT
@@ -178,7 +178,7 @@ export default function (L) {
         } else {
           const size = this.getTileSize()
           // get web mercator bounding box
-          const boundingBox = this.crs === ProjectionConstants.EPSG_3857 ? window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+          const boundingBox = this.crs === WEB_MERCATOR ? window.mapcache.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
           // get tile requests
           let requests = this.layer.getTileRequestData(boundingBox, coords, size, this.crs, (bbox, srs) => {
             let projectedBoundingBox

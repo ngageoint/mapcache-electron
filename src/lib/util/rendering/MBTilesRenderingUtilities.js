@@ -1,5 +1,4 @@
 import { getDb, getTile, close, getVectorTileFeaturesFromDb, drawVectorFeaturesInCanvas } from './MBTilesUtilities'
-import { ProjectionConstants } from '@ngageoint/geopackage'
 import {
   getWGS84BoundingBoxFromXYZ,
   getWGS84ExtentFromXYZ
@@ -26,7 +25,7 @@ function requestTile (tileRequest) {
     let db
     try {
       db = getDb(dbFile)
-      if (crs === ProjectionConstants.EPSG_3857) {
+      if (crs === WEB_MERCATOR) {
         let base64Image
         if (format === 'pbf') {
           base64Image = drawVectorFeaturesInCanvas(getVectorTileFeaturesFromDb(db, coords.z, coords.x, coords.y), pointStyle, lineStyle, polygonStyle)
