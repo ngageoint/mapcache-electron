@@ -112,7 +112,7 @@ async function start () {
   setupWebContentHandling()
 
   if (!process.env.WEBPACK_DEV_SERVER_URL) {
-    require('./lib/protocol/protocol').default('mapcache')
+    require('./lib/protocol/protocol').default(protocol, 'mapcache')
   }
 
   MapCacheWindowManager.launchLoaderWindow()

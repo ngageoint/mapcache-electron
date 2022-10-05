@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut } from 'electron'
+import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut, protocol } from 'electron'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
@@ -107,6 +107,8 @@ class MapCacheWindowManager {
   // track web view url requests
   webViewURLs = {}
 
+  mapCachePartitionedSession = null
+
   setupGlobalShortcuts () {
     globalShortcut.register('CommandOrControl+Shift+S', () => {
       this.showAllDevTools()
@@ -139,7 +141,11 @@ class MapCacheWindowManager {
    * @returns {Electron.Session}
    */
   getMapCacheSession () {
-    return session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
+    if (this.mapCachePartitionedSession == null) {
+      this.mapCachePartitionedSession = session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
+      require('../protocol/protocol').default(this.mapCachePartitionedSession.protocol, 'mapcache')
+    }
+    return this.mapCachePartitionedSession
   }
 
   /**
@@ -760,7 +766,9 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch(() => {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      console.error(e)
+      onFulfilled()
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })

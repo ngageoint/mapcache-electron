@@ -2,8 +2,8 @@ import * as path from 'path'
 import { readFile } from 'fs'
 import { URL } from 'url'
 
-export default (scheme) => {
-  require('electron').protocol.registerBufferProtocol(scheme, (request, callback) => {
+export default (protocol, scheme) => {
+  protocol.registerBufferProtocol(scheme, (request, callback) => {
       let pathName = new URL(request.url).pathname
       pathName = decodeURI(pathName) // Needed in case URL contains spaces
       let absolutePath = pathName
