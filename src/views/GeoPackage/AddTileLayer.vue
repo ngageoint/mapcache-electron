@@ -781,7 +781,7 @@ export default {
     internalRenderingOrder: {
       async get () {
         const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-        return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+        return this.project.mapRenderingOrder != null ? this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item)) : []
       },
       default: []
     }

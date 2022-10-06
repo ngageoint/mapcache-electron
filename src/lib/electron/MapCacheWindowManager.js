@@ -971,10 +971,12 @@ class MapCacheWindowManager {
    * Launches the project window
    */
   launchProjectWindow () {
-    const windowHeight = 824 + (isWin ? 20 : 0)
+    const windowHeight = 828 + (isWin ? 20 : 0)
+    const minWidth = 1200
 
     this.projectWindowState = windowStateKeeper({
       defaultWidth: 1200,
+      minWidth: minWidth,
       defaultHeight: windowHeight,
       file: 'project-page.json',
       path: path.join(app.getPath('userData'), 'window_state'),
@@ -999,7 +1001,7 @@ class MapCacheWindowManager {
       width: this.projectWindowState.width,
       height: this.projectWindowState.height,
       minHeight: windowHeight,
-      minWidth: 1000
+      minWidth: minWidth
     })
 
     this.projectWindowState.manage(this.projectWindow)

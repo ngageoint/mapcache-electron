@@ -593,27 +593,36 @@ export default {
                   image: '/images/documentation/using_mapcache/tile_layer/article_02/image_06.jpg'
                 },
                 {
-                  paragraph: `Specify the bounds of the GeoPackage tile layer.`,
+                  paragraph: `Once the layers are ordered, specify the target projection.`,
                   image: '/images/documentation/using_mapcache/tile_layer/article_02/image_07.jpg',
+                  note: 'The standard projection for web map tiles is Web Mercator (EPSG:3857).'
+                },
+                {
+                  paragraph: `Specify the bounds of the GeoPackage tile layer.`,
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_08.jpg',
                   note: 'Keep in mind that the larger this area is, the more tiles will need to be generated at lower zoom levels. This will result in a larger GeoPackage file size.'
                 },
                 {
                   paragraph: `Once the bounds are specified, adjust the zoom levels for the GeoPackage tile layer. The allowed zoom levels are between 0 and 20.`,
-                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_08.jpg',
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_09.jpg',
                   note: 'The higher the max zoom level, the more tiles will be generated.'
                 },
                 {
                   paragraph: `If there are large number of tiles, that would be generated, but a particular zoom range,&nbsp;<strong>tile scaling</strong>&nbsp;can be enabled. Tile scaling reduces the number of tiles generated and stored in the GeoPackage tile layer by scaling tiles at nearby zoom levels.`,
-                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_09.jpg',
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_10.jpg',
                   note: 'Some of the tiles may be less detailed due to scaling and there could be unintended visual artifacts from feature layers.'
                 },
                 {
                   paragraph: `The Summary gives an indication of how many tiles will be generated. If the number is very large, a warning will be displayed.`,
-                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_10.jpg'
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_11.jpg'
                 },
                 {
-                  paragraph: `Click the&nbsp;<strong>Add</strong>&nbsp;button and the layer creation process will begin, as demonstrated in the video below.`,
-                  video: '/images/documentation/using_mapcache/tile_layer/article_02/video_01.webm'
+                  paragraph: `Click the&nbsp;<strong>Add</strong>&nbsp;button and the layer creation process will begin. The progress will be shown, as seen below.`,
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_12.jpg'
+                },
+                {
+                  paragraph: `Once complete, the tile layer will be available to view on the map.`,
+                  image: '/images/documentation/using_mapcache/tile_layer/article_02/image_13.jpg'
                 }
               ],
             },
