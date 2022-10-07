@@ -1,7 +1,7 @@
 <template>
   <v-card outlined class="range-ring-card">
     <v-card-title>
-      <v-btn color="primary" class="pr-2" icon @click="zoomToRangeRing"><v-icon>{{mdiCircleMultipleOutline}}</v-icon></v-btn>
+      <v-btn color="primary" class="mr-2" icon @click="zoomToRangeRing"><v-icon>{{mdiCircleMultipleOutline}}</v-icon></v-btn>
       Range rings
     </v-card-title>
     <v-card-subtitle>Specify the center of your ranged rings, then add rings.</v-card-subtitle>
