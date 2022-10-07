@@ -1,4 +1,5 @@
 import isNil from 'lodash/isNil'
+import { fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
 
 function getBaseUrlAndQueryParams (url) {
   let query = ''
@@ -35,14 +36,15 @@ function generateUrlWithQueryParams (url, queryParams) {
 }
 
 function isXYZ (url) {
-  const xIndex = url.toLowerCase().indexOf('{x}')
-  const yIndex = url.toLowerCase().indexOf('{y}')
-  const zIndex = url.toLowerCase().indexOf('{z}')
+  const fixedUrl = fixXYZTileServerUrlForLeaflet(url);
+  const xIndex = fixedUrl.toLowerCase().indexOf('{x}')
+  const yIndex = fixedUrl.toLowerCase().indexOf('{y}')
+  const zIndex = fixedUrl.toLowerCase().indexOf('{z}')
   return zIndex > -1 && zIndex < xIndex && xIndex < yIndex
 }
 
 function requiresSubdomains (url) {
-  return url.toLowerCase().indexOf('{s}') > -1
+  return fixXYZTileServerUrlForLeaflet(url).toLowerCase().indexOf('{s}') > -1
 }
 
 function isWMS (url) {

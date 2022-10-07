@@ -170,7 +170,7 @@ function generateUrlForTile (url, subdomains, x, y, z) {
  * @returns {string}
  */
 function fixXYZTileServerUrlForLeaflet (filePath) {
-  return filePath.replaceAll('${', '{').replace('{X}', '{x}').replace('{Y}', '{y}').replace('{Z}', '{z}').replace('{S}', '{s}')
+  return filePath.replaceAll('<', '{').replaceAll('>', '}').replaceAll('${', '{').replace('{X}', '{x}').replace('{col}', '{x}').replace('{Y}', '{y}').replace('{row}', '{y}').replace('{Z}', '{z}').replace('{zoom}', '{z}').replace('{S}', '{s}')
 }
 
 /**
