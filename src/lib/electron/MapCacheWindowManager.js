@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut } from 'electron'
+import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut, protocol } from 'electron'
 import path from 'path'
 import isNil from 'lodash/isNil'
 import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
@@ -107,6 +107,8 @@ class MapCacheWindowManager {
   // track web view url requests
   webViewURLs = {}
 
+  mapCachePartitionedSession = null
+
   setupGlobalShortcuts () {
     globalShortcut.register('CommandOrControl+Shift+S', () => {
       this.showAllDevTools()
@@ -139,7 +141,11 @@ class MapCacheWindowManager {
    * @returns {Electron.Session}
    */
   getMapCacheSession () {
-    return session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
+    if (this.mapCachePartitionedSession == null) {
+      this.mapCachePartitionedSession = session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
+      require('../protocol/protocol').default(this.mapCachePartitionedSession.protocol, 'mapcache')
+    }
+    return this.mapCachePartitionedSession
   }
 
   /**
@@ -217,7 +223,6 @@ class MapCacheWindowManager {
         }
       }
       const headers = details.requestHeaders
-
       callback({
         requestHeaders: headers
       })
@@ -761,7 +766,9 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch(() => {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      console.error(e)
+      onFulfilled()
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })
@@ -825,7 +832,8 @@ class MapCacheWindowManager {
       this.mainWindow = new BrowserWindow({
         title: 'MapCache',
         webPreferences: {
-          preload: path.join(__dirname, 'mainPreload.js')
+          preload: path.join(__dirname, 'mainPreload.js'),
+          partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
         },
         show: false,
         x: this.mainWindowState.x,
@@ -963,10 +971,12 @@ class MapCacheWindowManager {
    * Launches the project window
    */
   launchProjectWindow () {
-    const windowHeight = 824 + (isWin ? 20 : 0)
+    const windowHeight = 828 + (isWin ? 20 : 0)
+    const minWidth = 1200
 
     this.projectWindowState = windowStateKeeper({
       defaultWidth: 1200,
+      minWidth: minWidth,
       defaultHeight: windowHeight,
       file: 'project-page.json',
       path: path.join(app.getPath('userData'), 'window_state'),
@@ -991,7 +1001,7 @@ class MapCacheWindowManager {
       width: this.projectWindowState.width,
       height: this.projectWindowState.height,
       minHeight: windowHeight,
-      minWidth: 1000
+      minWidth: minWidth
     })
 
     this.projectWindowState.manage(this.projectWindow)
@@ -1098,7 +1108,8 @@ class MapCacheWindowManager {
     this.featureTableWindow = new BrowserWindow({
       title: 'MapCache feature table',
       webPreferences: {
-        preload: path.join(__dirname, 'featureTablePreload.js')
+        preload: path.join(__dirname, 'featureTablePreload.js'),
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
       },
       show: false,
       x: this.featureTableWindowState.x,
@@ -1151,6 +1162,11 @@ class MapCacheWindowManager {
    */
   closeProject (isDeleting = false) {
     MapCacheWindowManager.disableCertificateAuth()
+    if (this.webViewAuth != null) {
+      this.webViewAuth.finish()
+      this.webViewAuth = null
+      this.webViewURLs = {}
+    }
     if (this.featureTableWindow) {
       this.closingProjectWindow = true
       this.featureTableWindow.hide()

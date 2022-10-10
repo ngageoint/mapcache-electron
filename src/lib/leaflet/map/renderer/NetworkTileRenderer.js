@@ -15,7 +15,6 @@ import {
   REQUEST_TILE_COMPILATION_COMPLETED
 } from '../../../electron/ipc/MapCacheIPC'
 import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
-import { ProjectionConstants } from '@ngageoint/geopackage'
 import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
 
 /**
@@ -143,7 +142,7 @@ export default class NetworkTileRenderer {
           callback(null, null)
           return
         }
-        const boundingBox = crs === ProjectionConstants.EPSG_3857 ? this.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
+        const boundingBox = crs === WEB_MERCATOR ? this.getWebMercatorBoundingBoxFromXYZ(coords.x, coords.y, coords.z) : getWGS84BoundingBoxFromXYZ(coords.x, coords.y, coords.z)
         // get tile requests
         let requests = this.layer.getTileRequestData(boundingBox, coords, size, crs, (bbox, srs) => {
           let projectedBoundingBox

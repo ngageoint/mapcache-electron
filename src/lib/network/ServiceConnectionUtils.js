@@ -252,9 +252,11 @@ async function testXYZin4326 (serviceUrl, subdomains, options) {
   cancellableServiceRequest.withCredentials = options.withCredentials || false
   try {
     const response = await cancellableServiceRequest.request(url)
-    const contentLength = response.headers['content-length'] || response.headers['Content-Length']
-    if (contentLength != null && contentLength !== 0) {
-      is4326 = true
+    if (response != null && response.headers != null) {
+      const contentLength = response.headers['content-length'] || response.headers['Content-Length']
+      if (contentLength != null && contentLength !== 0) {
+        is4326 = true
+      }
     }
   } catch (e) {
     // 401 unauthorized, no need to keep checking

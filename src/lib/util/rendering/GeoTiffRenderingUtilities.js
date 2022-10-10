@@ -8,8 +8,7 @@ import { trimExtentToWebMercatorMax } from '../xyz/XYZTileUtilities'
 import { MAX_BYTE_VALUE, getSample, getReaderForSample, stretchValue, getMaxForDataType } from '../geotiff/GeoTiffUtilities'
 import { disposeCanvas, createCanvas, makeImageData } from '../canvas/CanvasUtilities'
 import keys from 'lodash/keys'
-import { COLON_DELIMITER, EPSG } from '../../projection/ProjectionConstants'
-import { ProjectionConstants } from '@ngageoint/geopackage'
+import { COLON_DELIMITER, EPSG, WEB_MERCATOR } from '../../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../xyz/WGS84XYZTileUtilities'
 
 
@@ -80,7 +79,7 @@ function requestTile (tileRequest) {
       let targetData = imageData.data
 
       let tileBbox, tileUpperRightBuffered, tileLowerLeftBuffered, fullExtent, ll, ur
-      if (crs === ProjectionConstants.EPSG_3857) {
+      if (crs === WEB_MERCATOR) {
         tileBbox = getWebMercatorBoundingBoxFromXYZ(x, y, z)
         tileUpperRightBuffered = wgs84ToWebMercator.inverse([tileBbox.maxLon + (tileBbox.maxLon - tileBbox.minLon), tileBbox.maxLat + (tileBbox.maxLat - tileBbox.minLat)])
         tileLowerLeftBuffered = wgs84ToWebMercator.inverse([tileBbox.minLon - (tileBbox.maxLon - tileBbox.minLon), tileBbox.minLat - (tileBbox.maxLat - tileBbox.minLat)])

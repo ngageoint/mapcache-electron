@@ -587,7 +587,8 @@ export default {
               tileMatrixSets: layer.tileMatrixSets,
               enabled: false,
               version: this.serviceInfo.wmtsInfo.serviceIdentification.version,
-              resource: layer.resource
+              resource: layer.resource,
+              style: layer.style
             }
           })
           sourceToProcess.wmtsInfo = this.serviceInfo.wmtsInfo

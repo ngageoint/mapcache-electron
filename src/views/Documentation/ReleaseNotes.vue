@@ -91,13 +91,16 @@ export default {
             'Fixed MGRS conversion errors in special regions.',
             'Fix for error with too many styles/icons and styles with null values.',
             'Ensure that bounds is set to edit mode when first displayed.',
-            'Fix for shapefile features without geometry error.'
+            'Fix for shapefile features without geometry error.',
+            'Fix for protected resouces that require users to authenticate through a web page.'
           ],
           newFeatures: [
             'Support a 4326 leaflet map.',
             'Create 4326 GeoPackage tile layer.',
             'Added Overpass categories and ability to manually edit the query\'s filter.',
-            'Extract GeoTIFFs from shapefiles.'
+            'Extract GeoTIFFs from shapefiles.',
+            'Icon anchor can now be by clicking on the icon.',
+            'Range ring creation tool.'
           ],
         },
         {

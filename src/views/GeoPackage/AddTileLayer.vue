@@ -190,7 +190,7 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5" color="primary">
+        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
           Order layers
           <small
               class="pt-1">{{
@@ -784,7 +784,7 @@ export default {
     internalRenderingOrder: {
       async get () {
         const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-        return this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+        return this.project.mapRenderingOrder != null ? this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item)) : []
       },
       default: []
     }

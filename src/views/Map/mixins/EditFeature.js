@@ -1,8 +1,13 @@
 import { L } from '../../../lib/leaflet/vendor'
 import cloneDeep from 'lodash/cloneDeep'
 import { DRAWING_LAYER_PANE, DRAWING_VERTEX_PANE } from '../../../lib/leaflet/map/panes/MapPanes'
-import { flattenFeature, explodeFlattenedFeature } from '../../../lib/util/geojson/GeoJSONUtilities'
+import {
+  flattenFeature,
+  explodeFlattenedFeature,
+  generateCircularFeature
+} from '../../../lib/util/geojson/GeoJSONUtilities'
 import isNil from 'lodash/isNil'
+
 
 const MODES = {
   EDIT: 0,
@@ -38,7 +43,7 @@ export default {
       let geojson = layer.toGeoJSON(10)
       if (!isNil(layer._mRadius)) {
         // feature.properties.radius = this.createdLayer._mRadius
-        geojson = this.generateCircularFeature(geojson.geometry.coordinates, geojson.properties, layer._mRadius)
+        geojson = generateCircularFeature(geojson.geometry.coordinates, geojson.properties, layer._mRadius)
       }
 
       this.editingLayer.addData(geojson)
