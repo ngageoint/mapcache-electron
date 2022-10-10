@@ -766,9 +766,7 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch((e) => {
-      console.error(e)
-      onFulfilled()
+    window.loadURL(url).then(onFulfilled).catch(() => {
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })
