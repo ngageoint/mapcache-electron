@@ -13,6 +13,7 @@ import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilit
 import CancellableTileRequest from '../../../network/CancellableTileRequest'
 import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
 import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
+import SlowServerNotifier from '../../../geopackage/SlowServerNotifier'
 
 /**
  * The map cache networking map layer is a wrapper for WMS/XYZ and other services
@@ -32,6 +33,7 @@ export default function (L) {
       this.error = null
       this.axiosRequestScheduler = getAxiosRequestScheduler(this.layer.rateLimit || DEFAULT_RATE_LIMIT)
       this.layer.setRenderer(constructRenderer(this.layer, false))
+      this.serverMonitor = new SlowServerNotifier()
       this.on('tileunload', (event) => {
         event.tile.onload = null
         event.tile.src = ''
@@ -199,10 +201,11 @@ export default function (L) {
                 if (!ret.cancelled) {
                   const cancellableTileRequest = new CancellableTileRequest()
                   cancellableTileRequests.push(cancellableTileRequest)
-                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({
-                                                                                                                                                                          dataUrl,
+                  this.serverMonitor.beforeRender(this.layer)
+                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({                                                                                                                                                     dataUrl,
                                                                                                                                                                           error
                                                                                                                                                                         }) => {
+                    this.serverMonitor.afterRender(this.layer)
                     resolve({ dataUrl, error, request })
                   })
                 } else {
@@ -276,6 +279,11 @@ export default function (L) {
         }
       }
       createTilePromise.signal.then(() => {
+        let status = {}
+        this.serverMonitor.applyWarningMessage(status)
+        if(status.warning) {
+          window.mapcache.setSourceWarning({ id: this.id, warning: status.warning })
+        }
         doneWrapper(null, tile)
       }).catch((e) => {
         doneWrapper(e, tile)
