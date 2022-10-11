@@ -29,6 +29,10 @@
             <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.error">
+            <data-source-warning :project-id="projectId"
+                                         :source="sources[item.id]"></data-source-warning>
+          </v-list-item-icon>
+          <v-list-item-icon class="mt-auto mb-auto" v-if="item.error">
             <data-source-troubleshooting :project-id="projectId"
                                          :source="sources[item.id]"></data-source-troubleshooting>
           </v-list-item-icon>
@@ -51,6 +55,7 @@
 import isNil from 'lodash/isNil'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import DataSourceWarning from './DataSourceWarning.vue'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import { zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
@@ -59,6 +64,7 @@ export default {
   components: {
     GeoTIFFTroubleshooting,
     DataSourceTroubleshooting,
+    DataSourceWarning,
     SourceVisibilitySwitch
   },
   props: {
