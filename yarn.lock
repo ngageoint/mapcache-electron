@@ -1072,10 +1072,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@ngageoint/geopackage@4.2.2":
-  version "4.2.2"
-  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.2.2.tgz#1ebb383cd5f50d0963109167d1f8e6bca8903bd6"
-  integrity sha512-hlG5GqxiRZCjWNoIjcqprmvWv3MChbi/rSMXZGPO5zAPnyiTh3smgllmGlo81326KGVyDVm4vB9wVhn7RnyqtA==
+"@ngageoint/geopackage@4.2.3":
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/@ngageoint/geopackage/-/geopackage-4.2.3.tgz#67a31e95f7359214bac118a369c597b3fa5a5859"
+  integrity sha512-LdRmoO4o9E1Ln8eRpgr0G6jnzUrj9MXF93bTbbnQAJU80Z68qFWGHh0WLaYS1nressbM+M5LtK7MF7j+o1ppJA==
   dependencies:
     "@turf/bbox" "6.3.0"
     "@turf/boolean-clockwise" "6.5.0"

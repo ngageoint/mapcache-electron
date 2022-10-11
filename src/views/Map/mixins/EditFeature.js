@@ -33,7 +33,8 @@ export default {
       noUndo: true,
       noRedo: true,
       isDragging: false,
-      editDrawing: false
+      editDrawing: false,
+      cutTimer: null
     }
   },
   methods: {
@@ -169,6 +170,7 @@ export default {
         case MODES.CUT:
           this.map.pm.disableGlobalCutMode()
           this.map.off('pm:cut')
+          this.cutTimer = null
           break
         case MODES.ROTATE:
           this.map.pm.disableGlobalRotateMode()
@@ -211,6 +213,9 @@ export default {
         })
         this.editingLayer.on('pm:edit', () => {
           this.updateEditingStack()
+          if (this.mode === MODES.CUT) {
+            this.stopMode()
+          }
         })
         this.mode = MODES.EDIT
       }
@@ -223,14 +228,28 @@ export default {
         this.map.pm.enableGlobalCutMode({
           allowSelfIntersection: false,
         })
+
+        this.cutTimer = null
         this.map.on('pm:cut', (e) => {
-          e.originalLayer.setLatLngs(e.layer.getLatLngs())
-          e.originalLayer.addTo(this.map)
-          e.originalLayer._pmTempLayer = false
-          e.layer._pmTempLayer = true
-          e.layer.remove()
-          this.stopMode()
-          this.updateEditingStack()
+          if (this.cutTimer != null) {
+            clearTimeout(this.cutTimer)
+          }
+          const originalLayer = e.originalLayer
+          const newLayer = e.layer
+          this.map.removeLayer(originalLayer)
+          this.map.removeLayer(newLayer)
+          this.editingLayer.removeLayer(originalLayer)
+          if (newLayer.getLayers) {
+            newLayer.getLayers().forEach(layer => {
+              this.editingLayer.addLayer(layer)
+            })
+          } else {
+            this.editingLayer.addLayer(newLayer)
+          }
+          this.cutTimer = setTimeout(() => {
+            this.updateEditingStack()
+            this.stopMode()
+          }, 250)
         })
         this.mode = MODES.CUT
       }

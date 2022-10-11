@@ -22,7 +22,7 @@
     "@geoman-io/leaflet-geoman-free": "2.11.4",
     "@mapbox/geojson-rewind": "0.5.1",
     "@mdi/js": "6.3.95",
-    "@ngageoint/geopackage": "4.2.2",
+    "@ngageoint/geopackage": "4.2.3",
     "@terraformer/arcgis": "2.1.0",
     "@turf/area": "6.5.0",
     "@turf/bbox": "6.5.0",
