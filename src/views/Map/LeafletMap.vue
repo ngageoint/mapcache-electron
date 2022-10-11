@@ -178,7 +178,7 @@
         </v-list>
       </v-card-text>
     </v-card>
-    <range-ring v-if="showRangeRingTool" :map="map" :close="cancelRangeRingTool" :save-feature="saveRangeRingFeature"></range-ring>
+    <range-ring v-if="showRangeRingTool" :map="map" :close="cancelRangeRingTool" :save-feature="saveRangeRingFeature" :style="{top: getRangeRingToolOffset()}"></range-ring>
     <v-card v-if="project.displayAddressSearchBar" outlined class="nominatim-card ma-0 pa-0 transparent">
       <nominatim-search :project="project" :map-bounds="mapBounds" :disable-search="disableSearch"/>
     </v-card>
@@ -778,6 +778,16 @@ export default {
     },
     getReorderCardOffset () {
       let yOffset = 320
+      if (!this.project.zoomControlEnabled) {
+        yOffset -= 74
+      }
+      if (!this.project.displayZoomEnabled) {
+        yOffset -= 44
+      }
+      return yOffset + 'px !important'
+    },
+    getRangeRingToolOffset () {
+      let yOffset = 364
       if (!this.project.zoomControlEnabled) {
         yOffset -= 74
       }
@@ -2126,6 +2136,7 @@ export default {
   max-height: 350px !important;
   border: 2px solid rgba(0, 0, 0, 0.2) !important;
 }
+
 
 .grid-overlay-card {
   top: 54px;
