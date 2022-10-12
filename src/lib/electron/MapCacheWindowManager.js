@@ -209,6 +209,18 @@ class MapCacheWindowManager {
   }
 
   /**
+   * Gets the origin for a url
+   * @param url
+   * @returns {string}
+   */
+  getOrigin (url) {
+    const pathArray = url.split( '/' )
+    const protocol = pathArray[0]
+    const host = pathArray[2]
+    return protocol + '//' + host
+  }
+
+  /**
    * Sets up the web request workflow.
    */
   setupWebRequestWorkflow () {
@@ -281,7 +293,9 @@ class MapCacheWindowManager {
     // once completed, we need to delete the map's id to prevent memory leak
     this.getMapCacheSession().webRequest.onCompleted(details => {
       if (this.webViewAuth != null) {
-        this.webViewAuth.onWebRequestCompleted(details)
+        this.webViewAuth.onWebRequestCompleted(details, async () => {
+          this.getMapCacheSession().clearAuthCache()
+        })
       }
       delete this.requests[details.id]
     })

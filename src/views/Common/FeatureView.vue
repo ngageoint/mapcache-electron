@@ -513,6 +513,7 @@ export default {
   text-align: center;
 }
 .show-less-text {
+  word-break: break-all !important;
   max-height: 40px !important;
   display: inline-block !important;
   overflow: hidden !important;
