@@ -44,7 +44,7 @@
           <v-row justify="center" style="overflow: hidden;">
             <v-img id="create-edit-icon" v-observe-visibility="imageVisibilityChanged" @click="handleAnchorChange" class="ma-4 clickable" contain :max-width="displayWidth" :max-height="displayHeight" :src="iconUrl"></v-img>
           </v-row>
-          <v-icon id="create-edit-icon-anchor" v-show="anchorLeft !== 0 && anchorTop !== 0 && anchorVValid && anchorVValid" color="red" :style="{position: 'fixed', top: anchorTop, left: anchorLeft}">{{mdiTargetVariant}}</v-icon>
+          <v-icon id="create-edit-icon-anchor" v-show="anchorLeft !== 0 && anchorTop !== 0 && anchorUValid && anchorVValid" color="red" :style="{position: 'fixed', top: anchorTop, left: anchorLeft}">{{mdiTargetVariant}}</v-icon>
           <v-row>
             <v-col class="pl-2 pr-2" cols="6">
               <number-picker :number="anchorU" :min="0.0" :max="1.0" :step="0.05" label="Horizontal anchor %" @update-number="(val) => {this.anchorU = val}" @update-valid="(val) => {this.anchorUValid = val}"></number-picker>
