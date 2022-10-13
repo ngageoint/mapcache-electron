@@ -21,7 +21,9 @@
             label="Password"
             clearable
             v-model="password"
-            type="password"
+            :type="visible ? 'text' : 'password'"
+            :append-icon="visible ? mdiEyeOff : mdiEye"
+            @click:append="() => (visible = !visible)"
             :rules="basicAuthPasswordRules"
             required/>
       </v-form>
@@ -46,6 +48,7 @@
 
 <script>
 import { CREDENTIAL_TYPE_BASIC } from '../../lib/network/HttpUtilities'
+import { mdiEye, mdiEyeOff } from '@mdi/js'
 
 export default {
   props: {
@@ -53,7 +56,7 @@ export default {
     signIn: Function,
     authInfo: Object,
     details: Object,
-    eventUrl: String,
+    eventUrl: String
   },
   methods: {
     async callSignIn () {
@@ -82,7 +85,10 @@ export default {
       basicAuthUsernameRules: [v => !!v || 'Username is required'],
       basicAuthPasswordRules: [v => !!v || 'Password is required'],
       username: '',
-      password: ''
+      password: '',
+      visible: false,
+      mdiEye,
+      mdiEyeOff
     }
   }
 }

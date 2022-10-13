@@ -6,7 +6,7 @@
       <v-col>
         <v-list-item-subtitle>{{ lowerCaseName }}</v-list-item-subtitle>
       </v-col>
-      <v-switch class="pa-0" color="primary" v-model="editedValue" hide-details></v-switch>
+      <v-switch class="pa-0 mt-0" color="primary" v-model="editedValue" hide-details></v-switch>
     </v-row>
     <v-row no-gutters justify="space-between" v-else-if="dataType === DATE || dataType === DATETIME">
       <v-col v-if="showDate">

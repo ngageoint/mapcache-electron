@@ -83,8 +83,9 @@ export default class WebViewAuth {
   /**
    * Handle web request complete
    * @param details
+   * @param handleWebViewFailure
    */
-  onWebRequestCompleted (details) {
+  onWebRequestCompleted (details, handleWebViewFailure) {
     // response from auth ended in failure
     if (this.webContents != null && details.webContentsId === this.webContents.id && details.statusCode >= 400) {
       this.authBrowserEventSender.send(WEB_VIEW_AUTH_RESPONSE, {
@@ -95,6 +96,7 @@ export default class WebViewAuth {
           }
         }
       })
+      handleWebViewFailure()
       this.finish()
     }
     if (!this.isFinished() && details.url === this.authBrowserTargetURL && details.webContentsId === this.webContents.id) {

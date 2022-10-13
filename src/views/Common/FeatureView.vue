@@ -370,6 +370,9 @@ export default {
       handler () {
         window.mapcache.featureExists(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId).then(exists => {
           if (!exists) {
+            if (this.editing) {
+              EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, false)
+            }
             EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
           }
         })
@@ -451,7 +454,6 @@ export default {
         this.editing = true
         const feature = cloneDeep(this.featureViewData.feature)
         EventBus.$emit(EventBus.EventTypes.EDIT_FEATURE_GEOMETRY, feature)
-        // this.zoomTo()
       })
     },
     disableEdit () {
@@ -511,6 +513,7 @@ export default {
   text-align: center;
 }
 .show-less-text {
+  word-break: break-all !important;
   max-height: 40px !important;
   display: inline-block !important;
   overflow: hidden !important;
