@@ -907,7 +907,6 @@ function setSourceWarning ({ id, warning }) {
     const sourceId = keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
     if (!isNil(sourceId)) {
       const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
-      source.error = warning
       source.warning = warning
       store.dispatch('Projects/setDataSource', { projectId, source })
       break
