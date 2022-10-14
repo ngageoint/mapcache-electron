@@ -1,5 +1,6 @@
 import isNil from 'lodash/isNil'
 import { constructRenderer } from '../renderer/RendererFactory'
+import { GEOPACKAGE } from '../../../layer/LayerTypes'
 
 /**
  * The map cache map layer is a wrapper for a MapCache Layer object. This object has functions for handling the rendering of EPSG:3857 tiles
@@ -7,6 +8,9 @@ import { constructRenderer } from '../renderer/RendererFactory'
 export default function (L) {
   L.TileLayer.MapCacheLayer = L.TileLayer.extend({
     initialize: function (options) {
+      if (options.layer && options.layer.layerType === GEOPACKAGE) {
+        options.removeZooms = true
+      }
       L.TileLayer.prototype.initialize.call(this, null, options)
       this.layer = options.layer
       this.id = options.layer.id
@@ -14,6 +18,7 @@ export default function (L) {
       this.className = options.className || ''
       this.outstandingTileRequests = {}
       this.crs = options.crs ? options.crs.code : L.CRS.EPSG3857.code
+
 
       const renderer = constructRenderer(this.layer, false)
       if (renderer.updateMaxFeatures != null) {

@@ -9,6 +9,7 @@
 export default function (L) {
   L.TileLayer.mergeOptions({
     dumpToCanvas: L.Browser.canvas,
+    removeZooms: false
   })
 
   L.TileLayer.include({
@@ -34,6 +35,19 @@ export default function (L) {
         )
         level.ctx = level.canvas.getContext('2d')
         this._resetCanvasSize(level)
+
+        if (this.options.removeZooms) {
+          Object.keys(this._levels).forEach(key => {
+            if (Math.abs(Number(level.zoom) - Number(key)) > 1) {
+              console.log('removing zoom: ' + key)
+              const level = this._levels[key]
+              if (level != null) {
+                L.DomUtil.remove(level.canvas)
+              }
+            }
+          })
+          // this._updateLevels()
+        }
       }
     },
 
@@ -205,8 +219,6 @@ export default function (L) {
 
       level.ctx.drawImage(imageSource, offset.x, offset.y, tileSize.x, tileSize.y)
 
-      // TODO: Clear the pixels of other levels' canvases where they overlap
-      // this newly dumped tile.
       return this
     }
   })
