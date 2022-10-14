@@ -308,7 +308,6 @@ export default {
         boundingBoxWithBuffer[2] = Math.min(180, (boundingBoxWithBuffer[2] + widthOffset))
         boundingBoxWithBuffer[3] = Math.min(90, (boundingBoxWithBuffer[3] + heightOffset))
       }
-      console.log(boundingBoxWithBuffer)
       return boundingBoxWithBuffer
     },
     async addLayer () {

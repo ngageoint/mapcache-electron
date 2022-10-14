@@ -39,7 +39,6 @@ export default function (L) {
         if (this.options.removeZooms) {
           Object.keys(this._levels).forEach(key => {
             if (Math.abs(Number(level.zoom) - Number(key)) > 1) {
-              console.log('removing zoom: ' + key)
               const level = this._levels[key]
               if (level != null) {
                 L.DomUtil.remove(level.canvas)
