@@ -49,8 +49,10 @@ export default class XYZServerLayer extends NetworkTileLayer {
    * @param size
    * @param crs
    * @param projectedBoundingBoxFunction
+   * @param convertToWebMercator
+   * @param getWebMercatorBoundingBoxFromXYZ
    */
-  getTileRequestData (boundingBox, coords, size, crs, projectedBoundingBoxFunction) {
+  getTileRequestData (boundingBox, coords, size, crs, projectedBoundingBoxFunction, convertToWebMercator, getWebMercatorBoundingBoxFromXYZ) {
     const projectedBoundingBox = projectedBoundingBoxFunction(boundingBox, this.srs)
     const requests = []
 
@@ -65,6 +67,7 @@ export default class XYZServerLayer extends NetworkTileLayer {
         tileSRS: this.srs
       })
     } else {
+      // target is in EPSG:3857 and source is EPSG:4326
       if (crs === WEB_MERCATOR) {
         const zoom = Math.max(0, coords.z - 1)
         const tiles = getTilesForExtentAtZoom([projectedBoundingBox.minLon, projectedBoundingBox.minLat, projectedBoundingBox.maxLon, projectedBoundingBox.maxLat], zoom)
@@ -78,13 +81,14 @@ export default class XYZServerLayer extends NetworkTileLayer {
             tileSRS: this.srs
           })
         })
+        // target is in EPSG:4326 and source is EPSG:3857
       } else {
         const zoom = Math.min(20, coords.z + 1)
         const extent = getWGS84ExtentFromXYZ(coords.x, coords.y, coords.z)
         const tiles = tilesInExtentAtZoom([[extent[1], extent[0]], [extent[3], extent[2]]], zoom)
-        const webMercatorExtent = window.mapcache.convertToWebMercator(trimExtentToWebMercatorMax(extent))
+        const webMercatorExtent = convertToWebMercator(trimExtentToWebMercatorMax(extent))
         tiles.forEach((tile) => {
-          const tileWebMercatorBounds = window.mapcache.getWebMercatorBoundingBoxFromXYZ(tile.x, tile.y, tile.z)
+          const tileWebMercatorBounds = getWebMercatorBoundingBoxFromXYZ(tile.x, tile.y, tile.z)
           requests.push({
             url: this.getTileUrl(tile),
             width: size.x,

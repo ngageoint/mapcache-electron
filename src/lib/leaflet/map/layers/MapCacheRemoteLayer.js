@@ -188,7 +188,7 @@ export default function (L) {
               projectedBoundingBox = window.mapcache.reprojectBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, this.crs, srs)
             }
             return projectedBoundingBox
-          })
+          }, window.mapcache.convertToWebMercator, window.mapcache.getWebMercatorBoundingBoxFromXYZ)
 
           // create promises for each tile request
           if (requests != null && requests.length > 0) {
