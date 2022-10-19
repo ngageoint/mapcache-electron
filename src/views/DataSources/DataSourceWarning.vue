@@ -53,7 +53,7 @@ export default {
       }
     }),
     troubleShootingMessage () {
-      let message = 'The request(s) to the server timed out. Consider increasing the request timeout (ms) for this data source.'
+      let message = this.source.warning
 
       return message
     }
