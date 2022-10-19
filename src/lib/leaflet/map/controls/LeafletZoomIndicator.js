@@ -29,7 +29,7 @@ export default class LeafletZoomIndicator extends L.Control {
       this.updateIndicator(map)
     }, 50)
     map.on('zoom', throttleUpdateIndicator)
-    map.on('zoomEnd', debounceUpdateIndicator)
+    map.on('zoomend', debounceUpdateIndicator)
     return container
   }
 }

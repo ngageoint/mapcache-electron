@@ -271,7 +271,7 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-step editable :complete="step > 6" step="6"
-                        :rules="[() => (boundingBoxFilter || Number(step) < 6) && (!isEditingBoundingBox() || (Number(step) === 6))]"
+                        :rules="[() => (boundingBoxFilter || Number(step) < 7) && (!isEditingBoundingBox() || (Number(step) === 6))]"
                         color="primary">
           Specify bounding box
           <small

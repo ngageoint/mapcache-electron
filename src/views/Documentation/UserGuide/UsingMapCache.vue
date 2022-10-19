@@ -850,17 +850,21 @@ export default {
                   image: '/images/documentation/using_mapcache/data_source/article_09/image_06.jpg'
                 },
                 {
-                  paragraph: `Click the <strong>Import</strong> button to perform the request.`,
+                  paragraph: `Any feature that intersects the bounding box is returned. This includes potentially large features that may extend far outside of the bounds requested. Clipping the results can be enabled to prevent this behavior and limit the results to be within the bounding box. The buffer percentage determines how much the bounding box should grow for clipping.`,
                   image: '/images/documentation/using_mapcache/data_source/article_09/image_07.jpg'
                 },
                 {
+                  paragraph: `Click the <strong>Import</strong> button to perform the request.`,
+                  image: '/images/documentation/using_mapcache/data_source/article_09/image_08.jpg'
+                },
+                {
                   paragraph: `If a large number of results will be returned, a prompt appears requesting permission to continue.`,
-                  image: '/images/documentation/using_mapcache/data_source/article_09/image_08.jpg',
+                  image: '/images/documentation/using_mapcache/data_source/article_09/image_09.jpg',
                   note: 'The larger the number of results, the longer the processing will take.'
                 },
                 {
                   paragraph: `Once the data is fully processed, it will be available to view on the map.`,
-                  image: '/images/documentation/using_mapcache/data_source/article_09/image_09.jpg'
+                  image: '/images/documentation/using_mapcache/data_source/article_09/image_10.jpg'
                 }
               ],
             },

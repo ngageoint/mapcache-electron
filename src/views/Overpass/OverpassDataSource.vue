@@ -159,10 +159,30 @@
             Continue
           </v-btn>
         </v-stepper-content>
-        <v-stepper-step editable :step="5" color="primary">
+        <v-stepper-step editable :complete="step > 5" step="5" color="primary" :rules="[() => clipBufferValid]">
+          Feature clipping
+          <small class="pt-1">{{clipBufferValid ? (clipFeatures ? ('Enabled (' + clipBuffer + '%)') : 'Disabled') : 'Invalid buffer percentage'}}</small>
+        </v-stepper-step>
+        <v-stepper-content step="5">
+          <v-card flat tile>
+            <v-card-subtitle>
+              The features returned may extend beyond the bounding box set above. If you would like to clip those features, enable clipping and specify a buffer around the bounding box.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-switch :disabled="overpassBoundingBox == null || isEditingBoundingBox()" v-model="clipFeatures" label="Clip features"/>
+              <number-picker suffix="%" :disabled="overpassBoundingBox == null || isEditingBoundingBox() || !clipFeatures" :number="clipBuffer" :label="'Bounding box buffer'" :step="5" :min="0"
+                             @update-valid="(v) => {this.clipBufferValid = v}"
+                             @update-number="(val) => {this.clipBuffer = val}"></number-picker>
+            </v-card-text>
+          </v-card>
+          <v-btn class="mb-2" text color="primary" @click="step = 6">
+            Continue
+          </v-btn>
+        </v-stepper-content>
+        <v-stepper-step editable :step="6" color="primary">
           Summary
         </v-stepper-step>
-        <v-stepper-content :step="5" :rules="[() => (overpassBoundingBox || !isEditingBoundingBox() || overpassGeneratedQueryValid || step < 5)]">
+        <v-stepper-content :step="6" :rules="[() => (overpassBoundingBox || !isEditingBoundingBox() || overpassGeneratedQueryValid || step < 6)]">
           <v-card flat tile>
             <v-card-text v-if="overpassGeneratedQueryValid">
               Data retrieved using the OSM Overpass API
@@ -214,6 +234,7 @@ import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import { environment } from '../../lib/env/env'
 import bboxPolygon from '@turf/bbox-polygon'
 import area from '@turf/area'
+import NumberPicker from '../Common/NumberPicker'
 
 export default {
   props: {
@@ -229,7 +250,7 @@ export default {
       }
     }),
     importReady () {
-      return this.step === 5 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
+      return this.step === 6 && !this.isEditingBoundingBox() && this.overpassBoundingBox != null
     }
   },
   data () {
@@ -259,10 +280,14 @@ export default {
         closeOnContentClick: true
       },
       exceedsBoundingBoxAreaThreshold: false,
-      boundingBoxArea: null
+      boundingBoxArea: null,
+      clipFeatures: true,
+      clipBuffer: 20,
+      clipBufferValid: true
     }
   },
   components: {
+    NumberPicker,
     BoundingBoxEditor
   },
   methods: {
@@ -271,6 +296,19 @@ export default {
     },
     open (url) {
       window.mapcache.openExternal(url)
+    },
+    applyBufferToBoundingBox (boundingBox) {
+      let boundingBoxWithBuffer = boundingBox.slice()
+      if (this.clipBuffer > 0) {
+        const bufferPercentage = this.clipBuffer / 100.0
+        const widthOffset = (boundingBoxWithBuffer[2] - boundingBoxWithBuffer[0]) * bufferPercentage
+        const heightOffset = (boundingBoxWithBuffer[3] - boundingBoxWithBuffer[1]) * bufferPercentage
+        boundingBoxWithBuffer[0] = Math.max(-180, (boundingBoxWithBuffer[0] - widthOffset))
+        boundingBoxWithBuffer[1] = Math.max(-90, (boundingBoxWithBuffer[1] - heightOffset))
+        boundingBoxWithBuffer[2] = Math.min(180, (boundingBoxWithBuffer[2] + widthOffset))
+        boundingBoxWithBuffer[3] = Math.min(90, (boundingBoxWithBuffer[3] + heightOffset))
+      }
+      return boundingBoxWithBuffer
     },
     async addLayer () {
       const id = window.mapcache.createUniqueID()
@@ -282,7 +320,10 @@ export default {
         queryCount: generateQueryFromFilter(this.overpassQuery, this.overpassBoundingBox, true),
         bbox: this.overpassBoundingBox,
         serviceType: SERVICE_TYPE.OVERPASS,
-        name: this.dataSourceName
+        name: this.dataSourceName,
+      }
+      if (this.clipFeatures) {
+        sourceToProcess.clippingBounds = this.applyBufferToBoundingBox(this.overpassBoundingBox)
       }
       this.close()
       this.$nextTick(() => {

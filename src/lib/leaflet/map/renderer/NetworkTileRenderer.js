@@ -152,7 +152,7 @@ export default class NetworkTileRenderer {
             projectedBoundingBox = this.reprojectBoundingBox(bbox.minLon, bbox.maxLon, bbox.minLat, bbox.maxLat, crs, srs)
           }
           return projectedBoundingBox
-        })
+        }, this.convertToWebMercator, this.getWebMercatorBoundingBoxFromXYZ)
 
         if (requests != null && requests.length > 0) {
           // iterate over each web request and attempt to perform
