@@ -1,5 +1,5 @@
 <template>
-  <v-btn v-if="source.warning && !dismissed" icon color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning">
+  <v-btn v-if="source.warning" icon color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning">
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
@@ -62,7 +62,6 @@ export default {
     return {
       mdiInformation: mdiInformation,
       showTroubleshootingDialog: false,
-      dismissed: false,
     }
   },
   methods: {
@@ -73,8 +72,11 @@ export default {
       this.showTroubleshootingDialog = true
     },
     dismissWarning () {
-      this.dismissed = true
+      this.clearWarning(this.source)
       this.showTroubleshootingDialog = false
+    },
+    clearWarning (theSource) {
+      theSource.warning = '';
     }
   }
 }
