@@ -198,6 +198,9 @@
             <span>{{ configuration.pane === 'vector' ? 'Feature' : 'Tile' }} base map</span>
           </p>
         </v-col>
+        <v-col cols="1" v-if="baseMap.warning">
+          <data-source-warning :source="baseMap"></data-source-warning>
+        </v-col>
         <v-col cols="1" v-if="baseMap.error && !baseMap.readonly">
           <base-map-troubleshooting :base-map="baseMap"></base-map-troubleshooting>
         </v-col>
@@ -366,6 +369,7 @@ import BackgroundTileColor from '../Common/Style/BackgroundTileColor'
 import MBTilesOptions from '../Common/Style/MBTilesOptions'
 import StyleEditor from '../StyleEditor/StyleEditor'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import NumberPicker from '../Common/NumberPicker'
 import { mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS } from '../../lib/network/HttpUtilities'
@@ -394,6 +398,7 @@ export default {
     GeoTIFFTroubleshooting,
     NumberPicker,
     BaseMapTroubleshooting,
+    DataSourceWarning,
     StyleEditor,
     MBTilesOptions,
     BackgroundTileColor,
