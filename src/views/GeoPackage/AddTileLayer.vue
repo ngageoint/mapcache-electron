@@ -110,6 +110,8 @@
                         <v-list-item-content>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                         </v-list-item-content>
+                        <data-source-warning v-if="item.source.warning" :source="item.source"
+                                                     :project-id="project.id"></data-source-warning>
                         <data-source-troubleshooting v-if="item.source.error" :source="item.source"
                                                      :project-id="project.id"></data-source-troubleshooting>
                         <v-list-item-action>
@@ -421,6 +423,7 @@ import debounce from 'lodash/debounce'
 import NumberPicker from '../Common/NumberPicker'
 import EventBus from '../../lib/vue/EventBus'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
@@ -466,6 +469,7 @@ export default {
   components: {
     BoundingBoxEditor,
     DataSourceTroubleshooting,
+    DataSourceWarning,
     SourceVisibilitySwitch,
     NumberPicker
   },
