@@ -69,8 +69,7 @@
                         <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
                       </v-list-item-content>
                       <v-list-item-action>
-                        <data-source-warning v-if="item.source && item.source.warning" :source="item.source"
-                                                     :project-id="project.id"></data-source-warning>
+                        <data-source-warning v-if="item.source && item.source.warning" :source="item.source"></data-source-warning>
                       </v-list-item-action>
                       <v-list-item-action>
                         <data-source-troubleshooting v-if="item.source && item.error" :source="item.source"

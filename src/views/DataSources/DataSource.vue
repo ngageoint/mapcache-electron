@@ -263,7 +263,7 @@
           </p>
         </v-col>
         <v-col cols="1" v-if="source.warning">
-          <data-source-warning :source="source" :project-id="project.id"></data-source-warning>
+          <data-source-warning :source="source"></data-source-warning>
         </v-col>
         <v-col cols="1" v-if="source.error">
           <data-source-troubleshooting :source="source" :project-id="project.id"></data-source-troubleshooting>

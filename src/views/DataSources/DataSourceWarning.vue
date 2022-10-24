@@ -43,8 +43,7 @@ export default {
           name: '',
         }
       }
-    },
-    projectId: String
+    }
   },
   computed: {
     ...mapState({
