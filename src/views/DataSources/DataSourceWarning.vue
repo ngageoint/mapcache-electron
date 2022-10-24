@@ -75,7 +75,7 @@ export default {
       this.showTroubleshootingDialog = false
     },
     clearWarning (theSource) {
-      theSource.warning = '';
+      window.mapcache.setSourceWarning({ id: theSource.id, warning: '' })
     }
   }
 }
