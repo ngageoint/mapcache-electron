@@ -50,9 +50,11 @@ export default class SlowServerNotifier {
             }
             status.warning += layerName;
 
-            if(count > 1 && index < count - 1) {
+            if(count > 2 && index < count - 1) {
                 status.warning += ", "
             }
+
+            index++
         }
 
         if(count > 0) {
