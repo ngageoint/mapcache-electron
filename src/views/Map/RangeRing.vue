@@ -24,7 +24,7 @@
           <v-select dense label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
         </v-col>
         <v-col offset="1" cols="1">
-          <v-btn @click="addRingDistance" icon><v-icon>{{mdiPlus}}</v-icon></v-btn>
+          <v-btn :disabled="!distancesValid" @click="addRingDistance" icon><v-icon>{{mdiPlus}}</v-icon></v-btn>
         </v-col>
       </v-row>
       <v-row no-gutters>
@@ -32,7 +32,10 @@
           <v-list-item style="width: 100% !important;" class="ma-0 pa-0" v-for="(item, i) in ringDistances" :key="i">
             <v-row no-gutters justify="space-between" align-content="center">
               <v-col cols="10">
-                <v-text-field hide-details dense type="number" v-model="item.distance" :min="0"></v-text-field>
+                <number-picker :number="Number(item.distance)"
+                               @update-valid="(valid) => {item.valid = valid}"
+                               @update-number="(val) => {item.distance = val}" :min="Number(0)"
+                               :step="Number(1)"/>
               </v-col>
               <v-col offset="1" cols="1">
                 <v-btn @click="() => deleteRingDistance(i)" icon><v-icon>{{mdiTrashCanOutline}}</v-icon></v-btn>
@@ -46,7 +49,7 @@
     <v-card-actions>
       <v-spacer/>
       <v-btn text @click="cancel" color="warning">Cancel</v-btn>
-      <v-btn @click="saveRangeRingFeature" text color="primary">Save</v-btn>
+      <v-btn :disabled="!distancesValid" @click="saveRangeRingFeature" text color="primary">Save</v-btn>
     </v-card-actions>
   </v-card>
 </template>
@@ -57,8 +60,10 @@ import { convertLength } from '@turf/helpers'
 import { DRAWING_LAYER_PANE } from '../../lib/leaflet/map/panes/MapPanes'
 import { mdiPlus, mdiTrashCanOutline, mdiMapMarker, mdiCircleMultipleOutline } from '@mdi/js'
 import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
+import NumberPicker from '../Common/NumberPicker'
 
 export default {
+  components: { NumberPicker },
   props: {
     map: Object,
     saveFeature: Function,
@@ -75,7 +80,8 @@ export default {
       ringCenterLayer: null,
       distanceUnits: [{text: 'Feet', value: 'feet'}, {text: 'Miles', value: 'miles'}, {text: 'Meters',  value: 'meters'}, {text: 'Kilometers', value: 'kilometers'}],
       distanceUnit: 'miles',
-      ringDistances: []
+      ringDistances: [],
+      distancesValid: true
     }
   },
   methods: {
@@ -154,7 +160,8 @@ export default {
       this.ringMapLayers.push(ringLayer)
       ringLayer.addTo(this.map)
       this.ringDistances.push({
-        distance: distance
+        distance: distance,
+        valid: distance > 0
       })
     },
     deleteRingDistance (index) {
@@ -166,15 +173,17 @@ export default {
       for (let i = 0; i < this.ringMapLayers.length; i++) {
         const ringMapLayer = this.ringMapLayers[i]
         this.map.removeLayer(ringMapLayer)
-        const newRingMapLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
-          radius: this.convertDistance(this.ringDistances[i].distance, this.distanceUnit, 'meters'),
-          pane: DRAWING_LAYER_PANE.name,
-          zIndex: DRAWING_LAYER_PANE.zIndex,
-          distance: this.ringDistances[i].distance,
-          fill: false
-        })
-        newRingMapLayer.addTo(this.map)
-        this.ringMapLayers[i] = newRingMapLayer
+        if (this.ringDistances[i].distance >= 0) {
+          const newRingMapLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
+            radius: this.convertDistance(this.ringDistances[i].distance, this.distanceUnit, 'meters'),
+            pane: DRAWING_LAYER_PANE.name,
+            zIndex: DRAWING_LAYER_PANE.zIndex,
+            distance: this.ringDistances[i].distance,
+            fill: false
+          })
+          newRingMapLayer.addTo(this.map)
+          this.ringMapLayers[i] = newRingMapLayer
+        }
       }
     }
   },
@@ -204,14 +213,20 @@ export default {
   watch: {
     ringDistances: {
       handler () {
+        let valid = true
         this.ringDistances.forEach(ringDistance => {
           ringDistance.distance = Number(ringDistance.distance)
+          if (!ringDistance.valid) {
+            valid = false
+          }
         })
         if (this.ringDistances.length === this.ringMapLayers.length) {
           for (let i = 0; i < this.ringDistances.length; i++) {
             const ringDistance = Number(this.ringDistances[i].distance)
             const featureDistance = Number(this.ringMapLayers[i].options.distance)
-            if (ringDistance !== featureDistance) {
+            if (ringDistance < 0) {
+              this.map.removeLayer(this.ringMapLayers[i])
+            } else if (ringDistance !== featureDistance) {
               this.map.removeLayer(this.ringMapLayers[i])
               const ringLayer = L.circle(L.latLng(this.rangeRingCenter.lat, this.rangeRingCenter.lon), {
                 radius: this.convertDistance(ringDistance, this.distanceUnit, 'meters'),
@@ -225,6 +240,7 @@ export default {
             }
           }
         }
+        this.distancesValid = valid
       },
       deep: true
     },
