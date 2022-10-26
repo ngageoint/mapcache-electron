@@ -83,7 +83,7 @@ export default {
       releaseNotes: [
         {
           title: 'MapCache 1.5.0',
-          releaseDate: 'TBD',
+          releaseDate: 'Oct. 27, 2022',
           bugFixes: [
             'Fix for decimal zoom levels in tile creation.',
             'Fix for MAGE KMZ exports not importing.',
