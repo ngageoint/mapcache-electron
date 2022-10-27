@@ -556,7 +556,7 @@ export default {
               sections: [
                 {
                   paragraph: `Most web based maps utilize a web mercator map. Web mercator is a projection that allows the world to be viewed in a square view. This view can be broken down into tiles and as the zoom level increase, in order to capture more detail, the number of tiles quadruples. At zoom level zero there is 1 tile, at zoom level one there are 4 tiles, at zoom level two there are 16 tiles, etc...`,
-                  note: 'MapCache only supports generating GeoPackage tile layers in web mercator, currently.'
+                  note: 'MapCache supports generating GeoPackage tile layers in Web Mercator (EPSG:3857) and Plate Carrée (EPSG:4326).'
                 },
                 {
                   paragraph: `In MapCache, imagery and raster data can be imported from a variety of sources. Some of those sources require an internet connection to access, such as WMS, WMTS, and XYZ tile servers. By creating a GeoPackage tile layer, the tiles from those web services can be stored for offline use.`
