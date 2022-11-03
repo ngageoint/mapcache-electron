@@ -5,6 +5,9 @@
 ## About
 MapCache is a desktop application running in Electron, built for Windows, Linux, and MacOS. It provides the ability to create GeoPackages from geospatial data sources. Supported geospatial data formats include WMS, WFS, WMTS, ArcGIS FS, XYZ, GeoTIFF, KMZ/KML, GeoJSON, MBTiles and SHP.
 
+## GeoPackage
+MapCache utilizes the NGA's GeoPackage libraries. For more information on the GeoPackage libraries, click [here](https://github.com/ngageoint/GeoPackage)
+
 ## Develop
 [Development Instructions](BUILD.md)
 
