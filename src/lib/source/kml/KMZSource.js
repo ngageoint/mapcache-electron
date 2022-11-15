@@ -21,14 +21,15 @@ export default class KMZSource extends Source {
     const zipFileNames = zipEntries.map(zipEntry => zipEntry.entryName)
     zip.extractAllTo(unzippedDirectory, true, undefined)
 
-    // name of kml in kmz is usually doc.kml, rename it to the name of the kmz file
+    // name of kml in kmz is usually doc.kml, rename it to the name of the kmz file.
     const kmzFileName = path.basename(this.filePath, path.extname(this.filePath))
     const kmlFile = zipFileNames.find(file => file.endsWith('.kml'))
     const kmlFilePath = path.join(unzippedDirectory, kmlFile)
     const newKmlFileName = kmzFileName + '.kml'
     const newKmlFilePath = path.join(unzippedDirectory, newKmlFileName)
-    await jetpack.copyAsync(kmlFilePath, newKmlFilePath)
-
+    if (newKmlFilePath.toLowerCase() !== kmlFilePath.toLowerCase()) {
+      await jetpack.copyAsync(kmlFilePath, newKmlFilePath)
+    }
     // now that kml and resources are established, pass along to a kml source to process
     const kmlSource = new KMLSource(this.id, this.directory, newKmlFilePath)
     const layers = await kmlSource.retrieveLayers(statusCallback)
