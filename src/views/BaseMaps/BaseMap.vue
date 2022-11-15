@@ -282,18 +282,18 @@
             </v-col>
           </v-row>
           <v-row class="pb-2" no-gutters justify="start"
-                 v-if="baseMap.url || configuration.pane === 'tile' && (configuration.layerType === 'WMS' || configuration.layerType === 'WMTS' || configuration.layerType === 'XYZServer')">
+                 v-if="(baseMap.url || configuration.filePath) && configuration.pane === 'tile' && (configuration.layerType === 'WMS' || configuration.layerType === 'WMTS' || configuration.layerType === 'XYZServer')">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 URL
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px', wordWrap: 'break-word'}">
-                {{ url }}
+                {{ baseMap.url ? baseMap.url : configuration.filePath }}
               </p>
             </v-col>
           </v-row>
           <v-row class="pb-2" no-gutters justify="start"
-                 v-if="configuration.subdomains !== null && configuration.subdomains !== undefined">
+                 v-if="configuration.subdomains !== null && configuration.subdomains !== undefined && configuration.subdomains.length > 0">
             <v-col>
               <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 Subdomains
