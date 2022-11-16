@@ -87,7 +87,8 @@ export default {
           bugFixes: [
             'KML/KMZ filename fix.',
             'URL no longer missing from base map view.',
-            'Support for binary/octet-stream responses from WMS/WMTS/XYZ services.'
+            'Support for binary/octet-stream responses from WMS/WMTS/XYZ services.',
+            'Cancel range ring tool when switching the map projection.'
           ]
         },
         {

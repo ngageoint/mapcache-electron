@@ -615,6 +615,7 @@ export default {
       this.setupGridBoundsSelection()
       this.resetSearchResults()
       this.updateMapWithEditedFeature()
+      this.cancelRangeRingTool()
       this.addDrawBoundsToMap()
     },
     updateGrid (gridId) {
