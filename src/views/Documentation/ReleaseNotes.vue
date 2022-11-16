@@ -86,7 +86,8 @@ export default {
           releaseDate: 'TBD',
           bugFixes: [
             'KML/KMZ filename fix.',
-            'URL no longer missing from base map view.'
+            'URL no longer missing from base map view.',
+            'Support for binary/octet-stream responses from WMS/WMTS/XYZ services.'
           ]
         },
         {

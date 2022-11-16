@@ -6,8 +6,6 @@ import { createUniqueID } from '../util/UniqueIDUtilities'
 export default class CancellableTileRequest {
   cancelled = false
   axiosRequestScheduler
-  requestTimeoutFunction
-  responseReceived = false
   convertPbfToDataUrl
   requests = []
 
@@ -37,6 +35,51 @@ export default class CancellableTileRequest {
         this.axiosRequestScheduler.cancel(token)
       }
     }
+  }
+
+  /**
+   * Gets mime type from signature
+   * @param signature
+   * @returns {string}
+   */
+  getMimetypeFromSignature = (signature) => {
+    let type
+    switch (signature) {
+      case '89504e47':
+        type = 'image/png'
+        break
+      case '47494638':
+        type = 'image/gif'
+        break
+      case 'ffd8ffe0':
+      case 'ffd8ffe1':
+      case 'ffd8ffe2':
+      case 'ffd8ffe3':
+      case 'ffd8ffe8':
+        type = 'image/jpeg'
+        break
+      default:
+        break
+    }
+    return type
+  }
+
+
+  /**
+   * Determines the mime type of this buffer
+   * @param uint8array
+   * @return string
+   */
+  getMimeTypeFromBuffer (uint8array) {
+    let str = ''
+    uint8array.slice(0, 4).forEach(byte => str += byte.toString(16))
+    let mimeType = this.getMimetypeFromSignature(str)
+
+    if (mimeType == null) {
+      throw new Error('Failed to determine mime type of buffer.')
+    }
+
+    return mimeType
   }
 
   /**
@@ -78,6 +121,8 @@ export default class CancellableTileRequest {
         const dataBuffer = Buffer.from(response.data)
         if (response.headers['content-type'] === 'image/pbf' || response.headers['content-type'] === 'application/x-protobuf') {
           dataUrl = this.convertPbfToDataUrl(dataBuffer, size.x, size.y)
+        } else if (response.headers['content-type'] === 'binary/octet-stream' || response.headers['content-type'] === 'application/octet-stream') {
+          dataUrl = 'data:' + this.getMimeTypeFromBuffer(new Uint8Array(response.data)) + ';base64,' + dataBuffer.toString('base64')
         } else {
           dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + dataBuffer.toString('base64')
         }
