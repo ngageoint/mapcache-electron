@@ -38,6 +38,7 @@ import {
 } from '../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 import { getWebMercatorBoundingBoxFromXYZ } from '../util/tile/TileBoundingBoxUtils'
+import SlowServerNotifier from './SlowServerNotifier'
 
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
@@ -295,6 +296,7 @@ async function buildTileLayer (configuration, statusCallback) {
       throttleStatusCallback(status)
       let tilesAdded = 0
       let timeStart = new Date().getTime()
+      const slowServerNotifier = new SlowServerNotifier()
 
       const boundingBoxFromXYZFunction = isWebMercator ? getWebMercatorBoundingBoxFromXYZ : getWGS84BoundingBoxFromXYZ
 
@@ -333,7 +335,9 @@ async function buildTileLayer (configuration, statusCallback) {
             const layer = sortedLayers[i]
             if (layers.indexOf(layer.id) !== -1) {
               tilePromises.push(new Promise((resolve, reject) => {
+                slowServerNotifier.beforeRender(layer)
                 layer.renderTile(createUniqueID(), { x, y, z }, { x: size.x, y: size.y }, projection, (err, result) => {
+                  slowServerNotifier.afterRender(layer)
                   if (err) {
                     reject(err)
                   } else if (!isNil(result)) {
@@ -397,6 +401,9 @@ async function buildTileLayer (configuration, statusCallback) {
         const averageTimePerTile = (new Date().getTime() - timeStart) / tilesAdded
         status.message = 'Tiles processed: ' + tilesAdded + ' of ' + estimatedNumberOfTiles + '\nApprox. time remaining: ' + prettyPrintMs(averageTimePerTile * (estimatedNumberOfTiles - tilesAdded))
         status.progress = 20 + 80 * tilesAdded / estimatedNumberOfTiles
+
+        slowServerNotifier.applyWarningMessage(status)
+
         throttleStatusCallback(status)
       })
 

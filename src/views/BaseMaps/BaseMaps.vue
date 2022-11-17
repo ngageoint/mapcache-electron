@@ -32,6 +32,9 @@
               <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
             </v-list-item-content>
+            <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.warning">
+              <data-source-warning :source="item.baseMap"></data-source-warning>
+            </v-list-item-icon>
             <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">
               <base-map-troubleshooting :base-map="item.baseMap"></base-map-troubleshooting>
             </v-list-item-icon>
@@ -86,6 +89,7 @@ import values from 'lodash/values'
 import keys from 'lodash/keys'
 import BaseMap from './BaseMap'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { mdiChevronLeft, mdiMapOutline } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
@@ -97,6 +101,7 @@ export default {
   components: {
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
+    DataSourceWarning,
     BaseMap
   },
   props: {

@@ -262,6 +262,9 @@
             <span>{{ source.pane === 'vector' ? 'Feature' : 'Tile' }} data source</span>
           </p>
         </v-col>
+        <v-col cols="1" v-if="source.warning">
+          <data-source-warning :source="source"></data-source-warning>
+        </v-col>
         <v-col cols="1" v-if="source.error">
           <data-source-troubleshooting :source="source" :project-id="project.id"></data-source-troubleshooting>
         </v-col>
@@ -486,6 +489,7 @@ import EventBus from '../../lib/vue/EventBus'
 import SourceVisibilitySwitch from './SourceVisibilitySwitch'
 import MBTilesOptions from '../Common/Style/MBTilesOptions'
 import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import DataSourceWarning from './DataSourceWarning.vue'
 import NumberPicker from '../Common/NumberPicker'
 import {
   mdiChevronLeft,
@@ -535,6 +539,7 @@ export default {
     GeoTIFFTroubleshooting,
     NumberPicker,
     DataSourceTroubleshooting,
+    DataSourceWarning,
     MBTilesOptions,
     SourceVisibilitySwitch,
     TransparencyOptions,

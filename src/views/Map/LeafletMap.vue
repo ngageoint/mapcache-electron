@@ -165,6 +165,7 @@
                 </v-btn>
               </v-list-item-icon>
               <v-list-item-title>{{ item.name }}</v-list-item-title>
+              <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
               <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
               <geo-t-i-f-f-troubleshooting v-if="item.missingRaster"
                                            :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
@@ -354,6 +355,7 @@ import FeatureEditor from '../Common/FeatureEditor'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import LeafletRangeRingControl from '../../lib/leaflet/map/controls/LeafletRangeRingControl'
 import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
 import { constructLayer } from '../../lib/layer/LayerFactory'
@@ -533,6 +535,7 @@ export default {
     NominatimSearch,
     GeoTIFFTroubleshooting,
     BaseMapTroubleshooting,
+    DataSourceWarning,
     FeatureEditor,
     FeatureTables
   },

@@ -69,6 +69,9 @@
                         <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
                       </v-list-item-content>
                       <v-list-item-action>
+                        <data-source-warning v-if="item.source && item.source.warning" :source="item.source"></data-source-warning>
+                      </v-list-item-action>
+                      <v-list-item-action>
                         <data-source-troubleshooting v-if="item.source && item.error" :source="item.source"
                                                      :project-id="project.id"></data-source-troubleshooting>
                       </v-list-item-action>
@@ -130,12 +133,14 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import ColorPicker from '../Common/ColorPicker'
 import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
 
 export default {
   components: {
     DataSourceTroubleshooting,
+    DataSourceWarning,
     ColorPicker
   },
   props: {

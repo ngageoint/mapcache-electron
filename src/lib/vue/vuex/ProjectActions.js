@@ -886,6 +886,34 @@ function setSourceError ({ id, error }) {
   }
 }
 
+/**
+ * this attempts to apply the warning to the source
+ * @param id
+ * @param warning The warning message.
+ */
+function setSourceWarning ({ id, warning }) {
+  // search basemaps for matching id and assign error
+  const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
+  if (!isNil(baseMap)) {
+    const baseMapCopy = cloneDeep(baseMap)
+    baseMapCopy.warning = warning
+    store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+  }
+
+  // search sources for matching id and assign error
+  const projectKeys = keys(store.state.Projects)
+  for (let i = 0; i < projectKeys.length; i++) {
+    const projectId = projectKeys[i]
+    const sourceId = keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
+    if (!isNil(sourceId)) {
+      const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+      source.warning = warning
+      store.dispatch('Projects/setDataSource', { projectId, source })
+      break
+    }
+  }
+}
+
 function saveConnectionSettings (projectId, sourceId, timeoutMs, rateLimit, retryAttempts) {
   const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
   source.timeoutMs = timeoutMs
@@ -968,6 +996,7 @@ export {
   editBaseMap,
   removeBaseMap,
   setSourceError,
+  setSourceWarning,
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
   clearStylingForFeature,
