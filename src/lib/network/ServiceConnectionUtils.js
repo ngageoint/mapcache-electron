@@ -303,13 +303,16 @@ async function testXYZTileServiceConnection (serviceUrl, options) {
                 throw e
               }
               invalidSubdomains.push(subdomain)
+              if (options.cancelIfAnySubdomainsFail) {
+                break
+              }
             }
           }
           requiredCredentials = cancellableServiceRequest.requiredCredentials()
         }
         if (invalidSubdomains.length > 0) {
           error = 'The following XYZ service url subdomains were invalid: ' + invalidSubdomains.join(',')
-        } else {
+        } else if (!options.omit4326Check) {
           const is4326 = await testXYZin4326(serviceUrl, subdomains, options)
           serviceInfo = {
             is4326

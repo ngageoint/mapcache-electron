@@ -359,7 +359,7 @@ import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
 import { constructLayer } from '../../lib/layer/LayerFactory'
 import { getDefaultBaseMaps, getOfflineBaseMapId } from '../../lib/util/basemaps/BaseMapUtilities'
 import { isRemote } from '../../lib/layer/LayerTypes'
-import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
+import { connectToBaseMap, testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
 import {
   GRID_SELECTION_PANE,
   BASE_MAP_PANE,
@@ -419,6 +419,7 @@ import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
 import { environment } from '../../lib/env/env'
 import RangeRing from './RangeRing'
 import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
+import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -955,6 +956,15 @@ export default {
         delete this.dataSourceMapLayers[sourceId]
       }
     },
+    addSelectedBaseMap (self, map, baseMapId, defaultBaseMap, baseMap) {
+      map.addLayer(self.baseMapLayers[baseMapId])
+      self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
+      this.setAttribution(baseMap.attribution)
+      self.baseMapLayers[baseMapId].bringToBack()
+    },
+    async testBaseMap (baseMap) {
+      return testServiceConnection(this.mapProjection === WEB_MERCATOR_CODE ? baseMap.layerConfiguration.url : baseMap.layerConfiguration.pcUrl, SERVICE_TYPE.XYZ, { subdomains: baseMap.layerConfiguration.subdomains, timeout: 500, omit4326Check: true, cancelIfAnySubdomainsFail: true })
+    },
     addBaseMap (baseMap, map) {
       let self = this
       const baseMapId = baseMap.id
@@ -962,18 +972,18 @@ export default {
       if (baseMapId === getOfflineBaseMapId()) {
         self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, this.$vuetify.theme.dark)
         if (self.selectedBaseMapId === baseMapId) {
-          map.addLayer(self.baseMapLayers[baseMapId])
-          self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
-          this.setAttribution(baseMap.attribution)
-          self.baseMapLayers[baseMapId].bringToBack()
+          this.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
         }
       } else if (!isNil(defaultBaseMap)) {
         self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, this.$vuetify.theme.dark)
         if (self.selectedBaseMapId === baseMapId) {
-          map.addLayer(self.baseMapLayers[baseMapId])
-          self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
-          this.setAttribution(baseMap.attribution)
-          self.baseMapLayers[baseMapId].bringToBack()
+          self.testBaseMap(baseMap).then(result => {
+            if (result && !result.error) {
+              self.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
+            } else {
+              self.selectedBaseMapId = getOfflineBaseMapId();
+            }
+          })
         }
       } else {
         let layer = constructLayer(baseMap.layerConfiguration)
