@@ -83,7 +83,7 @@ export default {
       releaseNotes: [
         {
           title: 'MapCache 1.5.1',
-          releaseDate: 'TBD',
+          releaseDate: 'Feb. 14, 2023',
           bugFixes: [
             'KML/KMZ filename fix.',
             'URL no longer missing from base map view.',
