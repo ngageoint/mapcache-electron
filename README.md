@@ -18,7 +18,7 @@ Software source code previously released under an open source license and then m
 
 #### Authors
 
-[Dan Barela](https://github.com/danielbarela) • [Christopher Caldwell](https://github.com/caldwellc) • [Joe Clark](https://github.com/jclark118) • [Tyler Burgett](https://github.com/tyburg)
+[Dan Barela](https://github.com/danielbarela) • [Christopher Caldwell](https://github.com/caldwellc) • [Joe Clark](https://github.com/jclark118) • [Tyler Burgett](https://github.com/tyburg) • [Brandon Cleveland](https://github.com/bcleveland1022)
 
 #### License
 

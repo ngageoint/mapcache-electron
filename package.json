@@ -1,8 +1,11 @@
 {
   "name": "mapcache",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
-  "author": "Christopher Caldwell <c.caldwell90@gmail.com>",
+  "author": {
+    "name": "Christopher Caldwell",
+    "url": "https://github.com/caldwellc"
+  },
   "scripts": {
     "lint": "vue-cli-service lint",
     "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
@@ -41,7 +44,7 @@
     "axios": "0.23.0",
     "better-sqlite3": "7.4.1",
     "bindings": "https://github.com/caldwellc/node-bindings.git#master",
-    "caniuse-lite": "^1.0.30001352",
+    "caniuse-lite": "^1.0.30001452",
     "dom-to-image-more": "^2.9.5",
     "electron-dl": "3.2.1",
     "electron-log": "4.4.1",
@@ -118,11 +121,19 @@
   "contributors": [
     {
       "name": "Daniel Barela",
-      "email": "daniel.barela@gmail.com"
+      "url": "https://github.com/danielbarela"
     },
     {
       "name": "Joe Clark",
-      "email": "jclark118@gmail.com"
+      "url": "https://github.com/jclark118"
+    },
+    {
+      "name": "Tyler Burgett",
+      "url": "https://github.com/tyburg"
+    },
+    {
+      "name": "Brandon Cleveland",
+      "url": "https://github.com/bcleveland1022"
     }
   ],
   "license": "MIT",
