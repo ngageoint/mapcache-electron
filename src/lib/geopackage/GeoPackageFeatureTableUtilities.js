@@ -19,7 +19,6 @@ import cloneDeep from 'lodash/cloneDeep'
 import keys from 'lodash/keys'
 import isObject from 'lodash/isObject'
 import reproject from 'reproject'
-import wkx from 'wkx'
 import bbox from '@turf/bbox'
 import distance from '@turf/distance'
 import pointToLineDistance from '@turf/point-to-line-distance'
@@ -50,41 +49,13 @@ import orderBy from 'lodash/orderBy'
 import { getMediaTableName } from '../util/media/MediaUtilities'
 import {
   EPSG,
-  COLON_DELIMITER,
   WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
-import { convertersMatch } from '../projection/ProjectionUtilities'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
 const MAXIMUM_BATCH_SIZE = 10000
-
-/**
- * Links a feature row to a media row
- * @param gp
- * @param baseTableName
- * @param baseId
- * @param relatedTableName
- * @param relatedId
- * @returns {number}
- */
-function _linkFeatureRowToMediaRow (gp, baseTableName, baseId, relatedTableName, relatedId) {
-  const rte = gp.relatedTablesExtension
-  const mappingTableName = baseTableName + '_' + relatedTableName
-  const relationship = rte
-    .getRelationshipBuilder()
-    .setBaseTableName(baseTableName)
-    .setRelatedTableName(relatedTableName)
-    .setRelationType(MediaTable.RELATION_TYPE)
-    .setMappingTableName(mappingTableName)
-  rte.addRelationship(relationship)
-  const userMappingDao = rte.getMappingDao(mappingTableName)
-  const userMappingRow = userMappingDao.newRow()
-  userMappingRow.baseId = baseId
-  userMappingRow.relatedId = relatedId
-  return userMappingDao.create(userMappingRow)
-}
 
 /**
  * Update feature geometry
@@ -105,13 +76,14 @@ function _updateFeatureGeometry (gp, tableName, featureGeoJson, updateBoundingBo
   }
 
   const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-  if (featureGeometry !== null) {
-    const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-    geometryData.setGeometry(geometry)
-  } else {
-    const temp = wkx.Geometry.parse('POINT EMPTY')
-    geometryData.setGeometry(temp)
-  }
+  // TODO: Utilize Well Known Binary Simple Features
+  // if (featureGeometry !== null) {
+  //   const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+  //   geometryData.setGeometry(geometry)
+  // } else {
+  //   const temp = wkx.Geometry.parse('POINT EMPTY')
+  //   geometryData.setGeometry(temp)
+  // }
   featureRow.geometry = geometryData
   featureDao.update(featureRow)
   if (updateBoundingBox) {
@@ -258,7 +230,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   featureTableStyles.createStyleRelationship()
   featureTableStyles.createIconRelationship()
 
-  let iterator = featureCollection.features
+  let iterator = featureCollection != null ? featureCollection.features : []
   for (let feature of iterator) {
     // handle geometry property
     if (feature.properties.geometry) {
@@ -491,7 +463,8 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
 
   const processBatch = () => {
     // batch insert features
-    const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
+    // TODO: Utilize Well Known Binary Simple Features
+    // const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
     const reprojectionNeeded = !(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)
     const insertSql = SqliteQueryBuilder.buildInsert('\'' + featureDao.gpkgTableName + '\'', featureRow)
     featureRow = featureDao.newRow()
@@ -510,7 +483,8 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = feature.geometry
-        geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
+        // TODO: Utilize Well Known Binary Simple Features
+        // geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
         featureRow.geometry = geometryData
         for (const propertyKey in feature.properties) {
           if (propertyKey !== 'id' && Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
@@ -2050,13 +2024,14 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-        if (featureGeometry !== null) {
-          const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-          geometryData.setGeometry(geometry)
-        } else {
-          const temp = wkx.Geometry.parse('POINT EMPTY')
-          geometryData.setGeometry(temp)
-        }
+        // TODO: Utilize Well Known Binary Simple Features
+        // if (featureGeometry !== null) {
+        //   const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+        //   geometryData.setGeometry(geometry)
+        // } else {
+        //   const temp = wkx.Geometry.parse('POINT EMPTY')
+        //   geometryData.setGeometry(temp)
+        // }
         featureRow.geometry = geometryData
 
       } else if (updatedGeometry === null) {
@@ -2129,7 +2104,6 @@ async function streamingGeoPackageBuild (fileName, tableName) {
 }
 
 export {
-  _linkFeatureRowToMediaRow,
   _updateFeatureGeometry,
   updateFeatureGeometry,
   _addFeatureToFeatureTable,

@@ -105,15 +105,16 @@ async function clearUserDirectory (userDirectory) {
  * Node process: it is always one directory up from the __dirname
  * @returns {string}
  */
-function getExtraResourcesDirectory () {
+function getResourcesDirectory () {
   let extraResourcesPath
   // eslint-disable-next-line no-undef
-  if (!isNil(__static)) {
+  if (!isNil(process.env.NODE_ENV === 'development')) {
     // only set in electron process
     // eslint-disable-next-line no-undef
-    extraResourcesPath = path.join(path.dirname(__static), 'extraResources')
+    extraResourcesPath = path.join(path.dirname(__dirname), 'resources')
+    console.log(extraResourcesPath)
   } else {
-    extraResourcesPath = path.join(path.dirname(__dirname), 'extraResources')
+    extraResourcesPath = path.join(path.dirname(__dirname), 'resources')
   }
   return extraResourcesPath
 }
@@ -121,10 +122,10 @@ function getExtraResourcesDirectory () {
 function getWorkerDirectory () {
   let workerPath
   // eslint-disable-next-line no-undef
-  if (!isNil(__static)) {
+  if (!isNil(process.env.NODE_ENV === 'development')) {
     // only set in electron process
     // eslint-disable-next-line no-undef
-    workerPath = path.join(path.dirname(__static), 'dist_electron')
+    workerPath = path.join(path.dirname(__dirname), '..', 'dist_electron')
   } else {
     workerPath = path.join(path.dirname(__dirname), 'dist_electron')
   }
@@ -398,7 +399,7 @@ function isDirEmpty (dir) {
 
 
 export {
-  getExtraResourcesDirectory,
+  getResourcesDirectory,
   getWorkerDirectory,
   createNextAvailableProjectDirectory,
   createNextAvailableBaseMapDirectory,

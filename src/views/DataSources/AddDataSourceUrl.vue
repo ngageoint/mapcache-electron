@@ -2,7 +2,7 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -52,6 +52,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="dataSourceNameForm" v-model="dataSourceNameValid">
                 <v-text-field
+                    variant="underlined"
                     autofocus
                     v-model="dataSourceName"
                     :rules="dataSourceNameRules"
@@ -95,9 +96,9 @@
                       </template>
                       <template v-slot:item="{ item }">
                         <v-list-item dense link @click="setUrlToLink(item)">
-                          <v-list-item-content>
+                          <div>
                             {{ item }}
-                          </v-list-item-content>
+                          </div>
                           <v-list-item-action>
                             <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
                               <v-icon>{{ mdiTrashCan }}</v-icon>
@@ -127,6 +128,7 @@
                   </v-card-subtitle>
                   <v-form v-on:submit.prevent ref="subdomainRef" v-model="subdomainsValid">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="subdomainText"
                         :rules="subdomainRules"
@@ -225,7 +227,7 @@
                             @click="() => {item.active = !item.active}"
                         >
                           <template v-slot:default="{ active }">
-                            <v-list-item-content>
+                            <div>
                               <div v-if="item.title">
                                 <div class="list-item-title" v-text="item.title" :title="item.title"></div>
                               </div>
@@ -233,7 +235,7 @@
                                 <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
                                      :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
                               </div>
-                            </v-list-item-content>
+                            </div>
                             <v-list-item-action>
                               <v-switch
                                   :input-value="active"

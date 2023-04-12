@@ -1,4 +1,8 @@
-import path from 'path'
+import path from 'node:path'
+import WorkerThreadPool from '../pool/workerThreadPool'
+import os from 'node:os'
+import isNil from 'lodash/isNil'
+import { rmDirAsync } from '../../util/file/FileUtilities'
 
 import {
   REQUEST_RENDER,
@@ -15,7 +19,7 @@ import {
 /**
  * MapcacheThreadHelper
  */
-export default class MapcacheThreadHelper {
+export default class MapCacheThreadHelper {
   threadPool
 
   constructor () {
@@ -24,8 +28,6 @@ export default class MapcacheThreadHelper {
     // need to replace the mapcacheThread.js's file path to the unpackaged location
     file = file.replace('app.asar', 'app.asar.unpacked').replace('app-x64.asar', 'app-x64.asar.unpacked').replace('app-arm64.asar', 'app-arm64.asar.unpacked')
 
-    const os = require('os')
-    const WorkerThreadPool = require('../pool/workerThreadPool').default
     const workerCount = Math.max(2, os.cpus().length * 1.5)
     const config = []
     // perform tile rendering only
@@ -81,13 +83,11 @@ export default class MapcacheThreadHelper {
       // set up initial directory
       const directory = data.source.directory
       this.threadPool.addTask({ id: data.id, type: REQUEST_PROCESS_SOURCE, data: data }, sender, (err, result) => {
-        const isNil = require('lodash/isNil')
         if (!isNil(err)) {
           if (isNil(result)) {
             result = {}
           }
           result.error = err
-          const { rmDirAsync } = require('../../util/file/FileUtilities')
           rmDirAsync(directory).then((err) => {
             if (err) {
               // eslint-disable-next-line no-console
@@ -98,7 +98,6 @@ export default class MapcacheThreadHelper {
         }
         resolve(result)
       }, () => {
-        const { rmDirAsync } = require('../../util/file/FileUtilities')
         rmDirAsync(directory).then((err) => {
           if (err) {
             // eslint-disable-next-line no-console

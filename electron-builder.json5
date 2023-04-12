@@ -1,0 +1,144 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  productName: "MapCache",
+  appId: "mil.nga.mapcache",
+  artifactName: "${productName}.${version}.${ext}",
+  copyright: "Copyright © 2022 National Geospatial-Intelligence Agency",
+  extraResources: ["./resources/**", {
+    from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
+    to: "canvaskit/canvaskit.wasm",
+  }],
+  protocols: [
+    {
+      name: "MapCache",
+      role: "Editor",
+      schemes: ["mapcache"]
+    }
+  ],
+  asarUnpack: [
+    "**/node_modules/bin-wrapper/**/*",
+    "**/node_modules/imagemin-pngquant/**/*",
+    "**/node_modules/pngquant-bin/**/*",
+    "**/node_modules/better-sqlite3/**/*",
+    "**/node_modules/mime/**/*",
+    "**/node_modules/conf/**/*",
+    "**/node_modules/ajv-formats/**/*",
+    "**/node_modules/bindings/**/*",
+    "**/node_modules/file-uri-to-path/**/*",
+    "**/mapcacheThread.js",
+    "**/0.js",
+    "**/1.js",
+    "**/2.js",
+    "**/3.js",
+    "**/4.js",
+    "**/5.js",
+    "**/6.js",
+    "**/7.js",
+    "**/8.js",
+    "**/9.js",
+    "**/10.js",
+    "**/11.js",
+    "**/12.js",
+    "**/13.js"
+  ],
+  directories: {
+    buildResources: "buildResources"
+  },
+  buildDependenciesFromSource: true,
+  dmg: {
+    contents: [
+      {
+        x: 410,
+        y: 150,
+        type: "link",
+        path: "/Applications"
+      },
+      {
+        x: 130,
+        y: 150,
+        type: "file"
+      }
+    ],
+    sign: false
+  },
+  mac: {
+    category: "public.app-category.productivity",
+    fileAssociations: [
+      {
+        ext: 'gpkg',
+        name: 'GeoPackage File',
+        role: 'Editor',
+        icon: 'gpkg_doc.icns'
+      }
+    ],
+    target: [
+      {
+        target: "dmg",
+        arch: [
+          "universal"
+        ]
+      }
+    ],
+    icon: "buildResources/icon.icns",
+    hardenedRuntime : true,
+    gatekeeperAssess: false,
+    entitlements: "buildResources/entitlements.mac.plist",
+    entitlementsInherit: "buildResources/entitlements.mac.plist",
+    artifactName: "${productName}.${version}.${ext}"
+  },
+  mas: {
+    category: "public.app-category.productivity",
+    fileAssociations: [
+      {
+        ext: 'gpkg',
+        name: 'GeoPackage File',
+        role: 'Editor',
+        icon: 'gpkg_doc.icns'
+      }
+    ],
+    target: [
+      {
+        target: "dmg",
+        arch: [
+          "universal"
+        ]
+      }
+    ],
+    icon: "buildResources/icon.icns",
+    hardenedRuntime : true,
+    gatekeeperAssess: false,
+    entitlements: "buildResources/entitlements.mas.plist",
+    entitlementsInherit: "buildResources/entitlements.mas.plist"
+  },
+  win: {
+    fileAssociations: [
+      {
+        ext: 'gpkg',
+        name: 'GeoPackage File',
+        icon: 'gpkg_doc.ico'
+      }
+    ],
+    target: [
+      "portable",
+      "nsis",
+      "appx"
+    ],
+    icon: "buildResources/icon.ico"
+  },
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    include: "buildResources/uninstaller.nsh",
+    artifactName: "${productName}.${version}.Installer.${ext}"
+  },
+  linux: {
+    icon: "buildResources/icons",
+    target: [
+      "deb",
+      "rpm",
+      "tar.gz"
+    ]
+  }
+}

@@ -17,6 +17,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                      variant="underlined"
                       autofocus
                       v-model="addFieldValue"
                       :rules="addFieldRules"
@@ -108,12 +109,12 @@
             <v-list-item-icon>
               <v-icon>{{ tableFields[column].icon }}</v-icon>
             </v-list-item-icon>
-            <v-list-item-content>
+            <div>
               <v-list-item-title :title="tableFields[column].name"
                                  v-text="tableFields[column].name"></v-list-item-title>
               <v-list-item-subtitle :title="tableFields[column].type"
                                     v-text="tableFields[column].type"></v-list-item-subtitle>
-            </v-list-item-content>
+            </div>
             <v-list-item-icon class="sortHandle">
               <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
             </v-list-item-icon>
@@ -134,6 +135,10 @@ import {
   mdiDragHorizontalVariant
 } from '@mdi/js'
 import Sortable from 'sortablejs'
+import {
+  addGeoPackageFeatureTableColumn,
+  updateGeoPackageFeatureTableColumnOrder
+} from '../../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -193,47 +198,53 @@ export default {
       BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,
       DATETIME: window.mapcache.GeoPackageDataType.DATETIME,
       DATE: window.mapcache.GeoPackageDataType.DATE,
-      featureColumns: []
+      featureColumns: [],
+      tableFields: null,
+      columnOrder: []
     }
   },
-  asyncComputed: {
-    tableFields: {
-      get () {
-        return window.mapcache.getFeatureColumns(this.object.geopackageFilePath || this.object.path, this.tableName).then(columns => {
-          const tableFields = {}
-          const columnNames = columns._columns.map(column => column.name.toLowerCase())
-          columns._columns.forEach((column, index) => {
-            // excluding primary key column, blob columns, and _feature_id columns
-            if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-              tableFields[column.name.toLowerCase()] = {
-                id: column.name + '_' + index,
-                name: column.name.toLowerCase(),
-                type: this.getSimplifiedType(column.dataType),
-                icon: this.getSimplifiedTypeIcon(column.dataType),
-                click: () => {
-                  const featureLayerField = {
-                    name: column.name,
-                    icon: this.getSimplifiedTypeIcon(column.dataType),
-                    type: this.getSimplifiedType(column.dataType)
-                  }
-                  this.fieldClicked(featureLayerField, columnNames)
-                }
-              }
-            }
-          })
-          return tableFields
-        })
+  created () {
+    this.getTableFields().then(this.getColumnOrder)
+  },
+  watch: {
+    object: {
+      async handler () {
+        await this.getTableFields()
+        await this.getColumnOrder()
       },
-      default: null
+      deep: true
     },
-    columnOrder: {
-      async get () {
-        return this.isGeoPackage ? (this.object.tables.features[this.tableName] ? this.object.tables.features[this.tableName].columnOrder.slice() : await this.getColumnNames()) : (this.object.table ? this.object.table.columnOrder.slice() : await this.getColumnNames())
-      },
-      default: []
-    }
   },
   methods: {
+    async getColumnOrder () {
+      this.columnOrder = this.isGeoPackage ? (this.object.tables.features[this.tableName] ? this.object.tables.features[this.tableName].columnOrder.slice() : await this.getColumnNames()) : (this.object.table ? this.object.table.columnOrder.slice() : await this.getColumnNames())
+    },
+    async getTableFields () {
+      this.tableFields = window.mapcache.getFeatureColumns(this.object.geopackageFilePath || this.object.path, this.tableName).then(columns => {
+        const tableFields = {}
+        const columnNames = columns._columns.map(column => column.name.toLowerCase())
+        columns._columns.forEach((column, index) => {
+          // excluding primary key column, blob columns, and _feature_id columns
+          if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
+            tableFields[column.name.toLowerCase()] = {
+              id: column.name + '_' + index,
+              name: column.name.toLowerCase(),
+              type: this.getSimplifiedType(column.dataType),
+              icon: this.getSimplifiedTypeIcon(column.dataType),
+              click: () => {
+                const featureLayerField = {
+                  name: column.name,
+                  icon: this.getSimplifiedTypeIcon(column.dataType),
+                  type: this.getSimplifiedType(column.dataType)
+                }
+                this.fieldClicked(featureLayerField, columnNames)
+              }
+            }
+          }
+        })
+        return tableFields
+      })
+    },
     async getColumnNames () {
       const columns = await window.mapcache.getFeatureColumns(this.object.geopackageFilePath || this.object.path, this.tableName)
       return columns._columns.map(column => column.name.toLowerCase())
@@ -287,16 +298,10 @@ export default {
     },
     addField () {
       this.addFieldDialog = false
-      window.mapcache.addGeoPackageFeatureTableColumn({
-        projectId: this.projectId,
-        id: this.id,
-        isGeoPackage: this.isGeoPackage,
-        tableName: this.tableName,
-        columnName: this.addFieldValue,
-        columnType: this.addFieldType
+      addGeoPackageFeatureTableColumn(this.projectId, this.id, this.isGeoPackage, this.tableName, this.addFieldValue, this.addFieldType).then(() => {
+        this.addFieldValue = ''
+        this.addFieldType = window.mapcache.GeoPackageDataType.TEXT
       })
-      this.addFieldValue = ''
-      this.addFieldType = window.mapcache.GeoPackageDataType.TEXT
     },
     cancelAddField () {
       this.addFieldDialog = false
@@ -315,15 +320,10 @@ export default {
         }
       }
       headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
-      window.mapcache.updateGeoPackageFeatureTableColumnOrder({
-        projectId: this.projectId,
-        isGeoPackage: this.isGeoPackage,
-        id: this.id,
-        tableName: this.tableName,
-        columnOrder: headersTmp
-      })
+      updateGeoPackageFeatureTableColumnOrder(this.projectId, this.id, this.isGeoPackage, this.tableName, headersTmp)
     },
   },
+
 }
 </script>
 

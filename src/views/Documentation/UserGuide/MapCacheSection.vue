@@ -8,10 +8,14 @@
           <v-divider v-if="sectionIndex > 0 && !section.no_divider" class="mb-4"/>
           <v-card class="mt-0 pt-0" flat tile>
             <v-card-title class="ml-0 pl-0 mt-0 pt-0">
-              <v-icon v-if="section.icon" class="mr-4" :color="section.color">{{ section.icon }}</v-icon>
-              <v-img v-if="section.image" class="mr-4" :src="section.image"
-                     style="max-width: 22px; max-height: 22px;"></v-img>
-              {{ section.title }}
+              <v-icon size="24px" v-if="section.icon" class="mr-2" :color="section.color" :icon="section.icon"/>
+              <v-avatar rounded="0" v-if="section.image" class="mr-2" size="22px">
+                <v-img
+                    :src="section.image"
+                    alt="John"
+                ></v-img>
+              </v-avatar>
+              <span>{{ section.title }}</span>
             </v-card-title>
             <v-card-text class="ml-1">
               <v-row justify="space-between">
@@ -30,7 +34,7 @@
 </template>
 
 <script>
-import MapCacheArticle from './Article/MapCacheArticle'
+import MapCacheArticle from './Article/MapCacheArticle.vue'
 
 export default {
   components: { MapCacheArticle },

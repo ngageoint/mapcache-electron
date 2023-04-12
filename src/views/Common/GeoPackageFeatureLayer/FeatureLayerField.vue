@@ -2,13 +2,11 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title :title="column.name">{{ column.name.toLowerCase() }}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -28,6 +26,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="renamedColumn"
                         :rules="renamedColumnRules"
@@ -168,6 +167,7 @@
 
 <script>
 import { mdiChevronLeft, mdiPencil, mdiTrashCan } from '@mdi/js'
+import { deleteGeoPackageFeatureTableColumn, renameFeatureTableColumn } from '../../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -202,26 +202,15 @@ export default {
   methods: {
     rename () {
       this.renameDialog = false
-      window.mapcache.renameGeoPackageFeatureTableColumn({
-        projectId: this.projectId,
-        id: this.id,
-        isGeoPackage: this.isGeoPackage,
-        tableName: this.tableName,
-        oldColumnName: this.column.name,
-        newColumnName: this.renamedColumn
+      renameFeatureTableColumn(this.projectId, this.id, this.isGeoPackage, this.tableName, this.column.name, this.renamedColumn).then(() => {
+        this.renamed(this.renamedColumn)
       })
-      this.renamed(this.renamedColumn)
     },
     deleteField () {
       this.deleteDialog = false
-      window.mapcache.deleteGeoPackageFeatureTableColumn({
-        projectId: this.projectId,
-        id: this.id,
-        isGeoPackage: this.isGeoPackage,
-        tableName: this.tableName,
-        columnName: this.column.name
+      deleteGeoPackageFeatureTableColumn(this.projectId, this.id, this.isGeoPackage, this.tableName, this.column.name).then(() => {
+        this.back()
       })
-      this.back()
     },
     showRenameDialog () {
       this.renameValid = false

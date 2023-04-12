@@ -1,84 +1,101 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './views/App.vue'
 import router from './router'
-import AsyncComputed from 'vue-async-computed'
-import sanitizeHTML from 'sanitize-html'
-import vuetify from './lib/vue/vuetify/vuetify.js' // path to vuetify export
+import vuetify from './lib/vue/vuetify/vuetify' // path to vuetify export
 import './styles/app.css'
 import 'typeface-roboto/index.css'
-import { setCreateCanvasFunction } from './lib/util/canvas/CanvasUtilities'
-import createMapCachePersistedStateWrapper from './lib/vue/vuex/MapCachePersistedStateWrapper'
-import createMapCacheSharedMutationsWrapper from './lib/vue/vuex/MapCacheSharedMutationsWrapper'
-import Vuex from 'vuex'
+import {
+  setCreateCanvasFunction,
+  setMakeImageDataFunction,
+  setMakeImageFunction
+} from './lib/util/canvas/CanvasUtilities'
+import createMapCachePersistedStateWrapper from './lib/vue/vuex-electron/PersistedStateRenderer'
+import createMapCacheSharedMutationsWrapper from './lib/vue/vuex-electron/SharedMutationsRenderer'
+import { createStore } from 'vuex'
 import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
+import sanitizeHTML from 'sanitize-html'
 
+// Object.assign(console, window.log)
 
-Vue.directive('observe-visibility', ObserveVisibility)
-
-Object.assign(console, window.log)
-
-Vue.use(Vuex)
-
-Vue.prototype.$sanitize = sanitizeHTML
-
-let createStore = () => {
-  return new Vuex.Store({
-    modules,
-    plugins: [
-      createMapCachePersistedStateWrapper({ throttle: 100 }),
-      createMapCacheSharedMutationsWrapper(),
-    ],
-    strict: true
-  })
+let createVuexStore = () => {
+    return createStore({
+        modules,
+        plugins: [
+            createMapCachePersistedStateWrapper({ throttle: 100 }),
+            createMapCacheSharedMutationsWrapper(),
+        ],
+        strict: true
+    })
 }
 
 let store = undefined
-if (window.mapcache != null) {
-  if (window.mapcache.setupGeoPackageContext != null) {
-    window.mapcache.setupGeoPackageContext()
-  }
 
-  if (window.mapcache.createStorage != null) {
-    let storeAttempts = 0
-    while (store == null && storeAttempts < 3) {
-      try {
-        store = createStore()
-        // eslint-disable-next-line no-unused-vars
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        storeAttempts++
-      }
+if (window.mapcache) {
+    if (window.mapcache.setupGeoPackageContext != null) {
+        window.mapcache.setupGeoPackageContext()
+    }
+    if (window.vuex) {
+        let storeAttempts = 0
+        while (store == null && storeAttempts < 3) {
+            try {
+                store = createVuexStore()
+                // eslint-disable-next-line no-unused-vars
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                storeAttempts++
+            }
+        }
+
+        if (store == null) {
+            // eslint-disable-next-line no-console
+            console.error('Unable to create vuex store. Exiting.')
+            process.exit(0)
+        }
     }
 
-    if (store == null) {
-      // eslint-disable-next-line no-console
-      console.error('Unable to create vuex store. Exiting.')
-      process.exit(0)
-    }
-  }
+    // use BrowserCanvasAdapter in renderer processes
+    setCreateCanvasFunction((width, height) => {
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        return canvas
+    })
 
-  // use BrowserCanvasAdapter in renderer processes
-  setCreateCanvasFunction((width, height) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    return canvas
-  })
+    setMakeImageDataFunction((width, height) => {
+        return new ImageData(width, height)
+    })
+
+    setMakeImageFunction(async (source) => {
+        return new Promise((resolve, reject) => {
+            const image = new Image()
+            image.onload = function () {
+                resolve(image)
+            }
+            image.onerror = function (e) {
+                reject(e)
+            }
+            image.src = source
+        })
+    })
 }
 
-Vue.use(AsyncComputed)
-
-Vue.config.productionTip = false
-
-Vue.config.ignoredElements = [
-  /^x-/
-]
-
 /* eslint-disable no-new */
-new Vue({
-  vuetify,
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
+const app = createApp(App).use(vuetify).use(router).use(store)
+app.config.globalProperties.$sanitize = sanitizeHTML
+app.config.globalProperties.showToolTips = false
+app.config.productionTip = false
+app.config.ignoredElements = [
+    /^x-/
+]
+app.directive('observe-visibility', {
+    beforeMount: (el, binding, vnode) => {
+        vnode.context = binding.instance;
+        ObserveVisibility.bind(el, binding, vnode);
+    },
+    update: ObserveVisibility.update,
+    unmounted: ObserveVisibility.unbind,
+});
+
+app.mount('#app')
+

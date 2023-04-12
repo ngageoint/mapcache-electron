@@ -1,6 +1,6 @@
 import isNil from 'lodash/isNil'
-import { constructRenderer } from '../renderer/RendererFactory'
-import { GEOPACKAGE } from '../../../layer/LayerTypes'
+import { constructRenderer } from '../renderer/RendererFactory.js'
+import { GEOPACKAGE } from '../../../layer/LayerTypes.js'
 
 /**
  * The map cache map layer is a wrapper for a MapCache Layer object. This object has functions for handling the rendering of EPSG:3857 tiles

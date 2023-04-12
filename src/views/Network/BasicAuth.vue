@@ -9,6 +9,7 @@
       </v-card-subtitle>
       <v-form v-on:submit.prevent ref="signInForm" v-model="signInValid">
         <v-text-field
+            variant="underlined"
             autofocus
             tabindex="1"
             label="Username"
@@ -17,6 +18,7 @@
             :rules="basicAuthUsernameRules"
             required/>
         <v-text-field
+            variant="underlined"
             tabindex="2"
             label="Password"
             clearable

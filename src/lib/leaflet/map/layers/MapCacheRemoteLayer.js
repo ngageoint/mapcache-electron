@@ -4,16 +4,17 @@ import {
   DEFAULT_RETRY_ATTEMPTS,
   DEFAULT_TIMEOUT, getAuthenticationMethod, isTimeoutError,
   SERVICE_TYPE, TIMEOUT_STATUS
-} from '../../../network/HttpUtilities'
-import { getAxiosRequestScheduler, testServiceConnection } from '../../../network/ServiceConnectionUtils'
-import { constructRenderer } from '../renderer/RendererFactory'
-import { WMS, WMTS, XYZ_SERVER } from '../../../layer/LayerTypes'
-import EventBus from '../../../vue/EventBus'
-import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
-import CancellableTileRequest from '../../../network/CancellableTileRequest'
-import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
-import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
-import SlowServerNotifier from '../../../geopackage/SlowServerNotifier'
+} from '../../../network/HttpUtilities.js'
+import { getAxiosRequestScheduler, testServiceConnection } from '../../../network/ServiceConnectionUtils.js'
+import { constructRenderer } from '../renderer/RendererFactory.js'
+import { WMS, WMTS, XYZ_SERVER } from '../../../layer/LayerTypes.js'
+import EventBus from '../../../vue/EventBus.js'
+import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities.js'
+import CancellableTileRequest from '../../../network/CancellableTileRequest.js'
+import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities.js'
+import { WEB_MERCATOR } from '../../../projection/ProjectionConstants.js'
+import SlowServerNotifier from '../../../geopackage/SlowServerNotifier.js'
+import { setSourceError, setSourceWarning } from '../../../vue/vuex/ProjectActions'
 
 /**
  * The map cache networking map layer is a wrapper for WMS/XYZ and other services
@@ -100,21 +101,21 @@ export default function (L) {
     setError (error) {
       if (error.status === TIMEOUT_STATUS) {
         this.error = error
-        window.mapcache.setSourceError({ id: this.id, error: this.error })
+        setSourceError(this.id, this.error)
       } else if (error.response && (error.response.status >= 500 || error.response.status === 401)) {
         this.error = {
           status: error.response.status,
           statusText: error.response.statusText,
           authType: getAuthenticationMethod(error.response)
         }
-        window.mapcache.setSourceError({ id: this.id, error: this.error })
+        setSourceError(this.id, this.error)
       } else if (error.request) {
         if (navigator.onLine) {
           this.error = {
             status: -1,
             statusText: 'Unable to reach server.'
           }
-          window.mapcache.setSourceError({ id: this.id, error: this.error })
+          setSourceError(this.id, this.error)
         } else {
           // notify there may be a network error
           EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
@@ -289,7 +290,7 @@ export default function (L) {
           this.serverMonitor.applyWarningMessage(status)
           if(status.warning) {
             this.slownessNotified = true
-            window.mapcache.setSourceWarning({ id: this.id, warning: status.warning })
+            setSourceWarning(this.id, status.warning)
           }
         }
         doneWrapper(null, tile)

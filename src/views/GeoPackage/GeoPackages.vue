@@ -4,14 +4,11 @@
                :allow-notifications="allowNotifications"></geo-package>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
-        dark
         color="main"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>GeoPackages</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -63,65 +60,72 @@
         </v-card>
       </v-dialog>
     </v-sheet>
-    <v-speed-dial
-        class="fab-position"
-        v-model="fab"
-        transition="slide-y-reverse-transition"
-    >
-      <template v-slot:activator>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-                fab
-                color="primary"
-                v-bind="attrs"
-                v-on="on">
-              <img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px">
-            </v-btn>
+    <v-tooltip location="end" text="Add GeoPackage">
+      <template v-slot:activator="{ props }">
+        <v-btn
+            class="fab-container"
+            v-bind="props"
+            icon
+            color="primary"
+            @click="fab = !fab">
+          <template v-slot:default>
+            <v-img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px"/>
           </template>
-          <span>Add GeoPackage</span>
-        </v-tooltip>
+        </v-btn>
       </template>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-              fab
-              small
-              color="accent"
-              @click.stop="importGeoPackage"
-              v-bind="attrs"
-              v-on="on">
-            <v-icon>{{ mdiFileDocumentOutline }}</v-icon>
-          </v-btn>
-        </template>
-        <span>Import from file</span>
-      </v-tooltip>
-      <v-tooltip right :disabled="!project.showToolTips">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-              fab
-              small
-              color="accent"
-              @click.stop="createNewGeoPackage"
-              v-bind="attrs"
-              v-on="on">
-            <v-icon>{{ mdiPlus }}</v-icon>
-          </v-btn>
-        </template>
-        <span>New GeoPackage</span>
-      </v-tooltip>
-    </v-speed-dial>
+    </v-tooltip>
+
+<!--    <v-speed-dial-->
+<!--        class="fab-position"-->
+<!--        v-model="fab"-->
+<!--        transition="slide-y-reverse-transition"-->
+<!--    >-->
+<!--      <template v-slot:activator>-->
+<!--        <v-tooltip location="end" :disabled="!project.showToolTips">-->
+<!--          <template v-slot:activator="{ props }">-->
+
+<!--          </template>-->
+<!--          <span>Add GeoPackage</span>-->
+<!--        </v-tooltip>-->
+<!--      </template>-->
+<!--      <v-tooltip location="end" :disabled="!project.showToolTips">-->
+<!--        <template v-slot:activator="{ props }">-->
+<!--          <v-btn-->
+<!--              icon="mdi-file-document-outline"-->
+<!--              small-->
+<!--              color="accent"-->
+<!--              @click.stop="importGeoPackage"-->
+<!--              v-bind="props">-->
+<!--          </v-btn>-->
+<!--        </template>-->
+<!--        <span>Import from file</span>-->
+<!--      </v-tooltip>-->
+<!--      <v-tooltip location="end" :disabled="!project.showToolTips">-->
+<!--        <template v-slot:activator="{ props }">-->
+<!--          <v-btn-->
+<!--              icon="mdi-plus"-->
+<!--              small-->
+<!--              color="accent"-->
+<!--              @click.stop="createNewGeoPackage"-->
+<!--              v-bind="props">-->
+<!--            <v-icon>{{ mdiPlus }}</v-icon>-->
+<!--          </v-btn>-->
+<!--        </template>-->
+<!--        <span>New GeoPackage</span>-->
+<!--      </v-tooltip>-->
+<!--    </v-speed-dial>-->
   </v-sheet>
 </template>
 
 <script>
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-
-import GeoPackage from './GeoPackage'
-import GeoPackageList from './GeoPackageList'
+import GeoPackage from './GeoPackage.vue'
+import GeoPackageList from './GeoPackageList.vue'
 import { mdiAlert, mdiChevronLeft, mdiFileDocumentOutline, mdiPlus } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
+import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
+import { setActiveGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -171,7 +175,7 @@ export default {
           if (window.mapcache.fileExists(filePath)) {
             this.geopackageExistsDialog = true
           } else {
-            window.mapcache.addGeoPackage({ projectId: this.project.id, filePath: filePath }).then(added => {
+            addGeoPackage(this.project.id, filePath).then(added => {
               if (!added) {
                 // eslint-disable-next-line no-console
                 console.error('Failed to import GeoPackage')
@@ -198,10 +202,7 @@ export default {
           let fileInfo = window.mapcache.getFileInfo(result.filePaths[0])
           const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
           if (!existsInApp) {
-            window.mapcache.addGeoPackage({
-              projectId: this.project.id,
-              filePath: fileInfo.absolutePath
-            }).then(added => {
+            addGeoPackage(this.project.id, fileInfo.absolutePath).then(added => {
               if (!added) {
                 // eslint-disable-next-line no-console
                 console.error('Failed to import GeoPackage')
@@ -217,11 +218,11 @@ export default {
     },
     geopackageSelected (geopackageId) {
       this.selectedGeoPackage = this.geopackages[geopackageId]
-      window.mapcache.setActiveGeoPackage({ projectId: this.project.id, geopackageId: geopackageId })
+      setActiveGeoPackage(this.project.id, geopackageId)
     },
     deselectGeoPackage () {
       this.selectedGeoPackage = null
-      window.mapcache.setActiveGeoPackage({ projectId: this.project.id, geopackageId: null })
+      setActiveGeoPackage(this.project.id, null)
     }
   },
   watch: {
@@ -265,5 +266,11 @@ export default {
   width: 384px;
   left: 64px;
   bottom: 8px;
+}
+.fab-container {
+  position:fixed;
+  left: 384px;
+  bottom: 20px;
+  cursor:pointer;
 }
 </style>

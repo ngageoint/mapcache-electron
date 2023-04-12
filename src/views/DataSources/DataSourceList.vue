@@ -1,9 +1,8 @@
 <template>
   <v-sheet>
     <v-list class="pa-0" v-if="items">
-      <template v-for="item in items">
+      <template v-for="item in items" :key="item.id + 'list-item'">
         <v-list-item
-            :key="item.id + 'list-item'"
             @click="item.click"
         >
           <v-list-item-icon class="mt-auto mb-auto">
@@ -21,13 +20,13 @@
               <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
           </v-list-item-icon>
-          <v-list-item-content>
+          <div>
             <v-list-item-title :title="item.name" :style="{marginBottom: '0px', fontWeight: 500}"
                                v-html="item.name"></v-list-item-title>
             <v-list-item-subtitle v-if="item.type != null" v-html="item.type"></v-list-item-subtitle>
             <v-list-item-subtitle v-if="item.subtitle != null" v-html="item.subtitle"></v-list-item-subtitle>
             <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
           <v-list-item-icon class="mt-auto mb-auto" v-if="sources[item.id] && sources[item.id].warning">
             <data-source-warning :source="sources[item.id]"></data-source-warning>
           </v-list-item-icon>
@@ -44,7 +43,7 @@
                                       :source="sources[item.id]"></source-visibility-switch>
           </v-list-item-action>
         </v-list-item>
-        <v-divider :key="item.id + 'divider'"></v-divider>
+        <v-divider/>
       </template>
     </v-list>
   </v-sheet>
@@ -52,10 +51,10 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import SourceVisibilitySwitch from './SourceVisibilitySwitch'
-import DataSourceTroubleshooting from './DataSourceTroubleshooting'
+import SourceVisibilitySwitch from './SourceVisibilitySwitch.vue'
+import DataSourceTroubleshooting from './DataSourceTroubleshooting.vue'
 import DataSourceWarning from './DataSourceWarning.vue'
-import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import { zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
 

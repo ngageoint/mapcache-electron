@@ -17,13 +17,12 @@
             Open in a new project...
           </v-card-subtitle>
           <v-form v-on:submit.prevent v-model="projectNameValid" ref="form">
-            <v-text-field class="pl-4 pr-4" label="Project name" v-model="projectName" :rules="projectNameRules">
+            <v-text-field variant="underlined" class="pl-4 pr-4" label="Project name" v-model="projectName" :rules="projectNameRules">
               <template v-slot:append-outer>
-                <v-tooltip right>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn v-bind="attrs" v-on="on" color="primary" icon :disabled="!projectNameValid"
+                <v-tooltip location="end">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" color="primary" icon="mdi-plus" :disabled="!projectNameValid"
                            @click="() => createNewProject(projectName)">
-                      <v-icon>{{ mdiPlus }}</v-icon>
                     </v-btn>
                   </template>
                   <span>Create</span>
@@ -35,9 +34,9 @@
             or select a recent project.
           </v-card-subtitle>
           <v-row no-gutters class="pl-4 pr-4">
-            <v-list class="dialog-project-list" v-if="projects.length > 0">
+            <v-list lines="three" class="dialog-project-list" v-if="projects.length > 0">
               <v-list-item v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)">
-                <v-list-item-content>
+                <div>
                   <v-list-item-title>
                     {{ project.name }}
                   </v-list-item-title>
@@ -51,7 +50,7 @@
                       Object.keys(project.sources).length + ' data source' + (Object.keys(project.sources).length !== 1 ? 's' : '')
                     }}
                   </v-list-item-subtitle>
-                </v-list-item-content>
+                </div>
               </v-list-item>
             </v-list>
           </v-row>
@@ -69,9 +68,9 @@
         max-width="400"
         persistent
         @keydown.esc="cancelRemove">
-      <v-card v-if="deleteProjectDialog">
+      <v-card v-if="deleteProjectDialog" class="pa-2">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon icon="mdi-trash-can" color="warning" class="pr-2"/>
           Delete project
         </v-card-title>
         <v-card-text>
@@ -100,7 +99,7 @@
         persistent
         width="400">
       <v-card
-          color="#426e91" dark class="pt-2">
+          color="#426e91" theme="dark" class="pt-2">
         <v-card-text
             class="padding-top">
           {{ dialogText }}
@@ -118,47 +117,41 @@
         class="padding-top"
         width="400"
         @keydown.esc="cancelNewProject">
-      <edit-text-modal v-if="addProjectDialog" autofocus :icon="mdiPlus" title="Create project" save-text="Create"
+      <edit-text-modal v-if="addProjectDialog" autofocus icon="mdi-plus" title="Create project" save-text="Create"
                        :on-cancel="cancelNewProject" :value="projectName" :rules="projectNameRules" font-size="16px"
                        font-weight="bold" label="Project name" :on-save="createNewProject"/>
     </v-dialog>
     <v-row class="mt-4 mb-2" no-gutters justify="end">
-      <v-btn dark text @click="onClickNewProject">
-        <v-icon small>{{ mdiPlus }}</v-icon>
+      <v-btn class="dark-btn" prepend-icon="mdi-plus" @click="onClickNewProject" variant="text">
         Create project
       </v-btn>
     </v-row>
     <span style="color: whitesmoke; font-size: 12px">Recent projects</span>
     <v-row no-gutters justify="center" class="flex-grow-1 mt-2">
-      <v-list dark class="semi-transparent project-list pa-0" v-if="projects.length > 0">
-        <v-list-item class="semi-transparent" v-for="project in projects" :key="project.id"
-                     @click="onClickOpenProject(project)">
-          <v-list-item-content>
-            <v-list-item-title style="font-weight: 600;">
-              {{ project.name }}
-            </v-list-item-title>
-            <v-list-item-subtitle class="ml-2">
-              {{
-                Object.keys(project.geopackages).length + ' GeoPackage' + (Object.keys(project.geopackages).length !== 1 ? 's' : '')
-              }}
-            </v-list-item-subtitle>
-            <v-list-item-subtitle class="ml-2">
-              {{
-                Object.keys(project.sources).length + ' data source' + (Object.keys(project.sources).length !== 1 ? 's' : '')
-              }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-btn icon @click.stop.prevent="showDeleteProjectDialog(project)">
-              <v-icon>{{ mdiTrashCanOutline }}</v-icon>
-            </v-btn>
-          </v-list-item-action>
+      <v-list lines="two" theme="dark" class="semi-transparent project-list pa-0" v-if="projects.length > 0">
+        <v-list-item class="semi-transparent" v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)">
+          <v-list-item-title style="font-weight: 600;">
+            {{ project.name }}
+          </v-list-item-title>
+          <v-list-item-subtitle class="ml-2">
+            {{
+              Object.keys(project.geopackages).length + ' GeoPackage' + (Object.keys(project.geopackages).length !== 1 ? 's' : '')
+            }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle class="ml-2">
+            {{
+              Object.keys(project.sources).length + ' data source' + (Object.keys(project.sources).length !== 1 ? 's' : '')
+            }}
+          </v-list-item-subtitle>
+          <template v-slot:append>
+            <v-btn variant="text" icon="mdi:mdi-trash-can-outline" @click.stop.prevent="showDeleteProjectDialog(project)"/>
+          </template>
         </v-list-item>
       </v-list>
-      <v-card dark flat v-else class="semi-transparent project-list">
+      <v-card theme="dark" flat v-else class="semi-transparent project-list">
         <v-card-text>
           No projects. Click the <b>
-          <v-icon small>{{ mdiPlus }}</v-icon>
+          <v-icon icon="mdi-plus" small/>
           Create project</b> button to get started.
         </v-card-text>
       </v-card>
@@ -168,10 +161,11 @@
 
 <script>
 import { mapState } from 'vuex'
-import EditTextModal from '../Common/EditTextModal'
+import EditTextModal from '../Common/EditTextModal.vue'
 import { mdiPlus, mdiTrashCan, mdiTrashCanOutline, mdiPackageVariant } from '@mdi/js'
 import { environment } from '../../lib/env/env'
-import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
+import { addGeoPackage, deleteProject } from '../../lib/vue/vuex/CommonActions'
+import { disableRemoteSources, newProject, setProjectAccessed } from '../../lib/vue/vuex/LandingActions'
 
 export default {
   components: { EditTextModal },
@@ -283,7 +277,7 @@ export default {
         const source = Object.assign({}, preloadedSource)
         const sourceDirectory = window.mapcache.createSourceDirectory(directory)
         const layerDirectory = window.mapcache.createNextAvailableLayerDirectory(sourceDirectory)
-        source.id = createUniqueID()
+        source.id = window.mapcache.createUniqueID()
         source.directory = layerDirectory
         source.sourceDirectory = sourceDirectory
         sources[source.id] = source
@@ -298,12 +292,13 @@ export default {
       const id = window.mapcache.createUniqueID()
       const directory = window.mapcache.createProjectDirectory()
       const sources = this.createPreloadedDataSources(directory)
-      await window.mapcache.newProject({ id: id, name: projectName, directory: directory, sources: sources })
+      await newProject({ id: id, name: projectName, directory: directory, sources: sources })
       let geopackageIds = []
       while (this.geoPackageFiles.length > 0) {
-        geopackageIds.push(await window.mapcache.addGeoPackage({ projectId: id, filePath: this.geoPackageFiles.pop() }))
+        geopackageIds.push(await addGeoPackage({ projectId: id, filePath: this.geoPackageFiles.pop() }))
       }
       setTimeout(() => {
+        setProjectAccessed(id)
         window.mapcache.showProject(id, geopackageIds)
         this.reset()
       }, 100)
@@ -321,19 +316,21 @@ export default {
       this.reset()
     },
     remove () {
-      window.mapcache.deleteProject(this.projectToDelete)
-      this.deleteProjectDialog = false
-      this.reset()
+      deleteProject(this.projectToDelete.id).catch(e => {
+        console.error(e)
+      }).finally(() => {
+        this.deleteProjectDialog = false
+        this.reset()
+      })
     },
     async onClickOpenProject (project) {
       this.geoPackageFileImportDialog = false
       this.dialogText = 'Loading ' + project.name + '...'
       this.dialog = true
-      await window.mapcache.disableRemoteSources(project.id)
-      this.$nextTick(() => {
-        window.mapcache.showProject(project.id, null, this.geoPackageFiles.slice())
-        this.reset()
-      })
+      await disableRemoteSources(project.id)
+      await setProjectAccessed(project.id)
+      window.mapcache.showProject(project.id, null, this.geoPackageFiles.slice())
+      this.reset()
     }
   }
 }
@@ -374,5 +371,9 @@ export default {
 
 .no-transition .v-stepper__content {
   transition: none;
+}
+
+.dark-btn {
+  color: #FFFFFF !important;
 }
 </style>

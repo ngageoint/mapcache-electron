@@ -83,6 +83,7 @@ import isNil from 'lodash/isNil'
 import { isMapCacheUserCancellationError, SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import PreprocessSource from '../../lib/source/preprocessing/PreprocessSource'
 import { PROCESSING_STATES, getTitleForProcessingState } from '../../lib/source/SourceProcessing'
+import { addDataSources } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -183,7 +184,7 @@ export default {
           }
         }
         setTimeout(() => {
-          window.mapcache.addDataSources({ projectId: self.project.id, dataSources: result.dataSources }).then(() => {
+          addDataSources(self.project.id, result.dataSources).then(() => {
             self.$nextTick(() => {
               self.onComplete()
             })

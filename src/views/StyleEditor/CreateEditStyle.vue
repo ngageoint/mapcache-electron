@@ -41,12 +41,12 @@
     <v-card-text>
       <v-row no-gutters class="pl-4">
         <v-col cols="11">
-          <v-text-field autofocus label="Name" v-model="name" :rules="nameRules"></v-text-field>
+          <v-text-field variant="underlined" autofocus label="Name" v-model="name" :rules="nameRules"></v-text-field>
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="11">
-          <v-text-field label="Description" v-model="description"></v-text-field>
+          <v-text-field variant="underlined" label="Description" v-model="description"></v-text-field>
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
@@ -102,10 +102,11 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import ColorPicker from '../Common/ColorPicker'
-import NumberPicker from '../Common/NumberPicker'
-import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import ColorPicker from '../Common/ColorPicker.vue'
+import NumberPicker from '../Common/NumberPicker.vue'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
 import { mdiTrashCan } from '@mdi/js'
+import { createStyleRow, deleteStyleRow, updateStyleRow } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -168,7 +169,7 @@ export default {
     updateWidth (val) {
       this.width = val
     },
-    save () {
+    async save () {
       let styleRow = {
         name: this.name,
         description: this.description,
@@ -180,34 +181,14 @@ export default {
       }
       if (this.styleRow.id) {
         styleRow.id = this.styleRow.id
-        window.mapcache.updateStyleRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          styleRow: styleRow,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        await updateStyleRow(this.projectId, this.id, this.tableName, styleRow, this.isGeoPackage, this.isBaseMap)
       } else {
-        window.mapcache.createStyleRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          style: styleRow,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        await createStyleRow(this.projectId, this.id, this.tableName, styleRow, this.isGeoPackage, this.isBaseMap)
       }
       this.close()
     },
-    deleteStyle () {
-      window.mapcache.deleteStyleRow({
-        projectId: this.projectId,
-        id: this.id,
-        styleId: this.styleRow.id,
-        isGeoPackage: this.isGeoPackage,
-        isBaseMap: this.isBaseMap
-      })
+    async deleteStyle () {
+      await deleteStyleRow(this.projectId, this.id, this.styleRow.id, this.isGeoPackage, this.isBaseMap)
       this.close()
     }
   }

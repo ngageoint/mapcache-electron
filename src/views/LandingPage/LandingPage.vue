@@ -13,8 +13,8 @@
 </template>
 
 <script>
-import MapcacheWelcome from './MapcacheWelcome'
-import Projects from './Projects'
+import MapcacheWelcome from './MapcacheWelcome.vue'
+import Projects from './Projects.vue'
 
 export default {
   name: 'landing-page',
@@ -32,7 +32,7 @@ export default {
       rgba(30, 77, 124, .5) 5%,
       rgba(0, 0, 0, 0.87) 100%
   ),
-  url('../../../public/images/nasa_earth.png') bottom right no-repeat;
+  url('/images/nasa_earth.png') bottom right no-repeat;
   background-size: cover;
 }
 

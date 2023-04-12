@@ -1,9 +1,11 @@
 import { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, globalShortcut, protocol } from 'electron'
 import path from 'path'
 import isNil from 'lodash/isNil'
-import MapcacheThreadHelper from '../threads/helpers/mapcacheThreadHelper'
+import setupProtocol from '../../lib/protocol/protocol'
+import MapCacheThreadHelper from '../../lib/threads/helpers/mapcacheThreadHelper'
 import { getUserCertForUrl } from './auth/CertAuth'
 import { getClientCredentials } from './auth/BasicAuth'
+import store from '../../store/main'
 import {
   MAIN_CHANNELS,
   WORKER_CHANNELS,
@@ -73,6 +75,7 @@ import {
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 import WebViewAuth from './auth/WebViewAuth'
+import { download } from 'electron-dl'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
@@ -143,7 +146,7 @@ class MapCacheWindowManager {
   getMapCacheSession () {
     if (this.mapCachePartitionedSession == null) {
       this.mapCachePartitionedSession = session.fromPartition(MapCacheWindowManager.MAPCACHE_SESSION_PARTITION)
-      require('../protocol/protocol').default(this.mapCachePartitionedSession.protocol, 'mapcache')
+      setupProtocol(this.mapCachePartitionedSession.protocol, 'mapcache')
     }
     return this.mapCachePartitionedSession
   }
@@ -240,7 +243,7 @@ class MapCacheWindowManager {
       })
     })
 
-    const origin = isProduction ? 'mapcache://.' : process.env.WEBPACK_DEV_SERVER_URL.substring(0, process.env.WEBPACK_DEV_SERVER_URL.length - 1)
+    const origin = isProduction ? 'mapcache://.' : process.env.ELECTRON_RENDERER_URL.substring(0, process.env.ELECTRON_RENDERER_URL.length - 1)
 
     const fixHeaders = (headers) => {
       // protect against servers without required cors headers
@@ -325,7 +328,7 @@ class MapCacheWindowManager {
    * Sets up the vuex store, which will listen for state changes from the browser processes
    */
   setupVuexStore () {
-    this.store = require('../../store')
+    this.store = store
   }
 
   setupAuthWebViewHandler () {
@@ -387,7 +390,7 @@ class MapCacheWindowManager {
   async registerWorkerThreads () {
     if (this.mapcacheThreadHelper == null) {
       MapCacheWindowManager.clearWorkerThreadEventHandlers()
-      this.mapcacheThreadHelper = new MapcacheThreadHelper()
+      this.mapcacheThreadHelper = new MapCacheThreadHelper()
       await this.mapcacheThreadHelper.initialize()
       ipcMain.on(ATTACH_MEDIA, async (event, payload) => {
         const taskId = payload.id
@@ -780,7 +783,8 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch(() => {
+    window.loadURL(url).then(onFulfilled).catch((e) => {
+      console.error(e);
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })
@@ -790,13 +794,14 @@ class MapCacheWindowManager {
    * Launches worker process for building geopackage layers
    */
   launchWorkerAndExecuteConfiguration () {
-    const workerURL = process.env.WEBPACK_DEV_SERVER_URL
-      ? `${process.env.WEBPACK_DEV_SERVER_URL}#/worker`
+    const workerURL = process.env.ELECTRON_RENDERER_URL
+      ? `${process.env.ELECTRON_RENDERER_URL}/#/worker`
       : 'mapcache://./index.html/#/worker'
     this.workerWindow = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, 'workerPreload.js'),
-        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
+        preload: path.join(__dirname, '..', 'preload', 'workerPreload.js'),
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION,
+        sandbox: false
       },
       show: false
     })
@@ -825,7 +830,7 @@ class MapCacheWindowManager {
   launchMainWindow () {
     return new Promise((resolve => {
       const winURL = process.env.NODE_ENV === 'development'
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}`
+        ? `${process.env.ELECTRON_RENDERER_URL}/index.html`
         : `mapcache://./index.html`
 
       const menu = Menu.buildFromTemplate(this.getMenuTemplate())
@@ -844,8 +849,9 @@ class MapCacheWindowManager {
       this.mainWindow = new BrowserWindow({
         title: 'MapCache',
         webPreferences: {
-          preload: path.join(__dirname, 'mainPreload.js'),
-          partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
+          preload: path.join(__dirname, '..', 'preload', 'mainPreload.js'),
+          partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION,
+          sandbox: false
         },
         show: false,
         x: this.mainWindowState.x,
@@ -893,9 +899,10 @@ class MapCacheWindowManager {
    * Launches the loader window
    */
   launchLoaderWindow () {
-    const winURL = process.env.WEBPACK_DEV_SERVER_URL
-      ? `${process.env.WEBPACK_DEV_SERVER_URL}/loader.html`
+    const winURL = process.env.ELECTRON_RENDERER_URL
+      ? `${process.env.ELECTRON_RENDERER_URL}/loader.html`
       : `mapcache://./loader.html`
+
     this.loadingWindow = new BrowserWindow({
       frame: false,
       show: false,
@@ -913,8 +920,8 @@ class MapCacheWindowManager {
   launchReleaseNotesWindow () {
     if (this.releaseNotesWindow == null) {
       const windowHeight = 700 + (isWin ? 20 : 0)
-      const winURL = process.env.WEBPACK_DEV_SERVER_URL
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/release_notes`
+      const winURL = process.env.ELECTRON_RENDERER_URL
+        ? `${process.env.ELECTRON_RENDERER_URL}/#/release_notes`
         : `mapcache://./index.html/#/release_notes`
       this.releaseNotesWindowState = windowStateKeeper({
         defaultWidth: 800,
@@ -946,8 +953,8 @@ class MapCacheWindowManager {
   launchUserGuideWindow () {
     if (this.userGuideWindow == null) {
       const windowHeight = 1000 + (isWin ? 20 : 0)
-      const winURL = process.env.WEBPACK_DEV_SERVER_URL
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/user_guide`
+      const winURL = process.env.ELECTRON_RENDERER_URL
+        ? `${process.env.ELECTRON_RENDERER_URL}/#/user_guide`
         : `mapcache://./index.html/#/user_guide`
       this.userGuideWindowState = windowStateKeeper({
         defaultWidth: 900,
@@ -958,7 +965,8 @@ class MapCacheWindowManager {
       this.userGuideWindow = new BrowserWindow({
         title: 'MapCache User Guide',
         webPreferences: {
-          preload: path.join(__dirname, 'userGuidePreload.js')
+          preload: path.join(__dirname, '..', 'preload', 'userGuidePreload.js'),
+          sandbox: false
         },
         show: false,
         x: this.userGuideWindowState.x,
@@ -1003,9 +1011,10 @@ class MapCacheWindowManager {
     this.projectWindow = new BrowserWindow({
       title: 'MapCache',
       webPreferences: {
-        preload: path.join(__dirname, 'projectPreload.js'),
+        preload: path.join(__dirname, '..', 'preload', 'projectPreload.js'),
         webviewTag: true,
-        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION,
+        sandbox: false
       },
       show: false,
       x: this.projectWindowState.x,
@@ -1120,8 +1129,9 @@ class MapCacheWindowManager {
     this.featureTableWindow = new BrowserWindow({
       title: 'MapCache feature table',
       webPreferences: {
-        preload: path.join(__dirname, 'featureTablePreload.js'),
-        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION
+        preload: path.join(__dirname, '..', 'preload', 'featureTablePreload.js'),
+        partition: MapCacheWindowManager.MAPCACHE_SESSION_PARTITION,
+        sandbox: false
       },
       show: false,
       x: this.featureTableWindowState.x,
@@ -1145,8 +1155,8 @@ class MapCacheWindowManager {
     this.featureTableWindow.on('hide', () => {
       this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
     })
-    const winURL = process.env.WEBPACK_DEV_SERVER_URL
-      ? `${process.env.WEBPACK_DEV_SERVER_URL}#/feature_table/${projectId}`
+    const winURL = process.env.ELECTRON_RENDERER_URL
+      ? `${process.env.ELECTRON_RENDERER_URL}/#/feature_table/${projectId}`
       : `mapcache://./index.html/#/feature_table/${projectId}`
     this.loadContent(this.featureTableWindow, winURL, () => {
     })
@@ -1159,8 +1169,7 @@ class MapCacheWindowManager {
    */
   downloadURL = async (url) => {
     try {
-      const download = require('electron-dl').download
-      const fileUrl = require('file-url')
+      const { fileUrl } = await import('file-url');
       await download(this.projectWindow, fileUrl(url))
       // eslint-disable-next-line no-unused-vars
     } catch (error) {
@@ -1201,11 +1210,11 @@ class MapCacheWindowManager {
    */
   showProject (projectId, geopackageIds, filePaths) {
     try {
+      const winURL = process.env.ELECTRON_RENDERER_URL
+        ? `${process.env.ELECTRON_RENDERER_URL}/#/project/${projectId}`
+        : `mapcache://./index.html/#/project/${projectId}`
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
-      const winURL = process.env.WEBPACK_DEV_SERVER_URL
-        ? `${process.env.WEBPACK_DEV_SERVER_URL}#/project/${projectId}`
-        : `mapcache://./index.html/#/project/${projectId}`
       this.loadContent(this.projectWindow, winURL, () => {
         if (geopackageIds != null || filePaths != null) {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)

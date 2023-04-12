@@ -45,7 +45,7 @@
 import {
   mdiPencil
 } from '@mdi/js'
-import NumberPicker from './NumberPicker'
+import NumberPicker from './NumberPicker.vue'
 
 export default {
   props: {

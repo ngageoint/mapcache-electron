@@ -2,7 +2,7 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -24,6 +24,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="dataSourceNameForm" v-model="dataSourceNameValid">
                 <v-text-field
+                    variant="underlined"
                     autofocus
                     v-model="dataSourceName"
                     :rules="dataSourceNameRules"
@@ -91,6 +92,7 @@
               <v-form v-on:submit.prevent ref="urlForm" v-model="overpassGeneratedQueryValid">
                 <v-row no-gutters justify="space-between">
                   <v-text-field
+                      variant="underlined"
                       v-model="overpassSearchTerm"
                       :rules="overpassSearchRules"
                       label="Overpass search term"
@@ -113,9 +115,9 @@
               Modify query<br>
               <small class="pt-1">For advanced users</small>
             </v-col>
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn :disabled="step !== '3'" icon v-bind="attrs" v-on="on" :color="queryLocked ? 'red' : 'secondary'" @click="queryLocked = !queryLocked"><v-icon>{{queryLocked ? mdiLock : mdiLockOpen}}</v-icon></v-btn>
+            <v-tooltip location="bottom">
+              <template v-slot:activator="{ props }">
+                <v-btn :disabled="step !== '3'" icon v-bind="props" :color="queryLocked ? 'red' : 'secondary'" @click="queryLocked = !queryLocked"><v-icon>{{queryLocked ? mdiLock : mdiLockOpen}}</v-icon></v-btn>
               </template>
               <span>{{queryLocked ? 'Unlock' : 'Lock'}}</span>
             </v-tooltip>
@@ -221,7 +223,7 @@
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import { mdiTrashCan, mdiSteering, mdiLock, mdiLockOpen } from '@mdi/js'
-import BoundingBoxEditor from '../Common/BoundingBoxEditor'
+import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import {
   getOverpassQueryFilter,
   getOverpassQueryFilterFromTags,
@@ -234,7 +236,7 @@ import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import { environment } from '../../lib/env/env'
 import bboxPolygon from '@turf/bbox-polygon'
 import area from '@turf/area'
-import NumberPicker from '../Common/NumberPicker'
+import NumberPicker from '../Common/NumberPicker.vue'
 
 export default {
   props: {

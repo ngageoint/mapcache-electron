@@ -4,17 +4,18 @@ import AdmZip from 'adm-zip'
 import KMLSource from './KMLSource'
 import Source from '../Source'
 import { rmDirAsync } from '../../util/file/FileUtilities'
+import { sleep } from '../../util/common/CommonUtilities'
 
 /**
  * KMZSource represents a .kmz file
  */
 export default class KMZSource extends Source {
   async retrieveLayers (statusCallback) {
-    await this.sleep(250)
+    await sleep(250)
     // setup directory to extract kmz contents to
     const unzippedDirectory = path.join(this.directory, 'unzipped')
 
-    await this.sleep(250)
+    await sleep(250)
     // extract kmz contents to the source directory
     const zip = new AdmZip(this.filePath)
     const zipEntries = zip.getEntries()

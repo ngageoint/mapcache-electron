@@ -25,9 +25,12 @@ import {
   isUserCancellation,
   isNotFoundError
 } from './HttpUtilities'
-import { parseStringPromise } from 'xml2js'
+// import { parseStringPromise } from 'xml2js'
 import { getWMTSCapabilitiesURL, getWMTSInfo } from '../util/wmts/WMTSUtilities'
 
+async function parseStringPromise () {
+  return ''
+}
 /**
  * These functions handles connections to supported GIS services
  * WMS, WFS, XYZ and ArcGIS
@@ -490,7 +493,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
         sourceClone.error = undefined
         sourceClone.visible = true
         sourceClone.withCredentials = withCredentials
-        updateDataSource({ projectId: projectId, source: sourceClone })
+        updateDataSource(projectId, sourceClone)
         success = true
       }
     }
@@ -498,7 +501,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
       let sourceClone = cloneDeep(source)
       sourceClone.error = error
       sourceClone.visible = false
-      updateDataSource({ projectId: projectId, source: sourceClone })
+      updateDataSource(projectId, sourceClone)
     }
   }
   return success

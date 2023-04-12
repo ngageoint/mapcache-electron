@@ -1,4 +1,4 @@
-import { parentPort } from 'worker_threads'
+import { parentPort } from 'node:worker_threads'
 import {
   BoundingBox,
   CanvasKitCanvasAdapter,
@@ -28,7 +28,7 @@ import {
   GEOPACKAGE_TABLE_COUNT,
   GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL
 } from './mapcacheThreadRequestTypes'
-import path from 'path'
+import path from 'node:path'
 import { base64toUInt8Array } from '../util/Base64Utilities'
 import { copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable } from '../geopackage/GeoPackageCommon'
 import { getFeatureCount, getFeatureTablePage } from '../geopackage/GeoPackageFeatureTableUtilities'
@@ -36,6 +36,10 @@ import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionCon
 import { tileExtentCalculator } from '../util/xyz/WGS84XYZTileUtilities'
 import { compileTiles } from '../util/tile/TileCompilationUtilities'
 import { DEFAULT_TILE_SIZE } from '../util/tile/TileConstants'
+import { addMediaAttachment, addMediaAttachmentFromUrl } from '../geopackage/GeoPackageMediaUtilities'
+// import SourceFactory from '../source/SourceFactory'
+// import GeoTIFFSource from '../source/geotiff/GeoTIFFSource'
+import CanvasKitInit from '@ngageoint/geopackage/dist/canvaskit/canvaskit.js'
 
 /**
  * ExpiringGeoPackageConnection will expire after a period of inactivity of specified
@@ -140,62 +144,60 @@ function getExpiringGeoPackageConnection (filePath) {
  * @returns {Promise<any>}
  */
 async function attachMedia (data) {
-  const { addMediaAttachment, addMediaAttachmentFromUrl } = require('../geopackage/GeoPackageMediaUtilities')
   if (data.filePath != null) {
     return addMediaAttachment(data.geopackagePath, data.tableName, data.featureId, data.filePath)
   } else if (data.url != null) {
     return addMediaAttachmentFromUrl(data.geopackagePath, data.tableName, data.featureId, data.url)
   }
 }
-
-/**
- * This function takes a source configuration and returns any data source layers necessary
- * @param data
- * @returns {Promise<{dataSources: Array}>}
- */
-async function processDataSource (data) {
-  const SourceFactory = require('../source/SourceFactory').default
-  let source = data.source
-  let dataSources = []
-  let error = null
-  const statusCallback = (message, completionPercentage) => {
-    parentPort.postMessage({ type: 'status', message, completionPercentage })
-  }
-  try {
-    let createdSource = await SourceFactory.constructSource(source)
-    if (createdSource != null) {
-      let layers = await createdSource.retrieveLayers(statusCallback)
-      if (layers.length > 0) {
-        for (let i = 0; i < layers.length; i++) {
-          try {
-            let layer = layers[i]
-            dataSources.push({ id: layer.id, config: layer.configuration })
-            // eslint-disable-next-line no-unused-vars
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to initialize data source: ' + layers[i].sourceLayerName)
-            error = err
-          }
-        }
-      } else {
-        error = new Error('No data source layers retrieved.')
-      }
-    } else {
-      error = new Error('Failed to create data source.')
-    }
-    // eslint-disable-next-line no-unused-vars
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to process data source.')
-    error = e
-  }
-  if (error != null) {
-    throw error
-  }
-  return {
-    dataSources: dataSources
-  }
-}
+//
+// /**
+//  * This function takes a source configuration and returns any data source layers necessary
+//  * @param data
+//  * @returns {Promise<{dataSources: Array}>}
+//  */
+// async function processDataSource (data) {
+//   let source = data.source
+//   let dataSources = []
+//   let error = null
+//   const statusCallback = (message, completionPercentage) => {
+//     parentPort.postMessage({ type: 'status', message, completionPercentage })
+//   }
+//   try {
+//     let createdSource = await SourceFactory.constructSource(source)
+//     if (createdSource != null) {
+//       let layers = await createdSource.retrieveLayers(statusCallback)
+//       if (layers.length > 0) {
+//         for (let i = 0; i < layers.length; i++) {
+//           try {
+//             let layer = layers[i]
+//             dataSources.push({ id: layer.id, config: layer.configuration })
+//             // eslint-disable-next-line no-unused-vars
+//           } catch (err) {
+//             // eslint-disable-next-line no-console
+//             console.error('Failed to initialize data source: ' + layers[i].sourceLayerName)
+//             error = err
+//           }
+//         }
+//       } else {
+//         error = new Error('No data source layers retrieved.')
+//       }
+//     } else {
+//       error = new Error('Failed to create data source.')
+//     }
+//     // eslint-disable-next-line no-unused-vars
+//   } catch (e) {
+//     // eslint-disable-next-line no-console
+//     console.error('Failed to process data source.')
+//     error = e
+//   }
+//   if (error != null) {
+//     throw error
+//   }
+//   return {
+//     dataSources: dataSources
+//   }
+// }
 
 /**
  * Requests a geopackage vector tile
@@ -312,21 +314,20 @@ async function renderTile (data) {
 }
 
 
-/**
- * Generates and returns the absolute path to a geotiff raster data file
- * @param data
- * @returns {Promise<string>}
- */
-async function generateGeoTIFFRasterFile (data) {
-  const { filePath } = data
-  const GeoTIFFSource = require('../source/geotiff/GeoTIFFSource').default
-  const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
-  const image = await GeoTIFFSource.getImage(geotiff)
-  const rasterFile = path.join(path.dirname(filePath), 'data.bin')
-  await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
-  geotiff.close()
-  return rasterFile
-}
+// /**
+//  * Generates and returns the absolute path to a geotiff raster data file
+//  * @param data
+//  * @returns {Promise<string>}
+//  */
+// async function generateGeoTIFFRasterFile (data) {
+//   const { filePath } = data
+//   const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
+//   const image = await GeoTIFFSource.getImage(geotiff)
+//   const rasterFile = path.join(path.dirname(filePath), 'data.bin')
+//   await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
+//   geotiff.close()
+//   return rasterFile
+// }
 
 function renameTable (data) {
   return renameGeoPackageTable(data.filePath, data.tableName, data.newTableName)
@@ -362,31 +363,31 @@ function executeTask (message) {
       { once: true }
     )
     currentTask.cancelTask = ac.abort
-    if (message.type === REQUEST_ATTACH_MEDIA) {
+      if (message.type === REQUEST_ATTACH_MEDIA) {
       attachMedia(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted })
       })
-    } else if (message.type === REQUEST_PROCESS_SOURCE) {
+    } /*else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted })
       })
-    } else if (message.type === REQUEST_RENDER) {
+    } */else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted })
       })
-    } else if (message.type === REQUEST_GEOTIFF_RASTER) {
+    }/* else if (message.type === REQUEST_GEOTIFF_RASTER) {
       generateGeoTIFFRasterFile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted })
       })
-    } else if (message.type === REQUEST_TILE_COMPILATION) {
+    } */else if (message.type === REQUEST_TILE_COMPILATION) {
       compileTiles(message.data).then(result => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
@@ -426,7 +427,6 @@ function executeTask (message) {
       resolve({ error: 'Unsupported message type: ' + message.type, result: false, cancelled: ac.signal.aborted })
     }
   })
-
 }
 
 /**
@@ -434,6 +434,7 @@ function executeTask (message) {
  */
 function setupRequestListener () {
   parentPort.on('message', (message) => {
+    console.log(message)
     if (message.type === CANCEL) {
       if (currentTask.cancelTask) {
         currentTask.cancelTask()
@@ -458,11 +459,15 @@ function setupRequestListener () {
  * Starts up the thread
  */
 function startThread () {
-  const path = require('path')
-  const CanvasKitInit = require('@ngageoint/geopackage/dist/canvaskit/canvaskit.js')
+  // TODO: DEP: See if this hack to fix canvas kit not handling node 18's fetch lib well
+  const fetchHolder = fetch
+  fetch = null
   CanvasKitInit({
-    locateFile: (file) => process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(path.dirname(__dirname), 'node_modules', '@ngageoint', 'geopackage', 'dist', 'canvaskit', file)
+    locateFile: (file) => {
+      return (process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(__dirname, '..', '..', 'node_modules', '@ngageoint', 'geopackage', 'dist', 'canvaskit', file))
+    }
   }).then((CanvasKit) => {
+    fetch = fetchHolder
     CanvasKitCanvasAdapter.setCanvasKit(CanvasKit)
     setCreateCanvasFunction((width, height) => {
       return CanvasKit.MakeCanvas(width, height)
@@ -484,6 +489,9 @@ function startThread () {
     })
     setupRequestListener()
     parentPort.postMessage({ error: null })
+  }).catch(e => {
+    console.error(e)
+    parentPort.postMessage({ error: e })
   })
 }
 

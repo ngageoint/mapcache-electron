@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 16.14.2
+* Install Node 18.13.0
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64

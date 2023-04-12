@@ -1,4 +1,4 @@
-import { L } from '../../vendor'
+import { L } from '../../vendor.js'
 import isNil from 'lodash/isNil'
 
 /**

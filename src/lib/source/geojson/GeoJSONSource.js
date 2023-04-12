@@ -8,11 +8,12 @@ import { chain } from 'stream-chain'
 import { parser } from 'stream-json'
 import { pick } from 'stream-json/filters/Pick'
 import { streamArray } from 'stream-json/streamers/StreamArray'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class GeoJSONSource extends Source {
   async retrieveLayers (statusCallback) {
     statusCallback('Processing GeoJSON file', 0)
-    await this.sleep(250)
+    await sleep(250)
 
     const { layerId, layerDirectory } = this.createLayerDirectory()
     const name = path.basename(this.filePath, path.extname(this.filePath))
@@ -56,7 +57,7 @@ export default class GeoJSONSource extends Source {
 
     const { count, extent } = await done()
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
 
     return [
       new VectorLayer({

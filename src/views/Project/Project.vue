@@ -36,75 +36,75 @@
       <v-navigation-drawer
           color="main"
           v-model="drawer"
+          rail
           expand-on-hover
-          mini-variant
-          permanent
-          absolute
-          dark
           style="z-index: 10;"
       >
-        <v-list dense flat class="py-0">
-          <v-list-item one-line class="px-0 pt-1 pb-1">
-            <v-list-item-avatar class="ml-2">
-              <img alt="MapCache icon" src="/images/64x64.png"/>
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>MapCache</v-list-item-title>
-              <v-list-item-subtitle>{{ project.name }}</v-list-item-subtitle>
-            </v-list-item-content>
+        <v-list>
+          <v-list-item
+              prepend-avatar="/images/64x64.png"
+              title="MapCache"
+              :subtitle="project.name"
+              class="pl-2"
+          >
+            <template v-slot:prepend>
+              <v-avatar size="42">
+                <v-img
+                    src="/images/64x64.png"
+                ></v-img>
+              </v-avatar>
+            </template>
           </v-list-item>
-          <v-list-item-group v-model="tabId" activeClass="list-item-active">
-            <v-list-item
-                class="list-item"
-                v-for="(tab, i) in tabs"
-                :key="i"
-                :value="tab.tabId"
-                :onclick="tab.onclick"
-                v-ripple="{ class: `main--text` }"
-            >
-              <v-list-item-icon>
-                <v-badge
-                    v-if="tabNotification[tab.tabId]"
-                    color="red"
-                    dot
-                    overlap
-                >
-                  <v-icon v-text="tab.icon"></v-icon>
-                </v-badge>
-                <v-icon v-else v-text="tab.icon"></v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title v-text="tab.text"></v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list-item-group>
         </v-list>
+        <v-list density="compact" nav>
+          <v-list-item
+              v-for="(tab, i) in tabs"
+              :key="i"
+              :value="tab.tabId"
+              :onclick="() => tab.onClick(i)"
+              :title="tab.text"
+              :active="tabId === tab.tabId"
+          >
+            <template v-slot:prepend>
+              <v-badge
+                  v-if="tabNotification[tab.tabId]"
+                  color="red"
+                  dot
+                  overlap
+              >
+                <v-icon :icon="tab.icon"></v-icon>
+              </v-badge>
+              <v-icon v-else :icon="tab.icon"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="tabId != null">
           <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"
                         :display-feature="displayFeature" :allow-notifications="allowNotifications"></geo-packages>
-          <data-sources ref="dataSourceRef" v-show="tabId === 1" :back="back" :project="project"
+          <data-sources  v-show="tabId === 1" ref="dataSourceRef" :back="back" :project="project"
                         :sources="project.sources" :display-feature="displayFeature"
                         :allow-notifications="allowNotifications"></data-sources>
-          <settings v-show="tabId === 2" :back="back" :project="project" :dark="darkTheme"
-                    :allow-notifications="allowNotifications"></settings>
+          <settings v-show="tabId === 2" :back="back" :project="project"
+                    :allow-notifications="allowNotifications" :dark="darkTheme"></settings>
           <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null"
                                     :results="nominatimSearchResults" :back="back"
                                     :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
-          <leaflet-map
-              ref="map"
-              visible
-              :geopackages="project.geopackages"
-              :sources="project.sources"
-              :project-id="project.id"
-              :project="project"
-              :resizeListener="tabId"
-              :feature-table-popped-out="featureTablePoppedOut"
-              :dark-theme="darkTheme">
-          </leaflet-map>
+<!--          <leaflet-map-->
+<!--              ref="map"-->
+<!--              visible-->
+<!--              :geopackages="project.geopackages"-->
+<!--              :sources="project.sources"-->
+<!--              :project-id="project.id"-->
+<!--              :project="project"-->
+<!--              :resizeListener="tabId"-->
+<!--              :feature-table-popped-out="featureTablePoppedOut"-->
+<!--              :dark-theme="darkTheme">-->
+<!--          </leaflet-map>-->
         </v-col>
       </v-row>
     </v-layout>
@@ -150,22 +150,38 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
+import { useTheme } from 'vuetify'
 import isNil from 'lodash/isNil'
-import Vue from 'vue'
 import EventBus from '../../lib/vue/EventBus'
-import LeafletMap from '../Map/LeafletMap'
-import Settings from '../Settings/Settings'
-import GeoPackages from '../GeoPackage/GeoPackages'
-import DataSources from '../DataSources/DataSources'
-import BasicAuth from '../Network/BasicAuth'
-import CertAuth from '../Network/CertAuth'
+import LeafletMap from '../Map/LeafletMap.vue'
+import Settings from '../Settings/Settings.vue'
+import GeoPackages from '../GeoPackage/GeoPackages.vue'
+import DataSources from '../DataSources/DataSources.vue'
+import BasicAuth from '../Network/BasicAuth.vue'
+import CertAuth from '../Network/CertAuth.vue'
 import { mdiCogOutline, mdiLayersOutline, mdiPackageVariant, mdiMagnify } from '@mdi/js'
 import { SUPPORTED_FILE_EXTENSIONS_WITH_DOT } from '../../lib/util/file/FileConstants'
-import NominatimSearchResults from '../Nominatim/NominatimSearchResults'
-import ConfirmationCard from '../Common/ConfirmationCard'
-import WebViewDialog from '../Common/WebViewDialog'
+import NominatimSearchResults from '../Nominatim/NominatimSearchResults.vue'
+import ConfirmationCard from '../Common/ConfirmationCard.vue'
+import WebViewDialog from '../Common/WebViewDialog.vue'
+import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
+import {
+  addProjectState,
+  clearNotification,
+  clearNotifications,
+  setActiveGeoPackage,
+  setProjectName
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
+  setup () {
+    const theme = useTheme()
+
+    return {
+      theme,
+      setTheme: (isDark) => theme.global.name.value = isDark ? 'dark' : 'light'
+    }
+  },
   data () {
     return {
       authUrl: null,
@@ -183,9 +199,9 @@ export default {
       drawer: true,
       tabId: 0,
       tabs: [
-        { tabId: 0, text: 'GeoPackages', icon: mdiPackageVariant },
-        { tabId: 1, text: 'Data sources', icon: mdiLayersOutline },
-        { tabId: 2, text: 'Settings', icon: mdiCogOutline },
+        { tabId: 0, text: 'GeoPackages', icon: 'mdi-package-variant', onClick: (i) => this.tabId = i },
+        { tabId: 1, text: 'Data sources', icon: 'mdi-layers-outline', onClick: (i) => this.tabId = i } ,
+        { tabId: 2, text: 'Settings', icon: 'mdi-cog-outline', onClick: (i) => this.tabId = i },
       ],
       showCertificateSelectionDialog: false,
       certificateList: [],
@@ -235,7 +251,7 @@ export default {
         if (!isNil(project)) {
           isDark = project.dark
         }
-        this.$vuetify.theme.dark = isDark
+        this.setTheme(isDark)
         return isDark
       },
       allowNotifications (state) {
@@ -265,7 +281,7 @@ export default {
         }
         if (!isNil(this.tabId) && this.tabId >= 0 && tabNotification[this.tabId]) {
           tabNotification[this.tabId] = false
-          window.mapcache.clearNotification({ projectId: this.project.id, tabId: this.tabId })
+          clearNotification(this.project.id, this.tabId)
         }
         return tabNotification
       },
@@ -276,7 +292,7 @@ export default {
         if (!isNil(project)) {
           show = project.showToolTips
         }
-        Vue.prototype.$showToolTips = show
+        this.$showToolTips = show
         return show
       }
     }),
@@ -297,13 +313,16 @@ export default {
     CertAuth
   },
   methods: {
+    updatedSelected(val) {
+      this.tabId = val.id
+    },
     cancelAuthRequest () {
       this.authUrl = null
       window.mapcache.cancelWebViewAuthRequest()
     },
     handleSearchResults (data) {
       if (this.tabs.length === 3) {
-        this.tabs.splice(2, 0, { tabId: 3, text: 'Search', icon: mdiMagnify })
+        this.tabs.splice(2, 0, { tabId: 3, text: 'Search', icon: mdiMagnify, onClick: (i) => this.tabId = i })
       }
       this.nominatimSearchResults = data
       this.tabId = 3
@@ -320,23 +339,25 @@ export default {
     getMapCenterAndZoom () {
       let bounds
       try {
-        bounds = this.$refs['map'].getMapCenterAndZoom()
+        // TODO: Fix
+        // bounds = this.$refs['map'].getMapCenterAndZoom()
         // eslint-disable-next-line no-empty
       } catch (e) {
+        // console.error(e);
       }
       return bounds
     },
     saveProjectName (val) {
-      window.mapcache.setProjectName({ project: this.project, name: val })
+      setProjectName(this.project.id, val)
     },
     back () {
-      this.tabId = undefined
+      this.tabId = null
     },
     addGeoPackageToApp (path) {
       return new Promise(resolve => {
         const existsInApp = Object.values(this.project.geopackages).find(geopackage => geopackage.path === path)
         if (!existsInApp) {
-          window.mapcache.addGeoPackage({ projectId: this.project.id, filePath: path }).then(geopackageId => {
+          addGeoPackage(this.project.id, path).then(geopackageId => {
             resolve(geopackageId)
           })
         } else {
@@ -434,13 +455,13 @@ export default {
     },
     showToolTips: {
       handler (newValue) {
-        Vue.prototype.$showToolTips = newValue
+        this.$showToolTips = newValue
       }
     },
     item: {
       handler (newValue) {
         if (!isNil(this.tabNotification[newValue]) && this.tabNotification[newValue]) {
-          window.mapcache.clearNotification({ projectId: this.project.id, tabId: newValue })
+          clearNotification(this.project.id, newValue)
         }
       }
     }
@@ -455,9 +476,9 @@ export default {
     })
     let uistate = this.getUIStateByProjectId(this.project.id)
     if (!uistate) {
-      window.mapcache.addProjectState({ projectId: this.project.id })
+      addProjectState(this.project.id)
     }
-    window.mapcache.setActiveGeoPackage({ projectId: this.project.id, geopackageId: null })
+    setActiveGeoPackage(this.project.id, null)
     window.mapcache.addLoadOrDisplayGeoPackageListener(async (geopackageIds = [], filePaths = []) => {
       if (filePaths != null && filePaths.length > 0) {
         let geopackageId = null
@@ -465,18 +486,18 @@ export default {
           geopackageId = await this.addGeoPackageToApp(filePaths[i])
         }
         if (filePaths.length === 1) {
-          window.mapcache.setActiveGeoPackage({ projectId: this.project.id, geopackageId: geopackageId })
+          await setActiveGeoPackage(this.project.id, geopackageId)
         }
       } else {
         if (geopackageIds != null && geopackageIds.length === 1) {
-          window.mapcache.setActiveGeoPackage({ projectId: this.project.id, geopackageId: geopackageIds[0] })
+          await setActiveGeoPackage(this.project.id, geopackageIds[0])
         }
       }
       this.$nextTick(() => {
         this.tabId = 0
       })
     })
-    window.mapcache.clearNotifications({ projectId: this.project.id })
+    clearNotifications(this.project.id)
     this.setupDragAndDrop()
     window.mapcache.removeClosingProjectWindowListener()
     window.mapcache.removeSelectClientCertificateListener()
@@ -589,20 +610,5 @@ export default {
   min-height: 100vh;
   max-height: 100vh;
   /*overflow-y: auto;*/
-}
-
-.list-item:hover {
-  background-color: var(--v-main-darken2) !important;
-  color: whitesmoke;
-}
-
-.list-item-active {
-  background-color: var(--v-main_active_background-base);
-  color: var(--v-main_active_text-base) !important;
-}
-
-.list-item-active:hover {
-  background-color: var(--v-main-base);
-  color: whitesmoke !important;
 }
 </style>

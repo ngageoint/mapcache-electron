@@ -1,34 +1,21 @@
 let makeImageDataFunction = (width, height) => {
-  return new ImageData(width, height)
+  throw new Error('Operation not configured.')
 }
 
 let makeImageFunction = async (source) => {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = function () {
-      resolve(image)
-    }
-    image.onerror = function (e) {
-      reject(e)
-    }
-    image.src = source
-  })
-}
+  throw new Error('Operation not configured.')
 
-let readPixelsFunction = (image) => {
-  const canvas = document.createElement('canvas')
-  canvas.width = image.width
-  canvas.height = image.height
-  const context = canvas.getContext('2d')
-  context.drawImage(image, 0, 0)
-  return context.getImageData(0, 0, image.width, image.height).data
 }
 
 let createCanvasFunction = (width, height) => {
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  return canvas
+  throw new Error('Operation not configured.')
+}
+
+let readPixelsFunction = (image) => {
+  const canvas = createCanvasFunction(image.width, image.height)
+  const context = canvas.getContext('2d')
+  context.drawImage(image, 0, 0)
+  return context.getImageData(0, 0, image.width, image.height).data
 }
 
 function setCreateCanvasFunction (f) {

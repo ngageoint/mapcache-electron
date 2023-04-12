@@ -1,4 +1,4 @@
-import { L } from '../../vendor'
+import { L } from '../../vendor.js'
 import debounce from 'lodash/debounce'
 import throttle from 'lodash/throttle'
 

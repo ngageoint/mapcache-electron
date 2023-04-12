@@ -3,7 +3,7 @@
     <v-card-text>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum latitude"
+          <v-text-field variant="underlined" v-if="boundingBox == null && !editingDirectly" disabled label="Minimum latitude"
                         value="Not set"></v-text-field>
           <number-picker v-else :disabled="!editingDirectly" ref="minLatRef"
                          :additional-rules="[v => (Number(v) < this.maxLatitude || 'Min latitude should be less than max latitude.')]"
@@ -14,7 +14,7 @@
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum latitude"
+          <v-text-field variant="underlined" v-if="boundingBox == null && !editingDirectly" disabled label="Maximum latitude"
                         value="Not set"></v-text-field>
           <number-picker v-else :disabled="!editingDirectly" ref="maxLatRef"
                          :additional-rules="[v => (Number(v) > this.minLatitude || 'Max latitude should be greater than min latitude.')]"
@@ -25,7 +25,7 @@
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Minimum longitude"
+          <v-text-field variant="underlined" v-if="boundingBox == null && !editingDirectly" disabled label="Minimum longitude"
                         value="Not set"></v-text-field>
           <number-picker v-else :disabled="!editingDirectly" ref="minLongRef"
                          :additional-rules="[v => (Number(v) < this.maxLongitude || 'Min longitude should be less than max longitude.')]"
@@ -36,7 +36,7 @@
       </v-row>
       <v-row no-gutters class="ml-4">
         <v-col>
-          <v-text-field v-if="boundingBox == null && !editingDirectly" disabled label="Maximum longitude"
+          <v-text-field variant="underlined" v-if="boundingBox == null && !editingDirectly" disabled label="Maximum longitude"
                         value="Not set"></v-text-field>
           <number-picker v-else :disabled="!editingDirectly" ref="maxLongRef"
                          :additional-rules="[v => (Number(v) > this.minLongitude || 'Max longitude should be greater than min longitude.')]"
@@ -90,7 +90,7 @@
         <template v-slot:activator="{ on, attrs }">
           <v-btn
               color="primary"
-              dark
+              theme="dark"
               v-bind="attrs"
               v-on="on">
             {{ 'Edit' }}
@@ -126,8 +126,9 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import NumberPicker from './NumberPicker'
+import NumberPicker from './NumberPicker.vue'
 import EventBus from '../../lib/vue/EventBus'
+import { getExtentOfActiveLayers } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: {
@@ -208,7 +209,7 @@ export default {
       EventBus.$off(EventBus.EventTypes.GRID_BOUNDING_BOX_CANCELLED(this.id))
     },
     setBoundingBoxFilterToExtent () {
-      window.mapcache.getExtentOfActiveLayers(this.project.id).then(boundingBox => {
+      getExtentOfActiveLayers(this.project.id).then(boundingBox => {
         this.updateBoundingBox(boundingBox)
       }).catch(() => {
         // eslint-disable-next-line no-console

@@ -2,7 +2,6 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
@@ -23,6 +22,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="baseMapNameForm" v-model="baseMapNameValid">
                 <v-text-field
+                    variant="underlined"
                     autofocus
                     v-model="baseMapName"
                     :rules="baseMapNameRules"
@@ -47,10 +47,9 @@
             <v-card-text>
               <v-list dense>
                 <v-list-item-group mandatory v-model="selectedLayer">
-                  <template v-for="(item, i) in layers">
+                  <template v-for="(item, i) in layers" :key="`layer-${i}`">
                     <v-list-item
                         two-line
-                        :key="`layer-${i}`"
                         :value="i">
                       <v-list-item-icon style="margin-top: 12px;">
                         <v-btn icon @click.stop="item.zoomTo">
@@ -64,10 +63,10 @@
                                alt="Feature layer" width="20px" height="20px"/>
                         </v-btn>
                       </v-list-item-icon>
-                      <v-list-item-content>
+                      <div>
                         <v-list-item-title v-text="item.title"></v-list-item-title>
                         <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
-                      </v-list-item-content>
+                      </div>
                       <v-list-item-action>
                         <data-source-warning v-if="item.source && item.source.warning" :source="item.source"></data-source-warning>
                       </v-list-item-action>
@@ -131,11 +130,12 @@ import { mapActions } from 'vuex'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
-import ColorPicker from '../Common/ColorPicker'
-import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
+import ColorPicker from '../Common/ColorPicker.vue'
+import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting.vue'
 import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'
+import { addBaseMap } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: {
@@ -147,75 +147,6 @@ export default {
     baseMaps: Array,
     project: Object,
     close: Function
-  },
-  asyncComputed: {
-    layers: {
-      async get () {
-        let items = []
-        const sources = values(this.project.sources)
-        for (let i = 0; i < sources.length; i++) {
-          let source = sources[i]
-          items.push({
-            id: source.id,
-            source: source,
-            error: source.error,
-            name: source.displayName ? source.displayName : source.name,
-            title: source.displayName ? source.displayName : source.name,
-            subtitle: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
-            isGeoPackage: false,
-            type: source.pane === 'vector' ? 'feature' : 'tile',
-            zoomTo: debounce((e) => {
-              e.stopPropagation()
-              zoomToSource(source)
-            }, 100)
-          })
-        }
-        const geopackages = values(this.project.geopackages)
-        for (let i = 0; i < geopackages.length; i++) {
-          const geopackage = geopackages[i]
-          if (await window.mapcache.isHealthy(geopackage)) {
-            const tiles = keys(geopackage.tables.tiles)
-            for (let j = 0; j < tiles.length; j++) {
-              const table = tiles[j]
-              items.push({
-                id: geopackage.id + '_' + table,
-                geopackageId: geopackage.id,
-                name: table,
-                tableName: table,
-                title: geopackage.name,
-                subtitle: table,
-                type: 'tile',
-                isGeoPackage: true,
-                zoomTo: debounce((e) => {
-                  e.stopPropagation()
-                  zoomToGeoPackageTable(geopackage, table)
-                }, 100)
-              })
-            }
-            const features = keys(geopackage.tables.features)
-            for (let j = 0; j < features.length; j++) {
-              const table = features[j]
-              items.push({
-                id: geopackage.id + '_' + table,
-                geopackageId: geopackage.id,
-                name: table,
-                tableName: table,
-                title: geopackage.name,
-                subtitle: table,
-                type: 'feature',
-                isGeoPackage: true,
-                zoomTo: debounce((e) => {
-                  e.stopPropagation()
-                  zoomToGeoPackageTable(geopackage, table)
-                }, 100)
-              })
-            }
-          }
-        }
-        return items
-      },
-      default: []
-    }
   },
   data () {
     return {
@@ -230,13 +161,78 @@ export default {
       deleteBaseMapDialog: false,
       addBaseMapDialog: false,
       selectedLayer: 0,
-      backgroundColor: '#DDDDDD'
+      backgroundColor: '#DDDDDD',
+      layers: []
     }
   },
   methods: {
     ...mapActions({
       editBaseMap: 'BaseMaps/editBaseMap',
     }),
+    async updateItems () {
+      let items = []
+      const sources = values(this.project.sources)
+      for (let i = 0; i < sources.length; i++) {
+        let source = sources[i]
+        items.push({
+          id: source.id,
+          source: source,
+          error: source.error,
+          name: source.displayName ? source.displayName : source.name,
+          title: source.displayName ? source.displayName : source.name,
+          subtitle: getDisplayText(source.sourceType) || getDisplayText(source.layerType),
+          isGeoPackage: false,
+          type: source.pane === 'vector' ? 'feature' : 'tile',
+          zoomTo: debounce((e) => {
+            e.stopPropagation()
+            zoomToSource(source)
+          }, 100)
+        })
+      }
+      const geopackages = values(this.project.geopackages)
+      for (let i = 0; i < geopackages.length; i++) {
+        const geopackage = geopackages[i]
+        if (await window.mapcache.isHealthy(geopackage)) {
+          const tiles = keys(geopackage.tables.tiles)
+          for (let j = 0; j < tiles.length; j++) {
+            const table = tiles[j]
+            items.push({
+              id: geopackage.id + '_' + table,
+              geopackageId: geopackage.id,
+              name: table,
+              tableName: table,
+              title: geopackage.name,
+              subtitle: table,
+              type: 'tile',
+              isGeoPackage: true,
+              zoomTo: debounce((e) => {
+                e.stopPropagation()
+                zoomToGeoPackageTable(geopackage, table)
+              }, 100)
+            })
+          }
+          const features = keys(geopackage.tables.features)
+          for (let j = 0; j < features.length; j++) {
+            const table = features[j]
+            items.push({
+              id: geopackage.id + '_' + table,
+              geopackageId: geopackage.id,
+              name: table,
+              tableName: table,
+              title: geopackage.name,
+              subtitle: table,
+              type: 'feature',
+              isGeoPackage: true,
+              zoomTo: debounce((e) => {
+                e.stopPropagation()
+                zoomToGeoPackageTable(geopackage, table)
+              }, 100)
+            })
+          }
+        }
+      }
+      this.items = items
+    },
     save () {
       let configuration = {}
       let layer = this.layers[this.selectedLayer]
@@ -249,9 +245,19 @@ export default {
         configuration = this.project.sources[layer.id]
       }
       window.mapcache.saveBaseMap(this.baseMapName, configuration, this.backgroundColor).then((baseMap) => {
-        window.mapcache.addBaseMap(baseMap)
-        this.close()
+        addBaseMap(baseMap).finally(this.close)
       })
+    }
+  },
+  created () {
+    this.updateItems()
+  },
+  watch: {
+    project: {
+      async handler () {
+        await this.updateItems()
+      },
+      deep: true
     }
   }
 }

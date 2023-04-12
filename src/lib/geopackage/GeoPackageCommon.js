@@ -5,14 +5,12 @@ import {
   GeoPackageValidate,
   RTreeIndex,
 } from '@ngageoint/geopackage'
-import wkx from 'wkx'
 import isNil from 'lodash/isNil'
 import fs from 'fs'
 import path from 'path'
-import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/file/FileUtilities'
-import { EPSG, COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
+import { COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
 
 /**
  * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
@@ -221,23 +219,6 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
   }
   return [tableBounds.minLongitude, tableBounds.minLatitude, tableBounds.maxLongitude, tableBounds.maxLatitude]
 }
-
-/**
- * Projects a geometry to 4326 from the srs provided
- * @param geometry
- * @param srs
- * @returns {wkx.Geometry}
- */
-function projectGeometryTo4326 (geometry, srs) {
-  let projectedGeometry = geometry.geometry
-  if (geometry && !geometry.empty && geometry.geometry) {
-    let geoJsonGeom = geometry.geometry.toGeoJSON()
-    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.projection, WORLD_GEODETIC_SYSTEM)
-    projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
-  }
-  return projectedGeometry
-}
-
 
 /**
  * Determines internal table information for a geopackage
@@ -597,14 +578,6 @@ function getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
   return new BoundingBox(normalizeLongitude(coordinate.lng) - queryDistanceDegrees, normalizeLongitude(coordinate.lng) + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
 }
 
-async function sleep (timeMs) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve()
-    }, timeMs)
-  })
-}
-
 function prettyPrintMs (milliseconds) {
   const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24))
   let msRemaining = milliseconds - days * (1000 * 60 * 60 * 24)
@@ -716,7 +689,6 @@ export {
   getBoundingBoxForTable,
   normalizeLongitude,
   getQueryBoundingBoxForCoordinateAndZoom,
-  sleep,
   flatten,
   prettyPrintMs,
   boundingBoxIntersection,
@@ -725,7 +697,6 @@ export {
   isHealthy,
   getDefaultValueForDataType,
   getExtentOfGeoPackageTables,
-  projectGeometryTo4326,
   _calculateTrueExtentForFeatureTable,
   _getGeoPackageFeatureTableForApp
 }

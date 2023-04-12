@@ -1,7 +1,7 @@
 <template>
   <v-card flat class="ml-8 mt-8" style="width: 640px;">
     <v-container>
-      <v-row no-gutters>
+      <v-row no-gutters class="mb-4">
         <p class="detail--text">
           Welcome to MapCache — a geospatial application for creating and aggregating map content. Harnessing the power
           of <span class="fake-link" style="color: #326482" @click="() => open(geoPackageLink)">GeoPackage</span>,
@@ -56,26 +56,26 @@
       </v-row>
       <v-row no-gutters>
         <v-tabs
+            style="width: 100vw;"
             v-model="sidebar_tab"
-            centered
+            align-tabs="center"
         >
-          <v-tabs-slider color="#45ced7"></v-tabs-slider>
-
           <v-tab
+              color="#45ced7"
               v-for="item in sidebar_items"
               :key="item"
           >
             {{ item }}
           </v-tab>
         </v-tabs>
-        <v-tabs-items v-model="sidebar_tab" style="width: 640px; height: 150px;">
-          <v-tab-item
+        <v-window v-model="sidebar_tab" style="width: 640px; height: 150px;">
+          <v-window-item
               v-for="item in sidebar_items"
               :key="item"
           >
             <p class="detail--text mt-4">{{ sidebar_item_text[sidebar_tab] }}</p>
-          </v-tab-item>
-        </v-tabs-items>
+          </v-window-item>
+        </v-window>
       </v-row>
       <v-row no-gutters>
         <h3>Map</h3>
@@ -97,26 +97,27 @@
       </v-row>
       <v-row no-gutters>
         <v-tabs
+            style="width: 100vw;"
             v-model="map_tab"
-            centered
+            align-tabs="center"
         >
-          <v-tabs-slider color="#45ced7"></v-tabs-slider>
 
           <v-tab
+              color="#45ced7"
               v-for="item in map_items"
               :key="item"
           >
             {{ item }}
           </v-tab>
         </v-tabs>
-        <v-tabs-items v-model="map_tab" style="width: 640px; height: 150px;">
-          <v-tab-item
+        <v-window v-model="map_tab" style="width: 640px; height: 150px;">
+          <v-window-item
               v-for="item in map_items"
               :key="item"
           >
             <p class="detail--text mt-4" v-html="map_item_text[map_tab]"></p>
-          </v-tab-item>
-        </v-tabs-items>
+          </v-window-item>
+        </v-window>
       </v-row>
     </v-container>
   </v-card>

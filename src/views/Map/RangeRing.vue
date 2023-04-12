@@ -9,10 +9,10 @@
       <v-card-subtitle class="ma-0 pb-4 pl-0">Center point</v-card-subtitle>
       <v-row no-gutters justify="space-between">
         <v-col cols="5">
-          <v-text-field class="pr-2" dense hide-details type="number" label="Latitude" v-model="rangeRingCenter.lat"></v-text-field>
+          <v-text-field variant="underlined" class="pr-2" dense hide-details type="number" label="Latitude" v-model="rangeRingCenter.lat"></v-text-field>
         </v-col>
         <v-col cols="5">
-          <v-text-field class="pr-2" dense hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
+          <v-text-field variant="underlined" class="pr-2" dense hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
         </v-col>
         <v-col offset="1" cols="1">
           <v-btn icon @click="drawRangeRingCenterPoint"><v-icon>{{mdiMapMarker}}</v-icon></v-btn>
@@ -60,7 +60,7 @@ import { convertLength } from '@turf/helpers'
 import { DRAWING_LAYER_PANE } from '../../lib/leaflet/map/panes/MapPanes'
 import { mdiPlus, mdiTrashCanOutline, mdiMapMarker, mdiCircleMultipleOutline } from '@mdi/js'
 import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
-import NumberPicker from '../Common/NumberPicker'
+import NumberPicker from '../Common/NumberPicker.vue'
 
 export default {
   components: { NumberPicker },

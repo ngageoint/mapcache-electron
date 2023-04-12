@@ -1,5 +1,3 @@
-import Vue from 'vue'
-
 const getDefaultState = () => {
   return {}
 }
@@ -14,7 +12,7 @@ const getters = {
 
 const mutations = {
   addProjectState (state, { projectId }) {
-    Vue.set(state, projectId, {
+    state[projectId] = {
       extents: [-53.4, -79.1, 53.64, 79.1],
       drawBounds: {},
       boundsBeingDrawn: {},
@@ -22,48 +20,48 @@ const mutations = {
       dark: false,
       popOutFeatureTable: false,
       allowNotifications: false
-    })
+    }
   },
   setProjectExtents (state, { projectId, extents }) {
     state[projectId].extents = extents
   },
   deleteProject (state, { projectId }) {
-    Vue.delete(state, projectId)
+    delete state[projectId]
   },
   setDarkTheme (state, { projectId, enabled }) {
-    Vue.set(state[projectId], 'dark', enabled)
+    state[projectId].dark = enabled
   },
   allowNotifications (state, { projectId, allow }) {
-    Vue.set(state[projectId], 'allowNotifications', allow)
+    state[projectId].allowNotifications = allow
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, getDefaultState())
   },
   notifyTab (state, { projectId, tabId }) {
     const notify = Object.assign({}, state[projectId].tabNotification || {})
     notify[tabId] = true
-    Vue.set(state[projectId], 'tabNotification', notify)
+    state[projectId].tabNotification = notify
   },
   clearNotification (state, { projectId, tabId }) {
     const notify = Object.assign({}, state[projectId].tabNotification || {})
     notify[tabId] = false
-    Vue.set(state[projectId], 'tabNotification', notify)
+    state[projectId].tabNotification = notify
   },
   clearNotifications (state, { projectId }) {
-    Vue.delete(state[projectId], 'tabNotification')
+    delete state[projectId].tabNotification
   },
   setMapZoom (state, { projectId, mapZoom }) {
-    Vue.set(state[projectId], 'mapZoom', mapZoom)
+    state[projectId].mapZoom = mapZoom
   },
   popOutFeatureTable (state, { projectId, popOut }) {
-    Vue.set(state[projectId], 'featureTablePoppedOut', popOut)
+    state[projectId].featureTablePoppedOut = popOut
   },
   migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, migratedState)
   }

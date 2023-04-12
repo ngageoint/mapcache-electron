@@ -13,9 +13,10 @@ import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
 import {
   REQUEST_TILE_COMPILATION,
   REQUEST_TILE_COMPILATION_COMPLETED
-} from '../../../electron/ipc/MapCacheIPC'
+} from '../../../../electron/lib/ipc/MapCacheIPC'
 import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
+import { setSourceError } from '../../../vue/vuex/ProjectActions'
 
 /**
  * This tile layer includes network connection settings such as timeout, retry attempts and number of requests per second (rate limit)
@@ -39,17 +40,12 @@ export default class NetworkTileRenderer {
     this.axiosRequestScheduler = getAxiosRequestScheduler(this.rateLimit)
     this.isElectron = isElectron
     if (isElectron) {
-      this.createUniqueID = require('../../../util/UniqueIDUtilities').createUniqueID
-      const { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } = require('../../../util/tile/TileBoundingBoxUtils')
-      this.getWebMercatorBoundingBoxFromXYZ = getWebMercatorBoundingBoxFromXYZ
-      this.tileIntersectsXYZ = tileIntersectsXYZ
-      const {
-        reprojectBoundingBox,
-        convertToWebMercator
-      } = require('../../../projection/ProjectionUtilities')
-      this.reprojectBoundingBox = reprojectBoundingBox
-      this.convertToWebMercator = convertToWebMercator
-      this.ipcRenderer = require('electron').ipcRenderer
+      this.createUniqueID = global.createUniqueID
+      this.getWebMercatorBoundingBoxFromXYZ = global.getWebMercatorBoundingBoxFromXYZ
+      this.tileIntersectsXYZ = global.tileIntersectsXYZ
+      this.reprojectBoundingBox = global.reprojectBoundingBox
+      this.convertToWebMercator = global.convertToWebMercator
+      this.ipcRenderer = global.ipcRenderer
     } else {
       this.createUniqueID = window.mapcache.createUniqueID
       this.getWebMercatorBoundingBoxFromXYZ = window.mapcache.getWebMercatorBoundingBoxFromXYZ
@@ -68,21 +64,21 @@ export default class NetworkTileRenderer {
   setError (error) {
     if (error.status === TIMEOUT_STATUS) {
       this.error = error
-      window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
+      setSourceError(this.layer.id, this.error)
     } else if (error.response && (error.response.status >= 400)) {
       this.error = {
         status: error.response.status,
         statusText: error.response.statusText,
         authType: getAuthenticationMethod(error.response)
       }
-      window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
+      setSourceError(this.layer.id, this.error)
     } else if (error.request) {
       if (navigator.onLine) {
         this.error = {
           status: -1,
           statusText: 'Unable to reach server.'
         }
-        window.mapcache.setSourceError({ id: this.layer.id, error: this.error })
+        setSourceError(this.layer.id, this.error)
       } else {
         // notify there may be a network error
         EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)

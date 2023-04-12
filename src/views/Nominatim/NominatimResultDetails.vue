@@ -1,14 +1,12 @@
 <template>
   <v-sheet class="mapcache-sheet">
     <v-toolbar
-        dark
+        theme="dark"
         color="main"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>{{ result.properties.name }}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
@@ -103,14 +101,13 @@
         </v-col>
       </v-row>
     </v-sheet>
-    <v-tooltip right :disabled="!project.showToolTips">
-      <template v-slot:activator="{ on, attrs }">
+    <v-tooltip location="end" :disabled="!project.showToolTips">
+      <template v-slot:activator="{ props }">
         <v-btn
             class="fab-position"
             fab
             color="primary"
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
             @click="saveFeature">
           <v-icon>{{ mdiContentSave }}</v-icon>
         </v-btn>

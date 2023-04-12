@@ -3,14 +3,12 @@
                             :back="deselectResult"></nominatim-result-details>
   <v-sheet v-else class="mapcache-sheet background">
     <v-toolbar
-        dark
+        theme="dark"
         color="main"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>Search results</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn icon @click="clearResults">
@@ -35,14 +33,14 @@
               v-on:mouseout="() => highlightFeatureOnMap(item, false)"
               v-on:blur="() => highlightFeatureOnMap(item, false)"
           >
-            <v-list-item-content>
+            <div>
               <v-list-item-title class="mb-2">{{ item.properties.name }}</v-list-item-title>
               <v-list-item-subtitle>{{
                   prettyifyWords(item.properties.type, true) + ' • ' + prettyifyWords(item.properties.category, true)
                 }}
               </v-list-item-subtitle>
               <v-list-item-subtitle>{{ prettyifyAddress(item.properties) }}</v-list-item-subtitle>
-            </v-list-item-content>
+            </div>
             <v-list-item-avatar
                 right
                 rounded
@@ -63,23 +61,23 @@
               <search-result-skelton v-for="i in 9" :key="i + '_search_skeleton'"></search-result-skelton>
             </div>
             <v-list-item three-line v-else>
-              <v-list-item-content>
+              <div>
                 <v-row class="detail--text" no-gutters justify="center">{{ 'No more results...' }}</v-row>
-              </v-list-item-content>
+              </div>
             </v-list-item>
           </div>
         </template>
       </v-virtual-scroll>
       <v-list no-gutters class="pb-0" v-else-if="this.results != null">
         <v-list-item three-line>
-          <v-list-item-content>
+          <div>
             <v-list-item-title>
               <b>No results matching "<i>{{ this.results.requestObject.q }}</i>".</b>
             </v-list-item-title>
             <v-list-item-subtitle class="pt-2">
               <p>Make sure your search is spelled correctly. Try removing or expanding the map filter.</p>
             </v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
         <v-divider></v-divider>
       </v-list>
@@ -89,10 +87,10 @@
 
 <script>
 import EventBus from '../../lib/vue/EventBus'
-import NominatimResultDetails from '../Nominatim/NominatimResultDetails'
+import NominatimResultDetails from '../Nominatim/NominatimResultDetails.vue'
 import { prettyifyAddress, prettyifyWords, queryWithRequestObject } from '../../lib/util/nominatim/NominatimUtilities'
 import { mdiChevronLeft, mdiContentSave, mdiClose } from '@mdi/js'
-import SearchResultSkelton from './SearchResultSkelton'
+import SearchResultSkelton from './SearchResultSkelton.vue'
 import isEqual from 'lodash/isEqual'
 
 export default {

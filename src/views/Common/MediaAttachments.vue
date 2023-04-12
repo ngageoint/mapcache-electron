@@ -66,8 +66,6 @@
     </v-card-title>
     <v-card-text class="pb-0" style="height: calc(100% - 114px)">
       <v-carousel v-model="model" v-if="attachments.length > 0"
-                  :dark="$vuetify.theme.dark"
-                  :light="!$vuetify.theme.dark"
                   :height="'100% !important'">
         <template v-slot:prev="{ on, attrs }">
           <v-btn
@@ -144,6 +142,7 @@ import {
   mdiPlus,
   mdiTrashCan
 } from '@mdi/js'
+import { synchronizeGeoPackage, updateStyleKey } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -210,9 +209,9 @@ export default {
 
       await window.mapcache.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
       if (self.isGeoPackage) {
-        window.mapcache.synchronizeGeoPackage({ projectId: self.projectId, geopackageId: self.id })
+        await synchronizeGeoPackage(self.projectId, self.id)
       } else {
-        window.mapcache.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+        updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
       }
       this.cancelDeleteAttachment()
     },
@@ -248,9 +247,9 @@ export default {
               }).then((success) => {
                 if (success) {
                   if (self.isGeoPackage) {
-                    window.mapcache.synchronizeGeoPackage({ projectId: self.projectId, geopackageId: self.id })
+                    synchronizeGeoPackage(self.projectId, self.id)
                   } else {
-                    window.mapcache.updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+                    updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
                   }
                   self.$nextTick(() => {
                     window.mapcache.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {

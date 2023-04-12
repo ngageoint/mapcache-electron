@@ -5,7 +5,6 @@
   <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
@@ -47,13 +46,10 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title :title="tableName">{{ tableName }}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -109,6 +105,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="renamedTable"
                         :rules="renamedTableRules"
@@ -155,6 +152,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="copiedTable"
                         :rules="copiedTableRules"
@@ -366,7 +364,7 @@
 </template>
 
 <script>
-import StyleEditor from '../StyleEditor/StyleEditor'
+import StyleEditor from '../StyleEditor/StyleEditor.vue'
 import EventBus from '../../lib/vue/EventBus'
 import {
   mdiCalendar,
@@ -382,10 +380,15 @@ import {
   mdiToggleSwitch,
   mdiTrashCan,
 } from '@mdi/js'
-import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities'
-import FeatureView from '../Common/FeatureView'
-import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField'
-import FeatureLayerFields from '../Common/GeoPackageFeatureLayer/FeatureLayerFields'
+import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities.js'
+import FeatureView from '../Common/FeatureView.vue'
+import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField.vue'
+import FeatureLayerFields from '../Common/GeoPackageFeatureLayer/FeatureLayerFields.vue'
+import {
+  copyGeoPackageTable, deleteGeoPackageTable, renameGeoPackageTable,
+  setGeoPackageFeatureTableVisible, updateFeatureTable,
+  updateGeoPackageFeatureTableColumnOrder
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -461,12 +464,7 @@ export default {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
       },
       set (value) {
-        window.mapcache.setGeoPackageFeatureTableVisible({
-          projectId: this.projectId,
-          geopackageId: this.geopackage.id,
-          tableName: this.tableName,
-          visible: value
-        })
+        setGeoPackageFeatureTableVisible( this.projectId, this.geopackage.id, this.tableName, value)
       }
     },
     indexed () {
@@ -505,14 +503,7 @@ export default {
       this.renamed(this.renamedTable)
       this.copiedTable = this.renamedTable + '_copy'
       this.renaming = true
-      window.mapcache.renameGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        newTableName: this.renamedTable,
-        type: 'feature'
-      }).then(() => {
+      renameGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'feature').then(() => {
         this.renaming = false
         this.$nextTick(() => {
           this.renameDialog = false
@@ -521,14 +512,7 @@ export default {
     },
     copy () {
       this.copying = true
-      window.mapcache.copyGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        copyTableName: this.copiedTable,
-        type: 'feature'
-      }).then(() => {
+      copyGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'feature').then(() => {
         this.$nextTick(() => {
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Feature layer copied', 'primary')
         })
@@ -539,13 +523,7 @@ export default {
     },
     deleteTable () {
       this.deleting = true
-      window.mapcache.deleteGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        type: 'feature'
-      }).then(() => {
+      deleteGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, 'feature').then(() => {
         this.deleting = false
         this.$nextTick(() => {
           this.deleteDialog = false
@@ -577,11 +555,7 @@ export default {
           setTimeout(function () {
             _this.indexingDone = true
             _this.indexMessage = 'Indexing completed'
-            window.mapcache.updateFeatureTable({
-              projectId: _this.projectId,
-              geopackageId: _this.geopackage.id,
-              tableName: _this.tableName
-            })
+            updateFeatureTable(_this.projectId, _this.geopackage.id, _this.tableName)
           }, 2000)
         })
       }, 1000)
@@ -626,12 +600,7 @@ export default {
         }
       }
       headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
-      window.mapcache.updateGeoPackageFeatureTableColumnOrder({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        tableName: this.tableName,
-        columnOrder: headersTmp
-      })
+      updateGeoPackageFeatureTableColumnOrder(this.projectId, this.geopackage.id, true, this.tableName, headersTmp)
     },
   },
   watch: {

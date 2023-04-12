@@ -3,7 +3,7 @@
     <v-dialog v-model="deleteUrlDialog" max-width="400" persistent @keydown.esc="cancelDeleteUrl">
       <v-card>
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon icon="mdi-trash-can-outline" color="warning" class="pr-2"/>
           Delete url
         </v-card-title>
         <v-card-text>
@@ -26,36 +26,34 @@
       </v-card>
     </v-dialog>
     <v-dialog v-model="addUrlDialog" max-width="400" persistent @keydown.esc="cancelAddNewUrl">
-      <edit-text-modal v-if="addUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Add url" :rules="urlRules"
+      <edit-text-modal v-if="addUrlDialog" prevent-spaces autofocus icon="mdi-pencil" title="Add url" :rules="urlRules"
                        save-text="Add" :on-cancel="cancelAddNewUrl" :value="addUrlValue" font-size="16px"
                        font-weight="bold" label="URL" :on-save="addNewUrl"/>
     </v-dialog>
     <v-dialog v-model="editUrlDialog" max-width="400" persistent @keydown.esc="cancelEditUrl">
-      <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus :icon="mdiPencil" title="Edit url"
+      <edit-text-modal v-if="editUrlDialog" prevent-spaces autofocus icon="mdi-pencil" title="Edit url"
                        :rules="editUrlRules" save-text="Save" :on-cancel="cancelEditUrl" :value="editUrlValue"
                        font-size="16px" font-weight="bold" label="URL" :on-save="editSavedUrl"/>
     </v-dialog>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">{{ mdiCloudOutline }}</v-icon>
+      <v-icon color="primary" class="pr-2" icon="mdi-cloud-outline"></v-icon>
       Saved urls
     </v-card-title>
     <v-card-text class="pb-0">
       <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
       <v-list style="max-height: 400px;" v-else>
         <v-list-item dense :key="item" v-for="item in urls.map(url => url.url)">
-          <v-list-item-content>
+          <div>
             <span class="text-break">{{ item }}</span>
-          </v-list-item-content>
-          <v-list-item-action>
+          </div>
+          <template v-slot:append>
             <v-row no-gutters justify="end">
-              <v-btn icon color="primary" @click.stop.prevent="showEditUrlDialog(item)">
-                <v-icon>{{ mdiPencil }}</v-icon>
+              <v-btn variant="text" icon="mdi-pencil" color="primary" @click.stop.prevent="showEditUrlDialog(item)">
               </v-btn>
-              <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                <v-icon>{{ mdiTrashCan }}</v-icon>
+              <v-btn variant="text" icon="mdi-trash-can-outline" color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
               </v-btn>
             </v-row>
-          </v-list-item-action>
+          </template>
         </v-list-item>
       </v-list>
     </v-card-text>
@@ -79,7 +77,7 @@
 <script>
 import { mapActions, mapState } from 'vuex'
 import { mdiCloudOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
-import EditTextModal from '../Common/EditTextModal'
+import EditTextModal from '../Common/EditTextModal.vue'
 
 export default {
   components: {

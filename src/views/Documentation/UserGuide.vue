@@ -1,27 +1,24 @@
 <template>
   <v-sheet class="overflow-hidden">
-    <v-card flat tile>
+    <v-card flat rounded="0">
       <v-toolbar
-          src="/images/documentation/toolbar.jpg"
-          dark
+          image="/images/documentation/toolbar.jpg"
+          theme="dark"
           flat
           height="164"
       >
-        <v-toolbar-title>
-          <v-row no-gutters class="justify-center pt-4" align="center" style="width: 100vw;">
-            <h1>MapCache User Guide</h1>
-          </v-row>
-        </v-toolbar-title>
-
+        <v-row no-gutters class="justify-center pt-4" align="center" style="width: 100vw;">
+          <h1>MapCache User Guide</h1>
+        </v-row>
         <v-spacer></v-spacer>
-
         <template v-slot:extension>
           <v-tabs
+              style="width: 100vw;"
               v-model="tab"
-              centered
+              slider-color="#45ced7"
+              align-tabs="center"
+              align="center"
           >
-            <v-tabs-slider color="#45ced7"></v-tabs-slider>
-
             <v-tab
                 v-for="item in items"
                 :key="item"
@@ -32,9 +29,9 @@
           </v-tabs>
         </template>
       </v-toolbar>
-      <v-card-text id="scroll-target" class="ma-0 pa-0 overflow-y-auto" style="height: calc(100vh - 212px)">
-        <v-tabs-items v-model="tab">
-          <v-tab-item
+      <v-card-text @scroll="onScroll" id="scroll-target" class="ma-0 pa-0 overflow-y-auto" style="height: calc(100vh - 212px)">
+        <v-window v-model="tab">
+          <v-window-item
               v-for="item in items"
               :key="item"
           >
@@ -46,21 +43,16 @@
             </v-row>
             <v-row no-gutters>
               <v-btn
-                  v-scroll:#scroll-target="onScroll"
+                  class="fab-container"
                   v-show="fab"
-                  fab
-                  dark
-                  fixed
-                  bottom
-                  right
+                  theme="dark"
                   color="primary"
+                  icon="mdi-chevron-up"
                   @click="toTop"
-              >
-                <v-icon large>{{ mdiChevronUp }}</v-icon>
-              </v-btn>
+              />
             </v-row>
-          </v-tab-item>
-        </v-tabs-items>
+          </v-window-item>
+        </v-window>
       </v-card-text>
     </v-card>
   </v-sheet>
@@ -68,10 +60,10 @@
 
 <script>
 
-import GettingStarted from './UserGuide/GettingStarted'
-import UsingMapCache from './UserGuide/UsingMapCache'
-import Settings from './UserGuide/Settings'
-import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions'
+import GettingStarted from './UserGuide/GettingStarted.vue'
+import UsingMapCache from './UserGuide/UsingMapCache.vue'
+import Settings from './UserGuide/Settings.vue'
+import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions.vue'
 import { mdiChevronUp } from '@mdi/js'
 
 export default {
@@ -96,18 +88,18 @@ export default {
       const top = window.scrollY || e.target.scrollTop || 0
       this.fab = top > 20
     },
-    toTop () {
-      document.getElementById('scroll-target').scrollTo({ top: 0, behavior: 'smooth' })
+    toTop (smooth = true) {
+      document.getElementById('scroll-target').scrollTo({ left: 0, top: 0, behavior: smooth ? 'smooth' : 'auto' })
     }
   },
   mounted () {
-    document.getElementById('scroll-target').scrollTo({ left: 0, top: 0 })
+    this.toTop(false)
     this.loaded = true
   },
   watch: {
     tab: {
       handler () {
-        document.getElementById('scroll-target').scrollTo({ left: 0, top: 0 })
+        this.toTop(false)
       }
     }
   }
@@ -115,4 +107,10 @@ export default {
 </script>
 
 <style scoped>
+.fab-container{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  cursor:pointer;
+}
 </style>

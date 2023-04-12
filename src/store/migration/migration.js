@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import store from '../.'
+import store from '../main'
 import cloneDeep from 'lodash/cloneDeep'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'

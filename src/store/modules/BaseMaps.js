@@ -1,5 +1,4 @@
 // Keeps a history of any tile URLs that the user has added, accessible across all projects
-import Vue from 'vue'
 
 const getDefaultState = () => {
   return {
@@ -43,13 +42,13 @@ const mutations = {
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, getDefaultState())
   },
   migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, migratedState)
   }

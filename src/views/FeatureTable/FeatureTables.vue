@@ -3,22 +3,22 @@
     <v-toolbar
         flat
         color="main"
-        dark
+        theme="dark"
         dense
     >
       <v-toolbar-title>{{ table.tabName }}</v-toolbar-title>
       <v-row no-gutters justify="end">
-        <v-tooltip v-if="popOut != null" left :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn v-bind="attrs" v-on="on" small @click.stop.prevent="popOut" icon>
+        <v-tooltip v-if="popOut != null" location="start" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" small @click.stop.prevent="popOut" icon>
               <v-icon>{{ mdiOpenInNew }}</v-icon>
             </v-btn>
           </template>
           <span>Pop out</span>
         </v-tooltip>
-        <v-tooltip v-if="popIn != null" left :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn v-bind="attrs" v-on="on" small @click.stop.prevent="popIn" icon>
+        <v-tooltip v-if="popIn != null" location="start" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" small @click.stop.prevent="popIn" icon>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" xml:space="preserve">
                 <g transform="matrix(1 0 0 1 9 9)" id="vQhd5OkwAibA90dsjT7gK">
                   <path
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import FeatureTable from './FeatureTable'
+import FeatureTable from './FeatureTable.vue'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 
 export default {

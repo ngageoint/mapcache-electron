@@ -47,11 +47,11 @@
 }
 
 .card-button:hover {
-    background-color: var(--v-hover-base)
+    background-color: rgb(var(--v-theme-hover));
 }
 
 .card-button:disabled {
-    background-color: var(--v-hover-base)
+    background-color: rgb(var(--v-theme-hover));
 }
 
 .content-panel {
@@ -63,7 +63,7 @@
     max-height: 100vh;
     overflow-y: auto;
     z-index: 2;
-    background-color: var(--v-detailbg-base) !important;
+    background-color: rgb(var(--v-theme-detailbg)) !important;
 }
 
 .sticky-toolbar {
@@ -80,7 +80,7 @@
     bottom: 0 !important;
     z-index: 3 !important;
     min-height: 53px !important;
-    background: var(--v-background-base) !important;
+    background: rgb(var(--v-theme-background)) !important;
 }
 
 .v-toolbar__title {
@@ -98,7 +98,11 @@
 }
 
 .warning-text {
-    color: var(--v-warning-base) !important;
+    color: rgb(var(--v-theme-warning)) !important;
+}
+
+.dark-btn {
+    color: rgb(var(--v-theme-text)) !important;
 }
 
 .hazard--text {
@@ -106,26 +110,26 @@
 }
 
 .detail--text {
-    color: var(--v-detail-base) !important;
+    color: rgb(var(--v-theme-detail)) !important;
 }
 
 .regular--text {
-    color: var(--v-text-base) !important;
+    color: rgb(var(--v-theme-text)) !important;
 }
 
 .detail-bg {
-    background-color: var(--v-detailbg-base) !important;
+    background-color: rgb(var(--v-theme-detailbg)) !important;
 }
 
 .background {
-    background-color: var(--v-background-base) !important;
+    background-color: rgb(var(--v-theme-background)) !important;
 }
 
 /* The emerging W3C standard
    that is currently Firefox-only */
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--v-scroll_thumb-base) var(--v-scroll_track-base);
+    scrollbar-color: rgb(var(--v-theme-scroll_thumb)) rgb(var(--v-theme-scroll_track));
 }
 
 /* Works on Chrome/Edge/Safari */
@@ -134,13 +138,13 @@
 }
 
 *::-webkit-scrollbar-track {
-    background: var(--v-scroll_track-base);
+    background: rgb(var(--v-theme-scroll_track));
 }
 
 *::-webkit-scrollbar-thumb {
-    background-color: var(--v-scroll_thumb-base);
+    background-color: rgb(var(--v-theme-scroll_thumb));
     border-radius: 10px;
-    border: 2px solid var(--v-scroll_track-base);
+    border: 2px solid rgb(var(--v-theme-scroll_track));
 }
 
 .alert-position {
@@ -176,12 +180,12 @@
 }
 
 .leaflet-control a {
-    color: var(--v-text-base) !important;
-    background: var(--v-background-base) !important;
+    color: rgb(var(--v-theme-text)) !important;
+    background: rgb(var(--v-theme-background)) !important;
 }
 
 .leaflet-control a:hover {
-    background: var(--v-hover-base) !important;
+    background: rgb(var(--v-theme-hover)) !important;
 }
 
 .leaflet-control-zoom-in {
@@ -220,6 +224,14 @@
     margin: 3px;
 }
 
+p {
+    margin-bottom: 16px;
+}
+
+ul {
+    padding-left: 24px;
+}
+
 #tooltip {
     display: none;
     position: absolute;
@@ -243,11 +255,15 @@
 }
 
 .leaflet-popup-content-wrapper {
-    background: var(--v-background-base) !important;
+    background: rgb(var(--v-theme-background)) !important;
 }
 
 .leaflet-popup-tip {
-    background: var(--v-background-base) !important;
+    background: rgb(var(--v-theme-background)) !important;
+}
+
+.primary--text {
+    color: rgb(var(--v-theme-primary)) !important;
 }
 
 .fake-link {
@@ -277,8 +293,8 @@
 }
 
 .leaflet-control-attribution {
-    color: var(--v-text-base) !important;
-    background: var(--v-background-base) !important;
+    color: rgb(var(--v-theme-text)) !important;
+    background: rgb(var(--v-theme-background)) !important;
 }
 
 .leaflet-coordinates {
@@ -311,7 +327,7 @@
 
 .ghost {
     opacity: 0.5 !important;
-    background-color: var(--v-primary-lighten2) !important;
+    background-color: rgb(var(--v-theme-primary-lighten2)) !important;
     cursor: grabbing !important;
     cursor: -webkit-grabbing !important;
     pointer-events: none !important;

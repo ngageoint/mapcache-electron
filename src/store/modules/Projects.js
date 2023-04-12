@@ -1,5 +1,3 @@
-import Vue from 'vue'
-
 const getDefaultState = () => {
   return {}
 }
@@ -13,86 +11,86 @@ const getters = {
 
 const mutations = {
   pushProjectToProjects (state, project) {
-    Vue.set(state, project.id, project)
+    state[project.id] = project
   },
-  setProjectName (state, { project, name }) {
-    if (state[project.id]) {
-      Vue.set(state[project.id], 'name', name)
+  setProjectName (state, { projectId, name }) {
+    if (state[projectId]) {
+      state[projectId].name = name
     }
   },
   setProjectAccessed (state, { projectId }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'lastAccessedDateTime', new Date().getTime())
+      state[projectId].lastAccessedDateTime = new Date().getTime()
     }
   },
   setDataSourceDisplayName (state, { projectId, sourceId, displayName }) {
     if (state[projectId]) {
-      Vue.set(state[projectId].sources[sourceId], 'displayName', displayName)
+      state[projectId].sources[sourceId].displayName = displayName
     }
   },
   addDataSources (state, { projectId, dataSources }) {
     if (state[projectId]) {
       dataSources.forEach(source => {
-        Vue.set(state[projectId].sources, source.id, source.config)
+        state[projectId].sources[source.id] = source.config
       })
     }
   },
   setGeoPackage (state, { projectId, geopackage }) {
     if (state[projectId]) {
-      Vue.set(state[projectId].geopackages, geopackage.id, geopackage)
+      state[projectId].geopackages[geopackage.id] = geopackage
     }
   },
   setDataSource (state, { projectId, source }) {
     if (state[projectId]) {
-      Vue.set(state[projectId].sources, source.id, source)
+      state[projectId].sources[source.id] = source
     }
   },
   setProjectMaxFeatures (state, { projectId, maxFeatures }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'maxFeatures', maxFeatures)
+      state[projectId].maxFeatures = maxFeatures
     }
   },
   setDataSourceVisible (state, { projectId, sourceId, visible }) {
     if (state[projectId]) {
-      Vue.set(state[projectId].sources[sourceId], 'visible', visible)
+      state[projectId].sources[sourceId].visible = visible
     }
   },
   removeDataSource (state, { projectId, sourceId }) {
     if (state[projectId]) {
-      Vue.delete(state[projectId].sources, sourceId)
+      delete state[projectId].sources[sourceId]
     }
   },
   deleteProject (state, { projectId }) {
-    Vue.delete(state, projectId)
+    delete state[projectId]
   },
   removeGeoPackage (state, { projectId, geopackageId }) {
     if (state[projectId]) {
-      Vue.delete(state[projectId].geopackages, geopackageId)
+      delete state[projectId].geopackages[geopackageId]
     }
   },
   setZoomControlEnabled (state, { projectId, enabled }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'zoomControlEnabled', enabled)
+      state[projectId].zoomControlEnabled = enabled
     }
   },
   setDisplayZoomEnabled (state, { projectId, enabled }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'displayZoomEnabled', enabled)
+      state[projectId].displayZoomEnabled = enabled
     }
   },
   setDisplayAddressSearchBar (state, { projectId, enabled }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'displayAddressSearchBar', enabled)
+      state[projectId].displayAddressSearchBar = enabled
     }
   },
   setDisplayCoordinates (state, { projectId, enabled }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'displayCoordinates', enabled)
+      state[projectId].displayCoordinates = enabled
     }
   },
   setDisplayScale (state, { projectId, enabled }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'displayScale', enabled)
+      state[projectId].displayScale = enabled
     }
   },
   clearActiveLayers (state, { projectId }) {
@@ -111,51 +109,51 @@ const mutations = {
         const source = projectCopy.sources[key]
         source.visible = false
       })
-      Vue.set(state, projectId, projectCopy)
+      state[projectId] = projectCopy
     }
   },
   showToolTips (state, { projectId, show }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'showToolTips', show)
+      state[projectId].showToolTips = show
     }
   },
   setMapProjection (state, { projectId, mapProjection }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'mapProjection', mapProjection)
+      state[projectId].mapProjection = mapProjection
     }
   },
   setActiveGeoPackage (state, { projectId, geopackageId }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'activeGeoPackage', {
+      state[projectId].activeGeoPackage = {
         geopackageId: geopackageId,
         tableName: undefined,
         showFeaturesTableEvent: 0
-      })
+      }
     }
   },
   setActiveGeoPackageFeatureLayer (state, { projectId, geopackageId, tableName }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'activeGeoPackage', {
+      state[projectId].activeGeoPackage = {
         geopackageId: geopackageId,
         tableName: tableName,
         showFeaturesTableEvent: 0
-      })
+      }
     }
   },
   resetState (state) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, getDefaultState())
   },
   setMapRenderingOrder (state, { projectId, mapRenderingOrder }) {
     if (state[projectId]) {
-      Vue.set(state[projectId], 'mapRenderingOrder', mapRenderingOrder)
+      state[projectId].mapRenderingOrder = mapRenderingOrder
     }
   },
   migrateState (state, { migratedState }) {
     Object.keys(state).forEach(key => {
-      Vue.delete(state, key)
+      delete state[key]
     })
     Object.assign(state, migratedState)
   }
@@ -190,8 +188,8 @@ const actions = {
   setProjectAccessed ({ commit }, { projectId }) {
     commit('setProjectAccessed', { projectId })
   },
-  setProjectName ({ commit }, { project, name }) {
-    commit('setProjectName', { project, name })
+  setProjectName ({ commit }, { projectId, name }) {
+    commit('setProjectName', { projectId, name })
   },
   showToolTips ({ commit }, { projectId, show }) {
     commit('showToolTips', { projectId, show })

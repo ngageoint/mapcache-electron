@@ -12,7 +12,7 @@
           item-height="48">
         <template v-slot:default="{ index, item }">
           <v-list-item link @click="() => setModel(index)">
-            <v-list-item-content>
+            <div>
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
                   <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="model === index ? index : null">
@@ -24,7 +24,7 @@
                   <geometry-style-svg v-else :geometry-type="assignment.geometryType" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
                 </v-row>
               </v-row>
-            </v-list-item-content>
+            </div>
           </v-list-item>
         </template>
       </v-virtual-scroll>
@@ -61,7 +61,8 @@
 </template>
 
 <script>
-import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
+import { clearStylingForFeature, setFeatureIcon, setFeatureStyle } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: { GeometryStyleSvg },
@@ -89,7 +90,7 @@ export default {
     items () {
       let items = []
       if (this.assignment != null) {
-        // point or multi point
+        // point or multipoint
         if (this.assignment.geometryType === 1 || this.assignment.geometryType === 4) {
           items = this.assignment.icons.concat(this.assignment.styles)
         } else {
@@ -112,35 +113,12 @@ export default {
         const selection = this.items[this.model]
         // they selected an icon
         if (selection.contentType != null) {
-          window.mapcache.setFeatureIcon({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            featureId: this.assignment.featureId,
-            iconId: selection.id,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
+          setFeatureIcon(this.projectId, this.id, this.tableName, this.assignment.featureId, selection.id, this.isGeoPackage, this.isBaseMap)
         } else {
-          window.mapcache.setFeatureStyle({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            featureId: this.assignment.featureId,
-            styleId: selection.id,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
+          setFeatureStyle(this.projectId, this.id, this.tableName, this.assignment.featureId, selection.id, this.isGeoPackage, this.isBaseMap)
         }
       } else {
-        window.mapcache.clearStylingForFeature({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          featureId: this.assignment.featureId,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        clearStylingForFeature(this.projectId, this.id, this.tableName, this.assignment.featureId, this.isGeoPackage, this.isBaseMap)
       }
       this.close()
     }

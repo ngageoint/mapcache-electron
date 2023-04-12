@@ -4,9 +4,7 @@
       <v-container>
         <v-row no-gutters justify="space-between" align="center" class="pb-4">
           <v-card-title class="pa-0 ma-0" v-html="article.title"></v-card-title>
-          <v-btn v-if="back != null" icon @click="back">
-            <v-icon>{{ mdiClose }}</v-icon>
-          </v-btn>
+          <v-btn variant="flat" v-if="back != null" icon="mdi-close" @click="back"/>
         </v-row>
         <v-row no-gutters v-if="article.introduction">
           <p class="detail--text" v-html="article.introduction"></p>
@@ -17,21 +15,21 @@
                            :divider="section.divider" :image="section.image" :video="section.video"></article-section>
           <v-row no-gutters v-if="section.tabItems">
             <v-tabs
+                style="width: 100vw;"
                 v-model="tabs[index]"
-                centered
+                align-tabs="center"
             >
-              <v-tabs-slider color="#45ced7"></v-tabs-slider>
-
               <v-tab
+                  color="#45ced7"
                   v-for="item in section.tabItems"
                   :key="item.title"
               >
                 {{ item.title }}
               </v-tab>
             </v-tabs>
-            <v-tabs-items v-model="tabs[index]"
+            <v-window v-model="tabs[index]"
                           :style="{width: 640 + 'px', height: (section.tabHeight ? section.tabHeight : 164) + 'px'}">
-              <v-tab-item
+              <v-window-item
                   v-for="(item, itemIndex) in section.tabItems"
                   :key="itemIndex"
               >
@@ -39,8 +37,8 @@
                 <article-section v-if="item.section" :title="item.section.title" :note="item.section.note"
                                  :paragraph="item.section.paragraph" :divider="item.section.divider"
                                  :image="item.section.image" :video="item.section.video"></article-section>
-              </v-tab-item>
-            </v-tabs-items>
+              </v-window-item>
+            </v-window>
           </v-row>
         </div>
       </v-container>
@@ -56,9 +54,9 @@
 
 <script>
 import { mdiClose } from '@mdi/js'
-import Tip from './Tip'
-import ArticleSection from './ArticleSection'
-import ArticleSkeleton from './ArticleSkeleton'
+import Tip from './Tip.vue'
+import ArticleSection from './ArticleSection.vue'
+import ArticleSkeleton from './ArticleSkeleton.vue'
 
 export default {
   components: { ArticleSkeleton, ArticleSection, Tip },

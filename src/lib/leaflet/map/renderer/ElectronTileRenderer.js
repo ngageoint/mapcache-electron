@@ -1,4 +1,5 @@
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../../projection/ProjectionConstants'
+import { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } from '../../../../electron/lib/ipc/MapCacheIPC'
 
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
@@ -13,8 +14,8 @@ export default class ElectronTileRenderer {
   constructor (layer, isElectron = false) {
     this.layer = layer
     if (isElectron) {
-      const { ipcRenderer } = require('electron')
-      const { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } = require('../../../electron/ipc/MapCacheIPC')
+      const ipcRenderer = global.ipcRenderer
+
       this.requestTile = (request) => {
         return new Promise(resolve => {
           ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
@@ -27,10 +28,10 @@ export default class ElectronTileRenderer {
       this.cancelTileRequest = (id) => {
         ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
       }
-
-      const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')
-      const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
-      const { getWGS84ExtentFromXYZ } = require('../../../util/xyz/WGS84XYZTileUtilities')
+      const getWebMercatorBoundingBoxFromXYZ = global.getWebMercatorBoundingBoxFromXYZ
+      const tileIntersects = global.tileIntersects
+      const wgs84ToWebMercator = global.wgs84ToWebMercator
+      const getWGS84ExtentFromXYZ = global.getWGS84ExtentFromXYZ
 
       this.tileIntersects = (x, y, z, crs, extent) => {
         if (crs === WEB_MERCATOR) {

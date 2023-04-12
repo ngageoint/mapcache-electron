@@ -6,9 +6,9 @@ const STORAGE_KEY = 'state'
 
 
 /**
- * MapCachePersistedStateWrapper really just handles importing initial state. it will not actually call set state on changes
+ * PersistedStateRenderer really just handles importing initial state. it will not actually call set state on changes
  */
-class MapCachePersistedStateWrapper {
+class PersistedStateRenderer {
   constructor (options, store) {
     this.options = options
     this.store = store
@@ -19,7 +19,9 @@ class MapCachePersistedStateWrapper {
     if (!this.options.throttle) {
       this.options.throttle = SET_STATE_THROTTLE
     }
-    window.mapcache.createStorage(STORAGE_NAME)
+    if (window.vuex) {
+      window.vuex.createStorage(this.options.storageName || STORAGE_NAME)
+    }
   }
 
   loadFilter (filter, name) {
@@ -61,7 +63,7 @@ class MapCachePersistedStateWrapper {
   }
 
   loadInitialState () {
-    let state = window.mapcache.getState(this.options.storageKey)
+    let state = window.vuex.getState(this.options.storageKey)
     if (state) {
       const mergedState = merge(this.store.state, state, { arrayMerge: this.combineMerge })
       this.store.replaceState(mergedState)
@@ -70,7 +72,7 @@ class MapCachePersistedStateWrapper {
 }
 
 export default (options = {}) => (store) => {
-  const persistedState = new MapCachePersistedStateWrapper(options, store)
+  const persistedState = new PersistedStateRenderer(options, store)
   persistedState.loadOptions()
   persistedState.loadInitialState()
 }

@@ -1,7 +1,7 @@
 <template>
-  <v-card>
+  <v-card class="pa-2">
     <v-card-title v-if="title != null">
-      <v-icon color="primary" class="pr-2">{{ icon }}</v-icon>
+      <v-icon color="primary" class="pr-2" :icon="icon"/>
       {{ title }}
     </v-card-title>
     <v-card-text>
@@ -9,8 +9,7 @@
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">
-              <v-text-field ref="textField" :label="label" v-model="editedValue" :rules="rules" :autofocus="autofocus"
-                            @keydown.space="handleSpaceKey"/>
+              <v-text-field variant="underlined" color="primary" ref="textField" :label="label" v-model="editedValue" :rules="rules" :autofocus="autofocus" @keydown.space="handleSpaceKey"/>
             </v-col>
           </v-row>
         </v-container>
@@ -130,7 +129,7 @@ export default {
   },
   mounted () {
     this.$nextTick(() => {
-      this.$refs.form.resetValidation()
+      this.$refs.form.validate()
     })
   }
 }

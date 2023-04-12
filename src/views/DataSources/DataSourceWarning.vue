@@ -33,6 +33,7 @@
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import { mdiInformation } from '@mdi/js'
+import { setSourceWarning } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -75,7 +76,7 @@ export default {
       this.showTroubleshootingDialog = false
     },
     clearWarning (theSource) {
-      window.mapcache.setSourceWarning({ id: theSource.id, warning: '' })
+      setSourceWarning(theSource.id, '')
     }
   }
 }

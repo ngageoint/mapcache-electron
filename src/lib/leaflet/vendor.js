@@ -3,14 +3,14 @@ import L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 
-import iconEnhancement from './map/improvements/IconEnhancement'
-import initSmoothWheel from './map/improvements/Leaflet.SmoothWheelZoom'
-import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap'
-import mapCacheLayer from './map/layers/MapCacheLayer'
-import mapCacheRemoteLayer from './map/layers/MapCacheRemoteLayer'
-import { setupGARSGrid } from './map/grid/gars/garsLeaflet'
-import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet'
-import { setupXYZGrid } from './map/grid/xyz/xyz'
+import iconEnhancement from './map/improvements/IconEnhancement.js'
+import initSmoothWheel from './map/improvements/Leaflet.SmoothWheelZoom.js'
+import tileLayerNoGap from './map/improvements/Leaflet.TileLayer.NoGap.js'
+import mapCacheLayer from './map/layers/MapCacheLayer.js'
+import mapCacheRemoteLayer from './map/layers/MapCacheRemoteLayer.js'
+import { setupGARSGrid } from './map/grid/gars/garsLeaflet.js'
+import { setupMGRSGrid } from './map/grid/mgrs/mgrsLeaflet.js'
+import { setupXYZGrid } from './map/grid/xyz/xyz.js'
 
 iconEnhancement(L)
 initSmoothWheel(L)
@@ -24,4 +24,6 @@ setupGARSGrid(L)
 setupMGRSGrid(L)
 setupXYZGrid(L)
 
-export * as L from 'leaflet'
+export {
+  L
+}

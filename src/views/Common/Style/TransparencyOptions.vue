@@ -1,10 +1,10 @@
 <template>
   <v-list two-line subheader>
-    <v-subheader>Transparency</v-subheader>
+    <v-list-subheader>Transparency</v-list-subheader>
     <v-list-item class="pt-2">
-      <v-list-item-content style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
+      <div style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
         Opacity
-      </v-list-item-content>
+      </div>
       <v-slider class="mx-auto" thumb-label="always" hide-details dense v-model="opacity" :min="0" :max="100"
                 :interval="1">
         <template v-slot:thumb-label="{ value }">

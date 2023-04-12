@@ -2,8 +2,8 @@ import log from 'electron-log'
 import path from 'path'
 import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
-import { buildFeatureLayer } from '../geopackage/GeoPackageFeatureTableBuilder'
-import { buildTileLayer } from '../geopackage/GeoPackageTileTableBuilder'
+import { buildFeatureLayer } from '../../lib/geopackage/GeoPackageFeatureTableBuilder'
+import { buildTileLayer } from '../../lib/geopackage/GeoPackageTileTableBuilder'
 import {
   GET_USER_DATA_DIRECTORY,
   WORKER_BUILD_FEATURE_LAYER,
@@ -13,7 +13,7 @@ import {
   WORKER_BUILD_TILE_LAYER_COMPLETED,
   WORKER_BUILD_TILE_LAYER_STATUS,
   WORKER_READY
-} from '../electron/ipc/MapCacheIPC'
+} from '../lib/ipc/MapCacheIPC'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)

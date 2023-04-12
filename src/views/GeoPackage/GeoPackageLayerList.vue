@@ -1,8 +1,7 @@
 <template>
   <v-list class="pa-0">
-    <template v-for="item in items">
+    <template v-for="item in items" :key="item.id">
       <v-list-item
-          :key="item.id"
           @click="item.click"
       >
         <v-list-item-icon class="mt-auto mb-auto">
@@ -19,9 +18,9 @@
             <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
           </v-btn>
         </v-list-item-icon>
-        <v-list-item-content>
+        <div>
           <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
-        </v-list-item-content>
+        </div>
         <v-list-item-action>
           <v-switch
               hide-details
@@ -32,15 +31,14 @@
           </v-switch>
         </v-list-item-action>
       </v-list-item>
-      <v-divider
-          :key="item.id + '_divider'"
-      ></v-divider>
+      <v-divider/>
     </template>
   </v-list>
 </template>
 
 <script>
 import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities'
+import { setGeoPackageFeatureTableVisible, setGeoPackageTileTableVisible } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -63,12 +61,7 @@ export default {
             _this.layerSelected(key)
           },
           setVisible: function (e) {
-            window.mapcache.setGeoPackageTileTableVisible({
-              projectId: _this.projectId,
-              geopackageId: _this.geopackage.id,
-              tableName: key,
-              visible: !tileLayer.visible
-            })
+            setGeoPackageTileTableVisible(_this.projectId, _this.geopackage.id, key, !tileLayer.visible)
             e.stopPropagation()
           },
           zoomTo: function (e) {
@@ -89,12 +82,7 @@ export default {
             _this.layerSelected(key)
           },
           setVisible: function (e) {
-            window.mapcache.setGeoPackageFeatureTableVisible({
-              projectId: _this.projectId,
-              geopackageId: _this.geopackage.id,
-              tableName: key,
-              visible: !featureLayer.visible
-            })
+            setGeoPackageFeatureTableVisible(_this.projectId, _this.geopackage.id, key, !featureLayer.visible)
             e.stopPropagation()
           },
           zoomTo: function (e) {

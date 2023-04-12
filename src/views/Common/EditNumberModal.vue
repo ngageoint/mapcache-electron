@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">{{ icon }}</v-icon>
+      <v-icon color="primary" class="pr-2" :icon="icon"/>
       {{ title }}
     </v-card-title>
     <v-card-text>
@@ -20,7 +20,7 @@
       <v-spacer></v-spacer>
       <v-btn
           text
-          :dark="darkMode"
+          :theme="darkMode ? 'dark' : 'light'"
           @click="cancel">
         {{ cancelText }}
       </v-btn>
@@ -28,7 +28,7 @@
           :disabled="!valid"
           color="primary"
           text
-          :dark="darkMode"
+          :theme="darkMode ? 'dark' : 'light'"
           @click="save">
         {{ saveText }}
       </v-btn>
@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import NumberPicker from './NumberPicker'
+import NumberPicker from './NumberPicker.vue'
 
 export default {
   props: {

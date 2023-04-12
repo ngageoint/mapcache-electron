@@ -2,7 +2,7 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -201,11 +201,11 @@
                 <v-list style="width: 100%">
                   <v-list-item :key="'edit-view-' + index" v-for="(column, index) in featureViewData.editableColumns"
                                class="ma-0 pa-0">
-                    <v-list-item-content class="ma-0 pa-0">
+                    <div class="ma-0 pa-0">
                       <feature-editor-column :id="column.name + '_' + index" v-bind="column"
                                              :update-column-property="updateEditableColumn"
                                              :index="index"></feature-editor-column>
-                    </v-list-item-content>
+                    </div>
                   </v-list-item>
                 </v-list>
               </v-form>
@@ -240,14 +240,19 @@ import {
 } from '@mdi/js'
 import {isHtml} from '../../lib/util/html/HTMLUtilities'
 import cloneDeep from 'lodash/cloneDeep'
-import FeatureEditorColumn from './FeatureEditorColumn'
-import GeometryStyleSvg from './GeometryStyleSvg'
+import FeatureEditorColumn from './FeatureEditorColumn.vue'
+import GeometryStyleSvg from './GeometryStyleSvg.vue'
 import { zoomToGeoPackageFeature } from '../../lib/leaflet/map/ZoomUtilities'
-import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment'
-import MediaAttachments from './MediaAttachments'
+import EditFeatureStyleAssignment from '../StyleEditor/EditFeatureStyleAssignment.vue'
+import MediaAttachments from './MediaAttachments.vue'
 import EventBus from '../../lib/vue/EventBus'
 import isNil from 'lodash/isNil'
 import { mapState } from 'vuex'
+import {
+  removeFeatureFromDataSource,
+  removeFeatureFromGeoPackage, synchronizeDataSource,
+  synchronizeGeoPackage, updateStyleKey
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: { MediaAttachments, EditFeatureStyleAssignment, GeometryStyleSvg, FeatureEditorColumn },
@@ -314,7 +319,18 @@ export default {
           'span': this.$sanitize.simpleTransform('span', {class: 'detail--text'}, false),
           'label': this.$sanitize.simpleTransform('label', { style: 'margin-right: 4px !important;', class: 'regular--text' }, false)
         }
-      }
+      },
+      featureViewData: {
+        editableColumns: [],
+        feature: {
+          properties: {}
+        },
+        style: {
+          style: null,
+          icon: null
+        }
+      },
+      featureImageObjectUrl: null
     }
   },
   computed: {
@@ -330,28 +346,8 @@ export default {
       }
     })
   },
-  asyncComputed: {
-    featureViewData: {
-      async get () {
-        return this.getFeatureViewData()
-      },
-      default: {
-        editableColumns: [],
-        feature: {
-          properties: {}
-        },
-        style: {
-          style: null,
-          icon: null
-        }
-      }
-    },
-    featureImageObjectUrl: {
-      async get () {
-        return await window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
-      },
-      default: null
-    }
+  created () {
+    this.getFeatureViewData().then(window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId))
   },
   watch: {
     featureId: {
@@ -364,6 +360,8 @@ export default {
         this.columnsToAdd = []
         this.editing = false
         this.disableEdit()
+        window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
+
       }
     },
     object: {
@@ -410,18 +408,9 @@ export default {
     },
     removeFeature () {
       if (this.isGeoPackage) {
-        window.mapcache.removeFeatureFromGeopackage({
-          projectId: this.projectId,
-          geopackageId: this.id,
-          tableName: this.tableName,
-          featureId: this.featureId
-        })
+        removeFeatureFromGeoPackage(this.projectId, this.id, this.tableName, this.featureId)
       } else {
-        window.mapcache.removeFeatureFromDataSource({
-          projectId: this.projectId,
-          sourceId: this.id,
-          featureId: this.featureId
-        })
+        removeFeatureFromDataSource(this.projectId, this.id, this.featureId)
       }
       this.removeDialog = false
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
@@ -475,11 +464,11 @@ export default {
         const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, this.featureViewData.editableColumns, feature.geometry, true)
         if (result.changes > 0) {
           if (this.isGeoPackage) {
-            window.mapcache.synchronizeGeoPackage({ projectId: this.projectId, geopackageId: this.id })
+            await synchronizeGeoPackage(this.projectId, this.id)
           } else {
-            window.mapcache.synchronizeDataSource({ projectId: this.projectId, sourceId: this.id })
+            await synchronizeDataSource(this.projectId, this.id)
           }
-          window.mapcache.updateStyleKey(this.projectId, this.id, this.tableName, this.isGeoPackage, false)
+          updateStyleKey(this.projectId, this.id, this.tableName, this.isGeoPackage, false)
         } else if (result.error) {
           this.failedToSaveErrorMessage = result.error
           this.failedToSaveSnackBar = true

@@ -11,8 +11,7 @@ export default class CancellableTileRequest {
 
   constructor (isElectron = false) {
     if (isElectron) {
-      const { convertPbfToDataUrl } = require('../util/rendering/MBTilesUtilities')
-      this.convertPbfToDataUrl = convertPbfToDataUrl
+      this.convertPbfToDataUrl = global.convertPbfToDataUrl
     } else {
       this.convertPbfToDataUrl = window.mapcache.convertPbfToDataUrl
     }

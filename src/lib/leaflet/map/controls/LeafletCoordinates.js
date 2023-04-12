@@ -1,8 +1,8 @@
-import { L } from '../../vendor'
-import { LatLng } from '../grid/mgrs/wgs84/LatLng'
-import { MGRS } from '../grid/mgrs/MGRS'
-import { lat2tile, long2tile } from '../../../util/xyz/XYZTileUtilities'
-import { latLng2GARS } from '../grid/gars/GARS'
+import { L } from '../../vendor.js'
+import { LatLng } from '../grid/mgrs/wgs84/LatLng.js'
+import { MGRS } from '../grid/mgrs/MGRS.js'
+import { lat2tile, long2tile } from '../../../util/xyz/XYZTileUtilities.js'
+import { latLng2GARS } from '../grid/gars/GARS.js'
 
 export default class LeafletCoordinates extends L.Control {
   coordinateType = 'LatLng'

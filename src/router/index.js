@@ -1,6 +1,4 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-
+import { createRouter, createWebHashHistory } from 'vue-router'
 const LandingPageLoader = () => import('../views/LandingPage/LandingPage.vue')
 const ProjectLoader = () => import('../views/Project/Project.vue')
 const WorkerLoader = () => import('../views/Worker/Worker.vue')
@@ -8,11 +6,8 @@ const FeatureTableLoader = () => import('../views/FeatureTable/FeatureTableWindo
 const UserGuide = () => import('../views/Documentation/UserGuide.vue')
 const ReleaseNotes = () => import('../views/Documentation/ReleaseNotes.vue')
 
-Vue.use(VueRouter)
-
-const router = new VueRouter({
-  mode: 'hash',
-  base: process.env.BASE_URL,
+const router = new createRouter({
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/project/:id',

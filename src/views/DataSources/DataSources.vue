@@ -16,22 +16,18 @@
     <v-sheet v-show="!urlSourceDialog && !overpassDialog && selectedDataSource == null" class="mapcache-sheet">
       <v-toolbar
           color="main"
-          dark
           flat
           class="sticky-toolbar"
       >
-        <v-btn icon @click="back">
-          <v-icon large>{{ mdiChevronLeft }}</v-icon>
-        </v-btn>
+        <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
         <v-toolbar-title>Data sources</v-toolbar-title>
       </v-toolbar>
       <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
         <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
         </data-source-list>
-        <template v-for="source in processingSourceList">
+        <template v-for="source in processingSourceList" :key="source.id">
           <processing-source
               :source="source"
-              :key="source.id"
               :project="project"
               class="sources processing-source"
               :on-cancel="() => cancelProcessing(source)"
@@ -61,56 +57,52 @@
           transition="slide-y-reverse-transition"
       >
         <template v-slot:activator>
-          <v-tooltip right :disabled="!project.showToolTips">
-            <template v-slot:activator="{ on, attrs }">
+          <v-tooltip location="end" :disabled="!project.showToolTips">
+            <template v-slot:activator="{ props }">
               <v-btn
                   fab
                   color="primary"
-                  v-bind="attrs"
-                  v-on="on">
+                  v-bind="props">
                 <v-icon>{{ mdiLayersPlus }}</v-icon>
               </v-btn>
             </template>
             <span>Add data source</span>
           </v-tooltip>
         </template>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
+        <v-tooltip location="end" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
             <v-btn
                 fab
                 small
                 color="accent"
                 @click.stop="addFileClick"
-                v-bind="attrs"
-                v-on="on">
+                v-bind="props">
               <v-icon>{{ mdiFileDocumentOutline }}</v-icon>
             </v-btn>
           </template>
           <span>Import from file</span>
         </v-tooltip>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
+        <v-tooltip location="end" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
             <v-btn
                 fab
                 small
                 color="accent"
                 @click.stop.prevent="showUrlDialog"
-                v-bind="attrs"
-                v-on="on">
+                v-bind="props">
               <v-icon>{{ mdiCloudDownloadOutline }}</v-icon>
             </v-btn>
           </template>
           <span>Download from url</span>
         </v-tooltip>
-        <v-tooltip right :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
+        <v-tooltip location="end" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
             <v-btn
                 fab
                 small
                 color="accent"
                 @click.stop.prevent="showOverpassDialog"
-                v-bind="attrs"
-                v-on="on">
+                v-bind="props">
               <v-icon>{{ mdiSteering }}</v-icon>
             </v-btn>
           </template>
@@ -125,13 +117,14 @@
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import ProcessingSource from './ProcessingSource'
-import DataSource from './DataSource'
-import DataSourceList from './DataSourceList'
-import AddDataSourceUrl from './AddDataSourceUrl'
+import ProcessingSource from './ProcessingSource.vue'
+import DataSource from './DataSource.vue'
+import DataSourceList from './DataSourceList.vue'
+import AddDataSourceUrl from './AddDataSourceUrl.vue'
 import { mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus, mdiSteering } from '@mdi/js'
 import { SUPPORTED_FILE_EXTENSIONS } from '../../lib/util/file/FileConstants'
-import OverpassDataSource from '../Overpass/OverpassDataSource'
+import OverpassDataSource from '../Overpass/OverpassDataSource.vue'
+import { notifyTab } from '../../lib/vue/vuex/ProjectActions'
 
 let selectedDataSource = null
 let fab = false
@@ -211,7 +204,7 @@ export default {
         let s = this.processingSourceList[i]
         if (s.id === source.id) {
           this.processingSourceList.splice(i, 1)
-          window.mapcache.notifyTab({ projectId: this.project.id, tabId: 1 })
+          notifyTab(this.project.id, 1)
           break
         }
       }

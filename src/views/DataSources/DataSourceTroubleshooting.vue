@@ -34,6 +34,7 @@ import isNil from 'lodash/isNil'
 import { mdiAlertCircle } from '@mdi/js'
 import { DEFAULT_TIMEOUT, isAuthenticationError, isServerError, isTimeoutError } from '../../lib/network/HttpUtilities'
 import { connectToSource } from '../../lib/network/ServiceConnectionUtils'
+import { setDataSource } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -88,7 +89,7 @@ export default {
       this.reconnecting = false
     },
     async connect () {
-      if (await connectToSource(this.projectId, this.source, window.mapcache.setDataSource, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT)) {
+      if (await connectToSource(this.projectId, this.source, setDataSource, !isNil(this.source.timeoutMs) ? this.source.timeoutMs : DEFAULT_TIMEOUT)) {
         this.$nextTick(() => {
           this.showTroubleshootingDialog = false
           this.connectionAttempts = 0

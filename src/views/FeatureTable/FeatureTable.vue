@@ -54,6 +54,7 @@
       <template v-slot:top>
         <v-row no-gutters justify="space-between" class="ma-2">
           <v-text-field
+              variant="underlined"
               class="ml-2 pt-0"
               autofocus
               v-model="search"
@@ -113,6 +114,11 @@ import isNil from 'lodash/isNil'
 import moment from 'moment/moment'
 import { mdiPaperclip, mdiTrashCan, mdiMagnify } from '@mdi/js'
 import Sortable from 'sortablejs'
+import {
+  deleteFeatureIdsFromDataSource,
+  deleteFeatureIdsFromGeoPackage,
+  updateGeoPackageFeatureTableColumnOrder
+} from '../../lib/vue/vuex/ProjectActions'
 
 const measureTextCanvas = document.createElement('canvas')
 
@@ -308,21 +314,11 @@ export default {
       headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
       // remove the checkbox and attachments
       headersTmp.splice(0, 2)
-      window.mapcache.updateGeoPackageFeatureTableColumnOrder({
-        projectId: this.projectId,
-        id: this.id,
-        isGeoPackage: this.isGeoPackage,
-        tableName: this.table.tableName,
-        columnOrder: headersTmp
-      })
+      updateGeoPackageFeatureTableColumnOrder(this.projectId, this.id, this.isGeoPackage, this.table.tableName, headersTmp)
       this.tableKey++
     },
     async getSearchCount (search) {
-      return await window.mapcache.countGeoPackageTable({
-        filePath: this.filePath,
-        tableName: this.table.tableName,
-        search: search
-      })
+      return await window.mapcache.countGeoPackageTable(this.filePath, this.table.tableName, search)
     },
     async determineSearchCount (search) {
       this.searchCount = await this.getSearchCount(search)
@@ -349,15 +345,7 @@ export default {
     },
     setPage (pageIndex) {
       this.loading = true
-      window.mapcache.searchGeoPackageTable({
-        filePath: this.filePath,
-        tableName: this.table.tableName,
-        page: pageIndex,
-        pageSize: this.options.itemsPerPage,
-        sortBy: this.sortField,
-        desc: this.descending,
-        search: this.search
-      }).then(page => {
+      window.mapcache.searchGeoPackageTable(this.filePath, this.table.tableName, pageIndex, this.options.itemsPerPage, this.sortField, this.descending, this.search).then(page => {
         this.tableEntries = this.getTableEntries(page)
         this.loading = false
       })
@@ -413,18 +401,9 @@ export default {
       if (!isNil(this.selected) && this.selected.length > 0) {
         const ids = this.selected.map(feature => feature.id)
         if (this.isGeoPackage) {
-          window.mapcache.deleteFeatureIdsFromGeoPackage({
-            projectId: this.projectId,
-            geopackageId: this.id,
-            tableName: this.table.tableName,
-            featureIds: ids
-          })
+          await deleteFeatureIdsFromGeoPackage(this.projectId, this.id, this.table.tableName, ids)
         } else {
-          window.mapcache.deleteFeatureIdsFromDataSource({
-            projectId: this.projectId,
-            sourceId: this.id,
-            featureIds: ids
-          })
+          await deleteFeatureIdsFromDataSource(this.projectId, this.id, ids)
         }
         const totalFeatureCount = await this.getSearchCount()
         if (totalFeatureCount === 0) {

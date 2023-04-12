@@ -80,9 +80,9 @@
         <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
           <v-list-item-group dense v-model="gridSelection" mandatory>
             <v-list-item dense v-for="(item) in gridOptions" :key="item.id" :value="item.id">
-              <v-list-item-content>
+              <div>
                 <v-list-item-title>{{ item.title }}</v-list-item-title>
-              </v-list-item-content>
+              </div>
             </v-list-item>
           </v-list-item-group>
         </v-list>
@@ -117,10 +117,10 @@
                 <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
             </v-list-item-icon>
-            <v-list-item-content class="pa-0 ma-0">
+            <div class="pa-0 ma-0">
               <v-list-item-title v-text="item.title"></v-list-item-title>
               <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
-            </v-list-item-content>
+            </div>
             <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
               <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
             </v-list-item-icon>
@@ -132,9 +132,9 @@
       <v-card-title class="pb-2">
         <v-row no-gutters justify="space-between">
           <p class="mb-0 pa-0">Base maps</p>
-          <v-tooltip left :disabled="!project.showToolTips">
-            <template v-slot:activator="{ on }">
-              <div v-on="on" style="margin-top: -3px !important;">
+          <v-tooltip location="start" :disabled="!project.showToolTips">
+            <template v-slot:activator="{ props }">
+              <div v-bind="props" style="margin-top: -3px !important;">
                 <v-btn :disabled="projectLayerCount === 0" @click="createNewBaseMap" color="primary" icon>
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                        preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="24" height="24">
@@ -345,16 +345,12 @@ import pick from 'lodash/pick'
 import throttle from 'lodash/throttle'
 import 'leaflet-geosearch/dist/geosearch.css'
 import LeafletActiveLayersTool from '../../lib/leaflet/map/controls/LeafletActiveLayersTool'
-import DrawBounds from './mixins/DrawBounds'
-import EditFeature from './mixins/EditFeature'
-import GridBounds from './mixins/GridBounds'
-import HighlightFeature from './mixins/HighlightFeature'
-import FeatureTables from '../FeatureTable/FeatureTables'
+import FeatureTables from '../FeatureTable/FeatureTables.vue'
 import LeafletZoomIndicator from '../../lib/leaflet/map/controls/LeafletZoomIndicator'
-import FeatureEditor from '../Common/FeatureEditor'
+import FeatureEditor from '../Common/FeatureEditor.vue'
 import LeafletBaseMapTool from '../../lib/leaflet/map/controls/LeafletBaseMapTool'
 import LeafletRangeRingControl from '../../lib/leaflet/map/controls/LeafletRangeRingControl'
-import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting'
+import BaseMapTroubleshooting from '../BaseMaps/BaseMapTroubleshooting.vue'
 import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { constructMapLayer } from '../../lib/leaflet/map/layers/LeafletMapLayerFactory'
 import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
@@ -391,7 +387,7 @@ import {
   mdiCircleOutline,
   mdiTrashCanOutline
 } from '@mdi/js'
-import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import {
   zoomToBaseMap,
   zoomToExtent,
@@ -399,9 +395,8 @@ import {
   zoomToGeoPackageTable,
   zoomToSource
 } from '../../lib/leaflet/map/ZoomUtilities'
-import NominatimSearch from '../Nominatim/NominatimSearch'
-import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup'
-import SearchResult from './mixins/SearchResults'
+import NominatimSearch from '../Nominatim/NominatimSearch.vue'
+import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup.vue'
 import { getDefaultIcon } from '../../lib/util/style/BrowserStyleUtilities'
 import {
   getDefaultMapCacheStyle,
@@ -416,12 +411,23 @@ import { latLng2GARS } from '../../lib/leaflet/map/grid/gars/GARS'
 import { FEATURE_TABLE_WINDOW_EVENTS } from '../FeatureTable/FeatureTableEvents'
 import { FEATURE_TABLE_ACTIONS } from '../FeatureTable/FeatureTableActions'
 import Sortable from 'sortablejs'
-import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage'
+import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage.vue'
 import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
 import { environment } from '../../lib/env/env'
-import RangeRing from './RangeRing'
+import RangeRing from './RangeRing.vue'
 import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
 import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
+import SearchResult from './mixins/SearchResults'
+import DrawBounds from './mixins/DrawBounds'
+import EditFeature from './mixins/EditFeature'
+import GridBounds from './mixins/GridBounds'
+import HighlightFeature from './mixins/HighlightFeature'
+import {
+  addFeatureToGeoPackage,
+  clearActiveLayers, editBaseMap,
+  notifyTab,
+  popOutFeatureTable, setMapRenderingOrder, setMapZoom, setSourceError
+} from '../../lib/vue/vuex/ProjectActions'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -666,7 +672,7 @@ export default {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, table, featureId)
     },
     popOutFeatureTable () {
-      window.mapcache.popOutFeatureTable({ projectId: this.projectId, popOut: true })
+      popOutFeatureTable(this.projectId, true)
       window.mapcache.showFeatureTableWindow(true)
     },
     hideFeatureTable () {
@@ -912,24 +918,13 @@ export default {
       }
     },
     async saveFeature (projectId, geopackageId, tableName, feature, columnsToAdd) {
-      await window.mapcache.addFeatureToGeoPackage({
-        projectId: projectId,
-        geopackageId: geopackageId,
-        tableName: tableName,
-        feature: feature,
-        columnsToAdd: columnsToAdd
-      })
+      await addFeatureToGeoPackage(projectId, geopackageId, tableName, feature, columnsToAdd)
       if (this.additionalFeatureToAdd) {
         // this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)
-        await window.mapcache.addFeatureToGeoPackage({
-          projectId: projectId,
-          geopackageId: geopackageId,
-          tableName: tableName,
-          feature: this.additionalFeatureToAdd
-        })
+        await addFeatureToGeoPackage(projectId, geopackageId, tableName, this.additionalFeatureToAdd)
         this.additionalFeatureToAdd = null
       }
-      window.mapcache.notifyTab({ projectId: projectId, tabId: 0 })
+      notifyTab(projectId, 0)
     },
     cancelDrawing () {
       this.$nextTick(() => {
@@ -1022,7 +1017,7 @@ export default {
       })
     },
     addGeoPackageToMap (geopackage, map) {
-      this.removeGeoPackage(geopackage.id)
+      this.removeGeoPackageFromMap(geopackage.id)
       this.geopackageMapLayers[geopackage.id] = {}
       geopackageLayers[geopackage.id] = cloneDeep(geopackage)
       keys(geopackage.tables.tiles).filter(tableName => geopackage.tables.tiles[tableName].visible).forEach(tableName => {
@@ -1039,7 +1034,7 @@ export default {
         delete this.geopackageMapLayers[geopackageId][tableName]
       }
     },
-    removeGeoPackage (geopackageId) {
+    removeGeoPackageFromMap (geopackageId) {
       for (let tableName of keys(this.geopackageMapLayers[geopackageId])) {
         this.removeGeoPackageTable(geopackageId, tableName)
       }
@@ -1209,7 +1204,7 @@ export default {
         crs: this.getMapProjection(),
         detectRetina: window.devicePixelRatio > 1
       })
-      window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: Math.floor(defaultZoom) })
+      setMapZoom(this.project.id, Math.floor(defaultZoom))
       this.createMapPanes()
       this.createGridOverlays()
       this.setupControls()
@@ -1358,7 +1353,7 @@ export default {
       this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
         self.zoomToContent()
       }, function () {
-        window.mapcache.clearActiveLayers({ projectId: self.projectId })
+        clearActiveLayers(self.projectId)
       }, function () {
         self.showLayerOrderingDialog = !self.showLayerOrderingDialog
         if (self.showLayerOrderingDialog) {
@@ -1491,7 +1486,7 @@ export default {
         }
       })
       this.map.on('zoomend', () => {
-        window.mapcache.setMapZoom({ projectId: this.project.id, mapZoom: Math.floor(this.map.getZoom()) })
+        setMapZoom(this.project.id, Math.floor(this.map.getZoom()))
       })
     },
     addLayersToMap () {
@@ -1615,7 +1610,7 @@ export default {
           let success = true
           if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
             this.connectingToBaseMap = true
-            success = await connectToBaseMap(newBaseMap, window.mapcache.editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
+            success = await connectToBaseMap(newBaseMap, editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             this.connectingToBaseMap = false
           }
 
@@ -1709,7 +1704,7 @@ export default {
           }
         })
         this.baseMapLayers[this.selectedBaseMapId].bringToBack()
-        window.mapcache.setMapRenderingOrder({ projectId: this.projectId, mapRenderingOrder: layers.map(l => l.id) })
+        setMapRenderingOrder(this.projectId, layers.map(l => l.id))
         if (layers.length > 0 || this.searchResultLayers != null) {
           this.activeLayersControl.enable(this.layerOrder.length)
         } else {
@@ -1768,7 +1763,7 @@ export default {
                 try {
                   await this.dataSourceMapLayers[sourceId].testConnection()
                 } catch (e) {
-                  window.mapcache.setSourceError({ id: sourceId, error: e })
+                  setSourceError(sourceId, e)
                   valid = false
                 }
               }
@@ -1802,7 +1797,7 @@ export default {
 
         // remove geopackages that were removed
         existingGeoPackageKeys.filter((i) => updatedGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
-          self.removeGeoPackage(geoPackageId)
+          self.removeGeoPackageFromMap(geoPackageId)
           // hide feature table when a geopackage has been removed
           if (this.lastShowFeatureTableEvent != null && this.lastShowFeatureTableEvent.isGeoPackage && this.lastShowFeatureTableEvent.id === geoPackageId) {
             this.lastShowFeatureTableEvent = null
@@ -1812,7 +1807,7 @@ export default {
 
         // new source configs
         updatedGeoPackageKeys.filter((i) => existingGeoPackageKeys.indexOf(i) < 0).forEach(geoPackageId => {
-          self.removeGeoPackage(geoPackageId)
+          self.removeGeoPackageFromMap(geoPackageId)
           self.addGeoPackageToMap(updatedGeoPackages[geoPackageId], map)
         })
 
@@ -2089,7 +2084,7 @@ export default {
 </script>
 
 <style>
-@import '~leaflet/dist/leaflet.css';
+/*@import '~leaflet/dist/leaflet.css';*/
 
 .popup {
   display: flex;
@@ -2185,16 +2180,16 @@ export default {
   right: 50px !important;
   max-height: 480px !important;
   border: 2px solid rgba(0, 0, 0, 0.2) !important;
+}
 
 ul {
   list-style-type: none !important;
 }
 
-}
 .layer-order-list-item {
   min-height: 50px !important;
   cursor: move !important;
-  background: var(--v-background-base) !important;
+  background: var(--v-background) !important;
 }
 
 .layer-order-list-item i {
@@ -2216,12 +2211,12 @@ ul {
 
 .leaflet-popup-content-wrapper {
   color: var(--v-text-base) !important;
+}
 
 div {
   color: var(--v-text-base) !important;
 }
 
-}
 .address-control {
   position: absolute;
   top: 8px;

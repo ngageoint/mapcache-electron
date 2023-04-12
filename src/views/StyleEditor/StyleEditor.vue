@@ -75,11 +75,11 @@
             no-action
         >
           <template v-slot:activator>
-            <v-list-item-content>
+            <div>
               <v-row no-gutters justify="start" align="center">
                 <span v-text="styleListItems.title"></span>
               </v-row>
-            </v-list-item-content>
+            </div>
           </template>
           <v-virtual-scroll
               :bench="10"
@@ -88,7 +88,7 @@
               item-height="48">
             <template v-slot:default="{ item }">
               <v-list-item style="padding-left: 72px !important;" :key="item.id" @click="() => showStyleEditor(item)">
-                <v-list-item-content>
+                <div>
                   <v-row no-gutters justify="space-between" align="center">
                     <v-col cols="8">
                       <v-list-item-title v-text="item.name"></v-list-item-title>
@@ -101,7 +101,7 @@
                       </v-row>
                     </v-col>
                   </v-row>
-                </v-list-item-content>
+                </div>
               </v-list-item>
             </template>
           </v-virtual-scroll>
@@ -123,11 +123,11 @@
             no-action
         >
           <template v-slot:activator>
-            <v-list-item-content>
+            <div>
               <v-row no-gutters justify="space-between" align="center">
                 <span v-text="iconListItems.title"></span>
               </v-row>
-            </v-list-item-content>
+            </div>
           </template>
           <v-virtual-scroll
               :bench="10"
@@ -136,7 +136,7 @@
               item-height="48">
             <template v-slot:default="{ item }">
               <v-list-item style="padding-left: 72px !important;" :key="item.id" @click="() => showIconEditor(item)">
-                <v-list-item-content>
+                <div>
                   <v-row no-gutters justify="space-between" align="center">
                     <v-col cols="8">
                       <v-list-item-title v-text="item.name"></v-list-item-title>
@@ -147,7 +147,7 @@
                       </v-row>
                     </v-col>
                   </v-row>
-                </v-list-item-content>
+                </div>
               </v-list-item>
             </template>
           </v-virtual-scroll>
@@ -169,9 +169,9 @@
             no-action
         >
           <template v-slot:activator>
-            <v-list-item-content>
+            <div>
               <v-list-item-title v-text="assignmentListItems.title"></v-list-item-title>
-            </v-list-item-content>
+            </div>
           </template>
           <v-list-item
               v-for="assignment in assignmentListItems.items"
@@ -179,7 +179,7 @@
               link
               :disabled="assignment.disabled"
               @click="() => showStyleAssignment(assignment)">
-            <v-list-item-content>
+            <div>
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
                   <v-row no-gutters>
@@ -206,7 +206,7 @@
                   </v-row>
                 </v-col>
               </v-row>
-            </v-list-item-content>
+            </div>
           </v-list-item>
           <v-list-item v-if="assignmentListItems.hint" key="style-hint">
             <v-list-item-title>No styles or icons to assign</v-list-item-title>
@@ -218,12 +218,12 @@
       <v-divider v-if="!loading && hasStyleExtension"></v-divider>
       <v-card-actions>
         <v-spacer/>
-        <v-btn v-if="!loading && !hasStyleExtension" text dark color="#73c1c5"
+        <v-btn v-if="!loading && !hasStyleExtension" text theme="dark" color="#73c1c5"
                @click.stop="addStyleExtensionAndDefaultStyles()">
           <v-icon>{{ mdiPalette }}</v-icon>
           Enable styling
         </v-btn>
-        <v-btn v-if="!loading && hasStyleExtension" text dark color="#ff4444" @click.stop="removeDialog = true">
+        <v-btn v-if="!loading && hasStyleExtension" text theme="dark" color="#ff4444" @click.stop="removeDialog = true">
           <v-icon>{{ mdiTrashCan }}</v-icon>
           Remove styling
         </v-btn>
@@ -233,12 +233,13 @@
 </template>
 
 <script>
-import CreateEditStyle from './CreateEditStyle'
-import CreateEditIcon from './CreateEditIcon'
-import EditTableStyleAssignment from './EditTableStyleAssignment'
-import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import CreateEditStyle from './CreateEditStyle.vue'
+import CreateEditIcon from './CreateEditIcon.vue'
+import EditTableStyleAssignment from './EditTableStyleAssignment.vue'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
 import { mdiLinkVariant, mdiMapMarker, mdiPalette, mdiPencil, mdiPlus, mdiTrashCan } from '@mdi/js'
 import { getNewStyle } from '../../lib/util/style/CommonStyleUtilities'
+import { addStyleExtensionForTable, removeStyleExtensionForTable } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -438,23 +439,11 @@ export default {
       }
     },
     addStyleExtensionAndDefaultStyles () {
-      window.mapcache.addStyleExtensionForTable({
-        projectId: this.projectId,
-        id: this.id,
-        tableName: this.tableName,
-        isGeoPackage: this.isGeoPackage,
-        isBaseMap: this.isBaseMap
-      })
+      addStyleExtensionForTable(this.projectId, this.id, this.tableName, this.isGeoPackage, this.isBaseMap)
     },
     removeStyleExtensionAndTableStyles () {
       this.removeDialog = false
-      window.mapcache.removeStyleExtensionForTable({
-        projectId: this.projectId,
-        id: this.id,
-        tableName: this.tableName,
-        isGeoPackage: this.isGeoPackage,
-        isBaseMap: this.isBaseMap
-      })
+      removeStyleExtensionForTable(this.projectId, this.id, this.tableName, this.isGeoPackage, this.isBaseMap)
     }
   },
   watch: {

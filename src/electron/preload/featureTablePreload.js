@@ -1,33 +1,22 @@
 import log from 'electron-log'
-import Store from 'electron-store'
 import path from 'path'
 import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType } from '@ngageoint/geopackage'
-import { createUniqueID } from '../util/UniqueIDUtilities'
-import {
-  getFeatureColumns,
-  getFeatureCount,
-  getFeatureTablePage
-} from '../geopackage/GeoPackageFeatureTableUtilities'
-import {
-  deleteFeatureIdsFromDataSource,
-  deleteFeatureIdsFromGeoPackage,
-  popOutFeatureTable,
-  updateGeoPackageFeatureTableColumnOrder
-} from '../vue/vuex/ProjectActions'
+import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
+import { getFeatureColumns, getFeatureCount, getFeatureTablePage } from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
 import {
   FEATURE_TABLE_ACTION,
-  FEATURE_TABLE_EVENT,
+  FEATURE_TABLE_EVENT, GET_APP_VERSION,
   GET_USER_DATA_DIRECTORY,
   HIDE_FEATURE_TABLE_WINDOW,
-  IPC_EVENT_CONNECT,
-  IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS,
   REQUEST_GEOPACKAGE_TABLE_COUNT,
   REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED,
   REQUEST_GEOPACKAGE_TABLE_SEARCH,
   REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED
-} from '../electron/ipc/MapCacheIPC'
+} from '../lib/ipc/MapCacheIPC'
+import { vuexElectronAPI } from './vuexPreload'
+import { deleteFeatureIdsFromDataSource, deleteFeatureIdsFromGeoPackage } from '../../lib/vue/vuex/ProjectPreloadFunctions'
+import { getGeoPackageFeatureTableForApp } from '../../lib/geopackage/GeoPackageCommon'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -36,31 +25,17 @@ const getUserDataDirectory = () => {
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
-
-let storage
-
+contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)
 contextBridge.exposeInMainWorld('mapcache', {
-  connect (payload) {
-    ipcRenderer.send(IPC_EVENT_CONNECT, payload)
-  },
-  notifyMain (payload) {
-    ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
-  },
-  onNotifyRenderers (handler) {
-    ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
-  },
-  createStorage (name) {
-    storage = new Store({ name: name })
-  },
-  getState (key) {
-    return storage.get(key)
-  },
   setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   getUserDataDirectory,
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
+  },
+  getAppVersion: () => {
+    return ipcRenderer.sendSync(GET_APP_VERSION)
   },
   hideFeatureTableWindow: () => {
     ipcRenderer.send(HIDE_FEATURE_TABLE_WINDOW)
@@ -71,7 +46,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   sendFeatureTableAction: (action) => {
     ipcRenderer.send(FEATURE_TABLE_ACTION, action)
   },
-  countGeoPackageTable: ({ filePath, tableName, search }) => {
+  countGeoPackageTable: (filePath, tableName, search) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, result) => {
@@ -80,7 +55,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
     })
   },
-  searchGeoPackageTable: ({ filePath, tableName, page, pageSize, sortBy, desc, search }) => {
+  searchGeoPackageTable: (filePath, tableName, page, pageSize, sortBy, desc, search) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, result) => {
@@ -98,7 +73,6 @@ contextBridge.exposeInMainWorld('mapcache', {
       })
     })
   },
-  updateGeoPackageFeatureTableColumnOrder,
   createUniqueID,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -139,12 +113,10 @@ contextBridge.exposeInMainWorld('mapcache', {
     fromName: GeoPackageDataType.fromName,
     nameFromType: GeoPackageDataType.nameFromType
   },
-  // functions needed for feature table
   getFeatureColumns,
   getFeatureTablePage,
-  // functions needed for media attachments
+  getFeatureCount,
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,
-  getFeatureCount,
-  popOutFeatureTable
+  getGeoPackageFeatureTableForApp,
 })

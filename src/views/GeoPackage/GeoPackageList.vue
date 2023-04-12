@@ -25,16 +25,15 @@
       </v-card>
     </v-dialog>
     <v-list three-line class="pa-0" v-if="items">
-      <template v-for="item in items">
+      <template v-for="item in items" :key="item.id + 'list-item'">
         <v-list-item
-            :key="item.id + 'list-item'"
             @click="() => item.click(item)"
         >
-          <v-list-item-content>
+          <div>
             <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
             <v-list-item-subtitle v-text="item.featureLayersText"></v-list-item-subtitle>
             <v-list-item-subtitle v-text="item.tileLayersText"></v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
           <v-list-item-icon class="mt-auto mb-auto" v-if="item.health.missing">
             <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage">
               <v-icon>{{ mdiAlertCircle }}</v-icon>
@@ -54,9 +53,7 @@
             <v-icon>{{ mdiChevronRight }}</v-icon>
           </v-list-item-icon>
         </v-list-item>
-        <v-divider
-            :key="item.id + '-divider'"
-        ></v-divider>
+        <v-divider/>
       </template>
     </v-list>
   </v-sheet>
@@ -65,6 +62,7 @@
 <script>
 import { mdiAlertCircle, mdiChevronRight } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
+import { removeGeoPackage, synchronizeGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -119,10 +117,7 @@ export default {
               _this.dialogSubText = 'File not found at ' + geopackage.path + '. Would you like to remove this GeoPackage?'
               _this.dialogActionText = 'Remove'
               _this.showDialog = true
-              _this.dialogAction = () => window.mapcache.removeGeoPackage({
-                projectId: _this.projectId,
-                geopackageId: geopackage.id
-              })
+              _this.dialogAction = () => removeGeoPackage(_this.projectId, geopackage.id)
             },
             showInvalidFileDialog: function () {
               _this.dialogGeoPackageId = geopackage.id
@@ -130,20 +125,14 @@ export default {
               _this.dialogSubText = 'Would you like to remove this GeoPackage?'
               _this.dialogActionText = 'Remove'
               _this.showDialog = true
-              _this.dialogAction = () => window.mapcache.removeGeoPackage({
-                projectId: _this.projectId,
-                geopackageId: geopackage.id
-              })
+              _this.dialogAction = () => removeGeoPackage(_this.projectId, geopackage.id)
             },
             showSynchronizedFileDialog: function () {
               _this.dialogGeoPackageId = geopackage.id
               _this.dialogText = geopackage.name + ' GeoPackage not synchronized'
               _this.dialogSubText = geopackage.name + ' GeoPackage has been modified outside of the application. Would you like to synchronize this GeoPackage?'
               _this.dialogActionText = 'Synchronize'
-              _this.dialogAction = () => window.mapcache.synchronizeGeoPackage({
-                projectId: _this.projectId,
-                geopackageId: geopackage.id
-              })
+              _this.dialogAction = () => synchronizeGeoPackage(_this.projectId, geopackage.id)
               _this.showDialog = true
             }
           })
@@ -165,8 +154,8 @@ export default {
       dialogSubText: '',
       dialogGeoPackageId: '',
       dialogActionText: '',
-      dialogAction: () => {
-      }
+      dialogAction: () => {},
+      items: []
     }
   },
   watch: {
@@ -177,14 +166,11 @@ export default {
       deep: true
     }
   },
-  asyncComputed: {
-    items: {
-      get () {
-        return this.getItems()
-      },
-      default: []
-    }
-  }
+  created () {
+    this.getItems().then(items => {
+      this.items = items
+    })
+  },
 }
 </script>
 

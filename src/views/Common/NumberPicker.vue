@@ -1,6 +1,6 @@
 <template>
   <v-form ref="form" v-on:submit.prevent v-model="valid" style="width: 100%">
-    <v-text-field :suffix="suffix" :disabled="disabled" :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue"
+    <v-text-field variant="underlined" :suffix="suffix" :disabled="disabled" :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue"
                   type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
   </v-form>
 </template>

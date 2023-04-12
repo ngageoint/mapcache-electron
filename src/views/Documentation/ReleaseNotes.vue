@@ -1,20 +1,20 @@
 <template>
   <v-sheet class="overflow-hidden">
-    <v-card flat tile>
-      <v-toolbar
-          src="/images/documentation/toolbar.jpg"
-          dark
-          flat
-          height="172">
-        <v-row no-gutters class="justify-center mt-13" align="center" style="width: 100vw;">
-          <h1>MapCache Release Notes</h1>
-        </v-row>
-        <v-spacer></v-spacer>
-      </v-toolbar>
+    <v-toolbar
+        image="/images/documentation/toolbar.jpg"
+        theme="dark"
+        flat
+        height="164">
+      <v-row no-gutters class="justify-center" align="center" style="width: 100vw;">
+        <h1>MapCache Release Notes</h1>
+      </v-row>
+      <v-spacer></v-spacer>
+    </v-toolbar>
+    <v-card flat rounded="0">
       <v-row no-gutters>
         <v-col cols="4">
-          <v-row no-gutters class="pt-8">
-            <h4 class="ml-4 mb-3">Release notes</h4>
+          <v-row no-gutters class="pt-4">
+            <h3 class="ml-4">Release notes</h3>
           </v-row>
           <v-row v-for="item in releaseNotes" :key="item.title" no-gutters>
             <p class="fake-link allowselect ml-8 mt-1"
@@ -24,10 +24,10 @@
             </p>
           </v-row>
         </v-col>
-        <v-col cols="8" class="overflow-y-auto pt-4 pb-8" style="height: calc(100vh - 114px)">
-          <v-row v-for="item in releaseNotes" :key="item.title" no-gutters :ref="item.title">
-            <v-col cols="12" no-gutters class="mt-4">
-              <h3>{{ item.title }}</h3>
+        <v-col cols="8" class="overflow-y-auto" style="height: calc(100vh - 164px)">
+          <v-row v-for="item in releaseNotes" :key="item.title" no-gutters >
+            <v-col cols="12" no-gutters>
+              <h3 class="pt-4" :ref="item.title">{{ item.title }}</h3>
             </v-col>
             <v-col cols="12" no-gutters class="mb-4">
               <h5>{{ item.releaseDate }}</h5>
@@ -76,7 +76,6 @@
 </template>
 
 <script>
-
 export default {
   data () {
     return {
@@ -370,8 +369,8 @@ export default {
     }
   },
   methods: {
-    scrollToElement (version) {
-      const el = this.$refs[version][0]
+    scrollToElement (ref) {
+      const el = this.$refs[ref][0]
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' })
       }

@@ -4,19 +4,16 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>Settings</v-toolbar-title>
     </v-toolbar>
     <v-dialog v-model="deleteProjectDialog" max-width="400" persistent @keydown.esc="hideDeleteProjectDialog">
       <v-card v-if="deleteProjectDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon icon="mdi-trash-can" color="warning" class="pr-2"/>
           Delete project
         </v-card-title>
         <v-card-text>
@@ -44,107 +41,96 @@
       <saved-urls :close="() => {savedUrlDialog = false}"/>
     </v-dialog>
     <v-dialog v-model="editProjectNameDialog" max-width="400" persistent @keydown.esc="toggleEditProjectNameDialog">
-      <edit-text-modal autofocus :icon="mdiPencil" title="Rename project" :rules="projectNameRules" save-text="Rename"
+      <edit-text-modal autofocus icon="mdi-pencil" title="Rename project" :rules="projectNameRules" save-text="Rename"
                        :on-cancel="toggleEditProjectNameDialog" :value="project.name" font-size="16px"
                        font-weight="bold" label="Project name" :on-save="saveProjectName"/>
     </v-dialog>
     <v-dialog v-model="editMaxFeaturesDialog" max-width="400" persistent @keydown.esc="toggleEditMaxFeaturesDialog">
-      <edit-number-modal autofocus :icon="mdiPencil" title="Edit max features" save-text="Save"
+      <edit-number-modal autofocus icon="mdi-pencil" title="Edit max features" save-text="Save"
                          :on-cancel="toggleEditMaxFeaturesDialog" :value="Number(project.maxFeatures)" :min="Number(0)"
                          :step="Number(100)" :max="1000000" :darkMode="false" font-size="16px" font-weight="bold"
                          label="Max Features" :on-save="saveMaxFeatures"/>
     </v-dialog>
     <v-dialog v-model="nominatimUrlDialog" max-width="400" persistent @keydown.esc="toggleNominatimUrlDialog">
-      <edit-text-modal autofocus :icon="mdiPencil" title="Edit nominatim url" :rules="urlRules" save-text="Save"
+      <edit-text-modal autofocus icon="mdi-pencil" title="Edit nominatim url" :rules="urlRules" save-text="Save"
                        :on-cancel="toggleNominatimUrlDialog" :value="nominatimUrl" font-size="16px"
                        font-weight="bold" label="Nominatim url" :on-save="saveNominatimUrl"/>
     </v-dialog>
     <v-dialog v-model="overpassUrlDialog" max-width="400" persistent @keydown.esc="toggleOverpassUrlDialog">
-      <edit-text-modal autofocus :icon="mdiPencil" title="Edit overpass interpreter url" :rules="urlRules"
+      <edit-text-modal autofocus icon="mdi-pencil" title="Edit overpass interpreter url" :rules="urlRules"
                        save-text="Save"
                        :on-cancel="toggleOverpassUrlDialog" :value="overpassUrl" font-size="16px"
                        font-weight="bold" label="Overpass url" :on-save="saveOverpassUrl"/>
     </v-dialog>
     <v-sheet class="mapcache-sheet-content">
       <v-list two-line subheader>
-        <v-row no-gutters justify="space-between" align="center">
+        <v-row dense no-gutters justify="space-between" align="center">
           <v-col>
-            <v-subheader>General</v-subheader>
+            <v-list-subheader>General</v-list-subheader>
           </v-col>
-          <v-tooltip right :disabled="!project.showToolTips">
-            <template v-slot:activator="{ on, attrs }">
+          <v-tooltip text="Help" location="start" :disabled="!project.showToolTips">
+            <template v-slot:activator="{ props }">
               <v-btn
-                  v-bind="attrs"
-                  v-on="on"
+                  flat
+                  v-bind="props"
                   class="ma-2"
                   @click.stop.prevent="launchHelpWindow"
-                  icon
+                  icon="mdi-help-circle-outline"
               >
-                <v-icon>{{ mdiHelpCircleOutline }}</v-icon>
               </v-btn>
             </template>
-            <span>Help</span>
           </v-tooltip>
         </v-row>
         <v-list-item selectable @click.stop.prevent="toggleDarkTheme">
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Theme</v-list-item-title>
             <v-list-item-subtitle>Dark</v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-switch
-                v-model="darkTheme"
-                color="primary"
-            ></v-switch>
-          </v-list-item-action>
+          </div>
+          <template v-slot:append>
+            <v-switch theme="light" v-model="darkTheme" color="primary" hide-details/>
+          </template>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="notifications = !notifications">
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Notifications</v-list-item-title>
             <v-list-item-subtitle>Allow system notifications</v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-switch
-                v-model="notifications"
-                color="primary"
-            ></v-switch>
-          </v-list-item-action>
+          </div>
+          <template v-slot:append>
+            <v-switch v-model="notifications" color="primary" hide-details/>
+          </template>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="toggleShowToolTip">
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Tooltips</v-list-item-title>
             <v-list-item-subtitle>Show tooltips in application</v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-switch
-                v-model="showToolTip"
-                color="primary"
-            ></v-switch>
-          </v-list-item-action>
+          </div>
+          <template v-slot:append>
+            <v-switch v-model="showToolTip" color="primary" hide-details/>
+          </template>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="savedUrlDialog = true">
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Saved urls</v-list-item-title>
             <v-list-item-subtitle>Manage saved urls</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="baseMapsDialog = true">
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Base maps</v-list-item-title>
             <v-list-item-subtitle>Manage base maps</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
         <v-list-item @click="toggleNominatimUrlDialog">
-          <v-list-item-content style="padding-right: 12px;">
+          <div style="padding-right: 12px;">
             <v-list-item-title>Nominatim URL</v-list-item-title>
             <v-list-item-subtitle>Adjust the nominatim service used to search the map.</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
         <v-list-item @click="toggleOverpassUrlDialog">
-          <v-list-item-content style="padding-right: 12px;">
+          <div style="padding-right: 12px;">
             <v-list-item-title>Overpass URL</v-list-item-title>
             <v-list-item-subtitle>Adjust the interpreter used for Overpass data imports.</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
       </v-list>
       <v-divider></v-divider>
@@ -154,119 +140,77 @@
           flat
           style="padding-bottom: 0;"
       >
-        <v-subheader>Map</v-subheader>
+        <v-list-subheader>Map</v-list-subheader>
         <v-list-item>
-          <v-list-item-content>
+          <div>
             <v-list-item-title>Projection</v-list-item-title>
             <v-list-item-subtitle>Adjust the map's projection</v-list-item-subtitle>
-            <v-radio-group hide-details dense class="ml-2 mt-2 pt-0" v-model="mapProjection" :value="mapProjection" row>
+            <v-radio-group color="primary" hide-details dense class="ml-2 mt-2 pt-0" v-model="mapProjection" :value="mapProjection" row>
               <v-radio dense label="Web Mercator (EPSG:3857)" :value="3857"></v-radio>
               <v-radio dense label="Plate Carrée (EPSG:4326)" :value="4326"></v-radio>
             </v-radio-group>
-          </v-list-item-content>
+          </div>
         </v-list-item>
-        <v-list-item-group
-            v-model="settings"
-            multiple
-        >
-          <v-list-item>
-            <template v-slot:default="{ active }">
-              <v-list-item-content>
-                <v-list-item-title>Zoom control</v-list-item-title>
-                <v-list-item-subtitle>Show zoom in/out control</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch
-                    :input-value="active"
-                    color="primary"
-                ></v-switch>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:default="{ active }">
-              <v-list-item-content>
-                <v-list-item-title>Display current zoom</v-list-item-title>
-                <v-list-item-subtitle>Show current zoom level</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch
-                    :input-value="active"
-                    color="primary"
-                ></v-switch>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:default="{ active }">
-              <v-list-item-content>
-                <v-list-item-title>Address search</v-list-item-title>
-                <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch
-                    :input-value="active"
-                    color="primary"
-                ></v-switch>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:default="{ active }">
-              <v-list-item-content>
-                <v-list-item-title>Display coordinates</v-list-item-title>
-                <v-list-item-subtitle>Show cursor coordinates</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch
-                    :input-value="active"
-                    color="primary"
-                ></v-switch>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:default="{ active }">
-              <v-list-item-content>
-                <v-list-item-title>Display scale</v-list-item-title>
-                <v-list-item-subtitle>Show map scale</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch
-                    :input-value="active"
-                    color="primary"
-                ></v-switch>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-        </v-list-item-group>
+        <v-list-item selectable @click.stop.prevent="zoomControlEnabled = !zoomControlEnabled">
+          <v-list-item-title>Zoom control</v-list-item-title>
+          <v-list-item-subtitle>Show zoom in/out control</v-list-item-subtitle>
+          <template v-slot:append>
+            <v-switch v-model="zoomControlEnabled" color="primary" hide-details/>
+          </template>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="displayZoomEnabled = !displayZoomEnabled">
+          <v-list-item-title>Display current zoom</v-list-item-title>
+          <v-list-item-subtitle>Show current zoom level</v-list-item-subtitle>
+          <template v-slot:append>
+            <v-switch v-model="displayZoomEnabled" color="primary" hide-details/>
+          </template>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="displayAddressSearchBar = !displayAddressSearchBar">
+          <v-list-item-title>Address search</v-list-item-title>
+          <v-list-item-subtitle>Show address search bar</v-list-item-subtitle>
+          <template v-slot:append>
+            <v-switch v-model="displayAddressSearchBar" color="primary" hide-details/>
+          </template>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="displayCoordinates = !displayCoordinates">
+          <v-list-item-title>Display coordinates</v-list-item-title>
+          <v-list-item-subtitle>Show cursor coordinates</v-list-item-subtitle>
+          <template v-slot:append>
+            <v-switch v-model="displayCoordinates" color="primary" hide-details/>
+          </template>
+        </v-list-item>
+        <v-list-item selectable @click.stop.prevent="displayScale = !displayScale">
+          <v-list-item-title>Display scale</v-list-item-title>
+          <v-list-item-subtitle>Show map scale</v-list-item-subtitle>
+          <template v-slot:append>
+            <v-switch v-model="displayScale" color="primary" hide-details/>
+          </template>
+        </v-list-item>
         <v-list-item @click="toggleEditMaxFeaturesDialog">
-          <v-list-item-content style="padding-right: 12px;">
+          <div style="padding-right: 12px;">
             <v-list-item-title>Max features</v-list-item-title>
             <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
       </v-list>
       <v-divider></v-divider>
       <v-list subheader two-line style="padding-top: 0;">
-        <v-subheader>Project</v-subheader>
+        <v-list-subheader>Project</v-list-subheader>
         <v-list-item @click="toggleEditProjectNameDialog">
-          <v-list-item-content style="padding-right: 12px;">
+          <div style="padding-right: 12px;">
             <v-list-item-title>Rename project</v-list-item-title>
             <v-list-item-subtitle>Rename <b>{{ project.name }}</b> project</v-list-item-subtitle>
-          </v-list-item-content>
+          </div>
         </v-list-item>
         <v-list-item @click="showDeleteProjectDialog">
-          <v-list-item-content style="padding-right: 12px;">
+          <div style="padding-right: 12px;">
             <v-list-item-title class="warning--text">Delete project</v-list-item-title>
             <v-list-item-subtitle class="warning--text">Permanently delete <b>{{ project.name }}</b> project
             </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-avatar>
-            <v-btn icon color="warning">
-              <v-icon>{{ mdiTrashCan }}</v-icon>
-            </v-btn>
-          </v-list-item-avatar>
+          </div>
+          <template v-slot:append>
+            <v-btn variant="text" icon="mdi-trash-can-outline" color="warning"/>
+          </template>
         </v-list-item>
       </v-list>
     </v-sheet>
@@ -274,17 +218,28 @@
 </template>
 
 <script>
-import EditTextModal from '../Common/EditTextModal'
-import EditNumberModal from '../Common/EditNumberModal'
-import SavedUrls from './SavedUrls'
-import BaseMaps from '../BaseMaps/BaseMaps'
+import EditTextModal from '../Common/EditTextModal.vue'
+import EditNumberModal from '../Common/EditNumberModal.vue'
+import SavedUrls from './SavedUrls.vue'
+import BaseMaps from '../BaseMaps/BaseMaps.vue'
+import AddBaseMap from '../BaseMaps/AddBaseMap.vue'
 import { mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { mapState } from 'vuex'
 import { environment } from '../../lib/env/env'
 import { WEB_MERCATOR_CODE } from '../../lib/projection/ProjectionConstants'
-import AddBaseMap from '../BaseMaps/AddBaseMap'
 import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
+import { deleteProject } from '../../lib/vue/vuex/CommonActions'
+import {
+  allowNotifications,
+  setDarkTheme,
+  setDisplayAddressSearchBar, setDisplayCoordinates, setDisplayScale,
+  setDisplayZoomEnabled, setMapProjection, setNominatimUrl, setOverpassUrl,
+  setProjectMaxFeatures,
+  setProjectName,
+  setZoomControlEnabled,
+  showToolTips
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -320,18 +275,18 @@ export default {
     }),
     darkTheme: {
       get () {
-        return this.dark
+        return this.dark || false
       },
       set (val) {
-        window.mapcache.setDarkTheme({ projectId: this.project.id, enabled: val })
+        setDarkTheme(this.project.id, val)
       }
     },
     showToolTip: {
       get () {
-        return this.project.showToolTips
+        return this.project.showToolTips || false
       },
       set (val) {
-        window.mapcache.showToolTips({ projectId: this.project.id, show: val })
+        showToolTips(this.project.id, val)
       }
     },
     mapProjection: {
@@ -339,7 +294,7 @@ export default {
         return this.project.mapProjection || WEB_MERCATOR_CODE
       },
       set (val) {
-        window.mapcache.setMapProjection({ projectId: this.project.id, mapProjection: val })
+        setMapProjection(this.project.id, val)
       }
     },
     notifications: {
@@ -350,69 +305,57 @@ export default {
         if (val && Notification.permission !== 'granted') {
           Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
-              window.mapcache.allowNotifications({ projectId: this.project.id, allow: val })
+              allowNotifications(this.project.id, val)
             } else if (permission === 'denied') {
               EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Notification permission not granted.')
-              window.mapcache.allowNotifications({ projectId: this.project.id, allow: false })
+              allowNotifications(this.project.id, false)
             }
           })
         } else {
-          window.mapcache.allowNotifications({ projectId: this.project.id, allow: val })
+          allowNotifications(this.project.id, val)
         }
       }
     },
-    settings: {
+    zoomControlEnabled: {
       get () {
-        const settings = []
-        if (this.project.zoomControlEnabled || false) {
-          settings.push(0)
-        }
-        if (this.project.displayZoomEnabled || false) {
-          settings.push(1)
-        }
-        if (this.project.displayAddressSearchBar || false) {
-          settings.push(2)
-        }
-        if (this.project.displayCoordinates || false) {
-          settings.push(3)
-        }
-        if (this.project.displayScale || false) {
-          settings.push(4)
-        }
-        return settings
+        return this.project.zoomControlEnabled || false
       },
-      set (settings) {
-        const zoomControlEnabled = this.project.zoomControlEnabled || false
-        const displayZoomEnabled = this.project.displayZoomEnabled || false
-        const displayAddressSearchBar = this.project.displayAddressSearchBar || false
-        const displayCoordinates = this.project.displayCoordinates || false
-        const displayScale = this.project.displayScale || false
-        const zoomControlSettingFound = settings.findIndex(setting => setting === 0) >= 0
-        const displayZoomSettingFound = settings.findIndex(setting => setting === 1) >= 0
-        const displayAddressSearchBarFound = settings.findIndex(setting => setting === 2) >= 0
-        const displayCoordinatesFound = settings.findIndex(setting => setting === 3) >= 0
-        const displayScaleFound = settings.findIndex(setting => setting === 4) >= 0
-
-        if (zoomControlEnabled !== zoomControlSettingFound) {
-          window.mapcache.setZoomControlEnabled({ projectId: this.project.id, enabled: zoomControlSettingFound })
-        }
-        if (displayZoomEnabled !== displayZoomSettingFound) {
-          window.mapcache.setDisplayZoomEnabled({ projectId: this.project.id, enabled: displayZoomSettingFound })
-        }
-        if (displayAddressSearchBar !== displayAddressSearchBarFound) {
-          window.mapcache.setDisplayAddressSearchBar({
-            projectId: this.project.id,
-            enabled: displayAddressSearchBarFound
-          })
-        }
-        if (displayCoordinates !== displayCoordinatesFound) {
-          window.mapcache.setDisplayCoordinates({ projectId: this.project.id, enabled: displayCoordinatesFound })
-        }
-        if (displayScale !== displayScaleFound) {
-          window.mapcache.setDisplayScale({ projectId: this.project.id, enabled: displayScaleFound })
-        }
+      set (val) {
+        setZoomControlEnabled(this.project.id, val)
       }
-    }
+    },
+    displayZoomEnabled: {
+      get () {
+        return this.project.displayZoomEnabled || false
+      },
+      set (val) {
+        setDisplayZoomEnabled(this.project.id, val)
+      }
+    },
+    displayAddressSearchBar: {
+      get () {
+        return this.project.displayAddressSearchBar || false
+      },
+      set (val) {
+        setDisplayAddressSearchBar(this.project.id, val)
+      }
+    },
+    displayCoordinates: {
+      get () {
+        return this.project.displayCoordinates || false
+      },
+      set (val) {
+        setDisplayCoordinates(this.project.id, val)
+      }
+    },
+    displayScale: {
+      get () {
+        return this.project.displayScale || false
+      },
+      set (val) {
+        setDisplayScale(this.project.id, val)
+      }
+    },
   },
   data () {
     return {
@@ -442,18 +385,18 @@ export default {
       window.mapcache.launchUserGuide()
     },
     saveProjectName (val) {
-      window.mapcache.setProjectName({ project: this.project, name: val })
+      setProjectName(this.project.id, val)
       this.toggleEditProjectNameDialog()
     },
     saveMaxFeatures (val) {
-      window.mapcache.setProjectMaxFeatures({ projectId: this.project.id, maxFeatures: val })
+      setProjectMaxFeatures(this.project.id, val)
       this.toggleEditMaxFeaturesDialog()
     },
     toggleShowToolTip () {
-      window.mapcache.showToolTips({ projectId: this.project.id, show: !this.project.showToolTips })
+      showToolTips(this.project.id, !this.project.showToolTips)
     },
     toggleDarkTheme () {
-      window.mapcache.setDarkTheme({ projectId: this.project.id, enabled: !this.dark })
+      setDarkTheme(this.project.id, !this.dark)
     },
     toggleEditProjectNameDialog () {
       this.editProjectNameDialog = !this.editProjectNameDialog
@@ -471,18 +414,18 @@ export default {
       this.nominatimUrlDialog = !this.nominatimUrlDialog
     },
     saveNominatimUrl (val) {
-      window.mapcache.setNominatimUrl({ url: val })
+      setNominatimUrl(val)
       this.toggleNominatimUrlDialog()
     },
     toggleOverpassUrlDialog () {
       this.overpassUrlDialog = !this.overpassUrlDialog
     },
     saveOverpassUrl (val) {
-      window.mapcache.setOverpassUrl({ url: val })
+      setOverpassUrl(val)
       this.toggleOverpassUrlDialog()
     },
     deleteProjectAndClose () {
-      window.mapcache.deleteProject(this.project).then(() => {
+      deleteProject(this.project).then(() => {
         setTimeout(() => {
           window.mapcache.closeProject()
         }, 100)

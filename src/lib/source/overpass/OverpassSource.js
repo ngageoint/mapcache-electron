@@ -8,6 +8,7 @@ import { existsSync } from 'fs'
 import { streamOverpassJsonFile } from '../../util/overpass/OverpassStreamParser'
 import cloneDeep from 'lodash/cloneDeep'
 import { clipFeature } from '../../util/geojson/GeoJSONUtilities'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class OverpassSource extends Source {
   constructor (id, directory, filePath, sourceName, fileData, clippingBounds = null) {
@@ -38,7 +39,7 @@ export default class OverpassSource extends Source {
       // rmFile(this.fileData.filePath)
       const { extent, count } = await done()
       statusCallback('Cleaning up', 100)
-      await this.sleep(250)
+      await sleep(250)
 
       return [
         new VectorLayer({

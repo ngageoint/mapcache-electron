@@ -6,11 +6,12 @@
 </template>
 
 <script>
-import FeatureTables from './FeatureTables'
+import FeatureTables from './FeatureTables.vue'
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import { FEATURE_TABLE_WINDOW_EVENTS } from './FeatureTableEvents'
 import { FEATURE_TABLE_ACTIONS } from './FeatureTableActions'
+import { popOutFeatureTable } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   name: 'FeatureTableWindow',
@@ -89,7 +90,7 @@ export default {
       }
     },
     popIn () {
-      window.mapcache.popOutFeatureTable({ projectId: this.project.id, popOut: false })
+      popOutFeatureTable(this.project.id, false)
       window.mapcache.hideFeatureTableWindow()
     },
     zoomToFeature (path, table, featureId) {

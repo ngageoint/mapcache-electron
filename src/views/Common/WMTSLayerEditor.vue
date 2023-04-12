@@ -35,7 +35,7 @@
                             style="vertical-align: middle !important; align-self: center !important;">
             <v-icon :disabled="errored">{{ mdiDragHorizontalVariant }}</v-icon>
           </v-list-item-icon>
-          <v-list-item-content>
+          <div>
             <div v-if="item.name">
               <div class="list-item-title no-clamp" v-text="item.name"></div>
             </div>
@@ -43,7 +43,7 @@
               <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
                    :key="i + 'service-layer-title'" v-text="title"></div>
             </div>
-          </v-list-item-content>
+          </div>
           <v-list-item-action>
             <v-switch :disabled="errored" :input-value="item.enabled" color="primary"
                       @change="() => toggleLayer(item)"></v-switch>

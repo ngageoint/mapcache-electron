@@ -1,6 +1,6 @@
 <template>
   <v-list two-line subheader>
-    <v-subheader>Tile background color</v-subheader>
+    <v-list-subheader>Tile background color</v-list-subheader>
     <v-list-item class="pt-2">
       <v-row no-gutters>
         <v-col cols="12">
@@ -14,7 +14,7 @@
 <script>
 import isNil from 'lodash/isNil'
 import debounce from 'lodash/debounce'
-import ColorPicker from '../ColorPicker'
+import ColorPicker from '../ColorPicker.vue'
 
 export default {
   components: {

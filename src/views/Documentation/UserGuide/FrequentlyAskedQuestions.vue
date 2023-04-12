@@ -1,7 +1,7 @@
 <template>
   <v-card flat class="ml-8 mt-8" style="width: 640px;">
     <v-card-title>
-      <v-icon class="mr-2" color="primary">{{ mdiChatQuestionOutline }}</v-icon>
+      <v-icon size="24px" class="mr-2" color="primary" icon="mdi-chat-question-outline"/>
       Frequently Asked Questions
     </v-card-title>
     <v-container>
@@ -10,12 +10,12 @@
             v-for="(entry, i) in entries"
             :key="i"
         >
-          <v-expansion-panel-header>
+          <v-expansion-panel-title>
             <span class="regular--text font-weight-medium" style="line-height: 150%" v-html="entry.question"></span>
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
             <p class="detail--text" v-html="entry.answer"></p>
-          </v-expansion-panel-content>
+          </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
     </v-container>
@@ -23,9 +23,7 @@
 </template>
 
 <script>
-import {
-  mdiChatQuestionOutline,
-} from '@mdi/js'
+import { mdiChatQuestionOutline } from '@mdi/js'
 
 
 export default {

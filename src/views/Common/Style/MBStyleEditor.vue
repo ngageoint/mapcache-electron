@@ -54,9 +54,9 @@
 </template>
 
 <script>
-import ColorPicker from '../ColorPicker'
-import NumberPicker from '../NumberPicker'
-import GeometryStyleSvg from '../GeometryStyleSvg'
+import ColorPicker from '../ColorPicker.vue'
+import NumberPicker from '../NumberPicker.vue'
+import GeometryStyleSvg from '../GeometryStyleSvg.vue'
 
 export default {
   props: {

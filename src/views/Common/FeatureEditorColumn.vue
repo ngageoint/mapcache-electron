@@ -19,6 +19,7 @@
         >
           <template v-slot:activator="{ on, attrs }">
             <v-text-field
+                variant="underlined"
                 v-model="editedDateValue"
                 :label="name"
                 :prepend-icon="mdiCalendar"
@@ -54,6 +55,7 @@
         >
           <template v-slot:activator="{ on, attrs }">
             <v-text-field
+                variant="underlined"
                 v-model="editedTimeValue"
                 label="time"
                 :prepend-icon="mdiClock"
@@ -80,7 +82,7 @@
         </v-menu>
       </v-col>
     </v-row>
-    <v-text-field :label="lowerCaseName" clearable type="number" v-else v-model="editedValue"
+    <v-text-field variant="underlined" :label="lowerCaseName" clearable type="number" v-else v-model="editedValue"
                   :rules="rules"></v-text-field>
   </div>
 </template>
@@ -144,7 +146,7 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .editable-text-area::v-deep {
   textarea {
     max-height: 10rem;

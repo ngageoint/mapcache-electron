@@ -5,6 +5,7 @@
 
 <script>
 import isNil from 'lodash/isNil'
+import { setDataSourceVisible } from '../../lib/vue/vuex/CommonActions'
 
 export default {
   props: {
@@ -32,7 +33,7 @@ export default {
   methods: {
     async visibilityChanged () {
       let value = this.model
-      window.mapcache.setDataSourceVisible({ projectId: this.projectId, sourceId: this.source.id, visible: value })
+      await setDataSourceVisible(this.projectId, this.source.id, value)
     },
     initializing () {
       this.loadingContent = true

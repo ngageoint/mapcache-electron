@@ -35,6 +35,7 @@
 <script>
 import isNil from 'lodash/isNil'
 import { mdiAlertCircle } from '@mdi/js'
+import { editBaseMap, setDataSource } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -92,12 +93,12 @@ export default {
           if (isSource) {
             const sourceCopy = Object.assign({}, this.sourceOrBaseMap)
             sourceCopy.rasterFile = result
-            window.mapcache.setDataSource({ projectId: this.projectId, source: sourceCopy })
+            setDataSource(this.projectId, sourceCopy)
             this.closeTroubleshooting()
           } else {
             const baseMapCopy = Object.assign({}, this.sourceOrBaseMap)
             baseMapCopy.layerConfiguration.rasterFile = result
-            window.mapcache.editBaseMap(baseMapCopy)
+            editBaseMap(baseMapCopy)
             this.closeTroubleshooting()
           }
         }

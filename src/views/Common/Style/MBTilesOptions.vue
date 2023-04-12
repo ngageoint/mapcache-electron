@@ -25,9 +25,9 @@
       <m-b-style-editor title="Polygon style" :geometryType="3" :styleObject="configuration.polygonStyle"
                         :save="updatePolygonStyle" :close="() => {showPolygonStyleEditor = false}"></m-b-style-editor>
     </v-dialog>
-    <v-subheader>Vector styling</v-subheader>
+    <v-list-subheader>Vector styling</v-list-subheader>
     <v-list-item class="pt-2">
-      <v-list-item-content>
+      <div>
         <v-row no-gutters justify="space-between" align="center">
           <v-col cols="8">
             Point
@@ -38,10 +38,10 @@
                                 :fill-opacity="configuration.pointStyle.fillOpacity"/>
           </v-btn>
         </v-row>
-      </v-list-item-content>
+      </div>
     </v-list-item>
     <v-list-item class="pt-2">
-      <v-list-item-content>
+      <div>
         <v-row no-gutters justify="space-between" align="center">
           <v-col cols="8">
             Line
@@ -52,10 +52,10 @@
                                 :fill-opacity="configuration.lineStyle.fillOpacity"/>
           </v-btn>
         </v-row>
-      </v-list-item-content>
+      </div>
     </v-list-item>
     <v-list-item class="pt-2">
-      <v-list-item-content>
+      <div>
         <v-row no-gutters justify="space-between" align="center">
           <v-col cols="8">
             Polygon
@@ -66,7 +66,7 @@
                                 :fill-opacity="configuration.polygonStyle.fillOpacity"/>
           </v-btn>
         </v-row>
-      </v-list-item-content>
+      </div>
     </v-list-item>
   </v-list>
 </template>
@@ -74,8 +74,8 @@
 <script>
 import debounce from 'lodash/debounce'
 import isNil from 'lodash/isNil'
-import MBStyleEditor from './MBStyleEditor'
-import GeometryStyleSvg from '../GeometryStyleSvg'
+import MBStyleEditor from './MBStyleEditor.vue'
+import GeometryStyleSvg from '../GeometryStyleSvg.vue'
 
 export default {
   components: {

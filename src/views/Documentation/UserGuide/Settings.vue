@@ -15,7 +15,7 @@ import {
   mdiMinus,
   mdiCloudBraces
 } from '@mdi/js'
-import MapCacheSection from './MapCacheSection'
+import MapCacheSection from './MapCacheSection.vue'
 
 
 export default {
@@ -25,7 +25,7 @@ export default {
       sections: [
         {
           title: 'General',
-          icon: mdiCogOutline,
+          icon: 'mdi-cog-outline',
           color: 'primary',
           articles: [
             {
@@ -193,7 +193,7 @@ export default {
         },
         {
           title: 'Map',
-          icon: mdiMapOutline,
+          icon: 'mdi-map-outline',
           color: 'primary',
           articles: [
             {
@@ -283,7 +283,7 @@ ck pad gestures for adjusting the zoom level on the map, rather than the zoom co
         },
         {
           title: 'Project',
-          icon: mdiFolderOutline,
+          icon: 'mdi-folder-outline',
           color: 'primary',
           articles: [
             {

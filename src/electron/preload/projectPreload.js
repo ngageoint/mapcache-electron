@@ -4,43 +4,22 @@ import jetpack from 'fs-jetpack'
 import log from 'electron-log'
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
-import CredentialsManagement from '../network/CredentialsManagement'
-import Store from 'electron-store'
+import CredentialsManagement from '../lib/auth/CredentialsManagement'
 import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
+import { Context, GeometryType, HtmlCanvasAdapter, SqliteAdapter, GeoPackageDataType } from '@ngageoint/geopackage'
+import { exceedsFileSizeLimit, getMaxFileSizeString } from '../../lib/util/media/MediaUtilities'
+import { createNextAvailableBaseMapDirectory, createNextAvailableSourceDirectory, exists, rmDirAsync, createNextAvailableLayerDirectory, isDirEmpty, getLastModifiedDate } from '../../lib/util/file/FileUtilities'
+import { getDefaultIcon } from '../../lib/util/style/NodeStyleUtilities'
+import { getGeoPackageExtent, getBoundingBoxForTable, getTables, getGeoPackageFileSize, getDetails, isHealthy, normalizeLongitude, getExtentOfGeoPackageTables, checkGeoPackageHealth, getGeoPackageFeatureTableForApp, getOrCreateGeoPackageForApp } from '../../lib/geopackage/GeoPackageCommon'
+import { featureExists, getFeatureCountInBoundingBox, getFeatureColumns, indexFeatureTable, getBoundingBoxForFeature, getLayerColumns, getFeatureCount, getFeatureTablePage, getGeoPackageEditableColumnsForFeature, saveGeoPackageEditedFeature, getEditableColumnObject, getClosestFeature, getFeatureViewData } from '../../lib/geopackage/GeoPackageFeatureTableUtilities'
+import { deleteMediaAttachment, getMediaRelationships, getMediaObjectUrl, getFeatureImageObjectUrl, downloadAttachment } from '../../lib/geopackage/GeoPackageMediaUtilities'
 import {
-  Context,
-  GeometryType,
-  HtmlCanvasAdapter,
-  SqliteAdapter,
-  GeoPackageDataType,
-} from '@ngageoint/geopackage'
-import { exceedsFileSizeLimit, getMaxFileSizeString } from '../util/media/MediaUtilities'
-import {
-  createNextAvailableBaseMapDirectory,
-  createNextAvailableSourceDirectory,
-  getExtraResourcesDirectory,
-  exists,
-  rmDirAsync, createNextAvailableLayerDirectory
-} from '../util/file/FileUtilities'
-import { getDefaultIcon } from '../util/style/NodeStyleUtilities'
-import {
-  setDataSource,
-  setProjectName,
-  showToolTips,
-  setDataSourceDisplayName,
-  addDataSources,
-  addGeoPackage,
-  setGeoPackageLayersVisible,
-  setGeoPackageFeatureTableVisible,
-  setGeoPackageTileTableVisible,
-  sleep,
-  renameGeoPackage,
-  removeGeoPackage,
-  renameGeoPackageFeatureTableColumn,
-  deleteGeoPackageFeatureTableColumn,
-  addGeoPackageFeatureTableColumn,
-  removeDataSource,
-  getGeoPackageFilePath,
+  getStyleItemsForFeature,
+  getStyleDrawOverlap,
+  hasStyleExtension,
+  getGeoPackageFeatureTableStyleData,
+  getIconImageData,
+  getFeatureStyleOrIcon,
   setFeatureStyle,
   setFeatureIcon,
   setTableStyle,
@@ -52,195 +31,42 @@ import {
   deleteStyleRow,
   deleteIconRow,
   removeStyleExtensionForTable,
-  addFeatureTableToGeoPackage,
-  updateFeatureGeometry,
-  addFeatureToGeoPackage,
-  updateFeatureTable,
-  removeFeatureFromGeopackage,
-  removeFeatureFromDataSource,
-  deleteFeatureIdsFromGeoPackage,
-  deleteFeatureIdsFromDataSource,
-  setProjectMaxFeatures,
-  setZoomControlEnabled,
-  setDisplayZoomEnabled,
-  setDisplayAddressSearchBar,
-  setDisplayCoordinates,
-  setDisplayScale,
-  clearActiveLayers,
-  getExtentOfActiveLayers,
-  synchronizeGeoPackage,
-  synchronizeDataSource,
-  setActiveGeoPackage,
-  setActiveGeoPackageFeatureLayer,
-  updateStyleKey,
-  setDarkTheme,
-  notifyTab,
-  clearNotification,
-  clearNotifications,
-  setMapZoom,
-  setMapRenderingOrder,
-  addBaseMap,
-  editBaseMap,
-  removeBaseMap,
-  setSourceError,
-  setSourceWarning,
-  saveConnectionSettings,
-  saveBaseMapConnectionSettings,
-  clearStylingForFeature,
-  createGeoPackageWithFeatureTable,
-  updateRenamedGeoPackageTable,
-  updateDeletedGeoPackageTileTable,
-  addCopiedGeoPackageTileTable,
   addStyleExtensionForTable,
-  popOutFeatureTable,
-  updateGeoPackageFeatureTableColumnOrder,
-  allowNotifications,
-  addProjectState, setNominatimUrl, setOverpassUrl, setMapProjection
-} from '../vue/vuex/ProjectActions'
-import { deleteProject, setDataSourceVisible } from '../vue/vuex/CommonActions'
+  clearStylingForFeature
+} from '../../lib/geopackage/GeoPackageStyleUtilities'
+import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
+import { getBaseUrlAndQueryParams, isXYZ, isWFS, isWMS, isArcGISFeatureService, isUrlValid, requiresSubdomains, isWMTS } from '../../lib/network/URLUtilities'
+import { constructLayer } from '../../lib/layer/LayerFactory'
+import { fixXYZTileServerUrlForLeaflet } from '../../lib/util/xyz/XYZTileUtilities'
+import { getBaseURL, supportedImageFormats } from '../../lib/util/geoserver/GeoServiceUtilities'
+import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../../lib/util/tile/TileBoundingBoxUtils'
+import { getMetersPerUnit, getUnits, convertToWebMercator, reprojectBoundingBox } from '../../lib/projection/ProjectionUtilities'
+import { GEOTIFF } from '../../lib/layer/LayerTypes'
+import { ATTACH_MEDIA, ATTACH_MEDIA_COMPLETED, BUILD_FEATURE_LAYER, BUILD_FEATURE_LAYER_COMPLETED, BUILD_FEATURE_LAYER_STATUS, BUILD_TILE_LAYER, BUILD_TILE_LAYER_COMPLETED, BUILD_TILE_LAYER_STATUS, CANCEL_BUILD_FEATURE_LAYER, CANCEL_BUILD_FEATURE_LAYER_COMPLETED, CANCEL_BUILD_TILE_LAYER, CANCEL_BUILD_TILE_LAYER_COMPLETED, CANCEL_PROCESS_SOURCE, CANCEL_PROCESS_SOURCE_COMPLETED, CANCEL_SERVICE_REQUEST, CANCEL_TILE_REQUEST, CLIENT_CERTIFICATE_SELECTED, CLIENT_CREDENTIALS_INPUT, CLOSE_PROJECT, CLOSING_PROJECT_WINDOW, FEATURE_TABLE_ACTION, FEATURE_TABLE_EVENT, GENERATE_GEOTIFF_RASTER_FILE, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED, GET_APP_DATA_DIRECTORY, GET_USER_DATA_DIRECTORY, HIDE_FEATURE_TABLE_WINDOW, LOAD_OR_DISPLAY_GEOPACKAGES, OPEN_EXTERNAL, PROCESS_SOURCE, PROCESS_SOURCE_COMPLETED, PROCESS_SOURCE_STATUS, REQUEST_CLIENT_CREDENTIALS, REQUEST_GEOPACKAGE_TABLE_COPY, REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED, REQUEST_GEOPACKAGE_TABLE_COUNT, REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED, REQUEST_GEOPACKAGE_TABLE_SEARCH, REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED, REQUEST_GEOPACKAGE_TABLE_DELETE, REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED, REQUEST_GEOPACKAGE_TABLE_RENAME, REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED, REQUEST_TILE, REQUEST_TILE_COMPLETED, SELECT_CLIENT_CERTIFICATE, SHOW_FEATURE_TABLE_WINDOW, LAUNCH_USER_GUIDE, SEND_WINDOW_TO_FRONT, UNDO, REDO, CANCEL_TILE_COMPILATION_REQUEST, REQUEST_TILE_COMPILATION_COMPLETED, REQUEST_TILE_COMPILATION, WEB_VIEW_AUTH_REQUEST, WEB_VIEW_AUTH_RESPONSE, WEB_VIEW_AUTH_CANCEL, GET_APP_VERSION } from '../lib/ipc/MapCacheIPC'
+import { convertPbfToDataUrl } from '../../lib/util/rendering/MBTilesUtilities'
+import { showOpenDialog, showSaveDialog } from '../lib/dialog/DialogUtilities'
+import { vuexElectronAPI } from './vuexPreload'
+import { deleteProjectFolder } from '../../lib/vue/vuex/CommonPreloadFunctions'
 import {
-  getOrCreateGeoPackage,
-  getGeoPackageExtent,
-  getBoundingBoxForTable,
-  getTables,
-  getGeoPackageFileSize,
-  getDetails,
-  isHealthy,
-  normalizeLongitude,
-  getExtentOfGeoPackageTables,
-  checkGeoPackageHealth
-} from '../geopackage/GeoPackageCommon'
-import { getFeaturesForTablesAtLatLngZoom } from '../geopackage/GeoPackageMapUtilities'
-import {
-  getFeatureRow,
-  featureExists,
-  countOfFeaturesAt,
-  getFeatureCountInBoundingBox,
-  getFeatureColumns,
-  indexFeatureTable,
-  getAllFeaturesAsGeoJSON,
-  getBoundingBoxForFeature,
-  getLayerColumns,
-  getFeatureCount,
-  getFeatureTablePage,
-  getFeatureTablePageAtLatLngZoom,
-  getGeoPackageEditableColumnsForFeature,
-  saveGeoPackageEditedFeature,
-  getEditableColumnObject,
-  getClosestFeature,
-  getFeatureViewData,
-  checkUnique, getForms,
-} from '../geopackage/GeoPackageFeatureTableUtilities'
-import {
-  getMediaAttachmentsCounts,
-  deleteMediaAttachment,
-  getMediaRelationships,
-  getMediaObjectUrl,
-  getFeatureImageObjectUrl,
-  getAllAttachments,
-  getImageAttachments,
-  getVideoAttachments, downloadAttachment,
-} from '../geopackage/GeoPackageMediaUtilities'
-import {
-  getStyleItemsForFeature,
-  getStyleAssignmentForFeatures,
-  getStyleDrawOverlap,
-  hasStyleExtension,
-  getGeoPackageFeatureTableStyleData,
-  getIconImageData,
-  getFeatureStyleOrIcon
-} from '../geopackage/GeoPackageStyleUtilities'
-import { createUniqueID } from '../util/UniqueIDUtilities'
-import {
-  getBaseUrlAndQueryParams,
-  isXYZ,
-  isWFS,
-  isWMS,
-  isArcGISFeatureService,
-  isUrlValid,
-  requiresSubdomains,
-  isWMTS
-} from '../network/URLUtilities'
-import { constructLayer } from '../layer/LayerFactory'
-import { fixXYZTileServerUrlForLeaflet } from '../util/xyz/XYZTileUtilities'
-import { getBaseURL, supportedImageFormats } from '../util/geoserver/GeoServiceUtilities'
-import { getWebMercatorBoundingBoxFromXYZ, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
-import {
-  getDef,
-  reprojectWebMercatorBoundingBox,
-  getMetersPerUnit,
-  getUnits,
-  convertToWebMercator, reprojectBoundingBox
-} from '../projection/ProjectionUtilities'
-import { GEOTIFF } from '../layer/LayerTypes'
-import {
-  ATTACH_MEDIA,
-  ATTACH_MEDIA_COMPLETED,
-  BUILD_FEATURE_LAYER,
-  BUILD_FEATURE_LAYER_COMPLETED,
-  BUILD_FEATURE_LAYER_STATUS,
-  BUILD_TILE_LAYER,
-  BUILD_TILE_LAYER_COMPLETED,
-  BUILD_TILE_LAYER_STATUS,
-  CANCEL_BUILD_FEATURE_LAYER,
-  CANCEL_BUILD_FEATURE_LAYER_COMPLETED,
-  CANCEL_BUILD_TILE_LAYER,
-  CANCEL_BUILD_TILE_LAYER_COMPLETED,
-  CANCEL_PROCESS_SOURCE,
-  CANCEL_PROCESS_SOURCE_COMPLETED,
-  CANCEL_SERVICE_REQUEST,
-  CANCEL_TILE_REQUEST,
-  CLIENT_CERTIFICATE_SELECTED,
-  CLIENT_CREDENTIALS_INPUT,
-  CLOSE_PROJECT,
-  CLOSING_PROJECT_WINDOW,
-  FEATURE_TABLE_ACTION,
-  FEATURE_TABLE_EVENT,
-  GENERATE_GEOTIFF_RASTER_FILE,
-  GENERATE_GEOTIFF_RASTER_FILE_COMPLETED,
-  GET_APP_DATA_DIRECTORY,
-  GET_USER_DATA_DIRECTORY,
-  HIDE_FEATURE_TABLE_WINDOW,
-  IPC_EVENT_CONNECT,
-  IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS,
-  LOAD_OR_DISPLAY_GEOPACKAGES,
-  OPEN_EXTERNAL,
-  PROCESS_SOURCE,
-  PROCESS_SOURCE_COMPLETED,
-  PROCESS_SOURCE_STATUS,
-  REQUEST_CLIENT_CREDENTIALS,
-  REQUEST_GEOPACKAGE_TABLE_COPY,
-  REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED,
-  REQUEST_GEOPACKAGE_TABLE_COUNT,
-  REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED,
-  REQUEST_GEOPACKAGE_TABLE_SEARCH,
-  REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED,
-  REQUEST_GEOPACKAGE_TABLE_DELETE,
-  REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED,
-  REQUEST_GEOPACKAGE_TABLE_RENAME,
-  REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED,
-  REQUEST_TILE,
-  REQUEST_TILE_COMPLETED,
-  SELECT_CLIENT_CERTIFICATE,
-  SHOW_FEATURE_TABLE_WINDOW,
-  LAUNCH_USER_GUIDE,
-  SEND_WINDOW_TO_FRONT,
-  UNDO,
-  REDO,
-  CANCEL_TILE_COMPILATION_REQUEST,
-  REQUEST_TILE_COMPILATION_COMPLETED,
-  REQUEST_TILE_COMPILATION,
-  WEB_VIEW_AUTH_REQUEST,
-  WEB_VIEW_AUTH_RESPONSE, WEB_VIEW_AUTH_CANCEL,
-} from '../electron/ipc/MapCacheIPC'
-import { getOverpassQueryFilter } from '../util/overpass/OverpassUtilities'
-import {
-  convertPbfToDataUrl,
-  drawVectorFeaturesInCanvas,
-  getVectorTileFeatures
-} from '../util/rendering/MBTilesUtilities'
-import { showOpenDialog, showSaveDialog } from '../electron/dialog/DialogUtilities'
+  addDataSourceFeatureTableColumn,
+  addFeatureTableToGeoPackage,
+  addFeatureToGeoPackage,
+  addGeoPackageFeatureTableColumn,
+  deleteDataSourceFeatureTableColumn,
+  deleteFeatureIdsFromDataSource,
+  deleteFeatureIdsFromGeoPackage,
+  deleteGeoPackageFeatureTableColumn,
+  removeFeatureFromDataSource,
+  removeFeatureFromGeoPackage,
+  renameDataSourceFeatureTableColumn,
+  renameGeoPackage,
+  renameGeoPackageFeatureTableColumn,
+  synchronizeDataSource,
+  synchronizeGeoPackage,
+  updateFeatureTable
+} from '../../lib/vue/vuex/ProjectPreloadFunctions'
+import { LAYER_DIRECTORY_IDENTIFIER } from '../../lib/util/file/FileConstants'
+import offlineGeoPackagePath from '../../../resources/offline.gpkg?asset'
 
 function getUserDataDirectory () {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -259,6 +85,7 @@ function write (writable, data, callback) {
 log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
+contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)
 
 // if a user cancels inputting credentials, we will need to force a cancel of the request
 const cancelRequestURLToCallbackMap = {}
@@ -269,9 +96,6 @@ ipcRenderer.on(CANCEL_SERVICE_REQUEST, (event, url) => {
 })
 
 let fileStreams = {}
-
-let storage
-
 let webViewAuthListener = null
 let webViewAuthResponseListener = null
 
@@ -280,15 +104,6 @@ function createBaseMapDirectory () {
 }
 
 contextBridge.exposeInMainWorld('mapcache', {
-  connect (payload) {
-    ipcRenderer.send(IPC_EVENT_CONNECT, payload)
-  },
-  notifyMain (payload) {
-    ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
-  },
-  onNotifyRenderers (handler) {
-    ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
-  },
   registerAuthRequestListener(listener) {
     webViewAuthListener = listener
   },
@@ -316,12 +131,6 @@ contextBridge.exposeInMainWorld('mapcache', {
       })
     })
   },
-  createStorage (name) {
-    storage = new Store({ name: name })
-  },
-  getState (key) {
-    return storage.get(key)
-  },
   setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
@@ -330,6 +139,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     const id = createUniqueID()
     fileStreams[id] = fs.createWriteStream(path, { flags: 'a' })
     return id
+  },
+  getAppVersion: () => {
+    return ipcRenderer.sendSync(GET_APP_VERSION)
   },
   appendToStream: async (streamId, data) => {
     return new Promise(resolve => {
@@ -359,12 +171,8 @@ contextBridge.exposeInMainWorld('mapcache', {
     clipboard.writeText(text)
   },
   getOfflineGeoPackageFilePath: () => {
-    return path.join(getExtraResourcesDirectory(), 'offline.gpkg')
+    return offlineGeoPackagePath
   },
-  getProjectionDefinition: (code) => {
-    return getDef(code)
-  },
-  createBaseMapDirectory,
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
   },
@@ -380,6 +188,17 @@ contextBridge.exposeInMainWorld('mapcache', {
         console.error('Unable to remove source directory')
       }
     }
+    if (source.sourceDirectory && exists(source.sourceDirectory) && isDirEmpty(path.join(source.sourceDirectory, LAYER_DIRECTORY_IDENTIFIER))) {
+      try {
+        await rmDirAsync(source.sourceDirectory)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to remove source directory: ' + source.sourceDirectory)
+      }
+    }
+  },
+  deleteBaseMapDirectory: async (baseMap) => {
+    return rmDirAsync(baseMap.directory)
   },
   closeProject: () => {
     ipcRenderer.send(CLOSE_PROJECT)
@@ -534,69 +353,6 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_TILE_COMPILATION, request)
     })
   },
-  renameGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, newTableName, type = 'feature' }) => {
-    const requestId = createUniqueID()
-    return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(requestId), (event, result) => {
-        if (result) {
-          updateRenamedGeoPackageTable({ projectId, geopackageId, tableName, newTableName, type })
-        }
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_RENAME, { id: requestId, filePath, tableName: tableName, newTableName })
-    })
-  },
-  deleteGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, type = 'feature', silent = false }) => {
-    const requestId = createUniqueID()
-    return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(requestId), (event, result) => {
-        if (result && !silent) {
-          updateDeletedGeoPackageTileTable({ projectId, geopackageId, tableName, type })
-        }
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_DELETE, { id: requestId, filePath, tableName })
-    })
-  },
-  copyGeoPackageTable: ({ projectId, geopackageId, filePath, tableName, copyTableName, type = 'feature' }) => {
-    const requestId = createUniqueID()
-    return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(requestId), (event, result) => {
-        if (result.result) {
-          addCopiedGeoPackageTileTable({ projectId, geopackageId, tableName, copyTableName, type })
-        }
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, { id: requestId, filePath, tableName, copyTableName })
-    })
-  },
-  countGeoPackageTable: ({ filePath, tableName, search }) => {
-    const requestId = createUniqueID()
-    return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, { result }) => {
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
-    })
-  },
-  searchGeoPackageTable: ({ filePath, tableName, page, pageSize, sortBy, desc, search }) => {
-    const requestId = createUniqueID()
-    return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, { result }) => {
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {
-        id: requestId,
-        filePath,
-        tableName,
-        page,
-        pageSize,
-        sortBy,
-        desc,
-        search
-      })
-    })
-  },
   registerServiceRequestCancelListener: (url, callback) => {
     cancelRequestURLToCallbackMap[url] = callback
   },
@@ -733,9 +489,7 @@ contextBridge.exposeInMainWorld('mapcache', {
     ipcRenderer.send(LAUNCH_USER_GUIDE)
   },
   getGeoPackageEditableColumnsForFeature,
-  updateGeoPackageFeatureTableColumnOrder,
   getFeatureViewData,
-  checkUnique,
   saveGeoPackageEditedFeature,
   showFeatureTableWindow: (forcePopupWindowToFront = false) => {
     ipcRenderer.send(SHOW_FEATURE_TABLE_WINDOW, { force: forcePopupWindowToFront })
@@ -760,7 +514,6 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   encryptPassword: CredentialsManagement.encrypt,
   getDefaultIcon,
-  reprojectWebMercatorBoundingBox,
   reprojectBoundingBox,
   GeometryType: {
     GEOMETRY: GeometryType.GEOMETRY,
@@ -805,8 +558,6 @@ contextBridge.exposeInMainWorld('mapcache', {
     ipcRenderer.send(SEND_WINDOW_TO_FRONT)
   },
   convertPbfToDataUrl,
-  getOrCreateGeoPackage,
-  getGeoPackageExtent,
   getBoundingBoxForTable,
   getTables,
   getGeoPackageFileSize,
@@ -818,15 +569,12 @@ contextBridge.exposeInMainWorld('mapcache', {
   exceedsFileSizeLimit,
   getMaxFileSizeString,
   getStyleItemsForFeature,
-  getStyleAssignmentForFeatures,
   fixXYZTileServerUrlForLeaflet,
   getBaseURL,
   supportedImageFormats,
   createUniqueID,
   tileIntersectsXYZ,
   getWebMercatorBoundingBoxFromXYZ,
-  deleteProject,
-  setDataSourceVisible,
   getBaseUrlAndQueryParams,
   isXYZ,
   isWFS,
@@ -835,113 +583,28 @@ contextBridge.exposeInMainWorld('mapcache', {
   isArcGISFeatureService,
   isUrlValid,
   requiresSubdomains,
-  getFeaturesForTablesAtLatLngZoom,
-  getFeatureRow,
   featureExists,
-  countOfFeaturesAt,
   getFeatureCountInBoundingBox,
   getFeatureColumns,
-  getForms,
   indexFeatureTable,
-  getAllFeaturesAsGeoJSON,
-  getMediaAttachmentsCounts,
   deleteMediaAttachment,
   getMediaRelationships,
-  setDataSource,
-  setProjectName,
-  setNominatimUrl,
-  setOverpassUrl,
-  showToolTips,
-  setMapProjection,
-  allowNotifications,
-  setDataSourceDisplayName,
-  addDataSources,
-  addGeoPackage,
-  setGeoPackageLayersVisible,
-  setGeoPackageFeatureTableVisible,
-  setGeoPackageTileTableVisible,
-  sleep,
-  renameGeoPackage,
-  removeGeoPackage,
-  renameGeoPackageFeatureTableColumn,
-  deleteGeoPackageFeatureTableColumn,
-  addGeoPackageFeatureTableColumn,
-  removeDataSource,
-  getGeoPackageFilePath,
-  setFeatureStyle,
-  clearStylingForFeature,
-  setFeatureIcon,
-  setTableStyle,
-  setTableIcon,
-  createStyleRow,
-  createIconRow,
-  updateStyleRow,
-  updateIconRow,
-  deleteStyleRow,
-  deleteIconRow,
   hasStyleExtension,
   getGeoPackageFeatureTableStyleData,
-  removeStyleExtensionForTable,
-  addFeatureTableToGeoPackage,
-  updateFeatureGeometry,
-  addFeatureToGeoPackage,
-  updateFeatureTable,
-  removeFeatureFromGeopackage,
-  removeFeatureFromDataSource,
-  setProjectMaxFeatures,
-  setZoomControlEnabled,
-  setDisplayZoomEnabled,
-  setDisplayAddressSearchBar,
-  setDisplayCoordinates,
-  setDisplayScale,
-  clearActiveLayers,
-  getExtentOfActiveLayers,
-  synchronizeGeoPackage,
-  synchronizeDataSource,
-  setActiveGeoPackage,
-  addProjectState,
-  setActiveGeoPackageFeatureLayer,
-  updateStyleKey,
-  setDarkTheme,
-  notifyTab,
-  clearNotification,
-  clearNotifications,
-  setMapZoom,
-  setMapRenderingOrder,
-  addBaseMap,
-  editBaseMap,
-  removeBaseMap,
-  setSourceError,
-  setSourceWarning,
-  saveConnectionSettings,
-  saveBaseMapConnectionSettings,
   getBoundingBoxForFeature,
   getMediaObjectUrl,
   getStyleDrawOverlap,
-  getOverpassQueryFilter,
   getLayerColumns,
   getEditableColumnObject,
   getFeatureCount,
   getFeatureTablePage,
-  getFeatureTablePageAtLatLngZoom,
-  createGeoPackageWithFeatureTable,
   getMetersPerUnit,
   getUnits,
-  getDef,
-  drawVectorFeaturesInCanvas,
-  getVectorTileFeatures,
   convertToWebMercator,
   getIconImageData,
-  addStyleExtensionForTable,
   getClosestFeature,
   getFeatureImageObjectUrl,
-  getImageAttachments,
-  getVideoAttachments,
-  getAllAttachments,
-  deleteFeatureIdsFromGeoPackage,
-  deleteFeatureIdsFromDataSource,
   getFeatureStyleOrIcon,
-  popOutFeatureTable,
   downloadAttachment,
   registerUndoListener: (listener) => {
     ipcRenderer.on(UNDO, listener)
@@ -954,5 +617,92 @@ contextBridge.exposeInMainWorld('mapcache', {
   },
   unregisterRedoListeners: () => {
     ipcRenderer.removeAllListeners(REDO)
-  }
+  },
+  renameGeoPackageTable: (filePath, tableName, newTableName) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(requestId), (event, result) => {
+        resolve(!!result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_RENAME, { id: requestId, filePath, tableName: tableName, newTableName })
+    })
+  },
+  deleteGeoPackageTable: (filePath, tableName) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(requestId), (event, result) => {
+        resolve(!!result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_DELETE, { id: requestId, filePath, tableName })
+    })
+  },
+  copyGeoPackageTable: (filePath, tableName, copyTableName) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(requestId), (event, result) => {
+        resolve(!!result.result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COPY, { id: requestId, filePath, tableName, copyTableName })
+    })
+  },
+  countGeoPackageTable: (filePath, tableName, search) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, { result }) => {
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
+    })
+  },
+  searchGeoPackageTable: (filePath, tableName, page, pageSize, sortBy, desc, search) => {
+    const requestId = createUniqueID()
+    return new Promise(resolve => {
+      ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, { result }) => {
+        resolve(result)
+      })
+      ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_SEARCH, {
+        id: requestId,
+        filePath,
+        tableName,
+        page,
+        pageSize,
+        sortBy,
+        desc,
+        search
+      })
+    })
+  },
+  deleteProjectFolder,
+  getGeoPackageFeatureTableForApp,
+  getOrCreateGeoPackageForApp,
+  renameGeoPackage,
+  renameGeoPackageFeatureTableColumn,
+  renameDataSourceFeatureTableColumn,
+  deleteGeoPackageFeatureTableColumn,
+  deleteDataSourceFeatureTableColumn,
+  addGeoPackageFeatureTableColumn,
+  addDataSourceFeatureTableColumn,
+  setFeatureStyle,
+  setFeatureIcon,
+  setTableStyle,
+  setTableIcon,
+  createStyleRow,
+  createIconRow,
+  updateStyleRow,
+  updateIconRow,
+  deleteStyleRow,
+  deleteIconRow,
+  removeStyleExtensionForTable,
+  addStyleExtensionForTable,
+  getLastModifiedDate,
+  addFeatureTableToGeoPackage,
+  addFeatureToGeoPackage,
+  updateFeatureTable,
+  removeFeatureFromGeoPackage,
+  removeFeatureFromDataSource,
+  deleteFeatureIdsFromGeoPackage,
+  deleteFeatureIdsFromDataSource,
+  synchronizeGeoPackage,
+  synchronizeDataSource,
+  clearStylingForFeature,
 })

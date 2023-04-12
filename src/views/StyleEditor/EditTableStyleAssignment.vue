@@ -11,7 +11,7 @@
           item-height="48">
         <template v-slot:default="{ index, item }">
           <v-list-item link @click="() => setModel(index)">
-            <v-list-item-content>
+            <div>
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
                   <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="model === index ? index : null">
@@ -23,7 +23,7 @@
                   <geometry-style-svg v-else :geometry-type="assignment.geometryType" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
                 </v-row>
               </v-row>
-            </v-list-item-content>
+            </div>
           </v-list-item>
         </template>
       </v-virtual-scroll>
@@ -46,7 +46,8 @@
 </template>
 
 <script>
-import GeometryStyleSvg from '../Common/GeometryStyleSvg'
+import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
+import { setTableIcon, setTableStyle } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: { GeometryStyleSvg },
@@ -94,67 +95,19 @@ export default {
         this.model = index
       }
     },
-    save () {
+    async save () {
       if (this.model != null && this.model >= 0) {
         const selection = this.items[this.model]
         if (selection.url == null) {
-          window.mapcache.setTableStyle({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: this.assignment.geometryType,
-            styleId: selection.id,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
-          window.mapcache.setTableIcon({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: this.assignment.geometryType,
-            iconId: -1,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
+          await setTableStyle(this.projectId, this.id, this.tableName, this.assignment.geometryType, selection.id, this.isGeoPackage, this.isBaseMap)
+          await setTableIcon(this.projectId, this.id, this.tableName, this.assignment.geometryType, -1, this.isGeoPackage, this.isBaseMap)
         } else {
-          window.mapcache.setTableIcon({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: this.assignment.geometryType,
-            iconId: selection.id,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
-          window.mapcache.setTableStyle({
-            projectId: this.projectId,
-            id: this.id,
-            tableName: this.tableName,
-            geometryType: this.assignment.geometryType,
-            styleId: -1,
-            isGeoPackage: this.isGeoPackage,
-            isBaseMap: this.isBaseMap
-          })
+          await setTableIcon(this.projectId, this.id, this.tableName, this.assignment.geometryType, selection.id, this.isGeoPackage, this.isBaseMap)
+          await setTableStyle(this.projectId, this.id, this.tableName, this.assignment.geometryType, -1, this.isGeoPackage, this.isBaseMap)
         }
       } else {
-        window.mapcache.setTableStyle({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          geometryType: this.assignment.geometryType,
-          styleId: -1,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
-        window.mapcache.setTableIcon({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          geometryType: this.assignment.geometryType,
-          iconId: -1,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        await setTableStyle(this.projectId, this.id, this.tableName, this.assignment.geometryType, -1, this.isGeoPackage, this.isBaseMap)
+        await setTableIcon(this.projectId, this.id, this.tableName, this.assignment.geometryType, -1, this.isGeoPackage, this.isBaseMap)
       }
       this.close()
     }

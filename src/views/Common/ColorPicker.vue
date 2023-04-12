@@ -1,6 +1,7 @@
 <template>
   <v-sheet>
     <v-text-field
+        variant="underlined"
         :label="label"
         v-model="colorValue"
         readonly

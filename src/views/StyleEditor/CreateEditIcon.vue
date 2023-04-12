@@ -94,19 +94,19 @@
           <v-col offset="1" cols="7">
             <v-row no-gutters justify="start">
               <v-col>
-                <v-text-field autofocus label="Name" :rules="nameRules" v-model="name"></v-text-field>
+                <v-text-field variant="underlined" autofocus label="Name" :rules="nameRules" v-model="name"></v-text-field>
               </v-col>
             </v-row>
             <v-row no-gutters>
               <v-col>
-                <v-text-field label="Description" v-model="description"></v-text-field>
+                <v-text-field variant="underlined" label="Description" v-model="description"></v-text-field>
               </v-col>
             </v-row>
           </v-col>
         </v-row>
         <v-row no-gutters align="center">
           <v-col cols="5">
-            <v-text-field v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number"
+            <v-text-field variant="underlined" v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number"
                           label="Width (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
           <v-col cols="2">
@@ -116,7 +116,7 @@
             </v-btn>
           </v-col>
           <v-col cols="5">
-            <v-text-field v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules" type="number"
+            <v-text-field variant="underlined" v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules" type="number"
                           label="Height (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
         </v-row>
@@ -156,8 +156,9 @@
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import { mdiLink, mdiLinkOff, mdiTrashCan, mdiTargetVariant, mdiAnchor } from '@mdi/js'
-import NumberPicker from '../Common/NumberPicker'
+import NumberPicker from '../Common/NumberPicker.vue'
 import debounce from 'lodash/debounce'
+import { createIconRow, deleteIconRow, updateIconRow } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: { NumberPicker },
@@ -293,14 +294,8 @@ export default {
       this.aspectRatioLock = !this.aspectRatioLock
       this.aspectRatio = this.width / this.height
     },
-    deleteIcon () {
-      window.mapcache.deleteIconRow({
-        projectId: this.projectId,
-        id: this.id,
-        iconId: this.iconRow.id,
-        isGeoPackage: this.isGeoPackage,
-        isBaseMap: this.isBaseMap
-      })
+    async deleteIcon () {
+      await deleteIconRow(this.projectId, this.id, this.iconRow.id, this.isGeoPackage, this.isBaseMap)
       this.close()
     },
     save () {
@@ -316,23 +311,9 @@ export default {
       }
       if (this.iconRow.id) {
         iconRow.id = this.iconRow.id
-        window.mapcache.updateIconRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          iconRow: iconRow,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        updateIconRow(this.projectId, this.id, this.tableName, iconRow, this.isGeoPackage, this.isBaseMap)
       } else {
-        window.mapcache.createIconRow({
-          projectId: this.projectId,
-          id: this.id,
-          tableName: this.tableName,
-          icon: iconRow,
-          isGeoPackage: this.isGeoPackage,
-          isBaseMap: this.isBaseMap
-        })
+        createIconRow(this.projectId, this.id, this.tableName, iconRow, this.isGeoPackage, this.isBaseMap)
       }
       this.close()
     },

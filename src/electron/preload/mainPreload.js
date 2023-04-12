@@ -1,27 +1,24 @@
-import log from 'electron-log'
-import Store from 'electron-store'
-import path from 'path'
 import { contextBridge, ipcRenderer } from 'electron'
-import { deleteProject } from '../vue/vuex/CommonActions'
-import { addGeoPackage, disableRemoteSources, newProject, setProjectAccessed } from '../vue/vuex/LandingActions'
+import log from 'electron-log'
+import path from 'path'
+import { deleteProjectFolder } from '../../lib/vue/vuex/CommonPreloadFunctions'
 import {
   createNextAvailableLayerDirectory,
   createNextAvailableProjectDirectory,
   createNextAvailableSourceDirectory
-} from '../util/file/FileUtilities'
-import { createUniqueID } from '../util/UniqueIDUtilities'
+} from '../../lib/util/file/FileUtilities'
+import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
 import {
   GET_APP_VERSION,
   GET_USER_DATA_DIRECTORY,
-  IPC_EVENT_CONNECT,
-  IPC_EVENT_NOTIFY_MAIN,
-  IPC_EVENT_NOTIFY_RENDERERS,
   LAUNCH_WITH_GEOPACKAGE_FILES,
   OPEN_EXTERNAL,
   SHOW_PROJECT
-} from '../electron/ipc/MapCacheIPC'
+} from '../lib/ipc/MapCacheIPC'
 import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
-import { environment } from '../env/env'
+import { environment } from '../../lib/env/env'
+import { vuexElectronAPI } from './vuexPreload'
+import { getOrCreateGeoPackageForApp } from '../../lib/geopackage/GeoPackageCommon'
 
 const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -42,24 +39,8 @@ log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs'
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 
-let storage
-
+contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)
 contextBridge.exposeInMainWorld('mapcache', {
-  connect (payload) {
-    ipcRenderer.send(IPC_EVENT_CONNECT, payload)
-  },
-  notifyMain (payload) {
-    ipcRenderer.send(IPC_EVENT_NOTIFY_MAIN, payload)
-  },
-  onNotifyRenderers (handler) {
-    ipcRenderer.on(IPC_EVENT_NOTIFY_RENDERERS, handler)
-  },
-  createStorage (name) {
-    storage = new Store({ name: name })
-  },
-  getState (key) {
-    return storage.get(key)
-  },
   getUserDataDirectory,
   getAppDataDirectory: () => {
     return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
@@ -76,7 +57,6 @@ contextBridge.exposeInMainWorld('mapcache', {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)
   },
   showProject: (projectId, geopackageIds, filePaths) => {
-    setProjectAccessed(projectId)
     ipcRenderer.send(SHOW_PROJECT, projectId, geopackageIds, filePaths)
   },
   registerGeoPackageFileHandler: (callback) => {
@@ -94,12 +74,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   createSourceDirectory: (projectDirectory) => {
     return createNextAvailableSourceDirectory(projectDirectory)
   },
-  createNextAvailableLayerDirectory: (sourceDirectory) => {
-    return createNextAvailableLayerDirectory(sourceDirectory)
-  },
-  disableRemoteSources,
-  newProject,
-  deleteProject,
+  createNextAvailableLayerDirectory,
   createUniqueID,
-  addGeoPackage,
+  deleteProjectFolder,
+  getOrCreateGeoPackageForApp
 })

@@ -2,7 +2,6 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
@@ -62,6 +61,7 @@
             <v-card-text>
               <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
                 <v-text-field
+                    variant="underlined"
                     autofocus
                     v-model="layerName"
                     :rules="layerNameRules"
@@ -89,9 +89,8 @@
               <v-list dense>
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers"
                                    v-on:change="filterErroredLayers">
-                  <template v-for="(item, i) in dataSourceLayers">
+                  <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
                     <v-list-item
-                        :key="`data-source-item-${i}`"
                         :value="item.id"
                         @click.stop.prevent="item.changeVisibility">
                       <template v-slot:default="{ active }">
@@ -107,9 +106,9 @@
                                  width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
-                        <v-list-item-content>
+                        <div>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
-                        </v-list-item-content>
+                        </div>
                         <data-source-warning v-if="item.source.warning" :source="item.source"></data-source-warning>
                         <data-source-troubleshooting v-if="item.source.error" :source="item.source"
                                                      :project-id="project.id"></data-source-troubleshooting>
@@ -146,9 +145,8 @@
             <v-card-text>
               <v-list dense>
                 <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
-                  <template v-for="(item, i) in geopackageLayers">
+                  <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
                     <v-list-item
-                        :key="`geopackage-layer-item-${i}`"
                         :value="item.id"
                         @click.stop="item.changeVisibility">
                       <template v-slot:default="{ active }">
@@ -164,10 +162,10 @@
                                  width="20px" height="20px"/>
                           </v-btn>
                         </v-list-item-icon>
-                        <v-list-item-content>
+                        <div>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                           <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
-                        </v-list-item-content>
+                        </div>
                         <v-list-item-action>
                           <v-switch
                               dense
@@ -224,10 +222,10 @@
                       <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
                   </v-list-item-icon>
-                  <v-list-item-content class="pa-0 ma-0">
+                  <div class="pa-0 ma-0">
                     <v-list-item-title v-text="item.title"></v-list-item-title>
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
-                  </v-list-item-content>
+                  </div>
                   <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
                     <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
                   </v-list-item-icon>
@@ -419,12 +417,12 @@ import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
-import NumberPicker from '../Common/NumberPicker'
+import NumberPicker from '../Common/NumberPicker.vue'
 import EventBus from '../../lib/vue/EventBus'
-import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch'
+import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch.vue'
 import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
-import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting'
-import BoundingBoxEditor from '../Common/BoundingBoxEditor'
+import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting.vue'
+import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getTileCount } from '../../lib/util/tile/TileUtilities'
 import Sortable from 'sortablejs'
@@ -435,6 +433,13 @@ import {
   WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
 } from '../../lib/projection/ProjectionConstants'
 import { DEFAULT_TILE_SIZE } from '../../lib/util/tile/TileConstants'
+import { setDataSourceVisible } from '../../lib/vue/vuex/CommonActions'
+import {
+  notifyTab,
+  setGeoPackageFeatureTableVisible,
+  setGeoPackageTileTableVisible,
+  synchronizeGeoPackage
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -494,13 +499,17 @@ export default {
       tileWarningThreshold: 1000,
       configuration: null,
       cancelling: false,
-      internalRenderingOrder: [],
       boundingBoxFilter: null,
       targetProjection: WEB_MERCATOR,
       WEB_MERCATOR_DISPLAY_TEXT,
       WEB_MERCATOR,
       WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT,
-      WORLD_GEODETIC_SYSTEM
+      WORLD_GEODETIC_SYSTEM,
+      geopackageLayers: [],
+      dataSourceLayers: [],
+      selectedGeoPackageLayers: [],
+      selectedDataSourceLayers: [],
+      internalRenderingOrder: [],
     }
   },
   methods: {
@@ -529,23 +538,19 @@ export default {
       this.cancelling = true
       window.mapcache.cancelAddTileLayer(this.configuration).then(() => {
         setTimeout(() => {
-          window.mapcache.deleteGeoPackageTable({
-            filePath: self.geopackage.path,
-            tableName: self.configuration.table,
-            silent: true
-          }).then(() => {
+          window.mapcache.deleteGeoPackageTable(this.project.id, self.geopackage.id, self.geopackage.path, self.configuration.table, 'tile', true).then(() => {
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            window.mapcache.synchronizeGeoPackage({ projectId: this.project.id, geopackageId: this.geopackage.id })
+            synchronizeGeoPackage(this.project.id, this.geopackage.id)
           }).catch(() => {
             // table may not have been created yet
             self.done = true
             self.cancelling = false
             self.status.message = 'Cancelled'
             self.status.progress = 100
-            window.mapcache.synchronizeGeoPackage({ projectId: this.project.id, geopackageId: this.geopackage.id })
+            synchronizeGeoPackage(this.project.id, this.geopackage.id)
           })
         }, 500)
       })
@@ -587,26 +592,27 @@ export default {
         }
       }).then(() => {
         this.done = true
-        window.mapcache.synchronizeGeoPackage({ projectId: this.project.id, geopackageId: this.geopackage.id })
-        window.mapcache.notifyTab({ projectId: this.project.id, tabId: 0 })
-        if (this.status == null || this.status.error == null) {
-          window.mapcache.notifyTab({ projectId: this.project.id, tabId: 0 })
-          if (this.allowNotifications) {
-            new Notification('GeoPackage tile layer created', {
-              body: 'Finished building the "' + this.layerName + '" tile layer',
-            }).onclick = () => {
-              window.mapcache.sendWindowToFront()
+        synchronizeGeoPackage(this.project.id, this.geopackage.id).then(() => {
+          notifyTab(this.project.id, 0)
+          if (this.status == null || this.status.error == null) {
+            notifyTab(this.project.id, 0)
+            if (this.allowNotifications) {
+              new Notification('GeoPackage tile layer created', {
+                body: 'Finished building the "' + this.layerName + '" tile layer',
+              }).onclick = () => {
+                window.mapcache.sendWindowToFront()
+              }
+            }
+          } else {
+            if (this.allowNotifications) {
+              new Notification('Failed to create tile layer', {
+                body: 'Failed to build the "' + this.layerName + '" tile layer.\r\n' + this.status.error,
+              }).onclick = () => {
+                window.mapcache.sendWindowToFront()
+              }
             }
           }
-        } else {
-          if (this.allowNotifications) {
-            new Notification('Failed to create tile layer', {
-              body: 'Failed to build the "' + this.layerName + '" tile layer.\r\n' + this.status.error,
-            }).onclick = () => {
-              window.mapcache.sendWindowToFront()
-            }
-          }
-        }
+        })
       })
     },
     cancel () {
@@ -683,7 +689,7 @@ export default {
               visible,
               type: 'tile',
               changeVisibility: debounce(() => {
-                window.mapcache.setGeoPackageTileTableVisible({ projectId, geopackageId, tableName, visible: !visible })
+                setGeoPackageTileTableVisible(projectId, geopackageId, tableName, !visible)
               }, 100),
               zoomTo: debounce((e) => {
                 e.stopPropagation()
@@ -706,12 +712,7 @@ export default {
               visible,
               type: 'feature',
               changeVisibility: debounce(() => {
-                window.mapcache.setGeoPackageFeatureTableVisible({
-                  projectId,
-                  geopackageId,
-                  tableName,
-                  visible: !visible
-                })
+                setGeoPackageFeatureTableVisible(projectId, geopackageId, tableName, !visible)
               }, 100),
               zoomTo: debounce((e) => {
                 e.stopPropagation()
@@ -738,7 +739,7 @@ export default {
           type: source.pane === 'vector' ? 'feature' : 'tile',
           changeVisibility: debounce(() => {
             if (isNil(source.error)) {
-              window.mapcache.setDataSourceVisible({ projectId, sourceId: source.id, visible: !source.visible })
+              setDataSourceVisible(projectId, source.id, !source.visible)
             }
           }, 100),
           zoomTo: debounce((e) => {
@@ -757,39 +758,14 @@ export default {
     },
     fireReorderMapLayers: debounce((layers) => {
       EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
-    }, 100)
-  },
-  asyncComputed: {
-    geopackageLayers: {
-      async get () {
-        return this.getGeoPackageLayerItems()
-      },
-      default: []
-    },
-    dataSourceLayers: {
-      async get () {
-        return this.getDataSourceLayers()
-      },
-      default: []
-    },
-    selectedGeoPackageLayers: {
-      async get () {
-        return (await this.getGeoPackageLayerItems()).filter(item => item.visible).map(item => item.id)
-      },
-      default: []
-    },
-    selectedDataSourceLayers: {
-      async get () {
-        return (await this.getDataSourceLayers()).filter(item => item.visible).map(item => item.id)
-      },
-      default: []
-    },
-    internalRenderingOrder: {
-      async get () {
-        const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-        return this.project.mapRenderingOrder != null ? this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item)) : []
-      },
-      default: []
+    }, 100),
+    async updateProjectData () {
+      this.dataSourceLayers = await this.getDataSourceLayers()
+      this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
+      this.geopackageLayers = await this.getGeoPackageLayerItems()
+      this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
+      const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
+      this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
     }
   },
   computed: {
@@ -825,12 +801,7 @@ export default {
   watch: {
     project: {
       async handler () {
-        this.dataSourceLayers = await this.getDataSourceLayers()
-        this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
-        this.geopackageLayers = await this.getGeoPackageLayerItems()
-        this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
-        const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
-        this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+        await this.updateProjectData()
       },
       deep: true
     }
@@ -842,6 +813,9 @@ export default {
     const mapZoom = Math.floor(isNil(this.mapZoom) ? 3 : this.mapZoom)
     this.minZoom = Math.min(20, Math.max(0, mapZoom))
     this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
+  },
+  created () {
+    this.updateProjectData()
   }
 }
 </script>

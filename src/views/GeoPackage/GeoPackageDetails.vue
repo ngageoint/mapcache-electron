@@ -77,15 +77,28 @@ export default {
       return this.geopackage.path
     }
   },
-  asyncComputed: {
-    details: {
-      get () {
-        return window.mapcache.getDetails(this.geopackage.path).then(result => {
-          return result
-        })
-      },
-      default: { featureTableCount: 0, tileTableCount: 0, srsCount: 0 }
+  data () {
+    return {
+      details: { featureTableCount: 0, tileTableCount: 0, srsCount: 0 }
     }
+  },
+  methods: {
+    updateDetails () {
+      window.mapcache.getDetails(this.geopackage.path).then(result => {
+        this.details = result || { featureTableCount: 0, tileTableCount: 0, srsCount: 0 }
+      })
+    }
+  },
+  watch: {
+    geopackages: {
+      handler () {
+       this.updateDetails()
+      },
+      deep: true
+    }
+  },
+  created () {
+    this.updateDetails()
   }
 }
 </script>

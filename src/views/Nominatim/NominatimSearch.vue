@@ -5,7 +5,7 @@
         <v-form v-on:submit.prevent="runSearch">
           <v-text-field :disabled="disableSearch"
                         style="max-width: 350px;"
-                        solo
+                        variant="solo"
                         dense
                         hide-details
                         hint="Address"
@@ -15,12 +15,11 @@
                         clearable
                         @click:clear="clearResults">
             <template slot="append">
-              <v-tooltip right :disabled="!project.showToolTips">
-                <template v-slot:activator="{ on, attrs }">
+              <v-tooltip location="end" :disabled="!project.showToolTips">
+                <template v-slot:activator="{ props }">
                   <v-btn
                       :disabled="disableSearch"
-                      v-bind="attrs"
-                      v-on="on"
+                      v-bind="props"
                       class="mr-1"
                       icon
                       :color="applyViewBox ? 'primary' : ''"
@@ -31,9 +30,9 @@
                 <span>Restrict search to visible area of map</span>
               </v-tooltip>
               <v-divider inset vertical style="margin-bottom: 8px;"></v-divider>
-              <v-tooltip right :disabled="!project.showToolTips">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn :disabled="disableSearch" v-bind="attrs" v-on="on" class="ml-1" style="margin-right: -8px;"
+              <v-tooltip location="end" :disabled="!project.showToolTips">
+                <template v-slot:activator="{ props }">
+                  <v-btn :disabled="disableSearch" v-bind="props" class="ml-1" style="margin-right: -8px;"
                          color="primary" icon @click="runSearch">
                     <v-icon>{{ mdiMagnify }}</v-icon>
                   </v-btn>

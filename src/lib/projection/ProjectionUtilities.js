@@ -1,8 +1,6 @@
 import proj4 from 'proj4'
-import path from 'path'
 import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
-import { getExtraResourcesDirectory } from '../util/file/FileUtilities'
 import {
   COLON_DELIMITER,
   WEB_MERCATOR,
@@ -13,6 +11,7 @@ import {
 } from './ProjectionConstants'
 import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 import isEqual from 'lodash/isEqual'
+import proj4DB from '../../../resources/proj4.db?asset'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
@@ -54,7 +53,7 @@ function getUnits (name) {
 
 function getDef (code) {
   let def
-  const db = new Database(path.join(getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
+  const db = new Database(proj4DB, { readonly: true })
   const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
   const row = stmt.get(code)
   if (row && row.def) {

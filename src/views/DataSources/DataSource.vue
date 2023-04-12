@@ -15,7 +15,7 @@
   <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -57,13 +57,11 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title :title="initialDisplayName">{{ initialDisplayName }}</v-toolbar-title>
       <v-spacer></v-spacer>
     </v-toolbar>
@@ -91,6 +89,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                      variant="underlined"
                       autofocus
                       v-model="renamedSource"
                       :rules="renamedSourceRules"
@@ -320,12 +319,12 @@
             </v-card>
           </template>
         </v-hover>
-        <v-tooltip bottom :disabled="!project.showToolTips">
-          <template v-slot:activator="{ on, attrs }">
+        <v-tooltip location="bottom" :disabled="!project.showToolTips">
+          <template v-slot:activator="{ props }">
             <v-hover v-if="source.pane === 'vector'">
               <template v-slot="{ hover }">
                 <v-card class="ma-0 pa-0 ml-1 mr-1 clickable card-button" :elevation="hover ? 4 : 1"
-                        @click.stop="downloadGeoPackage" v-bind="attrs" v-on="on">
+                        @click.stop="downloadGeoPackage" v-bind="props">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
                       <v-icon small>{{ mdiExportVariant }}</v-icon>
@@ -464,10 +463,10 @@
           </v-row>
           <w-m-s-layer-editor v-if="source.layerType === 'WMS'" class="mt-4" :error="source.error" :project="project"
                               :configuration="source" :update-configuration="updateSource"
-                              :set-error="setSourceError"></w-m-s-layer-editor>
+                              :set-error="setError"></w-m-s-layer-editor>
           <w-m-t-s-layer-editor v-if="source.layerType === 'WMTS'" class="mt-4" :error="source.error" :project="project"
                                 :configuration="source" :update-configuration="updateSource"
-                                :set-error="setSourceError"></w-m-t-s-layer-editor>
+                                :set-error="setError"></w-m-t-s-layer-editor>
           <v-row class="pb-2" no-gutters v-if="source.geopackageFilePath != null">
             <feature-layer-fields :id="source.id" :project-id="project.id" :project="project" :table-name="source.sourceLayerName" :object="source" :field-clicked="showFieldManagementView"></feature-layer-fields>
           </v-row>
@@ -482,15 +481,6 @@ import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import keys from 'lodash/keys'
-import GeotiffOptions from '../Common/Style/GeotiffOptions'
-import TransparencyOptions from '../Common/Style/TransparencyOptions'
-import StyleEditor from '../StyleEditor/StyleEditor'
-import EventBus from '../../lib/vue/EventBus'
-import SourceVisibilitySwitch from './SourceVisibilitySwitch'
-import MBTilesOptions from '../Common/Style/MBTilesOptions'
-import DataSourceTroubleshooting from './DataSourceTroubleshooting'
-import DataSourceWarning from './DataSourceWarning.vue'
-import NumberPicker from '../Common/NumberPicker'
 import {
   mdiChevronLeft,
   mdiCloudBraces,
@@ -505,14 +495,30 @@ import {
   DEFAULT_RATE_LIMIT,
   DEFAULT_TIMEOUT,
 } from '../../lib/network/HttpUtilities'
-import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
-import EditZoomRange from '../../views/Common/EditZoomRange'
+import EventBus from '../../lib/vue/EventBus'
 import { zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
-import FeatureView from '../Common/FeatureView'
-import WMSLayerEditor from '../Common/WMSLayerEditor'
-import WMTSLayerEditor from '../Common/WMTSLayerEditor'
-import FeatureLayerFields from '../Common/GeoPackageFeatureLayer/FeatureLayerFields'
-import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField'
+import GeotiffOptions from '../Common/Style/GeotiffOptions.vue'
+import TransparencyOptions from '../Common/Style/TransparencyOptions.vue'
+import StyleEditor from '../StyleEditor/StyleEditor.vue'
+import SourceVisibilitySwitch from './SourceVisibilitySwitch.vue'
+import MBTilesOptions from '../Common/Style/MBTilesOptions.vue'
+import DataSourceTroubleshooting from './DataSourceTroubleshooting.vue'
+import DataSourceWarning from './DataSourceWarning.vue'
+import NumberPicker from '../Common/NumberPicker.vue'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
+import EditZoomRange from '../../views/Common/EditZoomRange.vue'
+import FeatureView from '../Common/FeatureView.vue'
+import WMSLayerEditor from '../Common/WMSLayerEditor.vue'
+import WMTSLayerEditor from '../Common/WMTSLayerEditor.vue'
+import FeatureLayerFields from '../Common/GeoPackageFeatureLayer/FeatureLayerFields.vue'
+import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField.vue'
+import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
+import {
+  removeDataSource, saveConnectionSettings,
+  setDataSource,
+  setDataSourceDisplayName, setSourceError,
+  synchronizeGeoPackage
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -619,7 +625,7 @@ export default {
       this.connectionSettingsDialog = false
     },
     saveConnectionSettings () {
-      window.mapcache.saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+      saveConnectionSettings(this.project.id, this.source.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
       this.closeConnectionSettingsDialog()
     },
     showConnectingSettingsDialog () {
@@ -642,20 +648,16 @@ export default {
     },
     saveLayerName () {
       this.renameDialog = false
-      window.mapcache.setDataSourceDisplayName({
-        projectId: this.project.id,
-        sourceId: this.source.id,
-        displayName: this.renamedSource
-      })
+      setDataSourceDisplayName(this.project.id, this.source.id, this.renamedSource)
     },
     copyAndAddGeoPackage (filePath) {
       this.exportingProgressDialog = true
       window.mapcache.copyFile(this.source.geopackageFilePath, filePath).then(() => {
         const geopackageKey = keys(this.project.geopackages).find(key => this.project.geopackages[key].path === filePath)
         if (isNil(geopackageKey)) {
-          window.mapcache.addGeoPackage({ projectId: this.project.id, filePath: filePath })
+          addGeoPackage(this.project.id, filePath)
         } else {
-          window.mapcache.synchronizeGeoPackage({ projectId: this.project.id, geopackageId: geopackageKey })
+          synchronizeGeoPackage(this.project.id, geopackageKey)
         }
         this.overwriteFile = ''
         setTimeout(() => {
@@ -721,19 +723,13 @@ export default {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE_TABLE, payload)
     },
     removeDataSource () {
-      window.mapcache.removeDataSource({ projectId: this.project.id, sourceId: this.source.id })
+      removeDataSource(this.project.id, this.source.id)
     },
     updateSource (updatedSource) {
-      window.mapcache.setDataSource({
-        projectId: this.project.id,
-        source: updatedSource
-      })
+      setDataSource(this.project.id, updatedSource)
     },
-    setSourceError (error) {
-      window.mapcache.setSourceError({
-        id: this.source.id,
-        error: error
-      })
+    setError (error) {
+      setSourceError(this.source.id, error)
     }
   }
 }

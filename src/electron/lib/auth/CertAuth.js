@@ -1,6 +1,5 @@
 import { CLIENT_CERTIFICATE_SELECTED, SELECT_CLIENT_CERTIFICATE } from '../ipc/MapCacheIPC'
-
-const { ipcMain } = require('electron')
+import { ipcMain } from 'electron'
 
 /**
  * Map of request origin to Promise.

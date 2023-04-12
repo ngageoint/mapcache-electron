@@ -4,34 +4,29 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>Base maps</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
       <v-list class="pa-0">
-        <template v-for="item in baseMapItems">
-          <v-list-item :key="item.id + '-base-map'" @click="() => showBaseMap(item.id)">
+        <template v-for="item in baseMapItems" :key="item.id + '-base-map'">
+          <v-list-item @click="() => showBaseMap(item.id)">
             <v-list-item-icon class="mt-auto mb-auto">
               <v-btn
-                  icon
+                  icon="mdi-map-outline"
                   color="whitesmoke"
-                  @click="(e) => item.zoomTo(e, project.id)"
-              >
-                <v-icon>{{ mdiMapOutline }}</v-icon>
-              </v-btn>
+                  @click="(e) => item.zoomTo(e, project.id)"/>
             </v-list-item-icon>
-            <v-list-item-content>
+            <div>
               <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
               <v-list-item-subtitle v-if="item.type != null" v-text="item.type"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
-            </v-list-item-content>
+            </div>
             <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.warning">
               <data-source-warning :source="item.baseMap"></data-source-warning>
             </v-list-item-icon>
@@ -42,13 +37,13 @@
               <geo-t-i-f-f-troubleshooting :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
             </v-list-item-icon>
           </v-list-item>
-          <v-divider :key="item.id + 'divider'"></v-divider>
+          <v-divider/>
         </template>
       </v-list>
     </v-sheet>
-    <v-tooltip right :disabled="!project.showToolTips">
-      <template v-slot:activator="{ on, attrs }">
-        <div class="fab-position" v-bind="attrs" v-on="on">
+    <v-tooltip location="end" :disabled="!project.showToolTips">
+      <template v-slot:activator="{ props }">
+        <div class="fab-position" v-bind="props">
           <v-btn
               :disabled="projectLayerCount === 0"
               fab
@@ -87,11 +82,11 @@ import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
-import BaseMap from './BaseMap'
-import BaseMapTroubleshooting from './BaseMapTroubleshooting'
+import BaseMap from './BaseMap.vue'
+import BaseMapTroubleshooting from './BaseMapTroubleshooting.vue'
 import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
 import { mdiChevronLeft, mdiMapOutline } from '@mdi/js'
-import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
 import { getDisplayText } from '../../lib/layer/LayerTypes'

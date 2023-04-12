@@ -11,11 +11,11 @@
       <v-form v-on:submit.prevent v-model="formValid">
         <v-list style="width: 100%">
           <v-list-item :key="'editor-' + column.name" v-for="(column, index) in editableColumns">
-            <v-list-item-content class="ma-0 pa-0">
+            <div class="ma-0 pa-0">
               <feature-editor-column :id="column.name + '_' + index" v-bind="column"
                                      :update-column-property="updateEditableColumn"
                                      :index="index"></feature-editor-column>
-            </v-list-item-content>
+            </div>
           </v-list-item>
         </v-list>
         <v-card-subtitle v-if="!isEditing && unrecognizedColumns.length > 0">
@@ -24,8 +24,8 @@
         </v-card-subtitle>
         <v-list v-if="!isEditing && unrecognizedColumns.length > 0" style="width: 100%">
           <v-list-item>
-            <v-list-item-content class="ma-0 pa-0">
-            </v-list-item-content>
+            <div class="ma-0 pa-0">
+            </div>
             <v-list-item-action>
               <v-row no-gutters>
                 <p style="padding-right: 16px;">Select all</p>
@@ -34,10 +34,10 @@
             </v-list-item-action>
           </v-list-item>
           <v-list-item :key="'editor-' + column.name" v-for="(column, index) in unrecognizedColumns">
-            <v-list-item-content class="ma-0 pa-0">
+            <div class="ma-0 pa-0">
               <feature-editor-column :id="column.name + '_' + index" :index="index" v-bind="column"
                                      :update-column-property="updateUnrecognizedColumn"></feature-editor-column>
-            </v-list-item-content>
+            </div>
             <v-list-item-action>
               <v-checkbox v-model="columnsToAdd" :value="index"></v-checkbox>
             </v-list-item-action>
@@ -85,10 +85,12 @@ import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import isObject from 'lodash/isObject'
 import cloneDeep from 'lodash/cloneDeep'
+import orderBy from 'lodash/orderBy'
 import moment from 'moment'
 import { mdiCalendar, mdiClock } from '@mdi/js'
-import orderBy from 'lodash/orderBy'
-import FeatureEditorColumn from './FeatureEditorColumn'
+import FeatureEditorColumn from './FeatureEditorColumn.vue'
+import EventBus from '../../lib/vue/EventBus'
+import { synchronizeDataSource, synchronizeGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   components: { FeatureEditorColumn },
@@ -125,26 +127,8 @@ export default {
       formValid: false,
       failedToSaveErrorMessage: '',
       failedToSaveSnackBar: false,
-      columnsToAdd: []
-    }
-  },
-  asyncComputed: {
-    editableColumns: {
-      async get () {
-        const editableColumns = await window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
-        if (this.isGeoPackage &&
-            this.object.tables.features[this.tableName] != null &&
-            this.object.tables.features[this.tableName].columnOrder != null &&
-            editableColumns != null &&
-            editableColumns.length > 0) {
-          const columnOrder = this.object.tables.features[this.tableName].columnOrder
-          editableColumns.sort((a, b) => {
-            return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
-          })
-        }
-        return editableColumns
-      },
-      default: []
+      columnsToAdd: [],
+      editableColumns: []
     }
   },
   computed: {
@@ -177,7 +161,32 @@ export default {
       }
     }
   },
+  created () {
+    this.updateEditableColumns()
+  },
+  watch: {
+    object: {
+      handler () {
+        this.updateEditableColumns()
+      },
+      deep: true
+    },
+  },
   methods: {
+    async updateEditableColumns () {
+      const editableColumns = await window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
+      if (this.isGeoPackage &&
+          this.object.tables.features[this.tableName] != null &&
+          this.object.tables.features[this.tableName].columnOrder != null &&
+          editableColumns != null &&
+          editableColumns.length > 0) {
+        const columnOrder = this.object.tables.features[this.tableName].columnOrder
+        editableColumns.sort((a, b) => {
+          return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+        })
+      }
+      return editableColumns
+    },
     updateUnrecognizedColumn (value, property, index) {
       this.unrecognizedColumns[index][property] = value
     },
@@ -189,11 +198,10 @@ export default {
         const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.feature.id, this.editableColumns)
         if (result.changes > 0) {
           if (this.isGeoPackage) {
-            window.mapcache.synchronizeGeoPackage({ projectId: this.projectId, geopackageId: this.id })
+            synchronizeGeoPackage(this.projectId, this.id).then(this.close)
           } else {
-            window.mapcache.synchronizeDataSource({ projectId: this.projectId, sourceId: this.id })
+            synchronizeDataSource(this.projectId, this.id).then(this.close)
           }
-          this.close()
         } else if (result.error) {
           this.failedToSaveErrorMessage = result.error
           this.failedToSaveSnackBar = true

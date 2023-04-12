@@ -1,5 +1,3 @@
-import Vue from 'vue'
-
 const state = {
   version: '-1'
 }
@@ -12,7 +10,7 @@ const getters = {
 
 const mutations = {
   setVersion (state, version) {
-    Vue.set(state, 'version', version)
+    state.version = version
   }
 }
 

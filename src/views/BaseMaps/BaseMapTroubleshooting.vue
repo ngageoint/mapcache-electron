@@ -33,6 +33,7 @@ import { mapState } from 'vuex'
 import { mdiAlertCircle } from '@mdi/js'
 import { isAuthenticationError, isServerError, isTimeoutError } from '../../lib/network/HttpUtilities'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
+import { editBaseMap } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -79,7 +80,7 @@ export default {
       this.reconnecting = false
     },
     async signIn () {
-      if (await connectToBaseMap(this.baseMap, window.mapcache.editBaseMap)) {
+      if (await connectToBaseMap(this.baseMap, editBaseMap)) {
         this.$nextTick(() => {
           this.showTroubleshootingDialog = false
           this.connectionAttempts = 0

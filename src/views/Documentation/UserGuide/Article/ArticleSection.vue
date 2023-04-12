@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import Tip from './Tip'
+import Tip from './Tip.vue'
 
 export default {
   components: { Tip },

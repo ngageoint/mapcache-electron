@@ -2,15 +2,13 @@
   <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn icon="mdi-chevron-left" @click="hideStyleEditor"/>
       <v-toolbar-title>
-        <v-icon large color="white" class="pr-2">{{ mdiPalette }}</v-icon>
+        <v-icon large color="white" class="pr-2" icon="mdi-palette"/>
         {{ baseMap.name }}
       </v-toolbar-title>
 
@@ -52,13 +50,11 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
+        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title :title="baseMap.name">{{ baseMap.name }}</v-toolbar-title>
     </v-toolbar>
     <v-dialog
@@ -68,7 +64,7 @@
         @keydown.esc="renameDialog = false">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
           Rename base map
         </v-card-title>
         <v-card-text>
@@ -77,6 +73,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                      variant="underlined"
                       autofocus
                       v-model="renamedBaseMap"
                       :rules="renamedBaseMapRules"
@@ -112,7 +109,7 @@
         @keydown.esc="connectionSettingsDialog = false">
       <v-card v-if="connectionSettingsDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiCloudBraces }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-cloud-braces"></v-icon>
           Edit network settings
         </v-card-title>
         <v-card-text>
@@ -166,7 +163,7 @@
         @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can-outline"/>
           Remove base map
         </v-card-title>
         <v-card-text>
@@ -193,7 +190,7 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn icon @click="zoomTo" color="whitesmoke">
-              <v-icon style="width: 20px; height: 20px;">{{ mdiMapOutline }}</v-icon>
+              <v-icon style="width: 20px; height: 20px;" class="mdi-map-outline"/>
             </v-btn>
             <span>{{ configuration.pane === 'vector' ? 'Feature' : 'Tile' }} base map</span>
           </p>
@@ -216,7 +213,7 @@
                     @click.stop="renameDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
+                  <v-icon small icon="mdi-pencil"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -231,7 +228,7 @@
                     @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPalette }}</v-icon>
+                  <v-icon small icon="mdi-palette"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -247,7 +244,7 @@
                     @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiCloudBraces }}</v-icon>
+                  <v-icon small icon="mdi-cloud-braces"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Network
@@ -262,7 +259,7 @@
                     @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiTrashCan }}</v-icon>
+                  <v-icon small icon="mdi-trash-can-outline"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Remove
@@ -363,20 +360,26 @@
 <script>
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
-import TransparencyOptions from '../Common/Style/TransparencyOptions'
-import GeotiffOptions from '../Common/Style/GeotiffOptions'
-import BackgroundTileColor from '../Common/Style/BackgroundTileColor'
-import MBTilesOptions from '../Common/Style/MBTilesOptions'
-import StyleEditor from '../StyleEditor/StyleEditor'
-import BaseMapTroubleshooting from './BaseMapTroubleshooting'
-import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
-import NumberPicker from '../Common/NumberPicker'
 import { mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS } from '../../lib/network/HttpUtilities'
-import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
-import WMSLayerEditor from '../Common/WMSLayerEditor'
-import WMTSLayerEditor from '../Common/WMTSLayerEditor'
+import TransparencyOptions from '../Common/Style/TransparencyOptions.vue'
+import GeotiffOptions from '../Common/Style/GeotiffOptions.vue'
+import BackgroundTileColor from '../Common/Style/BackgroundTileColor.vue'
+import MBTilesOptions from '../Common/Style/MBTilesOptions.vue'
+import StyleEditor from '../StyleEditor/StyleEditor.vue'
+import BaseMapTroubleshooting from './BaseMapTroubleshooting.vue'
+import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
+import NumberPicker from '../Common/NumberPicker.vue'
+import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
+import WMSLayerEditor from '../Common/WMSLayerEditor.vue'
+import WMTSLayerEditor from '../Common/WMTSLayerEditor.vue'
+import {
+  editBaseMap,
+  removeBaseMap,
+  saveBaseMapConnectionSettings,
+  setSourceError
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -453,7 +456,7 @@ export default {
       this.connectionSettingsDialog = false
     },
     saveConnectionSettings () {
-      window.mapcache.saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
+      saveBaseMapConnectionSettings(this.baseMap.id, this.timeoutMs, this.rateLimit, this.retryAttempts)
       this.closeConnectionSettingsDialog()
     },
     showConnectingSettingsDialog () {
@@ -465,9 +468,10 @@ export default {
       })
     },
     deleteBaseMap () {
-      window.mapcache.removeBaseMap(this.baseMap)
-      this.deleteDialog = false
-      this.back()
+      removeBaseMap(this.baseMap).then(() => {
+        this.deleteDialog = false
+        this.back()
+      })
     },
     zoomTo () {
       zoomToBaseMap(this.baseMap)
@@ -478,24 +482,21 @@ export default {
     saveBaseMapName () {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.name = this.renamedBaseMap
-      window.mapcache.editBaseMap(baseMap)
+      editBaseMap(baseMap)
       this.renameDialog = false
     },
     updateBackground (value) {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.background = value
-      window.mapcache.editBaseMap(baseMap)
+      editBaseMap(baseMap)
     },
     updateConfiguration (newConfiguration) {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.layerConfiguration = newConfiguration
-      window.mapcache.editBaseMap(baseMap)
+      editBaseMap(baseMap)
     },
     setBaseMapError (error) {
-      window.mapcache.setSourceError({
-        id: this.baseMap.id,
-        error: error
-      })
+      setSourceError(this.baseMap.id, error)
     }
   }
 }

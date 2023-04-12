@@ -2,13 +2,10 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        dark
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="back">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title :title="tableName">{{ tableName }}</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -28,6 +25,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="renamedTable"
                         :rules="renamedTableRules"
@@ -74,6 +72,7 @@
                 <v-row no-gutters>
                   <v-col cols="12">
                     <v-text-field
+                        variant="underlined"
                         autofocus
                         v-model="copiedTable"
                         :rules="copiedTableRules"
@@ -257,6 +256,11 @@ import isNil from 'lodash/isNil'
 import { mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities'
 import EventBus from '../../lib/vue/EventBus'
+import {
+  copyGeoPackageTable, deleteGeoPackageTable,
+  renameGeoPackageTable,
+  setGeoPackageTileTableVisible
+} from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -299,12 +303,7 @@ export default {
         return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].visible : false
       },
       set (value) {
-        window.mapcache.setGeoPackageTileTableVisible({
-          projectId: this.projectId,
-          geopackageId: this.geopackage.id,
-          tableName: this.tableName,
-          visible: value
-        })
+        setGeoPackageTileTableVisible(this.projectId, this.geopackage.id, this.tableName, value)
       }
     },
     tileCount () {
@@ -340,14 +339,7 @@ export default {
       this.renamed(this.renamedTable)
       this.copiedTable = this.renamedTable + '_copy'
       this.renaming = true
-      window.mapcache.renameGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        newTableName: this.renamedTable,
-        type: 'tile'
-      }).then(() => {
+      renameGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'tile').then(() => {
         this.renaming = false
         this.$nextTick(() => {
           this.renameDialog = false
@@ -356,14 +348,7 @@ export default {
     },
     copy () {
       this.copying = true
-      window.mapcache.copyGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        copyTableName: this.copiedTable,
-        type: 'tile'
-      }).then(() => {
+      copyGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'tile').then(() => {
         this.$nextTick(() => {
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Tile layer copied', 'primary')
         })
@@ -374,13 +359,7 @@ export default {
     },
     deleteTable () {
       this.deleting = true
-      window.mapcache.deleteGeoPackageTable({
-        projectId: this.projectId,
-        geopackageId: this.geopackage.id,
-        filePath: this.geopackage.path,
-        tableName: this.tableName,
-        type: 'tile'
-      }).then(() => {
+      deleteGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, 'tile').then(() => {
         this.deleting = false
         this.$nextTick(() => {
           this.deleteDialog = false

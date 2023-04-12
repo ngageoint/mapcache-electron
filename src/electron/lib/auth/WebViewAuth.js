@@ -1,6 +1,6 @@
 import { getClientCredentials } from './BasicAuth'
 import { WEB_VIEW_AUTH_RESPONSE } from '../ipc/MapCacheIPC'
-import { USER_CANCELLED_MESSAGE } from '../../network/HttpUtilities'
+import { USER_CANCELLED_MESSAGE } from '../../../lib/network/HttpUtilities'
 
 /**
  * Class for handling WebView like auth requests using Electron's BrowserView

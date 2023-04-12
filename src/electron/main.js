@@ -1,8 +1,12 @@
-'use strict'
 import { app, protocol } from 'electron'
 import path from 'path'
-import MapCacheWindowManager from './lib/electron/MapCacheWindowManager'
-import { environment } from './lib/env/env'
+import MapCacheWindowManager from './lib/MapCacheWindowManager'
+import { environment } from '../lib/env/env'
+import setupProtocol from '../lib/protocol/protocol'
+import { runMigration } from '../store/migration/migration'
+import { setupInitialDirectories } from '../lib/util/file/FileUtilities'
+import { default as install, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import log from 'electron-log'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -25,8 +29,7 @@ if (process.platform === 'win32') {
 
 async function setupVueDevTools () {
   try {
-    const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer')
-    await installExtension(VUEJS_DEVTOOLS)
+    await install(VUEJS_DEVTOOLS)
     // eslint-disable-next-line no-unused-vars
   } catch (e) {
     // eslint-disable-next-line no-console
@@ -38,7 +41,6 @@ async function setupVueDevTools () {
  * Sets up the electron-log library. This will write logs to a file.
  */
 function setupElectronLog () {
-  const log = require('electron-log')
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'mapcache.log')
   Object.assign(console, log.functions)
 }
@@ -65,6 +67,10 @@ function startOpenFileTimeout () {
  * Sets up handlers for various kill signals
  */
 function setupEventHandlers () {
+  process.on('unhandledRejection', (error) => {
+    console.error(error)
+  })
+
   if (process.platform === 'win32') {
     process.on('message', (data) => {
       if (data === 'graceful-exit') {
@@ -111,13 +117,12 @@ async function start () {
   setupEventHandlers()
   setupWebContentHandling()
 
-  if (!process.env.WEBPACK_DEV_SERVER_URL) {
-    require('./lib/protocol/protocol').default(protocol, 'mapcache')
+  if (!process.env.ELECTRON_RENDERER_URL) {
+    setupProtocol(protocol, 'mapcache')
   }
 
   MapCacheWindowManager.launchLoaderWindow()
 
-  const { runMigration } = require('./store/migration/migration')
   // check if store is out of date, if so, delete content
   try {
     if (!await runMigration()) {
@@ -134,7 +139,6 @@ async function start () {
     app.quit()
   }
 
-  const { setupInitialDirectories } = require('./lib/util/file/FileUtilities')
   setupInitialDirectories(app.getPath('userData'))
 
   await MapCacheWindowManager.start()
@@ -167,7 +171,7 @@ if (!gotTheLock) {
   })
 
   /**
-   * once window-all-closed is fired, quit the application (this implies that the landing page window has been exited.
+   * once window-all-closed is fired, quit the application (this implies that the landing page window has been exited).
    */
   app.once('window-all-closed', () => {
     app.quit()
@@ -194,7 +198,7 @@ if (!gotTheLock) {
    * when activate is fired, if the app is not already running, start it.
    */
   app.on('activate', () => {
-    // On macOS it's common to re-create a window in the app when the
+    // On macOS, it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (!MapCacheWindowManager.isAppRunning()) {
       start()
@@ -214,10 +218,14 @@ if (!gotTheLock) {
   app.once('ready', () => {
     if (!isProduction) {
       setupVueDevTools().then(() => {
-        start()
+        start().catch(e => {
+          console.error(e);
+        })
       })
     } else {
-      start()
+      start().catch(e => {
+        console.error(e);
+      })
     }
   })
 }

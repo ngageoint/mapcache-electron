@@ -1,7 +1,7 @@
 import { CLIENT_CREDENTIALS_INPUT, REQUEST_CLIENT_CREDENTIALS } from '../ipc/MapCacheIPC'
 
-const { ipcMain } = require('electron')
-import CredentialsManagement from '../../network/CredentialsManagement'
+import { ipcMain } from 'electron'
+import CredentialsManagement from './CredentialsManagement'
 
 /**
  * Map of request origin to Promise.
