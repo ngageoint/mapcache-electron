@@ -219,9 +219,9 @@
                     <v-list-item-title v-text="item.title"></v-list-item-title>
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
                   </div>
-                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
-                  </v-list-item-icon>
+                  <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
+                    <v-icon icon="mdi-drag-horizontal-variant"/>
+                  </template>
                 </v-list-item>
               </v-list>
             </v-card-text>
@@ -301,7 +301,6 @@ import debounce from 'lodash/debounce'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch.vue'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
-import { mdiDragHorizontalVariant } from '@mdi/js'
 import Sortable from 'sortablejs'
 import EventBus from '../../lib/vue/EventBus'
 import throttle from 'lodash/throttle'
@@ -365,7 +364,6 @@ export default {
       cancelling: false,
       boundingBoxFilter: null,
       filteredFeatureCount: 0,
-      mdiDragHorizontalVariant: mdiDragHorizontalVariant,
       geopackageFeatureLayers: [],
       selectedGeoPackageFeatureLayers: [],
       selectedDataSourceLayers: [],
@@ -523,7 +521,7 @@ export default {
       const geopackageKeys = keys(this.project.geopackages)
       for (let i = 0; i < geopackageKeys.length; i++) {
         const geopackage = this.project.geopackages[geopackageKeys[i]]
-        if (await window.mapcache.isHealthy(geopackage)) {
+        if (await window.mapcache.isHealthy(geopackage.path, geopackage.modifiedDate)) {
           Object.keys(geopackage.tables.features).forEach(table => {
             const tableName = table
             const visible = geopackage.tables.features[table].visible

@@ -18,20 +18,20 @@
     <v-card-actions>
       <v-btn
           v-if="onBack != null"
-          text
+          variant="text"
           @click="back">
         {{ backText }}
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="cancel">
         {{ cancelText }}
       </v-btn>
       <v-btn
           :disabled="!valid"
           color="primary"
-          text
+          variant="text"
           @click="save">
         {{ saveText }}
       </v-btn>

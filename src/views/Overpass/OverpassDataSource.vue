@@ -2,11 +2,10 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-icon>{{ mdiSteering }}</v-icon>
+      <v-icon icon="mdi-steering"/>
       <v-toolbar-title>Overpass feature download</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content">
@@ -222,7 +221,6 @@
 <script>
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
-import { mdiTrashCan, mdiSteering, mdiLock, mdiLockOpen } from '@mdi/js'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import {
   getOverpassQueryFilter,
@@ -266,10 +264,6 @@ export default {
       overpassBoundingBox: undefined,
       overpassSearchTerm: '',
       overpassQuery: defaultQuery,
-      mdiTrashCan,
-      mdiSteering,
-      mdiLock,
-      mdiLockOpen,
       step: 1,
       dataSourceNameValid: true,
       overpassGeneratedQueryValid: true,

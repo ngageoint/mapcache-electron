@@ -53,7 +53,7 @@ export default class NetworkTileRenderer {
       this.reprojectBoundingBox = window.mapcache.reprojectBoundingBox
       this.convertToWebMercator = window.mapcache.convertToWebMercator
     }
-    this.layerBounds3857 = this.convertToWebMercator(this.layer.extent)
+    this.layerBounds3857 = this.convertToWebMercator(this.layer.extent.slice())
     this.layerBounds4326 = this.layer.extent.slice()
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <v-list two-line subheader>
+  <v-list lines="two" subheader>
     <v-list-subheader>Transparency</v-list-subheader>
     <v-list-item class="pt-2">
       <div style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">

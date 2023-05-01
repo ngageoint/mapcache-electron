@@ -2,7 +2,6 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -17,7 +16,7 @@
           @keydown.esc="renameDialog = false">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
             Rename field
           </v-card-title>
           <v-card-text>
@@ -62,7 +61,7 @@
           @keydown.esc="deleteDialog = false">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+            <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
             Delete field
           </v-card-title>
           <v-card-text>
@@ -102,7 +101,7 @@
                     @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
+                  <v-icon small icon="mdi-pencil"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -117,7 +116,7 @@
                     @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiTrashCan }}</v-icon>
+                  <v-icon small icon="mdi-trash-can"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -166,7 +165,6 @@
 </template>
 
 <script>
-import { mdiChevronLeft, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { deleteGeoPackageFeatureTableColumn, renameFeatureTableColumn } from '../../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -186,9 +184,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiPencil: mdiPencil,
-      mdiTrashCan: mdiTrashCan,
       deleteDialog: false,
       renameValid: false,
       renameDialog: false,

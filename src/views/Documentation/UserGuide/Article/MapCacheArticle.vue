@@ -53,7 +53,6 @@
 </template>
 
 <script>
-import { mdiClose } from '@mdi/js'
 import Tip from './Tip.vue'
 import ArticleSection from './ArticleSection.vue'
 import ArticleSkeleton from './ArticleSkeleton.vue'
@@ -68,7 +67,6 @@ export default {
   },
   data () {
     return {
-      mdiClose,
       tabs: [null, null, null, null, null, null, null, null, null],
       loaded: false
     }

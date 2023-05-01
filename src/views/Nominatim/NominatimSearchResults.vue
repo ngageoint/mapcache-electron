@@ -3,7 +3,6 @@
                             :back="deselectResult"></nominatim-result-details>
   <v-sheet v-else class="mapcache-sheet background">
     <v-toolbar
-        theme="dark"
         color="main"
         flat
         class="sticky-toolbar"
@@ -12,7 +11,7 @@
       <v-toolbar-title>Search results</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn icon @click="clearResults">
-        <v-icon>{{ mdiClose }}</v-icon>
+        <v-icon icon="mdi-close"/>
       </v-btn>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -27,7 +26,7 @@
               class="background"
               style="height: 104px;"
               v-if="item.type !== 'END'"
-              three-line
+              lines="three"
               @click="(e) => selectResult(e, item)"
               v-on:mouseover="() => highlightFeatureOnMap(item, true)"
               v-on:mouseout="() => highlightFeatureOnMap(item, false)"
@@ -60,7 +59,7 @@
                                      v-observe-visibility="visibilityChanged"></search-result-skelton>
               <search-result-skelton v-for="i in 9" :key="i + '_search_skeleton'"></search-result-skelton>
             </div>
-            <v-list-item three-line v-else>
+            <v-list-item lines="three" v-else>
               <div>
                 <v-row class="detail--text" no-gutters justify="center">{{ 'No more results...' }}</v-row>
               </div>
@@ -69,7 +68,7 @@
         </template>
       </v-virtual-scroll>
       <v-list no-gutters class="pb-0" v-else-if="this.results != null">
-        <v-list-item three-line>
+        <v-list-item lines="three">
           <div>
             <v-list-item-title>
               <b>No results matching "<i>{{ this.results.requestObject.q }}</i>".</b>
@@ -89,7 +88,6 @@
 import EventBus from '../../lib/vue/EventBus'
 import NominatimResultDetails from '../Nominatim/NominatimResultDetails.vue'
 import { prettyifyAddress, prettyifyWords, queryWithRequestObject } from '../../lib/util/nominatim/NominatimUtilities'
-import { mdiChevronLeft, mdiContentSave, mdiClose } from '@mdi/js'
 import SearchResultSkelton from './SearchResultSkelton.vue'
 import isEqual from 'lodash/isEqual'
 
@@ -103,9 +101,6 @@ export default {
   data () {
     return {
       selectedResult: null,
-      mdiChevronLeft: mdiChevronLeft,
-      mdiContentSave: mdiContentSave,
-      mdiClose: mdiClose,
       fab: false,
       selection: 0,
       noMoreResults: false,

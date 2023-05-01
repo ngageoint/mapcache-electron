@@ -4,7 +4,6 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -15,27 +14,24 @@
       <v-list class="pa-0">
         <template v-for="item in baseMapItems" :key="item.id + '-base-map'">
           <v-list-item @click="() => showBaseMap(item.id)">
-            <v-list-item-icon class="mt-auto mb-auto">
+            <template v-slot:prepend>
               <v-btn
                   icon="mdi-map-outline"
                   color="whitesmoke"
                   @click="(e) => item.zoomTo(e, project.id)"/>
-            </v-list-item-icon>
+            </template>
             <div>
               <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
               <v-list-item-subtitle v-if="item.type != null" v-text="item.type"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
             </div>
-            <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.warning">
-              <data-source-warning :source="item.baseMap"></data-source-warning>
-            </v-list-item-icon>
-            <v-list-item-icon class="mt-auto mb-auto" v-if="item.baseMap.error">
-              <base-map-troubleshooting :base-map="item.baseMap"></base-map-troubleshooting>
-            </v-list-item-icon>
-            <v-list-item-icon class="mt-auto mb-auto" v-if="item.missingRaster">
-              <geo-t-i-f-f-troubleshooting :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
-            </v-list-item-icon>
+            <template v-slot:append>
+              <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
+              <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
+              <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
+
+            </template>
           </v-list-item>
           <v-divider/>
         </template>
@@ -85,7 +81,6 @@ import keys from 'lodash/keys'
 import BaseMap from './BaseMap.vue'
 import BaseMapTroubleshooting from './BaseMapTroubleshooting.vue'
 import DataSourceWarning from '../DataSources/DataSourceWarning.vue'
-import { mdiChevronLeft, mdiMapOutline } from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
 import { getDefaultBaseMaps } from '../../lib/util/basemaps/BaseMapUtilities'
@@ -145,8 +140,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiMapOutline: mdiMapOutline,
       addBaseMapDialog: false,
       selectedBaseMap: null
     }

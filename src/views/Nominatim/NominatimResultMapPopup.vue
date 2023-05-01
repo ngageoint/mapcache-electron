@@ -20,19 +20,14 @@
         </v-card-subtitle>
       </v-col>
       <v-col class="mt-2" style="margin-left: -8px;">
-        <v-btn color="primary" icon @click="zoomTo">
-          <v-icon>{{ mdiMagnify }}</v-icon>
-        </v-btn>
-        <v-btn color="primary" icon @click="saveFeature">
-          <v-icon>{{ mdiContentSaveOutline }}</v-icon>
-        </v-btn>
+        <v-btn color="primary" icon="mdi-magnify" @click="zoomTo"/>
+        <v-btn color="primary" @click="saveFeature" icon="mdi-content-save-outline"/>
       </v-col>
     </v-row>
   </v-card>
 </template>
 
 <script>
-import { mdiContentSaveOutline, mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { prettyifyAddress, prettyifyWords } from '../../lib/util/nominatim/NominatimUtilities'
 
@@ -41,12 +36,6 @@ export default {
     result: Object,
     mouseover: Function,
     mouseleave: Function
-  },
-  data () {
-    return {
-      mdiContentSaveOutline: mdiContentSaveOutline,
-      mdiMagnify: mdiMagnify
-    }
   },
   methods: {
     prettyifyWords: prettyifyWords,

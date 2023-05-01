@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+      <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
       Edit zoom levels
     </v-card-title>
     <v-card-text>
@@ -26,14 +26,14 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Cancel
       </v-btn>
       <v-btn
           :disabled="!editedMinZoomValid || !editedMaxZoomValid"
           color="primary"
-          text
+          variant="text"
           @click="updateLayerZoomRange">
         Save
       </v-btn>
@@ -42,9 +42,6 @@
 </template>
 
 <script>
-import {
-  mdiPencil
-} from '@mdi/js'
 import NumberPicker from './NumberPicker.vue'
 
 export default {
@@ -59,7 +56,6 @@ export default {
   },
   data () {
     return {
-      mdiPencil,
       editZoomLevelsDialog: true,
       editedMinZoom: this.minZoom,
       editedMaxZoom: this.maxZoom,

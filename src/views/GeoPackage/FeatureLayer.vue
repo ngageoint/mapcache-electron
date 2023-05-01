@@ -1,6 +1,6 @@
 <template>
   <feature-view v-if="displayFeature && displayFeature.isGeoPackage" :name="geopackage.name" :project="project"
-                :projectId="projectId" is-geo-package :geopackage-path="geopackage.path" :id="geopackage.id"
+                :projectId="project.id" is-geo-package :geopackage-path="geopackage.path" :id="geopackage.id"
                 :tableName="tableName" :feature-id="displayFeature.featureId" :object="geopackage" :back="hideFeature"/>
   <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
@@ -8,11 +8,9 @@
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="hideStyleEditor"/>
       <v-toolbar-title>
-        <v-icon large color="white" class="pr-2">{{ mdiPalette }}</v-icon>
+        <v-icon large color="white" class="pr-2" icon="mdi-palette"/>
         {{ tableName }}
       </v-toolbar-title>
     </v-toolbar>
@@ -20,7 +18,7 @@
       <v-card flat tile>
         <style-editor v-if="styleEditorVisible"
                       :tableName="tableName"
-                      :projectId="projectId"
+                      :projectId="project.id"
                       :project="project"
                       :id="geopackage.id"
                       :path="geopackage.path"
@@ -35,7 +33,7 @@
   </v-sheet>
   <feature-layer-field v-else-if="showFeatureLayerField"
                        :tableName="tableName"
-                       :projectId="projectId"
+                       :projectId="project.id"
                        :id="geopackage.id"
                        is-geo-package
                        :object="geopackage"
@@ -59,7 +57,7 @@
           persistent>
         <v-card>
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiSpeedometer }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-speedometer"/>
             Indexing feature table
           </v-card-title>
           <v-card-text>
@@ -82,7 +80,7 @@
             <v-spacer></v-spacer>
             <v-btn
                 v-if="indexingDone"
-                text
+                variant="text"
                 @click="indexDialog = false">
               Close
             </v-btn>
@@ -96,7 +94,7 @@
           @keydown.esc="closeRenameDialog">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
             Rename feature layer
           </v-card-title>
           <v-card-text>
@@ -121,7 +119,7 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="renaming"
-                text
+                variant="text"
                 @click="renameDialog = false">
               Cancel
             </v-btn>
@@ -129,7 +127,7 @@
                 :loading="renaming"
                 :disabled="!renameValid"
                 color="primary"
-                text
+                variant="text"
                 @click="rename">
               Rename
             </v-btn>
@@ -143,7 +141,7 @@
           @keydown.esc="closeCopyDialog">
         <v-card v-if="copyDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiContentCopy }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-content-copy"/>
             Copy feature layer
           </v-card-title>
           <v-card-text>
@@ -168,7 +166,7 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="copying"
-                text
+                variant="text"
                 @click="copyDialog = false">
               Cancel
             </v-btn>
@@ -176,7 +174,7 @@
                 :loading="copying"
                 :disabled="!copyValid"
                 color="primary"
-                text
+                variant="text"
                 @click="copy">
               Copy
             </v-btn>
@@ -190,7 +188,7 @@
           @keydown.esc="closeDeleteDialog">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+            <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
             Delete feature layer
           </v-card-title>
           <v-card-text>
@@ -201,14 +199,14 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="deleting"
-                text
+                variant="text"
                 @click="deleteDialog = false">
               Cancel
             </v-btn>
             <v-btn
                 :loading="deleting"
                 color="warning"
-                text
+                variant="text"
                 @click="deleteTable">
               Delete
             </v-btn>
@@ -218,12 +216,11 @@
       <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="center">
         <v-col>
           <p class="text-subtitle-1">
-            <v-btn icon @click="zoomToLayer" color="whitesmoke">
-              <img v-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                   height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+            <v-btn variant="text" icon @click="zoomToLayer" color="whitesmoke">
+              <v-img v-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-            <span style="vertical-align: middle;">Feature layer</span>
+            <span class="ml-2" style="vertical-align: middle;">Feature layer</span>
           </p>
         </v-col>
       </v-row>
@@ -234,7 +231,7 @@
                     @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
+                  <v-icon small icon="mdi-pencil"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -249,7 +246,7 @@
                     @click.stop="showCopyDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiContentCopy }}</v-icon>
+                  <v-icon small icon="mdi-content-copy"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Copy
@@ -264,7 +261,7 @@
                     @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPalette }}</v-icon>
+                  <v-icon small icon="mdi-palette"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -279,7 +276,7 @@
                     @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiTrashCan }}</v-icon>
+                  <v-icon small icon="mdi-trash-can"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -293,7 +290,7 @@
             <v-card class="ma-0 pa-0 ml-1 clickable card-button" :elevation="hover ? 4 : 1" @click.stop="indexTable">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiSpeedometer }}</v-icon>
+                  <v-icon small icon="mdi-speedometer"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Index
@@ -316,11 +313,11 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Enable
-                </p>
-                <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible"
-                          hide-details></v-switch>
+                <v-switch color="primary" class="ml-2" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
+                  <template v-slot:prepend>
+                    <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">Enable</p>
+                  </template>
+                </v-switch>
               </v-row>
             </v-col>
           </v-row>
@@ -335,10 +332,7 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <v-btn class="btn-background" @click.stop="showFeatureTable" :disabled="featureCount === 0">
-                  <v-icon left>
-                    {{ mdiTableEye }}
-                  </v-icon>
+                <v-btn class="btn-background" @click.stop="showFeatureTable" :disabled="featureCount === 0" prepend-icon="mdi-table-eye">
                   View features
                 </v-btn>
               </v-row>
@@ -357,7 +351,7 @@
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-6 pr-6 pt-3 detail-bg">
-        <feature-layer-fields :id="geopackage.id" is-geo-package :project-id="projectId" :project="project" :table-name="tableName" :object="geopackage" :field-clicked="showFieldManagementView"></feature-layer-fields>
+        <feature-layer-fields :id="geopackage.id" is-geo-package :project-id="project.id" :project="project" :table-name="tableName" :object="geopackage" :field-clicked="showFieldManagementView"></feature-layer-fields>
       </v-row>
     </v-sheet>
   </v-sheet>
@@ -366,20 +360,6 @@
 <script>
 import StyleEditor from '../StyleEditor/StyleEditor.vue'
 import EventBus from '../../lib/vue/EventBus'
-import {
-  mdiCalendar,
-  mdiCalendarClock,
-  mdiChevronLeft,
-  mdiContentCopy,
-  mdiFormatText,
-  mdiPalette,
-  mdiPencil,
-  mdiPound,
-  mdiSpeedometer,
-  mdiTableEye,
-  mdiToggleSwitch,
-  mdiTrashCan,
-} from '@mdi/js'
 import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities.js'
 import FeatureView from '../Common/FeatureView.vue'
 import FeatureLayerField from '../Common/GeoPackageFeatureLayer/FeatureLayerField.vue'
@@ -392,7 +372,6 @@ import {
 
 export default {
   props: {
-    projectId: String,
     project: Object,
     geopackage: Object,
     tableName: String,
@@ -416,18 +395,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiSpeedometer: mdiSpeedometer,
-      mdiPencil: mdiPencil,
-      mdiContentCopy: mdiContentCopy,
-      mdiFormatText: mdiFormatText,
-      mdiPound: mdiPound,
-      mdiToggleSwitch: mdiToggleSwitch,
-      mdiCalendar: mdiCalendar,
-      mdiCalendarClock: mdiCalendarClock,
-      mdiTableEye: mdiTableEye,
-      mdiTrashCan: mdiTrashCan,
-      mdiPalette: mdiPalette,
       styleEditorVisible: false,
       showFeatureLayerField: false,
       featureLayerField: null,
@@ -464,7 +431,7 @@ export default {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
       },
       set (value) {
-        setGeoPackageFeatureTableVisible( this.projectId, this.geopackage.id, this.tableName, value)
+        setGeoPackageFeatureTableVisible(this.project.id, this.geopackage.id, this.tableName, value)
       }
     },
     indexed () {
@@ -503,7 +470,7 @@ export default {
       this.renamed(this.renamedTable)
       this.copiedTable = this.renamedTable + '_copy'
       this.renaming = true
-      renameGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'feature').then(() => {
+      renameGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'feature').then(() => {
         this.renaming = false
         this.$nextTick(() => {
           this.renameDialog = false
@@ -512,7 +479,7 @@ export default {
     },
     copy () {
       this.copying = true
-      copyGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'feature').then(() => {
+      copyGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'feature').then(() => {
         this.$nextTick(() => {
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Feature layer copied', 'primary')
         })
@@ -523,7 +490,7 @@ export default {
     },
     deleteTable () {
       this.deleting = true
-      deleteGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, 'feature').then(() => {
+      deleteGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, 'feature').then(() => {
         this.deleting = false
         this.$nextTick(() => {
           this.deleteDialog = false
@@ -555,7 +522,7 @@ export default {
           setTimeout(function () {
             _this.indexingDone = true
             _this.indexMessage = 'Indexing completed'
-            updateFeatureTable(_this.projectId, _this.geopackage.id, _this.tableName)
+            updateFeatureTable(_this.project.id, _this.geopackage.id, _this.tableName)
           }, 2000)
         })
       }, 1000)
@@ -600,7 +567,7 @@ export default {
         }
       }
       headersTmp.splice(newIndex, 0, headersTmp.splice(oldIndex, 1)[0])
-      updateGeoPackageFeatureTableColumnOrder(this.projectId, this.geopackage.id, true, this.tableName, headersTmp)
+      updateGeoPackageFeatureTableColumnOrder(this.project.id, this.geopackage.id, true, this.tableName, headersTmp)
     },
   },
   watch: {

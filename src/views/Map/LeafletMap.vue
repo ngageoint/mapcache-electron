@@ -1,7 +1,7 @@
 <template>
   <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}"
        @mouseleave="mouseLeft" @mouseenter="mouseEntered">
-    <div id="map" :style="{width: '100%',  zIndex: 0, flex: 1, backgroundColor: mapBackground}">
+    <div id="map" :style="{width: '100%', zIndex: 0, flex: 1, backgroundColor: mapBackground}">
       <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
           v-model="geopackageFeatureLayerSelectionDialog"
@@ -106,24 +106,21 @@
               class="sortable-list-item"
               :key="item.id"
               dense>
-            <v-list-item-icon class="mt-1">
+            <template v-slot:prepend>
               <v-btn icon @click.stop="item.zoomTo">
-                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer"
-                     width="20px" height="20px"/>
-                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                     height="20px"/>
-                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px"
-                     height="20px"/>
+                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
                 <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
-            </v-list-item-icon>
+            </template>
             <div class="pa-0 ma-0">
               <v-list-item-title v-text="item.title"></v-list-item-title>
               <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
             </div>
-            <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
-              <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
-            </v-list-item-icon>
+            <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
+              <v-icon icon="mdi-drag-horizontal-variant"/>
+            </template>
           </v-list-item>
         </v-list>
       </v-card-text>
@@ -156,26 +153,24 @@
         <v-card-subtitle class="pt-1 pb-1">
           Select a base map.
         </v-card-subtitle>
-        <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
-          <v-list-item-group v-model="selectedBaseMapId" mandatory>
-            <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
-              <v-list-item-icon style="margin-right: 16px;">
-                <v-btn small icon @click.stop="(e) => item.zoomTo(e)">
-                  <v-icon small>{{ mdiMapOutline }}</v-icon>
-                </v-btn>
-              </v-list-item-icon>
-              <v-list-item-title>{{ item.name }}</v-list-item-title>
-              <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
-              <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
-              <geo-t-i-f-f-troubleshooting v-if="item.missingRaster"
-                                           :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
-              <v-progress-circular
-                  v-if="item.id == selectedBaseMapId && connectingToBaseMap"
-                  indeterminate
-                  color="primary"
-              ></v-progress-circular>
-            </v-list-item>
-          </v-list-item-group>
+        <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;" v-model="selectedBaseMapId">
+          <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
+            <template v-slot:prepend>
+              <v-btn small icon="mdi-map-outline" @click.stop="(e) => item.zoomTo(e)">
+                <v-icon small>{{ mdiMapOutline }}</v-icon>
+              </v-btn>
+            </template>
+            <v-list-item-title>{{ item.name }}</v-list-item-title>
+            <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
+            <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
+            <geo-t-i-f-f-troubleshooting v-if="item.missingRaster"
+                                         :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
+            <v-progress-circular
+                v-if="item.id === selectedBaseMapId && connectingToBaseMap"
+                indeterminate
+                color="primary"
+            ></v-progress-circular>
+          </v-list-item>
         </v-list>
       </v-card-text>
     </v-card>
@@ -191,98 +186,27 @@
           class="background"
       >
         <v-list>
-          <v-list-item dense>
-            <v-list-item-icon>
-              <v-icon>{{ mdiPencil }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title class="text-h6">
-              Edit tools
-            </v-list-item-title>
-          </v-list-item>
+          <v-list-item dense prepend-icon="mdi-pencil" title="Edit Tools"/>
         </v-list>
         <v-divider></v-divider>
         <v-list dense>
-          <v-list-item-group v-model="mode">
-            <v-list-item link @click="toggleVertexEditing" :value="0">
-              <v-list-item-icon>
-                <v-icon>{{ mdiVectorPolylineEdit }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Edit</v-list-item-title>
-            </v-list-item>
-            <v-list-item link @click="toggleDrag" :value="1">
-              <v-list-item-icon>
-                <v-icon> {{ mdiCursorMove }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Drag</v-list-item-title>
-            </v-list-item>
-            <v-list-item link @click="toggleCut" :value="2">
-              <v-list-item-icon>
-                <v-icon>{{ mdiContentCut }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Cut</v-list-item-title>
-            </v-list-item>
-            <v-list-item link @click="toggleRotate" :value="3">
-              <v-list-item-icon>
-                <v-icon>{{ mdiReload }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Rotate</v-list-item-title>
-            </v-list-item>
-            <v-list-item link @click="toggleErase" :value="4">
-              <v-list-item-icon>
-                <v-icon>{{ mdiEraser }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Erase</v-list-item-title>
-            </v-list-item>
-          </v-list-item-group>
-          <v-list-item link @click="undoEdit" :disabled="noUndo">
-            <v-list-item-icon>
-              <v-icon :disabled="noUndo">{{ mdiUndo }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>Undo</v-list-item-title>
-          </v-list-item>
-          <v-list-item link @click="redoEdit" :disabled="noRedo">
-            <v-list-item-icon>
-              <v-icon :disabled="noRedo">{{ mdiRedo }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>Redo</v-list-item-title>
-          </v-list-item>
+          <v-list-item link @click="toggleVertexEditing" :value="0" prepend-icon="mdi-vector-polyline-edit" title="Edit"/>
+          <v-list-item link @click="toggleDrag" :value="1" prepend-icon="mdi-cursor-move" title="Drag"/>
+          <v-list-item link @click="toggleCut" :value="2" prepend-icon="mdi-content-cut" title="Cut"/>
+          <v-list-item link @click="toggleRotate" :value="3" prepend-icon="mdi-reload" title="Rotate"/>
+          <v-list-item link @click="toggleErase" :value="4" prepend-icon="mdi-eraser" title="Erase"/>
+          <v-list-item link @click="undoEdit" :disabled="noUndo" prepend-icon="mdi-undo" title="Undo"/>
+          <v-list-item link @click="redoEdit" :disabled="noRedo" prepend-icon="mdi-redo" title="Redo"/>
           <v-divider></v-divider>
           <v-list-group :prepend-icon="mdiShapePlus">
             <template v-slot:activator>
               <v-list-item-title>Add shapes</v-list-item-title>
             </template>
-            <v-list-item-group v-model="mode">
-              <v-list-item link @click="toggleDrawMarker" :value="5">
-                <v-list-item-icon>
-                  <v-icon>{{ mdiMapMarker }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Marker</v-list-item-title>
-              </v-list-item>
-              <v-list-item link @click="toggleDrawLine" :value="6">
-                <v-list-item-icon>
-                  <v-icon>{{ mdiVectorPolyline }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Line</v-list-item-title>
-              </v-list-item>
-              <v-list-item link @click="toggleDrawRectangle" :value="7">
-                <v-list-item-icon>
-                  <v-icon>{{ mdiVectorRectangle }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Rectangle</v-list-item-title>
-              </v-list-item>
-              <v-list-item link @click="toggleDrawPolygon" :value="8">
-                <v-list-item-icon>
-                  <v-icon>{{ mdiVectorPolygon }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Polygon</v-list-item-title>
-              </v-list-item>
-              <v-list-item link @click="toggleDrawCircle" :value="9">
-                <v-list-item-icon>
-                  <v-icon>{{ mdiCircleOutline }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Circle</v-list-item-title>
-              </v-list-item>
-            </v-list-item-group>
+            <v-list-item link @click="toggleDrawMarker" :value="5" prepend-icon="mdi-map-marker" title="Marker"/>
+            <v-list-item link @click="toggleDrawLine" :value="6" prepend-icon="mdi-vector-polyline" title="Line"/>
+            <v-list-item link @click="toggleDrawRectangle" :value="7" prepend-icon="mdi-vector-rectangle" title="Rectangle"/>
+            <v-list-item link @click="toggleDrawPolygon" :value="8" prepend-icon="mdi-vector-polygon" title="Polygon"/>
+            <v-list-item link @click="toggleDrawCircle" :value="9" prepend-icon="mdi-circle-outline" title="Circle"/>
           </v-list-group>
         </v-list>
       </v-navigation-drawer>
@@ -295,10 +219,7 @@
           class="background"
       >
         <v-list>
-          <v-list-item dense>
-            <v-list-item-icon>
-              <v-icon>{{ mdiPencil }}</v-icon>
-            </v-list-item-icon>
+          <v-list-item dense prepend-icon="mdi-pencil">
             <v-list-item-title class="text-h6">
               Edit tools
             </v-list-item-title>
@@ -306,20 +227,12 @@
         </v-list>
         <v-divider></v-divider>
         <v-list dense>
-          <v-list-item-group v-model="drawBoundsMode" mandatory>
-            <v-list-item link @click="toggleBoundsEdit" :value="0">
-              <v-list-item-icon>
-                <v-icon>{{ mdiVectorPolylineEdit }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Edit</v-list-item-title>
-            </v-list-item>
-            <v-list-item link @click="toggleBoundsDrag" :value="1">
-              <v-list-item-icon>
-                <v-icon> {{ mdiCursorMove }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Drag</v-list-item-title>
-            </v-list-item>
-          </v-list-item-group>
+          <v-list-item link @click="toggleBoundsEdit" :value="0" prepend-icon="mdi-vector-polyline-edit">
+            <v-list-item-title>Edit</v-list-item-title>
+          </v-list-item>
+          <v-list-item link @click="toggleBoundsDrag" :value="1" prepend-icon="mdi-cursor-move">
+            <v-list-item-title>Drag</v-list-item-title>
+          </v-list-item>
         </v-list>
       </v-navigation-drawer>
     </v-card>
@@ -367,26 +280,6 @@ import {
   DRAWING_VERTEX_PANE,
   DRAWING_LAYER_PANE
 } from '../../lib/leaflet/map/panes/MapPanes'
-import {
-  mdiMapOutline,
-  mdiDragHorizontalVariant,
-  mdiVectorPolylineEdit,
-  mdiReload,
-  mdiEraser,
-  mdiContentCut,
-  mdiCursorMove,
-  mdiPencil,
-  mdiRedo,
-  mdiUndo,
-  mdiMapMarker,
-  mdiVectorPolyline,
-  mdiVectorRectangle,
-  mdiVectorPolygon,
-  mdiShapePlus,
-  mdiPlus,
-  mdiCircleOutline,
-  mdiTrashCanOutline
-} from '@mdi/js'
 import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import {
   zoomToBaseMap,
@@ -511,7 +404,7 @@ export default {
             updateKey: 0,
             baseMap: baseMapConfig,
             name: baseMapConfig.name,
-            missingRaster: window.mapcache.isRasterMissing(baseMapConfig.layerConfiguration),
+            missingRaster: baseMapConfig.layerConfiguration ? window.mapcache.isRasterMissing(baseMapConfig.layerConfiguration.layerType, baseMapConfig.layerConfiguration.rasterFile) : false,
             zoomTo: debounce((e) => {
               e.stopPropagation()
               zoomToBaseMap(baseMapConfig)
@@ -548,24 +441,6 @@ export default {
   data () {
     return {
       map: null,
-      mdiTrashCanOutline,
-      mdiCircleOutline,
-      mdiReload,
-      mdiEraser,
-      mdiVectorPolylineEdit,
-      mdiMapOutline,
-      mdiDragHorizontalVariant,
-      mdiContentCut,
-      mdiCursorMove,
-      mdiPencil,
-      mdiRedo,
-      mdiUndo,
-      mdiMapMarker,
-      mdiVectorPolyline,
-      mdiVectorRectangle,
-      mdiVectorPolygon,
-      mdiShapePlus,
-      mdiPlus,
       disableSearch: false,
       mapBounds: [-180, -90, 180, 90],
       consecutiveClicks: 0,
@@ -1189,6 +1064,8 @@ export default {
     initializeMap (centerAndZoom) {
       const defaultCenter = centerAndZoom ? centerAndZoom.center : [40.809118, 61.614383]
       const defaultZoom = centerAndZoom ? centerAndZoom.zoom : 3
+      console.log(defaultCenter)
+      console.log(defaultZoom)
       this.map = L.map('map', {
         attributionControl: false,
         center: defaultCenter,
@@ -2084,7 +1961,7 @@ export default {
 </script>
 
 <style>
-/*@import '~leaflet/dist/leaflet.css';*/
+@import 'leaflet/dist/leaflet.css';
 
 .popup {
   display: flex;

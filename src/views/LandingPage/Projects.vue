@@ -9,7 +9,7 @@
         @keydown.esc="cancelRemove">
       <v-card flat tile v-if="geoPackageFileImportDialog" class="overflow-hidden">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiPackageVariant }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-package-variant"/>
           Open {{ geoPackageFiles.length }} GeoPackage {{ geoPackageFiles.length === 1 ? 'file' : 'files' }}
         </v-card-title>
         <v-card-text class="pb-0">
@@ -18,7 +18,7 @@
           </v-card-subtitle>
           <v-form v-on:submit.prevent v-model="projectNameValid" ref="form">
             <v-text-field variant="underlined" class="pl-4 pr-4" label="Project name" v-model="projectName" :rules="projectNameRules">
-              <template v-slot:append-outer>
+              <template v-slot:append>
                 <v-tooltip location="end">
                   <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" color="primary" icon="mdi-plus" :disabled="!projectNameValid"
@@ -57,7 +57,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="cancelGeoPackageFileImport">
+          <v-btn variant="text" @click="cancelGeoPackageFileImport">
             Cancel
           </v-btn>
         </v-card-actions>
@@ -81,13 +81,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelRemove">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="remove">
             Delete
           </v-btn>
@@ -99,14 +99,16 @@
         persistent
         width="400">
       <v-card
-          color="#426e91" theme="dark" class="pt-2">
+          theme="dark"
+          color="#426e91" class="pt-2 pb-4">
         <v-card-text
-            class="padding-top">
+            theme="dark"
+            class="pt-2">
           {{ dialogText }}
           <v-progress-linear
+              class="mt-2"
               indeterminate
-              color="white"
-              class="mb-0">
+              color="white">
           </v-progress-linear>
         </v-card-text>
       </v-card>
@@ -128,7 +130,7 @@
     </v-row>
     <span style="color: whitesmoke; font-size: 12px">Recent projects</span>
     <v-row no-gutters justify="center" class="flex-grow-1 mt-2">
-      <v-list lines="two" theme="dark" class="semi-transparent project-list pa-0" v-if="projects.length > 0">
+      <v-list lines="two" class="semi-transparent project-list pa-0" v-if="projects.length > 0" theme="dark">
         <v-list-item class="semi-transparent" v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)">
           <v-list-item-title style="font-weight: 600;">
             {{ project.name }}
@@ -148,7 +150,7 @@
           </template>
         </v-list-item>
       </v-list>
-      <v-card theme="dark" flat v-else class="semi-transparent project-list">
+      <v-card flat v-else class="semi-transparent project-list">
         <v-card-text>
           No projects. Click the <b>
           <v-icon icon="mdi-plus" small/>
@@ -162,7 +164,6 @@
 <script>
 import { mapState } from 'vuex'
 import EditTextModal from '../Common/EditTextModal.vue'
-import { mdiPlus, mdiTrashCan, mdiTrashCanOutline, mdiPackageVariant } from '@mdi/js'
 import { environment } from '../../lib/env/env'
 import { addGeoPackage, deleteProject } from '../../lib/vue/vuex/CommonActions'
 import { disableRemoteSources, newProject, setProjectAccessed } from '../../lib/vue/vuex/LandingActions'
@@ -181,10 +182,6 @@ export default {
   data () {
     return {
       step: 1,
-      mdiTrashCan: mdiTrashCan,
-      mdiPackageVariant: mdiPackageVariant,
-      mdiTrashCanOutline: mdiTrashCanOutline,
-      mdiPlus: mdiPlus,
       dialog: false,
       dialogText: '',
       deleteProjectDialog: false,

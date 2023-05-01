@@ -8,17 +8,11 @@
 </template>
 
 <script>
-import { mdiLightbulbOnOutline } from '@mdi/js'
 
 export default {
   props: {
     tip: String
-  },
-  data () {
-    return {
-      mdiLightbulbOnOutline,
-    }
-  },
+  }
 }
 </script>
 

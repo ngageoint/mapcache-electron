@@ -88,8 +88,6 @@
 </template>
 
 <script>
-import { mdiCalendar, mdiClock } from '@mdi/js'
-
 export default {
   props: {
     index: Number,
@@ -106,8 +104,6 @@ export default {
   },
   data () {
     return {
-      mdiCalendar: mdiCalendar,
-      mdiClock: mdiClock,
       TEXT: window.mapcache.GeoPackageDataType.TEXT,
       FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
       BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,

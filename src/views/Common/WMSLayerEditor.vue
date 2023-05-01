@@ -30,11 +30,11 @@
             :disabled="errored"
             v-for="(item) in sortedLayers"
             class="sortable-list-item"
-            :key="item.name">
-          <v-list-item-icon class="sortHandle"
-                            style="vertical-align: middle !important; align-self: center !important;">
-            <v-icon :disabled="errored">{{ mdiDragHorizontalVariant }}</v-icon>
-          </v-list-item-icon>
+            :key="item.name"
+            prepend-icon="mdi-drag-horizontal-variant">
+<!--          <v-list-item-icon class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">-->
+<!--            <v-icon :disabled="errored" icon="mdi-drag-horizontal-variant"/>-->
+<!--          </v-list-item-icon>-->
           <div>
             <div v-if="item.title">
               <div class="list-item-title no-clamp" v-text="item.title"></div>
@@ -66,7 +66,6 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import { mdiDragHorizontalVariant } from '@mdi/js'
 import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import { testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
 import Sortable from 'sortablejs'
@@ -127,7 +126,6 @@ export default {
   },
   data () {
     return {
-      mdiDragHorizontalVariant,
       sortedRenderingLayers: [],
       loaded: false,
       errored: false

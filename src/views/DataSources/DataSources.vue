@@ -1,6 +1,6 @@
 <template>
   <div class="ma-0 pa-0 mapcache-sheet">
-    <data-source v-if="selectedDataSource !== null && selectedDataSource !== undefined"
+    <data-source v-if="selectedDataSource != null"
                  :key="selectedDataSource.id"
                  class="sources"
                  :source="selectedDataSource"
@@ -13,7 +13,7 @@
                          :project="project" :add-source="addSource"></add-data-source-url>
     <overpass-data-source v-else-if="overpassDialog" :back="() => {overpassDialog = false}" :sources="sources"
                           :project="project" :add-source="addSource"></overpass-data-source>
-    <v-sheet v-show="!urlSourceDialog && !overpassDialog && selectedDataSource == null" class="mapcache-sheet">
+    <v-sheet v-else class="mapcache-sheet">
       <v-toolbar
           color="main"
           flat
@@ -23,8 +23,7 @@
         <v-toolbar-title>Data sources</v-toolbar-title>
       </v-toolbar>
       <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
-        <data-source-list :sources="sources" :projectId="project.id" :source-selected="dataSourceSelected">
-        </data-source-list>
+        <data-source-list :sources="sources" :project="project" :source-selected="dataSourceSelected"/>
         <template v-for="source in processingSourceList" :key="source.id">
           <processing-source
               :source="source"
@@ -62,8 +61,8 @@
               <v-btn
                   fab
                   color="primary"
-                  v-bind="props">
-                <v-icon>{{ mdiLayersPlus }}</v-icon>
+                  v-bind="props"
+                  icon="mdi-layers-plus">
               </v-btn>
             </template>
             <span>Add data source</span>
@@ -76,8 +75,8 @@
                 small
                 color="accent"
                 @click.stop="addFileClick"
-                v-bind="props">
-              <v-icon>{{ mdiFileDocumentOutline }}</v-icon>
+                v-bind="props"
+                icon="mdi-file-document-outline">
             </v-btn>
           </template>
           <span>Import from file</span>
@@ -89,8 +88,8 @@
                 small
                 color="accent"
                 @click.stop.prevent="showUrlDialog"
-                v-bind="props">
-              <v-icon>{{ mdiCloudDownloadOutline }}</v-icon>
+                v-bind="props"
+                icon="mdi-cloud-download-outline">
             </v-btn>
           </template>
           <span>Download from url</span>
@@ -102,8 +101,8 @@
                 small
                 color="accent"
                 @click.stop.prevent="showOverpassDialog"
-                v-bind="props">
-              <v-icon>{{ mdiSteering }}</v-icon>
+                v-bind="props"
+                icon="mdi-steering">
             </v-btn>
           </template>
           <span>Download OpenStreetMap features with Overpass</span>
@@ -121,7 +120,6 @@ import ProcessingSource from './ProcessingSource.vue'
 import DataSource from './DataSource.vue'
 import DataSourceList from './DataSourceList.vue'
 import AddDataSourceUrl from './AddDataSourceUrl.vue'
-import { mdiChevronLeft, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiLayersPlus, mdiSteering } from '@mdi/js'
 import { SUPPORTED_FILE_EXTENSIONS } from '../../lib/util/file/FileConstants'
 import OverpassDataSource from '../Overpass/OverpassDataSource.vue'
 import { notifyTab } from '../../lib/vue/vuex/ProjectActions'
@@ -146,11 +144,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiLayersPlus: mdiLayersPlus,
-      mdiFileDocumentOutline: mdiFileDocumentOutline,
-      mdiCloudDownloadOutline: mdiCloudDownloadOutline,
-      mdiSteering: mdiSteering,
       selectedDataSource,
       fab,
       urlSourceDialog: false,
@@ -235,6 +228,7 @@ export default {
       this.selectedDataSource = this.project.sources[dataSourceId]
     },
     deselectDataSource () {
+      console.log('deselected data source')
       this.selectedDataSource = null
     },
     showUrlDialog () {

@@ -3,7 +3,7 @@
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiAlertCircle }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-alert-circle"/>
           {{ initialDisplayName + ' troubleshooting' }}
         </v-card-title>
         <v-card-text>
@@ -23,14 +23,13 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-icon>{{ mdiAlertCircle }}</v-icon>
+    <v-icon icon="mdi-alert-circle"/>
   </v-btn>
   <div v-else></div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
-import { mdiAlertCircle } from '@mdi/js'
 import { isAuthenticationError, isServerError, isTimeoutError } from '../../lib/network/HttpUtilities'
 import { connectToBaseMap } from '../../lib/network/ServiceConnectionUtils'
 import { editBaseMap } from '../../lib/vue/vuex/ProjectActions'
@@ -61,7 +60,6 @@ export default {
   },
   data () {
     return {
-      mdiAlertCircle: mdiAlertCircle,
       showTroubleshootingDialog: false,
       reconnecting: false,
       connectionAttempts: 0

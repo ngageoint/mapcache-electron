@@ -3,17 +3,20 @@
     <web-view-dialog :key="authKey" v-if="authUrl != null" :width="600" :url="authUrl" :cancel="cancelAuthRequest"></web-view-dialog>
     <v-dialog
         v-model="closingDialog"
+        theme="dark"
         persistent
         width="400">
       <v-card
-          color="#426e91" dark class="pt-2">
+          theme="dark"
+          color="#426e91" class="pt-2 pb-4">
         <v-card-text
-            class="padding-top">
+            theme="dark"
+            class="pt-2">
           {{ closingMessage }}
           <v-progress-linear
+              class="mt-2"
               indeterminate
-              color="white"
-              class="mb-0">
+              color="white">
           </v-progress-linear>
         </v-card-text>
       </v-card>
@@ -94,17 +97,16 @@
                                     :project="project"></nominatim-search-results>
         </v-col>
         <v-col>
-<!--          <leaflet-map-->
-<!--              ref="map"-->
-<!--              visible-->
-<!--              :geopackages="project.geopackages"-->
-<!--              :sources="project.sources"-->
-<!--              :project-id="project.id"-->
-<!--              :project="project"-->
-<!--              :resizeListener="tabId"-->
-<!--              :feature-table-popped-out="featureTablePoppedOut"-->
-<!--              :dark-theme="darkTheme">-->
-<!--          </leaflet-map>-->
+          <leaflet-map
+              ref="map"
+              visible
+              :geopackages="project.geopackages"
+              :sources="project.sources"
+              :project-id="project.id"
+              :project="project"
+              :resizeListener="tabId"
+              :feature-table-popped-out="featureTablePoppedOut">
+          </leaflet-map>
         </v-col>
       </v-row>
     </v-layout>
@@ -118,7 +120,7 @@
       No internet connectivity. Check your connection.
       <template v-slot:action="{ attrs }">
         <v-btn
-            text
+            variant="text"
             v-bind="attrs"
             @click="noInternet = false"
         >
@@ -137,7 +139,7 @@
       <template v-slot:action="{ attrs }">
         <v-btn
             :color="alertColor"
-            text
+            variant="text"
             v-bind="attrs"
             @click="showAlertMessage = false"
         >
@@ -159,7 +161,6 @@ import GeoPackages from '../GeoPackage/GeoPackages.vue'
 import DataSources from '../DataSources/DataSources.vue'
 import BasicAuth from '../Network/BasicAuth.vue'
 import CertAuth from '../Network/CertAuth.vue'
-import { mdiCogOutline, mdiLayersOutline, mdiPackageVariant, mdiMagnify } from '@mdi/js'
 import { SUPPORTED_FILE_EXTENSIONS_WITH_DOT } from '../../lib/util/file/FileConstants'
 import NominatimSearchResults from '../Nominatim/NominatimSearchResults.vue'
 import ConfirmationCard from '../Common/ConfirmationCard.vue'
@@ -186,10 +187,6 @@ export default {
     return {
       authUrl: null,
       authKey: 0,
-      mdiPackageVariant: mdiPackageVariant,
-      mdiLayersOutline: mdiLayersOutline,
-      mdiCogOutline: mdiCogOutline,
-      mdiMagnify: mdiMagnify,
       closingMessage: '',
       closingDialog: false,
       loading: true,
@@ -607,6 +604,7 @@ export default {
 .content-panel {
   background-color: whitesmoke;
   max-width: 400px;
+  min-width: 400px;
   min-height: 100vh;
   max-height: 100vh;
   /*overflow-y: auto;*/

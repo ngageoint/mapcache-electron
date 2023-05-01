@@ -5,11 +5,11 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import "@mdi/font/css/materialdesignicons.css"
+import * as labs from 'vuetify/labs/components'
 
-// TODO: figure out how to add these svgs...
-// import MapFilterOnSvg from '../../../views/Nominatim/MapFilterOnSvg'
-// import MapFilterOffSvg from '../../../views/Nominatim/MapFilterOffSvg'
 
+import MapFilterOnSvg from '../../../views/Nominatim/MapFilterOnSvg.vue'
+import MapFilterOffSvg from '../../../views/Nominatim/MapFilterOffSvg.vue'
 
 const light = {
   dark: false,
@@ -29,7 +29,9 @@ const light = {
     main_active_background: '#ffffff',
     main_active_text: '#326482',
     scroll_thumb: '#808285',
-    scroll_track: '#f5f5f5'
+    scroll_track: '#f5f5f5',
+    switch_thumb: '#808285',
+    switch_track: '#f5f5f5'
   }
 }
 
@@ -56,11 +58,18 @@ const dark = {
 }
 
 export default createVuetify({
-  components,
+  components: {
+    ...components,
+    ...labs,
+  },
   directives,
   icons: {
     defaultSet: 'mdi',
-    aliases,
+    aliases: {
+      ...aliases,
+      mapFilterOn: MapFilterOnSvg,
+      mapFilterOff: MapFilterOffSvg
+    },
     sets: {
       mdi,
     }

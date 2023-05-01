@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import { mdiInformation } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 
 export default {
@@ -35,11 +34,6 @@ export default {
     icon: String,
     message: String,
     close: Function
-  },
-  data () {
-    return {
-      mdiInformation
-    }
   },
   methods: {
     onYes () {

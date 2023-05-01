@@ -3,7 +3,7 @@
     <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showTroubleshootingDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiAlertCircle }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-alert-circle"/>
           {{ initialDisplayName + ' Troubleshooting' }}
         </v-card-title>
         <v-card-text>
@@ -27,14 +27,13 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-icon>{{ mdiAlertCircle }}</v-icon>
+    <v-icon icon="mdi-alert-circle"/>
   </v-btn>
   <div v-else></div>
 </template>
 
 <script>
 import isNil from 'lodash/isNil'
-import { mdiAlertCircle } from '@mdi/js'
 import { editBaseMap, setDataSource } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -66,7 +65,6 @@ export default {
   },
   data () {
     return {
-      mdiAlertCircle: mdiAlertCircle,
       showTroubleshootingDialog: false,
       generating: false,
       error: null

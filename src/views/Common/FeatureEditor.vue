@@ -50,14 +50,14 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         {{ editableColumns.length > 0 ? 'Cancel' : 'Close' }}
       </v-btn>
       <v-btn
           :disabled="!formValid"
           color="primary"
-          text
+          variant="text"
           @click="save">
         Save
       </v-btn>
@@ -87,9 +87,8 @@ import isObject from 'lodash/isObject'
 import cloneDeep from 'lodash/cloneDeep'
 import orderBy from 'lodash/orderBy'
 import moment from 'moment'
-import { mdiCalendar, mdiClock } from '@mdi/js'
 import FeatureEditorColumn from './FeatureEditorColumn.vue'
-import EventBus from '../../lib/vue/EventBus'
+// import EventBus from '../../lib/vue/EventBus'
 import { synchronizeDataSource, synchronizeGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -115,8 +114,6 @@ export default {
   },
   data () {
     return {
-      mdiCalendar: mdiCalendar,
-      mdiClock: mdiClock,
       TEXT: window.mapcache.GeoPackageDataType.TEXT,
       FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
       BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,

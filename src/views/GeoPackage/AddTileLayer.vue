@@ -29,7 +29,7 @@
           <v-spacer></v-spacer>
           <v-btn
               v-if="!done"
-              text
+              variant="text"
               :disabled="cancelling"
               color="warning"
               @click.stop="cancelAddTileLayer">
@@ -38,7 +38,7 @@
           <v-btn
               v-if="done"
               color="primary"
-              text
+              variant="text"
               @click.stop="cancel">
             Close
           </v-btn>
@@ -71,7 +71,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" :disabled="!layerNameValid">
+          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!layerNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -127,7 +127,7 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 3">
+          <v-btn variant="text" color="primary" @click="step = 3">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -211,7 +211,7 @@
                     v-for="item in sortedLayers"
                     class="sortable-list-item"
                     :key="item.id">
-                  <v-list-item-icon class="mt-1">
+                  <template v-slot:prepend>
                     <v-btn icon @click.stop="item.zoomTo">
                       <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png"
                            alt="Tile layer" width="20px" height="20px"/>
@@ -221,14 +221,14 @@
                            width="20px" height="20px"/>
                       <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
-                  </v-list-item-icon>
+                  </template>
                   <div class="pa-0 ma-0">
                     <v-list-item-title v-text="item.title"></v-list-item-title>
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
                   </div>
-                  <v-list-item-icon class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
-                  </v-list-item-icon>
+                  <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
+                    <v-icon icon="mdi-drag-horizontal-variant"/>
+                  </template>
                 </v-list-item>
               </v-list>
             </v-card-text>
@@ -426,7 +426,6 @@ import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getTileCount } from '../../lib/util/tile/TileUtilities'
 import Sortable from 'sortablejs'
-import { mdiDragHorizontalVariant } from '@mdi/js'
 import {
   WEB_MERCATOR,
   WEB_MERCATOR_DISPLAY_TEXT, WORLD_GEODETIC_SYSTEM,
@@ -479,7 +478,6 @@ export default {
   },
   data () {
     return {
-      mdiDragHorizontalVariant: mdiDragHorizontalVariant,
       scalingEnabled: false,
       step: 1,
       layerNameValid: true,
@@ -675,7 +673,7 @@ export default {
       const geopackageKeys = keys(this.project.geopackages)
       for (let i = 0; i < geopackageKeys.length; i++) {
         const geopackage = this.project.geopackages[geopackageKeys[i]]
-        if (await window.mapcache.isHealthy(geopackage)) {
+        if (await window.mapcache.isHealthy(geopackage.path, geopackage.modifiedDate)) {
           Object.keys(geopackage.tables.tiles).forEach(table => {
             const tableName = table
             const visible = geopackage.tables.tiles[table].visible

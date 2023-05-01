@@ -19,7 +19,7 @@
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
               <v-btn icon @click="addGeoPackage" v-bind="props">
-                <v-icon color="primary">{{ mdiPlus }}</v-icon>
+                <v-icon color="primary" icon="mdi-plus"/>
               </v-btn>
             </template>
             <span>Create GeoPackage</span>
@@ -37,7 +37,7 @@
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
               <v-btn :disabled="geoPackageModel == null" icon @click="enableAddFeatureLayerMode" v-bind="props">
-                <v-icon color="primary">{{ mdiPlus }}</v-icon>
+                <v-icon color="primary" icon="mdi-plus"/>
               </v-btn>
             </template>
             <span>Add feature layer</span>
@@ -54,9 +54,7 @@
         <v-col cols="1">
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
-              <v-btn :disabled="geoPackageModel == null" icon @click="addFeatureLayerMode = false" v-bind="props">
-                <v-icon>{{ mdiClose }}</v-icon>
-              </v-btn>
+              <v-btn :disabled="geoPackageModel == null" icon="mdi-close" @click="addFeatureLayerMode = false" v-bind="props"/>
             </template>
             <span>Cancel</span>
           </v-tooltip>
@@ -66,7 +64,7 @@
             <template v-slot:activator="{ props }">
               <v-btn @click="handleAddFeatureLayer" :disabled="geoPackageModel == null || !newFeatureNameValid" icon
                      v-bind="props">
-                <v-icon color="primary">{{ mdiCheck }}</v-icon>
+                <v-icon color="primary" icon="mdi-check"/>
               </v-btn>
             </template>
             <span>Save feature layer</span>
@@ -76,10 +74,10 @@
     </v-card-text>
     <v-card-actions>
       <v-spacer/>
-      <v-btn text @click="cancel">
+      <v-btn variant="text" @click="cancel">
         Cancel
       </v-btn>
-      <v-btn text color="primary" :disabled="!featureTableValid"
+      <v-btn variant="text" color="primary" :disabled="!featureTableValid"
              @click="() => save(geoPackageModel, featureTableModel)">
         Add feature
       </v-btn>
@@ -93,7 +91,7 @@
       <template v-slot:action="{ attrs }">
         <v-btn
             color="warning"
-            text
+            variant="text"
             v-bind="attrs"
             @click="showAlert = false"
         >
@@ -106,7 +104,6 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import { mdiPlus, mdiClose, mdiCheck } from '@mdi/js'
 import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
 import { addFeatureTableToGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
@@ -120,9 +117,6 @@ export default {
   },
   data () {
     return {
-      mdiPlus,
-      mdiClose,
-      mdiCheck,
       valid: false,
       showAlert: false,
       step: 1,

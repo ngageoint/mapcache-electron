@@ -1,9 +1,9 @@
 <template>
-  <v-btn v-if="source.warning" icon color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning">
-    <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
-      <v-card v-if="showTroubleshootingDialog">
+  <v-btn v-if="source.warning" color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning" icon="mdi-information">
+    <v-dialog v-model="showWarningDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
+      <v-card v-if="showWarningDialog">
         <v-card-title>
-          <v-icon color="#F4D03F" class="pr-2">{{ mdiInformation }}</v-icon>
+          <v-icon color="#F4D03F" class="pr-2" icon="mdi-information"/>
           {{ initialDisplayName + ' Warning' }}
         </v-card-title>
         <v-card-text>
@@ -24,7 +24,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-icon>{{ mdiInformation }}</v-icon>
   </v-btn>
   <div v-else></div>
 </template>
@@ -32,7 +31,6 @@
 <script>
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
-import { mdiInformation } from '@mdi/js'
 import { setSourceWarning } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -53,27 +51,24 @@ export default {
       }
     }),
     troubleShootingMessage () {
-      let message = this.source.warning
-
-      return message
+      return this.source.warning
     }
   },
   data () {
     return {
-      mdiInformation: mdiInformation,
-      showTroubleshootingDialog: false,
+      showWarningDialog: false,
     }
   },
   methods: {
     closeTroubleshooting () {
-      this.showTroubleshootingDialog = false
+      this.showWarningDialog = false
     },
     showTroubleshooting () {
-      this.showTroubleshootingDialog = true
+      this.showWarningDialog = true
     },
     dismissWarning () {
       this.clearWarning(this.source)
-      this.showTroubleshootingDialog = false
+      this.showWarningDialog = false
     },
     clearWarning (theSource) {
       setSourceWarning(theSource.id, '')

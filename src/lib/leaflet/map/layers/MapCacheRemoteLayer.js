@@ -27,7 +27,7 @@ export default function (L) {
       L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
       this.outstandingTileRequests = {}
       this.layer = options.layer
-      this.layerBounds = this.crs === WEB_MERCATOR ? window.mapcache.convertToWebMercator(this.layer.extent) : this.layer.extent.slice()
+      this.layerBounds = this.crs === WEB_MERCATOR ? window.mapcache.convertToWebMercator(options.layer.extent.slice()) : options.layer.extent.slice()
       this.id = options.layer.id
       this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
       this.timeout = !isNil(this.layer.timeoutMs) ? this.layer.timeoutMs : DEFAULT_TIMEOUT
@@ -337,7 +337,6 @@ export default function (L) {
         this.error = null
       }
       this.layer.update(layer)
-      this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
       let southWest = L.latLng(this.layer.extent[1], this.layer.extent[0])
       let northEast = L.latLng(this.layer.extent[3], this.layer.extent[2])
       this.originalOptions.bounds = L.latLngBounds(southWest, northEast)

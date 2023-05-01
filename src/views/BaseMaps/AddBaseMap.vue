@@ -32,7 +32,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" :disabled="!baseMapNameValid">
+          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!baseMapNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -49,10 +49,10 @@
                 <v-list-item-group mandatory v-model="selectedLayer">
                   <template v-for="(item, i) in layers" :key="`layer-${i}`">
                     <v-list-item
-                        two-line
+                        lines="two"
                         :value="i">
                       <v-list-item-icon style="margin-top: 12px;">
-                        <v-btn icon @click.stop="item.zoomTo">
+                        <v-btn variant="text"  icon @click.stop="item.zoomTo">
                           <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark"
                                src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
                           <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark"
@@ -85,7 +85,7 @@
               No layers available for base map.
             </v-card-subtitle>
           </v-card>
-          <v-btn text color="primary" @click="step = '3'">
+          <v-btn variant="text" color="primary" @click="step = '3'">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -109,13 +109,13 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-            text
+            variant="text"
             @click="close">
           Cancel
         </v-btn>
         <v-btn
             :disabled="!baseMapNameValid || layers.length === 0 || step !== '3'"
-            text
+            variant="text"
             color="primary"
             @click="save">
           Save
@@ -192,7 +192,7 @@ export default {
       const geopackages = values(this.project.geopackages)
       for (let i = 0; i < geopackages.length; i++) {
         const geopackage = geopackages[i]
-        if (await window.mapcache.isHealthy(geopackage)) {
+        if (await window.mapcache.isHealthy(geopackage.path, geopackage.modifiedDate)) {
           const tiles = keys(geopackage.tables.tiles)
           for (let j = 0; j < tiles.length; j++) {
             const table = tiles[j]

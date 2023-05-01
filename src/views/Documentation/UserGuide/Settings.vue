@@ -6,8 +6,6 @@
 <script>
 import {
   mdiCogOutline,
-  mdiFolderOutline,
-  mdiMapOutline,
   mdiTrashCanOutline,
   mdiPencil,
   mdiPalette,

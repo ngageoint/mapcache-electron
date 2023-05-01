@@ -451,8 +451,8 @@ contextBridge.exposeInMainWorld('mapcache', {
   fileExists: (filePath) => {
     return jetpack.exists(filePath)
   },
-  isRasterMissing: (config) => {
-    return config != null && config.layerType === GEOTIFF && (config.rasterFile == null || !jetpack.exists(config.rasterFile))
+  isRasterMissing: (layerType, rasterFile) => {
+    return layerType === GEOTIFF && (rasterFile == null || !jetpack.exists(rasterFile))
   },
   getExtensionName: (filePath) => {
     return path.extname(filePath)

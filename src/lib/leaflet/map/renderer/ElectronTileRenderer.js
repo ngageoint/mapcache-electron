@@ -87,7 +87,7 @@ export default class ElectronTileRenderer {
    * @override
    */
   async renderTile (requestId, coords, size, crs, callback) {
-    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent)) {
+    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent.slice())) {
       callback(null, null)
     } else {
       this.requestTile(this.getTileRequest(requestId, coords, size, crs)).then((result) => {

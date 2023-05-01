@@ -23,13 +23,9 @@
 </template>
 
 <script>
-import { mdiChatQuestionOutline } from '@mdi/js'
-
-
 export default {
   data () {
     return {
-      mdiChatQuestionOutline,
       entries: [
         {
           question: 'Can I use MapCache to create a GeoPackage containing tiles for the whole world at every zoom level?',

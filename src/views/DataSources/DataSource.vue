@@ -15,15 +15,12 @@
   <v-sheet v-else-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="hideStyleEditor">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="hideStyleEditor"/>
       <v-toolbar-title>
-        <v-icon large color="white" class="pr-2">{{ mdiPalette }}</v-icon>
+        <v-icon large color="white" class="pr-2" icon="mdi-palette"/>
         {{ initialDisplayName }}
       </v-toolbar-title>
     </v-toolbar>
@@ -57,7 +54,6 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -80,7 +76,7 @@
         @keydown.esc="renameDialog = false">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
           Rename data source
         </v-card-title>
         <v-card-text>
@@ -104,14 +100,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="renameDialog = false">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!renameValid"
               color="primary"
-              text
+              variant="text"
               @click="saveLayerName">
             Rename
           </v-btn>
@@ -125,7 +121,7 @@
         @keydown.esc="connectionSettingsDialog = false">
       <v-card v-if="connectionSettingsDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiCloudBraces }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-cloud-braces"/>
           Edit network settings
         </v-card-title>
         <v-card-text>
@@ -158,14 +154,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="closeConnectionSettingsDialog">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!rateLimitValid || !timeoutValid || !retryAttemptsValid"
               color="primary"
-              text
+              variant="text"
               @click="saveConnectionSettings">
             Save
           </v-btn>
@@ -179,7 +175,7 @@
         @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Remove data source
         </v-card-title>
         <v-card-text>
@@ -189,13 +185,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="deleteDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="removeDataSource">
             Remove
           </v-btn>
@@ -209,7 +205,7 @@
         @keydown.esc="cancelOverwrite">
       <v-card v-if="showOverwriteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiExportVariant }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-export-variant"/>
           Overwrite {{ overwriteFileName }}
         </v-card-title>
         <v-card-text>
@@ -218,13 +214,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelOverwrite">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="overwrite">
             Overwrite
           </v-btn>
@@ -237,7 +233,7 @@
         persistent>
       <v-card>
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiExportVariant }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-export-variant"/>
           Exporting {{ initialDisplayName }}
         </v-card-title>
         <v-card-text>
@@ -280,7 +276,7 @@
                     @click.stop="renameDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
+                  <v-icon small icon="mdi-pencil"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -295,7 +291,7 @@
                     @click.stop="styleEditorVisible = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPalette }}</v-icon>
+                  <v-icon small icon="mdi-palette"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Style
@@ -310,7 +306,7 @@
                     @click.stop="showConnectingSettingsDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiCloudBraces }}</v-icon>
+                  <v-icon small icon="mdi-cloud-braces"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Network
@@ -327,7 +323,7 @@
                         @click.stop="downloadGeoPackage" v-bind="props">
                   <v-card-text class="pa-2">
                     <v-row no-gutters align-content="center" justify="center">
-                      <v-icon small>{{ mdiExportVariant }}</v-icon>
+                      <v-icon small icon="mdi-export-variant"/>
                     </v-row>
                     <v-row no-gutters align-content="center" justify="center">
                       Export
@@ -345,7 +341,7 @@
                     @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiTrashCan }}</v-icon>
+                  <v-icon small icon="mdi-trash-can"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Remove
@@ -405,9 +401,8 @@
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                 <span style="margin-top: 8px;">{{ source.minZoom + ' - ' + source.maxZoom }}</span>
-                <v-btn style="margin-top: -2px;" icon small v-if="source.layerType === 'XYZServer'"
+                <v-btn style="margin-top: -2px;" icon="mdi-pencil" small v-if="source.layerType === 'XYZServer'"
                        @click="editZoomLevels">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
                 </v-btn>
               </p>
             </v-col>
@@ -423,10 +418,7 @@
             </v-col>
             <v-col>
               <v-row no-gutters justify="end">
-                <v-btn class="btn-background" @click.stop="showFeatureTable">
-                  <v-icon left>
-                    {{ mdiTableEye }}
-                  </v-icon>
+                <v-btn class="btn-background" @click.stop="showFeatureTable" prepend-icon="mdi-table-eye">
                   View features
                 </v-btn>
               </v-row>
@@ -481,15 +473,6 @@ import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import keys from 'lodash/keys'
-import {
-  mdiChevronLeft,
-  mdiCloudBraces,
-  mdiExportVariant,
-  mdiPalette,
-  mdiPencil,
-  mdiTableEye,
-  mdiTrashCan,
-} from '@mdi/js'
 import {
   DEFAULT_RETRY_ATTEMPTS,
   DEFAULT_RATE_LIMIT,
@@ -564,13 +547,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft,
-      mdiPencil,
-      mdiCloudBraces,
-      mdiTrashCan,
-      mdiExportVariant,
-      mdiPalette,
-      mdiTableEye,
       defaultTimeout: DEFAULT_TIMEOUT,
       defaultRateLimit: DEFAULT_RATE_LIMIT,
       defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,

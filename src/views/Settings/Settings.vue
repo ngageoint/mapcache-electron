@@ -24,13 +24,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="hideDeleteProjectDialog">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteProjectAndClose">
             Delete
           </v-btn>
@@ -63,7 +63,7 @@
                        font-weight="bold" label="Overpass url" :on-save="saveOverpassUrl"/>
     </v-dialog>
     <v-sheet class="mapcache-sheet-content">
-      <v-list two-line subheader>
+      <v-list lines="two" subheader>
         <v-row dense no-gutters justify="space-between" align="center">
           <v-col>
             <v-list-subheader>General</v-list-subheader>
@@ -87,7 +87,7 @@
             <v-list-item-subtitle>Dark</v-list-item-subtitle>
           </div>
           <template v-slot:append>
-            <v-switch theme="light" v-model="darkTheme" color="primary" hide-details/>
+            <v-switch v-model="darkTheme" color="primary" hide-details/>
           </template>
         </v-list-item>
         <v-list-item selectable @click.stop.prevent="notifications = !notifications">
@@ -194,7 +194,7 @@
         </v-list-item>
       </v-list>
       <v-divider></v-divider>
-      <v-list subheader two-line style="padding-top: 0;">
+      <v-list subheader lines="two" style="padding-top: 0;">
         <v-list-subheader>Project</v-list-subheader>
         <v-list-item @click="toggleEditProjectNameDialog">
           <div style="padding-right: 12px;">
@@ -223,7 +223,6 @@ import EditNumberModal from '../Common/EditNumberModal.vue'
 import SavedUrls from './SavedUrls.vue'
 import BaseMaps from '../BaseMaps/BaseMaps.vue'
 import AddBaseMap from '../BaseMaps/AddBaseMap.vue'
-import { mdiChevronLeft, mdiCloudOutline, mdiHelpCircleOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { mapState } from 'vuex'
 import { environment } from '../../lib/env/env'
@@ -359,11 +358,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiPencil: mdiPencil,
-      mdiTrashCan: mdiTrashCan,
-      mdiCloudOutline: mdiCloudOutline,
-      mdiHelpCircleOutline: mdiHelpCircleOutline,
       editProjectNameDialog: false,
       editMaxFeaturesDialog: false,
       helpDialog: false,

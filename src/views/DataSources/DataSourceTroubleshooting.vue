@@ -1,37 +1,32 @@
 <template>
-  <v-btn v-if="source.error" icon color="#d9534f" @click.stop="() => showTroubleshooting()" title="Error">
-    <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
-      <v-card v-if="showTroubleshootingDialog">
-        <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiAlertCircle }}</v-icon>
-          {{ initialDisplayName + ' troubleshooting' }}
-        </v-card-title>
-        <v-card-text>
-          {{ troubleShootingMessage }}
-        </v-card-text>
-        <v-card-actions>
-          <v-btn id="connectionButton" :loading="reconnecting" :color="connectionAttempts === 0 ? 'primary' : 'warning'"
-                 text @click.stop="reconnect">
-            {{ connectionAttempts === 0 ? 'Connect' : 'Retry' }}
-          </v-btn>
-          <v-spacer></v-spacer>
-          <v-btn
-              text
-              @click.stop="closeTroubleshooting">
-            Close
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-icon>{{ mdiAlertCircle }}</v-icon>
-  </v-btn>
-  <div v-else></div>
+  <v-btn icon="mdi-alert-circle" variant="text" class="mr-2" color="#d9534f" @click.stop="() => showTroubleshooting()" title="Error"/>
+  <v-dialog v-model="showTroubleshootingDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
+    <v-card v-if="showTroubleshootingDialog">
+      <v-card-title>
+        <v-icon color="warning" class="pr-2" icon="mdi-alert-circle"/>
+        {{ initialDisplayName + ' troubleshooting' }}
+      </v-card-title>
+      <v-card-text>
+        {{ troubleShootingMessage }}
+      </v-card-text>
+      <v-card-actions>
+        <v-btn id="connectionButton" :loading="reconnecting" :color="connectionAttempts === 0 ? 'primary' : 'warning'" variant="text" @click.stop="reconnect">
+          {{ connectionAttempts === 0 ? 'Connect' : 'Retry' }}
+        </v-btn>
+        <v-spacer></v-spacer>
+        <v-btn
+            variant="text"
+            @click.stop="closeTroubleshooting">
+          Close
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
 import { mapState } from 'vuex'
 import isNil from 'lodash/isNil'
-import { mdiAlertCircle } from '@mdi/js'
 import { DEFAULT_TIMEOUT, isAuthenticationError, isServerError, isTimeoutError } from '../../lib/network/HttpUtilities'
 import { connectToSource } from '../../lib/network/ServiceConnectionUtils'
 import { setDataSource } from '../../lib/vue/vuex/ProjectActions'
@@ -70,7 +65,6 @@ export default {
   },
   data () {
     return {
-      mdiAlertCircle: mdiAlertCircle,
       showTroubleshootingDialog: false,
       reconnecting: false,
       connectionAttempts: 0

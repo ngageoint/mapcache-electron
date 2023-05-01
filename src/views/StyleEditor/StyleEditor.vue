@@ -7,7 +7,7 @@
         @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Remove styling
         </v-card-title>
         <v-card-text>
@@ -17,13 +17,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="removeDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="removeStyleExtensionAndTableStyles">
             Remove
           </v-btn>
@@ -110,8 +110,8 @@
               <span>{{ styleListItems.hint ? 'No styles found' : '' }}</span>
               <v-btn
                   @click.stop.prevent="addStyle"
-                  color="primary">
-                <v-icon small class="mr-1">{{ mdiPlus }}</v-icon>
+                  color="primary"
+                  prepend-icon="mdi-plus">
                 Add style
               </v-btn>
             </v-row>
@@ -156,8 +156,8 @@
               <span>{{ iconListItems.hint ? 'No icons found' : '' }}</span>
               <v-btn
                   @click.stop.prevent="addIcon"
-                  color="primary">
-                <v-icon small class="mr-1">{{ mdiPlus }}</v-icon>
+                  color="primary"
+                  prepend-icon="mdi-plus">
                 Add icon
               </v-btn>
             </v-row>
@@ -218,13 +218,11 @@
       <v-divider v-if="!loading && hasStyleExtension"></v-divider>
       <v-card-actions>
         <v-spacer/>
-        <v-btn v-if="!loading && !hasStyleExtension" text theme="dark" color="#73c1c5"
-               @click.stop="addStyleExtensionAndDefaultStyles()">
-          <v-icon>{{ mdiPalette }}</v-icon>
+        <v-btn v-if="!loading && !hasStyleExtension" variant="text" color="#73c1c5"
+               @click.stop="addStyleExtensionAndDefaultStyles()" prepend-icon="mdi-palette">
           Enable styling
         </v-btn>
-        <v-btn v-if="!loading && hasStyleExtension" text theme="dark" color="#ff4444" @click.stop="removeDialog = true">
-          <v-icon>{{ mdiTrashCan }}</v-icon>
+        <v-btn prepend-icon="mdi-trash-can" v-if="!loading && hasStyleExtension" variant="text" color="#ff4444" @click.stop="removeDialog = true">
           Remove styling
         </v-btn>
       </v-card-actions>
@@ -237,7 +235,6 @@ import CreateEditStyle from './CreateEditStyle.vue'
 import CreateEditIcon from './CreateEditIcon.vue'
 import EditTableStyleAssignment from './EditTableStyleAssignment.vue'
 import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
-import { mdiLinkVariant, mdiMapMarker, mdiPalette, mdiPencil, mdiPlus, mdiTrashCan } from '@mdi/js'
 import { getNewStyle } from '../../lib/util/style/CommonStyleUtilities'
 import { addStyleExtensionForTable, removeStyleExtensionForTable } from '../../lib/vue/vuex/ProjectActions'
 
@@ -261,31 +258,25 @@ export default {
   },
   data () {
     return {
-      mdiTrashCan: mdiTrashCan,
-      mdiPlus: mdiPlus,
-      mdiPencil: mdiPencil,
-      mdiPalette: mdiPalette,
-      mdiMapMarker: mdiMapMarker,
-      mdiLinkVariant: mdiLinkVariant,
       loading: false,
       hasStyleExtension: false,
       updatingStyle: true,
       features: [],
       iconFeatures: [],
       styleListItems: {
-        action: mdiPalette,
+        action: 'mdi-palette',
         items: [],
         title: 'Styles',
         active: false
       },
       iconListItems: {
-        action: mdiMapMarker,
+        action: 'mdi-map-marker',
         items: [],
         title: 'Icons',
         active: false
       },
       assignmentListItems: {
-        action: mdiLinkVariant,
+        action: 'mdi-link-variant',
         items: [],
         title: 'Default assignment',
         active: false

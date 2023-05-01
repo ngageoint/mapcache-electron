@@ -1,5 +1,5 @@
 <template>
-  <v-list two-line subheader>
+  <v-list lines="two" subheader>
     <v-list-subheader>Tile background color</v-list-subheader>
     <v-list-item class="pt-2">
       <v-row no-gutters>

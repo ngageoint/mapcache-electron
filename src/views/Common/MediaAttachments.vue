@@ -7,7 +7,7 @@
         @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Delete media attachment
         </v-card-title>
         <v-card-text>
@@ -16,13 +16,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelDeleteAttachment">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteAttachment">
             Delete
           </v-btn>
@@ -36,7 +36,7 @@
         @keydown.esc="attachError = false">
       <v-card v-if="attachError">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiAlertCircle }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-alert-circle"/>
           Error attaching file
         </v-card-title>
         <v-card-text>
@@ -45,7 +45,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="hideError">
             Close
           </v-btn>
@@ -53,16 +53,14 @@
       </v-card>
     </v-dialog>
     <v-card-title>
-      <v-icon color="primary" class="pr-2">{{ mdiPaperclip }}</v-icon>
+      <v-icon color="primary" class="pr-2" icon="mdi-paperclip"/>
       Feature attachments
       <v-spacer/>
       <v-btn :loading="attaching" text color="primary" @click.stop="attach">
-        <v-icon small>{{ mdiPlus }}</v-icon>
+        <v-icon small icon="mdi-plus"/>
         attachment
       </v-btn>
-      <v-btn icon @click="toggleFullScreen">
-        <v-icon>{{ isFullScreen ? mdiFullscreenExit : mdiFullscreen }}</v-icon>
-      </v-btn>
+      <v-btn variant="text" :icon="isFullScreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'" @click="toggleFullScreen"/>
     </v-card-title>
     <v-card-text class="pb-0" style="height: calc(100% - 114px)">
       <v-carousel v-model="model" v-if="attachments.length > 0"
@@ -73,7 +71,7 @@
               v-bind="attrs"
               v-on="on"
           >
-            <v-icon>{{ mdiChevronLeft }}</v-icon>
+            <v-icon icon="mdi-chevron-left"/>
           </v-btn>
         </template>
         <template v-slot:next="{ on, attrs }">
@@ -82,7 +80,7 @@
               v-bind="attrs"
               v-on="on"
           >
-            <v-icon>{{ mdiChevronRight }}</v-icon>
+            <v-icon icon="mdi-chevron-right"/>
           </v-btn>
         </template>
         <v-carousel-item
@@ -132,16 +130,6 @@
 <script>
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import {
-  mdiAlertCircle,
-  mdiChevronLeft,
-  mdiChevronRight,
-  mdiFullscreen,
-  mdiFullscreenExit,
-  mdiPaperclip,
-  mdiPlus,
-  mdiTrashCan
-} from '@mdi/js'
 import { synchronizeGeoPackage, updateStyleKey } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -158,14 +146,6 @@ export default {
   },
   data () {
     return {
-      mdiTrashCan: mdiTrashCan,
-      mdiAlertCircle: mdiAlertCircle,
-      mdiPaperclip: mdiPaperclip,
-      mdiPlus: mdiPlus,
-      mdiFullscreen: mdiFullscreen,
-      mdiFullscreenExit: mdiFullscreenExit,
-      mdiChevronLeft: mdiChevronLeft,
-      mdiChevronRight: mdiChevronRight,
       attaching: false,
       model: null,
       attachments: [],

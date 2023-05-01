@@ -64,13 +64,11 @@ import GettingStarted from './UserGuide/GettingStarted.vue'
 import UsingMapCache from './UserGuide/UsingMapCache.vue'
 import Settings from './UserGuide/Settings.vue'
 import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions.vue'
-import { mdiChevronUp } from '@mdi/js'
 
 export default {
   components: { FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache },
   data () {
     return {
-      mdiChevronUp,
       fab: false,
       tab: null,
       key: 0,

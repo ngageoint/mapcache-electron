@@ -2,7 +2,6 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -15,7 +14,7 @@
         @keydown.esc="cancelDeleteUrl">
       <v-card v-if="deleteUrlDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Delete url
         </v-card-title>
         <v-card-text>
@@ -101,7 +100,7 @@
                           </div>
                           <v-list-item-action>
                             <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                              <v-icon>{{ mdiTrashCan }}</v-icon>
+                              <v-icon icon="mdi-trash-can"/>
                             </v-btn>
                           </v-list-item-action>
                         </v-list-item>
@@ -208,7 +207,7 @@
                   {{ 'Layers from the ArcGIS feature service to import.' }}
                 </v-card-subtitle>
                 <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-4">
-                  <v-virtual-scroll
+                  <v-infinite-scroll
                       class="pa-0 ma-0 detail-bg"
                       :items="serviceLayers"
                       :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
@@ -246,7 +245,7 @@
                         </v-list-item>
                       </v-list-item-group>
                     </template>
-                  </v-virtual-scroll>
+                  </v-infinite-scroll>
                 </v-card-text>
               </v-sheet>
             </v-card>
@@ -335,7 +334,6 @@
 import { mapActions, mapState } from 'vuex'
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import { mdiTrashCan, mdiDragHorizontalVariant } from '@mdi/js'
 import {
   SERVICE_TYPE,
   DEFAULT_TIMEOUT,
@@ -402,8 +400,6 @@ export default {
       WEB_MERCATOR_DISPLAY_TEXT,
       WORLD_GEODETIC_SYSTEM,
       WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT,
-      mdiTrashCan,
-      mdiDragHorizontalVariant,
       supportedImageFormats: window.mapcache.supportedImageFormats,
       step: 1,
       summaryStep: 3,

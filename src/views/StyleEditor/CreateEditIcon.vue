@@ -7,7 +7,7 @@
         @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Delete icon
         </v-card-title>
         <v-card-text>
@@ -16,13 +16,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="deleteDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteIcon">
             Delete
           </v-btn>
@@ -36,7 +36,7 @@
         @keydown.esc="anchorDialog = false">
       <v-card style="overflow: hidden;">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiAnchor }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-anchor"/>
           Set anchor position
         </v-card-title>
         <v-card-text style="overflow: hidden;">
@@ -57,14 +57,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="acceptAnchorUpdates">
             Close
           </v-btn>
           <v-btn
               :disabled="iconRow != null && iconRow.anchorU === anchorU && iconRow.anchorV === anchorV"
               color="red"
-              text
+              variant="text"
               @click="resetAnchor">
             Reset
           </v-btn>
@@ -122,7 +122,7 @@
         </v-row>
         <v-row no-gutters class="pt-2">
           <v-col cols="5">
-            <v-btn text @click="anchorDialog = true"><v-icon>{{ mdiAnchor }}</v-icon>&nbsp;Set anchor</v-btn>
+            <v-btn variant="text" @click="anchorDialog = true" prepend-icon="mdi-anchor">Set anchor</v-btn>
           </v-col>
         </v-row>
       </v-form>
@@ -131,20 +131,20 @@
       <v-btn
           v-if="iconRow.id !== null && iconRow.id !== undefined"
           color="warning"
-          text
+          variant="text"
           @click="deleteDialog = true">
         Delete
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>
       <v-btn
           :disabled="!formValid"
           color="primary"
-          text
+          variant="text"
           @click="save">
         Save
       </v-btn>
@@ -155,7 +155,6 @@
 <script>
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
-import { mdiLink, mdiLinkOff, mdiTrashCan, mdiTargetVariant, mdiAnchor } from '@mdi/js'
 import NumberPicker from '../Common/NumberPicker.vue'
 import debounce from 'lodash/debounce'
 import { createIconRow, deleteIconRow, updateIconRow } from '../../lib/vue/vuex/ProjectActions'
@@ -180,11 +179,6 @@ export default {
   },
   data () {
     return {
-      mdiTrashCan: mdiTrashCan,
-      mdiLink: mdiLink,
-      mdiLinkOff: mdiLinkOff,
-      mdiTargetVariant,
-      mdiAnchor,
       formValid: true,
       name: this.iconRow.name,
       data: this.iconRow.data,

@@ -2,11 +2,10 @@
   <v-sheet v-if="styleEditorVisible" class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon="mdi-chevron-left" @click="hideStyleEditor"/>
+      <v-btn variant="text" icon="mdi-chevron-left" @click="hideStyleEditor"/>
       <v-toolbar-title>
         <v-icon large color="white" class="pr-2" icon="mdi-palette"/>
         {{ baseMap.name }}
@@ -50,7 +49,6 @@
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
@@ -88,14 +86,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="renameDialog = false">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!renameValid"
               color="primary"
-              text
+              variant="text"
               @click="saveBaseMapName">
             Rename
           </v-btn>
@@ -142,14 +140,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="closeConnectionSettingsDialog">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!rateLimitValid || !timeoutValid || !retryAttemptsValid"
               color="primary"
-              text
+              variant="text"
               @click="saveConnectionSettings">
             Save
           </v-btn>
@@ -172,13 +170,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="deleteDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteBaseMap">
             Remove
           </v-btn>
@@ -189,7 +187,7 @@
       <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="space-between">
         <v-col>
           <p class="text-subtitle-1">
-            <v-btn icon @click="zoomTo" color="whitesmoke">
+            <v-btn variant="text" icon @click="zoomTo" color="whitesmoke">
               <v-icon style="width: 20px; height: 20px;" class="mdi-map-outline"/>
             </v-btn>
             <span>{{ configuration.pane === 'vector' ? 'Feature' : 'Tile' }} base map</span>
@@ -360,7 +358,6 @@
 <script>
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
-import { mdiChevronLeft, mdiCloudBraces, mdiMapOutline, mdiPalette, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { DEFAULT_TIMEOUT, DEFAULT_RATE_LIMIT, DEFAULT_RETRY_ATTEMPTS } from '../../lib/network/HttpUtilities'
 import { zoomToBaseMap } from '../../lib/leaflet/map/ZoomUtilities'
 import TransparencyOptions from '../Common/Style/TransparencyOptions.vue'
@@ -424,12 +421,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiPencil: mdiPencil,
-      mdiCloudBraces: mdiCloudBraces,
-      mdiMapOutline: mdiMapOutline,
-      mdiPalette: mdiPalette,
-      mdiTrashCan: mdiTrashCan,
       defaultTimeout: DEFAULT_TIMEOUT,
       defaultRateLimit: DEFAULT_RATE_LIMIT,
       defaultRetryAttempts: DEFAULT_RETRY_ATTEMPTS,

@@ -36,33 +36,23 @@
                       style="width: 100%"
                   >
                     <v-btn :value="TEXT">
-                      <v-icon left :color="addFieldType === TEXT ? 'primary' : ''">
-                        {{ mdiFormatText }}
-                      </v-icon>
+                      <v-icon left :color="addFieldType === TEXT ? 'primary' : ''" icon="mdi-format-text"/>
                       <span class="hidden-sm-and-down">Text</span>
                     </v-btn>
                     <v-btn :value="FLOAT">
-                      <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''">
-                        {{ mdiPound }}
-                      </v-icon>
+                      <v-icon left :color="addFieldType === FLOAT ? 'primary' : ''" icon="mdi-pound"/>
                       <span class="hidden-sm-and-down">Number</span>
                     </v-btn>
                     <v-btn :value="BOOLEAN">
-                      <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''">
-                        {{ mdiToggleSwitch }}
-                      </v-icon>
+                      <v-icon left :color="addFieldType === BOOLEAN ? 'primary' : ''" icon="mdi-toggle-switch"/>
                       <span class="hidden-sm-and-down">Checkbox</span>
                     </v-btn>
                     <v-btn :value="DATE">
-                      <v-icon left :color="addFieldType === DATE ? 'primary' : ''">
-                        {{ mdiCalendar }}
-                      </v-icon>
+                      <v-icon left :color="addFieldType === DATE ? 'primary' : ''" icon="mdi-calendar"/>
                       <span class="hidden-sm-and-down">Date</span>
                     </v-btn>
                     <v-btn :value="DATETIME">
-                      <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''">
-                        {{ mdiCalendarClock }}
-                      </v-icon>
+                      <v-icon left :color="addFieldType === DATETIME ? 'primary' : ''" icon="mdi-calendar-clock"/>
                       <span class="hidden-sm-and-down">Date & Time</span>
                     </v-btn>
                   </v-btn-toggle>
@@ -106,18 +96,18 @@
               v-if="tableFields[column] != null"
               class="detail-bg sortable-list-item"
               @click="tableFields[column].click">
-            <v-list-item-icon>
-              <v-icon>{{ tableFields[column].icon }}</v-icon>
-            </v-list-item-icon>
+            <template v-slot:prepend>
+              <v-icon :icon="tableFields[column].icon"/>
+            </template>
             <div>
               <v-list-item-title :title="tableFields[column].name"
                                  v-text="tableFields[column].name"></v-list-item-title>
               <v-list-item-subtitle :title="tableFields[column].type"
                                     v-text="tableFields[column].type"></v-list-item-subtitle>
             </div>
-            <v-list-item-icon class="sortHandle">
-              <v-icon>{{ mdiDragHorizontalVariant }}</v-icon>
-            </v-list-item-icon>
+            <template v-slot:append>
+              <v-icon class="sortHandle" icon="mdi-drag-horizontal-variant"/>
+            </template>
           </v-list-item>
         </div>
       </v-list>
@@ -126,14 +116,6 @@
 </template>
 
 <script>
-import {
-  mdiCalendar,
-  mdiCalendarClock,
-  mdiFormatText,
-  mdiPound,
-  mdiToggleSwitch,
-  mdiDragHorizontalVariant
-} from '@mdi/js'
 import Sortable from 'sortablejs'
 import {
   addGeoPackageFeatureTableColumn,
@@ -177,12 +159,6 @@ export default {
   },
   data () {
     return {
-      mdiCalendar,
-      mdiCalendarClock,
-      mdiFormatText,
-      mdiPound,
-      mdiToggleSwitch,
-      mdiDragHorizontalVariant,
       showFeatureLayerField: false,
       featureLayerField: null,
       addFieldDialog: false,
@@ -270,19 +246,19 @@ export default {
       return simplifiedType
     },
     getSimplifiedTypeIcon (dataType) {
-      let simplifiedTypeIcon = mdiPound
+      let simplifiedTypeIcon = 'mdi-pound'
       switch (dataType) {
         case window.mapcache.GeoPackageDataType.BOOLEAN:
-          simplifiedTypeIcon = mdiToggleSwitch
+          simplifiedTypeIcon = 'mdi-toggle-switch'
           break
         case window.mapcache.GeoPackageDataType.TEXT:
-          simplifiedTypeIcon = mdiFormatText
+          simplifiedTypeIcon = 'mdi-format-text'
           break
         case window.mapcache.GeoPackageDataType.DATE:
-          simplifiedTypeIcon = mdiCalendar
+          simplifiedTypeIcon = 'mdi-calendar'
           break
         case window.mapcache.GeoPackageDataType.DATETIME:
-          simplifiedTypeIcon = mdiCalendarClock
+          simplifiedTypeIcon = 'mdi-calendar-clock'
           break
         default:
           break

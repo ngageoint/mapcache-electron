@@ -50,7 +50,6 @@
 
 <script>
 import { CREDENTIAL_TYPE_BASIC } from '../../lib/network/HttpUtilities'
-import { mdiEye, mdiEyeOff } from '@mdi/js'
 
 export default {
   props: {
@@ -88,9 +87,7 @@ export default {
       basicAuthPasswordRules: [v => !!v || 'Password is required'],
       username: '',
       password: '',
-      visible: false,
-      mdiEye,
-      mdiEyeOff
+      visible: false
     }
   }
 }

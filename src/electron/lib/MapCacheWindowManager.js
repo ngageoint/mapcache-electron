@@ -243,7 +243,7 @@ class MapCacheWindowManager {
       })
     })
 
-    const origin = isProduction ? 'mapcache://.' : process.env.ELECTRON_RENDERER_URL.substring(0, process.env.ELECTRON_RENDERER_URL.length - 1)
+    const origin = isProduction ? 'mapcache://.' : process.env.ELECTRON_RENDERER_URL
 
     const fixHeaders = (headers) => {
       // protect against servers without required cors headers

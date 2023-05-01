@@ -4,32 +4,31 @@
       <v-list-item
           @click="item.click"
       >
-        <v-list-item-icon class="mt-auto mb-auto">
+        <template v-slot:prepend>
           <v-btn
               icon
+              variant="text"
               color="whitesmoke"
               @click="item.zoomTo"
           >
-            <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px"
-                 height="20px"/>
-            <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                 height="20px"/>
-            <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-            <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+            <template v-slot:default>
+              <v-img v-if="item.isTile && project.dark" src="/images/white_layers.png" alt="Tile layer" width="22px" height="22px"/>
+              <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="22px" height="22px"/>
+              <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+            </template>
           </v-btn>
-        </v-list-item-icon>
-        <div>
-          <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
-        </div>
-        <v-list-item-action>
+        </template>
+        <v-list-item-title class="ml-4" :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
+        <template v-slot:append>
           <v-switch
-              hide-details
               color="primary"
-              @click="item.setVisible"
+              hide-details
+              @click.stop="item.setVisible"
               :input-value="item.visible"
               dense>
           </v-switch>
-        </v-list-item-action>
+        </template>
       </v-list-item>
       <v-divider/>
     </template>
@@ -43,12 +42,11 @@ import { setGeoPackageFeatureTableVisible, setGeoPackageTileTableVisible } from 
 export default {
   props: {
     geopackage: Object,
-    projectId: String,
+    project: Object,
     layerSelected: Function
   },
   computed: {
     items () {
-      const _this = this
       const items = []
       Object.keys(this.geopackage.tables.tiles).sort().forEach(key => {
         const tileLayer = this.geopackage.tables.tiles[key]
@@ -57,15 +55,15 @@ export default {
           isTile: true,
           isFeature: false,
           name: key,
-          click: function () {
-            _this.layerSelected(key)
+          click: () => {
+            this.layerSelected(key)
           },
-          setVisible: function (e) {
-            setGeoPackageTileTableVisible(_this.projectId, _this.geopackage.id, key, !tileLayer.visible)
+          setVisible: (e) => {
+            setGeoPackageTileTableVisible(this.project.id, this.geopackage.id, key, !tileLayer.visible)
             e.stopPropagation()
           },
-          zoomTo: function (e) {
-            zoomToGeoPackageTable(_this.geopackage, key)
+          zoomTo: (e) => {
+            zoomToGeoPackageTable(this.geopackage, key)
             e.stopPropagation()
           },
           visible: tileLayer.visible
@@ -78,15 +76,15 @@ export default {
           isTile: false,
           isFeature: true,
           name: key,
-          click: function () {
-            _this.layerSelected(key)
+          click: () => {
+            this.layerSelected(key)
           },
-          setVisible: function (e) {
-            setGeoPackageFeatureTableVisible(_this.projectId, _this.geopackage.id, key, !featureLayer.visible)
+          setVisible: (e) => {
+            setGeoPackageFeatureTableVisible(this.project.id, this.geopackage.id, key, !featureLayer.visible)
             e.stopPropagation()
           },
-          zoomTo: function (e) {
-            zoomToGeoPackageTable(_this.geopackage, key)
+          zoomTo: (e) => {
+            zoomToGeoPackageTable(this.geopackage, key)
             e.stopPropagation()
           },
           visible: featureLayer.visible
@@ -97,7 +95,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-</style>

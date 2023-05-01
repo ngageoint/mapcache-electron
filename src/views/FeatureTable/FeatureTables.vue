@@ -3,16 +3,13 @@
     <v-toolbar
         flat
         color="main"
-        theme="dark"
         dense
     >
       <v-toolbar-title>{{ table.tabName }}</v-toolbar-title>
       <v-row no-gutters justify="end">
         <v-tooltip v-if="popOut != null" location="start" :disabled="!project.showToolTips">
           <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" small @click.stop.prevent="popOut" icon>
-              <v-icon>{{ mdiOpenInNew }}</v-icon>
-            </v-btn>
+            <v-btn v-bind="props" small @click.stop.prevent="popOut" icon="mdi-open-in-new"/>
           </template>
           <span>Pop out</span>
         </v-tooltip>
@@ -32,9 +29,7 @@
           </template>
           <span>Pop in</span>
         </v-tooltip>
-        <v-btn small @click.stop.prevent="close" icon>
-          <v-icon>{{ mdiClose }}</v-icon>
-        </v-btn>
+        <v-btn small @click.stop.prevent="close" icon="mdi-close"/>
       </v-row>
     </v-toolbar>
     <feature-table v-if="table && table.isGeoPackage && geopackages[table.geopackageId] != null"
@@ -55,7 +50,6 @@
 
 <script>
 import FeatureTable from './FeatureTable.vue'
-import { mdiClose, mdiOpenInNew } from '@mdi/js'
 
 export default {
   components: {
@@ -77,8 +71,6 @@ export default {
   },
   data () {
     return {
-      mdiClose: mdiClose,
-      mdiOpenInNew: mdiOpenInNew,
       tab: null
     }
   }

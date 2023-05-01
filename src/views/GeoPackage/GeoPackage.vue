@@ -4,7 +4,6 @@
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
-      :projectId="project.id"
       :project="project"
       :back="deselectLayer"
       :renamed="selectedLayerRenamed"
@@ -14,7 +13,7 @@
       :key="geopackage.id + '_' + selectedLayer"
       :table-name="selectedLayer"
       :geopackage="geopackage"
-      :projectId="project.id"
+      :project="project"
       :back="deselectLayer"
       :renamed="selectedLayerRenamed"/>
   <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage"
@@ -46,7 +45,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="detailDialog = false">
             Close
           </v-btn>
@@ -60,7 +59,7 @@
         @keydown.esc="exitRenamingDialog">
       <v-card v-if="renameDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
           Rename GeoPackage
         </v-card-title>
         <v-card-text>
@@ -85,7 +84,7 @@
           <v-spacer></v-spacer>
           <v-btn
               :disabled="renaming"
-              text
+              variant="text"
               @click="renameDialog = false">
             Cancel
           </v-btn>
@@ -93,7 +92,7 @@
               :loading="renaming"
               :disabled="!renameValid"
               color="primary"
-              text
+              variant="text"
               @click="rename">
             Rename
           </v-btn>
@@ -107,7 +106,7 @@
         @keydown.esc="copyDialog = false">
       <v-card v-if="copyDialog">
         <v-card-title>
-          <v-icon color="primary" class="pr-2">{{ mdiContentCopy }}</v-icon>
+          <v-icon color="primary" class="pr-2" icon="mdi-content-copy"/>
           Copy GeoPackage
         </v-card-title>
         <v-card-text>
@@ -131,14 +130,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="copyDialog = false">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!copyValid"
               color="primary"
-              text
+              variant="text"
               @click="copy">
             Copy
           </v-btn>
@@ -152,7 +151,7 @@
         @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Remove GeoPackage
         </v-card-title>
         <v-card-text>
@@ -162,13 +161,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="removeDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="remove">
             Remove
           </v-btn>
@@ -205,7 +204,7 @@
                       @click.stop="detailDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>{{ mdiInformationOutline }}</v-icon>
+                    <v-icon small icon="mdi-information-outline"/>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Details
@@ -220,7 +219,7 @@
                       @click.stop="openFolder">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>{{ mdiFolder }}</v-icon>
+                    <v-icon small icon="mdi-folder"/>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Show
@@ -235,7 +234,7 @@
                       @click.stop="renameDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>{{ mdiPencil }}</v-icon>
+                    <v-icon small icon="mdi-pencil"/>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Rename
@@ -250,7 +249,7 @@
                       @click.stop="copyDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>{{ mdiContentCopy }}</v-icon>
+                    <v-icon small icon="mdi-content-copy"/>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Copy
@@ -265,7 +264,7 @@
                       @click.stop="removeDialog = true">
                 <v-card-text class="pa-2">
                   <v-row no-gutters align-content="center" justify="center">
-                    <v-icon small>{{ mdiTrashCan }}</v-icon>
+                    <v-icon small icon="mdi-trash-can"/>
                   </v-row>
                   <v-row no-gutters align-content="center" justify="center">
                     Remove
@@ -284,7 +283,7 @@
             </p>
           </v-col>
         </v-row>
-        <geo-package-layer-list :project-id="project.id" :geopackage="geopackage"
+        <geo-package-layer-list :project="project" :geopackage="geopackage"
                                 :layer-selected="layerSelected"></geo-package-layer-list>
       </v-sheet>
     </v-sheet>
@@ -299,9 +298,8 @@
             <span v-bind="props">
               <v-btn
                   fab
-                  color="primary">
-                <v-icon>{{ mdiLayersPlus }}</v-icon>
-              </v-btn>
+                  color="primary"
+                  icon="mdi-layers-plus"/>
             </span>
           </template>
           <span>Add layer</span>
@@ -353,15 +351,6 @@ import GeoPackageDetails from './GeoPackageDetails.vue'
 import GeoPackageLayerList from './GeoPackageLayerList.vue'
 import AddFeatureLayer from './AddFeatureLayer.vue'
 import AddTileLayer from './AddTileLayer.vue'
-import {
-  mdiChevronLeft,
-  mdiContentCopy,
-  mdiFolder,
-  mdiInformationOutline,
-  mdiLayersPlus,
-  mdiPencil,
-  mdiTrashCan
-} from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
 import {
@@ -389,13 +378,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiPencil: mdiPencil,
-      mdiContentCopy: mdiContentCopy,
-      mdiTrashCan: mdiTrashCan,
-      mdiInformationOutline: mdiInformationOutline,
-      mdiFolder: mdiFolder,
-      mdiLayersPlus: mdiLayersPlus,
       fab: false,
       addFeatureLayerDialog: false,
       addTileLayerDialog: false,

@@ -24,34 +24,20 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-list three-line class="pa-0" v-if="items">
+    <v-list lines="three" class="pa-0" v-if="items">
       <template v-for="item in items" :key="item.id + 'list-item'">
-        <v-list-item
-            @click="() => item.click(item)"
-        >
+        <v-list-item @click="() => item.click(item)">
           <div>
             <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
             <v-list-item-subtitle v-text="item.featureLayersText"></v-list-item-subtitle>
             <v-list-item-subtitle v-text="item.tileLayersText"></v-list-item-subtitle>
           </div>
-          <v-list-item-icon class="mt-auto mb-auto" v-if="item.health.missing">
-            <v-btn icon color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage">
-              <v-icon>{{ mdiAlertCircle }}</v-icon>
-            </v-btn>
-          </v-list-item-icon>
-          <v-list-item-icon class="mt-auto mb-auto" v-else-if="item.health.invalid">
-            <v-btn icon color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage">
-              <v-icon>{{ mdiAlertCircle }}</v-icon>
-            </v-btn>
-          </v-list-item-icon>
-          <v-list-item-icon class="mt-auto mb-auto" v-else-if="!item.health.synchronized">
-            <v-btn icon color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage">
-              <v-icon>{{ mdiAlertCircle }}</v-icon>
-            </v-btn>
-          </v-list-item-icon>
-          <v-list-item-icon class="mt-auto mb-auto">
-            <v-icon>{{ mdiChevronRight }}</v-icon>
-          </v-list-item-icon>
+          <template v-slot:append class="mt-auto mb-auto">
+            <v-btn variant="text" v-if="item.health.missing" color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage" icon="mdi-alert-circle"/>
+            <v-btn variant="text" v-else-if="item.health.invalid" color="#d9534f" @click.stop="item.showInvalidFileDialog" title="Invalid GeoPackage" icon="mdi-alert-circle"/>
+            <v-btn variant="text" v-else-if="!item.health.synchronized" color="#d9534f" @click.stop="item.showSynchronizedFileDialog" title="Synchronize GeoPackage" icon="mdi-alert-circle"/>
+            <v-icon icon="mdi-chevron-right"/>
+          </template>
         </v-list-item>
         <v-divider/>
       </template>
@@ -60,7 +46,6 @@
 </template>
 
 <script>
-import { mdiAlertCircle, mdiChevronRight } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { removeGeoPackage, synchronizeGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
@@ -96,9 +81,9 @@ export default {
             name: geopackage.name,
             featureLayersText: 'Feature layers: ' + Object.keys(geopackage.tables.features).length,
             tileLayersText: 'Tile layers: ' + Object.keys(geopackage.tables.tiles).length,
-            health: await window.mapcache.checkGeoPackageHealth(geopackage),
+            health: await window.mapcache.checkGeoPackageHealth(geopackage.path, geopackage.modifiedDate),
             click: async function (item) {
-              item.health = await window.mapcache.checkGeoPackageHealth(geopackage)
+              item.health = await window.mapcache.checkGeoPackageHealth(geopackage.path, geopackage.modifiedDate)
               if (!item.health.missing && !item.health.invalid && item.health.synchronized) {
                 _this.geopackageSelected(geopackage.id)
               } else {
@@ -147,8 +132,6 @@ export default {
   },
   data () {
     return {
-      mdiAlertCircle: mdiAlertCircle,
-      mdiChevronRight: mdiChevronRight,
       showDialog: false,
       dialogText: '',
       dialogSubText: '',

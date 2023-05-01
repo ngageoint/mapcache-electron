@@ -5,43 +5,31 @@
         <v-list-item
             @click="item.click"
         >
-          <v-list-item-icon class="mt-auto mb-auto">
+          <template v-slot:prepend>
             <v-btn
                 icon
+                variant="text"
                 color="whitesmoke"
                 @click="item.zoomTo"
             >
-              <img v-if="item.isTile && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer"
-                   width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                   height="20px"/>
-              <img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="20px"
-                   height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-if="item.isTile && project.dark" src="/images/white_layers.png" alt="Tile layer" width="22px" height="22px"/>
+              <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="22px" height="22px"/>
+              <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-          </v-list-item-icon>
-          <div>
-            <v-list-item-title :title="item.name" :style="{marginBottom: '0px', fontWeight: 500}"
-                               v-html="item.name"></v-list-item-title>
-            <v-list-item-subtitle v-if="item.type != null" v-html="item.type"></v-list-item-subtitle>
-            <v-list-item-subtitle v-if="item.subtitle != null" v-html="item.subtitle"></v-list-item-subtitle>
+          </template>
+          <div class="pl-2">
+            <v-list-item-title :title="item.name" :style="{marginBottom: '0px', fontWeight: 500}" v-text="item.name"></v-list-item-title>
+            <v-list-item-subtitle v-if="item.type != null" v-text="item.type"></v-list-item-subtitle>
+            <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
             <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
           </div>
-          <v-list-item-icon class="mt-auto mb-auto" v-if="sources[item.id] && sources[item.id].warning">
-            <data-source-warning :source="sources[item.id]"></data-source-warning>
-          </v-list-item-icon>
-          <v-list-item-icon class="mt-auto mb-auto" v-if="item.error">
-            <data-source-troubleshooting :project-id="projectId"
-                                         :source="sources[item.id]"></data-source-troubleshooting>
-          </v-list-item-icon>
-          <v-list-item-icon class="mt-auto mb-auto" v-if="item.missingRaster">
-            <geo-t-i-f-f-troubleshooting :project-id="projectId"
-                                         :source-or-base-map="sources[item.id]"></geo-t-i-f-f-troubleshooting>
-          </v-list-item-icon>
-          <v-list-item-action>
-            <source-visibility-switch :disabled="item.missingRaster" :input-value="item.visible" :project-id="projectId"
-                                      :source="sources[item.id]"></source-visibility-switch>
-          </v-list-item-action>
+          <template v-slot:append>
+            <data-source-warning v-if="sources[item.id] && sources[item.id].warning" :source="sources[item.id]"></data-source-warning>
+            <data-source-troubleshooting v-if="item.error" :project-id="project.id" :source="sources[item.id]"></data-source-troubleshooting>
+            <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :project-id="project.id" :source-or-base-map="sources[item.id]"></geo-t-i-f-f-troubleshooting>
+            <source-visibility-switch :disabled="item.missingRaster" :input-value="item.visible" :project-id="project.id" :source="sources[item.id]"></source-visibility-switch>
+          </template>
         </v-list-item>
         <v-divider/>
       </template>
@@ -67,7 +55,7 @@ export default {
   },
   props: {
     sources: Object,
-    projectId: String,
+    project: Object,
     sourceSelected: Function
   },
   computed: {
@@ -87,7 +75,7 @@ export default {
         }
         items.push({
           id: key,
-          missingRaster: window.mapcache.isRasterMissing(source),
+          missingRaster: window.mapcache.isRasterMissing(source.layerType, source.rasterFile),
           error: source.error,
           visible: source.visible,
           name: isNil(source.displayName) ? source.name : source.displayName,

@@ -8,7 +8,7 @@
         @keydown.esc="removeDialog = false">
       <v-card v-if="removeDialog && selected !== null && selected.length > 0">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Delete feature
         </v-card-title>
         <v-card-text>
@@ -64,13 +64,11 @@
               hide-details
               clearable
           ></v-text-field>
-          <v-btn :disabled="selected.length === 0" icon color="red" @click="showDeleteConfirmation">
-            <v-icon>{{ mdiTrashCan }}</v-icon>
-          </v-btn>
+          <v-btn :disabled="selected.length === 0" color="red" @click="showDeleteConfirmation" icon="mdi-trash-can"/>
         </v-row>
       </template>
       <template v-slot:[`header.attachments`]="{}">
-        <v-icon style="margin-left: -4px !important; margin-top: -4px !important;" small>{{ mdiPaperclip }}</v-icon>
+        <v-icon style="margin-left: -4px !important; margin-top: -4px !important;" small icon="mdi-paperclip"/>
       </template>
       <template v-slot:item="{ item, headers, index, isSelected, select }">
         <tr class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)"
@@ -112,7 +110,6 @@ import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
 import isNil from 'lodash/isNil'
 import moment from 'moment/moment'
-import { mdiPaperclip, mdiTrashCan, mdiMagnify } from '@mdi/js'
 import Sortable from 'sortablejs'
 import {
   deleteFeatureIdsFromDataSource,
@@ -161,9 +158,6 @@ export default {
   },
   data () {
     return {
-      mdiMagnify: mdiMagnify,
-      mdiTrashCan: mdiTrashCan,
-      mdiPaperclip: mdiPaperclip,
       removeDialog: false,
       selected: [],
       page: 1,

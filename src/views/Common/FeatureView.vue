@@ -2,13 +2,10 @@
   <v-sheet class="mapcache-sheet">
     <v-toolbar
         color="main"
-        theme="dark"
         flat
         class="sticky-toolbar"
     >
-      <v-btn icon @click="closeView">
-        <v-icon large>{{ mdiChevronLeft }}</v-icon>
-      </v-btn>
+      <v-btn density="comfortable" icon="mdi-chevron-left" @click="closeView"/>
       <v-toolbar-title>Feature</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
@@ -19,7 +16,7 @@
           @keydown.esc="removeDialog = false">
         <v-card v-if="removeDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+            <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
             Delete feature
           </v-card-title>
           <v-card-text>
@@ -28,13 +25,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-                text
+                variant="text"
                 @click="cancelRemove">
               Cancel
             </v-btn>
             <v-btn
                 color="warning"
-                text
+                variant="text"
                 @click="removeFeature">
               Delete
             </v-btn>
@@ -107,7 +104,7 @@
                             :elevation="editing ? 0 : (hover ? 4 : 1)" @click.stop="enableEdit">
                       <v-card-text class="pa-2">
                         <v-row no-gutters align-content="center" justify="center">
-                          <v-icon small>{{ mdiPencil }}</v-icon>
+                          <v-icon small icon="mdi-pencil"/>
                         </v-row>
                         <v-row no-gutters align-content="center" justify="center">
                           Edit
@@ -122,7 +119,7 @@
                             :elevation="editing ? 0 : (hover ? 4 : 1)" @click.stop="showStyleAssignment">
                       <v-card-text class="pa-2">
                         <v-row no-gutters align-content="center" justify="center">
-                          <v-icon small>{{ mdiPalette }}</v-icon>
+                          <v-icon small icon="mdi-palette"/>
                         </v-row>
                         <v-row no-gutters align-content="center" justify="center">
                           Style
@@ -137,7 +134,7 @@
                             :elevation="editing ? 0 : (hover ? 4 : 1)" @click.stop="editFeatureMediaAttachments">
                       <v-card-text class="pa-2">
                         <v-row no-gutters align-content="center" justify="center">
-                          <v-icon small>{{ mdiPaperclip }}</v-icon>
+                          <v-icon small icon="mdi-paperclip"/>
                         </v-row>
                         <v-row no-gutters align-content="center" justify="center">
                           Attach
@@ -152,7 +149,7 @@
                             :elevation="editing ? 0 : (hover ? 4 : 1)" @click.stop="showDeleteConfirmation">
                       <v-card-text class="pa-2">
                         <v-row no-gutters align-content="center" justify="center">
-                          <v-icon small>{{ mdiTrashCan }}</v-icon>
+                          <v-icon small icon="mdi-trash-can"/>
                         </v-row>
                         <v-row no-gutters align-content="center" justify="center">
                           Delete
@@ -217,27 +214,13 @@
     <v-divider v-if="editing"/>
     <v-footer class="background" v-if="editing">
       <v-spacer/>
-      <v-btn v-if="editing" @click="disableEdit" text>Cancel</v-btn>
-      <v-btn v-if="editing" :disabled="!formValid" @click="saveChanges" text color="primary">Save</v-btn>
+      <v-btn v-if="editing" @click="disableEdit" variant="text">Cancel</v-btn>
+      <v-btn v-if="editing" :disabled="!formValid" @click="saveChanges" variant="text" color="primary">Save</v-btn>
     </v-footer>
   </v-sheet>
 </template>
 
 <script>
-import {
-  mdiCalendar,
-  mdiClock,
-  mdiChevronLeft,
-  mdiChevronRight,
-  mdiTrashCan,
-  mdiPencil,
-  mdiMagnify,
-  mdiCancel,
-  mdiContentSave,
-  mdiPaperclip,
-  mdiPalette,
-  mdiContentCopy
-} from '@mdi/js'
 import {isHtml} from '../../lib/util/html/HTMLUtilities'
 import cloneDeep from 'lodash/cloneDeep'
 import FeatureEditorColumn from './FeatureEditorColumn.vue'
@@ -273,18 +256,6 @@ export default {
   },
   data () {
     return {
-      mdiContentCopy: mdiContentCopy,
-      mdiPalette: mdiPalette,
-      mdiPaperclip: mdiPaperclip,
-      mdiContentSave: mdiContentSave,
-      mdiCancel: mdiCancel,
-      mdiMagnify: mdiMagnify,
-      mdiPencil: mdiPencil,
-      mdiTrashCan: mdiTrashCan,
-      mdiCalendar: mdiCalendar,
-      mdiClock: mdiClock,
-      mdiChevronLeft: mdiChevronLeft,
-      mdiChevronRight: mdiChevronRight,
       TEXT: window.mapcache.GeoPackageDataType.TEXT,
       FLOAT: window.mapcache.GeoPackageDataType.FLOAT,
       BOOLEAN: window.mapcache.GeoPackageDataType.BOOLEAN,

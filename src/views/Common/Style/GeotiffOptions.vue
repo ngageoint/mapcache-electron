@@ -1,6 +1,6 @@
 <template>
   <v-sheet>
-    <v-list two-line subheader>
+    <v-list lines="two" subheader>
       <v-list-subheader>Rendering method</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
@@ -10,7 +10,7 @@
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
-    <v-list two-line subheader v-if="renderingMethod === 0">
+    <v-list lines="two" subheader v-if="renderingMethod === 0">
       <v-list-subheader>Gray scale options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
@@ -44,7 +44,7 @@
         </v-list-item-action>
       </v-list-item>
     </v-list>
-    <v-list two-line subheader v-if="renderingMethod === 1">
+    <v-list lines="two" subheader v-if="renderingMethod === 1">
       <v-list-subheader>RGB options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
@@ -110,7 +110,7 @@
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
-    <v-list two-line subheader v-if="renderingMethod === 2">
+    <v-list lines="two" subheader v-if="renderingMethod === 2">
       <v-list-subheader>Palette options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
@@ -120,7 +120,7 @@
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
-    <v-list two-line subheader>
+    <v-list lines="two" subheader>
       <v-list-subheader>Transparency options</v-list-subheader>
       <v-list-item v-if="renderingMethod < 2">
         <div style="padding-right: 12px;">

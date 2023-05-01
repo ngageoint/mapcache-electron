@@ -302,20 +302,21 @@ function getGeoPackageFileSize (filePath) {
 
 /**
  * True if the geopackage's last modified date matches what is in state
- * @param geopackage
+ * @param path
+ * @param modifiedDate
  * @returns {boolean}
  */
-function isSynchronized (geopackage) {
-  return getLastModifiedDate(geopackage.path) === (geopackage.modifiedDate ? geopackage.modifiedDate : '0')
+function isSynchronized (path, modifiedDate) {
+  return getLastModifiedDate(path) === (modifiedDate ? modifiedDate : '0')
 }
 
 /**
  * True if the geopackage does not exist on the file system
- * @param geopackage
+ * @param path
  * @returns {boolean}
  */
-function isMissing (geopackage) {
-  return !exists(geopackage.path)
+function isMissing (path) {
+  return !exists(path)
 }
 
 /**
@@ -338,16 +339,17 @@ async function isGeoPackageValid (filePath) {
 
 /**
  * Check GeoPackage's health
- * @param geopackage
+ * @param path
+ * @param modifiedDate
  * @returns {Promise<{synchronized: boolean, invalid: boolean, missing: boolean}>}
  */
-async function checkGeoPackageHealth (geopackage) {
-  const missing = isMissing(geopackage)
-  const synchronized = isSynchronized(geopackage)
+async function checkGeoPackageHealth (path, modifiedDate) {
+  const missing = isMissing(path)
+  const synchronized = isSynchronized(path, modifiedDate)
   let invalid = false
   if (!missing) {
     try {
-      invalid = !await isGeoPackageValid(geopackage.path)
+      invalid = !await isGeoPackageValid(path)
     } catch (error) {
       invalid = true
     }
@@ -617,8 +619,8 @@ function boundingBoxIntersection (bbox1, bbox2) {
   return intersection
 }
 
-async function isHealthy (geopackage) {
-  const health = await checkGeoPackageHealth(geopackage)
+async function isHealthy (path, modifiedDate) {
+  const health = await checkGeoPackageHealth(path, modifiedDate)
   return !health.missing && !health.invalid && health.synchronized
 }
 

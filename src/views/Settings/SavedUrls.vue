@@ -12,13 +12,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelDeleteUrl">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="removeUrlFromHistory">
             Delete
           </v-btn>
@@ -59,14 +59,14 @@
     </v-card-text>
     <v-card-actions>
       <v-btn
-          text
+          variant="text"
           color="primary"
           @click="showAddUrlDialog">
         Add url
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>
@@ -76,7 +76,6 @@
 
 <script>
 import { mapActions, mapState } from 'vuex'
-import { mdiCloudOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
 import EditTextModal from '../Common/EditTextModal.vue'
 
 export default {
@@ -95,9 +94,6 @@ export default {
   },
   data () {
     return {
-      mdiPencil: mdiPencil,
-      mdiTrashCan: mdiTrashCan,
-      mdiCloudOutline: mdiCloudOutline,
       urlToDelete: null,
       deleteUrlDialog: false,
       savedUrlDialog: false,

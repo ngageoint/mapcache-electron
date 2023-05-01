@@ -33,9 +33,7 @@
               <v-tooltip location="end" :disabled="!project.showToolTips">
                 <template v-slot:activator="{ props }">
                   <v-btn :disabled="disableSearch" v-bind="props" class="ml-1" style="margin-right: -8px;"
-                         color="primary" icon @click="runSearch">
-                    <v-icon>{{ mdiMagnify }}</v-icon>
-                  </v-btn>
+                         color="primary" @click="runSearch" icon="mdi-magnify"/>
                 </template>
                 <span>Search</span>
               </v-tooltip>
@@ -48,7 +46,6 @@
 </template>
 
 <script>
-import { mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { queryNominatim } from '../../lib/util/nominatim/NominatimUtilities'
 import { mapState } from 'vuex'
@@ -71,7 +68,6 @@ export default {
   data () {
     return {
       applyViewBox: false,
-      mdiMagnify: mdiMagnify,
       query: '',
       searching: false
     }

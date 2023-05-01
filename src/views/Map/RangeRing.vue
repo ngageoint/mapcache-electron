@@ -58,7 +58,6 @@
 import { L } from '../../lib/leaflet/vendor'
 import { convertLength } from '@turf/helpers'
 import { DRAWING_LAYER_PANE } from '../../lib/leaflet/map/panes/MapPanes'
-import { mdiPlus, mdiTrashCanOutline, mdiMapMarker, mdiCircleMultipleOutline } from '@mdi/js'
 import { generateCircularFeature } from '../../lib/util/geojson/GeoJSONUtilities'
 import NumberPicker from '../Common/NumberPicker.vue'
 
@@ -71,10 +70,6 @@ export default {
   },
   data () {
     return {
-      mdiPlus,
-      mdiTrashCanOutline,
-      mdiMapMarker,
-      mdiCircleMultipleOutline,
       rangeRingCenter: { lat: 0.0, lon: 0.0 },
       ringMapLayers: [],
       ringCenterLayer: null,

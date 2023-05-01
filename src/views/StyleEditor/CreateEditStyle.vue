@@ -7,7 +7,7 @@
         @keydown.esc="deleteDialog = false">
       <v-card v-if="deleteDialog">
         <v-card-title>
-          <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+          <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
           Delete style
         </v-card-title>
         <v-card-text>
@@ -105,7 +105,6 @@ import isNil from 'lodash/isNil'
 import ColorPicker from '../Common/ColorPicker.vue'
 import NumberPicker from '../Common/NumberPicker.vue'
 import GeometryStyleSvg from '../Common/GeometryStyleSvg.vue'
-import { mdiTrashCan } from '@mdi/js'
 import { createStyleRow, deleteStyleRow, updateStyleRow } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
@@ -127,7 +126,6 @@ export default {
   },
   data () {
     return {
-      mdiTrashCan: mdiTrashCan,
       name: this.styleRow.name,
       description: this.styleRow.description || '',
       color: this.styleRow.color,

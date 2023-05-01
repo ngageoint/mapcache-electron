@@ -35,7 +35,7 @@
           @keydown.esc="geopackageExistsDialog = false">
         <v-card v-if="geopackageExistsDialog">
           <v-card-title>
-            <v-icon color="orange" class="pr-2">{{ mdiAlert }}</v-icon>
+            <v-icon color="orange" class="pr-2" icon="mdi-alert"/>
             Create GeoPackage warning
           </v-card-title>
           <v-card-text>
@@ -46,13 +46,13 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-                text
+                variant="text"
                 @click="geopackageExistsDialog = false">
               Cancel
             </v-btn>
             <v-btn
                 color="primary"
-                text
+                variant="text"
                 @click="createNewGeoPackage">
               OK
             </v-btn>
@@ -122,7 +122,6 @@ import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import GeoPackage from './GeoPackage.vue'
 import GeoPackageList from './GeoPackageList.vue'
-import { mdiAlert, mdiChevronLeft, mdiFileDocumentOutline, mdiPlus } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
 import { setActiveGeoPackage } from '../../lib/vue/vuex/ProjectActions'
@@ -137,10 +136,6 @@ export default {
   },
   data () {
     return {
-      mdiAlert: mdiAlert,
-      mdiFileDocumentOutline: mdiFileDocumentOutline,
-      mdiPlus: mdiPlus,
-      mdiChevronLeft: mdiChevronLeft,
       fab: false,
       geopackageExistsDialog: false,
       selectedGeoPackage: null

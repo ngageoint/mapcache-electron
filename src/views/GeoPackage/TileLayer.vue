@@ -16,7 +16,7 @@
           @keydown.esc="closeRenameDialog">
         <v-card v-if="renameDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiPencil }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-pencil"/>
             Rename tile layer
           </v-card-title>
           <v-card-text>
@@ -41,7 +41,7 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="renaming"
-                text
+                variant="text"
                 @click="renameDialog = false">
               Cancel
             </v-btn>
@@ -49,7 +49,7 @@
                 :loading="renaming"
                 :disabled="!renameValid"
                 color="primary"
-                text
+                variant="text"
                 @click="rename">
               Rename
             </v-btn>
@@ -63,7 +63,7 @@
           @keydown.esc="closeCopyDialog">
         <v-card v-if="copyDialog">
           <v-card-title>
-            <v-icon color="primary" class="pr-2">{{ mdiContentCopy }}</v-icon>
+            <v-icon color="primary" class="pr-2" icon="mdi-content-copy"/>
             Copy tile layer
           </v-card-title>
           <v-card-text>
@@ -88,7 +88,7 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="copying"
-                text
+                variant="text"
                 @click="copyDialog = false">
               Cancel
             </v-btn>
@@ -96,7 +96,7 @@
                 :loading="copying"
                 :disabled="!copyValid"
                 color="primary"
-                text
+                variant="text"
                 @click="copy">
               Copy
             </v-btn>
@@ -110,7 +110,7 @@
           @keydown.esc="closeDeleteDialog">
         <v-card v-if="deleteDialog">
           <v-card-title>
-            <v-icon color="warning" class="pr-2">{{ mdiTrashCan }}</v-icon>
+            <v-icon color="warning" class="pr-2" icon="mdi-trash-can"/>
             Delete tile layer
           </v-card-title>
           <v-card-text>
@@ -121,14 +121,14 @@
             <v-spacer></v-spacer>
             <v-btn
                 :disabled="deleting"
-                text
+                variant="text"
                 @click="deleteDialog = false">
               Cancel
             </v-btn>
             <v-btn
                 :loading="deleting"
                 color="warning"
-                text
+                variant="text"
                 @click="deleteTable">
               Delete
             </v-btn>
@@ -138,12 +138,11 @@
       <v-row no-gutters class="pl-3 pt-3 pr-3 background">
         <v-col>
           <p class="text-subtitle-1">
-            <v-btn icon @click="zoomToLayer" color="whitesmoke">
-              <img v-if="$vuetify.theme.dark" src="/images/white_layers.png" alt="Feature layer" width="20px"
-                   height="20px"/>
-              <img v-else src="/images/colored_layers.png" alt="Feature layer" width="20px" height="20px"/>
+            <v-btn variant="text" icon @click="zoomToLayer" color="whitesmoke">
+              <v-img v-if="project.dark" src="/images/white_layers.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-else src="/images/colored_layers.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
-            <span style="vertical-align: middle;">Tile layer</span>
+            <span class="ml-2" style="vertical-align: middle;">Tile layer</span>
           </p>
         </v-col>
       </v-row>
@@ -154,7 +153,7 @@
                     @click.stop="showRenameDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiPencil }}</v-icon>
+                  <v-icon small icon="mdi-pencil"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Rename
@@ -169,7 +168,7 @@
                     @click.stop="showCopyDialog">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiContentCopy }}</v-icon>
+                  <v-icon small icon="mdi-content-copy"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Copy
@@ -184,7 +183,7 @@
                     @click.stop="deleteDialog = true">
               <v-card-text class="pa-2">
                 <v-row no-gutters align-content="center" justify="center">
-                  <v-icon small>{{ mdiTrashCan }}</v-icon>
+                  <v-icon small icon="mdi-trash-can"/>
                 </v-row>
                 <v-row no-gutters align-content="center" justify="center">
                   Delete
@@ -206,12 +205,12 @@
               </p>
             </v-col>
             <v-col>
-              <v-row no-gutters justify="end">
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Enable
-                </p>
-                <v-switch color="primary" class="ml-2" :style="{marginTop: '-4px'}" dense v-model="visible"
-                          hide-details></v-switch>
+              <v-row no-gutters style="flex-direction: row-reverse">
+                <v-switch color="primary" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
+                  <template v-slot:prepend>
+                    <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">Enable</p>
+                  </template>
+                </v-switch>
               </v-row>
             </v-col>
           </v-row>
@@ -253,7 +252,6 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import { mdiChevronLeft, mdiContentCopy, mdiPalette, mdiPencil, mdiTrashCan } from '@mdi/js'
 import { zoomToGeoPackageTable } from '../../lib/leaflet/map/ZoomUtilities'
 import EventBus from '../../lib/vue/EventBus'
 import {
@@ -264,7 +262,7 @@ import {
 
 export default {
   props: {
-    projectId: String,
+    project: Object,
     geopackage: Object,
     tableName: String,
     back: Function,
@@ -272,11 +270,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiPencil: mdiPencil,
-      mdiContentCopy: mdiContentCopy,
-      mdiTrashCan: mdiTrashCan,
-      mdiPalette: mdiPalette,
       deleteDialog: false,
       renameValid: false,
       renameDialog: false,
@@ -303,7 +296,7 @@ export default {
         return !isNil(this.geopackage.tables.tiles[this.tableName]) ? this.geopackage.tables.tiles[this.tableName].visible : false
       },
       set (value) {
-        setGeoPackageTileTableVisible(this.projectId, this.geopackage.id, this.tableName, value)
+        setGeoPackageTileTableVisible(this.project.id, this.geopackage.id, this.tableName, value)
       }
     },
     tileCount () {
@@ -339,7 +332,7 @@ export default {
       this.renamed(this.renamedTable)
       this.copiedTable = this.renamedTable + '_copy'
       this.renaming = true
-      renameGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'tile').then(() => {
+      renameGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, this.renamedTable, 'tile').then(() => {
         this.renaming = false
         this.$nextTick(() => {
           this.renameDialog = false
@@ -348,7 +341,7 @@ export default {
     },
     copy () {
       this.copying = true
-      copyGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'tile').then(() => {
+      copyGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, this.copiedTable, 'tile').then(() => {
         this.$nextTick(() => {
           EventBus.$emit(EventBus.EventTypes.ALERT_MESSAGE, 'Tile layer copied', 'primary')
         })
@@ -359,7 +352,7 @@ export default {
     },
     deleteTable () {
       this.deleting = true
-      deleteGeoPackageTable(this.projectId, this.geopackage.id, this.geopackage.path, this.tableName, 'tile').then(() => {
+      deleteGeoPackageTable(this.project.id, this.geopackage.id, this.geopackage.path, this.tableName, 'tile').then(() => {
         this.deleting = false
         this.$nextTick(() => {
           this.deleteDialog = false

@@ -1,7 +1,6 @@
 <template>
   <v-sheet class="mapcache-sheet">
     <v-toolbar
-        theme="dark"
         color="main"
         flat
         class="sticky-toolbar"
@@ -27,8 +26,7 @@
               </p>
             </v-col>
             <v-col cols="1">
-              <v-btn color="primary" icon @click="zoomTo">
-                <v-icon>{{ mdiMagnify }}</v-icon>
+              <v-btn color="primary" icon="mdi-magnify" @click="zoomTo">
               </v-btn>
             </v-col>
           </v-row>
@@ -108,9 +106,8 @@
             fab
             color="primary"
             v-bind="props"
-            @click="saveFeature">
-          <v-icon>{{ mdiContentSave }}</v-icon>
-        </v-btn>
+            @click="saveFeature"
+            icon="mdi-content-save"/>
       </template>
       <span>Save</span>
     </v-tooltip>
@@ -118,7 +115,6 @@
 </template>
 
 <script>
-import { mdiChevronLeft, mdiContentSave, mdiMagnify } from '@mdi/js'
 import EventBus from '../../lib/vue/EventBus'
 import { prettyifyWords, prettyifyAddress } from '../../lib/util/nominatim/NominatimUtilities'
 
@@ -130,9 +126,6 @@ export default {
   },
   data () {
     return {
-      mdiChevronLeft: mdiChevronLeft,
-      mdiContentSave: mdiContentSave,
-      mdiMagnify: mdiMagnify,
       fab: false,
     }
   },
