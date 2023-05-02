@@ -1,6 +1,5 @@
 <template>
-  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false"
-            color="primary" dense hide-details @click.stop.prevent="" @change="visibilityChanged"></v-switch>
+  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop=""/>
 </template>
 
 <script>
@@ -31,10 +30,6 @@ export default {
     }
   },
   methods: {
-    async visibilityChanged () {
-      let value = this.model
-      await setDataSourceVisible(this.projectId, this.source.id, value)
-    },
     initializing () {
       this.loadingContent = true
     },
@@ -46,6 +41,12 @@ export default {
     inputValue: {
       handler (newValue) {
         this.model = newValue
+      }
+    },
+    model: {
+      async handler (newValue) {
+        await setDataSourceVisible(this.projectId, this.source.id, newValue)
+
       }
     }
   }

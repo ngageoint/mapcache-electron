@@ -188,7 +188,7 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn variant="text" icon @click="zoomTo" color="whitesmoke">
-              <v-icon style="width: 20px; height: 20px;" class="mdi-map-outline"/>
+              <v-icon style="width: 20px; height: 20px;" icon="mdi-map-outline"/>
             </v-btn>
             <span>{{ configuration.pane === 'vector' ? 'Feature' : 'Tile' }} base map</span>
           </p>
@@ -372,7 +372,7 @@ import GeoTIFFTroubleshooting from '../Common/GeoTIFFTroubleshooting.vue'
 import WMSLayerEditor from '../Common/WMSLayerEditor.vue'
 import WMTSLayerEditor from '../Common/WMTSLayerEditor.vue'
 import {
-  editBaseMap,
+  setBaseMap,
   removeBaseMap,
   saveBaseMapConnectionSettings,
   setSourceError
@@ -413,7 +413,7 @@ export default {
       return this.baseMap.readonly
     },
     rasterMissing () {
-      return window.mapcache.isRasterMissing(this.baseMap.layerConfiguration || {})
+      return this.baseMap.layerConfiguration ? window.mapcache.isRasterMissing(this.baseMap.layerConfiguration.layerType, this.baseMap.layerConfiguration.rasterFile) : false
     },
     url () {
       return this.project.mapProjection === 3857 ? this.baseMap.url : this.baseMap.pcUrl
@@ -473,18 +473,18 @@ export default {
     saveBaseMapName () {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.name = this.renamedBaseMap
-      editBaseMap(baseMap)
+      setBaseMap(baseMap)
       this.renameDialog = false
     },
     updateBackground (value) {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.background = value
-      editBaseMap(baseMap)
+      setBaseMap(baseMap)
     },
     updateConfiguration (newConfiguration) {
       const baseMap = cloneDeep(this.baseMap)
       baseMap.layerConfiguration = newConfiguration
-      editBaseMap(baseMap)
+      setBaseMap(baseMap)
     },
     setBaseMapError (error) {
       setSourceError(this.baseMap.id, error)

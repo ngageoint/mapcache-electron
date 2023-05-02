@@ -245,14 +245,14 @@
       <v-row no-gutters class="pl-3 pt-3 pr-3 background" justify="space-between">
         <v-col>
           <p class="text-subtitle-1">
-            <v-btn icon @click="zoomTo" color="whitesmoke">
-              <img v-if="source.pane === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer"
+            <v-btn variant="text" icon @click="zoomTo" color="whitesmoke">
+              <v-img v-if="source.pane === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer"
                    width="20px" height="20px"/>
-              <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
+              <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
                    height="20px"/>
-              <img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px"
+              <v-img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px"
                    height="20px"/>
-              <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
             <span>{{ source.pane === 'vector' ? 'Feature' : 'Tile' }} data source</span>
           </p>
@@ -542,7 +542,7 @@ export default {
       }
     }),
     missingRaster () {
-      return window.mapcache.isRasterMissing(this.source)
+      return window.mapcache.isRasterMissing(this.source.layerType, this.source.rasterFile)
     }
   },
   data () {
@@ -713,6 +713,6 @@ export default {
 
 <style scoped>
 .btn-background {
-  background-color: var(--v-main_active_background-base) !important;
+  background-color: rgb(var(--v-theme-main_active_background)) !important;
 }
 </style>

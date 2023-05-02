@@ -595,6 +595,6 @@ export default {
 
 <style scoped>
 .btn-background {
-  background-color: var(--v-main_active_background-base) !important;
+  background-color: rgb(var(--v-theme-main_active_background)) !important;
 }
 </style>

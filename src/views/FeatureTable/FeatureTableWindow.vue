@@ -12,9 +12,18 @@ import isNil from 'lodash/isNil'
 import { FEATURE_TABLE_WINDOW_EVENTS } from './FeatureTableEvents'
 import { FEATURE_TABLE_ACTIONS } from './FeatureTableActions'
 import { popOutFeatureTable } from '../../lib/vue/vuex/ProjectActions'
+import { useTheme } from 'vuetify'
 
 export default {
   name: 'FeatureTableWindow',
+  setup () {
+    const theme = useTheme()
+
+    return {
+      theme,
+      setTheme: (isDark) => theme.global.name.value = isDark ? 'dark' : 'light'
+    }
+  },
   components: { FeatureTables },
   computed: {
     ...mapState({
@@ -28,9 +37,7 @@ export default {
         if (!isNil(project)) {
           isDark = project.dark
         }
-        this.$nextTick(() => {
-          this.$vuetify.theme.dark = isDark
-        })
+        this.setTheme(isDark)
         return isDark
       },
     })
@@ -125,7 +132,7 @@ export default {
     darkTheme: {
       handler (newValue) {
         this.$nextTick(() => {
-          this.$vuetify.theme.dark = newValue
+          this.setTheme(newValue)
         })
       }
     }

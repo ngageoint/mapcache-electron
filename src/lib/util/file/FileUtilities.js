@@ -112,7 +112,6 @@ function getResourcesDirectory () {
     // only set in electron process
     // eslint-disable-next-line no-undef
     extraResourcesPath = path.join(path.dirname(__dirname), 'resources')
-    console.log(extraResourcesPath)
   } else {
     extraResourcesPath = path.join(path.dirname(__dirname), 'resources')
   }

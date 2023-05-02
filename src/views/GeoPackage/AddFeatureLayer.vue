@@ -96,21 +96,18 @@
                     <v-list-item
                         :value="item.value"
                         @click.stop="item.changeVisibility">
+                      <template v-slot:prepend>
+                        <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
+                          <v-img v-if="project.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        </v-btn>
+                      </template>
                       <template v-slot:default="{ active }">
-                        <v-list-item-icon>
-                          <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}"
-                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer"
-                                 width="20px" height="20px"/>
-                          </v-btn>
-                        </v-list-item-icon>
                         <div>
                           <v-list-item-title v-text="item.text"></v-list-item-title>
                         </div>
                         <v-list-item-action>
-                          <source-visibility-switch :input-value="active" :project-id="project.id"
-                                                    :source="project.sources[item.id]"></source-visibility-switch>
+                          <source-visibility-switch :input-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>
@@ -150,15 +147,13 @@
                     <v-list-item
                         :value="item.value"
                         @click.stop="item.changeVisibility">
+                      <template v-slot:prepend>
+                        <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
+                          <v-img v-if="project.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        </v-btn>
+                      </template>
                       <template v-slot:default="{ active }">
-                        <v-list-item-icon>
-                          <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <img v-if="$vuetify.theme.dark" :style="{verticalAlign: 'middle'}"
-                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                            <img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer"
-                                 width="20px" height="20px"/>
-                          </v-btn>
-                        </v-list-item-icon>
                         <div>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                           <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
@@ -208,13 +203,12 @@
                     v-for="item in sortedLayers"
                     class="sortable-list-item"
                     :key="item.id">
-                  <v-list-item-icon class="mt-1">
+                  <template v-slot:prepend class="mt-1">
                     <v-btn icon @click.stop="item.zoomTo">
-                      <img v-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                           height="20px"/>
-                      <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <v-img v-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
-                  </v-list-item-icon>
+                  </template>
                   <div class="pa-0 ma-0">
                     <v-list-item-title v-text="item.title"></v-list-item-title>
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>

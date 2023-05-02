@@ -143,7 +143,7 @@
                     </v-col>
                     <v-col>
                       <v-row no-gutters justify="end" class="mr-5">
-                        <img class="icon-box" :src="item.url"/>
+                        <v-img class="icon-box" :src="item.url"/>
                       </v-row>
                     </v-col>
                   </v-row>
@@ -194,7 +194,7 @@
                 </v-col>
                 <v-col cols="4" v-if="assignment.icon">
                   <v-row no-gutters justify="end" class="mr-5">
-                    <img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.icon.url"/>
+                    <v-img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.icon.url"/>
                   </v-row>
                 </v-col>
                 <v-col cols="4" v-if="assignment.style">

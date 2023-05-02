@@ -81,7 +81,7 @@
                 <v-row no-gutters justify="center" style="height: 100%;">
                   <v-col align-self="center">
                     <v-row no-gutters justify="center" class="pa-0 mx-auto">
-                      <img class="square-icon" :src="iconUrl"/>
+                      <v-img class="square-icon" :src="iconUrl"/>
                     </v-row>
                     <v-row no-gutters justify="center" class="pa-0 mx-auto">
                       Browse...

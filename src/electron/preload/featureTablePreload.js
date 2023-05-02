@@ -1,5 +1,4 @@
-import log from 'electron-log'
-import path from 'path'
+import log from 'electron-log/renderer'
 import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context, GeometryType, GeoPackageDataType } from '@ngageoint/geopackage'
 import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
@@ -22,7 +21,6 @@ const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
-log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)

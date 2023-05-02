@@ -434,7 +434,6 @@ function executeTask (message) {
  */
 function setupRequestListener () {
   parentPort.on('message', (message) => {
-    console.log(message)
     if (message.type === CANCEL) {
       if (currentTask.cancelTask) {
         currentTask.cancelTask()

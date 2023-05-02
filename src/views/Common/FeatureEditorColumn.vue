@@ -143,13 +143,11 @@ export default {
 </script>
 
 <style scoped>
-.editable-text-area::v-deep {
-  textarea {
-    max-height: 10rem;
-    overflow: auto;
-  }
-  textarea::-webkit-scrollbar {
-    width: 0 !important;
-  }
+.editable-text-area:deep(.textarea) {
+  max-height: 10rem;
+  overflow: auto;
+}
+.editable-text-area:deep(.textarea::-webkit-scrollbar) {
+  width: 0 !important;
 }
 </style>

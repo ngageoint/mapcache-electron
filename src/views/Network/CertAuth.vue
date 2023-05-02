@@ -87,17 +87,17 @@ export default {
 }
 
 .list-item:hover {
-  background-color: var(--v-main-darken2) !important;
+  background-color: rgb(var(--v-theme-main-darken-2)) !important;
   color: whitesmoke;
 }
 
 .list-item-active {
-  background-color: var(--v-main_active_background-base);
-  color: var(--v-main_active_text-base) !important;
+  background-color: rgb(var(--v-theme-main_active_background));
+  color: rgb(var(--v-theme-main_active_text)) !important;
 }
 
 .list-item-active:hover {
-  background-color: var(--v-main-base);
+  background-color: rgb(var(--v-theme-main));
   color: whitesmoke !important;
 }
 </style>

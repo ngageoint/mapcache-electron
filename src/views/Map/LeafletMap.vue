@@ -2,7 +2,7 @@
   <div v-show="visible" :style="{width: '100%', height: '100%', zIndex: 0, position: 'relative', display: 'flex'}"
        @mouseleave="mouseLeft" @mouseenter="mouseEntered">
     <div id="map" :style="{width: '100%', zIndex: 0, flex: 1, backgroundColor: mapBackground}">
-      <div id='tooltip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
+      <div id='map-action-tip' :style="{top: project.displayAddressSearchBar ? '54px' : '10px'}"></div>
       <v-dialog
           v-model="geopackageFeatureLayerSelectionDialog"
           max-width="450"
@@ -77,15 +77,7 @@
         <v-card-subtitle class="pt-1 pb-1">
           Select grid overlay to view.
         </v-card-subtitle>
-        <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;">
-          <v-list-item-group dense v-model="gridSelection" mandatory>
-            <v-list-item dense v-for="(item) in gridOptions" :key="item.id" :value="item.id">
-              <div>
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
-              </div>
-            </v-list-item>
-          </v-list-item-group>
-        </v-list>
+        <v-list mandatory :selected="gridSelection" item-value="id" dense class="pa-0" style="max-height: 200px; overflow-y: auto;" :items="gridOptions" @update:selected="updateSelectedGrid"/>
       </v-card-text>
     </v-card>
     <v-card outlined v-show="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
@@ -108,10 +100,10 @@
               dense>
             <template v-slot:prepend>
               <v-btn icon @click.stop="item.zoomTo">
-                <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                <v-img v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                <v-img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
             </template>
             <div class="pa-0 ma-0">
@@ -156,9 +148,7 @@
         <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;" v-model="selectedBaseMapId">
           <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
             <template v-slot:prepend>
-              <v-btn small icon="mdi-map-outline" @click.stop="(e) => item.zoomTo(e)">
-                <v-icon small>{{ mdiMapOutline }}</v-icon>
-              </v-btn>
+              <v-btn small icon="mdi-map-outline" @click.stop="(e) => item.zoomTo(e)"/>
             </template>
             <v-list-item-title>{{ item.name }}</v-list-item-title>
             <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
@@ -175,7 +165,7 @@
       </v-card-text>
     </v-card>
     <range-ring v-if="showRangeRingTool" :map="map" :close="cancelRangeRingTool" :save-feature="saveRangeRingFeature" :style="{top: getRangeRingToolOffset()}"></range-ring>
-    <v-card v-if="project.displayAddressSearchBar" outlined class="nominatim-card ma-0 pa-0 transparent">
+    <v-card v-if="project.displayAddressSearchBar" elevation="2" class="nominatim-card ma-0 pa-0 transparent">
       <nominatim-search :project="project" :map-bounds="mapBounds" :disable-search="disableSearch"/>
     </v-card>
     <v-card v-if="isEditing" flat tile class="feature-editing-card ma-0 pa-0">
@@ -315,12 +305,7 @@ import DrawBounds from './mixins/DrawBounds'
 import EditFeature from './mixins/EditFeature'
 import GridBounds from './mixins/GridBounds'
 import HighlightFeature from './mixins/HighlightFeature'
-import {
-  addFeatureToGeoPackage,
-  clearActiveLayers, editBaseMap,
-  notifyTab,
-  popOutFeatureTable, setMapRenderingOrder, setMapZoom, setSourceError
-} from '../../lib/vue/vuex/ProjectActions'
+import { addFeatureToGeoPackage, clearActiveLayers, setBaseMap, notifyTab, popOutFeatureTable, setMapRenderingOrder, setMapZoom, setSourceError } from '../../lib/vue/vuex/ProjectActions'
 
 // millisecond threshold for double clicks, if user single clicks, there will be a 200ms delay in running a feature query
 const DOUBLE_CLICK_THRESHOLD = 200
@@ -478,7 +463,7 @@ export default {
       contextMenuPopup: null,
       performingReverseQuery: false,
       gridOptions: [{ id: 0, title: 'None' }, { id: 1, title: 'XYZ' }, { id: 2, title: 'GARS' }, { id: 3, title: 'MGRS' }],
-      gridSelection: 0,
+      gridSelection: [0],
       closeContextMenuTimeoutId: null,
       showRangeRingTool: false
     }
@@ -503,7 +488,9 @@ export default {
       this.cancelRangeRingTool()
       this.addDrawBoundsToMap()
     },
-    updateGrid (gridId) {
+    updateSelectedGrid (val) {
+      this.gridSelection = val
+      const gridId = val[0]
       if (gridId === 0) {
         this.garsGridOverlay.remove()
         this.mgrsGridOverlay.remove()
@@ -799,7 +786,7 @@ export default {
         await addFeatureToGeoPackage(projectId, geopackageId, tableName, this.additionalFeatureToAdd)
         this.additionalFeatureToAdd = null
       }
-      notifyTab(projectId, 0)
+      return notifyTab(projectId, 0)
     },
     cancelDrawing () {
       this.$nextTick(() => {
@@ -831,7 +818,7 @@ export default {
     },
     addSelectedBaseMap (self, map, baseMapId, defaultBaseMap, baseMap) {
       map.addLayer(self.baseMapLayers[baseMapId])
-      self.mapBackground = self.$vuetify.theme.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
+      self.mapBackground = self.project.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
       this.setAttribution(baseMap.attribution)
       self.baseMapLayers[baseMapId].bringToBack()
     },
@@ -843,12 +830,12 @@ export default {
       const baseMapId = baseMap.id
       const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
       if (baseMapId === getOfflineBaseMapId()) {
-        self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, this.$vuetify.theme.dark)
+        self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, project.dark)
         if (self.selectedBaseMapId === baseMapId) {
           this.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
         }
       } else if (!isNil(defaultBaseMap)) {
-        self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, this.$vuetify.theme.dark)
+        self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, project.dark)
         if (self.selectedBaseMapId === baseMapId) {
           self.testBaseMap(baseMap).then(result => {
             if (result && !result.error) {
@@ -1064,8 +1051,6 @@ export default {
     initializeMap (centerAndZoom) {
       const defaultCenter = centerAndZoom ? centerAndZoom.center : [40.809118, 61.614383]
       const defaultZoom = centerAndZoom ? centerAndZoom.zoom : 3
-      console.log(defaultCenter)
-      console.log(defaultZoom)
       this.map = L.map('map', {
         attributionControl: false,
         center: defaultCenter,
@@ -1144,7 +1129,8 @@ export default {
               }
             })
           }
-        }).catch(() => {
+        }).catch((e) => {
+          console.error(e)
           // eslint-disable-next-line no-console
           console.error('Error retrieving nominatim reverse query results.')
         }).finally(() => {
@@ -1429,11 +1415,6 @@ export default {
         }
       }
     },
-    gridSelection: {
-      handler (newValue) {
-        this.updateGrid(newValue)
-      }
-    },
     baseMaps: {
       handler (newBaseMaps) {
         const self = this
@@ -1471,7 +1452,7 @@ export default {
             if (repaintRequired) {
               self.baseMapLayers[selectedBaseMapId].redraw()
             }
-            this.mapBackground = this.$vuetify.theme.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
+            this.mapBackground = project.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
           }
         }
       }
@@ -1487,7 +1468,7 @@ export default {
           let success = true
           if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
             this.connectingToBaseMap = true
-            success = await connectToBaseMap(newBaseMap, editBaseMap, newBaseMap.layerConfiguration.timeoutMs)
+            success = await connectToBaseMap(newBaseMap, setBaseMap, newBaseMap.layerConfiguration.timeoutMs)
             this.connectingToBaseMap = false
           }
 
@@ -1509,7 +1490,7 @@ export default {
               this.setAttribution(newBaseMap.attribution)
               self.baseMapLayers[newBaseMapId].bringToBack()
             }
-            self.mapBackground = self.$vuetify.theme.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
+            self.mapBackground = project.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
           } else {
             self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
             this.setAttribution(newBaseMap.attribution)
@@ -2041,7 +2022,6 @@ export default {
   position: absolute !important;
   left: 10px !important;
   max-height: 350px !important;
-  border: 2px solid rgba(0, 0, 0, 0.2) !important;
 }
 
 .feature-editing-card {
@@ -2066,32 +2046,19 @@ ul {
 .layer-order-list-item {
   min-height: 50px !important;
   cursor: move !important;
-  background: var(--v-background) !important;
+  background: rgb(var(--v-theme-background)) !important;
 }
 
 .layer-order-list-item i {
   cursor: pointer !important;
 }
 
-.flip-list-move {
-  transition: transform 0.5s;
-}
-
-.no-move {
-  transition: transform 0s;
-}
-
-.ghost {
-  opacity: 0.5 !important;
-  background-color: var(--v-primary-lighten2) !important;
-}
-
 .leaflet-popup-content-wrapper {
-  color: var(--v-text-base) !important;
+  color: rgb(var(--v-theme-text)) !important;
 }
 
 div {
-  color: var(--v-text-base) !important;
+  color: rgb(var(--v-theme-text)) !important;
 }
 
 .address-control {

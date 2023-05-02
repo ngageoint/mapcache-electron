@@ -3,14 +3,11 @@
     <web-view-dialog :key="authKey" v-if="authUrl != null" :width="600" :url="authUrl" :cancel="cancelAuthRequest"></web-view-dialog>
     <v-dialog
         v-model="closingDialog"
-        theme="dark"
         persistent
         width="400">
       <v-card
-          theme="dark"
           color="#426e91" class="pt-2 pb-4">
         <v-card-text
-            theme="dark"
             class="pt-2">
           {{ closingMessage }}
           <v-progress-linear
@@ -319,7 +316,7 @@ export default {
     },
     handleSearchResults (data) {
       if (this.tabs.length === 3) {
-        this.tabs.splice(2, 0, { tabId: 3, text: 'Search', icon: mdiMagnify, onClick: (i) => this.tabId = i })
+        this.tabs.splice(2, 0, { tabId: 3, text: 'Search', icon: 'mdi-magnify', onClick: (i) => this.tabId = i })
       }
       this.nominatimSearchResults = data
       this.tabId = 3
@@ -337,10 +334,10 @@ export default {
       let bounds
       try {
         // TODO: Fix
-        // bounds = this.$refs['map'].getMapCenterAndZoom()
+        bounds = this.$refs['map'].getMapCenterAndZoom()
         // eslint-disable-next-line no-empty
       } catch (e) {
-        // console.error(e);
+        console.error(e);
       }
       return bounds
     },
@@ -447,7 +444,7 @@ export default {
   watch: {
     darkTheme: {
       handler (newValue) {
-        this.$vuetify.theme.dark = newValue
+        this.setTheme(newValue)
       }
     },
     showToolTips: {

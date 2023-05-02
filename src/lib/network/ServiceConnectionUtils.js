@@ -510,11 +510,11 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
 /**
  * Attempts to connect to a source
  * @param baseMap
- * @param editBaseMap
+ * @param setBaseMap
  * @param timeout (default 5000)
  * @returns {Promise<boolean>}
  */
-async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
+async function connectToBaseMap (baseMap, setBaseMap, timeout = 5000) {
   let success = false
   if (!isNil(baseMap.layerConfiguration)) {
     const serviceType = getServiceType(baseMap.layerConfiguration.layerType)
@@ -554,14 +554,14 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
         let baseMapClone = cloneDeep(baseMap)
         baseMapClone.error = undefined
         baseMapClone.withCredentials = withCredentials
-        editBaseMap(baseMapClone)
+        setBaseMap(baseMapClone)
         success = true
       }
     }
     if (error) {
       let baseMapClone = cloneDeep(baseMap)
       baseMapClone.error = error
-      editBaseMap(baseMapClone)
+      setBaseMap(baseMapClone)
     }
   }
   return success

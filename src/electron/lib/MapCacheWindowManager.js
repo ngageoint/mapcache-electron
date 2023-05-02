@@ -191,7 +191,9 @@ class MapCacheWindowManager {
           // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
           // refreshed, we want Electron to try selecting a cert again when the app loads.
           if (!isNil(associatedRequest)) {
-            webContents.send(CANCEL_SERVICE_REQUEST, associatedRequest.url)
+            if (!webContents.isDestroyed()) {
+              webContents.send(CANCEL_SERVICE_REQUEST, associatedRequest.url)
+            }
           }
         })
       }
@@ -383,6 +385,12 @@ class MapCacheWindowManager {
     })
   }
 
+  sendResponse (event, channel, ...args) {
+    if (!event.sender.isDestroyed() && !event.sender.isCrashed()) {
+      event.sender.send(channel, args)
+    }
+  }
+
   /**
    * Registers the worker threads
    * @return {Promise<void>}
@@ -395,7 +403,7 @@ class MapCacheWindowManager {
       ipcMain.on(ATTACH_MEDIA, async (event, payload) => {
         const taskId = payload.id
         const success = await this.mapcacheThreadHelper.attachMedia(payload)
-        event.sender.send(ATTACH_MEDIA_COMPLETED(taskId), success)
+        this.sendResponse(event, ATTACH_MEDIA_COMPLETED(taskId), success)
       })
 
       ipcMain.on(PROCESS_SOURCE, async (event, payload) => {
@@ -403,21 +411,21 @@ class MapCacheWindowManager {
         payload.id = taskId
         const result = await this.mapcacheThreadHelper.processDataSource(payload, event.sender)
         if (result && !result.cancelled) {
-          event.sender.send(PROCESS_SOURCE_COMPLETED(taskId), result)
+          this.sendResponse(event, PROCESS_SOURCE_COMPLETED(taskId), result)
         }
       })
 
       ipcMain.on(CANCEL_PROCESS_SOURCE, (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.cancelTask(taskId, true).then(() => {
-          event.sender.send(CANCEL_PROCESS_SOURCE_COMPLETED(taskId))
+          this.sendResponse(event, CANCEL_PROCESS_SOURCE_COMPLETED(taskId))
         })
       })
 
       ipcMain.on(CANCEL_TILE_REQUEST, async (event, payload) => {
         const taskId = payload.id
         await this.mapcacheThreadHelper.cancelTask(taskId, false).then(() => {
-          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_TILE_COMPLETED(taskId), {
             error: 'Cancelled by user.'
           })
         })
@@ -426,11 +434,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_TILE, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.renderTile(payload).then(response => {
-          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_TILE_COMPLETED(taskId), {
             base64Image: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_TILE_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_TILE_COMPLETED(taskId), {
             error: e
           })
         })
@@ -439,9 +447,9 @@ class MapCacheWindowManager {
       ipcMain.on(GENERATE_GEOTIFF_RASTER_FILE, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.generateGeoTIFFRaster(payload).then((result) => {
-          event.sender.send(GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), result)
+          this.sendResponse(event, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), result)
         }).catch(e => {
-          event.sender.send(GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), {
+          this.sendResponse(event, GENERATE_GEOTIFF_RASTER_FILE_COMPLETED(taskId), {
             error: e
           })
         })
@@ -450,11 +458,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_TILE_COMPILATION, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.compileTiles(payload, event.sender).then(response => {
-          event.sender.send(REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
             base64Image: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_TILE_COMPILATION_COMPLETED(taskId), {
             error: e
           })
         })
@@ -463,11 +471,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_GEOPACKAGE_TABLE_RENAME, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.renameGeoPackageTable(payload).then(response => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
             result: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_RENAME_COMPLETED(taskId), {
             error: e
           })
         })
@@ -476,11 +484,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_GEOPACKAGE_TABLE_DELETE, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.deleteGeoPackageTable(payload).then(response => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
             result: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_DELETE_COMPLETED(taskId), {
             error: e
           })
         })
@@ -489,11 +497,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_GEOPACKAGE_TABLE_COPY, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.copyGeoPackageTable(payload).then(response => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
             result: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_COPY_COMPLETED(taskId), {
             error: e
           })
         })
@@ -502,11 +510,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_GEOPACKAGE_TABLE_COUNT, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.countGeoPackageTable(payload).then(response => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
             result: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(taskId), {
             error: e
           })
         })
@@ -515,11 +523,11 @@ class MapCacheWindowManager {
       ipcMain.on(REQUEST_GEOPACKAGE_TABLE_SEARCH, async (event, payload) => {
         const taskId = payload.id
         this.mapcacheThreadHelper.searchGeoPackageTable(payload).then(response => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
             result: response
           })
         }).catch(e => {
-          event.sender.send(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
+          this.sendResponse(event, REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(taskId), {
             error: e
           })
         })
@@ -567,11 +575,11 @@ class MapCacheWindowManager {
     })
 
     ipcMain.on(SHOW_SAVE_DIALOG, (event, options) => {
-      dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => event.sender.send(SHOW_SAVE_DIALOG_COMPLETED, result))
+      dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => this.sendResponse(event, SHOW_SAVE_DIALOG_COMPLETED, result))
     })
 
     ipcMain.on(SHOW_OPEN_DIALOG, (event, options) => {
-      dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => event.sender.send(SHOW_OPEN_DIALOG_COMPLETED, result))
+      dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), options).then(result => this.sendResponse(event, SHOW_OPEN_DIALOG_COMPLETED, result))
     })
 
     ipcMain.on(SHOW_PROJECT, (event, projectId, geopackageIds, filePaths) => {
@@ -585,15 +593,21 @@ class MapCacheWindowManager {
 
     ipcMain.on(HIDE_FEATURE_TABLE_WINDOW, (event, args) => {
       this.showHideFeatureTableWindow(false)
-      this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW, args)
+      if (!this.projectWindow.webContents.isDestroyed()) {
+        this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW, args)
+      }
     })
 
     ipcMain.on(FEATURE_TABLE_ACTION, (event, args) => {
-      this.projectWindow.webContents.send(FEATURE_TABLE_ACTION, args)
+      if (!this.projectWindow.webContents.isDestroyed()) {
+        this.projectWindow.webContents.send(FEATURE_TABLE_ACTION, args)
+      }
     })
 
     ipcMain.on(FEATURE_TABLE_EVENT, (event, args) => {
-      this.featureTableWindow.webContents.send(FEATURE_TABLE_EVENT, args)
+      if (!this.featureTableWindow.webContents.isDestroyed()) {
+        this.featureTableWindow.webContents.send(FEATURE_TABLE_EVENT, args)
+      }
     })
 
     ipcMain.on(CLOSE_PROJECT, () => {
@@ -604,10 +618,10 @@ class MapCacheWindowManager {
     ipcMain.on(BUILD_FEATURE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
       const statusCallback = (status) => {
-        event.sender.send(BUILD_FEATURE_LAYER_STATUS(taskId), status)
+        this.sendResponse(event, BUILD_FEATURE_LAYER_STATUS(taskId), status)
       }
       const completedCallback = () => {
-        event.sender.send(BUILD_FEATURE_LAYER_COMPLETED(taskId))
+        this.sendResponse(event, BUILD_FEATURE_LAYER_COMPLETED(taskId))
       }
       ipcMain.once(WORKER_BUILD_FEATURE_LAYER_COMPLETED(taskId), (event, result) => {
         ipcMain.removeAllListeners(WORKER_BUILD_FEATURE_LAYER_STATUS(taskId))
@@ -626,7 +640,7 @@ class MapCacheWindowManager {
       })
       ipcMain.removeAllListeners(WORKER_READY)
       ipcMain.on(WORKER_READY, (event) => {
-        event.sender.send(WORKER_BUILD_FEATURE_LAYER, {
+        this.sendResponse(event, WORKER_BUILD_FEATURE_LAYER, {
           taskId: payload.configuration.id,
           configuration: payload.configuration
         })
@@ -641,15 +655,15 @@ class MapCacheWindowManager {
         this.workerWindow.destroy()
         this.workerWindow = null
       }
-      event.sender.send(CANCEL_BUILD_FEATURE_LAYER_COMPLETED(taskId))
+      this.sendResponse(event, CANCEL_BUILD_FEATURE_LAYER_COMPLETED(taskId))
     })
     ipcMain.on(BUILD_TILE_LAYER, (event, payload) => {
       const taskId = payload.configuration.id
       const statusCallback = (status) => {
-        event.sender.send(BUILD_TILE_LAYER_STATUS(taskId), status)
+        this.sendResponse(event, BUILD_TILE_LAYER_STATUS(taskId), status)
       }
       const completedCallback = () => {
-        event.sender.send(BUILD_TILE_LAYER_COMPLETED(taskId))
+        this.sendResponse(event, BUILD_TILE_LAYER_COMPLETED(taskId))
       }
       ipcMain.once(WORKER_BUILD_TILE_LAYER_COMPLETED(taskId), (event, result) => {
         ipcMain.removeAllListeners(WORKER_BUILD_TILE_LAYER_STATUS(taskId))
@@ -668,7 +682,7 @@ class MapCacheWindowManager {
       })
       ipcMain.removeAllListeners(WORKER_READY)
       ipcMain.on(WORKER_READY, (event) => {
-        event.sender.send(WORKER_BUILD_TILE_LAYER, {
+        this.sendResponse(event, WORKER_BUILD_TILE_LAYER, {
           taskId: payload.configuration.id,
           configuration: payload.configuration
         })
@@ -683,7 +697,7 @@ class MapCacheWindowManager {
         this.workerWindow.destroy()
         this.workerWindow = null
       }
-      event.sender.send(CANCEL_BUILD_TILE_LAYER_COMPLETED(taskId))
+      this.sendResponse(event, CANCEL_BUILD_TILE_LAYER_COMPLETED(taskId))
     })
 
     ipcMain.on(LAUNCH_USER_GUIDE, () => {
@@ -784,7 +798,6 @@ class MapCacheWindowManager {
    */
   loadContent (window, url, onFulfilled = () => {}) {
     window.loadURL(url).then(onFulfilled).catch((e) => {
-      console.error(e);
       // eslint-disable-next-line no-console
       console.error('Failed to load content.')
     })
@@ -1153,7 +1166,9 @@ class MapCacheWindowManager {
       }
     })
     this.featureTableWindow.on('hide', () => {
-      this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
+      if (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed()) {
+        this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
+      }
     })
     const winURL = process.env.ELECTRON_RENDERER_URL
       ? `${process.env.ELECTRON_RENDERER_URL}/#/feature_table/${projectId}`
@@ -1194,7 +1209,7 @@ class MapCacheWindowManager {
       this.featureTableWindow.destroy()
       this.featureTableWindow = null
     }
-    if (this.projectWindow) {
+    if (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed()) {
       this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, { isDeleting })
       this.launchMainWindow().then(() => {
         this.showMainWindow()
@@ -1216,7 +1231,7 @@ class MapCacheWindowManager {
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
       this.loadContent(this.projectWindow, winURL, () => {
-        if (geopackageIds != null || filePaths != null) {
+        if (geopackageIds != null || filePaths != null && (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed())) {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
         }
         this.setupCertificateAuth()
@@ -1233,7 +1248,7 @@ class MapCacheWindowManager {
             this.mainWindow.destroy()
             this.mainWindow = null
           }
-        }, 250)
+        }, 2500)
       })
       // eslint-disable-next-line no-unused-vars
     } catch (e) {

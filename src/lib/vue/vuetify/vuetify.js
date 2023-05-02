@@ -21,17 +21,13 @@ const light = {
     warning: '#FF1744',
     neutral: '#808285',
     hover: '#f5f5f5',
-    text: '#1e1e1e',
     background: '#FFFFFF',
-    surface: '#FFFFFF',
     detail: '#696969',
     detailbg: '#f5f5f5',
     main_active_background: '#ffffff',
     main_active_text: '#326482',
     scroll_thumb: '#808285',
     scroll_track: '#f5f5f5',
-    switch_thumb: '#808285',
-    switch_track: '#f5f5f5'
   }
 }
 
@@ -46,8 +42,6 @@ const dark = {
     neutral: '#414042',
     hover: '#414042',
     background: '#1e1e1e',
-    surface: '#1e1e1e',
-    text: '#f5f5f5',
     detail: '#808285',
     detailbg: '#2b2b2b',
     main_active_background: '#1e1e1e',
@@ -76,6 +70,11 @@ export default createVuetify({
   },
   theme: {
     defaultTheme: 'light',
+    variations: {
+      colors: ['main', 'primary'],
+      lighten: 2,
+      darken: 2,
+    },
     themes: {
       light: light,
       dark: dark

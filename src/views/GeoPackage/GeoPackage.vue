@@ -287,56 +287,62 @@
                                 :layer-selected="layerSelected"></geo-package-layer-list>
       </v-sheet>
     </v-sheet>
-    <v-speed-dial
+    <speed-dial
+        v-on:deactivated="fab = false"
         class="fab-position"
-        v-model="fab"
+        :activated="fab"
         transition="slide-y-reverse-transition"
     >
       <template v-slot:activator>
-        <v-tooltip location="end" :disabled="!project.showToolTips">
+        <v-tooltip location="end" :disabled="!project.showToolTips" text="Add layer">
           <template v-slot:activator="{ props }">
-            <span v-bind="props">
-              <v-btn
-                  fab
-                  color="primary"
-                  icon="mdi-layers-plus"/>
-            </span>
+            <v-btn
+              v-bind="props"
+              size="56px"
+              elevation="4"
+              color="primary"
+              icon="mdi-layers-plus"
+              :active="fab"
+              @click="fab = !fab"/>
           </template>
-          <span>Add layer</span>
         </v-tooltip>
       </template>
-      <v-tooltip location="end" :disabled="!project.showToolTips">
-        <template v-slot:activator="{ props }">
-          <span v-bind="props">
-            <v-btn
-                fab
-                small
-                color="accent"
-                @click="addFeatureLayer">
-              <img :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px"
-                   height="20px">
-            </v-btn>
-          </span>
-        </template>
-        <span>Add feature layer</span>
-      </v-tooltip>
-      <v-tooltip location="end" :disabled="!project.showToolTips">
-        <template v-slot:activator="{ props }">
-          <span v-bind="props">
-            <v-btn
-                fab
-                small
-                color="accent"
-                @click="addTileLayer"
-                :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0">
-              <img :style="{verticalAlign: 'middle'}" src="/images/white_layers.png" alt="Tile layer" width="24px"
-                   height="20px">
-            </v-btn>
-          </span>
-        </template>
-        <span>Add tile layer</span>
-      </v-tooltip>
-    </v-speed-dial>
+      <template v-slot:options>
+        <v-col class="ma-0 pa-0" cols="12">
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="Add tile layer">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                  v-bind="props"
+                  icon
+                  color="accent"
+                  size="40px"
+                  style="margin-top: 6px; margin-bottom: 6px;"
+                  elevation="4"
+                  @click="addTileLayer"
+                  :disabled="projectTileLayerCount === 0 && projectFeatureLayerCount === 0">
+                <v-img :style="{verticalAlign: 'middle'}" src="/images/white_layers.png" alt="Tile layer" width="24px" height="20px"/>
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </v-col>
+        <v-col class="ma-0 pa-0" cols="12">
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="Add feature layer">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                  v-bind="props"
+                  icon
+                  color="accent"
+                  size="40px"
+                  style="margin-top: 6px; margin-bottom: 6px;"
+                  elevation="4"
+                  @click="addFeatureLayer">
+                <v-img :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </v-col>
+      </template>
+    </speed-dial>
   </v-sheet>
 </template>
 
@@ -359,6 +365,7 @@ import {
   setActiveGeoPackageFeatureLayer,
   setGeoPackageLayersVisible
 } from '../../lib/vue/vuex/ProjectActions'
+import SpeedDial from '../Common/SpeedDial.vue'
 
 export default {
   props: {
@@ -374,7 +381,8 @@ export default {
     GeoPackageLayerList,
     GeoPackageDetails,
     FeatureLayer,
-    TileLayer
+    TileLayer,
+    SpeedDial
   },
   data () {
     return {

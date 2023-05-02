@@ -41,7 +41,8 @@ async function setupVueDevTools () {
  * Sets up the electron-log library. This will write logs to a file.
  */
 function setupElectronLog () {
-  log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'mapcache.log')
+  log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs', 'mapcache.log')
+  log.initialize()
   Object.assign(console, log.functions)
 }
 
@@ -68,6 +69,7 @@ function startOpenFileTimeout () {
  */
 function setupEventHandlers () {
   process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection')
     console.error(error)
   })
 
@@ -218,14 +220,10 @@ if (!gotTheLock) {
   app.once('ready', () => {
     if (!isProduction) {
       setupVueDevTools().then(() => {
-        start().catch(e => {
-          console.error(e);
-        })
+        return start()
       })
     } else {
-      start().catch(e => {
-        console.error(e);
-      })
+      return start()
     }
   })
 }

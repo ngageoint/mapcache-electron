@@ -19,7 +19,7 @@
                   </v-radio-group>
                 </v-col>
                 <v-row no-gutters justify="end" align="center">
-                  <img v-if="item.url != null" class="icon-box" :src="item.url"/>
+                  <v-img v-if="item.url != null" class="icon-box" :src="item.url"/>
                   <geometry-style-svg v-else :geometry-type="assignment.geometryType" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
                 </v-row>
               </v-row>

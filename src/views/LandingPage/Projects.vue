@@ -99,10 +99,8 @@
         persistent
         width="400">
       <v-card
-          theme="dark"
           color="#426e91" class="pt-2 pb-4">
         <v-card-text
-            theme="dark"
             class="pt-2">
           {{ dialogText }}
           <v-progress-linear
@@ -313,8 +311,8 @@ export default {
       this.reset()
     },
     remove () {
-      deleteProject(this.projectToDelete.id).catch(e => {
-        console.error(e)
+      deleteProject(this.projectToDelete.id).catch(() => {
+        console.error('Failed to delete project')
       }).finally(() => {
         this.deleteProjectDialog = false
         this.reset()

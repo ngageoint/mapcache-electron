@@ -10,9 +10,7 @@
       <v-btn density="comfortable" icon="mdi-chevron-left" @click="back"/>
       <v-toolbar-title>Search results</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn icon @click="clearResults">
-        <v-icon icon="mdi-close"/>
-      </v-btn>
+      <v-btn icon="mdi-close" @click="clearResults"/>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content detail-bg">
       <v-virtual-scroll
@@ -31,6 +29,7 @@
               v-on:mouseover="() => highlightFeatureOnMap(item, true)"
               v-on:mouseout="() => highlightFeatureOnMap(item, false)"
               v-on:blur="() => highlightFeatureOnMap(item, false)"
+              :prepend-avatar="getImage(item)"
           >
             <div>
               <v-list-item-title class="mb-2">{{ item.properties.name }}</v-list-item-title>
@@ -40,17 +39,17 @@
               </v-list-item-subtitle>
               <v-list-item-subtitle>{{ prettyifyAddress(item.properties) }}</v-list-item-subtitle>
             </div>
-            <v-list-item-avatar
-                right
-                rounded
-                v-if="getImage(item) != null"
-                size="72"
-            >
-              <v-img
-                  :alt="item.properties.name"
-                  :src="getImage(item)"
-              ></v-img>
-            </v-list-item-avatar>
+<!--            <v-list-item-avatar-->
+<!--                right-->
+<!--                rounded-->
+<!--                v-if="getImage(item) != null"-->
+<!--                size="72"-->
+<!--            >-->
+<!--              <v-img-->
+<!--                  :alt="item.properties.name"-->
+<!--                  :src="getImage(item)"-->
+<!--              ></v-img>-->
+<!--            </v-list-item-avatar>-->
           </v-list-item>
           <v-divider v-if="item.type !== 'END'"></v-divider>
           <div v-if="item.type === 'END'">
@@ -108,7 +107,9 @@ export default {
   },
   mounted () {
     EventBus.$on(EventBus.EventTypes.SHOW_NOMINATIM_SEARCH_RESULT, (osm_id) => {
-      this.selectResult(null, this.results.featureCollection.features.find(feature => feature.properties.osm_id === osm_id))
+      if (this.results != null) {
+        this.selectResult(null, this.results.featureCollection.features.find(feature => feature.properties.osm_id === osm_id))
+      }
     })
     EventBus.$on(EventBus.EventTypes.DESELECT_NOMINATIM_SEARCH_RESULT, () => {
       this.deselectResult()

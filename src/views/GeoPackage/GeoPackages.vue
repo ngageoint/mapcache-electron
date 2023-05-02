@@ -60,60 +60,62 @@
         </v-card>
       </v-dialog>
     </v-sheet>
-    <v-tooltip location="end" text="Add GeoPackage">
-      <template v-slot:activator="{ props }">
-        <v-btn
-            class="fab-container"
-            v-bind="props"
-            icon
-            color="primary"
-            @click="fab = !fab">
-          <template v-slot:default>
-            <v-img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px"/>
+    <speed-dial
+        v-on:deactivated="fab = false"
+        :activated="fab"
+        transition="slide-y-reverse-transition"
+    >
+      <template v-slot:activator>
+        <v-tooltip location="end" text="Add GeoPackage">
+          <template v-slot:activator="{ props }">
+            <v-btn
+                v-bind="props"
+                icon
+                size="56px"
+                color="primary"
+                elevation="4"
+                :active="fab"
+                @click="fab = !fab">
+              <template v-slot:default>
+                <v-img style="color: white;" src="/images/new-geopackage.svg" width="20px" height="20px"/>
+              </template>
+            </v-btn>
           </template>
-        </v-btn>
+        </v-tooltip>
       </template>
-    </v-tooltip>
-
-<!--    <v-speed-dial-->
-<!--        class="fab-position"-->
-<!--        v-model="fab"-->
-<!--        transition="slide-y-reverse-transition"-->
-<!--    >-->
-<!--      <template v-slot:activator>-->
-<!--        <v-tooltip location="end" :disabled="!project.showToolTips">-->
-<!--          <template v-slot:activator="{ props }">-->
-
-<!--          </template>-->
-<!--          <span>Add GeoPackage</span>-->
-<!--        </v-tooltip>-->
-<!--      </template>-->
-<!--      <v-tooltip location="end" :disabled="!project.showToolTips">-->
-<!--        <template v-slot:activator="{ props }">-->
-<!--          <v-btn-->
-<!--              icon="mdi-file-document-outline"-->
-<!--              small-->
-<!--              color="accent"-->
-<!--              @click.stop="importGeoPackage"-->
-<!--              v-bind="props">-->
-<!--          </v-btn>-->
-<!--        </template>-->
-<!--        <span>Import from file</span>-->
-<!--      </v-tooltip>-->
-<!--      <v-tooltip location="end" :disabled="!project.showToolTips">-->
-<!--        <template v-slot:activator="{ props }">-->
-<!--          <v-btn-->
-<!--              icon="mdi-plus"-->
-<!--              small-->
-<!--              color="accent"-->
-<!--              @click.stop="createNewGeoPackage"-->
-<!--              v-bind="props">-->
-<!--            <v-icon>{{ mdiPlus }}</v-icon>-->
-<!--          </v-btn>-->
-<!--        </template>-->
-<!--        <span>New GeoPackage</span>-->
-<!--      </v-tooltip>-->
-<!--    </v-speed-dial>-->
+      <template v-slot:options>
+        <v-col class="ma-0 pa-0" cols="12">
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="New GeoPackage">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                  icon="mdi-plus"
+                  size="40px"
+                  style="margin-top: 6px; margin-bottom: 6px;"
+                  color="accent"
+                  @click.stop="createNewGeoPackage"
+                  elevation="4"
+                  v-bind="props">
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </v-col>
+        <v-col class="ma-0 pa-0" cols="12">
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="Import from file">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                  icon="mdi-file-document-outline"
+                  size="40px"
+                  style="margin-top: 6px; margin-bottom: 6px;"
+                  color="accent"
+                  @click.stop="importGeoPackage"
+                  elevation="4"
+                  v-bind="props">
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </v-col>
+      </template>
+    </speed-dial>
   </v-sheet>
 </template>
 
@@ -125,6 +127,7 @@ import GeoPackageList from './GeoPackageList.vue'
 import EventBus from '../../lib/vue/EventBus'
 import { addGeoPackage } from '../../lib/vue/vuex/CommonActions'
 import { setActiveGeoPackage } from '../../lib/vue/vuex/ProjectActions'
+import SpeedDial from '../Common/SpeedDial.vue'
 
 export default {
   props: {
@@ -143,7 +146,8 @@ export default {
   },
   components: {
     GeoPackageList,
-    GeoPackage
+    GeoPackage,
+    SpeedDial
   },
   methods: {
     showFab (e) {
@@ -261,11 +265,5 @@ export default {
   width: 384px;
   left: 64px;
   bottom: 8px;
-}
-.fab-container {
-  position:fixed;
-  left: 384px;
-  bottom: 20px;
-  cursor:pointer;
 }
 </style>

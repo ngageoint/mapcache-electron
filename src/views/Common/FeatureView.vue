@@ -43,7 +43,7 @@
             v-if="styleAssignment"
             :assignment="styleAssignment"
             :table-name="tableName"
-            :project-id="projectId"
+            :project-id="project.id"
             :id="id"
             :is-geo-package="isGeoPackage"
             :close="closeStyleAssignment"/>
@@ -54,7 +54,7 @@
         <media-attachments
             v-if="showFeatureMediaAttachments"
             :tableName="tableName"
-            :project-id="projectId"
+            :project="project"
             :geopackage-path="geopackagePath"
             :id="id"
             :feature-id="featureId"
@@ -83,7 +83,7 @@
                                           :fill-color="featureViewData.style.style.fillColor"
                                           :fill-opacity="featureViewData.style.style.fillOpacity"
                                           :geometry-type="featureViewData.geometryTypeCode"/>
-                      <img v-else-if="featureViewData.style.icon" class="icon-box" style="width: 25px; height: 25px;"
+                      <v-img v-else-if="featureViewData.style.icon" class="icon-box" style="width: 25px; height: 25px;"
                            :src="featureViewData.style.icon.url"/>
                     </v-btn>
                     <v-col>
@@ -240,7 +240,7 @@ import {
 export default {
   components: { MediaAttachments, EditFeatureStyleAssignment, GeometryStyleSvg, FeatureEditorColumn },
   props: {
-    projectId: String,
+    project: Object,
     name: String,
     geopackagePath: String,
     id: String,
@@ -379,9 +379,9 @@ export default {
     },
     removeFeature () {
       if (this.isGeoPackage) {
-        removeFeatureFromGeoPackage(this.projectId, this.id, this.tableName, this.featureId)
+        removeFeatureFromGeoPackage(this.project.id, this.id, this.tableName, this.featureId)
       } else {
-        removeFeatureFromDataSource(this.projectId, this.id, this.featureId)
+        removeFeatureFromDataSource(this.project.id, this.id, this.featureId)
       }
       this.removeDialog = false
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE)
@@ -435,11 +435,11 @@ export default {
         const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, this.featureViewData.editableColumns, feature.geometry, true)
         if (result.changes > 0) {
           if (this.isGeoPackage) {
-            await synchronizeGeoPackage(this.projectId, this.id)
+            await synchronizeGeoPackage(this.project.id, this.id)
           } else {
-            await synchronizeDataSource(this.projectId, this.id)
+            await synchronizeDataSource(this.project.id, this.id)
           }
-          updateStyleKey(this.projectId, this.id, this.tableName, this.isGeoPackage, false)
+          updateStyleKey(this.project.id, this.id, this.tableName, this.isGeoPackage, false)
         } else if (result.error) {
           this.failedToSaveErrorMessage = result.error
           this.failedToSaveSnackBar = true

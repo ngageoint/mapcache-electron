@@ -34,7 +34,7 @@
 
 <script>
 import isNil from 'lodash/isNil'
-import { editBaseMap, setDataSource } from '../../lib/vue/vuex/ProjectActions'
+import { setBaseMap, setDataSource } from '../../lib/vue/vuex/ProjectActions'
 
 export default {
   props: {
@@ -96,7 +96,7 @@ export default {
           } else {
             const baseMapCopy = Object.assign({}, this.sourceOrBaseMap)
             baseMapCopy.layerConfiguration.rasterFile = result
-            editBaseMap(baseMapCopy)
+            setBaseMap(baseMapCopy)
             this.closeTroubleshooting()
           }
         }

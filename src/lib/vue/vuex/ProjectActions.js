@@ -1,5 +1,6 @@
 import cloneDeep from 'lodash/cloneDeep'
 import store from '../../../store/renderer'
+import { isProxy, toRaw } from 'vue';
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   let filePath
@@ -60,14 +61,30 @@ function updateStyleKey (projectId, id, tableName, isGeoPackage, isBaseMap = fal
 }
 
 function setGeoPackage (projectId, geopackage) {
+  Object.keys(geopackage).forEach(key => {
+    if (isProxy(geopackage[key])) {
+      geopackage[key] = toRaw(geopackage[key])
+    }
+  })
   return store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
 }
 
 function setDataSource (projectId, source) {
-  return store.dispatch('Projects/setDataSource', { projectId, source })
+  Object.keys(source).forEach(key => {
+    if (isProxy(source[key])) {
+      source[key] = toRaw(source[key])
+    }
+  })
+  return store.dispatch('Projects/setDataSource', { projectId, source: source })
 }
 
 function setBaseMap (baseMap) {
+  console.log(baseMap)
+  Object.keys(baseMap).forEach(key => {
+    if (isProxy(baseMap[key])) {
+      baseMap[key] = toRaw(baseMap[key])
+    }
+  })
   return store.dispatch('BaseMaps/editBaseMap', baseMap)
 }
 
@@ -96,8 +113,14 @@ function setDataSourceDisplayName (projectId, sourceId, displayName) {
 }
 
 async function addDataSources (projectId, dataSources) {
+  dataSources = toRaw(dataSources)
   for (let i = 0; i < dataSources.length; i++) {
     const source = dataSources[i]
+    Object.keys(source).forEach(key => {
+      if (isProxy(source[key])) {
+        source[key] = toRaw(source[key])
+      }
+    })
     if (source.config.geopackageFilePath != null) {
       source.table = await window.mapcache.getGeoPackageFeatureTableForApp(source.config.geopackageFilePath, source.config.sourceLayerName)
     }
@@ -569,10 +592,6 @@ function addBaseMap (baseMap) {
   return store.dispatch('BaseMaps/addBaseMap', baseMap)
 }
 
-function editBaseMap (baseMap) {
-  return store.dispatch('BaseMaps/editBaseMap', baseMap)
-}
-
 async function removeBaseMap (baseMap) {
   const err = await window.mapcache.deleteBaseMapDirectory(baseMap)
   if (err) {
@@ -712,7 +731,7 @@ export {
   setMapZoom,
   setMapRenderingOrder,
   addBaseMap,
-  editBaseMap,
+  setBaseMap,
   removeBaseMap,
   setSourceError,
   setSourceWarning,

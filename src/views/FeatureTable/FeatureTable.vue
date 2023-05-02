@@ -58,7 +58,7 @@
               class="ml-2 pt-0"
               autofocus
               v-model="search"
-              :append-icon="mdiMagnify"
+              append-icon="mdi-magnify"
               label="Search"
               single-line
               hide-details

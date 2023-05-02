@@ -64,6 +64,6 @@ export default {
 
 <style scoped>
 .themed-border {
-  border: 2px solid var(--v-scroll_track-base)
+  border: 2px solid rgb(var(--v-theme-scroll_track))
 }
 </style>

@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import jetpack from 'fs-jetpack'
-import log from 'electron-log'
+import log from 'electron-log/renderer'
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import CredentialsManagement from '../lib/auth/CredentialsManagement'
@@ -82,7 +82,6 @@ function write (writable, data, callback) {
   writable.write(data, callback)
 }
 
-log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)

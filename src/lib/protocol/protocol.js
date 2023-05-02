@@ -13,7 +13,7 @@ export default (protocol, scheme) => {
       readFile(absolutePath, (error, data) => {
         if (error) {
           // eslint-disable-next-line no-console
-          console.error(`Failed to read ${pathName} on ${scheme} protocol`, error)
+          console.error(`Failed to read ${pathName} on ${scheme} protocol`)
         }
         const extension = path.extname(pathName).toLowerCase()
         let mimeType = ''

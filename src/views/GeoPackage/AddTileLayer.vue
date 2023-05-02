@@ -93,19 +93,15 @@
                     <v-list-item
                         :value="item.id"
                         @click.stop.prevent="item.changeVisibility">
+                      <template v-slot:prepend class="mr-4">
+                        <v-btn icon @click.stop="item.zoomTo">
+                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        </v-btn>
+                      </template>
                       <template v-slot:default="{ active }">
-                        <v-list-item-icon class="mr-4">
-                          <v-btn icon @click.stop="item.zoomTo">
-                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark"
-                                 src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark"
-                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
-                                 src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer"
-                                 width="20px" height="20px"/>
-                          </v-btn>
-                        </v-list-item-icon>
                         <div>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                         </div>
@@ -149,19 +145,15 @@
                     <v-list-item
                         :value="item.id"
                         @click.stop="item.changeVisibility">
+                      <template v-slot:prepend>
+                        <v-btn icon @click.stop="item.zoomTo">
+                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        </v-btn>
+                      </template>
                       <template v-slot:default="{ active }">
-                        <v-list-item-icon>
-                          <v-btn icon @click.stop="item.zoomTo">
-                            <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark"
-                                 src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark"
-                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
-                                 src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                            <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer"
-                                 width="20px" height="20px"/>
-                          </v-btn>
-                        </v-list-item-icon>
                         <div>
                           <v-list-item-title v-text="item.title"></v-list-item-title>
                           <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
@@ -213,13 +205,13 @@
                     :key="item.id">
                   <template v-slot:prepend>
                     <v-btn icon @click.stop="item.zoomTo">
-                      <img v-if="item.type === 'tile' && $vuetify.theme.dark" src="/images/white_layers.png"
+                      <v-img v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png"
                            alt="Tile layer" width="20px" height="20px"/>
-                      <img v-else-if="$vuetify.theme.dark" src="/images/white_polygon.png" alt="Feature layer"
+                      <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer"
                            width="20px" height="20px"/>
-                      <img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer"
+                      <v-img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer"
                            width="20px" height="20px"/>
-                      <img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
                   </template>
                   <div class="pa-0 ma-0">
@@ -819,19 +811,6 @@ export default {
 </script>
 
 <style scoped>
-.ghost {
-  opacity: 0.5 !important;
-  background-color: var(--v-primary-lighten2) !important;
-}
-
-.flip-list-move {
-  transition: transform 0.5s;
-}
-
-.no-move {
-  transition: transform 0s;
-}
-
 .v-input--reverse .v-input__slot {
   flex-direction: row-reverse;
   justify-content: flex-end;
@@ -857,7 +836,7 @@ ul {
 .list-item {
   min-height: 50px !important;
   cursor: move !important;
-  background: var(--v-background-base) !important;
+  background: rgb(var(--v-theme-background)) !important;
 }
 
 .list-item i {

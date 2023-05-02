@@ -51,18 +51,18 @@
                     <v-list-item
                         lines="two"
                         :value="i">
-                      <v-list-item-icon style="margin-top: 12px;">
-                        <v-btn variant="text"  icon @click.stop="item.zoomTo">
-                          <img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && $vuetify.theme.dark"
-                               src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <img :style="{verticalAlign: 'middle'}" v-else-if="$vuetify.theme.dark"
-                               src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          <img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
-                               src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png"
-                               alt="Feature layer" width="20px" height="20px"/>
+                      <template v-slot:prepend style="margin-top: 12px;">
+                        <v-btn variant="text" icon @click.stop="item.zoomTo">
+                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && project.dark"
+                                 src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="project.dark"
+                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
+                                 src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                          <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png"
+                                 alt="Feature layer" width="20px" height="20px"/>
                         </v-btn>
-                      </v-list-item-icon>
+                      </template>
                       <div>
                         <v-list-item-title v-text="item.title"></v-list-item-title>
                         <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
@@ -166,9 +166,6 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      editBaseMap: 'BaseMaps/editBaseMap',
-    }),
     async updateItems () {
       let items = []
       const sources = values(this.project.sources)

@@ -30,12 +30,11 @@
             :disabled="errored"
             v-for="(item) in sortedLayers"
             class="sortable-list-item"
-            :key="item.name"
-            prepend-icon="mdi-drag-horizontal-variant">
-<!--          <v-list-item-icon class="sortHandle"-->
-<!--                            style="vertical-align: middle !important; align-self: center !important;">-->
-<!--            <v-icon :disabled="errored">{{ mdiDragHorizontalVariant }}</v-icon>-->
-<!--          </v-list-item-icon>-->
+            :key="item.name">
+          <template v-slot:prepend class="sortHandle"
+                            style="vertical-align: middle !important; align-self: center !important;">
+            <v-icon :disabled="errored" icon="mdi-drag-horizontal-variant"></v-icon>
+          </template>
           <div>
             <div v-if="item.name">
               <div class="list-item-title no-clamp" v-text="item.name"></div>
@@ -166,7 +165,7 @@ export default {
       testServiceConnection(this.configuration.filePath, SERVICE_TYPE.WMTS, options).then(result => {
         if (!isNil(result.serviceInfo)) {
           this.wmtsInfo = result.serviceInfo.wmtsInfo
-          this.sortedRenderingLayers = result.serviceInfo.serviceLayers.map(serviceLayer => {
+          this.sortedRenderingLayers = (result.serviceInfo.serviceLayers || []).map(serviceLayer => {
             const sourceLayer = this.configuration.layers.find(l => l.name === serviceLayer.title)
             const { tileMatrixSet } = WMTSLayer.getLayerTileMatrixInfo(result.serviceInfo.wmtsInfo, serviceLayer)
             return {
@@ -219,8 +218,8 @@ export default {
 </script>
 
 <style scoped>
-.skeleton >>> .v-skeleton-loader__list-item-two-line {
-  background: var(--v-detailbg-base) !important;
-  background-color: var(--v-detailbg-base) !important;
+.skeleton:deep(.v-skeleton-loader__list-item-two-line) {
+  background: rgb(var(--v-theme-detailbg)) !important;
+  background-color: rgb(var(--v-theme-detailbg)) !important;
 }
 </style>

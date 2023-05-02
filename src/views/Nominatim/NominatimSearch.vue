@@ -1,48 +1,33 @@
 <template>
-  <v-card-text class="ma-0 pa-0">
-    <v-row no-gutters>
-      <v-col>
-        <v-form v-on:submit.prevent="runSearch">
-          <v-text-field :disabled="disableSearch"
-                        style="max-width: 350px;"
-                        variant="solo"
-                        dense
-                        hide-details
-                        hint="Address"
-                        class="mr-0"
-                        v-model="query"
-                        :loading="searching"
-                        clearable
-                        @click:clear="clearResults">
-            <template slot="append">
-              <v-tooltip location="end" :disabled="!project.showToolTips">
-                <template v-slot:activator="{ props }">
-                  <v-btn
-                      :disabled="disableSearch"
-                      v-bind="props"
-                      class="mr-1"
-                      icon
-                      :color="applyViewBox ? 'primary' : ''"
-                      @click="toggleViewBoxFilter">
-                    <v-icon>{{ applyViewBox ? '$mapFilterOn' : '$mapFilterOff' }}</v-icon>
-                  </v-btn>
-                </template>
-                <span>Restrict search to visible area of map</span>
-              </v-tooltip>
-              <v-divider inset vertical style="margin-bottom: 8px;"></v-divider>
-              <v-tooltip location="end" :disabled="!project.showToolTips">
-                <template v-slot:activator="{ props }">
-                  <v-btn :disabled="disableSearch" v-bind="props" class="ml-1" style="margin-right: -8px;"
-                         color="primary" @click="runSearch" icon="mdi-magnify"/>
-                </template>
-                <span>Search</span>
-              </v-tooltip>
-            </template>
-          </v-text-field>
-        </v-form>
-      </v-col>
-    </v-row>
-  </v-card-text>
+  <v-form v-on:submit.prevent="runSearch">
+    <v-text-field :disabled="disableSearch"
+                  style="max-width: 350px;"
+                  variant="solo"
+                  density="compact"
+                  hide-details
+                  hint="Address"
+                  class="mr-0"
+                  v-model="query"
+                  :loading="searching"
+                  clearable
+                  persistent-clear
+                  clear-icon="mdi-close"
+                  @click:clear="clearResults">
+      <template v-slot:append-inner>
+        <v-tooltip location="end" :disabled="!project.showToolTips" text="Restrict search to visible area of map">
+          <template v-slot:activator="{ props }">
+            <v-btn style="margin-top: -2px !important;" variant="text" density="compact" :disabled="disableSearch" v-bind="props" class="mr-2 ml-2" :icon="applyViewBox ? '$mapFilterOn' : '$mapFilterOff'" :color="applyViewBox ? 'primary' : ''" @click="toggleViewBoxFilter"/>
+          </template>
+        </v-tooltip>
+        <v-divider inset vertical style="max-height: calc(100% - 8px) !important;" class="mb-0 mt-0"></v-divider>
+        <v-tooltip location="end" :disabled="!project.showToolTips" text="Search">
+          <template v-slot:activator="{ props }">
+            <v-btn style="margin-top: -2px !important;" variant="text" density="compact" :disabled="disableSearch" v-bind="props" class="ml-2" color="primary" @click="runSearch" icon="mdi-magnify"/>
+          </template>
+        </v-tooltip>
+      </template>
+    </v-text-field>
+  </v-form>
 </template>
 
 <script>

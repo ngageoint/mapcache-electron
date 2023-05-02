@@ -16,7 +16,31 @@ import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import sanitizeHTML from 'sanitize-html'
 
-// Object.assign(console, window.log)
+
+if (window && window.log) {
+    // update console log functions to utilize the window's log functions. Also, make sure we don't send anything too complicated otherwise it will error out.
+    console.log = (message, ...optionalParams) => {
+        window.log.log(JSON.stringify(message))
+    }
+    console.warn = (message, ...optionalParams) => {
+        window.log.warn(JSON.stringify(message))
+    }
+    console.info = (message, ...optionalParams) => {
+        window.log.info(JSON.stringify(message))
+    }
+    console.error = (message, ...optionalParams) => {
+        window.log.error(JSON.stringify(message))
+    }
+    console.verbose = (message, ...optionalParams) => {
+        // window.log.verbose(JSON.stringify(message))
+    }
+    console.debug = (message, ...optionalParams) => {
+        // window.log.debug(JSON.stringify(message))
+    }
+    console.silly = (message, ...optionalParams) => {
+        // window.log.silly(JSON.stringify(message))
+    }
+}
 
 let createVuexStore = () => {
     return createStore({

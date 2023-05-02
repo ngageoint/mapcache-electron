@@ -26,7 +26,7 @@
               </p>
             </v-col>
             <v-col cols="1">
-              <v-btn color="primary" icon="mdi-magnify" @click="zoomTo">
+              <v-btn density="compact" variant="text" color="primary" icon="mdi-magnify" @click="zoomTo">
               </v-btn>
             </v-col>
           </v-row>
@@ -68,7 +68,7 @@
                 Website
               </p>
               <p class="fake-link allowselect wrap"
-                 :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 :style="{color: project.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(result.properties.website)">
                 {{ result.properties.website }}
               </p>
@@ -80,7 +80,7 @@
                 Wikipedia
               </p>
               <p class="fake-link allowselect wrap"
-                 :style="{color: $vuetify.theme.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 :style="{color: project.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(getWikiUrl(result.properties.wikipedia))">
                 {{ result.properties.wikipedia }}
               </p>

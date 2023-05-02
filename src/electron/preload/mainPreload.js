@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import log from 'electron-log'
+import log from 'electron-log/renderer'
 import path from 'path'
 import { deleteProjectFolder } from '../../lib/vue/vuex/CommonPreloadFunctions'
 import {
@@ -35,10 +35,9 @@ if (environment.eventkitUrl != null) {
   allowedOpenExternalLinks.push(environment.eventkitUrl)
 }
 
-log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
+// utilize the log functions
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
-
 contextBridge.exposeInMainWorld('vuex', vuexElectronAPI)
 contextBridge.exposeInMainWorld('mapcache', {
   getUserDataDirectory,

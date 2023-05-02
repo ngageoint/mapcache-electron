@@ -134,7 +134,7 @@ import { synchronizeGeoPackage, updateStyleKey } from '../../lib/vue/vuex/Projec
 
 export default {
   props: {
-    projectId: String,
+    project: Object,
     geopackagePath: String,
     id: String,
     isGeoPackage: Boolean,
@@ -189,9 +189,9 @@ export default {
 
       await window.mapcache.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
       if (self.isGeoPackage) {
-        await synchronizeGeoPackage(self.projectId, self.id)
+        await synchronizeGeoPackage(self.project.id, self.id)
       } else {
-        updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+        updateStyleKey(self.project.id, self.id, self.tableName, self.isGeoPackage)
       }
       this.cancelDeleteAttachment()
     },
@@ -217,7 +217,7 @@ export default {
           self.$nextTick(() => {
             if (!window.mapcache.exceedsFileSizeLimit(filePath)) {
               window.mapcache.attachMediaToGeoPackage({
-                projectId: self.projectId,
+                projectId: self.project.id,
                 id: self.id,
                 isGeoPackage: self.isGeoPackage,
                 geopackagePath: self.geopackagePath,
@@ -227,9 +227,9 @@ export default {
               }).then((success) => {
                 if (success) {
                   if (self.isGeoPackage) {
-                    synchronizeGeoPackage(self.projectId, self.id)
+                    synchronizeGeoPackage(self.project.id, self.id)
                   } else {
-                    updateStyleKey(self.projectId, self.id, self.tableName, self.isGeoPackage)
+                    updateStyleKey(self.project.id, self.id, self.tableName, self.isGeoPackage)
                   }
                   self.$nextTick(() => {
                     window.mapcache.getMediaRelationships(self.geopackagePath, self.tableName, self.featureId).then(relationships => {
@@ -292,7 +292,7 @@ export default {
     loadingContent: {
       async handler () {
         if (this.loadingContent === false) {
-          const isDark = this.$vuetify.theme.dark
+          const isDark = project.dark
           this.$nextTick(() => {
             const frame = document.getElementById(this.model + '-iframe')
             frame.onload = function () {
@@ -324,8 +324,8 @@ export default {
 
 <style scoped>
 .iframe {
-  background-color: var(--v-background-base) !important;
-  color: var(--v-text-base) !important;
+  background-color: rgb(var(--v-theme-background)) !important;
+  color: rgb(var(--v-theme-text)) !important;
 }
 
 .v-carousel {

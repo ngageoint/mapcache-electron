@@ -156,9 +156,7 @@ export default class WorkerThreadPool extends EventEmitter {
           }
         })
       } catch (e) {
-        console.error(e)
-        // reject(e)
-        resolve()
+        reject(e)
       }
     })
   }

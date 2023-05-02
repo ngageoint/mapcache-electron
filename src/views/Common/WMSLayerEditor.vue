@@ -30,11 +30,10 @@
             :disabled="errored"
             v-for="(item) in sortedLayers"
             class="sortable-list-item"
-            :key="item.name"
-            prepend-icon="mdi-drag-horizontal-variant">
-<!--          <v-list-item-icon class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">-->
-<!--            <v-icon :disabled="errored" icon="mdi-drag-horizontal-variant"/>-->
-<!--          </v-list-item-icon>-->
+            :key="item.name">
+          <template v-slot:prepend class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">
+            <v-icon :disabled="errored" icon="mdi-drag-horizontal-variant"/>
+          </template>
           <div>
             <div v-if="item.title">
               <div class="list-item-title no-clamp" v-text="item.title"></div>
@@ -218,8 +217,8 @@ export default {
 </script>
 
 <style scoped>
-.skeleton >>> .v-skeleton-loader__list-item-two-line {
-  background: var(--v-detailbg-base) !important;
-  background-color: var(--v-detailbg-base) !important;
+.skeleton:deep(.v-skeleton-loader__list-item-two-line) {
+  background: rgb(var(--v-theme-detailbg)) !important;
+  background-color: rgb(var(--v-theme-detailbg)) !important;
 }
 </style>

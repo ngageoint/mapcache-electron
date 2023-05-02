@@ -50,64 +50,76 @@
           </v-col>
         </v-row>
       </v-card>
-      <v-speed-dial
+      <speed-dial
+          v-on:deactivated="fab = false"
           class="fab-position"
-          v-model="fab"
+          :activated="fab"
           transition="slide-y-reverse-transition"
       >
+
         <template v-slot:activator>
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
               <v-btn
-                  fab
+                  size="56px"
                   color="primary"
                   v-bind="props"
+                  :active="fab"
+                  @click="fab = !fab"
                   icon="mdi-layers-plus">
               </v-btn>
             </template>
             <span>Add data source</span>
           </v-tooltip>
         </template>
-        <v-tooltip location="end" :disabled="!project.showToolTips">
-          <template v-slot:activator="{ props }">
-            <v-btn
-                fab
-                small
-                color="accent"
-                @click.stop="addFileClick"
-                v-bind="props"
-                icon="mdi-file-document-outline">
-            </v-btn>
-          </template>
-          <span>Import from file</span>
-        </v-tooltip>
-        <v-tooltip location="end" :disabled="!project.showToolTips">
-          <template v-slot:activator="{ props }">
-            <v-btn
-                fab
-                small
-                color="accent"
-                @click.stop.prevent="showUrlDialog"
-                v-bind="props"
-                icon="mdi-cloud-download-outline">
-            </v-btn>
-          </template>
-          <span>Download from url</span>
-        </v-tooltip>
-        <v-tooltip location="end" :disabled="!project.showToolTips">
-          <template v-slot:activator="{ props }">
-            <v-btn
-                fab
-                small
-                color="accent"
-                @click.stop.prevent="showOverpassDialog"
-                v-bind="props"
-                icon="mdi-steering">
-            </v-btn>
-          </template>
-          <span>Download OpenStreetMap features with Overpass</span>
-        </v-tooltip>
-      </v-speed-dial>
+        <template v-slot:options>
+          <v-col class="ma-0 pa-0" cols="12">
+            <v-tooltip location="end" :disabled="!project.showToolTips" text="Download OpenStreetMap features with Overpass">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                    color="accent"
+                    @click.stop.prevent="showOverpassDialog"
+                    v-bind="props"
+                    size="40px"
+                    style="margin-top: 6px; margin-bottom: 6px;"
+                    elevation="4"
+                    icon="mdi-steering">
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </v-col>
+          <v-col class="ma-0 pa-0" cols="12">
+            <v-tooltip location="end" :disabled="!project.showToolTips" text="Download from url">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                    size="40px"
+                    style="margin-top: 6px; margin-bottom: 6px;"
+                    elevation="4"
+                    color="accent"
+                    @click.stop.prevent="showUrlDialog"
+                    v-bind="props"
+                    icon="mdi-cloud-download-outline">
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </v-col>
+          <v-col class="ma-0 pa-0" cols="12">
+            <v-tooltip location="end" :disabled="!project.showToolTips" text="Import from file">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                    size="40px"
+                    style="margin-top: 6px; margin-bottom: 6px;"
+                    elevation="4"
+                    color="accent"
+                    @click.stop="addFileClick"
+                    v-bind="props"
+                    icon="mdi-file-document-outline">
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </v-col>
+        </template>
+      </speed-dial>
     </v-sheet>
   </div>
 </template>
@@ -123,6 +135,7 @@ import AddDataSourceUrl from './AddDataSourceUrl.vue'
 import { SUPPORTED_FILE_EXTENSIONS } from '../../lib/util/file/FileConstants'
 import OverpassDataSource from '../Overpass/OverpassDataSource.vue'
 import { notifyTab } from '../../lib/vue/vuex/ProjectActions'
+import SpeedDial from '../Common/SpeedDial.vue'
 
 let selectedDataSource = null
 let fab = false
@@ -156,7 +169,8 @@ export default {
     AddDataSourceUrl,
     ProcessingSource,
     DataSource,
-    DataSourceList
+    DataSourceList,
+    SpeedDial,
   },
   methods: {
     showFab (e) {
@@ -228,7 +242,6 @@ export default {
       this.selectedDataSource = this.project.sources[dataSourceId]
     },
     deselectDataSource () {
-      console.log('deselected data source')
       this.selectedDataSource = null
     },
     showUrlDialog () {
@@ -277,5 +290,4 @@ export default {
   list-style: none;
   text-align: left;
 }
-
 </style>

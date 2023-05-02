@@ -1,5 +1,4 @@
-import log from 'electron-log'
-import path from 'path'
+import log from 'electron-log/renderer'
 import { ipcRenderer, contextBridge } from 'electron'
 import { SqliteAdapter, HtmlCanvasAdapter, Context } from '@ngageoint/geopackage'
 import { buildFeatureLayer } from '../../lib/geopackage/GeoPackageFeatureTableBuilder'
@@ -19,7 +18,6 @@ const getUserDataDirectory = () => {
   return ipcRenderer.sendSync(GET_USER_DATA_DIRECTORY)
 }
 
-log.transports.file.resolvePath = () => path.join(getUserDataDirectory(), 'logs', 'mapcache.log')
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
 
