@@ -1955,11 +1955,11 @@ function getEditableColumnObject (column, properties) {
 }
 
 async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feature, columns) {
-  if (isNil(columns) || isNil(columns._columns)) {
+  if (isNil(columns)) {
     return []
   }
   const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
-  const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+  const columnObjects = columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
     return getEditableColumnObject(column, properties)
   })
 

@@ -120,7 +120,7 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 3">
+          <v-btn variant="text" color="primary" @click="step = 3">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -177,7 +177,7 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 4">
+          <v-btn variant="text" color="primary" @click="step = 4">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -195,9 +195,8 @@
             </v-card-subtitle>
             <v-card-text>
               <v-list
-                  id="sortable-list"
                   style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
-                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
+                  v-sortable="{onEnd:updateSortedLayerOrder}"
                   dense>
                 <v-list-item
                     v-for="item in sortedLayers"
@@ -214,13 +213,13 @@
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
                   </div>
                   <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon icon="mdi-drag-horizontal-variant"/>
+                    <v-icon @click.stop.prevent icon="mdi-drag-horizontal-variant"/>
                   </template>
                 </v-list-item>
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 5">
+          <v-btn variant="text" color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -271,7 +270,7 @@
         <v-spacer></v-spacer>
         <v-btn
             color="primary"
-            text
+            variant="text"
             @click.stop="cancel">
           Cancel
         </v-btn>
@@ -279,7 +278,7 @@
             v-if="!done"
             :disabled="Number(step) !== 6 || isEditingBoundingBox() || !layerNameValid"
             color="primary"
-            text
+            variant="text"
             @click.stop="addFeatureLayer">
           Add
         </v-btn>
@@ -295,7 +294,6 @@ import debounce from 'lodash/debounce'
 import SourceVisibilitySwitch from '../DataSources/SourceVisibilitySwitch.vue'
 import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
-import Sortable from 'sortablejs'
 import EventBus from '../../lib/vue/EventBus'
 import throttle from 'lodash/throttle'
 import { setDataSourceVisible } from '../../lib/vue/vuex/CommonActions'
@@ -315,28 +313,6 @@ export default {
     geopackage: Object,
     allowNotifications: Boolean,
     back: Function
-  },
-  directives: {
-    'sortable-list': {
-      inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? {
-          ...binding.value,
-          handle: '.sortHandle',
-          ghostClass: 'ghost',
-          dragClass: 'detail-bg',
-          forceFallback: true,
-          onChoose: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onStart: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onUnchoose: function () {
-            document.body.style.cursor = 'default'
-          }, // Dragging started
-        } : {})
-      },
-    },
   },
   data () {
     return {

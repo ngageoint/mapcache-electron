@@ -385,7 +385,7 @@ class MapCacheWindowManager {
     })
   }
 
-  sendResponse (event, channel, ...args) {
+  sendResponse (event, channel, args) {
     if (!event.sender.isDestroyed() && !event.sender.isCrashed()) {
       event.sender.send(channel, args)
     }
@@ -797,10 +797,13 @@ class MapCacheWindowManager {
    * @param onFulfilled
    */
   loadContent (window, url, onFulfilled = () => {}) {
-    window.loadURL(url).then(onFulfilled).catch((e) => {
-      // eslint-disable-next-line no-console
-      console.error('Failed to load content.')
-    })
+    if (window != null) {
+      window.loadURL(url).then(onFulfilled).catch((e) => {
+        console.error(e);
+        // eslint-disable-next-line no-console
+        console.error('Failed to load content.')
+      })
+    }
   }
 
   /**
@@ -1248,7 +1251,7 @@ class MapCacheWindowManager {
             this.mainWindow.destroy()
             this.mainWindow = null
           }
-        }, 2500)
+        }, 1500)
       })
       // eslint-disable-next-line no-unused-vars
     } catch (e) {

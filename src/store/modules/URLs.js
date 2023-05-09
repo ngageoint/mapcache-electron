@@ -18,35 +18,36 @@ const getters = {
 }
 
 const mutations = {
-  addUrl (state, urlObject) {
+  addUrl (state, url) {
+    console.log(url)
     let exists = false
     for (let i = 0; i < state.savedUrls.length; i++) {
-      if (state.savedUrls[i].url === urlObject.url) {
+      if (state.savedUrls[i].url.toLowerCase() === url.toLowerCase()) {
         exists = true
       }
     }
     if (!exists) {
-      state.savedUrls.push(urlObject)
+      state.savedUrls.push({ url: url })
     }
   },
   removeUrl (state, url) {
-    for (var i = 0; i < state.savedUrls.length; i++) {
+    for (let i = 0; i < state.savedUrls.length; i++) {
       if (state.savedUrls[i].url === url) {
         state.savedUrls.splice(i, 1)
       }
     }
   },
   editUrl (state, { oldUrl, newUrl }) {
-    for (var i = 0; i < state.savedUrls.length; i++) {
+    for (let i = 0; i < state.savedUrls.length; i++) {
       if (state.savedUrls[i].url === oldUrl) {
         state.savedUrls.splice(i, 1, { url: newUrl })
       }
     }
   },
-  setNominatimUrl (state, { url }) {
+  setNominatimUrl (state, url) {
     state.nominatimUrl = url
   },
-  setOverpassUrl (state, { url }) {
+  setOverpassUrl (state, url) {
     state.overpassUrl = url
   },
   resetState (state) {
@@ -79,11 +80,11 @@ const actions = {
   migrateState ({ commit }, { migratedState }) {
     commit('migrateState', { migratedState })
   },
-  setNominatimUrl ({ commit }, { url }) {
-    commit('setNominatimUrl', { url })
+  setNominatimUrl ({ commit }, url) {
+    commit('setNominatimUrl', url)
   },
-  setOverpassUrl ({ commit }, { url }) {
-    commit('setOverpassUrl', { url })
+  setOverpassUrl ({ commit }, url) {
+    commit('setOverpassUrl', url)
   },
 }
 

@@ -99,14 +99,13 @@
         persistent
         width="400">
       <v-card
-          color="#426e91" class="pt-2 pb-4">
+          color="primary" class="pt-2 pb-4">
         <v-card-text
-            class="pt-2">
-          {{ dialogText }}
+            class="pt-2 text-theme-dark-background">
+          <p class="text-theme-dark-background" v-text="dialogText"/>
           <v-progress-linear
-              class="mt-2"
-              indeterminate
-              color="white">
+              class="mt-2 text-theme-dark-background"
+              indeterminate>
           </v-progress-linear>
         </v-card-text>
       </v-card>
@@ -122,11 +121,11 @@
                        font-weight="bold" label="Project name" :on-save="createNewProject"/>
     </v-dialog>
     <v-row class="mt-4 mb-2" no-gutters justify="end">
-      <v-btn class="dark-btn" prepend-icon="mdi-plus" @click="onClickNewProject" variant="text">
+      <v-btn class="text-theme-dark-background" prepend-icon="mdi-plus" @click="onClickNewProject" variant="text">
         Create project
       </v-btn>
     </v-row>
-    <span style="color: whitesmoke; font-size: 12px">Recent projects</span>
+    <span>Recent projects</span>
     <v-row no-gutters justify="center" class="flex-grow-1 mt-2">
       <v-list lines="two" class="semi-transparent project-list pa-0" v-if="projects.length > 0" theme="dark">
         <v-list-item class="semi-transparent" v-for="project in projects" :key="project.id" @click="onClickOpenProject(project)">
@@ -149,7 +148,7 @@
         </v-list-item>
       </v-list>
       <v-card flat v-else class="semi-transparent project-list">
-        <v-card-text>
+        <v-card-text class="text-theme-dark-background">
           No projects. Click the <b>
           <v-icon icon="mdi-plus" small/>
           Create project</b> button to get started.
@@ -287,10 +286,10 @@ export default {
       const id = window.mapcache.createUniqueID()
       const directory = window.mapcache.createProjectDirectory()
       const sources = this.createPreloadedDataSources(directory)
-      await newProject({ id: id, name: projectName, directory: directory, sources: sources })
+      await newProject(id, projectName, directory, sources)
       let geopackageIds = []
       while (this.geoPackageFiles.length > 0) {
-        geopackageIds.push(await addGeoPackage({ projectId: id, filePath: this.geoPackageFiles.pop() }))
+        geopackageIds.push(await addGeoPackage(id, this.geoPackageFiles.pop()))
       }
       setTimeout(() => {
         setProjectAccessed(id)
@@ -337,6 +336,7 @@ export default {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .semi-transparent {
@@ -350,6 +350,7 @@ export default {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .dialog-project-list {
@@ -358,6 +359,7 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   border: solid lightgray 1px;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .import-dialog {
@@ -366,9 +368,5 @@ export default {
 
 .no-transition .v-stepper__content {
   transition: none;
-}
-
-.dark-btn {
-  color: #FFFFFF !important;
 }
 </style>

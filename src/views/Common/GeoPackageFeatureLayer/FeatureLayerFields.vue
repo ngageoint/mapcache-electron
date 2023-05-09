@@ -2,11 +2,11 @@
   <v-container class="ma-0 pa-0">
     <v-dialog
         v-model="addFieldDialog"
-        max-width="575"
+        max-width="612"
         persistent
         @keydown.esc="cancelAddField">
-      <v-card v-if="addFieldDialog">
-        <v-card-title>
+      <v-card v-if="addFieldDialog" class="pl-2 pt-2 pr-2">
+        <v-card-title class="pb-0">
           <v-row no-gutters justify="start" align="center">
             Add field
           </v-row>
@@ -17,6 +17,7 @@
               <v-row no-gutters>
                 <v-col cols="12">
                   <v-text-field
+                      color="primary"
                       variant="underlined"
                       autofocus
                       v-model="addFieldValue"
@@ -26,14 +27,17 @@
                   ></v-text-field>
                 </v-col>
               </v-row>
-              <v-row no-gutters class="mt-4">
+              <v-row no-gutters class="mt-4 mb-4">
                 <v-col cols="12">
-                  <p class="pb-0 mb-0">Type</p>
+                  <label style="letter-spacing: 0.009375em; font-size: 12.5px; opacity: var(--v-medium-emphasis-opacity);">Type</label>
                   <v-btn-toggle
+                      style="background: rgb(var(--v-theme-detailbg));"
+                      class="mt-2"
+                      variant="outlined"
+                      divided
                       v-model="addFieldType"
                       color="primary"
                       mandatory
-                      style="width: 100%"
                   >
                     <v-btn :value="TEXT">
                       <v-icon left :color="addFieldType === TEXT ? 'primary' : ''" icon="mdi-format-text"/>
@@ -64,14 +68,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelAddField">
             Cancel
           </v-btn>
           <v-btn
               :disabled="!addFieldValid"
               color="primary"
-              text
+              variant="text"
               @click="addField">
             Save
           </v-btn>
@@ -87,26 +91,21 @@
     <v-row no-gutters class="mt-4 detail-bg">
       <v-list
           v-if="tableFields != null && columnOrder != null"
-          id="sortable-list"
           style="width: 100%"
           class="detail-bg ma-0 pa-0"
-          v-sortable-list="{onEnd:updateColumnOrder}">
+          v-sortable="{onEnd:updateColumnOrder}">
         <div v-for="column in columnOrder" :key="column">
           <v-list-item
               v-if="tableFields[column] != null"
-              class="detail-bg sortable-list-item"
-              @click="tableFields[column].click">
-            <template v-slot:prepend>
-              <v-icon :icon="tableFields[column].icon"/>
-            </template>
-            <div>
-              <v-list-item-title :title="tableFields[column].name"
-                                 v-text="tableFields[column].name"></v-list-item-title>
-              <v-list-item-subtitle :title="tableFields[column].type"
-                                    v-text="tableFields[column].type"></v-list-item-subtitle>
-            </div>
+              class="detail-bg sortable-list-item pt-3 pb-3"
+              @click="tableFields[column].click"
+              :prepend-icon="tableFields[column].icon">
+            <v-list-item-title :title="tableFields[column].name"
+                               v-text="tableFields[column].name"></v-list-item-title>
+            <v-list-item-subtitle :title="tableFields[column].type"
+                                  v-text="tableFields[column].type"></v-list-item-subtitle>
             <template v-slot:append>
-              <v-icon class="sortHandle" icon="mdi-drag-horizontal-variant"/>
+              <v-icon @click.stop.prevent class="sortHandle" icon="mdi-drag-horizontal-variant"/>
             </template>
           </v-list-item>
         </div>
@@ -116,7 +115,6 @@
 </template>
 
 <script>
-import Sortable from 'sortablejs'
 import {
   addGeoPackageFeatureTableColumn,
   updateGeoPackageFeatureTableColumnOrder
@@ -135,27 +133,6 @@ export default {
       default: false
     },
     fieldClicked: Function
-  },
-  directives: {
-    'sortable-list': {
-      inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? {
-          ...binding.value,
-          handle: '.sortHandle',
-          ghostClass: 'ghost',
-          forceFallback: true,
-          onChoose: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onStart: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onUnchoose: function () {
-            document.body.style.cursor = 'default'
-          }, // Dragging started
-        } : {})
-      },
-    },
   },
   data () {
     return {
@@ -196,13 +173,13 @@ export default {
       this.columnOrder = this.isGeoPackage ? (this.object.tables.features[this.tableName] ? this.object.tables.features[this.tableName].columnOrder.slice() : await this.getColumnNames()) : (this.object.table ? this.object.table.columnOrder.slice() : await this.getColumnNames())
     },
     async getTableFields () {
-      this.tableFields = window.mapcache.getFeatureColumns(this.object.geopackageFilePath || this.object.path, this.tableName).then(columns => {
-        const tableFields = {}
+      window.mapcache.getFeatureColumns(this.object.geopackageFilePath || this.object.path, this.tableName).then(columns => {
+        this.tableFields = {}
         const columnNames = columns._columns.map(column => column.name.toLowerCase())
         columns._columns.forEach((column, index) => {
           // excluding primary key column, blob columns, and _feature_id columns
           if (!column.primaryKey && column.dataType !== window.mapcache.GeoPackageDataType.BLOB && column.name !== '_feature_id') {
-            tableFields[column.name.toLowerCase()] = {
+            this.tableFields[column.name.toLowerCase()] = {
               id: column.name + '_' + index,
               name: column.name.toLowerCase(),
               type: this.getSimplifiedType(column.dataType),
@@ -218,7 +195,7 @@ export default {
             }
           }
         })
-        return tableFields
+        return this.tableFields
       })
     },
     async getColumnNames () {

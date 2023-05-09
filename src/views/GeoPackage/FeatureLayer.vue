@@ -431,6 +431,7 @@ export default {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
       },
       set (value) {
+        console.log(value)
         setGeoPackageFeatureTableVisible(this.project.id, this.geopackage.id, this.tableName, value)
       }
     },

@@ -1,7 +1,7 @@
 <template>
   <v-card outlined class="range-ring-card">
     <v-card-title>
-      <v-btn color="primary" class="mr-2" icon @click="zoomToRangeRing"><v-icon>{{mdiCircleMultipleOutline}}</v-icon></v-btn>
+      <v-btn variant="text" color="primary" class="mr-2" @click="zoomToRangeRing" icon="mdi-circle-multiple-outline"/>
       Range rings
     </v-card-title>
     <v-card-subtitle>Specify the center of your ranged rings, then add rings.</v-card-subtitle>
@@ -14,18 +14,16 @@
         <v-col cols="5">
           <v-text-field variant="underlined" class="pr-2" dense hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
         </v-col>
-        <v-col offset="1" cols="1">
-          <v-btn icon @click="drawRangeRingCenterPoint"><v-icon>{{mdiMapMarker}}</v-icon></v-btn>
-        </v-col>
+        <v-spacer/>
+        <v-btn variant="text" icon="mdi-map-marker" @click="drawRangeRingCenterPoint"/>
       </v-row>
       <v-card-subtitle class="ma-0 pb-4 pl-0">Rings</v-card-subtitle>
       <v-row no-gutters justify="space-between">
         <v-col cols="10">
-          <v-select dense label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
+          <v-select variant="underlined" dense label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
         </v-col>
-        <v-col offset="1" cols="1">
-          <v-btn :disabled="!distancesValid" @click="addRingDistance" icon><v-icon>{{mdiPlus}}</v-icon></v-btn>
-        </v-col>
+        <v-spacer/>
+        <v-btn variant="text" :disabled="!distancesValid" @click="addRingDistance" icon="mdi-plus"/>
       </v-row>
       <v-row no-gutters>
         <v-list style="width: 100% !important;" class="ma-0 pa-0">
@@ -37,9 +35,8 @@
                                @update-number="(val) => {item.distance = val}" :min="Number(0)"
                                :step="Number(1)"/>
               </v-col>
-              <v-col offset="1" cols="1">
-                <v-btn @click="() => deleteRingDistance(i)" icon><v-icon>{{mdiTrashCanOutline}}</v-icon></v-btn>
-              </v-col>
+              <v-spacer/>
+              <v-btn variant="text" @click="() => deleteRingDistance(i)" icon="mdi-trash-can-outline"/>
             </v-row>
           </v-list-item>
         </v-list>
@@ -48,8 +45,8 @@
     <v-divider/>
     <v-card-actions>
       <v-spacer/>
-      <v-btn text @click="cancel" color="warning">Cancel</v-btn>
-      <v-btn :disabled="!distancesValid" @click="saveRangeRingFeature" text color="primary">Save</v-btn>
+      <v-btn variant="text" @click="cancel" color="warning">Cancel</v-btn>
+      <v-btn :disabled="!distancesValid" @click="saveRangeRingFeature" variant="text" color="primary">Save</v-btn>
     </v-card-actions>
   </v-card>
 </template>
@@ -73,7 +70,7 @@ export default {
       rangeRingCenter: { lat: 0.0, lon: 0.0 },
       ringMapLayers: [],
       ringCenterLayer: null,
-      distanceUnits: [{text: 'Feet', value: 'feet'}, {text: 'Miles', value: 'miles'}, {text: 'Meters',  value: 'meters'}, {text: 'Kilometers', value: 'kilometers'}],
+      distanceUnits: [{title: 'Feet', value: 'feet'}, {title: 'Miles', value: 'miles'}, {title: 'Meters',  value: 'meters'}, {title: 'Kilometers', value: 'kilometers'}],
       distanceUnit: 'miles',
       ringDistances: [],
       distancesValid: true
@@ -211,7 +208,7 @@ export default {
         let valid = true
         this.ringDistances.forEach(ringDistance => {
           ringDistance.distance = Number(ringDistance.distance)
-          if (!ringDistance.valid) {
+          if (ringDistance.valid === false) {
             valid = false
           }
         })

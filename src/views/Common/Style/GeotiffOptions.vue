@@ -4,7 +4,7 @@
       <v-list-subheader>Rendering method</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select v-model="renderingMethod" :items="renderMethods" label="Rendering method" dense>
+          <v-select variant="underlined" v-model="renderingMethod" :items="renderMethods" label="Rendering method" dense>
           </v-select>
         </div>
       </v-list-item>
@@ -15,7 +15,7 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select v-model="grayBand" :items="bandOptions" label="Gray scale band" dense>
+            <v-select variant="underlined" v-model="grayBand" :items="bandOptions" label="Gray scale band" dense>
             </v-select>
           </v-row>
           <v-row no-gutters v-if="grayBand > 0">
@@ -29,7 +29,7 @@
             </v-col>
           </v-row>
           <v-row no-gutters>
-            <v-select v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient"
+            <v-select variant="underlined" v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient"
                       dense>
             </v-select>
           </v-row>
@@ -49,7 +49,7 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select v-model="redBand" :items="bandOptions" label="Red band" dense>
+            <v-select variant="underlined" v-model="redBand" :items="bandOptions" label="Red band" dense>
             </v-select>
           </v-row>
           <v-row no-gutters v-if="redBand > 0">
@@ -67,7 +67,7 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select v-model="greenBand" :items="bandOptions" label="Green band" dense>
+            <v-select variant="underlined" v-model="greenBand" :items="bandOptions" label="Green band" dense>
             </v-select>
           </v-row>
           <v-row no-gutters v-if="greenBand > 0">
@@ -85,7 +85,7 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select v-model="blueBand" :items="bandOptions" label="Blue band" dense>
+            <v-select variant="underlined" v-model="blueBand" :items="bandOptions" label="Blue band" dense>
             </v-select>
           </v-row>
           <v-row no-gutters v-if="blueBand > 0">
@@ -114,7 +114,7 @@
       <v-list-subheader>Palette options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select v-model="paletteBand" :items="bandOptions" label="Palette band" dense>
+          <v-select variant="underlined" v-model="paletteBand" :items="bandOptions" label="Palette band" dense>
           </v-select>
         </div>
       </v-list-item>
@@ -124,7 +124,7 @@
       <v-list-subheader>Transparency options</v-list-subheader>
       <v-list-item v-if="renderingMethod < 2">
         <div style="padding-right: 12px;">
-          <v-select v-model="alphaBand" :items="bandOptions" label="Alpha band" dense>
+          <v-select variant="underlined" v-model="alphaBand" :items="bandOptions" label="Alpha band" dense>
           </v-select>
         </div>
       </v-list-item>
@@ -182,11 +182,11 @@ export default {
   },
   computed: {
     grayScaleColorGradientItems () {
-      return [{ text: 'White is zero', value: 0 }, { text: 'Black is zero', value: 1 }]
+      return [{ title: 'White is zero', value: 0 }, { title: 'Black is zero', value: 1 }]
     },
     bandOptions () {
       return this.configuration.bandOptions.map(band => {
-        return { text: band.name, value: band.value }
+        return { title: band.name, value: band.value }
       })
     },
     renderingMethod: {
@@ -362,16 +362,16 @@ export default {
     renderMethods () {
       let methods = []
       if (this.configuration.colorMap) {
-        methods.push({ text: 'Palette', value: 2 })
+        methods.push({ title: 'Palette', value: 2 })
       } else if (this.configuration.photometricInterpretation === 6) {
-        methods.push({ text: 'YCbCr', value: 3 })
+        methods.push({ title: 'YCbCr', value: 3 })
       } else if (this.configuration.photometricInterpretation === 5) {
-        methods.push({ text: 'CMYK', value: 4 })
+        methods.push({ title: 'CMYK', value: 4 })
       } else if (this.configuration.photometricInterpretation === 8) {
-        methods.push({ text: 'CIELab', value: 5 })
+        methods.push({ title: 'CIELab', value: 5 })
       } else {
-        methods.push({ text: 'Gray scale', value: 0 })
-        methods.push({ text: 'RGB', value: 1 })
+        methods.push({ title: 'Gray scale', value: 0 })
+        methods.push({ title: 'RGB', value: 1 })
       }
       return methods
     },

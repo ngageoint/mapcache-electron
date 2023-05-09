@@ -16,7 +16,7 @@
       <template v-slot:append-inner>
         <v-tooltip location="end" :disabled="!project.showToolTips" text="Restrict search to visible area of map">
           <template v-slot:activator="{ props }">
-            <v-btn style="margin-top: -2px !important;" variant="text" density="compact" :disabled="disableSearch" v-bind="props" class="mr-2 ml-2" :icon="applyViewBox ? '$mapFilterOn' : '$mapFilterOff'" :color="applyViewBox ? 'primary' : ''" @click="toggleViewBoxFilter"/>
+            <v-btn style="margin-top: -2px !important;" variant="text" density="compact" :disabled="disableSearch" v-bind="props" class="mr-2 ml-2" :icon="applyViewBox ? '$mapFilterOn' : '$mapFilterOff'" :color="applyViewBox ? 'primary' : 'detail'" @click="toggleViewBoxFilter"/>
           </template>
         </v-tooltip>
         <v-divider inset vertical style="max-height: calc(100% - 8px) !important;" class="mb-0 mt-0"></v-divider>

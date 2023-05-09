@@ -1,73 +1,63 @@
 <template>
   <v-card flat tile>
-    <v-card-title>
+    <v-card-title class="pl-6 pt-4">
       Add feature to GeoPackage
     </v-card-title>
     <v-card-text>
-      <v-card-subtitle>
+      <v-card-subtitle class="text-wrap pb-6">
         Specify an existing GeoPackage or create a new one. Then you will be able to select a feature layer from that
         GeoPackage or create a new one.
       </v-card-subtitle>
       <v-row no-gutters justify="start" align="baseline" class="ml-4 mr-4">
-        <v-col cols="11">
-          <v-select :disabled="geopackageItems.length === 0"
-                    :label="geopackageItems.length > 0 ? 'Select a GeoPackage' : 'No GeoPackages exist, add a new one'"
-                    class="ml-2 mr-2" clearable v-model="geoPackageModel" :items="geopackageItems" persistent-hint
-                    hint="To create a new GeoPackage, press the + button."></v-select>
-        </v-col>
-        <v-col cols="1">
+        <v-select variant="underlined" :disabled="geopackageItems.length === 0"
+                  :label="geopackageItems.length > 0 ? 'Select a GeoPackage' : 'No GeoPackages exist, add a new one'"
+                  class="ml-2 mr-2" clearable v-model="geoPackageModel" :items="geopackageItems" persistent-hint
+                  hint="To create a new GeoPackage, press the + button."/>
+        <v-spacer/>
+        <v-col>
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
-              <v-btn icon @click="addGeoPackage" v-bind="props">
-                <v-icon color="primary" icon="mdi-plus"/>
-              </v-btn>
+              <v-btn style="margin-top: -24px !important;" density="comfortable" variant="text" color="primary" icon="mdi-plus" @click="addGeoPackage" v-bind="props"/>
             </template>
             <span>Create GeoPackage</span>
           </v-tooltip>
         </v-col>
       </v-row>
       <v-row v-if="!addFeatureLayerMode" no-gutters justify="start" align="baseline" class="ml-4 mr-4 mt-4">
-        <v-col cols="11">
-          <v-select clearable :disabled="geoPackageModel == null || featureLayers.length === 0"
-                    :label="featureLayers.length > 0 ? 'Select a feature layer' : 'No feature layers exist, add a new one'"
-                    class="ml-2 mr-2" v-model="featureTableModel" :items="featureLayers" persistent-hint
-                    hint="To create a new feature layer, press the + button."></v-select>
-        </v-col>
-        <v-col cols="1">
+        <v-select variant="underlined" clearable :disabled="geoPackageModel == null || featureLayers.length === 0"
+                  :label="featureLayers.length > 0 ? 'Select a feature layer' : 'No feature layers exist, add a new one'"
+                  class="ml-2 mr-2" v-model="featureTableModel" :items="featureLayers" persistent-hint
+                  hint="To create a new feature layer, press the + button."/>
+        <v-spacer/>
+        <v-col>
           <v-tooltip location="end" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
-              <v-btn :disabled="geoPackageModel == null" icon @click="enableAddFeatureLayerMode" v-bind="props">
-                <v-icon color="primary" icon="mdi-plus"/>
-              </v-btn>
+              <v-btn style="margin-top: -24px !important;" density="comfortable" variant="text" :disabled="geoPackageModel == null" color="primary" icon="mdi-plus" @click="enableAddFeatureLayerMode" v-bind="props"/>
             </template>
             <span>Add feature layer</span>
           </v-tooltip>
         </v-col>
       </v-row>
       <v-row v-else no-gutters justify="start" align="baseline" class="ml-4 mr-4 mt-4">
-        <v-col cols="10">
+        <v-col cols="9">
           <v-form v-on:submit.prevent v-model="newFeatureNameValid">
             <v-text-field variant="underlined" v-model="newFeatureTableName" :disabled="geoPackageModel == null" class="ml-2 mr-2"
-                          label="Type in feature layer name" :rules="featureTableRules"></v-text-field>
+                          label="Feature layer name" :rules="featureTableRules" persistent-hint hint="Type in the feature layer name"></v-text-field>
           </v-form>
         </v-col>
-        <v-col cols="1">
-          <v-tooltip location="end" :disabled="!project.showToolTips">
+        <v-spacer/>
+        <v-col>
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="Cancel">
             <template v-slot:activator="{ props }">
-              <v-btn :disabled="geoPackageModel == null" icon="mdi-close" @click="addFeatureLayerMode = false" v-bind="props"/>
+              <v-btn style="margin-top: -24px !important;" density="comfortable" variant="text" :disabled="geoPackageModel == null" icon="mdi-close" @click="addFeatureLayerMode = false" v-bind="props"/>
             </template>
-            <span>Cancel</span>
           </v-tooltip>
         </v-col>
-        <v-col cols="1">
-          <v-tooltip location="end" :disabled="!project.showToolTips">
+        <v-col>
+          <v-tooltip location="end" :disabled="!project.showToolTips" text="Save feature layer">
             <template v-slot:activator="{ props }">
-              <v-btn @click="handleAddFeatureLayer" :disabled="geoPackageModel == null || !newFeatureNameValid" icon
-                     v-bind="props">
-                <v-icon color="primary" icon="mdi-check"/>
-              </v-btn>
+              <v-btn style="margin-top: -24px !important;" density="comfortable" variant="text" @click="handleAddFeatureLayer" :disabled="geoPackageModel == null || !newFeatureNameValid" icon="mdi-check" color="primary" v-bind="props"/>
             </template>
-            <span>Save feature layer</span>
           </v-tooltip>
         </v-col>
       </v-row>
@@ -136,7 +126,7 @@ export default {
     geopackageItems () {
       return Object.values(this.geopackages).map(geopackage => {
         return {
-          text: geopackage.name,
+          title: geopackage.name,
           value: geopackage.id
         }
       })
@@ -150,7 +140,7 @@ export default {
     featureTableRules () {
       return [
         v => !!v || 'Name is required',
-        v => (this.geoPackageModel ? this.getFeatureLayerItemsForGeoPackageId(this.geoPackageModel) : []).map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Feature layer already exists'
+        v => (this.geoPackageModel ? this.getFeatureLayerItemsForGeoPackageId(this.geoPackageModel) : []).map(name => name.toLowerCase()).indexOf(v.toLowerCase()) === -1 || 'Feature layer name already exists'
       ]
     }
   },

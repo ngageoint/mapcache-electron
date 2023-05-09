@@ -89,9 +89,8 @@
           Drag layers to specify the map rendering order.
         </v-card-subtitle>
         <v-list
-            id="sortable-list"
             style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
-            v-sortable-list="{onEnd:updateLayerOrder}"
+            v-sortable="{onEnd:updateLayerOrder}"
             dense>
           <v-list-item
               v-for="item in layerOrder"
@@ -111,20 +110,21 @@
               <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
             </div>
             <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
-              <v-icon icon="mdi-drag-horizontal-variant"/>
+              <v-icon @click.stop.prevent icon="mdi-drag-horizontal-variant"/>
             </template>
           </v-list-item>
         </v-list>
       </v-card-text>
     </v-card>
-    <v-card outlined v-if="showBaseMapSelection" class="basemap-card">
-      <v-card-title class="pb-2">
-        <v-row no-gutters justify="space-between">
+    <v-card outlined v-if="showBaseMapSelection" class="basemap-card pa-2">
+      <v-card-title class="pb-2 pr-0">
+        <v-row no-gutters>
           <p class="mb-0 pa-0">Base maps</p>
+          <v-spacer/>
           <v-tooltip location="start" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
-              <div v-bind="props" style="margin-top: -3px !important;">
-                <v-btn :disabled="projectLayerCount === 0" @click="createNewBaseMap" color="primary" icon>
+              <div v-bind="props" style="margin-top: -8px !important;">
+                <v-btn icon :disabled="projectLayerCount === 0" variant="text" @click="createNewBaseMap" color="primary">
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                        preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="24" height="24">
                     <defs>
@@ -145,18 +145,19 @@
         <v-card-subtitle class="pt-1 pb-1">
           Select a base map.
         </v-card-subtitle>
-        <v-list dense class="pa-0" style="max-height: 200px; overflow-y: auto;" v-model="selectedBaseMapId">
-          <v-list-item v-for="item of baseMapItems" :key="item.id" :value="item.id">
+        <v-list mandatory density="compact" class="pa-0" style="max-height: 200px; overflow-y: auto;" :selected="selectedBaseMapId"  @update:selected="updateSelectedBaseMapId">
+          <v-list-item density="compact" v-for="item of baseMapItems" :key="item.id" :value="item.id">
             <template v-slot:prepend>
-              <v-btn small icon="mdi-map-outline" @click.stop="(e) => item.zoomTo(e)"/>
+              <v-btn icon density="compact" variant="text" @click.stop.prevent="(e) => item.zoomTo(e)">
+                <v-icon size="16" icon="mdi-map-outline"/>
+              </v-btn>
             </template>
-            <v-list-item-title>{{ item.name }}</v-list-item-title>
-            <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"></data-source-warning>
-            <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"></base-map-troubleshooting>
-            <geo-t-i-f-f-troubleshooting v-if="item.missingRaster"
-                                         :source-or-base-map="item.baseMap"></geo-t-i-f-f-troubleshooting>
+            <p class="ma-0 pa-0 pl-2">{{item.name}}</p>
+            <data-source-warning v-if="item.baseMap.warning" :source="item.baseMap"/>
+            <base-map-troubleshooting v-if="item.baseMap.error" :base-map="item.baseMap"/>
+            <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :source-or-base-map="item.baseMap"/>
             <v-progress-circular
-                v-if="item.id === selectedBaseMapId && connectingToBaseMap"
+                v-if="item.id === selectedBaseMapId[0] && connectingToBaseMap"
                 indeterminate
                 color="primary"
             ></v-progress-circular>
@@ -280,7 +281,6 @@ import {
 } from '../../lib/leaflet/map/ZoomUtilities'
 import NominatimSearch from '../Nominatim/NominatimSearch.vue'
 import NominatimResultMapPopup from '../Nominatim/NominatimResultMapPopup.vue'
-import { getDefaultIcon } from '../../lib/util/style/BrowserStyleUtilities'
 import {
   getDefaultMapCacheStyle,
   getDefaultRangeRingLineStyle
@@ -293,7 +293,6 @@ import { MGRS } from '../../lib/leaflet/map/grid/mgrs/MGRS'
 import { latLng2GARS } from '../../lib/leaflet/map/grid/gars/GARS'
 import { FEATURE_TABLE_WINDOW_EVENTS } from '../FeatureTable/FeatureTableEvents'
 import { FEATURE_TABLE_ACTIONS } from '../FeatureTable/FeatureTableActions'
-import Sortable from 'sortablejs'
 import AddFeatureToGeoPackage from '../Common/AddFeatureToGeoPackage.vue'
 import LeafletSnapshot from '../../lib/leaflet/map/controls/LeafletSnapshot'
 import { environment } from '../../lib/env/env'
@@ -358,25 +357,6 @@ export default {
     featureTablePoppedOut: Boolean,
     darkTheme: Boolean
   },
-  directives: {
-    'sortable-list': {
-      inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? {
-          ...binding.value, handle: '.sortHandle', ghostClass: 'ghost', dragClass: 'detail-bg',
-          forceFallback: true,
-          onChoose: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onStart: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onUnchoose: function () {
-            document.body.style.cursor = 'default'
-          }, // Dragging started
-        } : {})
-      },
-    },
-  },
   computed: {
     ...mapState({
       nominatimUrl: state => {
@@ -435,7 +415,7 @@ export default {
       dataSourceMapLayers: {},
       notReadOnlyBaseMapFilter: baseMap => !baseMap.readonly,
       geopackageMapLayers: {},
-      selectedBaseMapId: navigator.onLine ? '0' : '3',
+      selectedBaseMapId: navigator.onLine ? ['0'] : ['3'],
       isDrawing: false,
       maxFeatures: undefined,
       geopackageFeatureLayerSelectionDialog: false,
@@ -474,19 +454,61 @@ export default {
     },
     resetMap () {
       const centerAndZoom = this.getMapCenterAndZoom()
-      this.updateGrid(0)
+      this.updateSelectedGrid([0])
       this.map.remove()
       const oldLayerOrder = this.layerOrder.slice()
       this.layerOrder = []
       this.initializeMap(centerAndZoom)
       this.addLayersToMap()
       this.layerOrder = oldLayerOrder
-      this.updateGrid(this.gridSelection)
+      this.updateSelectedGrid(this.gridSelection)
       this.setupGridBoundsSelection()
       this.resetSearchResults()
       this.updateMapWithEditedFeature()
       this.cancelRangeRingTool()
       this.addDrawBoundsToMap()
+    },
+    async updateSelectedBaseMapId (val) {
+      const newBaseMapId = val[0]
+      const oldBaseMapId = this.selectedBaseMapId[0]
+
+      this.connectingToBaseMap = false
+      this.baseMapIndex = this.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
+      const newBaseMap = this.baseMaps[this.baseMapIndex]
+
+      let success = true
+      if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
+        this.connectingToBaseMap = true
+        success = await connectToBaseMap(newBaseMap, setBaseMap, newBaseMap.layerConfiguration.timeoutMs)
+        this.connectingToBaseMap = false
+      }
+
+      // remove old map layer
+      if (this.baseMapLayers[oldBaseMapId]) {
+        this.map.removeLayer(this.baseMapLayers[oldBaseMapId])
+      }
+
+      if (success && !window.mapcache.isRasterMissing(newBaseMap.layerConfiguration)) {
+        // check to see if base map has already been added
+        if (isNil(this.baseMapLayers[newBaseMapId])) {
+          this.addBaseMap(newBaseMap, this.map)
+        } else {
+          // do not update read only base maps id
+          if (!newBaseMap.readonly) {
+            this.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
+          }
+          this.map.addLayer(this.baseMapLayers[newBaseMapId])
+          this.setAttribution(newBaseMap.attribution)
+          this.baseMapLayers[newBaseMapId].bringToBack()
+        }
+        this.mapBackground = this.project.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
+        this.selectedBaseMapId = [newBaseMapId]
+      } else {
+        this.map.addLayer(this.baseMapLayers[this.offlineBaseMapId])
+        this.setAttribution(newBaseMap.attribution)
+        this.baseMapLayers[this.offlineBaseMapId].bringToBack()
+        this.selectedBaseMapId = [this.offlineBaseMapId]
+      }
     },
     updateSelectedGrid (val) {
       this.gridSelection = val
@@ -700,7 +722,7 @@ export default {
 
         if (feature.geometry.type === 'Point') {
           feature.style = {
-            icon: await getDefaultIcon('Default', 'Default icon for MapCache')
+            icon: await window.mapcache.getDefaultIcon('Default', 'Default icon for MapCache')
           }
         } else if (!feature.isRangeRing) {
           feature.style = {
@@ -831,24 +853,24 @@ export default {
       const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
       if (baseMapId === getOfflineBaseMapId()) {
         self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, project.dark)
-        if (self.selectedBaseMapId === baseMapId) {
+        if (self.selectedBaseMapId[0] === baseMapId) {
           this.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
         }
       } else if (!isNil(defaultBaseMap)) {
         self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, project.dark)
-        if (self.selectedBaseMapId === baseMapId) {
+        if (self.selectedBaseMapId[0] === baseMapId) {
           self.testBaseMap(baseMap).then(result => {
             if (result && !result.error) {
               self.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
             } else {
-              self.selectedBaseMapId = getOfflineBaseMapId();
+              self.selectedBaseMapId[0] = getOfflineBaseMapId();
             }
           })
         }
       } else {
         let layer = constructLayer(baseMap.layerConfiguration)
         self.baseMapLayers[baseMapId] = constructMapLayer({ layer: layer, maxFeatures: self.project.maxFeatures, crs: this.getMapProjection() })
-        if (self.selectedBaseMapId === baseMapId) {
+        if (self.selectedBaseMapId[0] === baseMapId) {
           map.addLayer(self.baseMapLayers[baseMapId])
           this.setAttribution(baseMap.attribution)
           self.baseMapLayers[baseMapId].bringToBack()
@@ -1417,19 +1439,18 @@ export default {
     },
     baseMaps: {
       handler (newBaseMaps) {
-        const self = this
-        const selectedBaseMapId = this.selectedBaseMapId
-        const isDefaultBaseMap = self.defaultBaseMapIds.indexOf(selectedBaseMapId) !== -1
+        const selectedBaseMapId = this.selectedBaseMapId[0]
+        const isDefaultBaseMap = this.defaultBaseMapIds.indexOf(selectedBaseMapId) !== -1
 
         let oldConfig
-        if (!isNil(self.baseMapLayers[selectedBaseMapId]) && !isDefaultBaseMap) {
-          oldConfig = self.baseMapLayers[selectedBaseMapId].getLayer()._configuration
+        if (!isNil(this.baseMapLayers[selectedBaseMapId]) && !isDefaultBaseMap) {
+          oldConfig = this.baseMapLayers[selectedBaseMapId].getLayer()._configuration
         }
         // update the layer config stored for each base map
-        newBaseMaps.filter(self.notReadOnlyBaseMapFilter).forEach(baseMap => {
-          if (self.baseMapLayers[baseMap.id]) {
-            self.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
-            self.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
+        newBaseMaps.filter(this.notReadOnlyBaseMapFilter).forEach(baseMap => {
+          if (this.baseMapLayers[baseMap.id]) {
+            this.baseMapLayers[baseMap.id].update(baseMap.layerConfiguration)
+            this.baseMapLayers[baseMap.id].getLayer().error = baseMap.error
           }
         })
         const selectedBaseMap = newBaseMaps.find(baseMap => baseMap.id === selectedBaseMapId)
@@ -1439,65 +1460,22 @@ export default {
             if (newBaseMaps.length - 1 < this.baseMapIndex) {
               this.baseMapIndex = newBaseMaps.length - 1
             }
-            const layer = self.baseMapLayers[selectedBaseMapId]
+            const layer = this.baseMapLayers[selectedBaseMapId]
             if (layer) {
-              self.map.removeLayer(self.baseMapLayers[selectedBaseMapId])
+              this.map.removeLayer(this.baseMapLayers[selectedBaseMapId])
             }
-            delete self.baseMapLayers[selectedBaseMapId]
-            self.selectedBaseMapId = newBaseMaps[self.baseMapIndex].id
+            delete this.baseMapLayers[selectedBaseMapId]
+            this.updateSelectedBaseMapId([newBaseMaps[this.baseMapIndex].id])
           } else if (!isNil(oldConfig)) {
             const newConfig = selectedBaseMap.layerConfiguration
-            const repaintFields = self.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
+            const repaintFields = this.baseMapLayers[selectedBaseMapId].getLayer().getRepaintFields()
             const repaintRequired = !isEqual(pick(newConfig, repaintFields), pick(oldConfig, repaintFields))
             if (repaintRequired) {
-              self.baseMapLayers[selectedBaseMapId].redraw()
+              this.baseMapLayers[selectedBaseMapId].redraw()
             }
             this.mapBackground = project.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
           }
         }
-      }
-    },
-    selectedBaseMapId: {
-      handler (newBaseMapId, oldBaseMapId) {
-        const self = this
-        self.connectingToBaseMap = false
-        self.$nextTick(async () => {
-          this.baseMapIndex = self.baseMaps.findIndex(baseMap => baseMap.id === newBaseMapId)
-          const newBaseMap = self.baseMaps[self.baseMapIndex]
-
-          let success = true
-          if (!newBaseMap.readonly && !isNil(newBaseMap.layerConfiguration) && isRemote(newBaseMap.layerConfiguration)) {
-            this.connectingToBaseMap = true
-            success = await connectToBaseMap(newBaseMap, setBaseMap, newBaseMap.layerConfiguration.timeoutMs)
-            this.connectingToBaseMap = false
-          }
-
-          // remove old map layer
-          if (self.baseMapLayers[oldBaseMapId]) {
-            self.map.removeLayer(self.baseMapLayers[oldBaseMapId])
-          }
-
-          if (success && !window.mapcache.isRasterMissing(newBaseMap.layerConfiguration)) {
-            // check to see if base map has already been added
-            if (isNil(self.baseMapLayers[newBaseMapId])) {
-              self.addBaseMap(newBaseMap, self.map)
-            } else {
-              // do not update read only base maps id
-              if (!newBaseMap.readonly) {
-                self.baseMapLayers[newBaseMapId].update(newBaseMap.layerConfiguration)
-              }
-              self.map.addLayer(self.baseMapLayers[newBaseMapId])
-              this.setAttribution(newBaseMap.attribution)
-              self.baseMapLayers[newBaseMapId].bringToBack()
-            }
-            self.mapBackground = project.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
-          } else {
-            self.map.addLayer(self.baseMapLayers[self.offlineBaseMapId])
-            this.setAttribution(newBaseMap.attribution)
-            self.baseMapLayers[self.offlineBaseMapId].bringToBack()
-            self.selectedBaseMapId = self.offlineBaseMapId
-          }
-        })
       }
     },
     visible: {
@@ -1561,7 +1539,7 @@ export default {
             mapLayer.bringToBack()
           }
         })
-        this.baseMapLayers[this.selectedBaseMapId].bringToBack()
+        this.baseMapLayers[this.selectedBaseMapId[0]].bringToBack()
         setMapRenderingOrder(this.projectId, layers.map(l => l.id))
         if (layers.length > 0 || this.searchResultLayers != null) {
           this.activeLayersControl.enable(this.layerOrder.length)
@@ -1752,7 +1730,7 @@ export default {
         getDefaultBaseMaps().forEach(bm => {
           const baseMapLayer = this.baseMapLayers[bm.id]
           if (baseMapLayer != null) {
-            if (bm.id === this.selectedBaseMapId) {
+            if (bm.id === this.selectedBaseMapId[0]) {
               this.map.removeLayer(this.baseMapLayers[bm.id])
             }
             if (bm.id !== getOfflineBaseMapId()) {
@@ -1760,7 +1738,7 @@ export default {
             } else {
               this.baseMapLayers[bm.id] = this.createOfflineBaseMapLayer(bm, newDarkTheme)
             }
-            if (bm.id === this.selectedBaseMapId) {
+            if (bm.id === this.selectedBaseMapId[0]) {
               this.map.addLayer(this.baseMapLayers[bm.id])
               this.setAttribution(bm.attribution)
               this.baseMapLayers[bm.id].bringToBack()
@@ -1774,13 +1752,14 @@ export default {
           this.mgrsGridOverlay.setDarkModeEnabled(newDarkTheme)
           this.xyzGridOverlay.setDarkModeEnabled(newDarkTheme)
 
-          if (this.gridSelection === 1) {
+          if (Array.isArray(this.gridSelection) && this.gridSelection.length > 0)
+          if (this.gridSelection[0] === 1) {
             this.xyzGridOverlay.remove()
             this.xyzGridOverlay.addTo(this.map)
-          } else if (this.gridSelection === 2) {
+          } else if (this.gridSelection[0] === 2) {
             this.garsGridOverlay.remove()
             this.garsGridOverlay.addTo(this.map)
-          } else if (this.gridSelection === 3) {
+          } else if (this.gridSelection[0] === 3) {
             this.mgrsGridOverlay.remove()
             this.mgrsGridOverlay.addTo(this.map)
           }
@@ -1829,7 +1808,7 @@ export default {
               // update max features
               self.baseMapLayers[baseMapId].updateMaxFeatures(updatedProject.maxFeatures)
               // if visible, we need to toggle the layer
-              if (baseMapId === self.selectedBaseMapId) {
+              if (baseMapId === self.selectedBaseMapId[0]) {
                 self.baseMapLayers[baseMapId].redraw()
               }
             }
@@ -2057,8 +2036,8 @@ ul {
   color: rgb(var(--v-theme-text)) !important;
 }
 
-div {
-  color: rgb(var(--v-theme-text)) !important;
+.leaflet-control-container div {
+  color: rgb(var(--v-theme-detail)) !important;
 }
 
 .address-control {

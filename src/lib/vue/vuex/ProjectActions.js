@@ -79,7 +79,6 @@ function setDataSource (projectId, source) {
 }
 
 function setBaseMap (baseMap) {
-  console.log(baseMap)
   Object.keys(baseMap).forEach(key => {
     if (isProxy(baseMap[key])) {
       baseMap[key] = toRaw(baseMap[key])
@@ -93,11 +92,11 @@ function setProjectName (projectId, name) {
 }
 
 function setNominatimUrl (url) {
-  return store.dispatch('URLs/setNominatimUrl', { url })
+  return store.dispatch('URLs/setNominatimUrl', url)
 }
 
 function setOverpassUrl (url) {
-  return store.dispatch('URLs/setOverpassUrl', { url })
+  return store.dispatch('URLs/setOverpassUrl', url)
 }
 
 function showToolTips (projectId, show) {

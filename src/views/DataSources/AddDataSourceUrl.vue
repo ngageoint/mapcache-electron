@@ -646,7 +646,7 @@ export default {
     },
     addUrlToHistory (url) {
       // Save a given URL to the Tile URL history state
-      this.addUrl({ url: url })
+      this.addUrl(url)
     },
     setUrlToLink (url) {
       // Sets the url text box to the clicked-on url

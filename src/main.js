@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, isProxy, toRaw } from 'vue'
 import App from './views/App.vue'
 import router from './router'
 import vuetify from './lib/vue/vuetify/vuetify' // path to vuetify export
@@ -15,6 +15,7 @@ import { createStore } from 'vuex'
 import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import sanitizeHTML from 'sanitize-html'
+import Sortable from 'sortablejs'
 
 
 if (window && window.log) {
@@ -104,6 +105,28 @@ if (window.mapcache) {
     })
 }
 
+/**
+ * Vue 3 will wrap certain objects in a Proxy and that causes an error when calling preload functions.
+ * @param obj
+ * @return {*}
+ */
+window.deproxy = (obj) => {
+    if (Array.isArray(obj)) {
+        const deproxied = []
+        obj.forEach(o => {
+            deproxied.push(window.deproxy(o))
+        })
+        return deproxied
+    } else {
+        if (isProxy(obj)) {
+            return toRaw(obj)
+        } else {
+            return obj
+        }
+    }
+}
+
+
 /* eslint-disable no-new */
 const app = createApp(App).use(vuetify).use(router).use(store)
 app.config.globalProperties.$sanitize = sanitizeHTML
@@ -120,6 +143,27 @@ app.directive('observe-visibility', {
     update: ObserveVisibility.update,
     unmounted: ObserveVisibility.unbind,
 });
+
+// make v-sortable usable in all components
+app.directive('sortable', {
+    mounted: (el, binding) => {
+        Sortable.create(el, binding.value ? {
+            ...binding.value,
+            handle: '.sortHandle',
+            ghostClass: 'ghost',
+            forceFallback: true,
+            onChoose: function () {
+                document.body.style.cursor = 'grabbing'
+            }, // Dragging started
+            onStart: function () {
+                document.body.style.cursor = 'grabbing'
+            }, // Dragging started
+            onUnchoose: function () {
+                document.body.style.cursor = 'default'
+            }, // Dragging started
+        } : {})
+    }
+})
 
 app.mount('#app')
 

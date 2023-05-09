@@ -6,7 +6,7 @@
       </div>
 
       <div class="work-area">
-        <projects></projects>
+        <projects theme="dark"></projects>
       </div>
     </main>
   </div>

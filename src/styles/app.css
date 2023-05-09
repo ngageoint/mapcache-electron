@@ -101,7 +101,7 @@
     color: rgb(var(--v-theme-warning)) !important;
 }
 
-.dark-btn {
+.theme-text {
     color: rgb(var(--v-theme-text)) !important;
 }
 
@@ -247,14 +247,6 @@ ul {
     visibility: hidden;
 }
 
-.leaflet-popup-content-wrapper {
-    background: rgb(var(--v-theme-background)) !important;
-}
-
-.leaflet-popup-tip {
-    background: rgb(var(--v-theme-background)) !important;
-}
-
 .primary--text {
     color: rgb(var(--v-theme-primary)) !important;
 }
@@ -318,14 +310,6 @@ ul {
     cursor: grabbing !important;
 }
 
-.v-tooltip > .v-overlay__content {
-    color: rgb(var(--v-theme-surface)) !important;
-}
+.sortable-list-item {
 
-.v-switch__track .v-switch__thumb {
-    color: rgb(var(--v-theme-on-surface)) !important;
 }
-
-/*svg {*/
-/*    color: rgb(var(--v-theme-detail));*/
-/*}*/

@@ -22,12 +22,14 @@ const light = {
     neutral: '#808285',
     hover: '#f5f5f5',
     background: '#FFFFFF',
+    surface: '#FFFFFF',
     detail: '#696969',
     detailbg: '#f5f5f5',
     main_active_background: '#ffffff',
     main_active_text: '#326482',
     scroll_thumb: '#808285',
     scroll_track: '#f5f5f5',
+    dark_background: '#f5f5f5'
   }
 }
 
@@ -42,12 +44,14 @@ const dark = {
     neutral: '#414042',
     hover: '#414042',
     background: '#1e1e1e',
+    surface: '#1e1e1e',
     detail: '#808285',
     detailbg: '#2b2b2b',
     main_active_background: '#1e1e1e',
     main_active_text: '#f5f5f5',
     scroll_thumb: '#f5f5f5',
-    scroll_track: '#414042'
+    scroll_track: '#414042',
+    dark_background: '#f5f5f5'
   }
 }
 

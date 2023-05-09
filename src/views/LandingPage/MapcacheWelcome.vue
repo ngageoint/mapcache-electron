@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="app-title-block">
-      <img class="gp-img" src="/images/256x256.png">
+      <img class="gp-img" src="/images/256x256.png" alt="GeoPackage Icon">
       <h4>MapCache</h4>
       <p>
         Version: <strong id="mapcache-version">{{ version }}</strong>
@@ -11,7 +11,7 @@
     <div class="divider"></div>
     <div v-for="item in sidebarItems" :key="item.id">
       <button v-if="item.link != null" class="sidebar-item" @click="open(item.link)">
-        <img class="sidebar-item-img" :src="item.image"/>
+        <img class="sidebar-item-img" :src="item.image" :alt="item.alt"/>
 
         <div class="sidebar-item-info">
           <div class="sidebar-item-title">
@@ -38,19 +38,22 @@ const sidebarItems = [{
   description: 'Visit geopackage.org to learn more',
   link: environment.geopackageUrl,
   image: 'images/geopackage-2.png',
-  key: 'sidebar-item-0'
+  key: 'sidebar-item-0',
+  alt: 'GeoPackage'
 }, {
   title: 'NGA GeoPackage Libraries',
   description: 'Learn about the GeoPackage libraries developed by NGA',
   link: environment.geopackageLibrariesUrl,
   image: 'images/nga.png',
   key: 'sidebar-item-1',
+  alt: 'NGA GeoPackage Libraries'
 }, {
   title: 'EventKit',
   description: 'Import GeoPackage files created with EventKit',
   link: environment.eventkitUrl,
   image: 'images/eventkit.png',
-  key: 'sidebar-item-2'
+  key: 'sidebar-item-2',
+  alt: 'EventKit'
 }]
 
 export default {

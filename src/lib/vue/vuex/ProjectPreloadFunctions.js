@@ -119,7 +119,8 @@ async function deleteGeoPackageFeatureTableColumn (geopackage, tableName, column
     _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
     const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
     updateGeoPackageFileInfo(geopackage)
-    return updateExistingTable(existingTable, tableInfo, true, true)
+    updateExistingTable(existingTable, tableInfo, true, true)
+    return geopackage
   })
 }
 
@@ -138,13 +139,14 @@ async function deleteDataSourceFeatureTableColumn (source, tableName, columnName
 }
 
 async function addGeoPackageFeatureTableColumn (geopackage, tableName, columnName, columnType) {
-  const existingTable = geopackage.tables.features[tableName]
+  let existingTable = geopackage.tables.features[tableName]
   const filePath = geopackage.path
   return performSafeGeoPackageOperation(filePath, (gp) => {
     _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
     const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
     updateGeoPackageFileInfo(geopackage)
-    return updateExistingTable(existingTable, tableInfo, true, true)
+    updateExistingTable(existingTable, tableInfo, true, true)
+    return geopackage
   })
 }
 

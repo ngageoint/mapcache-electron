@@ -133,14 +133,15 @@ export default {
       if (this.isEditing) {
         return []
       } else {
+        const deproxiedFeature = window.deproxy(this.feature)
         const featureColumns = window.mapcache.getLayerColumns({
           type: 'FeatureCollection',
-          features: [this.feature]
+          features: [deproxiedFeature]
         }).columns
-        const featureProperties = isNil(this.feature) ? {} : cloneDeep(this.feature.properties)
+        const featureProperties = isNil(deproxiedFeature) ? {} : cloneDeep(deproxiedFeature.properties)
         return orderBy(featureColumns.filter(column => this.columns._columnNames.findIndex(name => name === column.name) === -1 && column.name !== '_feature_id').map(column => {
           column.dataType = window.mapcache.GeoPackageDataType.fromName(column.dataType)
-          return window.mapcache.getEditableColumnObject(column, featureProperties)
+          return window.mapcache.getEditableColumnObject(window.deproxy(column), featureProperties)
         }), ['lowerCaseName'], ['asc'])
       }
     },
@@ -171,7 +172,8 @@ export default {
   },
   methods: {
     async updateEditableColumns () {
-      const editableColumns = await window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, this.feature, this.columns)
+      const columns = this.columns != null && this.columns._columns != null ? this.columns._columns : []
+      const editableColumns = await window.mapcache.getGeoPackageEditableColumnsForFeature(this.geopackagePath, this.tableName, window.deproxy(this.feature), window.deproxy(columns))
       if (this.isGeoPackage &&
           this.object.tables.features[this.tableName] != null &&
           this.object.tables.features[this.tableName].columnOrder != null &&

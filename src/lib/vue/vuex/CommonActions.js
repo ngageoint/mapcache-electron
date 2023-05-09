@@ -16,12 +16,16 @@ async function deleteProject (projectId) {
 }
 
 async function addGeoPackage (projectId, filePath) {
-  const geopackage = await window.mapcache.getOrCreateGeoPackageForApp(filePath)
-  if (geopackage != null) {
-    await store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-    return geopackage.id
-  } else {
-    return null
+  try {
+    const geopackage = await window.mapcache.getOrCreateGeoPackageForApp(filePath)
+    if (geopackage != null) {
+      await store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+      return geopackage.id
+    } else {
+      return null
+    }
+  } catch (e) {
+    console.error(e)
   }
 }
 

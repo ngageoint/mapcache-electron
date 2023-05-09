@@ -195,9 +195,8 @@
             </v-card-subtitle>
             <v-card-text>
               <v-list
-                  id="sortable-list"
                   style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
-                  v-sortable-list="{onEnd:updateSortedLayerOrder}"
+                  v-sortable="{onEnd:updateSortedLayerOrder}"
                   dense>
                 <v-list-item
                     v-for="item in sortedLayers"
@@ -219,7 +218,7 @@
                     <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
                   </div>
                   <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon icon="mdi-drag-horizontal-variant"/>
+                    <v-icon @click.sort.prevent icon="mdi-drag-horizontal-variant"/>
                   </template>
                 </v-list-item>
               </v-list>
@@ -257,7 +256,7 @@
               </v-radio-group>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 6">
+          <v-btn variant="text" color="primary" @click="step = 6">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -280,7 +279,7 @@
                                  :update-bounding-box="updateBoundingBox"></bounding-box-editor>
           </v-card>
           <v-btn
-              text
+              variant="text"
               color="primary"
               @click="step = 7">
             Continue
@@ -308,7 +307,7 @@
             </v-card-text>
           </v-card>
           <v-btn
-              text
+              variant="text"
               color="primary"
               @click="step = 8">
             Continue
@@ -349,7 +348,7 @@
             </v-card-text>
           </v-card>
           <v-btn
-              text
+              variant="text"
               color="primary"
               @click="step = 9">
             Continue
@@ -387,7 +386,7 @@
         <v-spacer></v-spacer>
         <v-btn
             color="primary"
-            text
+            variant="text"
             @click.stop="cancel">
           Cancel
         </v-btn>
@@ -395,7 +394,7 @@
             v-if="!done && !processing"
             :disabled="Number(step) !== 9 || !boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)"
             color="primary"
-            text
+            variant="text"
             @click.stop="addTileLayer">
           Add
         </v-btn>
@@ -417,7 +416,6 @@ import DataSourceTroubleshooting from '../DataSources/DataSourceTroubleshooting.
 import BoundingBoxEditor from '../Common/BoundingBoxEditor.vue'
 import { zoomToGeoPackageTable, zoomToSource } from '../../lib/leaflet/map/ZoomUtilities'
 import { getTileCount } from '../../lib/util/tile/TileUtilities'
-import Sortable from 'sortablejs'
 import {
   WEB_MERCATOR,
   WEB_MERCATOR_DISPLAY_TEXT, WORLD_GEODETIC_SYSTEM,
@@ -438,28 +436,6 @@ export default {
     geopackage: Object,
     allowNotifications: Boolean,
     back: Function
-  },
-  directives: {
-    'sortable-list': {
-      inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? {
-          ...binding.value,
-          handle: '.sortHandle',
-          ghostClass: 'ghost',
-          dragClass: 'detail-bg',
-          forceFallback: true,
-          onChoose: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onStart: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onUnchoose: function () {
-            document.body.style.cursor = 'default'
-          }, // Dragging started
-        } : {})
-      },
-    },
   },
   components: {
     BoundingBoxEditor,

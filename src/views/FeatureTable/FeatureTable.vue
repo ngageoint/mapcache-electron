@@ -79,10 +79,10 @@
             <div v-if="header.value === 'attachments'">
               {{ item.attachments > 0 ? item.attachments : null }}
             </div>
-            <v-simple-checkbox v-else-if="header.value === 'data-table-select'" v-ripple @click="e => {
+            <v-checkbox v-else-if="header.value === 'data-table-select'" @click="e => {
               select(!isSelected)
               e.stopPropagation()
-            }" :value="isSelected"></v-simple-checkbox>
+            }" :value="isSelected"></v-checkbox>
             <div class="text-truncate" v-else>
               {{ item[header.value] }}
             </div>
@@ -99,7 +99,7 @@
         ></v-pagination>
       </v-col>
       <div v-if="showItemsPerPage" class="pr-4 items-per-page-select">
-        <v-select v-model="options.itemsPerPage" :items="itemsPerPageOptions" label="items per page"></v-select>
+        <v-select variant="underlined" v-model="options.itemsPerPage" :items="itemsPerPageOptions" label="items per page"></v-select>
       </div>
     </v-row>
   </v-sheet>

@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card class="pl-2 pr-2 pt-2">
     <v-dialog v-model="deleteUrlDialog" max-width="400" persistent @keydown.esc="cancelDeleteUrl">
       <v-card>
         <v-card-title>
@@ -39,13 +39,11 @@
       <v-icon color="primary" class="pr-2" icon="mdi-cloud-outline"></v-icon>
       Saved urls
     </v-card-title>
-    <v-card-text class="pb-0">
-      <v-card-subtitle v-if="urls.length === 0">No saved urls.</v-card-subtitle>
+    <v-card-text v-if="!!urls" class="pb-0 pt-0">
+      <v-card-subtitle v-if="!urls || urls.length === 0">No saved urls.</v-card-subtitle>
       <v-list style="max-height: 400px;" v-else>
-        <v-list-item dense :key="item" v-for="item in urls.map(url => url.url)">
-          <div>
-            <span class="text-break">{{ item }}</span>
-          </div>
+        <v-list-item class="pa-0" dense :key="item" v-for="item in urls">
+          <v-list-item-title class="ma-0 pa-0 text-wrap" v-text="item"></v-list-item-title>
           <template v-slot:append>
             <v-row no-gutters justify="end">
               <v-btn variant="text" icon="mdi-pencil" color="primary" @click.stop.prevent="showEditUrlDialog(item)">
@@ -88,8 +86,20 @@ export default {
   computed: {
     ...mapState({
       urls: state => {
-        return state.URLs.savedUrls || []
-      }
+        console.log(state.URLs.savedUrls)
+        return state.URLs.savedUrls.map(url => url.url)
+      },
+      urlRules: state => [
+        v => !!v || 'Url is required',
+        v => window.mapcache.isUrlValid(v) || 'Invalid url',
+        v => !state.URLs.savedUrls.find(url => url.url.toLowerCase() === v.toLowerCase()) || 'Url already exists'
+      ],
+      editUrlRules: state => [
+        v => !!v || 'Url is required',
+        v => window.mapcache.isUrlValid(v) || 'Invalid url',
+        v => v !== this.editUrlInitialValue || 'Url unchanged',
+        v => !state.URLs.savedUrls.find(url => url.url.toLowerCase() === v.toLowerCase()) || 'Url already exists'
+      ]
     })
   },
   data () {
@@ -99,21 +109,10 @@ export default {
       savedUrlDialog: false,
       addUrlValue: 'https://',
       addUrlDialog: false,
-      urlRules: [
-        v => !!v || 'Url is required',
-        v => window.mapcache.isUrlValid(v) || 'Invalid url',
-        v => !this.urls.find(url => url.url.toLowerCase() === v) || 'Url already exists'
-      ],
       urlValid: false,
       editUrlValue: null,
       editUrlInitialValue: null,
       editUrlDialog: false,
-      editUrlRules: [
-        v => !!v || 'Url is required',
-        v => window.mapcache.isUrlValid(v) || 'Invalid url',
-        v => v !== this.editUrlInitialValue || 'Url unchanged',
-        v => !this.urls.find(url => url.url === v) || 'Url already exists'
-      ],
       editUrlValid: false
     }
   },
@@ -134,7 +133,7 @@ export default {
     },
     addNewUrl (url) {
       this.addUrlDialog = false
-      this.addUrl({ url })
+      this.addUrl(url)
     },
     cancelDeleteUrl () {
       this.deleteUrlDialog = false

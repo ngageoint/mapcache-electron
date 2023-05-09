@@ -22,17 +22,16 @@
     <v-card-text class="ma-0 pa-0" v-if="loaded">
       <v-list
           :disabled="errored"
-          id="sortable-list"
           dense
           class="detail-bg"
-          v-sortable-list="{onEnd:updateSortedLayerOrder}">
+          v-sortable="{onEnd:updateSortedLayerOrder}">
         <v-list-item
             :disabled="errored"
             v-for="(item) in sortedLayers"
             class="sortable-list-item"
             :key="item.name">
           <template v-slot:prepend class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">
-            <v-icon :disabled="errored" icon="mdi-drag-horizontal-variant"/>
+            <v-icon @click.stop.prevent :disabled="errored" icon="mdi-drag-horizontal-variant"/>
           </template>
           <div>
             <div v-if="item.title">
@@ -67,7 +66,6 @@
 import isNil from 'lodash/isNil'
 import { SERVICE_TYPE } from '../../lib/network/HttpUtilities'
 import { testServiceConnection } from '../../lib/network/ServiceConnectionUtils'
-import Sortable from 'sortablejs'
 import cloneDeep from 'lodash/cloneDeep'
 import WMSLayer from '../../lib/layer/tile/WMSLayer'
 
@@ -85,28 +83,6 @@ export default {
     updateConfiguration: Function,
     setError: Function,
     project: Object
-  },
-  directives: {
-    'sortable-list': {
-      inserted: (el, binding) => {
-        Sortable.create(el, binding.value ? {
-          ...binding.value,
-          dragClass: 'detail-bg',
-          handle: '.sortHandle',
-          ghostClass: 'ghost',
-          forceFallback: true,
-          onChoose: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onStart: function () {
-            document.body.style.cursor = 'grabbing'
-          }, // Dragging started
-          onUnchoose: function () {
-            document.body.style.cursor = 'default'
-          }, // Dragging started
-        } : {})
-      },
-    },
   },
   computed: {
     sortedLayers: {

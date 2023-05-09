@@ -1,19 +1,11 @@
 <template>
   <v-layout id="project" class="project-holder ma-0 pa-0">
     <web-view-dialog :key="authKey" v-if="authUrl != null" :width="600" :url="authUrl" :cancel="cancelAuthRequest"></web-view-dialog>
-    <v-dialog
-        v-model="closingDialog"
-        persistent
-        width="400">
-      <v-card
-          color="#426e91" class="pt-2 pb-4">
-        <v-card-text
-            class="pt-2">
+    <v-dialog v-model="closingDialog" persistent width="400">
+      <v-card color="primary" class="pt-2 pb-4">
+        <v-card-text class="pt-2 text-theme-dark-background">
           {{ closingMessage }}
-          <v-progress-linear
-              class="mt-2"
-              indeterminate
-              color="white">
+          <v-progress-linear class="mt-2 text-theme-dark-background" indeterminate>
           </v-progress-linear>
         </v-card-text>
       </v-card>
@@ -34,6 +26,7 @@
     </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
       <v-navigation-drawer
+          permanent
           color="main"
           v-model="drawer"
           rail
