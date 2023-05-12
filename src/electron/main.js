@@ -1,12 +1,17 @@
-import { app, protocol } from 'electron'
+import { app, protocol, crashReporter } from 'electron'
 import path from 'path'
 import MapCacheWindowManager from './lib/MapCacheWindowManager'
 import { environment } from '../lib/env/env'
 import setupProtocol from '../lib/protocol/protocol'
 import { runMigration } from '../store/migration/migration'
 import { setupInitialDirectories } from '../lib/util/file/FileUtilities'
-import { default as install, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+// import { default as install, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import log from 'electron-log'
+
+
+crashReporter.start({ uploadToServer: false });
+console.error('Storing dumps inside', app.getPath('crashDumps'));
+
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -29,7 +34,7 @@ if (process.platform === 'win32') {
 
 async function setupVueDevTools () {
   try {
-    await install(VUEJS_DEVTOOLS)
+    // await install(VUEJS_DEVTOOLS)
     // eslint-disable-next-line no-unused-vars
   } catch (e) {
     // eslint-disable-next-line no-console

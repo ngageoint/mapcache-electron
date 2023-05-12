@@ -131,13 +131,22 @@ export default function (L) {
      * @param reject
      */
     loadImage (dataUrl, coords, tile, resolve, reject) {
-      tile.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        tile.getContext('2d').drawImage(image, 0, 0);
         resolve()
-      }
-      tile.onerror = (e) => {
+      };
+      image.onerror = (e) => {
         reject(e)
       }
-      tile.src = dataUrl
+      image.src = dataUrl
+      // tile.onload = () => {
+      //   resolve()
+      // }
+      // tile.onerror = (e) => {
+      //   reject(e)
+      // }
+      // tile.src = dataUrl
     },
     async compileTiles (id, tiles, size, clippingRegion, targetSrs, targetBounds) {
       return new Promise((resolve, reject) => {
@@ -206,9 +215,7 @@ export default function (L) {
                   if(!this.slownessNotified) {
                     this.serverMonitor.beforeRender(this.layer)
                   }
-                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({                                                                                                                                                     dataUrl,
-                                                                                                                                                                          error
-                                                                                                                                                                        }) => {
+                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({ dataUrl, error }) => {
                     if(!this.slownessNotified) {
                       this.serverMonitor.afterRender(this.layer)
                     }
@@ -259,7 +266,9 @@ export default function (L) {
     createTile (coords, done) {
       // create the tile img
       const requestId = window.mapcache.createUniqueID()
-      const tile = document.createElement('img')
+      const tile = document.createElement('canvas')
+      tile.width = 256
+      tile.height = 256
       tile.requestId = requestId
       tile.alt = ''
       tile.setAttribute('role', 'presentation')

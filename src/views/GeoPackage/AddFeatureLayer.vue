@@ -107,7 +107,7 @@
                           <v-list-item-title v-text="item.text"></v-list-item-title>
                         </div>
                         <v-list-item-action>
-                          <source-visibility-switch :input-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
+                          <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
                     </v-list-item>
@@ -162,7 +162,7 @@
                           <v-switch
                               dense
                               @click.stop="item.changeVisibility"
-                              :input-value="active"
+                              :model-value="active"
                               color="primary"
                           ></v-switch>
                         </v-list-item-action>

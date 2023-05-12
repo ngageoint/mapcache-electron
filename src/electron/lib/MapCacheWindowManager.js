@@ -191,7 +191,7 @@ class MapCacheWindowManager {
           // This intentionally doesn't call the callback, because Electron will remember the decision. If the app was
           // refreshed, we want Electron to try selecting a cert again when the app loads.
           if (!isNil(associatedRequest)) {
-            if (!webContents.isDestroyed()) {
+            if (!webContents.isCrashed()) {
               webContents.send(CANCEL_SERVICE_REQUEST, associatedRequest.url)
             }
           }
@@ -387,7 +387,11 @@ class MapCacheWindowManager {
 
   sendResponse (event, channel, args) {
     if (!event.sender.isDestroyed() && !event.sender.isCrashed()) {
-      event.sender.send(channel, args)
+      try {
+        event.sender.send(channel, args)
+      } catch (e) {
+        console.error(e)
+      }
     }
   }
 
@@ -593,19 +597,19 @@ class MapCacheWindowManager {
 
     ipcMain.on(HIDE_FEATURE_TABLE_WINDOW, (event, args) => {
       this.showHideFeatureTableWindow(false)
-      if (!this.projectWindow.webContents.isDestroyed()) {
+      if (!this.projectWindow.webContents.isCrashed()) {
         this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW, args)
       }
     })
 
     ipcMain.on(FEATURE_TABLE_ACTION, (event, args) => {
-      if (!this.projectWindow.webContents.isDestroyed()) {
+      if (!this.projectWindow.webContents.isCrashed()) {
         this.projectWindow.webContents.send(FEATURE_TABLE_ACTION, args)
       }
     })
 
     ipcMain.on(FEATURE_TABLE_EVENT, (event, args) => {
-      if (!this.featureTableWindow.webContents.isDestroyed()) {
+      if (!this.featureTableWindow.webContents.isCrashed()) {
         this.featureTableWindow.webContents.send(FEATURE_TABLE_EVENT, args)
       }
     })
@@ -1169,7 +1173,7 @@ class MapCacheWindowManager {
       }
     })
     this.featureTableWindow.on('hide', () => {
-      if (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed()) {
+      if (this.projectWindow != null && !this.projectWindow.webContents.isCrashed()) {
         this.projectWindow.webContents.send(HIDE_FEATURE_TABLE_WINDOW)
       }
     })
@@ -1212,12 +1216,12 @@ class MapCacheWindowManager {
       this.featureTableWindow.destroy()
       this.featureTableWindow = null
     }
-    if (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed()) {
+    if (this.projectWindow != null && !this.projectWindow.webContents.isCrashed()) {
       this.projectWindow.webContents.send(CLOSING_PROJECT_WINDOW, { isDeleting })
-      this.launchMainWindow().then(() => {
-        this.showMainWindow()
-      })
     }
+    this.launchMainWindow().then(() => {
+      this.showMainWindow()
+    })
   }
 
   /**
@@ -1234,7 +1238,7 @@ class MapCacheWindowManager {
       this.launchProjectWindow()
       this.launchFeatureTableWindow(projectId)
       this.loadContent(this.projectWindow, winURL, () => {
-        if (geopackageIds != null || filePaths != null && (this.projectWindow != null && !this.projectWindow.webContents.isDestroyed())) {
+        if (geopackageIds != null || filePaths != null && (this.projectWindow != null && !this.projectWindow.webContents.isCrashed())) {
           this.projectWindow.webContents.send(LOAD_OR_DISPLAY_GEOPACKAGES, geopackageIds, filePaths)
         }
         this.setupCertificateAuth()

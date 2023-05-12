@@ -19,11 +19,6 @@ import cloneDeep from 'lodash/cloneDeep'
 import keys from 'lodash/keys'
 import isObject from 'lodash/isObject'
 import reproject from 'reproject'
-import bbox from '@turf/bbox'
-import distance from '@turf/distance'
-import pointToLineDistance from '@turf/point-to-line-distance'
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
-import polygonToLine from '@turf/polygon-to-line'
 import moment from 'moment'
 import {
   performSafeGeoPackageOperation,
@@ -52,6 +47,11 @@ import {
   WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
+import bbox from '@turf/bbox'
+import distance from '@turf/distance'
+import pointToLineDistance from '@turf/point-to-line-distance'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import polygonToLine from '@turf/polygon-to-line'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
@@ -1354,10 +1354,10 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
   if (feature.geometry != null) {
     switch (feature.geometry.type) {
       case 'Point':
-        distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, { units: 'kilometers' }) * 1000.0
+        distanceInMeters = distance.default([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, { units: 'kilometers' }) * 1000.0
         break
       case 'LineString':
-        distanceInMeters = pointToLineDistance(coordinate, feature, { units: 'kilometers' }) * 1000.0
+        distanceInMeters = pointToLineDistance.default(coordinate, feature, { units: 'kilometers' }) * 1000.0
         break
       case 'MultiPoint':
         // eslint-disable-next-line no-case-declarations
@@ -1402,8 +1402,8 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
         break
       case 'Polygon':
         if (feature.geometry.coordinates != null && feature.geometry.coordinates.length > 0) {
-          isContained = booleanPointInPolygon(coordinate, feature)
-          distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
+          isContained = booleanPointInPolygon.default(coordinate, feature)
+          distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine.default(feature)).distance
         }
         break
       case 'MultiPolygon':
@@ -1454,46 +1454,56 @@ function determineMinDistanceBasedOnZoom (latitude, zoom) {
  * @private
  */
 async function _getClosestFeature (layers, latlng, zoom) {
-  let closestFeature = null
-  let closestDistance = Number.MAX_SAFE_INTEGER
-  let closestLayer = null
-  let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
+  try {
+    let closestFeature = null
+    let closestDistance = Number.MAX_SAFE_INTEGER
+    let closestLayer = null
+    let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
 
-  for (let lId = 0; lId < layers.length; lId++) {
-    const layer = layers[lId]
-    await performSafeGeoPackageOperation(layer.path, (gp) => {
-      const featureDao = gp.getFeatureDao(layer.tableName)
-      if (featureDao.featureTableIndex != null && featureDao.featureTableIndex.isIndexed()) {
-        const srs = featureDao.srs
-        const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
-        const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
-        const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
-        const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
-        const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
-        const coordinate = [latlng.lng, latlng.lat]
-        for (let i = 0; i < rows.length; i++) {
-          const featureRow = featureDao.getRow(rows[i])
-          const featureId = featureRow.id
-          const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
-          feature.type = 'Feature'
-          feature.id = featureId
+    for (let lId = 0; lId < layers.length; lId++) {
+      const layer = layers[lId]
+      await performSafeGeoPackageOperation(layer.path, (gp) => {
+        try {
+          const featureDao = gp.getFeatureDao(layer.tableName)
+          if (featureDao.featureTableIndex != null && featureDao.featureTableIndex.isIndexed()) {
+            const srs = featureDao.srs
+            const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
+            const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+            const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+            const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
+            const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
+            const coordinate = [latlng.lng, latlng.lat]
+            for (let i = 0; i < rows.length; i++) {
+              const featureRow = featureDao.getRow(rows[i])
+              const featureId = featureRow.id
+              const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+              feature.type = 'Feature'
+              feature.id = featureId
 
-          const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
-          if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
-            closestFeature = feature
-            closestDistance = distanceResult.distance
-            closestLayer = layer
+              const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
+              if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
+                closestFeature = feature
+                closestDistance = distanceResult.distance
+                closestLayer = layer
+              }
+            }
           }
+        } catch (e) {
+          console.log('wah')
+          console.error(e)
         }
-      }
-    })
-  }
+      })
+    }
 
-  return {
-    feature: closestFeature,
-    distance: closestDistance,
-    layer: closestLayer
+    return {
+      feature: closestFeature,
+      distance: closestDistance,
+      layer: closestLayer
+    }
+  } catch (e) {
+    console.error(e)
   }
+  return null
 }
 
 async function getClosestFeature (layers, latlng, zoom) {

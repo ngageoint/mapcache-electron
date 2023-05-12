@@ -24,8 +24,8 @@
           <v-switch
               color="primary"
               hide-details
-              @click.stop="item.setVisible"
-              :input-value="item.visible"
+              @click.stop.prevent="item.setVisible"
+              :model-value="item.visible"
               dense>
           </v-switch>
         </template>

@@ -5,7 +5,8 @@ import log from 'electron-log/renderer'
 import isNil from 'lodash/isNil'
 import cloneDeep from 'lodash/cloneDeep'
 import CredentialsManagement from '../lib/auth/CredentialsManagement'
-import { clipboard, contextBridge, ipcRenderer, shell } from 'electron'
+import { contextBridge, ipcRenderer, clipboard, shell } from 'electron'
+import { parseStringPromise } from 'xml2js'
 import { Context, GeometryType, HtmlCanvasAdapter, SqliteAdapter, GeoPackageDataType } from '@ngageoint/geopackage'
 import { exceedsFileSizeLimit, getMaxFileSizeString } from '../../lib/util/media/MediaUtilities'
 import { createNextAvailableBaseMapDirectory, createNextAvailableSourceDirectory, exists, rmDirAsync, createNextAvailableLayerDirectory, isDirEmpty, getLastModifiedDate } from '../../lib/util/file/FileUtilities'
@@ -158,6 +159,13 @@ contextBridge.exposeInMainWorld('mapcache', {
       delete fileStreams[streamId]
     }
   },
+  convertXMLtoJSON: async (xml) => {
+    return await parseStringPromise(xml, {trim: true}).then(json => {
+      return json
+    }).catch(e => {
+      return null
+    })
+  },
   generateJsonFilePath: (filePath, id) => {
     return path.join(filePath, id + '.json')
   },
@@ -202,14 +210,14 @@ contextBridge.exposeInMainWorld('mapcache', {
   closeProject: () => {
     ipcRenderer.send(CLOSE_PROJECT)
   },
-  cancelProcessingSource: (source) => {
+  cancelProcessingSource: async (source) => {
     return new Promise(resolve => {
       ipcRenderer.removeAllListeners(PROCESS_SOURCE_COMPLETED(source.id))
       ipcRenderer.once(CANCEL_PROCESS_SOURCE_COMPLETED(source.id), resolve)
       ipcRenderer.send(CANCEL_PROCESS_SOURCE, source)
     })
   },
-  attachMediaToGeoPackage: (data) => {
+  attachMediaToGeoPackage: async (data) => {
     return new Promise(resolve => {
       ipcRenderer.once(ATTACH_MEDIA_COMPLETED(data.id), (event, success) => {
         resolve(success)
@@ -278,14 +286,14 @@ contextBridge.exposeInMainWorld('mapcache', {
   processSource: (data) => {
     ipcRenderer.send(PROCESS_SOURCE, data)
   },
-  onceProcessSourceCompleted: (id) => {
+  onceProcessSourceCompleted: async (id) => {
     return new Promise(resolve => {
       ipcRenderer.once(PROCESS_SOURCE_COMPLETED(id), (event, result) => {
         resolve(result)
       })
     })
   },
-  addFeatureLayer: (configuration, statusCallback) => {
+  addFeatureLayer: async (configuration, statusCallback) => {
     return new Promise(resolve => {
       ipcRenderer.once(BUILD_FEATURE_LAYER_COMPLETED(configuration.id), () => {
         ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_STATUS(configuration.id))
@@ -297,7 +305,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(BUILD_FEATURE_LAYER, { configuration: configuration })
     })
   },
-  cancelAddFeatureLayer: (configuration) => {
+  cancelAddFeatureLayer: async (configuration) => {
     return new Promise(resolve => {
       ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_STATUS(configuration.id))
       ipcRenderer.removeAllListeners(BUILD_FEATURE_LAYER_COMPLETED(configuration.id))
@@ -307,7 +315,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(CANCEL_BUILD_FEATURE_LAYER, { configuration: configuration })
     })
   },
-  addTileLayer: (configuration, statusCallback) => {
+  addTileLayer: async (configuration, statusCallback) => {
     return new Promise(resolve => {
       ipcRenderer.once(BUILD_TILE_LAYER_COMPLETED(configuration.id), () => {
         ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_STATUS(configuration.id))
@@ -319,7 +327,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(BUILD_TILE_LAYER, { configuration: configuration })
     })
   },
-  cancelAddTileLayer: (configuration) => {
+  cancelAddTileLayer: async (configuration) => {
     return new Promise(resolve => {
       ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_STATUS(configuration.id))
       ipcRenderer.removeAllListeners(BUILD_TILE_LAYER_COMPLETED(configuration.id))
@@ -330,21 +338,29 @@ contextBridge.exposeInMainWorld('mapcache', {
     })
   },
   cancelTileRequest: (id) => {
-    ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
+    try {
+      ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
+    } catch (e) {
+      console.error(e)
+    }
   },
-  requestTile: (request) => {
+  requestTile: async (request) => {
     return new Promise(resolve => {
-      ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
-        resolve(result)
-      })
-      ipcRenderer.send(REQUEST_TILE, request)
+      try {
+        ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
+          resolve(result)
+        })
+        ipcRenderer.send(REQUEST_TILE, request)
+      } catch (e) {
+        console.error(e)
+      }
     })
   },
   cancelTileCompilationRequest: (id) => {
     ipcRenderer.send(CANCEL_TILE_COMPILATION_REQUEST, { id: id })
     ipcRenderer.removeAllListeners(REQUEST_TILE_COMPILATION_COMPLETED(id))
   },
-  requestTileCompilation: (request) => {
+  requestTileCompilation: async (request) => {
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_TILE_COMPILATION_COMPLETED(request.id), (event, result) => {
         resolve(result)
@@ -474,12 +490,12 @@ contextBridge.exposeInMainWorld('mapcache', {
       absolutePath: true
     })
   },
-  downloadBase64Image: (filePath, base64Image) => {
+  downloadBase64Image: async (filePath, base64Image) => {
     return new Promise(resolve => {
       fs.writeFile(filePath, base64Image, { encoding: 'base64' }, resolve)
     })
   },
-  copyFile: (filePath, toFilePath) => {
+  copyFile: async (filePath, toFilePath) => {
     return new Promise(resolve => {
       fs.copyFile(filePath, toFilePath, resolve)
     })

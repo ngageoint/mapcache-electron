@@ -40,7 +40,7 @@
     "@turf/polygon-to-line": "6.5.0",
     "@turf/transform-rotate": "6.5.0",
     "adm-zip": "0.5.9",
-    "axios": "0.23.0",
+    "axios": "1.4.0",
     "better-sqlite3": "8.1.0",
     "bindings": "https://github.com/caldwellc/node-bindings.git#master",
     "caniuse-lite": "^1.0.30001452",
@@ -80,13 +80,14 @@
     "vue-observe-visibility": "^1.0.0",
     "vue-router": "4.1.6",
     "vuetify": "3.2.1",
-    "vuex": "4.1.0"
+    "vuex": "4.1.0",
+    "xml2js": "^0.5.0"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@vitejs/plugin-vue": "^4.0.0",
-    "electron": "^24.2.0",
+    "electron": "^24.3.0",
     "electron-builder": "^23.6.0",
     "electron-devtools-installer": "^3.2.0",
     "electron-vite": "^1.0.21",

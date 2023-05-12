@@ -109,12 +109,9 @@
             <v-text-field variant="underlined" v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number"
                           label="Width (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
-          <v-col cols="2">
-            <v-btn icon @click="toggleAspectRatioLock"
-                   :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'">
-              <v-icon>{{ aspectRatioLock ? mdiLink : mdiLinkOff }}</v-icon>
-            </v-btn>
-          </v-col>
+          <v-spacer/>
+          <v-btn variant="text" :icon="aspectRatioLock ? 'mdi-link-variant' : 'mdi-link-variant-off'" @click="toggleAspectRatioLock" :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'"/>
+          <v-spacer/>
           <v-col cols="5">
             <v-text-field variant="underlined" v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules" type="number"
                           label="Height (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
@@ -158,6 +155,7 @@ import isEmpty from 'lodash/isEmpty'
 import NumberPicker from '../Common/NumberPicker.vue'
 import debounce from 'lodash/debounce'
 import { createIconRow, deleteIconRow, updateIconRow } from '../../lib/vue/vuex/ProjectActions'
+import { base64toUInt8Array } from '../../lib/util/Base64Utilities'
 
 export default {
   components: { NumberPicker },
@@ -344,7 +342,7 @@ export default {
             this.width = uploadedImage.width
             this.height = uploadedImage.height
             this.contentType = 'image/' + extension
-            this.data = Buffer.from(url.split(',')[1], 'base64')
+            this.data = base64toUInt8Array(url)
           }
         }
       })

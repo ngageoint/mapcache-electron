@@ -44,7 +44,7 @@ contextBridge.exposeInMainWorld('mapcache', {
   sendFeatureTableAction: (action) => {
     ipcRenderer.send(FEATURE_TABLE_ACTION, action)
   },
-  countGeoPackageTable: (filePath, tableName, search) => {
+  countGeoPackageTable: async (filePath, tableName, search) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_COUNT_COMPLETED(requestId), (event, result) => {
@@ -53,7 +53,7 @@ contextBridge.exposeInMainWorld('mapcache', {
       ipcRenderer.send(REQUEST_GEOPACKAGE_TABLE_COUNT, { id: requestId, filePath, tableName, search })
     })
   },
-  searchGeoPackageTable: (filePath, tableName, page, pageSize, sortBy, desc, search) => {
+  searchGeoPackageTable: async (filePath, tableName, page, pageSize, sortBy, desc, search) => {
     const requestId = createUniqueID()
     return new Promise(resolve => {
       ipcRenderer.once(REQUEST_GEOPACKAGE_TABLE_SEARCH_COMPLETED(requestId), (event, result) => {

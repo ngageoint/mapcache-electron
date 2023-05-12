@@ -289,18 +289,34 @@ ul {
     white-space: nowrap;
     overflow: hidden;
     box-sizing: border-box;
-    background: #fff;
-    background: rgba(255, 255, 255, 0.5);
-    color: #2e2e2e;
+    color: rgb(var(--v-theme-detail)) !important;
+    background: rgb(var(--v-theme-background)) !important;
+    border: solid #777777AA !important;
 }
 
 .leaflet-coordinates-control {
     position: absolute !important;
     left: 104px !important;
     bottom: 0 !important;
-    margin-bottom: 3px !important;
+    margin-bottom: 0 !important;
     min-width: 200px;
 }
+
+.leaflet-control-scale {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-control-scale-line {
+    background: rgb(var(--v-theme-background)) !important;
+    border-color: #777777AA !important;
+    text-shadow: unset !important;
+}
+
+.leaflet-control-attribution {
+    border: solid #777777AA !important;
+    border-bottom-right-radius: 10px;
+}
+
 
 .sortHandle {
     cursor: grab !important;

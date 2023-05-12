@@ -362,15 +362,11 @@
                 {{ source.pane === 'vector' ? source.sourceType : source.layerType }}
               </p>
             </v-col>
-            <v-col>
-              <v-row no-gutters justify="end">
-                <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                  Enable
-                </p>
-                <source-visibility-switch :disabled="missingRaster" :input-value="source.visible"
-                                          :project-id="project.id" :source="source" class="ml-2"
-                                          :style="{marginTop: '-4px'}"></source-visibility-switch>
-              </v-row>
+            <v-spacer/>
+            <v-col cols="4" style="margin-right: -23px;">
+              <source-visibility-switch :disabled="missingRaster" :model-value="source.visible"
+                                        :project-id="project.id" :source="source" class="ml-2"
+                                        :style="{marginTop: '-4px'}" label="Enable"></source-visibility-switch>
             </v-col>
           </v-row>
           <v-row class="pb-2" no-gutters justify="start"

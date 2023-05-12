@@ -109,7 +109,7 @@
                         <data-source-troubleshooting v-if="item.source.error" :source="item.source"
                                                      :project-id="project.id"></data-source-troubleshooting>
                         <v-list-item-action>
-                          <source-visibility-switch :input-value="active" :project-id="project.id"
+                          <source-visibility-switch :model-value="active" :project-id="project.id"
                                                     :source="project.sources[item.id]"></source-visibility-switch>
                         </v-list-item-action>
                       </template>
@@ -162,7 +162,7 @@
                           <v-switch
                               dense
                               @click.stop="item.changeVisibility"
-                              :input-value="active"
+                              :model-value="active"
                               color="primary"
                           ></v-switch>
                         </v-list-item-action>

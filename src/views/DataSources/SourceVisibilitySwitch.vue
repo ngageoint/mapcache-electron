@@ -1,5 +1,9 @@
 <template>
-  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop=""/>
+  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop="">
+    <template v-slot:prepend v-if="label != null">
+      <span class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginTop: '2px !important'}">{{ label }}</span>
+    </template>
+  </v-switch>
 </template>
 
 <script>
@@ -10,11 +14,12 @@ export default {
   props: {
     projectId: String,
     source: Object,
-    inputValue: Boolean,
+    modelValue: Boolean,
     disabled: {
       type: Boolean,
       default: false
-    }
+    },
+    label: String
   },
   computed: {
     errored: {
@@ -26,7 +31,7 @@ export default {
   data () {
     return {
       loadingContent: false,
-      model: !this.disabled && this.inputValue
+      model: !this.disabled && this.modelValue
     }
   },
   methods: {

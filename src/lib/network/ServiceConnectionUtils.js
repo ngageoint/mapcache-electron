@@ -25,12 +25,9 @@ import {
   isUserCancellation,
   isNotFoundError
 } from './HttpUtilities'
-// import { parseStringPromise } from 'xml2js'
 import { getWMTSCapabilitiesURL, getWMTSInfo } from '../util/wmts/WMTSUtilities'
 
-async function parseStringPromise () {
-  return ''
-}
+
 /**
  * These functions handles connections to supported GIS services
  * WMS, WFS, XYZ and ArcGIS
@@ -106,7 +103,7 @@ async function testWebMapTileServiceConnection (serviceUrl, options) {
     let response = await cancellableServiceRequest.request(url)
     withCredentials = cancellableServiceRequest.requiredCredentials()
     if (response) {
-      let result = await parseStringPromise(response.data)
+      let result = await window.mapcache.convertXMLtoJSON(response.data)
       let wmtsInfo = getWMTSInfo(result, url.indexOf('https') !== -1)
       serviceInfo = {
         title: 'WMTS Service',
@@ -166,7 +163,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       let response = await cancellableServiceRequest.request(url)
       withCredentials = cancellableServiceRequest.requiredCredentials()
       if (response) {
-        let result = await parseStringPromise(response.data)
+        let result = await window.mapcache.convertXMLtoJSON(response.data)
         let wmsInfo = await getWMSInfo(serviceUrl, result, version, withCredentials)
 
         serviceInfo = {
@@ -219,7 +216,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
       let cancellableServiceRequest = new CancellableServiceRequest()
       cancellableServiceRequest.withCredentials = options.withCredentials || false
       let response = await cancellableServiceRequest.request(url)
-      let result = await parseStringPromise(response.data)
+      let result = await window.mapcache.convertXMLtoJSON(response.data)
       let wfsInfo = getWFSInfo(result, version)
       serviceInfo = {
         title: wfsInfo.title || 'WFS Service',

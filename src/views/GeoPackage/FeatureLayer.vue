@@ -311,14 +311,13 @@
                 {{ geopackage.name }}
               </p>
             </v-col>
-            <v-col>
-              <v-row no-gutters justify="end">
-                <v-switch color="primary" class="ml-2" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
-                  <template v-slot:prepend>
-                    <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">Enable</p>
-                  </template>
-                </v-switch>
-              </v-row>
+            <v-spacer/>
+            <v-col cols="4" style="margin-right: -23px;">
+              <v-switch color="primary" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
+                <template v-slot:prepend>
+                  <span class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginTop: '2px !important'}">Enable</span>
+                </template>
+              </v-switch>
             </v-col>
           </v-row>
           <v-row class="pb-2" no-gutters justify="space-between">
@@ -431,7 +430,6 @@ export default {
         return this.geopackage.tables.features[this.tableName] ? this.geopackage.tables.features[this.tableName].visible : false
       },
       set (value) {
-        console.log(value)
         setGeoPackageFeatureTableVisible(this.project.id, this.geopackage.id, this.tableName, value)
       }
     },
@@ -588,7 +586,8 @@ export default {
           this.styleEditorVisible = false
           this.showFeatureLayerField = false
         }
-      }
+      },
+      deep: true
     }
   }
 }

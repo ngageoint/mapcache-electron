@@ -85,7 +85,7 @@
         Layer Order
       </v-card-title>
       <v-card-text>
-        <v-card-subtitle class="pt-0 pb-1">
+        <v-card-subtitle class="pt-0 pb-1 text-wrap">
           Drag layers to specify the map rendering order.
         </v-card-subtitle>
         <v-list
@@ -96,21 +96,22 @@
               v-for="item in layerOrder"
               class="sortable-list-item"
               :key="item.id"
+              @click.stop.prevent=""
               dense>
             <template v-slot:prepend>
-              <v-btn icon @click.stop="item.zoomTo">
+              <v-btn variant="text" icon @click.stop="item.zoomTo">
                 <v-img v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
                 <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                 <v-img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
                 <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
             </template>
-            <div class="pa-0 ma-0">
+            <div class="pl-2 pa-0 ma-0">
               <v-list-item-title v-text="item.title"></v-list-item-title>
               <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
             </div>
-            <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
-              <v-icon @click.stop.prevent icon="mdi-drag-horizontal-variant"/>
+            <template v-slot:append>
+              <v-icon @click.stop.prevent class="sortHandle mr-2" icon="mdi-drag-horizontal-variant"/>
             </template>
           </v-list-item>
         </v-list>
@@ -189,7 +190,7 @@
           <v-list-item link @click="undoEdit" :disabled="noUndo" prepend-icon="mdi-undo" title="Undo"/>
           <v-list-item link @click="redoEdit" :disabled="noRedo" prepend-icon="mdi-redo" title="Redo"/>
           <v-divider></v-divider>
-          <v-list-group :prepend-icon="mdiShapePlus">
+          <v-list-group prepend-icon="mdi-shape-plus">
             <template v-slot:activator>
               <v-list-item-title>Add shapes</v-list-item-title>
             </template>
@@ -954,10 +955,14 @@ export default {
         count: geopackage.tables.features[tableName].featureCount,
         extent: geopackage.tables.features[tableName].extent,
       })
-      let mapLayer = constructMapLayer({ layer: layer, maxFeatures: this.project.maxFeatures, crs: this.getMapProjection() })
-      if (geopackage.tables.features[tableName].visible) {
-        self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
-        self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false))
+      try {
+        let mapLayer = constructMapLayer({ layer: layer, maxFeatures: this.project.maxFeatures, crs: this.getMapProjection() })
+        if (geopackage.tables.features[tableName].visible) {
+          self.geopackageMapLayers[geopackage.id][tableName] = mapLayer
+          self.addLayerToMap(map, mapLayer, generateLayerOrderItemForGeoPackageTable(geopackage, tableName, false))
+        }
+      } catch (e) {
+        console.error(e)
       }
     },
     async zoomToContent () {
@@ -1428,7 +1433,8 @@ export default {
     mapProjection: {
       handler () {
         this.resetMap()
-      }
+      },
+      deep: true
     },
     featureTablePoppedOut: {
       handler (value) {
@@ -1476,7 +1482,8 @@ export default {
             this.mapBackground = project.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
           }
         }
-      }
+      },
+      deep: true
     },
     visible: {
       handler () {
@@ -1547,7 +1554,8 @@ export default {
           this.activeLayersControl.disable()
           this.showLayerOrderingDialog = false
         }
-      }
+      },
+      deep: true
     },
     sources: {
       async handler (updatedSources) {

@@ -44,7 +44,7 @@
             </div>
           </div>
           <v-list-item-action>
-            <v-switch :disabled="errored" :input-value="item.enabled" color="primary"
+            <v-switch :disabled="errored" :model-value="item.enabled" color="primary"
                       @change="() => toggleLayer(item)"></v-switch>
           </v-list-item-action>
         </v-list-item>

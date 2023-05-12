@@ -237,7 +237,7 @@
                             </div>
                             <v-list-item-action>
                               <v-switch
-                                  :input-value="active"
+                                  :model-value="active"
                                   color="primary"
                               ></v-switch>
                             </v-list-item-action>

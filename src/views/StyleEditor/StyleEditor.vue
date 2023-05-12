@@ -73,13 +73,13 @@
             v-model="styleListItems.active"
             :prepend-icon="styleListItems.action"
             no-action
+            value="Styles"
         >
-          <template v-slot:activator>
-            <div>
-              <v-row no-gutters justify="start" align="center">
-                <span v-text="styleListItems.title"></span>
-              </v-row>
-            </div>
+          <template v-slot:activator="{ props }">
+            <v-list-item
+                v-bind="props"
+                :title="styleListItems.title"
+            ></v-list-item>
           </template>
           <v-virtual-scroll
               :bench="10"
@@ -121,13 +121,13 @@
             v-model="iconListItems.active"
             :prepend-icon="iconListItems.action"
             no-action
+            value="Icons"
         >
-          <template v-slot:activator>
-            <div>
-              <v-row no-gutters justify="space-between" align="center">
-                <span v-text="iconListItems.title"></span>
-              </v-row>
-            </div>
+          <template v-slot:activator="{ props }">
+            <v-list-item
+                v-bind="props"
+                :title="iconListItems.title"
+            ></v-list-item>
           </template>
           <v-virtual-scroll
               :bench="10"
@@ -167,11 +167,13 @@
             v-model="assignmentListItems.active"
             :prepend-icon="assignmentListItems.action"
             no-action
+            value="Assignment"
         >
-          <template v-slot:activator>
-            <div>
-              <v-list-item-title v-text="assignmentListItems.title"></v-list-item-title>
-            </div>
+          <template v-slot:activator="{ props }">
+            <v-list-item
+                v-bind="props"
+                :title="assignmentListItems.title"
+            ></v-list-item>
           </template>
           <v-list-item
               v-for="assignment in assignmentListItems.items"
@@ -318,7 +320,7 @@ export default {
     },
     addIcon () {
       const icon = window.mapcache.getDefaultIcon()
-      icon.data = Buffer.from(icon.data)
+      // icon.data = Buffer.from(icon.data)
       this.showIconEditor(icon)
     },
     showStyleEditor (style) {

@@ -332,7 +332,6 @@ export default {
         this.editing = false
         this.disableEdit()
         window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
-
       }
     },
     object: {
@@ -365,6 +364,8 @@ export default {
         })
       }
       featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
+
+      console.log(featureViewData)
       return featureViewData
     },
     closeView () {

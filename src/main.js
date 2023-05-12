@@ -17,7 +17,6 @@ import { ObserveVisibility } from 'vue-observe-visibility'
 import sanitizeHTML from 'sanitize-html'
 import Sortable from 'sortablejs'
 
-
 if (window && window.log) {
     // update console log functions to utilize the window's log functions. Also, make sure we don't send anything too complicated otherwise it will error out.
     console.log = (message, ...optionalParams) => {

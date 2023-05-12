@@ -2,6 +2,7 @@ import axios from 'axios'
 import isNil from 'lodash/isNil'
 import { USER_CANCELLED_MESSAGE, isNotFoundError } from './HttpUtilities'
 import { createUniqueID } from '../util/UniqueIDUtilities'
+import { arrayBufferToBase64 } from '../util/Base64Utilities'
 
 export default class CancellableTileRequest {
   cancelled = false
@@ -116,14 +117,12 @@ export default class CancellableTileRequest {
           error = null
           break
         }
-
-        const dataBuffer = Buffer.from(response.data)
         if (response.headers['content-type'] === 'image/pbf' || response.headers['content-type'] === 'application/x-protobuf') {
-          dataUrl = this.convertPbfToDataUrl(dataBuffer, size.x, size.y)
+          dataUrl = this.convertPbfToDataUrl(response.data, size.x, size.y)
         } else if (response.headers['content-type'] === 'binary/octet-stream' || response.headers['content-type'] === 'application/octet-stream') {
-          dataUrl = 'data:' + this.getMimeTypeFromBuffer(new Uint8Array(response.data)) + ';base64,' + dataBuffer.toString('base64')
+          dataUrl = 'data:' + this.getMimeTypeFromBuffer(new Uint8Array(response.data)) + ';base64,' + arrayBufferToBase64(response.data)
         } else {
-          dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + dataBuffer.toString('base64')
+          dataUrl = 'data:' + response.headers['content-type'] + ';base64,' + arrayBufferToBase64(response.data)
         }
         error = null
       } catch (err) {

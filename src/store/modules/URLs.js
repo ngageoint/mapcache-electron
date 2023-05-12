@@ -19,7 +19,6 @@ const getters = {
 
 const mutations = {
   addUrl (state, url) {
-    console.log(url)
     let exists = false
     for (let i = 0; i < state.savedUrls.length; i++) {
       if (state.savedUrls[i].url.toLowerCase() === url.toLowerCase()) {

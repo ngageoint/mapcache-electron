@@ -95,7 +95,8 @@
               :project-id="project.id"
               :project="project"
               :resizeListener="tabId"
-              :feature-table-popped-out="featureTablePoppedOut">
+              :feature-table-popped-out="featureTablePoppedOut"
+              :dark-theme="darkTheme">
           </leaflet-map>
         </v-col>
       </v-row>
@@ -108,7 +109,7 @@
         timeout="-1"
     >
       No internet connectivity. Check your connection.
-      <template v-slot:action="{ attrs }">
+      <template v-slot:actions="{ attrs }">
         <v-btn
             variant="text"
             v-bind="attrs"
@@ -126,7 +127,7 @@
         style="margin-left: 56px;"
     >
       {{ alertMessage }}
-      <template v-slot:action="{ attrs }">
+      <template v-slot:actions="{ attrs }">
         <v-btn
             :color="alertColor"
             variant="text"

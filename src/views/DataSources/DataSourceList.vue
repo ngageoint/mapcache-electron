@@ -1,6 +1,6 @@
 <template>
   <v-sheet>
-    <v-list class="pa-0" v-if="items">
+    <v-list class="pa-0" lines="three" v-if="items">
       <template v-for="item in items" :key="item.id + 'list-item'">
         <v-list-item
             @click="item.click"
@@ -28,7 +28,7 @@
             <data-source-warning v-if="sources[item.id] && sources[item.id].warning" :source="sources[item.id]"></data-source-warning>
             <data-source-troubleshooting v-if="item.error" :project-id="project.id" :source="sources[item.id]"></data-source-troubleshooting>
             <geo-t-i-f-f-troubleshooting v-if="item.missingRaster" :project-id="project.id" :source-or-base-map="sources[item.id]"></geo-t-i-f-f-troubleshooting>
-            <source-visibility-switch :disabled="item.missingRaster" :input-value="item.visible" :project-id="project.id" :source="sources[item.id]"></source-visibility-switch>
+            <source-visibility-switch :disabled="item.missingRaster" :model-value="item.visible" :project-id="project.id" :source="sources[item.id]"></source-visibility-switch>
           </template>
         </v-list-item>
         <v-divider/>

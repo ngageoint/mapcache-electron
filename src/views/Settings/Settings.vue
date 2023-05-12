@@ -136,10 +136,7 @@
       <v-divider></v-divider>
       <v-list
           subheader
-          two-line
-          flat
-          style="padding-bottom: 0;"
-      >
+          lines="two">
         <v-list-subheader>Map</v-list-subheader>
         <v-list-item>
           <div>
@@ -187,10 +184,8 @@
           </template>
         </v-list-item>
         <v-list-item @click="toggleEditMaxFeaturesDialog">
-          <div style="padding-right: 12px;">
-            <v-list-item-title>Max features</v-list-item-title>
-            <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
-          </div>
+          <v-list-item-title>Max features</v-list-item-title>
+          <v-list-item-subtitle>Maximum features that should be rendered per tile</v-list-item-subtitle>
         </v-list-item>
       </v-list>
       <v-divider></v-divider>

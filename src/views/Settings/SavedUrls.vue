@@ -86,7 +86,6 @@ export default {
   computed: {
     ...mapState({
       urls: state => {
-        console.log(state.URLs.savedUrls)
         return state.URLs.savedUrls.map(url => url.url)
       },
       urlRules: state => [

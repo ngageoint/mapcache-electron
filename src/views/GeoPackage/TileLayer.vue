@@ -204,15 +204,15 @@
                 {{ geopackage.name }}
               </p>
             </v-col>
-            <v-col>
-              <v-row no-gutters style="flex-direction: row-reverse">
-                <v-switch color="primary" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
-                  <template v-slot:prepend>
-                    <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">Enable</p>
-                  </template>
-                </v-switch>
-              </v-row>
+            <v-spacer/>
+            <v-col cols="4" style="margin-right: -23px;">
+              <v-switch color="primary" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
+                <template v-slot:prepend>
+                  <span class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginTop: '2px !important'}">Enable</span>
+                </template>
+              </v-switch>
             </v-col>
+
           </v-row>
           <v-row class="pb-2" no-gutters>
             <v-col>

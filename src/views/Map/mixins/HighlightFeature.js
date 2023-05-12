@@ -129,6 +129,7 @@ export default {
               }
               layer.on('click', () => {
                 if (!this.isDrawing && !this.isEditing) {
+                  console.log(feature.id)
                   EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, tableName, feature.id)
                 }
               })

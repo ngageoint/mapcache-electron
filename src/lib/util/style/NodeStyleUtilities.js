@@ -2,8 +2,6 @@ import fs from 'node:fs'
 import mapMarker from '../../../../resources/map-marker.png?asset'
 import ylwPushpin from '../../../../resources/ylw-pushpin.png?asset'
 
-
-
 function getDefaultIcon (iconName = 'New Icon', description = '') {
   return {
     width: 25,

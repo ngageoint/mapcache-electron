@@ -4,7 +4,6 @@
       <v-col>
         <p :style="{fontSize: '16px', fontWeight: '500', marginBottom: '0px'}">
           Layers
-          <v-progress-circular class="pl-2" size="24" color="primary" v-if="!loaded" indeterminate></v-progress-circular>
         </p>
         <p class="detail--text" v-if="!loaded" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
           {{ 'Retrieving layer details' }}
@@ -33,7 +32,7 @@
           <template v-slot:prepend class="sortHandle" style="vertical-align: middle !important; align-self: center !important;">
             <v-icon @click.stop.prevent :disabled="errored" icon="mdi-drag-horizontal-variant"/>
           </template>
-          <div>
+          <div class="mr-4">
             <div v-if="item.title">
               <div class="list-item-title no-clamp" v-text="item.title"></div>
             </div>
@@ -42,10 +41,9 @@
                    :key="i + 'service-layer-title'" v-text="title"></div>
             </div>
           </div>
-          <v-list-item-action>
-            <v-switch :disabled="errored" :input-value="item.enabled" color="primary"
-                      @change="() => toggleLayer(item)"></v-switch>
-          </v-list-item-action>
+          <template v-slot:append>
+            <v-switch density="compact" hide-details :disabled="errored" :model-value="item.enabled" color="primary" @change="() => toggleLayer(item)"></v-switch>
+          </template>
         </v-list-item>
       </v-list>
     </v-card-text>
