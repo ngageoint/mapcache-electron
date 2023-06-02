@@ -63,8 +63,7 @@
             :toggle-full-screen="toggleAttachmentDialogFullScreen"
             :is-full-screen="attachmentDialogFullScreen"/>
       </v-dialog>
-      <v-card flat tile :class="editing ? 'ma-0 pa-0 fill-height' : 'ma-0 pa-0 d-flex flex-column'"
-              style="overflow-y: auto">
+      <v-card flat tile :class="editing ? 'ma-0 pa-0 fill-height' : 'ma-0 pa-0 d-flex flex-column'" style="overflow-y: auto">
         <v-card-text class="ma-0 pa-0">
           <v-row class="pb-2" v-if="featureImageObjectUrl" no-gutters>
             <v-img class="clickable" @click="showFeatureMediaAttachments = true" :src="featureImageObjectUrl"
@@ -76,6 +75,7 @@
                 <v-col>
                   <v-row no-gutters align-content="center" class="align-center">
                     <v-btn
+                        variant="text"
                         :disabled="featureViewData == null || featureViewData.feature == null || featureViewData.feature.geometry == null"
                         @click="zoomTo" class="mr-2" icon
                         v-if="featureViewData.style.style || featureViewData.style.icon">
@@ -194,7 +194,7 @@
               <span v-if="featureViewData.editableColumns.length === 0">
                   No fields to edit.
                 </span>
-              <v-form v-on:submit.prevent v-model="formValid">
+              <v-form v-on:submit.prevent="() => {}" v-model="formValid">
                 <v-list style="width: 100%">
                   <v-list-item :key="'edit-view-' + index" v-for="(column, index) in featureViewData.editableColumns"
                                class="ma-0 pa-0">
@@ -318,7 +318,10 @@ export default {
     })
   },
   created () {
-    this.getFeatureViewData().then(window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId))
+    this.getFeatureViewData().then((data) => {
+      this.featureViewData = data
+      window.mapcache.getFeatureImageObjectUrl(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
+    })
   },
   watch: {
     featureId: {
@@ -352,7 +355,10 @@ export default {
     isHtml,
     async getFeatureViewData () {
       const featureViewData = await window.mapcache.getFeatureViewData(this.object.geopackageFilePath ? this.object.geopackageFilePath : this.object.path, this.tableName, this.featureId)
-      featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => featureViewData.feature.properties[column.name] != null).length > 0 : false
+      featureViewData.hasSetFields = featureViewData.editableColumns != null ? featureViewData.editableColumns.filter(column => {
+        return featureViewData.feature.properties[column.name] != null
+      }).length > 0 : false
+
       if (this.isGeoPackage &&
           this.object.tables.features[this.tableName] != null &&
           this.object.tables.features[this.tableName].columnOrder != null &&
@@ -364,8 +370,6 @@ export default {
         })
       }
       featureViewData.canStyle = featureViewData.feature != null && featureViewData.feature.geometry != null
-
-      console.log(featureViewData)
       return featureViewData
     },
     closeView () {

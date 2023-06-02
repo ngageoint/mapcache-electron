@@ -10,18 +10,20 @@
           :height="Math.min(200, items.length * 48)"
           item-height="48">
         <template v-slot:default="{ index, item }">
-          <v-list-item link @click="() => setModel(index)">
+          <v-list-item link @click.stop.prevent="() => setModel(index)">
             <div>
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
-                  <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="model === index ? index : null">
+                  <v-radio-group class="ml-2 mt-0 pt-0" hide-details density="comfortable" v-model="model">
                     <v-radio class="ma-0 pa-0" dense :label="item.name" :value="index"></v-radio>
                   </v-radio-group>
                 </v-col>
-                <v-row no-gutters justify="end" align="center">
-                  <v-img v-if="item.url != null" class="icon-box" :src="item.url"/>
-                  <geometry-style-svg v-else :geometry-type="assignment.geometryType" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
-                </v-row>
+                <v-col cols="4">
+                  <v-row no-gutters justify="end" align="center" class="mr-10">
+                    <img :alt="item.name" v-if="item.url != null" class="icon-box" :src="item.url"/>
+                    <geometry-style-svg v-else :geometry-type="assignment.geometryType" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
+                  </v-row>
+                </v-col>
               </v-row>
             </div>
           </v-list-item>
@@ -31,13 +33,13 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>
       <v-btn
           color="primary"
-          text
+          variant="text"
           @click="save">
         Save
       </v-btn>

@@ -56,7 +56,7 @@
       <v-icon color="primary" class="pr-2" icon="mdi-paperclip"/>
       Feature attachments
       <v-spacer/>
-      <v-btn :loading="attaching" text color="primary" @click.stop="attach">
+      <v-btn :loading="attaching" variant="text" color="primary" @click.stop="attach">
         <v-icon small icon="mdi-plus"/>
         attachment
       </v-btn>
@@ -110,16 +110,16 @@
       </v-snackbar>
     </v-card-text>
     <v-card-actions>
-      <v-btn :disabled="attaching" v-if="attachments.length > 0" @click="showDeleteAttachmentDialog()" text
+      <v-btn :disabled="attaching" v-if="attachments.length > 0" @click="showDeleteAttachmentDialog()" variant="text"
              color="warning">Delete
       </v-btn>
-      <v-btn :disabled="attaching" v-if="attachments.length > 0" text color="primary" @click.stop="downloadAttachment">
+      <v-btn :disabled="attaching" v-if="attachments.length > 0" variant="text" color="primary" @click.stop="downloadAttachment">
         Download
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
           :disabled="attaching"
-          text
+          variant="text"
           @click="back">
         Close
       </v-btn>

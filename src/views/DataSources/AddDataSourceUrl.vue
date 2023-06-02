@@ -23,13 +23,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click.stop.prevent="cancelDeleteUrl">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="removeUrlFromHistory">
             Delete
           </v-btn>
@@ -49,7 +49,7 @@
               Specify a name for the new data source.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="dataSourceNameForm" v-model="dataSourceNameValid">
+              <v-form v-on:submit.prevent="() => {}" ref="dataSourceNameForm" v-model="dataSourceNameValid">
                 <v-text-field
                     variant="underlined"
                     autofocus
@@ -61,7 +61,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -76,7 +76,7 @@
               Specify the data source's url.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="urlForm" v-model="dataSourceUrlValid">
+              <v-form v-on:submit.prevent="() => {}" ref="urlForm" v-model="dataSourceUrlValid">
                 <v-row no-gutters justify="space-between">
                   <v-col>
                     <v-combobox
@@ -125,7 +125,7 @@
                   <v-card-subtitle class="pl-0">
                     This XYZ url requires subdomains.
                   </v-card-subtitle>
-                  <v-form v-on:submit.prevent ref="subdomainRef" v-model="subdomainsValid">
+                  <v-form v-on:submit.prevent="() => {}" ref="subdomainRef" v-model="subdomainsValid">
                     <v-text-field
                         variant="underlined"
                         autofocus
@@ -141,7 +141,7 @@
                   <v-spacer/>
                   <v-btn :loading="dataSourceUrlValid && loading" v-if="!connected" color="primary"
                          :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)"
-                         @click.stop="connect" text>
+                         @click.stop="connect" variant="text">
                     {{ loading ? 'Connecting...' : 'Connect' }}
                   </v-btn>
                   <span v-else style="color: #00C851;">
@@ -171,7 +171,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 3" :disabled="!connected">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 3" :disabled="!connected">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -250,7 +250,7 @@
               </v-sheet>
             </v-card>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 4">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 4">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -314,14 +314,14 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-            text
+            variant="text"
             @click.stop.prevent="close">
           Cancel
         </v-btn>
         <v-btn
             :disabled="!importReady"
             color="primary"
-            text
+            variant="text"
             @click.stop.prevent="addLayer">
           Import
         </v-btn>

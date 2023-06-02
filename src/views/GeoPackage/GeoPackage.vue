@@ -63,7 +63,7 @@
           Rename GeoPackage
         </v-card-title>
         <v-card-text>
-          <v-form v-on:submit.prevent v-model="renameValid">
+          <v-form v-on:submit.prevent="() => {}" v-model="renameValid">
             <v-container class="ma-0 pa-0">
               <v-row no-gutters>
                 <v-col cols="12">
@@ -110,7 +110,7 @@
           Copy GeoPackage
         </v-card-title>
         <v-card-text>
-          <v-form v-on:submit.prevent v-model="copyValid">
+          <v-form v-on:submit.prevent="() => {}" v-model="copyValid">
             <v-container class="ma-0 pa-0">
               <v-row no-gutters>
                 <v-col cols="12">

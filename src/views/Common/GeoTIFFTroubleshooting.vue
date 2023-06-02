@@ -14,13 +14,13 @@
           {{ error }}
         </v-card-text>
         <v-card-actions>
-          <v-btn id="generateRasterButton" :loading="generating" color="primary" text @click.stop="generate">
+          <v-btn id="generateRasterButton" :loading="generating" color="primary" variant="text" @click.stop="generate">
             Generate
           </v-btn>
           <v-spacer></v-spacer>
           <v-btn
               :disabled="generating"
-              text
+              variant="text"
               @click.stop="closeTroubleshooting">
             Close
           </v-btn>

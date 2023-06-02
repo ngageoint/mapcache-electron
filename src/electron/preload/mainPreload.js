@@ -2,19 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 import log from 'electron-log/renderer'
 import path from 'path'
 import { deleteProjectFolder } from '../../lib/vue/vuex/CommonPreloadFunctions'
-import {
-  createNextAvailableLayerDirectory,
-  createNextAvailableProjectDirectory,
-  createNextAvailableSourceDirectory
-} from '../../lib/util/file/FileUtilities'
+import { createNextAvailableLayerDirectory, createNextAvailableProjectDirectory, createNextAvailableSourceDirectory } from '../../lib/util/file/FileUtilities'
 import { createUniqueID } from '../../lib/util/UniqueIDUtilities'
-import {
-  GET_APP_VERSION,
-  GET_USER_DATA_DIRECTORY,
-  LAUNCH_WITH_GEOPACKAGE_FILES,
-  OPEN_EXTERNAL,
-  SHOW_PROJECT
-} from '../lib/ipc/MapCacheIPC'
+import { GET_APP_VERSION, GET_USER_DATA_DIRECTORY, LAUNCH_WITH_GEOPACKAGE_FILES, OPEN_EXTERNAL, SHOW_PROJECT } from '../lib/ipc/MapCacheIPC'
 import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
 import { environment } from '../../lib/env/env'
 import { vuexElectronAPI } from './vuexPreload'

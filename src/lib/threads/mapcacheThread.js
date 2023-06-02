@@ -26,7 +26,7 @@ import {
   GEOPACKAGE_TABLE_DELETE,
   GEOPACKAGE_TABLE_COPY,
   GEOPACKAGE_TABLE_COUNT,
-  GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL
+  GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL, GEOPACKAGE_API_REQUEST
 } from './mapcacheThreadRequestTypes'
 import path from 'node:path'
 import { base64toUInt8Array } from '../util/Base64Utilities'
@@ -38,7 +38,7 @@ import { compileTiles } from '../util/tile/TileCompilationUtilities'
 import { DEFAULT_TILE_SIZE } from '../util/tile/TileConstants'
 import { addMediaAttachment, addMediaAttachmentFromUrl } from '../geopackage/GeoPackageMediaUtilities'
 // import SourceFactory from '../source/SourceFactory'
-// import GeoTIFFSource from '../source/geotiff/GeoTIFFSource'
+import GeoTIFFSource from '../source/geotiff/GeoTIFFSource'
 import CanvasKitInit from '@ngageoint/geopackage/dist/canvaskit/canvaskit.js'
 
 /**
@@ -314,20 +314,20 @@ async function renderTile (data) {
 }
 
 
-// /**
-//  * Generates and returns the absolute path to a geotiff raster data file
-//  * @param data
-//  * @returns {Promise<string>}
-//  */
-// async function generateGeoTIFFRasterFile (data) {
-//   const { filePath } = data
-//   const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
-//   const image = await GeoTIFFSource.getImage(geotiff)
-//   const rasterFile = path.join(path.dirname(filePath), 'data.bin')
-//   await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
-//   geotiff.close()
-//   return rasterFile
-// }
+/**
+ * Generates and returns the absolute path to a geotiff raster data file
+ * @param data
+ * @returns {Promise<string>}
+ */
+async function generateGeoTIFFRasterFile (data) {
+  const { filePath } = data
+  const geotiff = await GeoTIFFSource.getGeoTIFF(filePath)
+  const image = await GeoTIFFSource.getImage(geotiff)
+  const rasterFile = path.join(path.dirname(filePath), 'data.bin')
+  await GeoTIFFSource.createGeoTIFFDataFile(image, rasterFile)
+  geotiff.close()
+  return rasterFile
+}
 
 function renameTable (data) {
   return renameGeoPackageTable(data.filePath, data.tableName, data.newTableName)
@@ -363,7 +363,7 @@ function executeTask (message) {
       { once: true }
     )
     currentTask.cancelTask = ac.abort
-      if (message.type === REQUEST_ATTACH_MEDIA) {
+   if (message.type === REQUEST_ATTACH_MEDIA) {
       attachMedia(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
@@ -381,13 +381,13 @@ function executeTask (message) {
       }).catch(() => {
         resolve({ error: 'Failed to render tile.', result: null, cancelled: ac.signal.aborted })
       })
-    }/* else if (message.type === REQUEST_GEOTIFF_RASTER) {
+    } else if (message.type === REQUEST_GEOTIFF_RASTER) {
       generateGeoTIFFRasterFile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to generate raster file.', result: null, cancelled: ac.signal.aborted })
       })
-    } */else if (message.type === REQUEST_TILE_COMPILATION) {
+    } else if (message.type === REQUEST_TILE_COMPILATION) {
       compileTiles(message.data).then(result => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {

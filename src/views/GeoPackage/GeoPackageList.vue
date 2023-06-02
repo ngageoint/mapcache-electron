@@ -11,13 +11,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click.stop="clearDialog">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click.stop="executeDialogAction">
             {{ dialogActionText }}
           </v-btn>

@@ -1078,6 +1078,7 @@ export default {
     initializeMap (centerAndZoom) {
       const defaultCenter = centerAndZoom ? centerAndZoom.center : [40.809118, 61.614383]
       const defaultZoom = centerAndZoom ? centerAndZoom.zoom : 3
+      window.L = L
       this.map = L.map('map', {
         attributionControl: false,
         center: defaultCenter,

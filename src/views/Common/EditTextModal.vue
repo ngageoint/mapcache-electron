@@ -5,7 +5,7 @@
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-form v-on:submit.prevent v-model="valid" ref="form">
+      <v-form v-on:submit.prevent="() => {}" v-model="valid" ref="form">
         <v-container class="ma-0 pa-0">
           <v-row no-gutters>
             <v-col cols="12">

@@ -90,7 +90,9 @@ export default class ElectronTileRenderer {
     if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent.slice())) {
       callback(null, null)
     } else {
-      this.requestTile(this.getTileRequest(requestId, coords, size, crs)).then((result) => {
+      const tileRequest = this.getTileRequest(requestId, coords, size, crs)
+      // TODO: inspect tile request for keys that would cause an issue cloning for preload
+      this.requestTile(JSON.parse(JSON.stringify(tileRequest))).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)

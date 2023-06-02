@@ -1319,8 +1319,8 @@ async function getGeoPackageFeatureTableStyleData (filePath, tableName) {
   result.geometryCollectionAssignment = null
   result.hasStyleExtension = false
   let gp
-  try {
-    gp = await GeoPackageAPI.open(filePath)
+  return GeoPackageAPI.open(filePath).then(geopackage => {
+    gp = geopackage
     result.hasStyleExtension = gp.featureStyleExtension.has(tableName)
     if (result.hasStyleExtension) {
       result.styleRows = Object.values(_getStyleRows(gp, tableName))
@@ -1335,11 +1335,6 @@ async function getGeoPackageFeatureTableStyleData (filePath, tableName) {
         result.geometryCollectionAssignment = determineAssignment(gp, tableName, GeometryType.GEOMETRYCOLLECTION)
       }
     }
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to get GeoPackage style.')
-  } finally {
     try {
       gp.close()
       gp = undefined
@@ -1348,8 +1343,12 @@ async function getGeoPackageFeatureTableStyleData (filePath, tableName) {
       // eslint-disable-next-line no-console
       console.error('Failed to close GeoPackage.')
     }
-  }
-  return result
+    return result
+  }).catch(() => {
+    // eslint-disable-next-line no-console
+    console.error('Failed to get GeoPackage style.')
+    return result
+  })
 }
 
 async function hasStyleExtension (path, tableName) {

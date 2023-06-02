@@ -94,7 +94,7 @@
                       <v-list-item-title v-text="item.name"></v-list-item-title>
                     </v-col>
                     <v-col>
-                      <v-row no-gutters justify="end" align="center" class="mr-5">
+                      <v-row no-gutters justify="end" align="center" class="mr-6">
                         <geometry-style-svg :geometry-type="1" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
                         <geometry-style-svg :geometry-type="2" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
                         <geometry-style-svg :geometry-type="3" :color="item.color" :fill-color="item.fillColor" :fill-opacity="item.fillOpacity"/>
@@ -142,8 +142,8 @@
                       <v-list-item-title v-text="item.name"></v-list-item-title>
                     </v-col>
                     <v-col>
-                      <v-row no-gutters justify="end" class="mr-5">
-                        <v-img class="icon-box" :src="item.url"/>
+                      <v-row no-gutters justify="end" class="mr-12">
+                        <img :alt="item.name" class="icon-box" :src="item.url"/>
                       </v-row>
                     </v-col>
                   </v-row>
@@ -194,14 +194,10 @@
                     <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>
                   </v-row>
                 </v-col>
-                <v-col cols="4" v-if="assignment.icon">
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <v-img class="icon-box" style="width: 25px; height: 25px;" :src="assignment.icon.url"/>
-                  </v-row>
-                </v-col>
-                <v-col cols="4" v-if="assignment.style">
-                  <v-row no-gutters justify="end" class="mr-5">
-                    <geometry-style-svg :geometry-type="assignment.geometryType"
+                <v-col cols="4">
+                  <v-row no-gutters justify="end" class="mr-12">
+                    <img :alt="assignment.icon.name" v-if="assignment.icon" class="icon-box" style="width: 25px; height: 25px;" :src="assignment.icon.url"/>
+                    <geometry-style-svg v-else-if="assignment.style" :geometry-type="assignment.geometryType"
                                         :color="assignment.style.color"
                                         :fill-color="assignment.style.fillColor"
                                         :fill-opacity="assignment.style.fillOpacity"/>
@@ -320,7 +316,6 @@ export default {
     },
     addIcon () {
       const icon = window.mapcache.getDefaultIcon()
-      // icon.data = Buffer.from(icon.data)
       this.showIconEditor(icon)
     },
     showStyleEditor (style) {
@@ -359,10 +354,7 @@ export default {
         this.styleItems = styleRows
         this.styleListItems.items = this.styleItems.slice()
         this.styleListItems.hint = this.styleListItems.items.length === 0
-        this.iconItems = iconRows.map(icon => {
-          icon.data = Buffer.from(icon.data)
-          return icon
-        })
+        this.iconItems = iconRows
         this.iconListItems.items = this.iconItems.slice()
         this.iconListItems.hint = this.iconListItems.items.length === 0
         const hasStyles = this.styleItems.length > 0

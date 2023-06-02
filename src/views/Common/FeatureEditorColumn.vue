@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-textarea class="editable-text-area" no-resize rows="1" auto-grow :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue" :rules="rules"></v-textarea>
+    <v-textarea variant="underlined" class="editable-text-area" no-resize rows="1" auto-grow :label="lowerCaseName" clearable v-if="dataType === TEXT" v-model="editedValue" :rules="rules"></v-textarea>
     <v-row style="height: 50px !important; margin-right: 6px !important;" class="align-center" no-gutters align="center"
            justify="space-between" v-else-if="dataType === BOOLEAN">
       <v-col>
@@ -17,16 +17,15 @@
             offset-y
             min-width="290px"
         >
-          <template v-slot:activator="{ on, attrs }">
+          <template v-slot:activator="{ props }">
             <v-text-field
                 variant="underlined"
                 v-model="editedDateValue"
                 :label="name"
-                :prepend-icon="mdiCalendar"
+                prepend-icon="mdi-calendar"
                 readonly
                 clearable
-                v-bind="attrs"
-                v-on="on"
+                v-bind="props"
             ></v-text-field>
           </template>
           <v-date-picker
@@ -36,7 +35,7 @@
           >
             <v-spacer></v-spacer>
             <v-btn
-                text
+                variant="text"
                 color="primary"
                 @click="dateMenu = false"
             >
@@ -53,16 +52,15 @@
             offset-y
             min-width="290px"
         >
-          <template v-slot:activator="{ on, attrs }">
+          <template v-slot:activator="{ props }">
             <v-text-field
                 variant="underlined"
                 v-model="editedTimeValue"
                 label="time"
-                :prepend-icon="mdiClock"
+                prepend-icon="mdi-clock"
                 readonly
                 clearable
-                v-bind="attrs"
-                v-on="on"
+                v-bind="props"
             ></v-text-field>
           </template>
           <v-time-picker
@@ -72,7 +70,7 @@
           >
             <v-spacer></v-spacer>
             <v-btn
-                text
+                variant="text"
                 color="primary"
                 @click="timeMenu = false"
             >
@@ -82,8 +80,7 @@
         </v-menu>
       </v-col>
     </v-row>
-    <v-text-field variant="underlined" :label="lowerCaseName" clearable type="number" v-else v-model="editedValue"
-                  :rules="rules"></v-text-field>
+    <v-text-field variant="underlined" :label="lowerCaseName" clearable type="number" v-else v-model="editedValue" :rules="rules"></v-text-field>
   </div>
 </template>
 

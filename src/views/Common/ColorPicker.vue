@@ -7,11 +7,11 @@
         readonly
     >
       <div slot="append">
-        <v-menu v-model="menu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false">
-          <template v-slot:activator="{ on }">
-            <div class="themed-border" :style="swatchStyle" v-on="on"></div>
+        <v-menu v-model="menu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false" :close-on-back="false">
+          <template v-slot:activator="{ props }">
+            <div class="themed-border" :style="swatchStyle" v-bind="props"></div>
           </template>
-          <v-card>
+          <v-card flat class="mt-2">
             <v-card-text class="pa-0">
               <v-color-picker v-model="colorValue" flat/>
             </v-card-text>
@@ -24,7 +24,8 @@
 
 <script>
 export default {
-  props: ['color', 'label'],
+  props: ['color', 'label', 'modelValue'],
+  emits: ["update:modelValue"],
   data () {
     return {
       colorValue: this.color,
@@ -55,7 +56,7 @@ export default {
   watch: {
     colorValue (val) {
       if (val) {
-        this.$emit('input', val)
+        this.$emit('update:modelValue', val)
       }
     }
   }

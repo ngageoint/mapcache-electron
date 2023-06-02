@@ -40,7 +40,7 @@
       </v-row>
       <v-row v-else no-gutters justify="start" align="baseline" class="ml-4 mr-4 mt-4">
         <v-col cols="9">
-          <v-form v-on:submit.prevent v-model="newFeatureNameValid">
+          <v-form v-on:submit.prevent="() => {}" v-model="newFeatureNameValid">
             <v-text-field variant="underlined" v-model="newFeatureTableName" :disabled="geoPackageModel == null" class="ml-2 mr-2"
                           label="Feature layer name" :rules="featureTableRules" persistent-hint hint="Type in the feature layer name"></v-text-field>
           </v-form>

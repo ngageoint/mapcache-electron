@@ -7,7 +7,7 @@
       <v-card-subtitle class="pl-0 pt-0 pb-0">
         {{ protocol + authInfo.host + ':' + authInfo.port }}
       </v-card-subtitle>
-      <v-form v-on:submit.prevent ref="signInForm" v-model="signInValid">
+      <v-form v-on:submit.prevent="() => {}" ref="signInForm" v-model="signInValid">
         <v-text-field
             variant="underlined"
             autofocus
@@ -33,14 +33,14 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="() => {cancel(eventUrl)}">
         Cancel
       </v-btn>
       <v-btn
           :disabled="!signInValid"
           color="primary"
-          text
+          variant="text"
           @click="callSignIn">
         Sign in
       </v-btn>

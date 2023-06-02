@@ -44,7 +44,7 @@
           <v-row justify="center" style="overflow: hidden;">
             <v-img id="create-edit-icon" v-observe-visibility="imageVisibilityChanged" @click="handleAnchorChange" class="ma-4 clickable" contain :max-width="displayWidth" :max-height="displayHeight" :src="iconUrl"></v-img>
           </v-row>
-          <v-icon id="create-edit-icon-anchor" v-show="anchorLeft !== 0 && anchorTop !== 0 && anchorUValid && anchorVValid" color="red" :style="{position: 'fixed', top: anchorTop, left: anchorLeft}">{{mdiTargetVariant}}</v-icon>
+          <v-icon id="create-edit-icon-anchor" icon="mdi-target-variant" v-show="anchorLeft !== 0 && anchorTop !== 0 && anchorUValid && anchorVValid" color="red" :style="{position: 'fixed', top: anchorTop, left: anchorLeft}"></v-icon>
           <v-row>
             <v-col class="pl-2 pr-2" cols="6">
               <number-picker :number="anchorU" :min="0.0" :max="1.0" :step="0.05" label="Horizontal anchor %" @update-number="(val) => {this.anchorU = val}" @update-valid="(val) => {this.anchorUValid = val}"></number-picker>
@@ -73,7 +73,7 @@
     </v-dialog>
     <v-card-title>{{ isNew ? 'Create icon' : 'Edit icon' }}</v-card-title>
     <v-card-text>
-      <v-form v-on:submit.prevent v-model="formValid">
+      <v-form v-on:submit.prevent="() => {}" v-model="formValid">
         <v-row no-gutters>
           <v-col cols="4" align-self="center">
             <v-row no-gutters justify="center" align="center">
@@ -106,15 +106,13 @@
         </v-row>
         <v-row no-gutters align="center">
           <v-col cols="5">
-            <v-text-field variant="underlined" v-model.number="width" v-on:input="setWidth($event)" :rules="widthRules" type="number"
-                          label="Width (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
+            <v-text-field variant="underlined" :model-value="width" @input="setWidth($event)" :rules="widthRules" type="number" label="Width (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
           <v-spacer/>
           <v-btn variant="text" :icon="aspectRatioLock ? 'mdi-link-variant' : 'mdi-link-variant-off'" @click="toggleAspectRatioLock" :title="aspectRatioLock ? 'Unlock aspect ratio' : 'Lock aspect ratio'"/>
           <v-spacer/>
           <v-col cols="5">
-            <v-text-field variant="underlined" v-model.number="height" v-on:input="setHeight($event)" :rules="heightRules" type="number"
-                          label="Height (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
+            <v-text-field variant="underlined" :model-value="height" @input="setHeight($event)" :rules="heightRules" type="number" label="Height (px)" :step="Number(1)" @keydown="handleKeyDown($event)"/>
           </v-col>
         </v-row>
         <v-row no-gutters class="pt-2">
@@ -139,8 +137,7 @@
         Close
       </v-btn>
       <v-btn
-          :disabled="!formValid"
-          color="primary"
+           color="primary"
           variant="text"
           @click="save">
         Save
@@ -155,7 +152,7 @@ import isEmpty from 'lodash/isEmpty'
 import NumberPicker from '../Common/NumberPicker.vue'
 import debounce from 'lodash/debounce'
 import { createIconRow, deleteIconRow, updateIconRow } from '../../lib/vue/vuex/ProjectActions'
-import { base64toUInt8Array } from '../../lib/util/Base64Utilities'
+import { arrayBufferToBase64, base64ToArrayBuffer } from '../../lib/util/Base64Utilities'
 
 export default {
   components: { NumberPicker },
@@ -214,7 +211,7 @@ export default {
   computed: {
     iconUrl: {
       get () {
-        return 'data:' + this.contentType + ';base64,' + this.data.toString('base64')
+        return 'data:' + this.contentType + ';base64,' + arrayBufferToBase64(this.data)
       }
     },
     displayWidth: {
@@ -270,13 +267,15 @@ export default {
         return false
       }
     },
-    setWidth (val, quiet = false) {
+    setWidth (event, quiet = false) {
+      const val = event.target ? event.target.value : event
       this.width = Math.floor(val)
       if (!quiet && this.aspectRatioLock) {
         this.setHeight(val / this.aspectRatio, true)
       }
     },
-    setHeight (val, quiet = false) {
+    setHeight (event, quiet = false) {
+      const val = event.target ? event.target.value : event
       this.height = Math.floor(val)
       if (!quiet && this.aspectRatioLock) {
         this.setWidth(val * this.aspectRatio, true)
@@ -342,7 +341,7 @@ export default {
             this.width = uploadedImage.width
             this.height = uploadedImage.height
             this.contentType = 'image/' + extension
-            this.data = base64toUInt8Array(url)
+            this.data = base64ToArrayBuffer(url)
           }
         }
       })

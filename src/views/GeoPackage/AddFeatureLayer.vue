@@ -30,7 +30,7 @@
           <v-spacer></v-spacer>
           <v-btn
               v-if="!done"
-              text
+              variant="text"
               :disabled="cancelling"
               color="warning"
               @click.stop="cancelAddFeatureLayer">
@@ -39,7 +39,7 @@
           <v-btn
               v-if="done"
               color="primary"
-              text
+              variant="text"
               @click.stop="cancel">
             Close
           </v-btn>
@@ -60,7 +60,7 @@
               Specify a name for the new GeoPackage feature layer.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
+              <v-form v-on:submit.prevent="() => {}" ref="layerNameForm" v-model="layerNameValid">
                 <v-text-field
                     variant="underlined"
                     autofocus
@@ -72,7 +72,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 2" :disabled="!layerNameValid">
+          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!layerNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -242,7 +242,7 @@
                                  :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
           </v-card>
           <v-btn
-              text
+              variant="text"
               color="primary"
               @click="step = 6">
             Continue

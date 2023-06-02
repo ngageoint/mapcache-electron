@@ -1,6 +1,5 @@
 <template>
-  <v-card v-if="assignment && assignment.hasStyleExtension && (assignment.styles.length + assignment.icons.length > 0)"
-          style="max-height: 400px;">
+  <v-card class="pt-2 pl-2 pr-2" v-if="assignment && assignment.hasStyleExtension && (assignment.styles.length + assignment.icons.length > 0)" style="max-height: 400px;">
     <v-card-title>Feature style assignment</v-card-title>
     <v-card-subtitle class="mt-1">Select a style to assign. Deselect to remove assignment.</v-card-subtitle>
     <v-card-text>
@@ -32,13 +31,13 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>
       <v-btn
           color="primary"
-          text
+          variant="text"
           @click="save">
         Save
       </v-btn>
@@ -52,7 +51,7 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>

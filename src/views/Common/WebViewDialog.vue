@@ -6,7 +6,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer/>
-        <v-btn text color="warning" @click="cancelAuth">Cancel</v-btn>
+        <v-btn variant="text" color="warning" @click="cancelAuth">Cancel</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

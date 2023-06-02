@@ -59,7 +59,7 @@
               Specify a name for the new GeoPackage tile layer.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="layerNameForm" v-model="layerNameValid">
+              <v-form v-on:submit.prevent="() => {}" ref="layerNameForm" v-model="layerNameValid">
                 <v-text-field
                     variant="underlined"
                     autofocus
@@ -177,7 +177,7 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 4">
+          <v-btn variant="text" color="primary" @click="step = 4">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -224,7 +224,7 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn text color="primary" @click="step = 5">
+          <v-btn variant="text" color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>

@@ -16,7 +16,7 @@
           <v-card-subtitle class="pa-0 pb-2">
             Open in a new project...
           </v-card-subtitle>
-          <v-form v-on:submit.prevent v-model="projectNameValid" ref="form">
+          <v-form v-on:submit.prevent="() => {}" v-model="projectNameValid" ref="form">
             <v-text-field variant="underlined" class="pl-4 pr-4" label="Project name" v-model="projectName" :rules="projectNameRules">
               <template v-slot:append>
                 <v-tooltip location="end">

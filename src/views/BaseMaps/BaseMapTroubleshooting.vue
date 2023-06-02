@@ -11,12 +11,12 @@
         </v-card-text>
         <v-card-actions>
           <v-btn id="connectionButton" :loading="reconnecting" :color="connectionAttempts === 0 ? 'primary' : 'warning'"
-                 text @click.stop="reconnect">
+                 variant="text" @click.stop="reconnect">
             {{ connectionAttempts === 0 ? 'Connect' : 'Retry' }}
           </v-btn>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click.stop="closeTroubleshooting">
             Close
           </v-btn>

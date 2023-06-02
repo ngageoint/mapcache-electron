@@ -8,7 +8,7 @@
         <span v-if="isEditing">Edit the feature's fields</span>
         <span v-else>The <strong>{{ tableName }}</strong> layer has several fields defined. Enter values for those fields and then save.</span>
       </v-card-subtitle>
-      <v-form v-on:submit.prevent v-model="formValid">
+      <v-form v-on:submit.prevent="() => {}" v-model="formValid">
         <v-list style="width: 100%">
           <v-list-item :key="'editor-' + column.name" v-for="(column, index) in editableColumns">
             <div class="ma-0 pa-0">
@@ -69,7 +69,7 @@
       <template v-slot:action="{ attrs }">
         <v-btn
             color="primary"
-            text
+            variant="text"
             v-bind="attrs"
             @click="failedToSaveSnackBar = false"
         >
@@ -88,7 +88,6 @@ import cloneDeep from 'lodash/cloneDeep'
 import orderBy from 'lodash/orderBy'
 import moment from 'moment'
 import FeatureEditorColumn from './FeatureEditorColumn.vue'
-// import EventBus from '../../lib/vue/EventBus'
 import { synchronizeDataSource, synchronizeGeoPackage } from '../../lib/vue/vuex/ProjectActions'
 
 export default {

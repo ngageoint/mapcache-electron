@@ -33,13 +33,13 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="() => {cancelSelection(certificateRequestUrl)}">
         Cancel
       </v-btn>
       <v-btn
           color="primary"
-          text
+          variant="text"
           @click="select">
         Select
       </v-btn>

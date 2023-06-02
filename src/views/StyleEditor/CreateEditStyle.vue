@@ -16,13 +16,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="deleteDialog = false">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteStyle">
             Delete
           </v-btn>
@@ -51,25 +51,25 @@
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5">
-          <colorpicker :color="color" v-model="color" label="Point / Line color"/>
+          <color-picker :color="color" v-model="color" label="Point / Line color"/>
         </v-col>
         <v-col offset="1" cols="5">
-          <colorpicker :color="fillColor" v-model="fillColor" label="Fill color"/>
+          <color-picker :color="fillColor" v-model="fillColor" label="Fill color"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="pl-4">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)"
+          <number-picker :number="opacity" label="Point / Line opacity" :step="Number(0.1)" :min="Number(0.0)"
                         :max="Number(1.0)" @update-number="updateOpacity" @update-valid="setOpacityValid"/>
         </v-col>
         <v-col offset="1" cols="5" class="align-center">
-          <numberpicker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)"
+          <number-picker :number="fillOpacity" label="Fill opacity" :step="Number(0.1)" :min="Number(0.0)"
                         :max="Number(1.0)" @update-number="updateFillOpacity" @update-valid="setFillOpacityValid"/>
         </v-col>
       </v-row>
       <v-row no-gutters class="justify-space-between pl-4" align="center">
         <v-col cols="5" class="align-center">
-          <numberpicker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only
+          <number-picker :number="width" label="Width (px)" :step="Number(0.1)" :min="Number(0.1)" arrows-only
                         @update-number="updateWidth" @update-valid="setWidthValid"/>
         </v-col>
       </v-row>
@@ -78,21 +78,20 @@
       <v-btn
           v-if="styleRow.id !== null && styleRow.id !== undefined"
           color="warning"
-          text
+          variant="text"
           @click="deleteDialog = true">
         Delete
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="close">
         Close
       </v-btn>
       <v-btn
-          v-if="this.opacityValid && this.fillOpacityValid && this.widthValid && name != null && name.trim().length > 0"
           :disabled="!this.opacityValid || !this.fillOpacityValid || !this.widthValid || this.name == null || this.name.trim().length === 0"
           color="primary"
-          text
+          variant="text"
           @click="save">
         Save
       </v-btn>
@@ -145,8 +144,8 @@ export default {
   },
   components: {
     GeometryStyleSvg,
-    'colorpicker': ColorPicker,
-    'numberpicker': NumberPicker
+    ColorPicker,
+    NumberPicker
   },
   methods: {
     setOpacityValid (val) {

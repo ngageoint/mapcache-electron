@@ -10,17 +10,9 @@
           {{ troubleShootingMessage }}
         </v-card-text>
         <v-card-actions>
-          <v-btn id="connectionButton"
-              text
-              @click.stop="dismissWarning">
-            Dismiss
-          </v-btn>
+          <v-btn id="connectionButton" variant="text" @click.stop="dismissWarning">Dismiss</v-btn>
           <v-spacer></v-spacer>
-          <v-btn
-              text
-              @click.stop="closeTroubleshooting">
-            Close
-          </v-btn>
+          <v-btn variant="text" @click.stop="closeTroubleshooting">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

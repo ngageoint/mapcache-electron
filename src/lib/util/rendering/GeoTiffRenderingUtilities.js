@@ -100,11 +100,11 @@ function requestTile (tileRequest) {
         const transform = getConverter(epsgString, crs)
 
         // get intersection of request and source data, this is in 3857
-        const intersection = intersect(bboxPolygon([ll[0], ll[1], ur[0], ur[1]]), bboxPolygon([tileBbox.minLon, tileBbox.minLat, tileBbox.maxLon, tileBbox.maxLat]))
+        const intersection = intersect.default(bboxPolygon.default([ll[0], ll[1], ur[0], ur[1]]), bboxPolygon.default([tileBbox.minLon, tileBbox.minLat, tileBbox.maxLon, tileBbox.maxLat]))
 
         if (intersection != null) {
           const reader = getReaderForSample(0, sampleFormat, bitsPerSample[0])
-          const intersectionBbox = bbox(intersection)
+          const intersectionBbox = bbox.default(intersection)
 
           // determine tx, ty
           const tx = (tileBbox.maxLon - tileBbox.minLon) / width

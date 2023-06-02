@@ -10,13 +10,13 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
-          text
+          variant="text"
           @click="onNo">
         No
       </v-btn>
       <v-btn
           color="primary"
-          text
+          variant="text"
           @click="onYes">
         Yes
       </v-btn>

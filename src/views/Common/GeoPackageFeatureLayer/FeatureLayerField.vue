@@ -20,7 +20,7 @@
             Rename field
           </v-card-title>
           <v-card-text>
-            <v-form v-on:submit.prevent ref="renameForm" v-model="renameValid">
+            <v-form v-on:submit.prevent="() => {}" ref="renameForm" v-model="renameValid">
               <v-container class="ma-0 pa-0">
                 <v-row no-gutters>
                   <v-col cols="12">
@@ -40,14 +40,14 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-                text
+                variant="text"
                 @click="renameDialog = false">
               Cancel
             </v-btn>
             <v-btn
                 :disabled="!renameValid"
                 color="primary"
-                text
+                variant="text"
                 @click="rename">
               Rename
             </v-btn>
@@ -73,13 +73,13 @@
             <v-spacer></v-spacer>
             <v-btn
                 color="primary"
-                text
+                variant="text"
                 @click="deleteDialog = false">
               Cancel
             </v-btn>
             <v-btn
                 color="warning"
-                text
+                variant="text"
                 @click="deleteField">
               Delete
             </v-btn>

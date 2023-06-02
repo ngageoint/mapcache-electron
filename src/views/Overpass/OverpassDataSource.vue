@@ -21,7 +21,7 @@
               Specify a name for this data source.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="dataSourceNameForm" v-model="dataSourceNameValid">
+              <v-form v-on:submit.prevent="() => {}" ref="dataSourceNameForm" v-model="dataSourceNameValid">
                 <v-text-field
                     variant="underlined"
                     autofocus
@@ -33,7 +33,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -88,7 +88,7 @@
               Specify the overpass search term. Leave this field blank to retrieve all features within the bounding box.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="urlForm" v-model="overpassGeneratedQueryValid">
+              <v-form v-on:submit.prevent="() => {}" ref="urlForm" v-model="overpassGeneratedQueryValid">
                 <v-row no-gutters justify="space-between">
                   <v-text-field
                       variant="underlined"
@@ -104,7 +104,7 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 3" :disabled="contentSelection === 1 && !overpassGeneratedQueryValid">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 3" :disabled="contentSelection === 1 && !overpassGeneratedQueryValid">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -131,7 +131,7 @@
               <v-textarea label="Overpass query" :rows="3" :disabled="queryLocked" v-model="overpassQuery"></v-textarea>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 4">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 4">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -156,7 +156,7 @@
                 area over 10 square miles may take several minutes to process.</b>
             </v-card-subtitle>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 5">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 5">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -176,7 +176,7 @@
                              @update-number="(val) => {this.clipBuffer = val}"></number-picker>
             </v-card-text>
           </v-card>
-          <v-btn class="mb-2" text color="primary" @click="step = 6">
+          <v-btn class="mb-2" variant="text" color="primary" @click="step = 6">
             Continue
           </v-btn>
         </v-stepper-content>
@@ -202,14 +202,14 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-            text
+            variant="text"
             @click.stop.prevent="close">
           Cancel
         </v-btn>
         <v-btn
             :disabled="!importReady"
             color="primary"
-            text
+            variant="text"
             @click.stop.prevent="addLayer">
           Import
         </v-btn>

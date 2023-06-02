@@ -12,7 +12,7 @@
           </v-row>
         </v-card-title>
         <v-card-text>
-          <v-form v-on:submit.prevent ref="copyForm" v-model="addFieldValid">
+          <v-form v-on:submit.prevent="() => {}" ref="copyForm" v-model="addFieldValid">
             <v-container class="ma-0 pa-0">
               <v-row no-gutters>
                 <v-col cols="12">

@@ -20,7 +20,7 @@
               Specify a name for the new base map.
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent ref="baseMapNameForm" v-model="baseMapNameValid">
+              <v-form v-on:submit.prevent="() => {}" ref="baseMapNameForm" v-model="baseMapNameValid">
                 <v-text-field
                     variant="underlined"
                     autofocus

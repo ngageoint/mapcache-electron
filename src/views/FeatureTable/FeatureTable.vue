@@ -18,13 +18,13 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              text
+              variant="text"
               @click="cancelRemove">
             Cancel
           </v-btn>
           <v-btn
               color="warning"
-              text
+              variant="text"
               @click="deleteSelected">
             Delete
           </v-btn>

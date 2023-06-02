@@ -50,7 +50,7 @@
       <v-spacer></v-spacer>
       <v-btn
           v-if="!editingDirectly && !drawingBounds && !pickingGrid && boundingBox != null"
-          text
+          variant="text"
           color="warning"
           class="mr-2"
           @click="reset">
@@ -58,7 +58,7 @@
       </v-btn>
       <v-btn
           v-if="editingDirectly"
-          text
+          variant="text"
           @click="editingDirectly = false">
         Cancel
       </v-btn>
@@ -87,11 +87,10 @@
           top
           close-on-click
       >
-        <template v-slot:activator="{ on, attrs }">
+        <template v-slot:activator="{ props }">
           <v-btn
               color="primary"
-              v-bind="attrs"
-              v-on="on">
+              v-bind="props">
             {{ 'Edit' }}
           </v-btn>
         </template>

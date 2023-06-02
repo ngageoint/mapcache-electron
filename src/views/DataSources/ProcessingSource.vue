@@ -59,7 +59,7 @@
         <v-spacer></v-spacer>
         <v-btn
             v-if="error || workflowState === 4"
-            text
+            variant="text"
             color="warning"
             @click="closeCard">
           Close
@@ -67,7 +67,7 @@
         <v-btn
             v-else-if="!error && workflowState !== 4"
             :disabled="workflowState === 3"
-            text
+            variant="text"
             color="warning"
             @click="cancelProcessing">
           Cancel processing

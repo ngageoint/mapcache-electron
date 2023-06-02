@@ -12,6 +12,7 @@ import {
 import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 import isEqual from 'lodash/isEqual'
 import proj4DB from '../../../resources/proj4.db?asset'
+import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
@@ -219,8 +220,9 @@ const wgs84ToWebMercator = getConverter(WORLD_GEODETIC_SYSTEM, WEB_MERCATOR)
 proj4.defs(WORLD_GEODETIC_SYSTEM_CRS, getDef(WORLD_GEODETIC_SYSTEM_CODE))
 
 function convertToWebMercator (extent) {
-  let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
-  let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
+  let trimmedExtent = trimExtentToWebMercatorMax(extent)
+  let filterLowerLeft = wgs84ToWebMercator.forward([trimmedExtent[0], trimmedExtent[1]])
+  let filterUpperRight = wgs84ToWebMercator.forward([trimmedExtent[2], trimmedExtent[3]])
   return {
     minLon: filterLowerLeft[0],
     maxLon: filterUpperRight[0],

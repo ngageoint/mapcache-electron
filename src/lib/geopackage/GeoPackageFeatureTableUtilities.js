@@ -1489,7 +1489,6 @@ async function _getClosestFeature (layers, latlng, zoom) {
             }
           }
         } catch (e) {
-          console.log('wah')
           console.error(e)
         }
       })
