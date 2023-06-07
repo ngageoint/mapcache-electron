@@ -109,14 +109,8 @@
         timeout="-1"
     >
       No internet connectivity. Check your connection.
-      <template v-slot:actions="{ attrs }">
-        <v-btn
-            variant="text"
-            v-bind="attrs"
-            @click="noInternet = false"
-        >
-          Close
-        </v-btn>
+      <template v-slot:actions>
+        <v-btn variant="text" @click="noInternet = false">Close</v-btn>
       </template>
     </v-snackbar>
     <v-snackbar
@@ -127,15 +121,8 @@
         style="margin-left: 56px;"
     >
       {{ alertMessage }}
-      <template v-slot:actions="{ attrs }">
-        <v-btn
-            :color="alertColor"
-            variant="text"
-            v-bind="attrs"
-            @click="showAlertMessage = false"
-        >
-          Close
-        </v-btn>
+      <template v-slot:actions>
+        <v-btn :color="alertColor" variant="text" @click="showAlertMessage = false">Close</v-btn>
       </template>
     </v-snackbar>
   </v-layout>

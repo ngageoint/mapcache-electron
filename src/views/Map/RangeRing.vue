@@ -9,10 +9,10 @@
       <v-card-subtitle class="ma-0 pb-4 pl-0">Center point</v-card-subtitle>
       <v-row no-gutters justify="space-between">
         <v-col cols="5">
-          <v-text-field variant="underlined" class="pr-2" dense hide-details type="number" label="Latitude" v-model="rangeRingCenter.lat"></v-text-field>
+          <v-text-field variant="underlined" class="pr-2" density="compact" hide-details type="number" label="Latitude" v-model="rangeRingCenter.lat"></v-text-field>
         </v-col>
         <v-col cols="5">
-          <v-text-field variant="underlined" class="pr-2" dense hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
+          <v-text-field variant="underlined" class="pr-2" density="compact" hide-details type="number" label="Longitude" v-model="rangeRingCenter.lon"></v-text-field>
         </v-col>
         <v-spacer/>
         <v-btn variant="text" icon="mdi-map-marker" @click="drawRangeRingCenterPoint"/>
@@ -20,7 +20,7 @@
       <v-card-subtitle class="ma-0 pb-4 pl-0">Rings</v-card-subtitle>
       <v-row no-gutters justify="space-between">
         <v-col cols="10">
-          <v-select variant="underlined" dense label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
+          <v-select hide-details variant="underlined" density="compact" label="Distance units" :items="distanceUnits" v-model="distanceUnit" item-text="text" item-value="value"></v-select>
         </v-col>
         <v-spacer/>
         <v-btn variant="text" :disabled="!distancesValid" @click="addRingDistance" icon="mdi-plus"/>
@@ -28,15 +28,15 @@
       <v-row no-gutters>
         <v-list style="width: 100% !important;" class="ma-0 pa-0">
           <v-list-item style="width: 100% !important;" class="ma-0 pa-0" v-for="(item, i) in ringDistances" :key="i">
-            <v-row no-gutters justify="space-between" align-content="center">
+            <v-row no-gutters>
               <v-col cols="10">
                 <number-picker :number="Number(item.distance)"
                                @update-valid="(valid) => {item.valid = valid}"
                                @update-number="(val) => {item.distance = val}" :min="Number(0)"
-                               :step="Number(1)"/>
+                               :step="Number(1)" hide-details/>
               </v-col>
               <v-spacer/>
-              <v-btn variant="text" @click="() => deleteRingDistance(i)" icon="mdi-trash-can-outline"/>
+              <v-btn class="mt-4" density="compact" variant="text" @click="() => deleteRingDistance(i)" icon="mdi-trash-can-outline"/>
             </v-row>
           </v-list-item>
         </v-list>

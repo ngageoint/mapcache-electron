@@ -4,8 +4,7 @@
       <v-list-subheader>Rendering method</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="renderingMethod" :items="renderMethods" label="Rendering method" dense>
-          </v-select>
+          <v-select variant="underlined" v-model="renderingMethod" :items="renderMethods" label="Rendering method" density="compact"/>
         </div>
       </v-list-item>
     </v-list>
@@ -15,22 +14,20 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="grayBand" :items="bandOptions" label="Gray scale band" dense>
-            </v-select>
+            <v-select variant="underlined" v-model="grayBand" :items="bandOptions" label="Gray scale band" density="compact"/>
           </v-row>
           <v-row no-gutters v-if="grayBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="grayBandMin" dense
+              <v-text-field variant="underlined" type="number" label="Min" v-model="grayBandMin" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="grayBandMax" dense
+              <v-text-field variant="underlined" type="number" label="Max" v-model="grayBandMax" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
           <v-row no-gutters>
-            <v-select variant="underlined" v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient"
-                      dense>
+            <v-select variant="underlined" v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient" density="compact">
             </v-select>
           </v-row>
         </div>
@@ -49,16 +46,16 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="redBand" :items="bandOptions" label="Red band" dense>
+            <v-select variant="underlined" v-model="redBand" :items="bandOptions" label="Red band" density="compact">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="redBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="redBandMin" dense
+              <v-text-field variant="underlined" type="number" label="Min" v-model="redBandMin" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="redBandMax" dense
+              <v-text-field variant="underlined" type="number" label="Max" v-model="redBandMax" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
@@ -67,16 +64,16 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="greenBand" :items="bandOptions" label="Green band" dense>
+            <v-select variant="underlined" v-model="greenBand" :items="bandOptions" label="Green band" density="compact">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="greenBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="greenBandMin" dense
+              <v-text-field variant="underlined" type="number" label="Min" v-model="greenBandMin" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="greenBandMax" dense
+              <v-text-field variant="underlined" type="number" label="Max" v-model="greenBandMax" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
@@ -85,16 +82,16 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="blueBand" :items="bandOptions" label="Blue band" dense>
+            <v-select variant="underlined" v-model="blueBand" :items="bandOptions" label="Blue band" density="compact">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="blueBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="blueBandMin" dense
+              <v-text-field variant="underlined" type="number" label="Min" v-model="blueBandMin" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="blueBandMax" dense
+              <v-text-field variant="underlined" type="number" label="Max" v-model="blueBandMax" density="compact"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
@@ -114,7 +111,7 @@
       <v-list-subheader>Palette options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="paletteBand" :items="bandOptions" label="Palette band" dense>
+          <v-select variant="underlined" v-model="paletteBand" :items="bandOptions" label="Palette band" density="compact">
           </v-select>
         </div>
       </v-list-item>
@@ -124,7 +121,7 @@
       <v-list-subheader>Transparency options</v-list-subheader>
       <v-list-item v-if="renderingMethod < 2">
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="alphaBand" :items="bandOptions" label="Alpha band" dense>
+          <v-select variant="underlined" v-model="alphaBand" :items="bandOptions" label="Alpha band" density="compact">
           </v-select>
         </div>
       </v-list-item>
@@ -138,7 +135,7 @@
       </v-list-item>
       <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
         <div style="padding-right: 12px;">
-          <v-text-field variant="underlined" type="number" label="NO_DATA value" v-model="globalNoDataValue" dense hide-details
+          <v-text-field variant="underlined" type="number" label="NO_DATA value" v-model="globalNoDataValue" density="compact" hide-details
                         @keydown="handleKeyDown($event)"></v-text-field>
         </div>
       </v-list-item>
@@ -146,7 +143,7 @@
         <div style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
           Opacity
         </div>
-        <v-slider class="mx-auto" thumb-label="always" hide-details dense v-model="opacity" :min="0" :max="100" :interval="1">
+        <v-slider class="mx-auto" thumb-label="always" hide-details density="compact" v-model="opacity" :min="0" :max="100" :interval="1">
           <template v-slot:thumb-label="{ value }">
             {{ value / 100.0 }}
           </template>

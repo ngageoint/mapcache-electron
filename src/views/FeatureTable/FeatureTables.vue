@@ -3,19 +3,19 @@
     <v-toolbar
         flat
         color="main"
-        dense
+        density="compact"
     >
       <v-toolbar-title>{{ table.tabName }}</v-toolbar-title>
-      <v-row no-gutters justify="end">
+      <v-row no-gutters justify="end" class="mr-4">
         <v-tooltip v-if="popOut != null" location="start" :disabled="!project.showToolTips">
           <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" small @click.stop.prevent="popOut" icon="mdi-open-in-new"/>
+            <v-btn density="compact" v-bind="props" small @click.stop.prevent="popOut" icon="mdi-open-in-new"/>
           </template>
           <span>Pop out</span>
         </v-tooltip>
         <v-tooltip v-if="popIn != null" location="start" :disabled="!project.showToolTips">
           <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" small @click.stop.prevent="popIn" icon>
+            <v-btn v-bind="props" density="compact" @click.stop.prevent="popIn" icon>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" xml:space="preserve">
                 <g transform="matrix(1 0 0 1 9 9)" id="vQhd5OkwAibA90dsjT7gK">
                   <path
@@ -29,7 +29,7 @@
           </template>
           <span>Pop in</span>
         </v-tooltip>
-        <v-btn small @click.stop.prevent="close" icon="mdi-close"/>
+        <v-btn density="compact" @click.stop.prevent="close" icon="mdi-close"/>
       </v-row>
     </v-toolbar>
     <feature-table v-if="table && table.isGeoPackage && geopackages[table.geopackageId] != null"

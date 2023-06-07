@@ -45,7 +45,7 @@
           <v-card-subtitle class="mt-0 pt-0">
             Select a method for specifying content.
           </v-card-subtitle>
-          <v-btn-toggle borderless dense v-model="contentSelection" class="pt-2 pb-4 pl-4" mandatory>
+          <v-btn-toggle borderless density="compact" v-model="contentSelection" class="pt-2 pb-4 pl-4" mandatory>
             <v-btn width="136">
               Category
             </v-btn>

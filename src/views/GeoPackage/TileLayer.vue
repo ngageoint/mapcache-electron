@@ -206,7 +206,7 @@
             </v-col>
             <v-spacer/>
             <v-col cols="4" style="margin-right: -23px;">
-              <v-switch color="primary" :style="{marginTop: '-16px'}" dense v-model="visible" hide-details>
+              <v-switch color="primary" :style="{marginTop: '-16px'}" density="compact" v-model="visible" hide-details>
                 <template v-slot:prepend>
                   <span class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginTop: '2px !important'}">Enable</span>
                 </template>

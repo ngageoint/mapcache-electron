@@ -215,7 +215,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   const columns = []
   columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-  const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
+  const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox.default(featureCollection) : [-180, -90, 180, 90]
   const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, wgs84SpatialReferenceSystem.srs_id)
   const featureDao = gp.getFeatureDao(tableName)
@@ -1021,7 +1021,7 @@ function _getBoundingBoxForFeature (gp, tableName, featureRowId) {
   if (featureRow) {
     const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, featureDao.srs)
     if (feature.geometry != null) {
-      extent = bbox(feature)
+      extent = bbox.default(feature)
       type = feature.geometry.type
     }
   }

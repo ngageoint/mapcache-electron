@@ -1,6 +1,6 @@
 <template>
   <v-sheet>
-    <v-list class="pa-0" lines="three" v-if="items">
+    <v-list class="pa-0" lines="two" v-if="items">
       <template v-for="item in items" :key="item.id + 'list-item'">
         <v-list-item
             @click="item.click"

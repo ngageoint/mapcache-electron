@@ -42,7 +42,7 @@
     <v-card-text v-if="!!urls" class="pb-0 pt-0">
       <v-card-subtitle v-if="!urls || urls.length === 0">No saved urls.</v-card-subtitle>
       <v-list style="max-height: 400px;" v-else>
-        <v-list-item class="pa-0" dense :key="item" v-for="item in urls">
+        <v-list-item class="pa-0" density="compact" :key="item" v-for="item in urls">
           <v-list-item-title class="ma-0 pa-0 text-wrap" v-text="item"></v-list-item-title>
           <template v-slot:append>
             <v-row no-gutters justify="end">

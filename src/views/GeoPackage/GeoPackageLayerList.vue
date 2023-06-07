@@ -26,7 +26,7 @@
               hide-details
               @click.stop.prevent="item.setVisible"
               :model-value="item.visible"
-              dense>
+              density="compact">
           </v-switch>
         </template>
       </v-list-item>

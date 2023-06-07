@@ -64,14 +64,14 @@
     </v-dialog>
     <v-sheet class="mapcache-sheet-content">
       <v-list lines="two" subheader>
-        <v-row dense no-gutters justify="space-between" align="center">
+        <v-row density="compact" no-gutters justify="space-between" align="center">
           <v-col>
             <v-list-subheader>General</v-list-subheader>
           </v-col>
           <v-tooltip text="Help" location="start" :disabled="!project.showToolTips">
             <template v-slot:activator="{ props }">
               <v-btn
-                  flat
+                  variant="flat"
                   v-bind="props"
                   class="ma-2"
                   @click.stop.prevent="launchHelpWindow"
@@ -142,9 +142,9 @@
           <div>
             <v-list-item-title>Projection</v-list-item-title>
             <v-list-item-subtitle>Adjust the map's projection</v-list-item-subtitle>
-            <v-radio-group color="primary" hide-details dense class="ml-2 mt-2 pt-0" v-model="mapProjection" :value="mapProjection" row>
-              <v-radio dense label="Web Mercator (EPSG:3857)" :value="3857"></v-radio>
-              <v-radio dense label="Plate Carrée (EPSG:4326)" :value="4326"></v-radio>
+            <v-radio-group color="primary" hide-details density="compact" class="ml-2 mt-2 pt-0" v-model="mapProjection" :value="mapProjection" row>
+              <v-radio density="compact" label="Web Mercator (EPSG:3857)" :value="3857"></v-radio>
+              <v-radio density="compact" label="Plate Carrée (EPSG:4326)" :value="4326"></v-radio>
             </v-radio-group>
           </div>
         </v-list-item>

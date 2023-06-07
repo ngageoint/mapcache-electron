@@ -14,8 +14,8 @@
             <div>
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
-                  <v-radio-group hide-details dense class="ml-2 mt-0 pt-0" :value="model === index ? index : null">
-                    <v-radio class="ma-0 pa-0" dense :label="item.name" :value="index"></v-radio>
+                  <v-radio-group hide-details density="compact" class="ml-2 mt-0 pt-0" :value="model === index ? index : null">
+                    <v-radio class="ma-0 pa-0" density="compact" :label="item.name" :value="index"></v-radio>
                   </v-radio-group>
                 </v-col>
                 <v-row no-gutters justify="end" align="center">

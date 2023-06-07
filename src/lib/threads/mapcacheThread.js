@@ -26,7 +26,9 @@ import {
   GEOPACKAGE_TABLE_DELETE,
   GEOPACKAGE_TABLE_COPY,
   GEOPACKAGE_TABLE_COUNT,
-  GEOPACKAGE_TABLE_SEARCH, REQUEST_TILE_COMPILATION, CANCEL, GEOPACKAGE_API_REQUEST
+  GEOPACKAGE_TABLE_SEARCH,
+  REQUEST_TILE_COMPILATION,
+  CANCEL
 } from './mapcacheThreadRequestTypes'
 import path from 'node:path'
 import { base64toUInt8Array } from '../util/Base64Utilities'
@@ -37,7 +39,7 @@ import { tileExtentCalculator } from '../util/xyz/WGS84XYZTileUtilities'
 import { compileTiles } from '../util/tile/TileCompilationUtilities'
 import { DEFAULT_TILE_SIZE } from '../util/tile/TileConstants'
 import { addMediaAttachment, addMediaAttachmentFromUrl } from '../geopackage/GeoPackageMediaUtilities'
-// import SourceFactory from '../source/SourceFactory'
+import SourceFactory from '../source/SourceFactory'
 import GeoTIFFSource from '../source/geotiff/GeoTIFFSource'
 import CanvasKitInit from '@ngageoint/geopackage/dist/canvaskit/canvaskit.js'
 
@@ -150,54 +152,54 @@ async function attachMedia (data) {
     return addMediaAttachmentFromUrl(data.geopackagePath, data.tableName, data.featureId, data.url)
   }
 }
-//
-// /**
-//  * This function takes a source configuration and returns any data source layers necessary
-//  * @param data
-//  * @returns {Promise<{dataSources: Array}>}
-//  */
-// async function processDataSource (data) {
-//   let source = data.source
-//   let dataSources = []
-//   let error = null
-//   const statusCallback = (message, completionPercentage) => {
-//     parentPort.postMessage({ type: 'status', message, completionPercentage })
-//   }
-//   try {
-//     let createdSource = await SourceFactory.constructSource(source)
-//     if (createdSource != null) {
-//       let layers = await createdSource.retrieveLayers(statusCallback)
-//       if (layers.length > 0) {
-//         for (let i = 0; i < layers.length; i++) {
-//           try {
-//             let layer = layers[i]
-//             dataSources.push({ id: layer.id, config: layer.configuration })
-//             // eslint-disable-next-line no-unused-vars
-//           } catch (err) {
-//             // eslint-disable-next-line no-console
-//             console.error('Failed to initialize data source: ' + layers[i].sourceLayerName)
-//             error = err
-//           }
-//         }
-//       } else {
-//         error = new Error('No data source layers retrieved.')
-//       }
-//     } else {
-//       error = new Error('Failed to create data source.')
-//     }
-//     // eslint-disable-next-line no-unused-vars
-//   } catch (e) {
-//     // eslint-disable-next-line no-console
-//     console.error('Failed to process data source.')
-//     error = e
-//   }
-//   if (error != null) {
-//     throw error
-//   }
-//   return {
-//     dataSources: dataSources
-//   }
-// }
+
+/**
+ * This function takes a source configuration and returns any data source layers necessary
+ * @param data
+ * @returns {Promise<{dataSources: Array}>}
+ */
+async function processDataSource (data) {
+  let source = data.source
+  let dataSources = []
+  let error = null
+  const statusCallback = (message, completionPercentage) => {
+    parentPort.postMessage({ type: 'status', message, completionPercentage })
+  }
+  try {
+    let createdSource = await SourceFactory.constructSource(source)
+    if (createdSource != null) {
+      let layers = await createdSource.retrieveLayers(statusCallback)
+      if (layers.length > 0) {
+        for (let i = 0; i < layers.length; i++) {
+          try {
+            let layer = layers[i]
+            dataSources.push({ id: layer.id, config: layer.configuration })
+            // eslint-disable-next-line no-unused-vars
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to initialize data source: ' + layers[i].sourceLayerName)
+            error = err
+          }
+        }
+      } else {
+        error = new Error('No data source layers retrieved.')
+      }
+    } else {
+      error = new Error('Failed to create data source.')
+    }
+    // eslint-disable-next-line no-unused-vars
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to process data source.')
+    error = e
+  }
+  if (error != null) {
+    throw error
+  }
+  return {
+    dataSources: dataSources
+  }
+}
 
 /**
  * Requests a geopackage vector tile
@@ -369,13 +371,13 @@ function executeTask (message) {
       }).catch(() => {
         resolve({ error: 'Failed to attach media.', result: null, cancelled: ac.signal.aborted })
       })
-    } /*else if (message.type === REQUEST_PROCESS_SOURCE) {
+    } else if (message.type === REQUEST_PROCESS_SOURCE) {
       processDataSource(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {
         resolve({ error: 'Failed to process data source.', result: null, cancelled: ac.signal.aborted })
       })
-    } */else if (message.type === REQUEST_RENDER) {
+    } else if (message.type === REQUEST_RENDER) {
       renderTile(message.data).then((result) => {
         resolve({ error: null, result: result, cancelled: ac.signal.aborted })
       }).catch(() => {

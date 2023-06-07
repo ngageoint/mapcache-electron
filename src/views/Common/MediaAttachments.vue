@@ -1,5 +1,5 @@
 <template>
-  <v-card style="height: 100%">
+  <v-card class="pl-3 pt-3 pr-3" style="height: 100%">
     <v-dialog
         v-model="deleteDialog"
         max-width="350"
@@ -53,32 +53,32 @@
       </v-card>
     </v-dialog>
     <v-card-title>
-      <v-icon color="primary" class="pr-2" icon="mdi-paperclip"/>
-      Feature attachments
-      <v-spacer/>
-      <v-btn :loading="attaching" variant="text" color="primary" @click.stop="attach">
-        <v-icon small icon="mdi-plus"/>
-        attachment
-      </v-btn>
-      <v-btn variant="text" :icon="isFullScreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'" @click="toggleFullScreen"/>
+      <v-row no-gutters>
+        <v-icon color="primary" class="pr-2" icon="mdi-paperclip"/>
+        Feature attachments
+        <v-spacer/>
+        <v-btn :loading="attaching" variant="text" color="primary" @click.stop="attach">
+          <v-icon small icon="mdi-plus"/>
+          attachment
+        </v-btn>
+        <v-btn density="comfortable" variant="text" :icon="isFullScreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'" @click="toggleFullScreen"/>
+      </v-row>
     </v-card-title>
     <v-card-text class="pb-0" style="height: calc(100% - 114px)">
       <v-carousel v-model="model" v-if="attachments.length > 0"
                   :height="'100% !important'">
-        <template v-slot:prev="{ on, attrs }">
+        <template v-slot:prev="{ props }">
           <v-btn
               icon
-              v-bind="attrs"
-              v-on="on"
+              @click="props.onClick"
           >
             <v-icon icon="mdi-chevron-left"/>
           </v-btn>
         </template>
-        <template v-slot:next="{ on, attrs }">
+        <template v-slot:next="{ props }">
           <v-btn
               icon
-              v-bind="attrs"
-              v-on="on"
+              @click="props.onClick"
           >
             <v-icon icon="mdi-chevron-right"/>
           </v-btn>
@@ -186,8 +186,8 @@ export default {
       } else {
         this.loadContent(this.attachments[this.model])
       }
-
-      await window.mapcache.deleteMediaAttachment(this.geopackagePath, attachmentToDelete)
+      
+      await window.mapcache.deleteMediaAttachment(this.geopackagePath, JSON.parse(JSON.stringify(attachmentToDelete)))
       if (self.isGeoPackage) {
         await synchronizeGeoPackage(self.project.id, self.id)
       } else {

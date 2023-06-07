@@ -15,7 +15,7 @@
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
                   <v-radio-group class="ml-2 mt-0 pt-0" hide-details density="comfortable" v-model="model">
-                    <v-radio class="ma-0 pa-0" dense :label="item.name" :value="index"></v-radio>
+                    <v-radio class="ma-0 pa-0" density="compact" :label="item.name" :value="index"></v-radio>
                   </v-radio-group>
                 </v-col>
                 <v-col cols="4">

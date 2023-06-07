@@ -78,11 +78,10 @@
         style="position: fixed; bottom: 0;"
     >
       GeoPackage already exists.
-      <template v-slot:action="{ attrs }">
+      <template v-slot:actions>
         <v-btn
             color="warning"
             variant="text"
-            v-bind="attrs"
             @click="showAlert = false"
         >
           Close

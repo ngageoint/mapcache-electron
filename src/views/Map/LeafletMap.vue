@@ -27,28 +27,28 @@
       </v-dialog>
     </div>
     <div v-show="contextMenuPopup != null" id="context-menu-popup" ref="contextMenuPopup">
-      <v-list dense>
-        <v-list-item dense @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
+      <v-list density="compact">
+        <v-list-item density="compact" @click="() => {copyText(contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6))}">
           {{
             contextMenuCoordinate ? (contextMenuCoordinate.lat.toFixed(6) + ', ' + contextMenuCoordinate.lng.toFixed(6)) : ''
           }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
+        <v-list-item density="compact" @click="() => {copyText(convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true))}">
           {{
             contextMenuCoordinate ? (convertToDms(contextMenuCoordinate.lat, false) + ', ' + convertToDms(contextMenuCoordinate.lng, true)) : ''
           }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+        <v-list-item density="compact" @click="() => {copyText(convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
           {{
             contextMenuCoordinate ? convertLatLng2GARS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
           }}
         </v-list-item>
-        <v-list-item dense @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
+        <v-list-item density="compact" @click="() => {copyText(convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, false))}">
           {{
             contextMenuCoordinate ? convertLatLng2MGRS(contextMenuCoordinate.lat, contextMenuCoordinate.lng, true) : ''
           }}
         </v-list-item>
-        <v-list-item dense @click="performReverseQuery">
+        <v-list-item density="compact" @click="performReverseQuery">
           What's here?
         </v-list-item>
       </v-list>
@@ -77,7 +77,7 @@
         <v-card-subtitle class="pt-1 pb-1">
           Select grid overlay to view.
         </v-card-subtitle>
-        <v-list mandatory :selected="gridSelection" item-value="id" dense class="pa-0" style="max-height: 200px; overflow-y: auto;" :items="gridOptions" @update:selected="updateSelectedGrid"/>
+        <v-list mandatory :selected="gridSelection" item-value="id" density="compact" class="pa-0" style="max-height: 200px; overflow-y: auto;" :items="gridOptions" @update:selected="updateSelectedGrid"/>
       </v-card-text>
     </v-card>
     <v-card outlined v-show="showLayerOrderingDialog" class="reorder-card" :style="{top: getReorderCardOffset()}">
@@ -91,13 +91,13 @@
         <v-list
             style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
             v-sortable="{onEnd:updateLayerOrder}"
-            dense>
+            density="compact">
           <v-list-item
               v-for="item in layerOrder"
               class="sortable-list-item"
               :key="item.id"
               @click.stop.prevent=""
-              dense>
+              density="compact">
             <template v-slot:prepend>
               <v-btn variant="text" icon @click.stop="item.zoomTo">
                 <v-img v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
@@ -178,10 +178,10 @@
           class="background"
       >
         <v-list>
-          <v-list-item dense prepend-icon="mdi-pencil" title="Edit Tools"/>
+          <v-list-item density="compact" prepend-icon="mdi-pencil" title="Edit Tools"/>
         </v-list>
         <v-divider></v-divider>
-        <v-list dense>
+        <v-list density="compact">
           <v-list-item link @click="toggleVertexEditing" :value="0" prepend-icon="mdi-vector-polyline-edit" title="Edit"/>
           <v-list-item link @click="toggleDrag" :value="1" prepend-icon="mdi-cursor-move" title="Drag"/>
           <v-list-item link @click="toggleCut" :value="2" prepend-icon="mdi-content-cut" title="Cut"/>
@@ -211,14 +211,14 @@
           class="background"
       >
         <v-list>
-          <v-list-item dense prepend-icon="mdi-pencil">
+          <v-list-item density="compact" prepend-icon="mdi-pencil">
             <v-list-item-title class="text-h6">
               Edit tools
             </v-list-item-title>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
-        <v-list dense>
+        <v-list density="compact">
           <v-list-item link @click="toggleBoundsEdit" :value="0" prepend-icon="mdi-vector-polyline-edit">
             <v-list-item-title>Edit</v-list-item-title>
           </v-list-item>

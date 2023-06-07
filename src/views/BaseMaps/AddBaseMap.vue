@@ -45,7 +45,7 @@
               Select a GeoPackage layer or data source for your base map.
             </v-card-subtitle>
             <v-card-text>
-              <v-list dense>
+              <v-list density="compact">
                 <v-list-item-group mandatory v-model="selectedLayer">
                   <template v-for="(item, i) in layers" :key="`layer-${i}`">
                     <v-list-item

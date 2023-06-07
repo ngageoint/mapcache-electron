@@ -139,7 +139,8 @@ export default {
       const self = this
       self.status = 'Queued'
       self.$nextTick(() => {
-        window.mapcache.processSource({ project: self.project, source: source })
+        console.log(source)
+        window.mapcache.processSource({ source: JSON.parse(JSON.stringify(source)) })
         self.workflowState = PROCESSING_STATES.QUEUED
       })
     },

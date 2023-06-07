@@ -94,26 +94,26 @@
             {{ 'Edit' }}
           </v-btn>
         </template>
-        <v-list dense>
-          <v-list-item dense @click="editingDirectly = true">
+        <v-list density="compact">
+          <v-list-item density="compact" @click="editingDirectly = true">
             <v-list-item-title>Type in</v-list-item-title>
           </v-list-item>
-          <v-list-item dense @click="drawBoundingBox">
+          <v-list-item density="compact" @click="drawBoundingBox">
             <v-list-item-title>Draw on map</v-list-item-title>
           </v-list-item>
-          <v-list-item dense @click="() => gridBoundingBox(0)">
+          <v-list-item density="compact" @click="() => gridBoundingBox(0)">
             <v-list-item-title>Use XYZ</v-list-item-title>
           </v-list-item>
-          <v-list-item dense @click="() => gridBoundingBox(1)">
+          <v-list-item density="compact" @click="() => gridBoundingBox(1)">
             <v-list-item-title>Use GARS</v-list-item-title>
           </v-list-item>
-          <v-list-item dense @click="() => gridBoundingBox(2)">
+          <v-list-item density="compact" @click="() => gridBoundingBox(2)">
             <v-list-item-title>Use MGRS</v-list-item-title>
           </v-list-item>
-          <v-list-item dense v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
+          <v-list-item density="compact" v-if="allowExtent" @click="setBoundingBoxFilterToExtent">
             <v-list-item-title>Use data extent</v-list-item-title>
           </v-list-item>
-          <v-list-item dense @click="setBoundingBoxToMapExtent">
+          <v-list-item density="compact" @click="setBoundingBoxToMapExtent">
             <v-list-item-title>Use map extent</v-list-item-title>
           </v-list-item>
         </v-list>

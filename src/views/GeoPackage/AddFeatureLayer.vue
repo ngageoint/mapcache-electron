@@ -90,7 +90,7 @@
               No data source layers.
             </v-card-subtitle>
             <v-card-text v-if="dataSourceLayers.length > 0">
-              <v-list dense>
+              <v-list density="compact">
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
                     <v-list-item
@@ -141,7 +141,7 @@
               No existing GeoPackage feature layers.
             </v-card-subtitle>
             <v-card-text v-if="geopackageFeatureLayers.length > 0">
-              <v-list dense>
+              <v-list density="compact">
                 <v-list-item-group multiple color="primary" v-model="selectedGeoPackageFeatureLayers">
                   <template v-for="(item, i) in geopackageFeatureLayers" :key="`geopackage-layer-item-${i}`">
                     <v-list-item
@@ -160,7 +160,7 @@
                         </div>
                         <v-list-item-action>
                           <v-switch
-                              dense
+                              density="compact"
                               @click.stop="item.changeVisibility"
                               :model-value="active"
                               color="primary"
@@ -197,7 +197,7 @@
               <v-list
                   style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
                   v-sortable="{onEnd:updateSortedLayerOrder}"
-                  dense>
+                  density="compact">
                 <v-list-item
                     v-for="item in sortedLayers"
                     class="sortable-list-item"

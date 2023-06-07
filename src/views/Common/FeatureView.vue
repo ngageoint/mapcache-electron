@@ -48,7 +48,7 @@
             :is-geo-package="isGeoPackage"
             :close="closeStyleAssignment"/>
       </v-dialog>
-      <v-dialog v-model="showFeatureMediaAttachments" max-width="600" persistent
+      <v-dialog v-model="showFeatureMediaAttachments" :max-width="attachmentDialogFullScreen ? null : 600" persistent
                 @keydown.esc="closeFeatureMediaAttachments" :fullscreen="attachmentDialogFullScreen"
                 style="overflow-y: hidden;">
         <media-attachments

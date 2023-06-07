@@ -11,7 +11,7 @@
           v-model="certificateSelection"
           single-select
           height="150px"
-          dense
+          density="compact"
           disable-filtering
           disable-pagination
           disable-sort

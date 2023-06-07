@@ -1,6 +1,6 @@
 <template>
   <v-form ref="form" v-on:submit.prevent="() => {}" v-model="valid" style="width: 100%">
-    <v-text-field variant="underlined" :suffix="suffix" :disabled="disabled" :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue"
+    <v-text-field :hide-details="hideDetails" variant="underlined" :suffix="suffix" :disabled="disabled" :hint="hint" :rules="rules" :autofocus="autofocus" v-model="numberValue"
                   type="number" :label="label" :step="step" :min="min" :max="max" @keydown="handleKeyDown($event)"/>
   </v-form>
 </template>
@@ -26,7 +26,8 @@ export default {
       type: Boolean,
       default: false
     },
-    suffix: String
+    suffix: String,
+    hideDetails: Boolean
   },
   data () {
     return {
@@ -62,6 +63,7 @@ export default {
     }
   },
   mounted () {
+    console.log('hide details: ' + this.hideDetails)
     this.revalidate()
   },
   watch: {

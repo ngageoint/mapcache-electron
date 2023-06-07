@@ -86,7 +86,7 @@
               Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
             </v-card-subtitle>
             <v-card-text>
-              <v-list dense>
+              <v-list density="compact">
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers"
                                    v-on:change="filterErroredLayers">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
@@ -139,7 +139,7 @@
               tile layer.
             </v-card-subtitle>
             <v-card-text>
-              <v-list dense>
+              <v-list density="compact">
                 <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
                   <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
                     <v-list-item
@@ -160,7 +160,7 @@
                         </div>
                         <v-list-item-action>
                           <v-switch
-                              dense
+                              density="compact"
                               @click.stop="item.changeVisibility"
                               :model-value="active"
                               color="primary"
@@ -197,7 +197,7 @@
               <v-list
                   style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
                   v-sortable="{onEnd:updateSortedLayerOrder}"
-                  dense>
+                  density="compact">
                 <v-list-item
                     v-for="item in sortedLayers"
                     class="sortable-list-item"

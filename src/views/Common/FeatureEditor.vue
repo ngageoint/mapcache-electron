@@ -66,11 +66,10 @@
         v-model="failedToSaveSnackBar"
     >
       Failed to save: {{ failedToSaveErrorMessage }}
-      <template v-slot:action="{ attrs }">
+      <template v-slot:actions>
         <v-btn
             color="primary"
             variant="text"
-            v-bind="attrs"
             @click="failedToSaveSnackBar = false"
         >
           Close

@@ -94,7 +94,7 @@
                         </v-list-item>
                       </template>
                       <template v-slot:item="{ item }">
-                        <v-list-item dense link @click="setUrlToLink(item)">
+                        <v-list-item density="compact" link @click="setUrlToLink(item)">
                           <div>
                             {{ item }}
                           </div>

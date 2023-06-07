@@ -1,5 +1,5 @@
 <template>
-  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" dense hide-details @click.stop="">
+  <v-switch :disabled="disabled || errored" v-model="model" :loading="loadingContent ? 'primary' : false" color="primary" density="compact" hide-details @click.stop="">
     <template v-slot:prepend v-if="label != null">
       <span class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginTop: '2px !important'}">{{ label }}</span>
     </template>

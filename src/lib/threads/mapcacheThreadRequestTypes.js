@@ -9,8 +9,6 @@ const GEOPACKAGE_TABLE_COUNT = 'geopackate_table_count'
 const GEOPACKAGE_TABLE_SEARCH = 'geopackage_table_search'
 const REQUEST_TILE_COMPILATION = 'request-compile-tiles'
 const CANCEL = 'cancel'
-const GEOPACKAGE_API_REQUEST = 'geopackage_api_request'
-
 
 export {
   REQUEST_RENDER,
@@ -23,6 +21,5 @@ export {
   GEOPACKAGE_TABLE_COUNT,
   GEOPACKAGE_TABLE_SEARCH,
   REQUEST_TILE_COMPILATION,
-  CANCEL,
-  GEOPACKAGE_API_REQUEST
+  CANCEL
 }

@@ -22,7 +22,7 @@
     <v-card-text class="ma-0 pa-0" v-if="loaded">
       <v-list
           :disabled="errored"
-          dense
+          density="compact"
           class="detail-bg"
           v-sortable="{onEnd:updateSortedLayerOrder}">
         <v-list-item
