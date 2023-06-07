@@ -5,6 +5,7 @@
                  class="sources"
                  :source="selectedDataSource"
                  :project="project"
+                 :dark="dark"
                  :display-feature="displayFeature"
                  :allow-notifications="allowNotifications"
                  :back="deselectDataSource">
@@ -23,7 +24,7 @@
         <v-toolbar-title>Data sources</v-toolbar-title>
       </v-toolbar>
       <v-sheet class="mapcache-sheet-content mapcache-fab-spacer detail-bg">
-        <data-source-list :sources="sources" :project="project" :source-selected="dataSourceSelected"/>
+        <data-source-list :sources="sources" :project="project" :source-selected="dataSourceSelected" :dark="dark"/>
         <template v-for="source in processingSourceList" :key="source.id">
           <processing-source
               :source="source"
@@ -144,6 +145,10 @@ export default {
   props: {
     sources: Object,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     allowNotifications: Boolean,
     back: Function,
     displayFeature: Object

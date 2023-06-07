@@ -217,7 +217,7 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn variant="text" icon @click="zoomToLayer" color="whitesmoke">
-              <v-img v-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
               <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
             <span class="ml-2" style="vertical-align: middle;">Feature layer</span>
@@ -372,6 +372,10 @@ import {
 export default {
   props: {
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     geopackage: Object,
     tableName: String,
     back: Function,

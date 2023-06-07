@@ -12,8 +12,8 @@
                 color="whitesmoke"
                 @click="item.zoomTo"
             >
-              <v-img v-if="item.isTile && project.dark" src="/images/white_layers.png" alt="Tile layer" width="22px" height="22px"/>
-              <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+              <v-img v-if="item.isTile && dark" src="/images/white_layers.png" alt="Tile layer" width="22px" height="22px"/>
+              <v-img v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
               <v-img v-else-if="item.isTile" src="/images/colored_layers.png" alt="Tile layer" width="22px" height="22px"/>
               <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
             </v-btn>
@@ -56,6 +56,10 @@ export default {
   props: {
     sources: Object,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     sourceSelected: Function
   },
   computed: {

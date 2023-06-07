@@ -1,7 +1,7 @@
 <template>
   <geo-package v-if="selectedGeoPackage !== null && selectedGeoPackage !== undefined" :project="project"
                :geopackage="selectedGeoPackage" :display-feature="displayFeature" :back="deselectGeoPackage"
-               :allow-notifications="allowNotifications"></geo-package>
+               :allow-notifications="allowNotifications" :dark="dark"/>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
@@ -133,6 +133,10 @@ export default {
   props: {
     geopackages: Object,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     allowNotifications: Boolean,
     back: Function,
     displayFeature: Object

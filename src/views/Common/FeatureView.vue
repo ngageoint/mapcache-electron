@@ -55,6 +55,7 @@
             v-if="showFeatureMediaAttachments"
             :tableName="tableName"
             :project="project"
+            :dark="darkTheme"
             :geopackage-path="geopackagePath"
             :id="id"
             :feature-id="featureId"

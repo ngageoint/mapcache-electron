@@ -1,25 +1,8 @@
 <template>
-  <feature-layer
-      v-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.features[selectedLayer]"
-      :key="geopackage.id + '_' + selectedLayer"
-      :table-name="selectedLayer"
-      :geopackage="geopackage"
-      :project="project"
-      :back="deselectLayer"
-      :renamed="selectedLayerRenamed"
-      :display-feature="displayFeature"/>
-  <tile-layer
-      v-else-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.tiles[selectedLayer]"
-      :key="geopackage.id + '_' + selectedLayer"
-      :table-name="selectedLayer"
-      :geopackage="geopackage"
-      :project="project"
-      :back="deselectLayer"
-      :renamed="selectedLayerRenamed"/>
-  <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage"
-                     :back="hideAddFeatureDialog" :allow-notifications="allowNotifications"></add-feature-layer>
-  <add-tile-layer v-else-if="addTileLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddTileDialog"
-                  :allow-notifications="allowNotifications"></add-tile-layer>
+  <feature-layer v-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.features[selectedLayer]" :key="geopackage.id + '_' + selectedLayer" :table-name="selectedLayer" :geopackage="geopackage" :project="project" :back="deselectLayer" :renamed="selectedLayerRenamed" :display-feature="displayFeature" :dark="dark"/>
+  <tile-layer v-else-if="selectedLayer !== null && selectedLayer !== undefined && geopackage.tables.tiles[selectedLayer]" :key="geopackage.id + '_' + selectedLayer" :table-name="selectedLayer" :geopackage="geopackage" :project="project" :back="deselectLayer" :renamed="selectedLayerRenamed" :dark="dark"/>
+  <add-feature-layer v-else-if="addFeatureLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddFeatureDialog" :allow-notifications="allowNotifications" :dark="dark"></add-feature-layer>
+  <add-tile-layer v-else-if="addTileLayerDialog" :project="project" :geopackage="geopackage" :back="hideAddTileDialog" :allow-notifications="allowNotifications" :dark="dark"/>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar
         color="main"
@@ -283,8 +266,7 @@
             </p>
           </v-col>
         </v-row>
-        <geo-package-layer-list :project="project" :geopackage="geopackage"
-                                :layer-selected="layerSelected"></geo-package-layer-list>
+        <geo-package-layer-list :project="project" :geopackage="geopackage" :layer-selected="layerSelected" :dark="dark"/>
       </v-sheet>
     </v-sheet>
     <speed-dial
@@ -371,6 +353,10 @@ export default {
   props: {
     geopackage: Object,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     allowNotifications: Boolean,
     back: Function,
     displayFeature: Object

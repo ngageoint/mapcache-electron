@@ -1,6 +1,5 @@
 <template>
-  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult"
-                            :back="deselectResult"></nominatim-result-details>
+  <nominatim-result-details v-if="selectedResult" :project="project" :result="selectedResult" :back="deselectResult" :dark="dark"/>
   <v-sheet v-else class="mapcache-sheet background">
     <v-toolbar
         color="main"
@@ -94,6 +93,10 @@ export default {
   components: { SearchResultSkelton, NominatimResultDetails },
   props: {
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     results: Object,
     back: Function
   },

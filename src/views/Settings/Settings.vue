@@ -1,5 +1,5 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <add-base-map v-if="addBaseMapDialog" :base-maps="baseMaps" :project="project" :close="() => {addBaseMapDialog = false}"></add-base-map>
+  <add-base-map :dark="dark" v-if="addBaseMapDialog" :base-maps="baseMaps" :project="project" :close="() => {addBaseMapDialog = false}"></add-base-map>
   <base-maps v-else-if="baseMapsDialog" :project="project" :back="() => { baseMapsDialog = false }"/>
   <v-sheet v-else class="mapcache-sheet">
     <v-toolbar

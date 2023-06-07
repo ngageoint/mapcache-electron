@@ -98,7 +98,7 @@
                         @click.stop="item.changeVisibility">
                       <template v-slot:prepend>
                         <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                          <v-img v-if="project.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                         </v-btn>
                       </template>
@@ -149,7 +149,7 @@
                         @click.stop="item.changeVisibility">
                       <template v-slot:prepend>
                         <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                          <v-img v-if="project.dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                         </v-btn>
                       </template>
@@ -204,7 +204,7 @@
                     :key="item.id">
                   <template v-slot:prepend class="mt-1">
                     <v-btn icon @click.stop="item.zoomTo">
-                      <v-img v-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      <v-img v-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                       <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
                   </template>
@@ -310,6 +310,10 @@ export default {
   },
   props: {
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     geopackage: Object,
     allowNotifications: Boolean,
     back: Function

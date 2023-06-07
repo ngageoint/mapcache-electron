@@ -68,7 +68,7 @@
                 Website
               </p>
               <p class="fake-link allowselect wrap"
-                 :style="{color: project.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 :style="{color: dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(result.properties.website)">
                 {{ result.properties.website }}
               </p>
@@ -80,7 +80,7 @@
                 Wikipedia
               </p>
               <p class="fake-link allowselect wrap"
-                 :style="{color: project.dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
+                 :style="{color: dark ? '#45ced7' : 'blue', fontSize: '14px', fontWeight: '500', marginBottom: '0px'}"
                  @click="() => open(getWikiUrl(result.properties.wikipedia))">
                 {{ result.properties.wikipedia }}
               </p>
@@ -121,6 +121,10 @@ import { prettyifyWords, prettyifyAddress } from '../../lib/util/nominatim/Nomin
 export default {
   props: {
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     result: Object,
     back: Function
   },

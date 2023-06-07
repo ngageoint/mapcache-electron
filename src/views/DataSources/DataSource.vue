@@ -246,9 +246,9 @@
         <v-col>
           <p class="text-subtitle-1">
             <v-btn variant="text" icon @click="zoomTo" color="whitesmoke">
-              <v-img v-if="source.pane === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer"
+              <v-img v-if="source.pane === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer"
                    width="20px" height="20px"/>
-              <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
+              <v-img v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px"
                    height="20px"/>
               <v-img v-else-if="source.pane === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px"
                    height="20px"/>
@@ -510,6 +510,10 @@ export default {
       }
     },
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     allowNotifications: Boolean,
     back: Function,
     displayFeature: Object,

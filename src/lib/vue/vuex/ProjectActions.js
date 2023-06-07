@@ -270,7 +270,7 @@ async function addGeoPackageFeatureTableColumn (projectId, id, isGeoPackage, tab
 }
 
 async function removeDataSource (projectId, sourceId) {
-  const source = store.state.Projects[projectId].sources[sourceId]
+  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
   await window.mapcache.deleteSourceDirectory(source)
   return store.dispatch('Projects/removeDataSource', { projectId, sourceId })
 }
@@ -592,7 +592,7 @@ function addBaseMap (baseMap) {
 }
 
 async function removeBaseMap (baseMap) {
-  const err = await window.mapcache.deleteBaseMapDirectory(baseMap)
+  const err = await window.mapcache.deleteBaseMapDirectory(cloneDeep(baseMap))
   if (err) {
     // eslint-disable-next-line no-console
     console.error('Failed to remove base map directory: ' + baseMap.directory)

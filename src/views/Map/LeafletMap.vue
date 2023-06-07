@@ -19,7 +19,7 @@
           scrollable
           persistent
           @keydown.esc="cancelAddFeature">
-        <feature-editor v-if="showAddFeatureDialog" :projectId="projectId" :id="featureToAddGeoPackage.id"
+        <feature-editor v-if="showAddFeatureDialog" :projectId="project.id" :id="featureToAddGeoPackage.id"
                         :object="project.geopackages[featureToAddGeoPackage.id]"
                         :save-new-feature="saveFeature" :geopackage-path="featureToAddGeoPackage.path"
                         :tableName="featureToAddTableName" :columns="featureToAddColumns" :feature="featureToAdd"
@@ -62,7 +62,7 @@
           class="mx-auto"
           style="max-height: 464px; overflow-y: auto; position: absolute; bottom: 0; z-index: 0; width: 100%">
         <v-card-text class="pa-0 ma-0 mb-2">
-          <feature-tables :project="project" :projectId="projectId" :geopackages="geopackages" :sources="sources"
+          <feature-tables :project="project" :projectId="project.id" :geopackages="geopackages" :sources="sources"
                           :table="table" :zoomToFeature="zoomToFeature" :show-feature="showFeature"
                           :close="hideFeatureTable" :pop-out="popOutFeatureTable"
                           :highlight-feature="highlightGeoPackageFeature"></feature-tables>
@@ -100,8 +100,8 @@
               density="compact">
             <template v-slot:prepend>
               <v-btn variant="text" icon @click.stop="item.zoomTo">
-                <v-img v-if="item.type === 'tile' && project.dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                <v-img v-else-if="project.dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                <v-img v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                <v-img v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                 <v-img v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
                 <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
               </v-btn>
@@ -351,12 +351,14 @@ export default {
   props: {
     sources: Object,
     geopackages: Object,
-    projectId: String,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     resizeListener: Number,
     visible: Boolean,
     featureTablePoppedOut: Boolean,
-    darkTheme: Boolean
   },
   computed: {
     ...mapState({
@@ -502,7 +504,7 @@ export default {
           this.setAttribution(newBaseMap.attribution)
           this.baseMapLayers[newBaseMapId].bringToBack()
         }
-        this.mapBackground = this.project.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
+        this.mapBackground = this.dark ? (newBaseMap.darkBackground || newBaseMap.background || '#333333') : (newBaseMap.background || '#ddd')
         this.selectedBaseMapId = [newBaseMapId]
       } else {
         this.map.addLayer(this.baseMapLayers[this.offlineBaseMapId])
@@ -557,7 +559,7 @@ export default {
       EventBus.$emit(EventBus.EventTypes.SHOW_FEATURE, id, isGeoPackage, table, featureId)
     },
     popOutFeatureTable () {
-      popOutFeatureTable(this.projectId, true)
+      popOutFeatureTable(this.project.id, true)
       window.mapcache.showFeatureTableWindow(true)
     },
     hideFeatureTable () {
@@ -841,7 +843,7 @@ export default {
     },
     addSelectedBaseMap (self, map, baseMapId, defaultBaseMap, baseMap) {
       map.addLayer(self.baseMapLayers[baseMapId])
-      self.mapBackground = self.project.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
+      self.mapBackground = self.dark ? defaultBaseMap.darkBackground : defaultBaseMap.background
       this.setAttribution(baseMap.attribution)
       self.baseMapLayers[baseMapId].bringToBack()
     },
@@ -853,12 +855,12 @@ export default {
       const baseMapId = baseMap.id
       const defaultBaseMap = getDefaultBaseMaps().find(bm => bm.id === baseMapId)
       if (baseMapId === getOfflineBaseMapId()) {
-        self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, project.dark)
+        self.baseMapLayers[baseMapId] = this.createOfflineBaseMapLayer(baseMap, this.dark)
         if (self.selectedBaseMapId[0] === baseMapId) {
           this.addSelectedBaseMap(self, map, baseMapId, defaultBaseMap, baseMap);
         }
       } else if (!isNil(defaultBaseMap)) {
-        self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, project.dark)
+        self.baseMapLayers[baseMapId] = self.createDefaultBaseMapLayer(defaultBaseMap, this.dark)
         if (self.selectedBaseMapId[0] === baseMapId) {
           self.testBaseMap(baseMap).then(result => {
             if (result && !result.error) {
@@ -1106,18 +1108,18 @@ export default {
       this.garsGridOverlay = L.garsGrid({
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
-        dark: this.darkTheme
+        dark: this.dark
       })
       this.mgrsGridOverlay = L.mgrsGrid({
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
-        dark: this.darkTheme
+        dark: this.dark
       })
       this.xyzGridOverlay = L.xyzGrid({
         interactive: false,
         pane: GRID_SELECTION_PANE.name,
         zIndex: GRID_SELECTION_PANE.zIndex,
-        dark: this.darkTheme
+        dark: this.dark
       })
     },
     createMapPanes () {
@@ -1244,7 +1246,7 @@ export default {
       this.activeLayersControl = new LeafletActiveLayersTool({}, function () {
         self.zoomToContent()
       }, function () {
-        clearActiveLayers(self.projectId)
+        clearActiveLayers(self.project.id)
       }, function () {
         self.showLayerOrderingDialog = !self.showLayerOrderingDialog
         if (self.showLayerOrderingDialog) {
@@ -1396,7 +1398,7 @@ export default {
         attribution: baseMap.layerConfiguration.attribution || '',
         minZoom: 0,
         maxZoom: 20,
-        className: dark ? 'dark' : '',
+        className: this.dark ? 'dark' : '',
         crossOrigin: 'Anonymous',
         crs: this.getMapProjection(),
       })
@@ -1420,7 +1422,7 @@ export default {
         mapPane: BASE_MAP_PANE.name,
         zIndex: BASE_MAP_PANE.zIndex,
         maxFeatures: 5000,
-        className: dark ? 'dark' : '',
+        className: this.dark ? 'dark' : '',
         crs: this.getMapProjection()
       })
     },
@@ -1480,7 +1482,7 @@ export default {
             if (repaintRequired) {
               this.baseMapLayers[selectedBaseMapId].redraw()
             }
-            this.mapBackground = project.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
+            this.mapBackground = this.dark ? (selectedBaseMap.darkBackground || selectedBaseMap.background || '#333333') : (selectedBaseMap.background || '#ddd')
           }
         }
       },
@@ -1548,7 +1550,7 @@ export default {
           }
         })
         this.baseMapLayers[this.selectedBaseMapId[0]].bringToBack()
-        setMapRenderingOrder(this.projectId, layers.map(l => l.id))
+        setMapRenderingOrder(this.project.id, layers.map(l => l.id))
         if (layers.length > 0 || this.searchResultLayers != null) {
           this.activeLayersControl.enable(this.layerOrder.length)
         } else {
@@ -1734,8 +1736,8 @@ export default {
       },
       deep: true
     },
-    darkTheme: {
-      handler (newDarkTheme) {
+    dark: {
+      handler (newValue) {
         getDefaultBaseMaps().forEach(bm => {
           const baseMapLayer = this.baseMapLayers[bm.id]
           if (baseMapLayer != null) {
@@ -1743,23 +1745,23 @@ export default {
               this.map.removeLayer(this.baseMapLayers[bm.id])
             }
             if (bm.id !== getOfflineBaseMapId()) {
-              this.baseMapLayers[bm.id] = this.createDefaultBaseMapLayer(bm, newDarkTheme)
+              this.baseMapLayers[bm.id] = this.createDefaultBaseMapLayer(bm, newValue)
             } else {
-              this.baseMapLayers[bm.id] = this.createOfflineBaseMapLayer(bm, newDarkTheme)
+              this.baseMapLayers[bm.id] = this.createOfflineBaseMapLayer(bm, newValue)
             }
             if (bm.id === this.selectedBaseMapId[0]) {
               this.map.addLayer(this.baseMapLayers[bm.id])
               this.setAttribution(bm.attribution)
               this.baseMapLayers[bm.id].bringToBack()
-              this.mapBackground = newDarkTheme ? (bm.darkBackground || bm.background || '#333333') : (bm.background || '#ddd')
+              this.mapBackground = newValue ? (bm.darkBackground || bm.background || '#333333') : (bm.background || '#ddd')
             }
           }
         })
 
         if (this.gridLayer == null) {
-          this.garsGridOverlay.setDarkModeEnabled(newDarkTheme)
-          this.mgrsGridOverlay.setDarkModeEnabled(newDarkTheme)
-          this.xyzGridOverlay.setDarkModeEnabled(newDarkTheme)
+          this.garsGridOverlay.setDarkModeEnabled(newValue)
+          this.mgrsGridOverlay.setDarkModeEnabled(newValue)
+          this.xyzGridOverlay.setDarkModeEnabled(newValue)
 
           if (Array.isArray(this.gridSelection) && this.gridSelection.length > 0)
           if (this.gridSelection[0] === 1) {

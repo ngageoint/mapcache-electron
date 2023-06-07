@@ -11,93 +11,45 @@
       </v-card>
     </v-dialog>
     <v-dialog max-width="580" v-model="showCertificateSelectionDialog" persistent>
-      <cert-auth v-if="showCertificateSelectionDialog" :certificate-request-url="certificateRequestUrl"
-                 :certificate-list="certificateList" :select-certificate="selectCertificate"
-                 :cancel-selection="cancelCertificateSelection"></cert-auth>
+      <cert-auth v-if="showCertificateSelectionDialog" :certificate-request-url="certificateRequestUrl" :certificate-list="certificateList" :select-certificate="selectCertificate" :cancel-selection="cancelCertificateSelection"/>
     </v-dialog>
     <v-dialog v-if="showSignIn" v-model="showSignIn" max-width="400" persistent>
-      <basic-auth v-if="showSignIn" :event-url="requestEventUrl" :auth-info="requestAuthInfo" :details="requestDetails"
-                  :cancel="cancelSignIn" :sign-in="signIn"></basic-auth>
+      <basic-auth v-if="showSignIn" :event-url="requestEventUrl" :auth-info="requestAuthInfo" :details="requestDetails" :cancel="cancelSignIn" :sign-in="signIn"/>
     </v-dialog>
     <v-dialog v-if="showConfirmation" v-model="showConfirmation" max-width="400" persistent>
-      <confirmation-card v-if="showConfirmation" :id="confirmationId" :title="confirmationTitle"
-                         :icon="confirmationIcon" :message="confirmationMessage"
-                         :close="closeConfirmationDialog"></confirmation-card>
+      <confirmation-card v-if="showConfirmation" :id="confirmationId" :title="confirmationTitle" :icon="confirmationIcon" :message="confirmationMessage" :close="closeConfirmationDialog"/>
     </v-dialog>
     <v-layout class="project-container overflow-hidden ma-0 pa-0">
-      <v-navigation-drawer
-          permanent
-          color="main"
-          v-model="drawer"
-          rail
-          expand-on-hover
-          style="z-index: 10;"
-      >
+      <v-navigation-drawer permanent color="main" v-model="drawer" rail expand-on-hover style="z-index: 10;">
         <v-list>
-          <v-list-item
-              prepend-avatar="/images/64x64.png"
-              title="MapCache"
-              :subtitle="project.name"
-              class="pl-2"
-          >
+          <v-list-item prepend-avatar="/images/64x64.png" title="MapCache" :subtitle="project.name" class="pl-2">
             <template v-slot:prepend>
               <v-avatar size="42">
-                <v-img
-                    src="/images/64x64.png"
-                ></v-img>
+                <v-img src="/images/64x64.png"/>
               </v-avatar>
             </template>
           </v-list-item>
         </v-list>
         <v-list density="compact" nav>
-          <v-list-item
-              v-for="(tab, i) in tabs"
-              :key="i"
-              :value="tab.tabId"
-              :onclick="() => tab.onClick(i)"
-              :title="tab.text"
-              :active="tabId === tab.tabId"
-          >
+          <v-list-item v-for="(tab, i) in tabs" :key="i" :value="tab.tabId" :onclick="() => tab.onClick(i)" :title="tab.text" :active="tabId === tab.tabId">
             <template v-slot:prepend>
-              <v-badge
-                  v-if="tabNotification[tab.tabId]"
-                  color="red"
-                  dot
-                  overlap
-              >
+              <v-badge v-if="tabNotification[tab.tabId]" color="red" dot overlap>
                 <v-icon :icon="tab.icon"></v-icon>
               </v-badge>
               <v-icon v-else :icon="tab.icon"></v-icon>
             </template>
           </v-list-item>
         </v-list>
-
       </v-navigation-drawer>
       <v-row no-gutters class="ml-14">
         <v-col class="content-panel" v-show="tabId != null">
-          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages"
-                        :display-feature="displayFeature" :allow-notifications="allowNotifications"></geo-packages>
-          <data-sources  v-show="tabId === 1" ref="dataSourceRef" :back="back" :project="project"
-                        :sources="project.sources" :display-feature="displayFeature"
-                        :allow-notifications="allowNotifications"></data-sources>
-          <settings v-show="tabId === 2" :back="back" :project="project"
-                    :allow-notifications="allowNotifications" :dark="darkTheme"></settings>
-          <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null"
-                                    :results="nominatimSearchResults" :back="back"
-                                    :project="project"></nominatim-search-results>
+          <geo-packages v-show="tabId === 0" :back="back" :project="project" :geopackages="project.geopackages" :display-feature="displayFeature" :allow-notifications="allowNotifications" :dark="dark"/>
+          <data-sources  v-show="tabId === 1" ref="dataSourceRef" :back="back" :project="project" :sources="project.sources" :display-feature="displayFeature" :allow-notifications="allowNotifications" :dark="dark"/>
+          <settings v-show="tabId === 2" :back="back" :project="project" :allow-notifications="allowNotifications" :dark="dark"/>
+          <nominatim-search-results v-show="tabId === 3 && nominatimSearchResults != null" :results="nominatimSearchResults" :back="back" :project="project" :dark="dark"/>
         </v-col>
         <v-col>
-          <leaflet-map
-              ref="map"
-              visible
-              :geopackages="project.geopackages"
-              :sources="project.sources"
-              :project-id="project.id"
-              :project="project"
-              :resizeListener="tabId"
-              :feature-table-popped-out="featureTablePoppedOut"
-              :dark-theme="darkTheme">
-          </leaflet-map>
+          <leaflet-map ref="map" visible :geopackages="project.geopackages" :sources="project.sources" :project-id="project.id" :project="project" :resizeListener="tabId" :feature-table-popped-out="featureTablePoppedOut" :dark="dark"/>
         </v-col>
       </v-row>
     </v-layout>
@@ -219,7 +171,7 @@ export default {
         }
         return project
       },
-      darkTheme (state) {
+      dark (state) {
         let isDark = false
         const projectId = this.$route.params.id
         let project = state.UIState[projectId]
@@ -423,7 +375,7 @@ export default {
     }
   },
   watch: {
-    darkTheme: {
+    dark: {
       handler (newValue) {
         this.setTheme(newValue)
       }

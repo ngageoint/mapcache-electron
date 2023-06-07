@@ -53,9 +53,9 @@
                         :value="i">
                       <template v-slot:prepend style="margin-top: 12px;">
                         <v-btn variant="text" icon @click.stop="item.zoomTo">
-                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && project.dark"
+                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark"
                                  src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="project.dark"
+                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark"
                                  src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
                           <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
                                  src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
@@ -146,6 +146,10 @@ export default {
   props: {
     baseMaps: Array,
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     close: Function
   },
   data () {

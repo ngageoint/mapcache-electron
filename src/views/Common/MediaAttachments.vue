@@ -135,6 +135,10 @@ import { synchronizeGeoPackage, updateStyleKey } from '../../lib/vue/vuex/Projec
 export default {
   props: {
     project: Object,
+    dark: {
+      type: Boolean,
+      default: false
+    },
     geopackagePath: String,
     id: String,
     isGeoPackage: Boolean,
@@ -186,7 +190,7 @@ export default {
       } else {
         this.loadContent(this.attachments[this.model])
       }
-      
+
       await window.mapcache.deleteMediaAttachment(this.geopackagePath, JSON.parse(JSON.stringify(attachmentToDelete)))
       if (self.isGeoPackage) {
         await synchronizeGeoPackage(self.project.id, self.id)
@@ -292,7 +296,7 @@ export default {
     loadingContent: {
       async handler () {
         if (this.loadingContent === false) {
-          const isDark = project.dark
+          const isDark = this.dark
           this.$nextTick(() => {
             const frame = document.getElementById(this.model + '-iframe')
             frame.onload = function () {
