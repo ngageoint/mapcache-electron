@@ -1,4 +1,4 @@
-import store from '../../../store/renderer'
+import store from '../../../renderer/src/store/renderer'
 
 function setDataSourceVisible (projectId, sourceId, visible) {
   return store.dispatch('Projects/setDataSourceVisible', { projectId, sourceId, visible })

@@ -1,15 +1,29 @@
-/**
- * @see https://www.electron.build/configuration/configuration
- */
 {
   productName: "MapCache",
   appId: "mil.nga.mapcache",
   artifactName: "${productName}.${version}.${ext}",
   copyright: "Copyright © 2022 National Geospatial-Intelligence Agency",
-  extraResources: ["./resources/**", {
-    from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
-    to: "canvaskit/canvaskit.wasm",
-  }],
+  files: [
+    '!**/.idea/*',
+    '!src/*',
+    '!changelog/*',
+    '!images/*',
+    '!electron.vite.config.ts',
+    '!electron-builder.json5',
+    '!{BUILD.md,README.md}',
+    '!{yarn.lock}',
+    '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}',
+    'dist/main',
+    'dist/preload',
+    'dist/renderer',
+    'resources'
+  ],
+  extraResources: [
+    {
+      from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
+      to: "canvaskit/canvaskit.wasm",
+    }
+  ],
   protocols: [
     {
       name: "MapCache",
@@ -27,21 +41,10 @@
     "**/node_modules/ajv-formats/**/*",
     "**/node_modules/bindings/**/*",
     "**/node_modules/file-uri-to-path/**/*",
-    "**/mapcacheThread.js",
-    "**/0.js",
-    "**/1.js",
-    "**/2.js",
-    "**/3.js",
-    "**/4.js",
-    "**/5.js",
-    "**/6.js",
-    "**/7.js",
-    "**/8.js",
-    "**/9.js",
-    "**/10.js",
-    "**/11.js",
-    "**/12.js",
-    "**/13.js"
+    "**/dist/main/chunks/**/*",
+    "**/dist/main/mapcacheThread.js",
+    "**/dist/preload/**/*",
+    "**/resources/**/*"
   ],
   directories: {
     buildResources: "buildResources"
@@ -76,9 +79,6 @@
     target: [
       {
         target: "dmg",
-        arch: [
-          "universal"
-        ]
       }
     ],
     icon: "buildResources/icon.icns",

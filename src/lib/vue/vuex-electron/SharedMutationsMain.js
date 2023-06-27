@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS } from '../../../electron/lib/ipc/MapCacheIPC'
+import { IPC_EVENT_CONNECT, IPC_EVENT_NOTIFY_MAIN, IPC_EVENT_NOTIFY_RENDERERS } from '../../../main/lib/ipc/MapCacheIPC'
 
 class SharedMutationsMain {
   constructor (options, store) {

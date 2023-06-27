@@ -8,8 +8,8 @@ import "@mdi/font/css/materialdesignicons.css"
 import * as labs from 'vuetify/labs/components'
 
 
-import MapFilterOnSvg from '../../../views/Nominatim/MapFilterOnSvg.vue'
-import MapFilterOffSvg from '../../../views/Nominatim/MapFilterOffSvg.vue'
+import MapFilterOnSvg from '../../../renderer/src/views/Nominatim/MapFilterOnSvg.vue'
+import MapFilterOffSvg from '../../../renderer/src/views/Nominatim/MapFilterOffSvg.vue'
 
 const light = {
   dark: false,

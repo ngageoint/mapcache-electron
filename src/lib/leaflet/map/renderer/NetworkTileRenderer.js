@@ -13,7 +13,7 @@ import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
 import {
   REQUEST_TILE_COMPILATION,
   REQUEST_TILE_COMPILATION_COMPLETED
-} from '../../../../electron/lib/ipc/MapCacheIPC'
+} from '../../../../main/lib/ipc/MapCacheIPC'
 import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
 import { setSourceError } from '../../../vue/vuex/ProjectActions'

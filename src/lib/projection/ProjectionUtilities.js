@@ -11,7 +11,7 @@ import {
 } from './ProjectionConstants'
 import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 import isEqual from 'lodash/isEqual'
-import proj4DB from '../../../resources/proj4.db?asset'
+import proj4DB from '../../../resources/proj4.db?asset&asarUnpack'
 import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 
 function getCode (name) {
@@ -54,7 +54,8 @@ function getUnits (name) {
 
 function getDef (code) {
   let def
-  const db = new Database(proj4DB, { readonly: true })
+  // TODO: this is a dumb hack because for some reason the build is unpacking this asset twice? maybe a better way to do this in the future....
+  const db = new Database(proj4DB.replace('unpacked.unpacked', 'unpacked'), { readonly: true })
   const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
   const row = stmt.get(code)
   if (row && row.def) {

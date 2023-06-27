@@ -1,6 +1,6 @@
 import throttle from 'lodash/throttle'
 import { PROCESSING_STATES } from '../../source/SourceProcessing'
-import { PROCESS_SOURCE_STATUS } from '../../../electron/lib/ipc/MapCacheIPC'
+import { PROCESS_SOURCE_STATUS } from '../../../main/lib/ipc/MapCacheIPC'
 import { AsyncResource } from 'node:async_hooks'
 import { EventEmitter } from 'node:events'
 import path from 'node:path'

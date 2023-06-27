@@ -465,7 +465,7 @@ function startThread () {
   fetch = null
   CanvasKitInit({
     locateFile: (file) => {
-      return (process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), 'canvaskit', file) : path.join(__dirname, '..', '..', 'node_modules', '@ngageoint', 'geopackage', 'dist', 'canvaskit', file))
+      return (process.env.NODE_ENV === 'production' ? path.join(path.dirname(__dirname), '..', '..', 'canvaskit', file) : path.join(__dirname, '..', '..', 'node_modules', '@ngageoint', 'geopackage', 'dist', 'canvaskit', file))
     }
   }).then((CanvasKit) => {
     fetch = fetchHolder

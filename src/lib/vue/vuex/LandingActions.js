@@ -1,4 +1,4 @@
-import store from '../../../store/renderer'
+import store from '../../../renderer/src/store/renderer'
 import { setDataSourceVisible } from './CommonActions'
 import { isRemote } from '../../layer/LayerTypes'
 

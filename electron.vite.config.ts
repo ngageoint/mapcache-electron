@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin, splitVendorChunkPlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
@@ -10,20 +10,15 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'src/electron/main.js'),
+          index: resolve(__dirname, 'src/main/main.js'),
           mapcacheThread: resolve(__dirname, 'src/lib/threads/mapcacheThread.js')
         },
         output: {
-          dir: 'dist-electron/main',
-          format: 'cjs',
-          manualChunks(id) {
-            if (id.includes('lowdb')) {
-              return 'lowdb'
-            }
-          }
+          dir: 'dist/main',
+          format: 'cjs'
         }
       },
-      outDir: 'dist-electron/main'
+      outDir: 'dist/main'
     },
     resolve: {
       mainFields: ['module', 'main', 'browser'],
@@ -35,14 +30,14 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          mainPreload: resolve(__dirname, 'src/electron/preload/mainPreload.js'),
-          projectPreload: resolve(__dirname, 'src/electron/preload/projectPreload.js'),
-          featureTablePreload: resolve(__dirname, 'src/electron/preload/featureTablePreload.js'),
-          userGuidePreload: resolve(__dirname, 'src/electron/preload/userGuidePreload.js'),
-          workerPreload: resolve(__dirname, 'src/electron/preload/workerPreload.js')
+          mainPreload: resolve(__dirname, 'src/preload/mainPreload.js'),
+          projectPreload: resolve(__dirname, 'src/preload/projectPreload.js'),
+          featureTablePreload: resolve(__dirname, 'src/preload/featureTablePreload.js'),
+          userGuidePreload: resolve(__dirname, 'src/preload/userGuidePreload.js'),
+          workerPreload: resolve(__dirname, 'src/preload/workerPreload.js')
         }
       },
-      outDir: 'dist-electron/preload'
+      outDir: 'dist/preload'
     },
     resolve: {
       mainFields: ['module', 'main', 'browser'],
@@ -50,18 +45,25 @@ export default defineConfig({
     }
   },
   renderer: {
-    root: '.',
+    root: 'src/renderer',
+    resolve: {
+      alias: {
+        '@renderer': resolve('src/renderer/src')
+      }
+    },
     build: {
+      outDir: 'dist/renderer',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'public/index.html')
+          index: resolve(__dirname, 'src/renderer/index.html'),
+          loader: resolve(__dirname, 'src/renderer/loader.html')
         }
-      },
-      outDir: 'dist-electron/renderer'
+      }
     },
     plugins: [
       vue(),
       vuetify({ autoImport: true }),
+      splitVendorChunkPlugin()
     ],
     optimizeDeps: {
       esbuildOptions: {

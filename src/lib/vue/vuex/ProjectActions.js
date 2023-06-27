@@ -1,5 +1,5 @@
 import cloneDeep from 'lodash/cloneDeep'
-import store from '../../../store/renderer'
+import store from '../../../renderer/src/store/renderer'
 import { isProxy, toRaw } from 'vue';
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {

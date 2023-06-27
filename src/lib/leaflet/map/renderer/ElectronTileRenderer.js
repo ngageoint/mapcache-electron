@@ -1,5 +1,5 @@
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../../projection/ProjectionConstants'
-import { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } from '../../../../electron/lib/ipc/MapCacheIPC'
+import { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } from '../../../../main/lib/ipc/MapCacheIPC'
 
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
