@@ -1,16 +1,8 @@
 <template>
-  <v-list lines="two" subheader>
+  <v-list lines="three" subheader>
     <v-list-subheader>Transparency</v-list-subheader>
     <v-list-item class="pt-2">
-      <div style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
-        Opacity
-      </div>
-      <v-slider class="mx-auto" thumb-label="always" hide-details density="compact" v-model="opacity" :min="0" :max="100"
-                :interval="1">
-        <template v-slot:thumb-label="{ value }">
-          {{ value / 100.0 }}
-        </template>
-      </v-slider>
+      <v-slider class="mt-8 mr-8 mb-4" thumb-label="always" label="Opacity" hide-details v-model="opacity" :min="0" :max="100" :interval="1"/>
     </v-list-item>
   </v-list>
 </template>
@@ -24,7 +16,7 @@ export default {
     this.debounceOpacityUpdated = debounce((value) => {
       if (!isNil(value)) {
         let updatedConfiguration = Object.assign({}, this.configuration)
-        updatedConfiguration.opacity = value
+        updatedConfiguration.opacity = value / 100.0
         this.updateConfiguration(updatedConfiguration)
       }
     }, 250)
@@ -33,14 +25,17 @@ export default {
     configuration: Object,
     updateConfiguration: Function
   },
-  computed: {
+  data () {
+    return {
+      opacity: this.configuration.opacity === null || this.configuration.opacity === undefined ? 1.0 : this.configuration.opacity * 100.0
+    }
+  },
+  watch: {
     opacity: {
-      get () {
-        return (this.configuration.opacity === null || this.configuration.opacity === undefined ? 1.0 : this.configuration.opacity) * 100.0
+      handler (newValue) {
+        this.debounceOpacityUpdated(newValue)
       },
-      set (value) {
-        this.debounceOpacityUpdated(Number(value) / 100.0)
-      }
+      deep: true
     }
   }
 }

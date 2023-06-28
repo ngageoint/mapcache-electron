@@ -84,6 +84,7 @@ import { isMapCacheUserCancellationError, SERVICE_TYPE } from '../../../../lib/n
 import PreprocessSource from '../../../../lib/source/preprocessing/PreprocessSource'
 import { PROCESSING_STATES, getTitleForProcessingState } from '../../../../lib/source/SourceProcessing'
 import { addDataSources } from '../../../../lib/vue/vuex/ProjectActions'
+import { prepareObjectForWindowFunction } from '../../../../lib/util/common/CommonUtilities'
 
 export default {
   props: {
@@ -139,7 +140,7 @@ export default {
       const self = this
       self.status = 'Queued'
       self.$nextTick(() => {
-        window.mapcache.processSource({ source: JSON.parse(JSON.stringify(source)) })
+        window.mapcache.processSource({ source: prepareObjectForWindowFunction(source) })
         self.workflowState = PROCESSING_STATES.QUEUED
       })
     },

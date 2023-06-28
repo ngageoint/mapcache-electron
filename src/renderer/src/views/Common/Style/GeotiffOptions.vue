@@ -4,7 +4,7 @@
       <v-list-subheader>Rendering method</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="renderingMethod" :items="renderMethods" label="Rendering method" density="compact"/>
+          <v-select variant="underlined" v-model="renderingMethod" :items="renderMethods" label="Rendering method" density="comfortable"/>
         </div>
       </v-list-item>
     </v-list>
@@ -14,7 +14,7 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="grayBand" :items="bandOptions" label="Gray scale band" density="compact"/>
+            <v-select variant="underlined" v-model="grayBand" :items="bandOptions" label="Gray scale band" density="comfortable"/>
           </v-row>
           <v-row no-gutters v-if="grayBand > 0">
             <v-col class="ma-0 pr-1">
@@ -27,18 +27,13 @@
             </v-col>
           </v-row>
           <v-row no-gutters>
-            <v-select variant="underlined" v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient" density="compact">
+            <v-select variant="underlined" v-model="grayScaleColorGradient" :items="grayScaleColorGradientItems" label="Color gradient" density="comfortable">
             </v-select>
           </v-row>
         </div>
       </v-list-item>
       <v-list-item>
-        <div style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-          Stretch bands to min/max
-        </div>
-        <v-list-item-action>
-          <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
-        </v-list-item-action>
+        <v-switch class="ml-2" label="Stretch bands to min/max" color="primary" v-model="stretchToMinMax"/>
       </v-list-item>
     </v-list>
     <v-list lines="two" subheader v-if="renderingMethod === 1">
@@ -46,16 +41,16 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="redBand" :items="bandOptions" label="Red band" density="compact">
+            <v-select variant="underlined" v-model="redBand" :items="bandOptions" label="Red band" density="comfortable">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="redBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="redBandMin" density="compact"
+              <v-text-field variant="underlined" type="number" label="Min" v-model="redBandMin" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="redBandMax" density="compact"
+              <v-text-field variant="underlined" type="number" label="Max" v-model="redBandMax" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
@@ -64,16 +59,16 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="greenBand" :items="bandOptions" label="Green band" density="compact">
+            <v-select variant="underlined" v-model="greenBand" :items="bandOptions" label="Green band" density="comfortable">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="greenBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="greenBandMin" density="compact"
+              <v-text-field variant="underlined" type="number" label="Min" v-model="greenBandMin" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="greenBandMax" density="compact"
+              <v-text-field variant="underlined" type="number" label="Max" v-model="greenBandMax" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
@@ -82,28 +77,23 @@
       <v-list-item>
         <div style="padding-right: 12px;">
           <v-row no-gutters class="ma-0 pa-0">
-            <v-select variant="underlined" v-model="blueBand" :items="bandOptions" label="Blue band" density="compact">
+            <v-select variant="underlined" v-model="blueBand" :items="bandOptions" label="Blue band" density="comfortable">
             </v-select>
           </v-row>
           <v-row no-gutters v-if="blueBand > 0">
             <v-col class="ma-0 pr-1">
-              <v-text-field variant="underlined" type="number" label="Min" v-model="blueBandMin" density="compact"
+              <v-text-field variant="underlined" type="number" label="Min" v-model="blueBandMin" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
             <v-col class="ma-0 pl-1">
-              <v-text-field variant="underlined" type="number" label="Max" v-model="blueBandMax" density="compact"
+              <v-text-field variant="underlined" type="number" label="Max" v-model="blueBandMax" density="comfortable"
                             @keydown="handleKeyDown($event)"></v-text-field>
             </v-col>
           </v-row>
         </div>
       </v-list-item>
       <v-list-item>
-        <div style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-          Stretch bands to min/max
-        </div>
-        <v-list-item-action>
-          <v-switch color="primary" v-model="stretchToMinMax"></v-switch>
-        </v-list-item-action>
+        <v-switch class="ml-2" label="Stretch bands to min/max" color="primary" v-model="stretchToMinMax"/>
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
@@ -111,8 +101,7 @@
       <v-list-subheader>Palette options</v-list-subheader>
       <v-list-item>
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="paletteBand" :items="bandOptions" label="Palette band" density="compact">
-          </v-select>
+          <v-select variant="underlined" v-model="paletteBand" :items="bandOptions" label="Palette band" density="comfortable"/>
         </div>
       </v-list-item>
     </v-list>
@@ -121,17 +110,12 @@
       <v-list-subheader>Transparency options</v-list-subheader>
       <v-list-item v-if="renderingMethod < 2">
         <div style="padding-right: 12px;">
-          <v-select variant="underlined" v-model="alphaBand" :items="bandOptions" label="Alpha band" density="compact">
+          <v-select hide-details variant="underlined" v-model="alphaBand" :items="bandOptions" label="Alpha band" density="comfortable">
           </v-select>
         </div>
       </v-list-item>
       <v-list-item v-if="renderingMethod < 2">
-        <div style="padding-right: 12px; padding-top: 0; padding-bottom: 0;">
-          Specify no data value
-        </div>
-        <v-list-item-action>
-          <v-switch color="primary" v-model="enableGlobalNoDataValue"></v-switch>
-        </v-list-item-action>
+        <v-switch class="ml-2" label="Specify no data value" color="primary" v-model="enableGlobalNoDataValue"/>
       </v-list-item>
       <v-list-item v-if="renderingMethod < 2 && enableGlobalNoDataValue">
         <div style="padding-right: 12px;">
@@ -140,14 +124,7 @@
         </div>
       </v-list-item>
       <v-list-item class="pt-2">
-        <div style="max-width: 100px; padding-right: 0px; padding-top: 0; padding-bottom: 0;">
-          Opacity
-        </div>
-        <v-slider class="mx-auto" thumb-label="always" hide-details density="compact" v-model="opacity" :min="0" :max="100" :interval="1">
-          <template v-slot:thumb-label="{ value }">
-            {{ value / 100.0 }}
-          </template>
-        </v-slider>
+        <v-slider class="mt-8 mr-8 mb-4" thumb-label="always" label="Opacity" hide-details v-model="opacity" :min="0" :max="100" :interval="1"/>
       </v-list-item>
     </v-list>
   </v-sheet>
@@ -161,7 +138,8 @@ import isNil from 'lodash/isNil'
 export default {
   data () {
     return {
-      globalNoDataValue: this.configuration.globalNoDataValue
+      globalNoDataValue: this.configuration.globalNoDataValue,
+      opacity: this.configuration.opacity === null || this.configuration.opacity === undefined ? 1.0 : this.configuration.opacity * 100.0
     }
   },
   created () {
@@ -194,14 +172,6 @@ export default {
         let updatedConfiguration = Object.assign({}, this.configuration)
         updatedConfiguration.renderingMethod = value
         this.updateConfiguration(updatedConfiguration)
-      }
-    },
-    opacity: {
-      get () {
-        return (this.configuration.opacity === null || this.configuration.opacity === undefined ? 1.0 : this.configuration.opacity) * 100.0
-      },
-      set (value) {
-        this.debounceLayerField(Number(value) / 100.0, 'opacity')
       }
     },
     redBand: {
@@ -395,6 +365,9 @@ export default {
   watch: {
     globalNoDataValue (value) {
       this.debounceLayerField(Number(value), 'globalNoDataValue')
+    },
+    opacity (value) {
+      this.debounceLayerField(Number(value) / 100.0, 'opacity')
     }
   }
 }

@@ -131,6 +131,7 @@
 import isNil from 'lodash/isNil'
 import isEmpty from 'lodash/isEmpty'
 import { synchronizeGeoPackage, updateStyleKey } from '../../../../lib/vue/vuex/ProjectActions'
+import { prepareObjectForWindowFunction } from '../../../../lib/util/common/CommonUtilities'
 
 export default {
   props: {
@@ -191,7 +192,7 @@ export default {
         this.loadContent(this.attachments[this.model])
       }
 
-      await window.mapcache.deleteMediaAttachment(this.geopackagePath, JSON.parse(JSON.stringify(attachmentToDelete)))
+      await window.mapcache.deleteMediaAttachment(this.geopackagePath, prepareObjectForWindowFunction(attachmentToDelete))
       if (self.isGeoPackage) {
         await synchronizeGeoPackage(self.project.id, self.id)
       } else {

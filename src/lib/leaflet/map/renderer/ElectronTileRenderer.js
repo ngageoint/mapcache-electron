@@ -1,5 +1,6 @@
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../../projection/ProjectionConstants'
 import { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } from '../../../../main/lib/ipc/MapCacheIPC'
+import { prepareObjectForWindowFunction } from '../../../util/common/CommonUtilities'
 
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
@@ -92,7 +93,7 @@ export default class ElectronTileRenderer {
     } else {
       const tileRequest = this.getTileRequest(requestId, coords, size, crs)
       // TODO: inspect tile request for keys that would cause an issue cloning for preload
-      this.requestTile(JSON.parse(JSON.stringify(tileRequest))).then((result) => {
+      this.requestTile(prepareObjectForWindowFunction(tileRequest)).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)
