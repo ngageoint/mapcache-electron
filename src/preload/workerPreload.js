@@ -20,7 +20,6 @@ const getUserDataDirectory = () => {
 
 Object.assign(console, log.functions)
 contextBridge.exposeInMainWorld('log', log.functions)
-
 contextBridge.exposeInMainWorld('mapcache', {
   setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)

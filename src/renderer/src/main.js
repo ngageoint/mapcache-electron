@@ -116,12 +116,17 @@ window.deproxy = (obj) => {
             deproxied.push(window.deproxy(o))
         })
         return deproxied
+    } else if (typeof obj == "object") {
+      let object = obj;
+      if (isProxy(object)) {
+          object = toRaw(object)
+      }
+      Object.keys(object).forEach(o => {
+        object[o] = window.deproxy(object[o])
+      })
+      return object
     } else {
-        if (isProxy(obj)) {
-            return toRaw(obj)
-        } else {
-            return obj
-        }
+      return obj
     }
 }
 

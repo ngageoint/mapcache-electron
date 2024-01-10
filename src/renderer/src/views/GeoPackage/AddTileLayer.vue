@@ -47,13 +47,10 @@
       <v-divider/>
     </v-sheet>
     <v-sheet v-else class="mapcache-sheet-content">
-      <v-stepper v-model="step" class="background" non-linear vertical
-                 :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
-        <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => layerNameValid]" color="primary">
-          Name the layer
-          <small class="pt-1">{{ layerName }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="1">
+      <v-stepper :items="['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8', 'Step 9']" class="background" non-linear vertical
+                 :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}" :mobile=true>
+        
+        <template v-slot:item.1 editable :complete="step > 1" :rules="[() => layerNameValid]" color="primary">
           <v-card flat tile>
             <v-card-subtitle>
               Specify a name for the new GeoPackage tile layer.
@@ -71,16 +68,12 @@
               </v-form>
             </v-card-text>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!layerNameValid">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 2" step="2" color="primary">
+        </template>
+        
+        <template v-slot:item.2 editable :complete="step > 2" step="2" color="primary">
           Select data sources
           <small class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
             selected</small>
-        </v-stepper-step>
-        <v-stepper-content step="2">
           <v-card flat tile>
             <v-card-subtitle>
               Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
@@ -123,16 +116,12 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = 3">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 3" step="3" color="primary">
+        </template>
+        
+        <template v-slot:item.3 :complete="step > 3" editable color="primary">
           Select GeoPackage layers
           <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
             selected</small>
-        </v-stepper-step>
-        <v-stepper-content step="3">
           <v-card flat tile>
             <v-card-subtitle>
               Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
@@ -177,18 +166,15 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = 4">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
+        </template>
+        
+        <template v-slot:item.4 editable :complete="step > 4" color="primary">
           Order layers
           <small
               class="pt-1">{{
               selectedGeoPackageLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''
-            }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="4">
+            }}
+          </small>
           <v-card flat tile>
             <v-card-subtitle>
               Drag the layers to specify the rendering order. Layers at the top of the list will be rendered on top.
@@ -224,18 +210,13 @@
               </v-list>
             </v-card-text>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = 5">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5" color="primary">
+        </template>
+        
+        <template v-slot:item.5 editable color="primary" :complete="step > 5">
           Set layer's projection
-          <small
-              class="pt-1">{{
-              targetProjection
-            }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="5">
+          <small class="pt-1">
+            {{ targetProjection }}
+          </small>
           <v-card flat tile>
             <v-card-subtitle>
               Specify the layer's target projection. <br><small>Note: {{ WEB_MERCATOR_DISPLAY_TEXT }} is recommended for mobile maps.</small>
@@ -256,20 +237,16 @@
               </v-radio-group>
             </v-card-text>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = 6">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 6" step="6"
-                        :rules="[() => (boundingBoxFilter || Number(step) < 7) && (!isEditingBoundingBox() || (Number(step) === 6))]"
-                        color="primary">
+        </template>
+        
+        <template v-slot:item.6 editable :complete="step > 6" :rules="[() => (boundingBoxFilter || Number(step) < 7) && (!isEditingBoundingBox() || (Number(step) === 6))]"
+        color="primary">
           Specify bounding box
-          <small
-              class="pt-1">{{
+          <small class="pt-1">
+            {{
               isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box set' : 'Bounding box not set')
-            }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="6">
+            }}
+          </small>
           <v-card flat tile>
             <v-card-subtitle>
               Provide a bounding box to restrict content from the selected data sources and GeoPackage feature layers
@@ -278,17 +255,10 @@
                                  :boundingBox="boundingBoxFilter"
                                  :update-bounding-box="updateBoundingBox"></bounding-box-editor>
           </v-card>
-          <v-btn
-              variant="text"
-              color="primary"
-              @click="step = 7">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 7" step="7" color="primary" :rules="[() => areZoomsValid()]">
+        </template>
+        
+        <template v-slot:item.7 editable :complete="step > 7" color="primary" :rules="[() => areZoomsValid()]">
           Specify zoom levels
-        </v-stepper-step>
-        <v-stepper-content step="7">
           <v-card flat tile>
             <v-card-subtitle>
               Specify the minimum and maximum zoom levels.
@@ -306,17 +276,10 @@
               </v-container>
             </v-card-text>
           </v-card>
-          <v-btn
-              variant="text"
-              color="primary"
-              @click="step = 8">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 8" step="8" color="primary">
+        </template>
+        
+        <template v-slot:item.8 editable :complete="step > 8" color="primary">
           Enable tile scaling
-        </v-stepper-step>
-        <v-stepper-content step="8">
           <v-card flat tile>
             <v-card-subtitle>
               Tile scaling reduces the number of tiles by searching for tiles at nearby zoom levels and scaling them.
@@ -347,17 +310,10 @@
               </v-container>
             </v-card-text>
           </v-card>
-          <v-btn
-              variant="text"
-              color="primary"
-              @click="step = 9">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable step="9" color="primary">
+        </template>
+        
+        <template v-slot:item.9 editable color="primary" step="9">
           Summary
-        </v-stepper-step>
-        <v-stepper-content step="9">
           <v-card-text class="ma-0 pa-0">
             <p v-if="(dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0"
                class="warning-text">At least one layer is required for import.</p>
@@ -376,7 +332,7 @@
               }}
             </v-card-subtitle>
           </v-card-text>
-        </v-stepper-content>
+        </template>
       </v-stepper>
     </v-sheet>
 
@@ -392,12 +348,12 @@
         </v-btn>
         <v-btn
             v-if="!done && !processing"
-            :disabled="Number(step) !== 9 || !boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)"
+            :disabled="!boundingBoxFilter || !layerNameValid || ((dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0)" 
             color="primary"
             variant="text"
             @click.stop="addTileLayer">
           Add
-        </v-btn>
+        </v-btn> <!-- Number(step) !== 9 || -->
       </v-card-actions>
     </div>
   </v-sheet>
@@ -405,6 +361,7 @@
 
 <script>
 import { mapState } from 'vuex'
+import { toRaw } from 'vue'
 import isNil from 'lodash/isNil'
 import keys from 'lodash/keys'
 import debounce from 'lodash/debounce'
@@ -501,7 +458,7 @@ export default {
       return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     },
     filterErroredLayers (layers) {
-      this.selectedDataSourceLayers = layers.filter(layerId => isNil(this.project.sources[layerId].error))
+      this.selectedDataSourceLayers = this.selectedDataSourceLayers.filter(layerId => isNil(this.project.sources[layerId].error))
     },
     async cancelAddTileLayer () {
       const self = this
@@ -556,7 +513,7 @@ export default {
         size: {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE}
       }
 
-      window.mapcache.addTileLayer(this.configuration, (status) => {
+      window.mapcache.addTileLayer(window.deproxy(this.configuration), (status) => {
         if (!this.done) {
           this.status = status
         }

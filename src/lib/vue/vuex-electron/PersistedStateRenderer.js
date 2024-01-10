@@ -63,10 +63,12 @@ class PersistedStateRenderer {
   }
 
   loadInitialState () {
-    let state = window.vuex.getState(this.options.storageKey)
-    if (state) {
-      const mergedState = merge(this.store.state, state, { arrayMerge: this.combineMerge })
-      this.store.replaceState(mergedState)
+    if (window.vuex) {
+      let state = window.vuex.getState(this.options.storageKey)
+      if (state) {
+        const mergedState = merge(this.store.state, state, { arrayMerge: this.combineMerge })
+        this.store.replaceState(mergedState)
+      }  
     }
   }
 }

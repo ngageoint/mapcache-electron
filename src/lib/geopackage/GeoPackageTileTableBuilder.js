@@ -1,7 +1,6 @@
 import { BoundingBox, TileScaling, TileScalingType } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import throttle from 'lodash/throttle'
-import imagemin from 'imagemin'
 import imageminPngquant from 'imagemin-pngquant'
 import {
   performSafeGeoPackageOperation,
@@ -36,7 +35,7 @@ import {
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
-import { getWebMercatorBoundingBoxFromXYZ, tileIntersects } from '../util/tile/TileBoundingBoxUtils'
+import { getWebMercatorBoundingBoxFromXYZ, tileIntersects, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
 import SlowServerNotifier from './SlowServerNotifier'
 import { convertPbfToDataUrl } from '../util/rendering/MBTilesUtilities'
 import { ipcRenderer } from 'electron'
@@ -52,6 +51,7 @@ async function getImageBufferFromCanvas (canvas) {
   if (!isBlank(canvas)) {
     if (hasTransparentPixels(canvas)) {
       try {
+        const imagemin = (await import('imagemin')).default;
         return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
           plugins: [imageminPngquant({ speed: 8, quality: [0.5, 0.8] })]
         })

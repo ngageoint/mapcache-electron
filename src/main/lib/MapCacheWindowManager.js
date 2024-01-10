@@ -672,8 +672,8 @@ class MapCacheWindowManager {
       ipcMain.once(WORKER_BUILD_TILE_LAYER_COMPLETED(taskId), (event, result) => {
         ipcMain.removeAllListeners(WORKER_BUILD_TILE_LAYER_STATUS(taskId))
         if (!isNil(this.workerWindow)) {
-          this.workerWindow.destroy()
-          this.workerWindow = null
+          //this.workerWindow.destroy()
+          //this.workerWindow = null
         }
         if (!isNil(result) && !isNil(result.error)) {
           result.message = 'Error'
