@@ -1,14 +1,30 @@
 let makeImageDataFunction = (width, height) => {
-  throw new Error('Operation not configured.')
+  // throw new Error('makeImageDataFunction Operation not configured.')
+  return new ImageData(width, height)
+
 }
 
 let makeImageFunction = async (source) => {
-  throw new Error('Operation not configured.')
+  // throw new Error('makeImageFunction Operation not configured.')
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = function () {
+      resolve(image)
+    }
+    image.onerror = function (e) {
+      reject(e)
+    }
+    image.src = source
+  })
 
 }
 
 let createCanvasFunction = (width, height) => {
-  throw new Error('Operation not configured.')
+  // throw new Error('createCanvasFunction Operation not configured.')
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return canvas
 }
 
 let readPixelsFunction = (image) => {
