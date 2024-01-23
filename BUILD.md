@@ -93,6 +93,8 @@ The browser window processes can be debugged using the chrome developer tools.
 * All dev tools windows can be shown by using the keyboard shortcut CommandOrControl+Shift+S.
 * All dev tools windows can be hidden by using the keyboard shortcut CommandOrControl+Shift+H.
 
+You can hook up vscode for debugging both the front and backend via launch.json configuration files.  Read more here: https://github.com/ngageoint/mapcache-electron/wiki/VS-Code-debugging
+
 # Building MapCache
 The following will help you create binaries for windows, linux, and macOS. Due to native libraries within the application, each build must occur on its specific platform.  
 
