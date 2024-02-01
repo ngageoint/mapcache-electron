@@ -1,7 +1,7 @@
 import { BoundingBox, TileScaling, TileScalingType } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import throttle from 'lodash/throttle'
-import imageminPngquant from 'imagemin-pngquant'
+import sharp from 'sharp'
 import {
   performSafeGeoPackageOperation,
   prettyPrintMs,
@@ -51,10 +51,9 @@ async function getImageBufferFromCanvas (canvas) {
   if (!isBlank(canvas)) {
     if (hasTransparentPixels(canvas)) {
       try {
-        const imagemin = (await import('imagemin')).default;
-        return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
-          plugins: [imageminPngquant({ speed: 8, quality: [0.5, 0.8] })]
-        })
+        return sharp(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'))
+          .png()
+          .toBuffer()
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
