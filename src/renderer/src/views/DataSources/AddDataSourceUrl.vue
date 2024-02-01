@@ -37,278 +37,237 @@
       </v-card>
     </v-dialog>
     <v-sheet class="mapcache-sheet-content">
-      <v-stepper v-model="step" class="background" non-linear vertical
-                 :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
-        <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => dataSourceNameValid]" color="primary">
-          Name the data source
-          <small class="pt-1">{{ dataSourceName }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="1" class="mt-0 pt-0">
-          <v-card flat tile>
-            <v-card-subtitle class="mt-0 pt-0">
-              Specify a name for the new data source.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-form v-on:submit.prevent="() => {}" ref="dataSourceNameForm" v-model="dataSourceNameValid">
+      <v-card flat tile>
+        <v-card-subtitle class="mt-4 pt-0">
+          Give your data source a name.
+        </v-card-subtitle>
+        <v-card-text>
+          <v-form v-on:submit.prevent="() => {}" ref="dataSourceNameForm" v-model="dataSourceNameValid">
+            <v-text-field
+                variant="underlined"
+                autofocus
+                v-model="dataSourceName"
+                :rules="dataSourceNameRules"
+                label=" Data source name"
+                hide-details-auto
+                required
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+      </v-card>
+
+      <v-card flat tile>
+        <v-card-subtitle class="mt-0 pt-0">
+          Specify the data source's url.
+        </v-card-subtitle>
+        <v-card-text>
+          <v-form v-on:submit.prevent="() => {}" ref="urlForm" v-model="dataSourceUrlValid">
+            <v-row no-gutters justify="space-between">
+              <v-col>
+                <v-combobox
+                    v-model="dataSourceUrl"
+                    :search-input.sync="dataSourceUrl"
+                    :menu-props="menuProps"
+                    :rules="dataSourceUrlRules"
+                    clearable
+                    :items="urls.map(url => url.url)"
+                    label="URL"
+                >
+                  <template v-slot:no-data>
+                    <v-list-item>
+                      <span class="subheading">No matching urls</span>
+                    </v-list-item>
+                  </template>
+                  <template v-slot:item="{ item }">
+                    <v-list-item density="compact" link @click="setUrlToLink(item)">
+                      <div>
+                        {{ item }}
+                      </div>
+                      <v-list-item-action>
+                        <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
+                          <v-icon icon="mdi-trash-can"/>
+                        </v-btn>
+                      </v-list-item-action>
+                    </v-list-item>
+                  </template>
+                </v-combobox>
+              </v-col>
+            </v-row>
+            <div v-if="!serviceTypeAutoDetected">
+              <v-card-subtitle>
+                The service type could not be determined, please select from the available options.
+              </v-card-subtitle>
+              <v-radio-group row v-model="selectedServiceType">
+                <v-radio
+                    v-for="serviceType in supportedServiceTypes"
+                    :key="'service-type-' + serviceType.value"
+                    :label="`${serviceType.name}`"
+                    :value="serviceType.value"
+                ></v-radio>
+              </v-radio-group>
+            </div>
+            <div v-if="requiresSubdomains">
+              <v-card-subtitle class="pl-0">
+                This XYZ url requires subdomains.
+              </v-card-subtitle>
+              <v-form v-on:submit.prevent="() => {}" ref="subdomainRef" v-model="subdomainsValid">
                 <v-text-field
                     variant="underlined"
-                    autofocus
-                    v-model="dataSourceName"
-                    :rules="dataSourceNameRules"
-                    label="Data source name"
+                    v-model="subdomainText"
+                    :rules="subdomainRules"
+                    label="Subdomains"
+                    hint="e.g. 1,2,3,4"
                     required
                 ></v-text-field>
               </v-form>
-            </v-card-text>
-          </v-card>
-          <v-btn class="mb-2" variant="text" color="primary" @click="step = 2" :disabled="!dataSourceNameValid">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 2" step="2" :rules="[() => dataSourceUrlValid]" color="primary">
-          Specify url
-          <small v-if="dataSourceUrlValid && connected"
-                 class="pt-1">{{ dataSourceUrl + ' (' + getServiceTypeName(selectedServiceType) + ')' }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="2" class="mt-0 pt-0">
-          <v-card flat tile>
-            <v-card-subtitle class="mt-0 pt-0">
-              Specify the data source's url.
+            </div>
+            <v-row no-gutters>
+              <v-spacer/>
+              <v-btn :loading="dataSourceUrlValid && loading" v-if="!connected" color="primary"
+                      :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)"
+                      @click.stop="connect" variant="text">
+                {{ loading ? 'Connecting...' : 'Test Connection' }}
+              </v-btn>
+              <span v-else style="color: #00C851;">
+                Connected
+              </span>
+            </v-row>
+            <h4 v-if="error && !loading" class="warning--text">
+              {{ error.statusText ? error.statusText : error }}</h4>
+            <div v-if="selectedServiceType === 2 && connected">
+              <v-card-subtitle class="pl-0">
+                Specify the XYZ tile service's projection. <br><small>Note: {{ WEB_MERCATOR_DISPLAY_TEXT }} is more commonly used.</small>
+              </v-card-subtitle>
+              <v-radio-group
+                  v-model="xyzProjection"
+                  mandatory
+              >
+                <v-radio
+                    :label=WEB_MERCATOR_DISPLAY_TEXT
+                    :value=WEB_MERCATOR
+                ></v-radio>
+                <v-radio
+                    :label=WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
+                    :value=WORLD_GEODETIC_SYSTEM
+                ></v-radio>
+              </v-radio-group>
+            </div>
+          </v-form>
+        </v-card-text>
+      </v-card>
+      
+      <v-card flat tile>
+        <v-card-text v-if="serviceInfo">
+          <h4 class="primary--text">{{ serviceInfo.title }}</h4>
+          <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{ serviceInfo.abstract }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.version">
+            {{ supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{ 'Contact person: ' + serviceInfo.contactName }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">
+            {{ 'Contact organization:' + serviceInfo.contactOrg }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{ 'Copyright:' + serviceInfo.copyright }}</p>
+        </v-card-text>
+        <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
+          <v-sheet>
+            <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">
+              {{ 'Layers from the WFS service to import.' }}
             </v-card-subtitle>
-            <v-card-text>
-              <v-form v-on:submit.prevent="() => {}" ref="urlForm" v-model="dataSourceUrlValid">
-                <v-row no-gutters justify="space-between">
-                  <v-col>
-                    <v-combobox
-                        v-model="dataSourceUrl"
-                        :search-input.sync="dataSourceUrl"
-                        :menu-props="menuProps"
-                        :rules="dataSourceUrlRules"
-                        clearable
-                        :items="urls.map(url => url.url)"
-                        label="URL"
+            <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">
+              {{ 'Layers from the ArcGIS feature service to import.' }}
+            </v-card-subtitle>
+            <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-4">
+              <v-infinite-scroll
+                  class="pa-0 ma-0 detail-bg"
+                  :items="serviceLayers"
+                  :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
+                  :item-height="getHeightFromServiceLayers(serviceLayers)"
+              >
+                <template v-slot:default="{ item, i }">
+                  <v-list-item-group
+                      v-model="selectedDataSourceLayers"
+                      multiple
+                      color="primary"
+                  >
+                    <v-list-item
+                        class="detail-bg"
+                        :key="`service-layer-${i}`"
+                        :value="item"
+                        @click="() => {item.active = !item.active}"
                     >
-                      <template v-slot:no-data>
-                        <v-list-item>
-                          <span class="subheading">No matching urls</span>
-                        </v-list-item>
-                      </template>
-                      <template v-slot:item="{ item }">
-                        <v-list-item density="compact" link @click="setUrlToLink(item)">
-                          <div>
-                            {{ item }}
+                      <template v-slot:default="{ active }">
+                        <div>
+                          <div v-if="item.title">
+                            <div class="list-item-title" v-text="item.title" :title="item.title"></div>
                           </div>
-                          <v-list-item-action>
-                            <v-btn icon color="warning" @click.stop.prevent="showDeleteUrlDialog(item)">
-                              <v-icon icon="mdi-trash-can"/>
-                            </v-btn>
-                          </v-list-item-action>
-                        </v-list-item>
+                          <div v-if="item.subtitles && item.subtitles.length > 0">
+                            <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
+                                  :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
+                          </div>
+                        </div>
+                        <v-list-item-action>
+                          <v-switch
+                              :model-value="active"
+                              color="primary"
+                          ></v-switch>
+                        </v-list-item-action>
                       </template>
-                    </v-combobox>
-                  </v-col>
-                </v-row>
-                <div v-if="!serviceTypeAutoDetected">
-                  <v-card-subtitle>
-                    The service type could not be determined, please select from the available options.
-                  </v-card-subtitle>
-                  <v-radio-group row v-model="selectedServiceType">
-                    <v-radio
-                        v-for="serviceType in supportedServiceTypes"
-                        :key="'service-type-' + serviceType.value"
-                        :label="`${serviceType.name}`"
-                        :value="serviceType.value"
-                    ></v-radio>
-                  </v-radio-group>
-                </div>
-                <div v-if="requiresSubdomains">
-                  <v-card-subtitle class="pl-0">
-                    This XYZ url requires subdomains.
-                  </v-card-subtitle>
-                  <v-form v-on:submit.prevent="() => {}" ref="subdomainRef" v-model="subdomainsValid">
-                    <v-text-field
-                        variant="underlined"
-                        autofocus
-                        v-model="subdomainText"
-                        :rules="subdomainRules"
-                        label="Subdomains"
-                        hint="e.g. 1,2,3,4"
-                        required
-                    ></v-text-field>
-                  </v-form>
-                </div>
-                <v-row no-gutters>
-                  <v-spacer/>
-                  <v-btn :loading="dataSourceUrlValid && loading" v-if="!connected" color="primary"
-                         :disabled="!dataSourceUrlValid || !urlIsValid || loading || (!subdomainsValid && selectedServiceType === 2)"
-                         @click.stop="connect" variant="text">
-                    {{ loading ? 'Connecting...' : 'Connect' }}
-                  </v-btn>
-                  <span v-else style="color: #00C851;">
-                    Connected
-                  </span>
-                </v-row>
-                <h4 v-if="error && !loading" class="warning--text">
-                  {{ error.statusText ? error.statusText : error }}</h4>
-                <div v-if="selectedServiceType === 2 && connected">
-                  <v-card-subtitle class="pl-0">
-                    Specify the XYZ tile service's projection. <br><small>Note: {{ WEB_MERCATOR_DISPLAY_TEXT }} is more commonly used.</small>
-                  </v-card-subtitle>
-                  <v-radio-group
-                      v-model="xyzProjection"
-                      mandatory
-                  >
-                    <v-radio
-                        :label=WEB_MERCATOR_DISPLAY_TEXT
-                        :value=WEB_MERCATOR
-                    ></v-radio>
-                    <v-radio
-                        :label=WORLD_GEODETIC_SYSTEM_DISPLAY_TEXT
-                        :value=WORLD_GEODETIC_SYSTEM
-                    ></v-radio>
-                  </v-radio-group>
-                </div>
-              </v-form>
+                    </v-list-item>
+                  </v-list-item-group>
+                </template>
+              </v-infinite-scroll>
             </v-card-text>
-          </v-card>
-          <v-btn class="mb-2" variant="text" color="primary" @click="step = 3" :disabled="!connected">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step
-            v-if="!loading && serviceInfo != null && (selectedServiceType === 1 || selectedServiceType === 3)" editable
-            :complete="step > 3" step="3" color="primary" :rules="[() => serviceLayers.length > 0]">
-          {{ 'Select ' + supportedServiceTypes[selectedServiceType].name + ' layers' }}
-          <small v-if="selectedServiceType === 0 && serviceInfo.format === undefined" class="pt-1">No supported image
-            formats</small>
-          <small v-else-if="serviceLayers.length === 0" class="pt-1">No supported layers available</small>
-          <small v-else class="pt-1">{{ !selectedDataSourceLayersValid() ? 'None' : selectedDataSourceLayers.length }}
-            selected</small>
-        </v-stepper-step>
-        <v-stepper-content
-            v-if="!loading && serviceInfo != null && (selectedServiceType === 1 || selectedServiceType === 3)" step="3">
-          <v-card flat tile>
-            <v-card-text v-if="serviceInfo">
-              <h4 class="primary--text">{{ serviceInfo.title }}</h4>
-              <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{ serviceInfo.abstract }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.version">
-                {{ supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{ 'Contact person: ' + serviceInfo.contactName }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">
-                {{ 'Contact organization:' + serviceInfo.contactOrg }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{ 'Copyright:' + serviceInfo.copyright }}</p>
-            </v-card-text>
-            <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
-              <v-sheet>
-                <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">
-                  {{ 'Layers from the WFS service to import.' }}
-                </v-card-subtitle>
-                <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">
-                  {{ 'Layers from the ArcGIS feature service to import.' }}
-                </v-card-subtitle>
-                <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-4">
-                  <v-infinite-scroll
-                      class="pa-0 ma-0 detail-bg"
-                      :items="serviceLayers"
-                      :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
-                      :item-height="getHeightFromServiceLayers(serviceLayers)"
-                  >
-                    <template v-slot:default="{ item, i }">
-                      <v-list-item-group
-                          v-model="selectedDataSourceLayers"
-                          multiple
-                          color="primary"
-                      >
-                        <v-list-item
-                            class="detail-bg"
-                            :key="`service-layer-${i}`"
-                            :value="item"
-                            @click="() => {item.active = !item.active}"
-                        >
-                          <template v-slot:default="{ active }">
-                            <div>
-                              <div v-if="item.title">
-                                <div class="list-item-title" v-text="item.title" :title="item.title"></div>
-                              </div>
-                              <div v-if="item.subtitles && item.subtitles.length > 0">
-                                <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                                     :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
-                              </div>
-                            </div>
-                            <v-list-item-action>
-                              <v-switch
-                                  :model-value="active"
-                                  color="primary"
-                              ></v-switch>
-                            </v-list-item-action>
-                          </template>
-                        </v-list-item>
-                      </v-list-item-group>
-                    </template>
-                  </v-infinite-scroll>
-                </v-card-text>
-              </v-sheet>
-            </v-card>
-          </v-card>
-          <v-btn class="mb-2" variant="text" color="primary" @click="step = 4">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step :editable="connected" :step="summaryStep" color="primary"
-                        :rules="[() => connected || step !== summaryStep]">
-          Summary
-          <small v-if="!connected && step === summaryStep" class="pt-1">Connection not verified.</small>
-        </v-stepper-step>
-        <v-stepper-content :step="summaryStep">
-          <v-card flat tile>
-            <v-card-text class="ma-0 pa-0"
-                         v-if="!loading && (selectedServiceType === 0|| selectedServiceType === 5 ) && !error && serviceInfo">
-              <h4 class="primary--text pb-0 mb-0">{{ serviceInfo.title }}</h4>
-              <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{ serviceInfo.abstract }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.version">
-                {{ supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{ 'Contact person: ' + serviceInfo.contactName }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">
-                {{ 'Contact organization:' + serviceInfo.contactOrg }}</p>
-              <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{ 'Copyright:' + serviceInfo.copyright }}</p>
-              <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 0">
-                <b>{{ serviceLayers.length }}</b>{{
-                  ' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '
-                }}<b>{{ serviceInfo.title }}</b>{{ ' will be imported as the ' }}<b>{{
-                  dataSourceName
-                }}</b>{{ ' data source.' }}
-              </p>
-              <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 5">
-                <b>{{ serviceLayers.length }}</b>{{
-                  ' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '
-                }}<b>{{ serviceInfo.title }}</b>{{ ' will be imported as the ' }}<b>{{
-                  dataSourceName
-                }}</b>{{ ' data source.' }}
-              </p>
-            </v-card-text>
-            <v-card-text class="ma-0 pa-0" v-else>
-              <p v-if="!loading && selectedServiceType === 1 && !error && selectedDataSourceLayersValid()">
-                <b>{{ selectedDataSourceLayers.length }}</b>
-                {{
-                  ' WFS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
-                }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
-              </p>
-              <p v-if="!loading && selectedServiceType === 3 && !error && selectedDataSourceLayersValid()">
-                <b>{{ selectedDataSourceLayers.length }}</b>
-                {{
-                  ' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
-                }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
-              </p>
-              <p v-if="!loading && selectedServiceType === 2 && !error && connected">
-                {{ 'The XYZ layer will be imported as the ' }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}</p>
-              <h4 v-if="error" class="warning--text">{{ error }}</h4>
-              <h4 v-if="!dataSourceUrlValid || !connected || (!selectedDataSourceLayersValid() && selectedServiceType !== 2)"
-                  class="warning--text">Nothing to import.</h4>
-            </v-card-text>
-          </v-card>
-        </v-stepper-content>
-      </v-stepper>
+          </v-sheet>
+        </v-card>
+      </v-card>
+
+      <v-card flat tile>
+        <v-card-text class="ma-4 pa-0"
+                      v-if="!loading && (selectedServiceType === 0|| selectedServiceType === 5 ) && !error && serviceInfo">
+          <h4 class="primary--text pb-0 mb-0">{{ serviceInfo.title }}</h4>
+          <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{ serviceInfo.abstract }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.version">
+            {{ supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{ 'Contact person: ' + serviceInfo.contactName }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">
+            {{ 'Contact organization:' + serviceInfo.contactOrg }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{ 'Copyright:' + serviceInfo.copyright }}</p>
+          <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 0">
+            <b>{{ serviceLayers.length }}</b>{{
+              ' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '
+            }}<b>{{ serviceInfo.title }}</b>{{ ' will be imported as the ' }}<b>{{
+              dataSourceName
+            }}</b>{{ ' data source.' }}
+          </p>
+          <p class="pb-0 mb-0 mt-4" v-if="selectedServiceType === 5">
+            <b>{{ serviceLayers.length }}</b>{{
+              ' layer' + (serviceLayers.length > 1 ? 's' : '') + ' from the '
+            }}<b>{{ serviceInfo.title }}</b>{{ ' will be imported as the ' }}<b>{{
+              dataSourceName
+            }}</b>{{ ' data source.' }}
+          </p>
+        </v-card-text>
+        <v-card-text class="ma-4 pa-0" v-else>
+          <p v-if="!loading && selectedServiceType === 1 && !error && selectedDataSourceLayersValid()">
+            <b>{{ selectedDataSourceLayers.length }}</b>
+            {{
+              ' WFS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
+            }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
+          </p>
+          <p v-if="!loading && selectedServiceType === 3 && !error && selectedDataSourceLayersValid()">
+            <b>{{ selectedDataSourceLayers.length }}</b>
+            {{
+              ' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
+            }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
+          </p>
+          <p v-if="!loading && selectedServiceType === 2 && !error && connected">
+            {{ 'The XYZ layer will be imported as the ' }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}</p>
+          <h4 v-if="error" class="warning--text">{{ error }}</h4>
+          <h4 v-if="!dataSourceUrlValid || !connected || (!selectedDataSourceLayersValid() && selectedServiceType !== 2)"
+              class="warning--text">Nothing to import.</h4>
+        </v-card-text>
+      </v-card>
     </v-sheet>
+    
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
       <v-card-actions>
@@ -391,7 +350,7 @@ export default {
       }
     }),
     importReady () {
-      return this.step === this.summaryStep && this.connected && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayersValid()) || this.selectedServiceType === SERVICE_TYPE.XYZ || this.selectedServiceType === SERVICE_TYPE.WMS || this.selectedServiceType === SERVICE_TYPE.WMTS)
+      return this.connected && this.dataSourceNameValid && this.dataSourceUrlValid && this.selectedServiceType !== -1 && !this.error && (((this.selectedServiceType < 2 || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) && this.selectedDataSourceLayersValid()) || this.selectedServiceType === SERVICE_TYPE.XYZ || this.selectedServiceType === SERVICE_TYPE.WMS || this.selectedServiceType === SERVICE_TYPE.WMTS)
     }
   },
   data () {
@@ -408,7 +367,7 @@ export default {
       accessDeniedOrForbidden: false,
       sortedRenderingLayers: undefined,
       dataSourceNameValid: true,
-      dataSourceName: 'Data source',
+      dataSourceName: "My Data Source",
       dataSourceNameRules: [v => !!v || 'Data source name is required'],
       dataSourceUrl: null,
       dataSourceUrlValid: true,

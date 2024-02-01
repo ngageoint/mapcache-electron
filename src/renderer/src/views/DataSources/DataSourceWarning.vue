@@ -1,5 +1,5 @@
 <template>
-  <v-btn v-if="source.warning" color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning" icon="mdi-information">
+  <v-btn v-if="source.warning" icon="mdi-information" variant="text" color="#F4D03F" @click.stop="() => showTroubleshooting()" title="Warning" class="mr-4">
     <v-dialog v-model="showWarningDialog" max-width="500" persistent @keydown.esc="closeTroubleshooting">
       <v-card v-if="showWarningDialog">
         <v-card-title>
