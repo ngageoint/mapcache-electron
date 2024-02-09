@@ -517,10 +517,10 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.19.12.tgz#c57c8afbb4054a3ab8317591a0b7320360b444ae"
   integrity sha512-T1QyPSDCyMXaO3pzBkF96E8xMkiRYbUEZADd29SyPGabqxMViNoii+NcK7eWJAEoU6RZyEm5lVSIjTmcdoB9HA==
 
-"@geoman-io/leaflet-geoman-free@2.15.0":
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/@geoman-io/leaflet-geoman-free/-/leaflet-geoman-free-2.15.0.tgz#fc15b53eab1cba0de75b14406d06a6a47d6d0c86"
-  integrity sha512-esann1pQ8cCX3pMR7XkXuf1vwwJLz1mAbkeyRWOfoLMKA8LBnbRxChIBZzzwzyGIxybNO93Bl6LaK8wEj8uzlA==
+"@geoman-io/leaflet-geoman-free@2.14.2":
+  version "2.14.2"
+  resolved "https://registry.yarnpkg.com/@geoman-io/leaflet-geoman-free/-/leaflet-geoman-free-2.14.2.tgz#c84c2115c263f34d11dc0b43859551639fe3d56b"
+  integrity sha512-6lIyG8RvSVdFjVjiQgBPyNASjymSyqzsiUeBW0pA+q41lB5fAg4SDC6SfJvWdEyDHa81Jb5FWjUkCc9O+u0gbg==
   dependencies:
     "@turf/boolean-contains" "^6.5.0"
     "@turf/kinks" "^6.5.0"
