@@ -437,6 +437,7 @@ export default {
       selectedGeoPackageLayers: [],
       selectedDataSourceLayers: [],
       internalRenderingOrder: [],
+      layersPreEnabled: [],
     }
   },
   methods: {
@@ -543,10 +544,29 @@ export default {
       })
     },
     cancel () {
+      this.disableSelectedSources()
       if (this.isEditingBoundingBox()) {
         this.$refs.boundingBoxEditor.stopEditing()
       }
       this.back()
+    },
+    disableSelectedSources () {
+      const sourceValues = Object.values(this.project.sources)
+      for (let i = 0; i < sourceValues.length; i++) {
+        const source = sourceValues[i]
+        if (!this.layersPreEnabled.includes(source.name)) {
+          setDataSourceVisible(this.project.id, source.id, false)
+        }
+      }
+    },
+    savePreEnabledLayers () {
+      const sourceValues = Object.values(this.project.sources)
+      for (let i = 0; i < sourceValues.length; i++) {
+        const source = sourceValues[i]
+        if (source.visible) {
+          this.layersPreEnabled.push(source.name)
+        }
+      }
     },
     updateMinZoom (val) {
       if (val > this.maxZoom) {
@@ -686,13 +706,16 @@ export default {
     fireReorderMapLayers: debounce((layers) => {
       EventBus.$emit(EventBus.EventTypes.REORDER_MAP_LAYERS, layers)
     }, 100),
-    async updateProjectData () {
+    async updateProjectData (callback) {
       this.dataSourceLayers = await this.getDataSourceLayers()
       this.selectedDataSourceLayers = this.dataSourceLayers.filter(item => item.visible).map(item => item.id)
       this.geopackageLayers = await this.getGeoPackageLayerItems()
       this.selectedGeoPackageLayers = this.geopackageLayers.filter(item => item.visible).map(item => item.id)
       const items = this.dataSourceLayers.filter(item => item.visible).concat(this.geopackageLayers.filter(item => item.visible))
       this.internalRenderingOrder = this.project.mapRenderingOrder.map(id => items.find(item => item.id === id)).filter(item => !isNil(item))
+      if(callback){
+        callback()
+      }
     }
   },
   computed: {
@@ -742,7 +765,9 @@ export default {
     this.maxZoom = Math.min(20, Math.max(0, (this.minZoom + 2)))
   },
   created () {
-    this.updateProjectData()
+    this.updateProjectData(() => {
+      this.savePreEnabledLayers()
+    })
   }
 }
 </script>
