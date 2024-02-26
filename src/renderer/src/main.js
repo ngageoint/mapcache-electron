@@ -110,23 +110,28 @@ if (window.mapcache) {
  * @return {*}
  */
 window.deproxy = (obj) => {
-    if (Array.isArray(obj)) {
-        const deproxied = []
-        obj.forEach(o => {
-            deproxied.push(window.deproxy(o))
+    console.log("deproxy: " + obj)
+    try {
+        if (Array.isArray(obj)) {
+            const deproxied = []
+            obj.forEach(o => {
+                deproxied.push(window.deproxy(o))
+            })
+            return deproxied
+        } else if (typeof obj == "object") {
+        let object = obj;
+        if (isProxy(object)) {
+            object = toRaw(object)
+        }
+        Object.keys(object).forEach(o => {
+            object[o] = window.deproxy(object[o])
         })
-        return deproxied
-    } else if (typeof obj == "object") {
-      let object = obj;
-      if (isProxy(object)) {
-          object = toRaw(object)
-      }
-      Object.keys(object).forEach(o => {
-        object[o] = window.deproxy(object[o])
-      })
-      return object
-    } else {
-      return obj
+        return object
+        } else {
+        return obj
+        }
+    } catch(e) {
+        console.log("Unexpected value when running deproxy " + obj + "\n" + e)
     }
 }
 

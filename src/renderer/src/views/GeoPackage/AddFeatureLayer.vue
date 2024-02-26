@@ -48,221 +48,177 @@
       <v-divider/>
     </v-sheet>
     <v-sheet v-else class="mapcache-sheet-content">
-      <v-stepper v-model="step" non-linear vertical class="background"
-                 :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
-        <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => layerNameValid]" color="primary">
-          Name the layer
-          <small class="pt-1">{{ layerName }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="1">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Specify a name for the new GeoPackage feature layer.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-form v-on:submit.prevent="() => {}" ref="layerNameForm" v-model="layerNameValid">
-                <v-text-field
-                    variant="underlined"
-                    autofocus
-                    v-model="layerName"
-                    :rules="layerNameRules"
-                    label="Layer name"
-                    required
-                ></v-text-field>
-              </v-form>
-            </v-card-text>
-          </v-card>
-          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!layerNameValid">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 2" step="2" color="primary">
-          Select data sources
-          <small class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
-            selected</small>
-        </v-stepper-step>
-        <v-stepper-content step="2">
-          <v-card flat tile>
-            <v-card-subtitle v-if="dataSourceLayers.length > 0">
-              Select data sources to populate the <b>{{ layerName }}</b> feature layer.
-            </v-card-subtitle>
-            <v-card-subtitle v-else>
-              No data source layers.
-            </v-card-subtitle>
-            <v-card-text v-if="dataSourceLayers.length > 0">
-              <v-list density="compact">
-                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
-                  <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
-                    <v-list-item
-                        :value="item.value"
-                        @click.stop="item.changeVisibility">
-                      <template v-slot:prepend>
-                        <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                          <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                        </v-btn>
-                      </template>
-                      <template v-slot:default="{ active }">
-                        <div>
-                          <v-list-item-title v-text="item.text"></v-list-item-title>
-                        </div>
-                        <v-list-item-action>
-                          <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
-                        </v-list-item-action>
-                      </template>
-                    </v-list-item>
-                    <v-divider
-                        v-if="i < selectedDataSourceLayers.length - 1"
-                        :key="'data_source_layer_divider_' + i"
-                    ></v-divider>
-                  </template>
-                </v-list-item-group>
-              </v-list>
-            </v-card-text>
-          </v-card>
-          <v-btn variant="text" color="primary" @click="step = 3">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 3" step="3" color="primary">
-          Select GeoPackage layers
-          <small
-              class="pt-1">{{
-              selectedGeoPackageFeatureLayers.length === 0 ? 'None' : selectedGeoPackageFeatureLayers.length
-            }}
-            selected</small>
-        </v-stepper-step>
-        <v-stepper-content step="3">
-          <v-card flat tile>
-            <v-card-subtitle v-if="geopackageFeatureLayers.length > 0">
-              Select existing GeoPackage feature layers to populate the <b>{{ layerName }}</b> feature layer.
-            </v-card-subtitle>
-            <v-card-subtitle v-else>
-              No existing GeoPackage feature layers.
-            </v-card-subtitle>
-            <v-card-text v-if="geopackageFeatureLayers.length > 0">
-              <v-list density="compact">
-                <v-list-item-group multiple color="primary" v-model="selectedGeoPackageFeatureLayers">
-                  <template v-for="(item, i) in geopackageFeatureLayers" :key="`geopackage-layer-item-${i}`">
-                    <v-list-item
-                        :value="item.value"
-                        @click.stop="item.changeVisibility">
-                      <template v-slot:prepend>
-                        <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                          <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                        </v-btn>
-                      </template>
-                      <template v-slot:default="{ active }">
-                        <div>
-                          <v-list-item-title v-text="item.title"></v-list-item-title>
-                          <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
-                        </div>
-                        <v-list-item-action>
-                          <v-switch
-                              density="compact"
-                              @click.stop="item.changeVisibility"
-                              :model-value="active"
-                              color="primary"
-                          ></v-switch>
-                        </v-list-item-action>
-                      </template>
-                    </v-list-item>
-                    <v-divider
-                        v-if="i < selectedGeoPackageFeatureLayers.length - 1"
-                        :key="'feature_layer_divider_' + i"
-                    ></v-divider>
-                  </template>
-                </v-list-item-group>
-              </v-list>
-            </v-card-text>
-          </v-card>
-          <v-btn variant="text" color="primary" @click="step = 4">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 4" step="4" color="primary">
-          Order layers
-          <small
-              class="pt-1">{{
-              selectedGeoPackageFeatureLayers.length + selectedDataSourceLayers.length === 0 ? 'No layers selected' : ''
-            }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="4">
-          <v-card flat tile>
-            <v-card-subtitle class="pt-0">
-              Drag the layers to specify the rendering order. Layers at the top of the list will be rendered on top.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-list
-                  style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
-                  v-sortable="{onEnd:updateSortedLayerOrder}"
-                  density="compact">
-                <v-list-item
-                    v-for="item in sortedLayers"
-                    class="sortable-list-item"
-                    :key="item.id">
-                  <template v-slot:prepend class="mt-1">
-                    <v-btn icon @click.stop="item.zoomTo">
-                      <v-img v-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                      <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                    </v-btn>
-                  </template>
-                  <div class="pa-0 ma-0">
-                    <v-list-item-title v-text="item.title"></v-list-item-title>
-                    <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
-                  </div>
-                  <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
-                    <v-icon @click.stop.prevent icon="mdi-drag-horizontal-variant"/>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-          <v-btn variant="text" color="primary" @click="step = 5">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 5" step="5"
-                        :rules="[() => !isEditingBoundingBox() || (Number(step) === 5)]" color="primary">
-          Specify bounding box filter (optional)
-          <small
-              class="pt-1">{{
-              isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box applied' : 'No bounding box')
-            }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="5">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Restrict features to a specified area of the map. If not provided, all features from your selected data
-              source and GeoPackage layers will be added.
-            </v-card-subtitle>
-            <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project"
-                                 :boundingBox="boundingBoxFilter"
-                                 :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
-          </v-card>
-          <v-btn
-              variant="text"
-              color="primary"
-              @click="step = 6">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable step="6" color="primary">
-          Summary
-        </v-stepper-step>
-        <v-stepper-content step="6">
-          <v-card flat tile>
-            <v-card-text>
-              <b>{{
-                  filteredFeatureCount
-                }}</b>{{
-                (boundingBoxFilter ? ' filtered' : '') + ' features will be added to the '
-              }}<b>{{ geopackage.name }}</b>{{ ' GeoPackage as the ' }}<b>{{ layerName }}</b>{{ ' feature layer.' }}
-            </v-card-text>
-          </v-card>
-        </v-stepper-content>
-      </v-stepper>
+      <v-card flat tile>
+        <v-card-text>
+          <v-form v-on:submit.prevent="() => {}" ref="layerNameForm" v-model="layerNameValid">
+            <v-text-field
+                variant="underlined"
+                autofocus
+                v-model="layerName"
+                :rules="layerNameRules"
+                label="Layer name"
+                required
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    
+      <v-tabs v-model="layerOptions" bg-color="light" class="w-100">
+        <v-tab value="blank" class="w-50">Blank Layer</v-tab>
+        <v-tab value="import" class="w-50">Import Features</v-tab>
+      </v-tabs>
+      <v-card>
+        <v-window v-model="layerOptions" class="pa-4">
+          <v-window-item value="blank">Draw your own features.</v-window-item>
+          
+          <!-- Import features from a data source -->
+          <v-window-item value="import">
+            <v-card flat tile>
+              <v-card-subtitle v-if="dataSourceLayers.length > 0">
+                Select data sources to populate the <b>{{ layerName }}</b> feature layer.
+              </v-card-subtitle>
+              <v-card-subtitle v-else>
+                No data source layers.
+              </v-card-subtitle>
+              <v-card-text v-if="dataSourceLayers.length > 0">
+                <v-list density="compact">
+                  <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
+                    <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
+                      <v-list-item
+                          :value="item.value"
+                          @click.stop="item.changeVisibility">
+                        <template v-slot:prepend>
+                          <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
+                            <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          </v-btn>
+                        </template>
+                        <template v-slot:default="{ active }"">
+                          <div>
+                            <v-list-item-title v-text="item.text"></v-list-item-title>
+                          </div>
+                          <v-list-item-action>
+                            <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
+                          </v-list-item-action>
+                        </template>
+                      </v-list-item>
+                      <v-divider
+                          v-if="i < selectedDataSourceLayers.length - 1"
+                          :key="'data_source_layer_divider_' + i"
+                      ></v-divider>
+                    </template>
+                  </v-list-item-group>
+                </v-list>
+              </v-card-text>
+            </v-card>
+
+            <!-- Import GeoPackage layers -->
+            <v-card flat tile>
+              <v-card-subtitle v-if="geopackageFeatureLayers.length > 0">
+                Select existing GeoPackage feature layers to populate the <b>{{ layerName }}</b> feature layer.
+              </v-card-subtitle>
+              <v-card-subtitle v-else>
+                No existing GeoPackage feature layers.
+              </v-card-subtitle>
+              <v-card-text v-if="geopackageFeatureLayers.length > 0">
+                <v-list density="compact">
+                  <v-list-item-group multiple color="primary" v-model="selectedGeoPackageFeatureLayers">
+                    <template v-for="(item, i) in geopackageFeatureLayers" :key="`geopackage-layer-item-${i}`">
+                      <v-list-item
+                          :value="item.value"
+                          @click.stop="item.changeVisibility">
+                        <template v-slot:prepend>
+                          <v-btn icon @click.stop="item.zoomTo" color="whitesmoke" class="mt-n15">
+                            <v-img v-if="dark" :style="{verticalAlign: 'middle', marginRight: '10px'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          </v-btn>
+                        </template>
+                        <template v-slot:default="{ active }">
+                          <div class="ml-4">
+                            <v-list-item-title v-text="item.title"></v-list-item-title>
+                            <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
+                          </div>
+                          <v-list-item-action>
+                            <v-switch
+                                density="compact"
+                                @click.stop="item.changeVisibility"
+                                :model-value="active"
+                                color="primary"
+                                class="ml-4"
+                            ></v-switch>
+                          </v-list-item-action>
+                        </template>
+                      </v-list-item>
+                      <v-divider
+                          v-if="i < selectedGeoPackageFeatureLayers.length - 1"
+                          :key="'feature_layer_divider_' + i"
+                      ></v-divider>
+                    </template>
+                  </v-list-item-group>
+                </v-list>
+              </v-card-text>
+            </v-card>
+
+            <!-- Layer ordering -->
+            <v-card flat tile v-if="selectedGeoPackageFeatureLayers.length + selectedDataSourceLayers.length > 1">
+              <v-card-subtitle class="pt-0">
+                Drag the layers to specify the rendering order. Layers at the top of the list will be rendered on top.
+              </v-card-subtitle>
+              <v-card-text>
+                <v-list
+                    style="max-height: 350px !important; width: 100% !important; overflow-y: auto !important;"
+                    v-sortable="{onEnd:updateSortedLayerOrder}"
+                    density="compact">
+                  <v-list-item
+                      v-for="item in sortedLayers"
+                      class="sortable-list-item"
+                      :key="item.id">
+                    <template v-slot:prepend class="mt-1">
+                      <v-btn icon @click.stop="item.zoomTo">
+                        <v-img v-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                      </v-btn>
+                    </template>
+                    <div class="pa-0 ma-0 ml-4">
+                      <v-list-item-title v-text="item.title"></v-list-item-title>
+                      <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+                    </div>
+                    <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
+                      <v-icon @click.stop.prevent icon="mdi-drag-horizontal-variant"/>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+        </v-window>
+      </v-card>
+
+    
+
+
+    
+      <v-btn class="mt-6 ml-4" variant=tonal @click.stop="toggleAdvancedOptions">Advanced Options</v-btn>
+      <v-card flat tile v-if="showAdvancedOptions" class="mt-4">
+        <p class="px-4 text-caption">
+          Restrict features to a specified area of the map. If not provided, all features from your selected data
+          source and GeoPackage layers will be added.
+        </p>
+        <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project"
+                              :boundingBox="boundingBoxFilter"
+                              :update-bounding-box="updateBoundingBoxFilter"></bounding-box-editor>
+      </v-card>
+    
+
+      <v-card flat tile>
+        <v-card-text>
+          <b>{{
+              filteredFeatureCount
+            }}</b>{{
+            (boundingBoxFilter ? ' filtered' : '') + ' features will be added to the '
+          }}<b>{{ geopackage.name }}</b>{{ ' GeoPackage as the ' }}<b>{{ layerName }}</b>{{ ' feature layer.' }}
+        </v-card-text>
+      </v-card>
     </v-sheet>
     <div v-if="!processing" class="sticky-card-action-footer">
       <v-divider></v-divider>
@@ -276,7 +232,7 @@
         </v-btn>
         <v-btn
             v-if="!done"
-            :disabled="Number(step) !== 6 || isEditingBoundingBox() || !layerNameValid"
+            :disabled="isEditingBoundingBox() || !layerNameValid"
             color="primary"
             variant="text"
             @click.stop="addFeatureLayer">
@@ -333,6 +289,8 @@ export default {
       },
       processing: false,
       done: false,
+      layerOptions: null,
+      showAdvancedOptions: false,
       dataSourceLayers: this.getDataSourceLayers(),
       configuration: null,
       cancelling: false,
@@ -367,6 +325,9 @@ export default {
       }
       layerOrderTmp.splice(newIndex, 0, layerOrderTmp.splice(oldIndex, 1)[0])
       this.sortedLayers = layerOrderTmp
+    },
+    toggleAdvancedOptions () {
+      this.showAdvancedOptions = !this.showAdvancedOptions
     },
     async cancelAddFeatureLayer () {
       const self = this
@@ -426,7 +387,7 @@ export default {
             }
           }
         }, 100)
-        window.mapcache.addFeatureLayer(this.configuration, handleStatus).then(() => {
+        window.mapcache.addFeatureLayer(window.deproxy(this.configuration), handleStatus).then(() => {
           this.done = true
           synchronizeGeoPackage(this.project.id, this.geopackage.id)
           if (this.status == null || this.status.error == null) {
@@ -482,7 +443,7 @@ export default {
         const tableName = item.tableName
         const geopackage = this.project.geopackages[item.geopackageId]
         if (!isNil(this.boundingBoxFilter)) {
-          numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(geopackage.path, tableName, this.boundingBoxFilter)
+          numberOfFeatures += await window.mapcache.getFeatureCountInBoundingBox(geopackage.path, tableName, window.deproxy(this.boundingBoxFilter))
         } else {
           numberOfFeatures += geopackage.tables.features[tableName].featureCount
         }
@@ -573,6 +534,7 @@ export default {
     }
   },
   mounted () {
+    this.updateProjectData()
     this.getFilteredFeatures().then(count => {
       this.filteredFeatureCount = count
     })
