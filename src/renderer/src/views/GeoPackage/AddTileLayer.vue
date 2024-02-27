@@ -520,6 +520,7 @@ export default {
         }
       }).then(() => {
         this.done = true
+        this.disableSelectedSources()
         synchronizeGeoPackage(this.project.id, this.geopackage.id).then(() => {
           notifyTab(this.project.id, 0)
           if (this.status == null || this.status.error == null) {
