@@ -17,7 +17,7 @@
     "postuninstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "@geoman-io/leaflet-geoman-free": "2.15.0",
+    "@geoman-io/leaflet-geoman-free": "2.14.2",
     "@mapbox/geojson-rewind": "~0.5.2",
     "@mdi/font": "^7.2.96",
     "@mdi/js": "^7.2.96",
@@ -38,7 +38,7 @@
     "@turf/transform-rotate": "^6.5.0",
     "adm-zip": "^0.5.10",
     "axios": "^1.4.0",
-    "better-sqlite3": "^8.4.0",
+    "better-sqlite3": "^9.4.3",
     "bindings": "https://github.com/caldwellc/node-bindings.git#master",
     "caniuse-lite": "^1.0.30001452",
     "deepmerge": "^4.3.1",
@@ -66,7 +66,7 @@
     "reproject": "^1.2.7",
     "sanitize-html": "^2.7.0",
     "sax": "^1.2.4",
-    "sharp": "^0.32.6",
+    "sharp": "0.32.6",
     "shpjs": "^4.0.4",
     "sortablejs": "^1.15.0",
     "stream-chain": "^2.2.5",
