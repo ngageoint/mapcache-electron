@@ -13,6 +13,7 @@
     "electron:build-mac": "yarn build && electron-builder --mac",
     "electron:build-mas": "yarn build && electron-builder --mas",
     "electron:build-win": "yarn build && electron-builder --win portable nsis",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
@@ -38,7 +39,7 @@
     "@turf/transform-rotate": "^6.5.0",
     "adm-zip": "^0.5.10",
     "axios": "^1.4.0",
-    "better-sqlite3": "^8.4.0",
+    "better-sqlite3": "^9.4.3",
     "bindings": "https://github.com/caldwellc/node-bindings.git#master",
     "caniuse-lite": "^1.0.30001452",
     "deepmerge": "^4.3.1",
@@ -83,6 +84,7 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@vitejs/plugin-vue": "^4.0.0",
