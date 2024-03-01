@@ -1,7 +1,7 @@
 import { BoundingBox, TileScaling, TileScalingType } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import throttle from 'lodash/throttle'
-import sharp from 'sharp'
+//import sharp from 'sharp'
 import {
   performSafeGeoPackageOperation,
   prettyPrintMs,
@@ -48,7 +48,7 @@ import { sleep } from '../util/common/CommonUtilities'
  */
 
 async function getImageBufferFromCanvas (canvas) {
-  if (!isBlank(canvas)) {
+  /*if (!isBlank(canvas)) {
     if (hasTransparentPixels(canvas)) {
       try {
         return sharp(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'))
@@ -62,7 +62,7 @@ async function getImageBufferFromCanvas (canvas) {
     } else {
       return Buffer.from(canvas.toDataURL('image/jpeg', { quality: 0.7 }).split(',')[1], 'base64')
     }
-  }
+  }*/
   return null
 }
 
