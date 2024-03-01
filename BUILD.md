@@ -59,9 +59,13 @@ Once you have set up a development environment, these steps will let you build a
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
 3. Fix git:// error:  
 `git config --global url."https://".insteadOf git://`
+4. Remove yarn.lock to clear x86/arm compatibility problems
+`rm -rf yarn.lock`
 5. Install dependencies:  
 `yarn`
-6. Run:  
+6. Important: rebuild better-sqlite3 before running:
+`yarn run rebuild`
+7. Run:  
 `yarn electron:serve` (run locally in development mode)
 
 # Cleaning MapCache Desktop
