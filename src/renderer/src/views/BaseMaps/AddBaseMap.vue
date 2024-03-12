@@ -8,44 +8,26 @@
       <v-toolbar-title>Add base map</v-toolbar-title>
     </v-toolbar>
     <v-sheet class="mapcache-sheet-content">
-      <v-stepper v-model="step" non-linear vertical class="background"
-                 :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}">
-        <v-stepper-step editable :complete="step > 1" step="1" :rules="[() => baseMapNameValid]" color="primary">
-          Name the base map
-          <small class="pt-1">{{ baseMapName }}</small>
-        </v-stepper-step>
-        <v-stepper-content step="1">
-          <v-card flat tile>
-            <v-card-subtitle>
-              Specify a name for the new base map.
+      <v-card flat tile>
+        <v-card-text>
+          <v-form v-on:submit.prevent="() => {}" ref="baseMapNameForm" v-model="baseMapNameValid">
+            <v-text-field
+                variant="underlined"
+                autofocus
+                v-model="baseMapName"
+                :rules="baseMapNameRules"
+                label="Basemap name"
+                required
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+      </v-card>
+      <v-card flat tile v-if="layers.length > 0">
+            <v-card-subtitle style="overflow-x:hidden !important;">
+              Select a GeoPackage layer or data source
             </v-card-subtitle>
             <v-card-text>
-              <v-form v-on:submit.prevent="() => {}" ref="baseMapNameForm" v-model="baseMapNameValid">
-                <v-text-field
-                    variant="underlined"
-                    autofocus
-                    v-model="baseMapName"
-                    :rules="baseMapNameRules"
-                    label="Layer name"
-                    required
-                ></v-text-field>
-              </v-form>
-            </v-card-text>
-          </v-card>
-          <v-btn variant="text" color="primary" @click="step = 2" :disabled="!baseMapNameValid">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable :complete="step > 2" step="2" color="primary" :rules="[() => layers.length > 0]">
-          Select layer
-        </v-stepper-step>
-        <v-stepper-content step="2">
-          <v-card flat tile v-if="layers.length > 0">
-            <v-card-subtitle>
-              Select a GeoPackage layer or data source for your base map.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-list density="compact">
+              <v-list style="max-height: 350px !important; width: 100% !important;" density="compact">
                 <v-list-item-group mandatory v-model="selectedLayer">
                   <template v-for="(item, i) in layers" :key="`layer-${i}`">
                     <v-list-item
@@ -85,14 +67,6 @@
               No layers available for base map.
             </v-card-subtitle>
           </v-card>
-          <v-btn variant="text" color="primary" @click="step = '3'">
-            Continue
-          </v-btn>
-        </v-stepper-content>
-        <v-stepper-step editable step="3" color="primary">
-          Tile background
-        </v-stepper-step>
-        <v-stepper-content step="3">
           <v-card flat tile>
             <v-card-subtitle>
               Select a background color for your tile
@@ -101,8 +75,6 @@
               <color-picker :color="backgroundColor" v-model="backgroundColor" label="Tile background"/>
             </v-card-text>
           </v-card>
-        </v-stepper-content>
-      </v-stepper>
     </v-sheet>
     <div class="sticky-card-action-footer">
       <v-divider></v-divider>
@@ -114,7 +86,7 @@
           Cancel
         </v-btn>
         <v-btn
-            :disabled="!baseMapNameValid || layers.length === 0 || step !== '3'"
+            :disabled="!baseMapNameValid || layers.length === 0"
             variant="text"
             color="primary"
             @click="save">
@@ -233,6 +205,7 @@ export default {
         }
       }
       this.items = items
+      this.layers = items
     },
     save () {
       let configuration = {}
@@ -245,7 +218,7 @@ export default {
       } else {
         configuration = this.project.sources[layer.id]
       }
-      window.mapcache.saveBaseMap(this.baseMapName, configuration, this.backgroundColor).then((baseMap) => {
+      window.mapcache.saveBaseMap(this.baseMapName, window.deproxy(configuration), this.backgroundColor).then((baseMap) => {
         addBaseMap(baseMap).finally(this.close)
       })
     }
