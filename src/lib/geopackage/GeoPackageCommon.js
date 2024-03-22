@@ -164,7 +164,11 @@ function _calculateTrueExtentForFeatureTable (gp, tableName) {
     while (!nextRow.done) {
       const featureRow = featureDao.getRow(nextRow.value)
       if (extent == null) {
-        extent = [featureRow.geometry.envelope.minX, featureRow.geometry.envelope.minY, featureRow.geometry.envelope.maxX, featureRow.geometry.envelope.maxY]
+        if (featureRow.geometry.envelope == null) {
+          return null
+        } else {
+          extent = [featureRow.geometry.envelope.minX, featureRow.geometry.envelope.minY, featureRow.geometry.envelope.maxX, featureRow.geometry.envelope.maxY]
+        }
       } else {
         extent[0] = Math.min(extent[0], featureRow.geometry.envelope.minX)
         extent[1] = Math.min(extent[1], featureRow.geometry.envelope.minY)

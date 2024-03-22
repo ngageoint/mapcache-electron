@@ -110,7 +110,6 @@ if (window.mapcache) {
  * @return {*}
  */
 window.deproxy = (obj) => {
-    console.log("deproxy: " + obj)
     try {
         if (Array.isArray(obj)) {
             const deproxied = []
