@@ -20,6 +20,7 @@ import keys from 'lodash/keys'
 import isObject from 'lodash/isObject'
 import reproject from 'reproject'
 import moment from 'moment'
+import wkx from 'wkx'
 import {
   performSafeGeoPackageOperation,
   getQueryBoundingBoxForCoordinateAndZoom,
@@ -463,8 +464,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
 
   const processBatch = () => {
     // batch insert features
-    // TODO: Utilize Well Known Binary Simple Features
-    // const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
+    const emptyPoint = wkx.Geometry.parse('POINT EMPTY')
     const reprojectionNeeded = !(srs.organization === EPSG && srs.organization_coordsys_id === WORLD_GEODETIC_SYSTEM_CODE)
     const insertSql = SqliteQueryBuilder.buildInsert('\'' + featureDao.gpkgTableName + '\'', featureRow)
     featureRow = featureDao.newRow()
@@ -483,8 +483,12 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = feature.geometry
-        // TODO: Utilize Well Known Binary Simple Features
-        // geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
+        if (featureGeometry) {
+          geometryData.setGeometry(wkx.Geometry.parseGeoJSON(featureGeometry))
+        } else {
+          emptyPoint
+        }
+
         featureRow.geometry = geometryData
         for (const propertyKey in feature.properties) {
           if (propertyKey !== 'id' && Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
@@ -531,6 +535,12 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         }
         feature.properties.geometry_property = feature.properties.geometry
         delete feature.properties.geometry
+      } else {
+        if (!definedColumnNames[GEOMETRY_PROPERTY]) {
+          definedColumnNames[GEOMETRY_PROPERTY] = true
+          featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.geometry)))
+        }
+        feature.properties.geometry_property = feature.geometry
       }
 
       // handle id property
@@ -592,12 +602,14 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
       processBatch()
     }
     // await _indexFeatureTable(gp, tableName)
-    const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
-    const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
-    return {
-      extent,
-      count: featureDao.count()
-    }
+    return performSafeGeoPackageOperation(gp.filePath, (gp) => {
+      const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
+      const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
+      return {
+        extent,
+        count: featureDao.count()
+      }
+    })
   }
 
   return {
@@ -1061,6 +1073,7 @@ function _updateBoundingBoxForFeatureTable (gp, tableName) {
     contents.max_x = 180.0
     contents.max_y = 90.0
   }
+
   contentsDao.update(contents)
   return contents
 }
