@@ -438,7 +438,7 @@ export default {
           })
           EventBus.$emit(EventBus.EventTypes.STOP_EDITING_FEATURE_GEOMETRY, true)
         })
-        const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, this.featureViewData.editableColumns, feature.geometry, true)
+        const result = await window.mapcache.saveGeoPackageEditedFeature(this.geopackagePath, this.tableName, this.featureId, window.deproxy(this.featureViewData.editableColumns), feature.geometry, true)
         if (result.changes > 0) {
           if (this.isGeoPackage) {
             await synchronizeGeoPackage(this.project.id, this.id)
@@ -452,7 +452,7 @@ export default {
         }
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Failed to save changes.')
+        console.error('couldnt save feature: ' + e)
       }
     },
     getHumanReadableDate (dateString, dateOnly = false) {

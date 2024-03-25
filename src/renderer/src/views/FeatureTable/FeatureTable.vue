@@ -77,16 +77,13 @@
       <tr style="max-height: 75px !important;" class="clickable" @dblclick="() => zoomTo(item)" @click="() => handleClick(item)" @mouseover="() => handleHover(item)" @mouseleave="() => handleMouseLeave(item)">
         <td v-for="column of columns" :key="index + '_' + column.key" class="text-start text-truncate" :style="{maxWidth: column.maxWidth, minWidth: (column.key === 'attachments' || column.key === 'data-table-select') ? '16px' : column.minWidth}">
           <div class="ma=0 pa-0" v-if="column.key === 'attachments'">
-            <!-- {{ item.columns.attachments > 0 ? item.columns.attachments : null }} -->
             {{ item.attachments > 0 ? item.attachments : null }}
-
           </div>
           <v-checkbox hide-details style="margin-left: -8px;" v-else-if="column.key === 'data-table-select'" @click="(e) => {
               toggleSelect(item)
               e.stopPropagation()
             }" :model-value="isSelected(item)"></v-checkbox>
           <div class="ma-0 pa-0 text-truncate" v-else>
-            <!-- {{item.columns[column.key]}} -->
             {{item[column.key]}}
           </div>
         </td>

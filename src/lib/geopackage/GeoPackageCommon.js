@@ -34,7 +34,7 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
       } catch (error) {
         result = { error: error }
         // eslint-disable-next-line no-console
-        console.error('Failed to perform GeoPackage operation')
+        console.error('Failed to perform GeoPackage operation: ' + error)
       }
       try {
         gp.close()

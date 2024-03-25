@@ -1999,6 +1999,7 @@ async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feat
  * @return {Promise<*>}
  */
 async function saveGeoPackageEditedFeature (filePath, tableName, featureId, editableColumns, updatedGeometry, updateGeometry = false) {
+  console.log('saving gpkg edited feature')
   return performSafeGeoPackageOperation(filePath, (gp) => {
     const featureDao = gp.getFeatureDao(tableName)
     const srs = featureDao.srs
@@ -2046,14 +2047,13 @@ async function saveGeoPackageEditedFeature (filePath, tableName, featureId, edit
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-        // TODO: Utilize Well Known Binary Simple Features
-        // if (featureGeometry !== null) {
-        //   const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-        //   geometryData.setGeometry(geometry)
-        // } else {
-        //   const temp = wkx.Geometry.parse('POINT EMPTY')
-        //   geometryData.setGeometry(temp)
-        // }
+        if (featureGeometry !== null) {
+          const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+          geometryData.setGeometry(geometry)
+        } else {
+          const temp = wkx.Geometry.parse('POINT EMPTY')
+          geometryData.setGeometry(temp)
+        }
         featureRow.geometry = geometryData
 
       } else if (updatedGeometry === null) {
