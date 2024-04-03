@@ -82,32 +82,25 @@
               </v-card-subtitle>
               <v-card-text v-if="dataSourceLayers.length > 0">
                 <v-list density="compact">
-                  <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers">
-                    <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
-                      <v-list-item
-                          :value="item.value"
-                          @click.stop="item.changeVisibility">
-                        <template v-slot:prepend>
-                          <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
-                            <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                            <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          </v-btn>
-                        </template>
-                        <template v-slot:default="{ active }"">
-                          <div>
-                            <v-list-item-title v-text="item.text"></v-list-item-title>
-                          </div>
-                          <v-list-item-action>
-                            <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
-                          </v-list-item-action>
-                        </template>
-                      </v-list-item>
-                      <v-divider
-                          v-if="i < selectedDataSourceLayers.length - 1"
-                          :key="'data_source_layer_divider_' + i"
-                      ></v-divider>
-                    </template>
-                  </v-list-item-group>
+                  <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
+                    <v-list-item :value="item.value" @click.stop="item.changeVisibility">
+                      <template v-slot:prepend>
+                        <v-btn icon @click.stop="item.zoomTo" color="whitesmoke">
+                          <v-img v-if="dark" :style="{verticalAlign: 'middle'}" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          <v-img v-else :style="{verticalAlign: 'middle'}" src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        </v-btn>
+                      </template>
+                      <template v-slot:default="{ active }">
+                        <div>
+                          <v-list-item-title v-text="item.text"></v-list-item-title>
+                        </div>
+                        <v-list-item-action>
+                          <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
+                        </v-list-item-action>
+                      </template>
+                    </v-list-item>
+                    <v-divider v-if="i < selectedDataSourceLayers.length - 1" :key="'data_source_layer_divider_' + i"></v-divider>
+                  </template>
                 </v-list>
               </v-card-text>
             </v-card>
