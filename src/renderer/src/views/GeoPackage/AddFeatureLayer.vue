@@ -115,7 +115,6 @@
               </v-card-subtitle>
               <v-card-text v-if="geopackageFeatureLayers.length > 0">
                 <v-list density="compact">
-                  <v-list-item-group multiple color="primary" v-model="selectedGeoPackageFeatureLayers">
                     <template v-for="(item, i) in geopackageFeatureLayers" :key="`geopackage-layer-item-${i}`">
                       <v-list-item
                           :value="item.value"
@@ -147,7 +146,6 @@
                           :key="'feature_layer_divider_' + i"
                       ></v-divider>
                     </template>
-                  </v-list-item-group>
                 </v-list>
               </v-card-text>
             </v-card>
