@@ -92,7 +92,7 @@
                       </template>
                       <template v-slot:default="{ active }">
                         <div>
-                          <v-list-item-title v-text="item.text"></v-list-item-title>
+                          <v-list-item-title>{{ item.text }}</v-list-item-title>
                         </div>
                         <v-list-item-action>
                           <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch>
@@ -127,8 +127,8 @@
                         </template>
                         <template v-slot:default="{ active }">
                           <div class="ml-4">
-                            <v-list-item-title v-text="item.title"></v-list-item-title>
-                            <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
+                            <v-list-item-title>{{ item.title }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
                           </div>
                           <v-list-item-action>
                             <v-switch
