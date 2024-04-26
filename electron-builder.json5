@@ -32,6 +32,13 @@
     }
   ],
   asarUnpack: [
+    "**/node_modules/**/*",
+    "**/node_modules/queue/**/*",
+    "**/node_modules/image-size/**/*",
+    "**/node_modules/@turf/**/*",
+    "**/node_modules/wkx/**/*",
+    "**/node_modules/lodash/**/*",
+    "**/node_modules/@ngageoint/**/*",
     "**/node_modules/bin-wrapper/**/*",
     "**/node_modules/imagemin-pngquant/**/*",
     "**/node_modules/pngquant-bin/**/*",
@@ -44,6 +51,7 @@
     "**/dist/main/chunks/**/*",
     "**/dist/main/mapcacheThread.js",
     "**/dist/preload/**/*",
+    "**/dist/renderer/**/*",
     "**/resources/**/*"
   ],
   directories: {

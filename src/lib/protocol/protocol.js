@@ -7,6 +7,7 @@ export default (protocol, scheme) => {
       let pathName = new URL(request.url).pathname
       console.log("original url pathname: " + pathName)
       pathName = decodeURI(pathName) // Needed in case URL contains spaces
+      pathName = path.join(pathName) // needed to reverse forward slashes for Windows.  see path docs
       let absolutePath = pathName
       console.log('original protocol file path: ' + path.join(__dirname, pathName))
       // TODO: this is a hack at determining where files will exist now that the structure of the build has changed.
