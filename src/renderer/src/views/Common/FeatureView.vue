@@ -450,6 +450,7 @@ export default {
           this.failedToSaveErrorMessage = result.error
           this.failedToSaveSnackBar = true
         }
+        this.disableEdit()
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error('couldnt save feature: ' + e)

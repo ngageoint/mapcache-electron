@@ -97,7 +97,6 @@
                         <v-list-item-action>
                           <v-switch density="compact" @click.stop="item.changeVisibility" :model-value="active" color="primary" class="ml-4"
                           :project-id="project.id" :source="project.sources[item.id]"></v-switch>
-                          <!-- <source-visibility-switch :model-value="active" :project-id="project.id" :source="project.sources[item.id]"></source-visibility-switch> -->
                         </v-list-item-action>
                       </template>
                     </v-list-item>
