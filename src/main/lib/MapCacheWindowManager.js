@@ -79,7 +79,7 @@ import { download } from 'electron-dl'
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
-const isProduction = process.env.NODE_ENV === 'production'
+const isProduction = app.isPackaged
 
 /**
  * MapCacheWindowManager manages all interactions with browser windows

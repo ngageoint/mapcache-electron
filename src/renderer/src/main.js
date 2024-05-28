@@ -111,6 +111,9 @@ if (window.mapcache) {
  */
 window.deproxy = (obj) => {
     try {
+        if(obj === null){
+                return obj
+        }
         if (Array.isArray(obj)) {
             const deproxied = []
             obj.forEach(o => {

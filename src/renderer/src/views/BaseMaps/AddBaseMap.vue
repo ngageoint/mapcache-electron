@@ -28,37 +28,35 @@
             </v-card-subtitle>
             <v-card-text>
               <v-list style="max-height: 350px !important; width: 100% !important;" density="compact">
-                <v-list-item-group mandatory v-model="selectedLayer">
-                  <template v-for="(item, i) in layers" :key="`layer-${i}`">
-                    <v-list-item
-                        lines="two"
-                        :value="i">
-                      <template v-slot:prepend style="margin-top: 12px;">
-                        <v-btn variant="text" icon @click.stop="item.zoomTo">
-                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark"
-                                 src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark"
-                                 src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
-                                 src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png"
-                                 alt="Feature layer" width="20px" height="20px"/>
-                        </v-btn>
-                      </template>
-                      <div>
-                        <v-list-item-title v-text="item.title"></v-list-item-title>
-                        <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
-                      </div>
-                      <v-list-item-action>
-                        <data-source-warning v-if="item.source && item.source.warning" :source="item.source"></data-source-warning>
-                      </v-list-item-action>
-                      <v-list-item-action>
-                        <data-source-troubleshooting v-if="item.source && item.error" :source="item.source"
-                                                     :project-id="project.id"></data-source-troubleshooting>
-                      </v-list-item-action>
-                    </v-list-item>
-                  </template>
-                </v-list-item-group>
+                <template v-for="(item, i) in layers" :key="`layer-${i}`">
+                  <v-list-item
+                      lines="two"
+                      :value="i">
+                    <template v-slot:prepend style="margin-top: 12px;">
+                      <v-btn variant="text" icon @click.stop="item.zoomTo">
+                        <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark"
+                                src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                        <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark"
+                                src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                        <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'"
+                                src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                        <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png"
+                                alt="Feature layer" width="20px" height="20px"/>
+                      </v-btn>
+                    </template>
+                    <div>
+                      <v-list-item-title>{{ item.title }}</v-list-item-title>
+                      <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
+                    </div>
+                    <v-list-item-action>
+                      <data-source-warning v-if="item.source && item.source.warning" :source="item.source"></data-source-warning>
+                    </v-list-item-action>
+                    <v-list-item-action>
+                      <data-source-troubleshooting v-if="item.source && item.error" :source="item.source"
+                                                    :project-id="project.id"></data-source-troubleshooting>
+                    </v-list-item-action>
+                  </v-list-item>
+                </template>
               </v-list>
             </v-card-text>
           </v-card>

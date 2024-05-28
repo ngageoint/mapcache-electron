@@ -179,9 +179,11 @@ export default {
           editableColumns.length > 0) {
         const columnOrder = this.object.tables.features[this.tableName].columnOrder
         editableColumns.sort((a, b) => {
-          return columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+          this.editableColumns = columnOrder.indexOf(a.lowerCaseName) < columnOrder.indexOf(b.lowerCaseName) ? -1 : 1
+          return this.editableColumns
         })
       }
+      this.editableColumns = editableColumns
       return editableColumns
     },
     updateUnrecognizedColumn (value, property, index) {
