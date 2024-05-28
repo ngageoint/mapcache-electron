@@ -220,7 +220,7 @@ export default {
     self.$nextTick(() => {
       // wfs and arcgis fs will require accessing features in browser, as opposed to trying that in node, given credentials
       if (source.serviceType === SERVICE_TYPE.WFS || source.serviceType === SERVICE_TYPE.ARCGIS_FS || source.serviceType === SERVICE_TYPE.OVERPASS) {
-        self.preprocessSource(source, statusCallback).then(updatedSource => {
+        self.preprocessSource(window.deproxy(source), statusCallback).then(updatedSource => {
           if (self.workflowState !== PROCESSING_STATES.CANCELLING && self.workflowState !== PROCESSING_STATES.CANCELLED) {
             self.sendSourceToProcess(updatedSource)
           }

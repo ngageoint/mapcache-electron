@@ -193,10 +193,7 @@
           </v-window-item>
         </v-window>
       </v-card>
-
-    
-
-
+      
     
       <v-btn class="mt-6 ml-4" variant=tonal @click.stop="toggleAdvancedOptions">Advanced Options</v-btn>
       <v-card flat tile v-if="showAdvancedOptions" class="mt-4">

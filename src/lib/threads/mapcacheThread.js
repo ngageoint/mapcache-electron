@@ -190,7 +190,7 @@ async function processDataSource (data) {
     // eslint-disable-next-line no-unused-vars
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Failed to process data source.')
+    console.error('Failed to process data source.\n', e.message)
     error = e
   }
   if (error != null) {
