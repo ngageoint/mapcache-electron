@@ -226,8 +226,18 @@ export default {
           if (column.dataType === window.mapcache.GeoPackageDataType.DATETIME) {
             try {
               if (!isNil(column.dateValue)) {
-                const dateString = column.dateValue + ' ' + (isNil(column.timeValue) ? '00:00:00' : column.timeValue)
-                value = moment.utc(dateString).toISOString()
+                if(!isNil(column.timeValue)){
+                  column.dateValue.setUTCHours(column.timeValue.substring(0,2))
+                  column.dateValue.setUTCMinutes(column.timeValue.substring(3,5))
+                  column.dateValue.setUTCSeconds(column.timeValue.substring(6,9))
+                } else {
+                  column.dateValue.setUTCHours("00")
+                  column.dateValue.setUTCMinutes("00")
+                  column.dateValue.setUTCSeconds("00")
+                }
+                const dateString = column.dateValue
+                value = moment.utc(dateString)
+                value = value.toISOString()
               } else {
                 value = null
               }
