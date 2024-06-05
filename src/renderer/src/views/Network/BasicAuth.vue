@@ -86,7 +86,7 @@ export default {
       basicAuthUsernameRules: [v => !!v || 'Username is required'],
       basicAuthPasswordRules: [v => !!v || 'Password is required'],
       username: '',
-      password: '',
+      password: String,
       visible: false
     }
   }
