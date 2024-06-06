@@ -1110,6 +1110,7 @@ export default {
         console.log(e);
         console.log('failed to init map')
       }
+      this.mapInitialized = true
     },
     createGridOverlays () {
       this.garsGridOverlay = new L.LayerGroup.GARSGrid({

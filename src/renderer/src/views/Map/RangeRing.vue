@@ -180,6 +180,9 @@ export default {
     }
   },
   mounted () {
+    if(this.map == null){
+      this.cancel()
+    }
     this.handlePlacemarkSetting = ({ layer }) => {
       const feature = layer.toGeoJSON()
       this.map.removeLayer(layer)
