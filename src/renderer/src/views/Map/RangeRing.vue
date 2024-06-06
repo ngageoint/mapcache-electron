@@ -61,7 +61,10 @@ import NumberPicker from '../Common/NumberPicker.vue'
 export default {
   components: { NumberPicker },
   props: {
-    map: Object,
+    map: {
+      type: Object,
+      required: true
+    },
     saveFeature: Function,
     close: Function
   },
