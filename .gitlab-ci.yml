@@ -10,6 +10,8 @@ owasp_depcheck_scan:
   stage: scan
 fortify_scanning:
   stage: test
+  rules:
+    - if: $SKIP_FORTIFY != 'true'
 include:
 - project: 'DSO-Millennium-Falcon/gitlab-ci-templates/scanning-templates'
   ref: master
