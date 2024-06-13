@@ -18,7 +18,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.14.2
+  * nvm install 18.17.0
 * Install Yarn
   * npm install yarn -g
 
@@ -66,7 +66,7 @@ Once you have set up a development environment, these steps will let you build a
 6. Important: rebuild better-sqlite3 before running:
 `yarn run rebuild`
 7. Run:  
-`yarn electron:serve` (run locally in development mode)
+`yarn dev` (run locally in development mode)
 
 # Cleaning MapCache Desktop
 The MapCache Desktop build and runtime processes will generate several files. The following commands will help cleanup your environment.
