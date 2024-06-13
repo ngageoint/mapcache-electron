@@ -29,6 +29,8 @@ export default class OverpassSource extends Source {
           const clippedFeature = clipFeature(cloneDeep(feature), this.clippingBounds)
           if (clippedFeature != null && clippedFeature.geometry != null && clippedFeature.geometry.coordinates != null && clippedFeature.geometry.coordinates.length > 0) {
             addFeature(clippedFeature)
+          } else {
+            addFeature(cloneDeep(feature))
           }
         } else {
           addFeature(cloneDeep(feature))
