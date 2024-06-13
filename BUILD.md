@@ -30,7 +30,7 @@
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
   * nvm install 16.14.2
-* Install Yarn
+* Install Yarn.  We are currently using 1.22.22, check for correct version under .yarn/releases.
   * npm install yarn -g
 
 ### Linux - Fedora 28 Workstation
