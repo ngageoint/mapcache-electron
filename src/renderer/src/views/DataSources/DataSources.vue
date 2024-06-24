@@ -74,7 +74,7 @@
           </v-tooltip>
         </template>
         <template v-slot:options>
-          <v-col class="ma-0 pa-0" cols="12">
+          <!--<v-col class="ma-0 pa-0" cols="12">
             <v-tooltip location="end" :disabled="!project.showToolTips" text="Download OpenStreetMap features with Overpass">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -88,7 +88,7 @@
                 </v-btn>
               </template>
             </v-tooltip>
-          </v-col>
+          </v-col>-->
           <v-col class="ma-0 pa-0" cols="12">
             <v-tooltip location="end" :disabled="!project.showToolTips" text="Download from url">
               <template v-slot:activator="{ props }">

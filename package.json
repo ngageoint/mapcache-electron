@@ -15,6 +15,7 @@
     "electron:build-mas": "yarn build && electron-builder --mas",
     "electron:build-win": "yarn build-win && electron-builder --win portable nsis",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "rebuild-m": "electron-rebuild -f -w better-sqlite3 -a arm64",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
