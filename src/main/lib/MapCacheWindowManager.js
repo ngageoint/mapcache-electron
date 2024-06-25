@@ -803,7 +803,6 @@ class MapCacheWindowManager {
   loadContent (window, url, onFulfilled = () => {}) {
     if (window != null) {
       window.loadURL(url).then(onFulfilled).catch((e) => {
-        console.error(e);
         // eslint-disable-next-line no-console
         console.error('Failed to load content.')
       })
