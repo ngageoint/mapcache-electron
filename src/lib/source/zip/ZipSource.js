@@ -4,11 +4,12 @@ import ShapeFileSource from '../shapefile/ShapeFileSource'
 import KMZSource from '../kml/KMZSource'
 import XYZFileSource from '../xyz/XYZFileSource'
 import isNil from 'lodash/isNil'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class ZipSource extends Source {
   async retrieveLayers (statusCallback) {
     statusCallback('Determining zip file contents', 0)
-    await this.sleep(250)
+    await sleep(250)
     let shapeFileSource
     let kmzSource
     let xyzFileSource

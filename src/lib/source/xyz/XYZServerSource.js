@@ -1,6 +1,7 @@
 import Source from '../Source'
 import XYZServerLayer from '../../layer/tile/XYZServerLayer'
 import { XYZ_SERVER } from '../../layer/LayerTypes'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class XYZSource extends Source {
   constructor (id, directory, filePath, subdomains = [], sourceName, withCredentials = false, minZoom, maxZoom, extent, srs) {
@@ -16,15 +17,15 @@ export default class XYZSource extends Source {
 
   async retrieveLayers (statusCallback) {
     statusCallback('Processing XYZ server', 0)
-    await this.sleep(250)
+    await sleep(250)
 
     statusCallback('Storing XYZ server data', 50)
-    await this.sleep(250)
+    await sleep(250)
 
     const { layerId, layerDirectory } = this.createLayerDirectory()
 
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
     return [
       new XYZServerLayer({
         id: layerId,

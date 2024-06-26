@@ -1,8 +1,6 @@
 import proj4 from 'proj4'
-import path from 'path'
 import isNil from 'lodash/isNil'
 import Database from 'better-sqlite3'
-import { getExtraResourcesDirectory } from '../util/file/FileUtilities'
 import {
   COLON_DELIMITER,
   WEB_MERCATOR,
@@ -13,6 +11,8 @@ import {
 } from './ProjectionConstants'
 import { trimBboxToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
 import isEqual from 'lodash/isEqual'
+import proj4DB from '../../../resources/proj4.db?asset&asarUnpack'
+import { trimExtentToWebMercatorMax } from '../util/xyz/XYZTileUtilities'
 
 function getCode (name) {
   const matches = name.match(/\d+$/)
@@ -54,7 +54,8 @@ function getUnits (name) {
 
 function getDef (code) {
   let def
-  const db = new Database(path.join(getExtraResourcesDirectory(), 'proj4.db'), { readonly: true })
+  // TODO: this is a dumb hack because for some reason the build is unpacking this asset twice? maybe a better way to do this in the future....
+  const db = new Database(proj4DB.replace('unpacked.unpacked', 'unpacked'), { readonly: true })
   const stmt = db.prepare('SELECT def FROM defs WHERE code = ?')
   const row = stmt.get(code)
   if (row && row.def) {
@@ -220,8 +221,9 @@ const wgs84ToWebMercator = getConverter(WORLD_GEODETIC_SYSTEM, WEB_MERCATOR)
 proj4.defs(WORLD_GEODETIC_SYSTEM_CRS, getDef(WORLD_GEODETIC_SYSTEM_CODE))
 
 function convertToWebMercator (extent) {
-  let filterLowerLeft = wgs84ToWebMercator.forward([extent[0], extent[1]])
-  let filterUpperRight = wgs84ToWebMercator.forward([extent[2], extent[3]])
+  let trimmedExtent = trimExtentToWebMercatorMax(extent)
+  let filterLowerLeft = wgs84ToWebMercator.forward([trimmedExtent[0], trimmedExtent[1]])
+  let filterUpperRight = wgs84ToWebMercator.forward([trimmedExtent[2], trimmedExtent[3]])
   return {
     minLon: filterLowerLeft[0],
     maxLon: filterUpperRight[0],

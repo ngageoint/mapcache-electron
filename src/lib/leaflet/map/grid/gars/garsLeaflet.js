@@ -141,7 +141,7 @@ function defaultGridOptions (dark = false) {
  *
  */
 function setupGARSGrid (L) {
-  L.GARSGrid = L.LayerGroup.extend({
+  L.LayerGroup.GARSGrid = L.LayerGroup.extend({
     options: {
       gridOptions: defaultGridOptions(false),
       // Redraw on move or moveend
@@ -161,7 +161,7 @@ function setupGARSGrid (L) {
       this._canvasContext = this._canvas.getContext('2d')
     },
 
-    setDarkModeEnabled: function (enabled) {
+    setDarkModeEnabled (enabled) {
       this.options.gridOptions = defaultGridOptions(enabled)
     },
 
@@ -214,15 +214,15 @@ function setupGARSGrid (L) {
         return label
       }
       if (zoom >= this.options.gridOptions.five_minute.minZoom && zoom <= this.options.gridOptions.five_minute.maxZoom) {
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 0.25 / 3.0), 0.25 / 3.0, this.options.gridOptions.five_minute, garsLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 0.25 / 3.0), 0.25 / 3.0, this.options.gridOptions.five_minute, garsLabelFn))
       }
       if (zoom >= this.options.gridOptions.fifteen_minute.minZoom && zoom <= this.options.gridOptions.fifteen_minute.maxZoom) {
         //quadBlocks are .25 degree squares, 4 per bigBlock
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 0.25), 0.25, this.options.gridOptions.fifteen_minute, garsLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 0.25), 0.25, this.options.gridOptions.fifteen_minute, garsLabelFn))
       }
       if (zoom >= this.options.gridOptions.thirty_minute.minZoom && zoom <= this.options.gridOptions.thirty_minute.maxZoom) {
         //Big blocks are 0.5x0.5 lat/lng squares
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 0.5), 0.5, this.options.gridOptions.thirty_minute, garsLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 0.5), 0.5, this.options.gridOptions.thirty_minute, garsLabelFn))
       }
 
       const degreeLabelFn = (lat, lng, increment, options) => {
@@ -233,13 +233,13 @@ function setupGARSGrid (L) {
         return label
       }
       if (zoom >= this.options.gridOptions.five_degree.minZoom && zoom <= this.options.gridOptions.five_degree.maxZoom) {
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 5.0), 5.0, this.options.gridOptions.five_degree, degreeLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 5.0), 5.0, this.options.gridOptions.five_degree, degreeLabelFn))
       }
       if (zoom >= this.options.gridOptions.ten_degree.minZoom && zoom <= this.options.gridOptions.ten_degree.maxZoom) {
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 10.0), 10.0, this.options.gridOptions.ten_degree, degreeLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 10.0), 10.0, this.options.gridOptions.ten_degree, degreeLabelFn))
       }
       if (zoom >= this.options.gridOptions.twenty_degree.minZoom && zoom <= this.options.gridOptions.twenty_degree.maxZoom) {
-        blocks = blocks.concat(this.calculateBlocks(L.GARSUtil.roundBounds(this._map.getBounds(), 20.0), 20.0, this.options.gridOptions.twenty_degree, degreeLabelFn))
+        blocks = blocks.concat(this.calculateBlocks(L.LayerGroup.GARSGrid.GARSUtil.roundBounds(this._map.getBounds(), 20.0), 20.0, this.options.gridOptions.twenty_degree, degreeLabelFn))
       }
 
       for (let i in blocks) {
@@ -290,7 +290,7 @@ function setupGARSGrid (L) {
     }
   })
 
-  L.GARSUtil = {
+  L.LayerGroup.GARSGrid.GARSUtil = {
     //Round bounds to the next biggest increment
     roundBounds: function (bounds, increment) {
       var sw = bounds.getSouthWest()
@@ -322,10 +322,6 @@ function setupGARSGrid (L) {
 
       return L.latLngBounds(sw, ne)
     },
-  }
-
-  L.garsGrid = function (options) {
-    return new L.GARSGrid(options)
   }
 }
 

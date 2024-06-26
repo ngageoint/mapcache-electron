@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 16.14.2
+* Install Node 18.13.0
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64
@@ -18,7 +18,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.14.2
+  * nvm install 18.17.0
 * Install Yarn
   * npm install yarn -g
 
@@ -30,7 +30,7 @@
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
   * nvm install 16.14.2
-* Install Yarn
+* Install Yarn.  We are currently using 1.22.22, check for correct version under .yarn/releases.
   * npm install yarn -g
 
 ### Linux - Fedora 28 Workstation
@@ -59,10 +59,14 @@ Once you have set up a development environment, these steps will let you build a
 `git clone https://github.com/ngageoint/mapcache-electron.git && cd mapcache-electron`
 3. Fix git:// error:  
 `git config --global url."https://".insteadOf git://`
+4. Remove yarn.lock to clear x86/arm compatibility problems
+`rm -rf yarn.lock`
 5. Install dependencies:  
 `yarn`
-6. Run:  
-`yarn electron:serve` (run locally in development mode)
+6. Important: rebuild better-sqlite3 before running:
+`yarn run rebuild`
+7. Run:  
+`yarn dev` (run locally in development mode)
 
 # Cleaning MapCache Desktop
 The MapCache Desktop build and runtime processes will generate several files. The following commands will help cleanup your environment.

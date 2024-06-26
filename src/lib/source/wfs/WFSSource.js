@@ -5,6 +5,7 @@ import { streamingGeoPackageBuild } from '../../geopackage/GeoPackageFeatureTabl
 import { VECTOR } from '../../layer/LayerTypes'
 import { convertWFSToGeoJSON } from '../../util/ol/OpenLayersUtilities'
 import { readFile, rmFile } from '../../util/file/FileUtilities'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class WFSSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName) {
@@ -15,7 +16,7 @@ export default class WFSSource extends Source {
 
   async retrieveLayers (statusCallback) {
     statusCallback('Processing WFS layers', 25)
-    await this.sleep(250)
+    await sleep(250)
 
     const { layerId, layerDirectory } = this.createLayerDirectory()
     let fileName = this.sourceName + '.gpkg'
@@ -42,7 +43,7 @@ export default class WFSSource extends Source {
     }
     const { extent, count } = await done()
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
 
     return [
       new VectorLayer({

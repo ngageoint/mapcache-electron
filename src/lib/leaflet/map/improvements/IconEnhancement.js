@@ -1,4 +1,4 @@
-import { blankMarker, blankMarker2x, marker, marker2x } from '../../markers'
+import { blankMarker, blankMarker2x, marker, marker2x } from '../../markers.js'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 /**

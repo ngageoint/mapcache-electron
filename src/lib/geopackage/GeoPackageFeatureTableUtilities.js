@@ -19,13 +19,8 @@ import cloneDeep from 'lodash/cloneDeep'
 import keys from 'lodash/keys'
 import isObject from 'lodash/isObject'
 import reproject from 'reproject'
-import wkx from 'wkx'
-import bbox from '@turf/bbox'
-import distance from '@turf/distance'
-import pointToLineDistance from '@turf/point-to-line-distance'
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
-import polygonToLine from '@turf/polygon-to-line'
 import moment from 'moment'
+import wkx from 'wkx'
 import {
   performSafeGeoPackageOperation,
   getQueryBoundingBoxForCoordinateAndZoom,
@@ -50,41 +45,18 @@ import orderBy from 'lodash/orderBy'
 import { getMediaTableName } from '../util/media/MediaUtilities'
 import {
   EPSG,
-  COLON_DELIMITER,
   WORLD_GEODETIC_SYSTEM,
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
-import { convertersMatch } from '../projection/ProjectionUtilities'
+import bbox from '@turf/bbox'
+import distance from '@turf/distance'
+import pointToLineDistance from '@turf/point-to-line-distance'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import polygonToLine from '@turf/polygon-to-line'
 
 const MINIMUM_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 1000
 const MAXIMUM_BATCH_SIZE = 10000
-
-/**
- * Links a feature row to a media row
- * @param gp
- * @param baseTableName
- * @param baseId
- * @param relatedTableName
- * @param relatedId
- * @returns {number}
- */
-function _linkFeatureRowToMediaRow (gp, baseTableName, baseId, relatedTableName, relatedId) {
-  const rte = gp.relatedTablesExtension
-  const mappingTableName = baseTableName + '_' + relatedTableName
-  const relationship = rte
-    .getRelationshipBuilder()
-    .setBaseTableName(baseTableName)
-    .setRelatedTableName(relatedTableName)
-    .setRelationType(MediaTable.RELATION_TYPE)
-    .setMappingTableName(mappingTableName)
-  rte.addRelationship(relationship)
-  const userMappingDao = rte.getMappingDao(mappingTableName)
-  const userMappingRow = userMappingDao.newRow()
-  userMappingRow.baseId = baseId
-  userMappingRow.relatedId = relatedId
-  return userMappingDao.create(userMappingRow)
-}
 
 /**
  * Update feature geometry
@@ -105,13 +77,14 @@ function _updateFeatureGeometry (gp, tableName, featureGeoJson, updateBoundingBo
   }
 
   const featureGeometry = typeof feature.geometry === 'string' ? JSON.parse(feature.geometry) : feature.geometry
-  if (featureGeometry !== null) {
-    const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
-    geometryData.setGeometry(geometry)
-  } else {
-    const temp = wkx.Geometry.parse('POINT EMPTY')
-    geometryData.setGeometry(temp)
-  }
+  // TODO: Utilize Well Known Binary Simple Features
+  // if (featureGeometry !== null) {
+  //   const geometry = wkx.Geometry.parseGeoJSON(featureGeometry)
+  //   geometryData.setGeometry(geometry)
+  // } else {
+  //   const temp = wkx.Geometry.parse('POINT EMPTY')
+  //   geometryData.setGeometry(temp)
+  // }
   featureRow.geometry = geometryData
   featureDao.update(featureRow)
   if (updateBoundingBox) {
@@ -243,7 +216,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   const columns = []
   columns.push(FeatureColumn.createPrimaryKeyColumn(0, 'id'))
   columns.push(FeatureColumn.createGeometryColumn(1, 'geometry', GeometryType.GEOMETRY, false, null))
-  const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox(featureCollection) : [-180, -90, 180, 90]
+  const extent = featureCollection != null && featureCollection.features.length > 0 ? bbox.default(featureCollection) : [-180, -90, 180, 90]
   const bb = new BoundingBox(extent[0], extent[2], extent[1], extent[3])
   gp.createFeatureTable(tableName, geometryColumns, columns, bb, wgs84SpatialReferenceSystem.srs_id)
   const featureDao = gp.getFeatureDao(tableName)
@@ -258,7 +231,7 @@ async function _createFeatureTable (gp, tableName, featureCollection) {
   featureTableStyles.createStyleRelationship()
   featureTableStyles.createIconRelationship()
 
-  let iterator = featureCollection.features
+  let iterator = featureCollection != null ? featureCollection.features : []
   for (let feature of iterator) {
     // handle geometry property
     if (feature.properties.geometry) {
@@ -510,7 +483,12 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
           feature = reproject.reproject(feature, WORLD_GEODETIC_SYSTEM, featureDao.projection)
         }
         const featureGeometry = feature.geometry
-        geometryData.setGeometry(featureGeometry ? wkx.Geometry.parseGeoJSON(featureGeometry) : emptyPoint)
+        if (featureGeometry) {
+          geometryData.setGeometry(wkx.Geometry.parseGeoJSON(featureGeometry))
+        } else {
+          emptyPoint
+        }
+
         featureRow.geometry = geometryData
         for (const propertyKey in feature.properties) {
           if (propertyKey !== 'id' && Object.prototype.hasOwnProperty.call(feature.properties, propertyKey)) {
@@ -557,6 +535,12 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
         }
         feature.properties.geometry_property = feature.properties.geometry
         delete feature.properties.geometry
+      } else {
+        if (!definedColumnNames[GEOMETRY_PROPERTY]) {
+          definedColumnNames[GEOMETRY_PROPERTY] = true
+          featureDao.addColumn(new FeatureColumn(featureDao.table.columns.columnCount(), GEOMETRY_PROPERTY, getDataTypeForValue(feature.geometry)))
+        }
+        feature.properties.geometry_property = feature.geometry
       }
 
       // handle id property
@@ -618,12 +602,14 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
       processBatch()
     }
     // await _indexFeatureTable(gp, tableName)
-    const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
-    const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
-    return {
-      extent,
-      count: featureDao.count()
-    }
+    return performSafeGeoPackageOperation(gp.filePath, (gp) => {
+      const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
+      const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
+      return {
+        extent,
+        count: featureDao.count()
+      }
+    })
   }
 
   return {
@@ -1047,7 +1033,7 @@ function _getBoundingBoxForFeature (gp, tableName, featureRowId) {
   if (featureRow) {
     const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, featureDao.srs)
     if (feature.geometry != null) {
-      extent = bbox(feature)
+      extent = bbox.default(feature)
       type = feature.geometry.type
     }
   }
@@ -1087,6 +1073,7 @@ function _updateBoundingBoxForFeatureTable (gp, tableName) {
     contents.max_x = 180.0
     contents.max_y = 90.0
   }
+
   contentsDao.update(contents)
   return contents
 }
@@ -1380,10 +1367,10 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
   if (feature.geometry != null) {
     switch (feature.geometry.type) {
       case 'Point':
-        distanceInMeters = distance([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, { units: 'kilometers' }) * 1000.0
+        distanceInMeters = distance.default([feature.geometry.coordinates[0], feature.geometry.coordinates[1]], coordinate, { units: 'kilometers' }) * 1000.0
         break
       case 'LineString':
-        distanceInMeters = pointToLineDistance(coordinate, feature, { units: 'kilometers' }) * 1000.0
+        distanceInMeters = pointToLineDistance.default(coordinate, feature, { units: 'kilometers' }) * 1000.0
         break
       case 'MultiPoint':
         // eslint-disable-next-line no-case-declarations
@@ -1428,8 +1415,8 @@ function getDistanceToCoordinateInMeters (coordinate, feature) {
         break
       case 'Polygon':
         if (feature.geometry.coordinates != null && feature.geometry.coordinates.length > 0) {
-          isContained = booleanPointInPolygon(coordinate, feature)
-          distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine(feature)).distance
+          isContained = booleanPointInPolygon.default(coordinate, feature)
+          distanceInMeters = getDistanceToCoordinateInMeters(coordinate, polygonToLine.default(feature)).distance
         }
         break
       case 'MultiPolygon':
@@ -1480,46 +1467,55 @@ function determineMinDistanceBasedOnZoom (latitude, zoom) {
  * @private
  */
 async function _getClosestFeature (layers, latlng, zoom) {
-  let closestFeature = null
-  let closestDistance = Number.MAX_SAFE_INTEGER
-  let closestLayer = null
-  let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
+  try {
+    let closestFeature = null
+    let closestDistance = Number.MAX_SAFE_INTEGER
+    let closestLayer = null
+    let minDistanceAway = determineMinDistanceBasedOnZoom(latlng.lat, zoom)
 
-  for (let lId = 0; lId < layers.length; lId++) {
-    const layer = layers[lId]
-    await performSafeGeoPackageOperation(layer.path, (gp) => {
-      const featureDao = gp.getFeatureDao(layer.tableName)
-      if (featureDao.featureTableIndex != null && featureDao.featureTableIndex.isIndexed()) {
-        const srs = featureDao.srs
-        const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
-        const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
-        const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
-        const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
-        const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
-        const coordinate = [latlng.lng, latlng.lat]
-        for (let i = 0; i < rows.length; i++) {
-          const featureRow = featureDao.getRow(rows[i])
-          const featureId = featureRow.id
-          const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
-          feature.type = 'Feature'
-          feature.id = featureId
+    for (let lId = 0; lId < layers.length; lId++) {
+      const layer = layers[lId]
+      await performSafeGeoPackageOperation(layer.path, (gp) => {
+        try {
+          const featureDao = gp.getFeatureDao(layer.tableName)
+          if (featureDao.featureTableIndex != null && featureDao.featureTableIndex.isIndexed()) {
+            const srs = featureDao.srs
+            const envelope = getQueryBoundingBoxForCoordinateAndZoom(latlng, zoom).projectBoundingBox(WORLD_GEODETIC_SYSTEM, featureDao.projection).buildEnvelope()
+            const index = featureDao.featureTableIndex.rtreeIndexed ? featureDao.featureTableIndex.rtreeIndexDao : featureDao.featureTableIndex.geometryIndexDao
+            const geomEnvelope = index._generateGeometryEnvelopeQuery(envelope)
+            const query = SqliteQueryBuilder.buildQuery(false, "'" + index.gpkgTableName + "'", geomEnvelope.tableNameArr, geomEnvelope.where, geomEnvelope.join, undefined, undefined, '"' + featureDao._table.getPkColumnName() + '" DESC', 25)
+            const rows = featureDao.connection.all(query, geomEnvelope.whereArgs)
+            const coordinate = [latlng.lng, latlng.lat]
+            for (let i = 0; i < rows.length; i++) {
+              const featureRow = featureDao.getRow(rows[i])
+              const featureId = featureRow.id
+              const feature = GeoPackage.parseFeatureRowIntoGeoJSON(featureRow, srs)
+              feature.type = 'Feature'
+              feature.id = featureId
 
-          const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
-          if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
-            closestFeature = feature
-            closestDistance = distanceResult.distance
-            closestLayer = layer
+              const distanceResult = getDistanceToCoordinateInMeters(coordinate, feature)
+              if ((distanceResult.distance <= minDistanceAway || distanceResult.isContained) && (closestFeature == null || distanceResult.distance < closestDistance)) {
+                closestFeature = feature
+                closestDistance = distanceResult.distance
+                closestLayer = layer
+              }
+            }
           }
+        } catch (e) {
+          console.error(e)
         }
-      }
-    })
-  }
+      })
+    }
 
-  return {
-    feature: closestFeature,
-    distance: closestDistance,
-    layer: closestLayer
+    return {
+      feature: closestFeature,
+      distance: closestDistance,
+      layer: closestLayer
+    }
+  } catch (e) {
+    console.error(e)
   }
+  return null
 }
 
 async function getClosestFeature (layers, latlng, zoom) {
@@ -1981,11 +1977,11 @@ function getEditableColumnObject (column, properties) {
 }
 
 async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feature, columns) {
-  if (isNil(columns) || isNil(columns._columns)) {
+  if (isNil(columns)) {
     return []
   }
   const properties = isNil(feature) ? {} : cloneDeep(feature.properties)
-  const columnObjects = columns._columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
+  const columnObjects = columns.filter(column => !column.primaryKey && !column.autoincrement && column.dataType !== GeoPackageDataType.BLOB && column.name !== '_feature_id').map((column) => {
     return getEditableColumnObject(column, properties)
   })
 
@@ -2003,6 +1999,7 @@ async function getGeoPackageEditableColumnsForFeature (filePath, tableName, feat
  * @return {Promise<*>}
  */
 async function saveGeoPackageEditedFeature (filePath, tableName, featureId, editableColumns, updatedGeometry, updateGeometry = false) {
+  console.log('saving gpkg edited feature')
   return performSafeGeoPackageOperation(filePath, (gp) => {
     const featureDao = gp.getFeatureDao(tableName)
     const srs = featureDao.srs
@@ -2129,7 +2126,6 @@ async function streamingGeoPackageBuild (fileName, tableName) {
 }
 
 export {
-  _linkFeatureRowToMediaRow,
   _updateFeatureGeometry,
   updateFeatureGeometry,
   _addFeatureToFeatureTable,

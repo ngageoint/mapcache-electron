@@ -1,4 +1,4 @@
-import { L } from '../../vendor'
+import { L } from '../../vendor.js'
 
 export default class LeafletBaseMapTool extends L.Control {
   basemapFunction

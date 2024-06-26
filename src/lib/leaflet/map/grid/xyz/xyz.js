@@ -1,7 +1,7 @@
 import EventBus from '../../../../vue/EventBus'
 
 function setupXYZGrid (L) {
-  L.XYZGrid = L.GridLayer.extend({
+  L.GridLayer.XYZGrid = L.GridLayer.extend({
     initialize: function (options) {
       L.GridLayer.prototype.initialize.call(this, options)
       this.currentId = options.id
@@ -50,10 +50,6 @@ function setupXYZGrid (L) {
       return tile
     }
   })
-
-  L.xyzGrid = function (options) {
-    return new L.XYZGrid(options)
-  }
 }
 
 export {

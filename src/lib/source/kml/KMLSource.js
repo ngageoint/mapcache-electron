@@ -11,6 +11,7 @@ import { VECTOR } from '../../layer/LayerTypes'
 import { getRemoteImage } from '../../network/NetworkRequestUtils'
 import { streamKml } from './KmlStream'
 import { disposeImage, makeImage } from '../../util/canvas/CanvasUtilities'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class KMLSource extends Source {
 
@@ -116,7 +117,7 @@ export default class KMLSource extends Source {
    */
   async retrieveLayers (statusCallback) {
     statusCallback('Processing KML file', 0)
-    await this.sleep(250)
+    await sleep(250)
     let layers = []
     // setup tmp directory
     const tmpDir = path.join(this.directory, 'tmp')
@@ -316,7 +317,7 @@ export default class KMLSource extends Source {
     }
 
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
 
     await rmDirAsync(tmpDir)
 

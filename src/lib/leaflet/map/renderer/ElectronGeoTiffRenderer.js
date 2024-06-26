@@ -41,7 +41,7 @@ export default class ElectronGeoTiffRenderer extends ElectronTileRenderer {
       alphaBand: this.layer.alphaBand,
       renderingMethod: this.layer.renderingMethod,
       grayScaleColorGradient: this.layer.grayScaleColorGradient,
-      extent: this.layer.extent,
+      extent: this.layer.extent.slice(),
       srs: this.layer.srs,
       globalNoDataValue: this.layer.globalNoDataValue,
       stretchToMinMax: this.layer.stretchToMinMax,

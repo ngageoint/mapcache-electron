@@ -2,7 +2,7 @@ import { MediaTable, IconTable } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import difference from 'lodash/difference'
 import jetpack from 'fs-jetpack'
-import request from 'request'
+import axios from 'axios'
 import {
   getExtension,
   getMediaObjectURL,
@@ -394,12 +394,12 @@ async function _addMediaAttachmentFromUrl (gp, tableName, featureId, url) {
     const featureRow = featureDao.queryForId(featureId)
     if (!isNil(featureRow)) {
       let { buffer, contentType } = await new Promise(resolve => {
-        request.get({ url, encoding: null }, function (err, res, body) {
-          if (!err) {
-            resolve({ buffer: body, contentType: res.headers['content-type'] })
-          } else {
-            resolve({ buffer: null, contentType: null })
-          }
+        axios.get(url, {
+          responseType: 'arraybuffer'
+        }).then(response => {
+          resolve({ buffer: response.data, contentType: response.headers['content-type'] })
+        }).catch(() => {
+          resolve({ buffer: null, contentType: null })
         })
       })
       if (buffer != null) {

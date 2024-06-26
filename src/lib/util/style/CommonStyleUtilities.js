@@ -57,17 +57,6 @@ function leafletStyle () {
   }
 }
 
-function hashCode (obj) {
-  const str = JSON.stringify(obj)
-  let hash = 0
-  if (str.length === 0) return hash
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return hash
-}
-
 function adjustColorForHighlight (color, amt) {
   let newColor = lightenDarkenColor(color, amt)
   if (newColor.toLowerCase() === color.toLowerCase()) {
@@ -114,7 +103,6 @@ function lightenDarkenColor (col, amt) {
 export {
   getDefaultMapCacheStyle,
   leafletStyle,
-  hashCode,
   lightenDarkenColor,
   adjustColorForHighlight,
   getNewStyle,
