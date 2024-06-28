@@ -4,16 +4,17 @@ import {
   DEFAULT_RETRY_ATTEMPTS,
   DEFAULT_TIMEOUT, getAuthenticationMethod, isTimeoutError,
   SERVICE_TYPE, TIMEOUT_STATUS
-} from '../../../network/HttpUtilities'
-import { getAxiosRequestScheduler, testServiceConnection } from '../../../network/ServiceConnectionUtils'
-import { constructRenderer } from '../renderer/RendererFactory'
-import { WMS, WMTS, XYZ_SERVER } from '../../../layer/LayerTypes'
-import EventBus from '../../../vue/EventBus'
-import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities'
-import CancellableTileRequest from '../../../network/CancellableTileRequest'
-import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities'
-import { WEB_MERCATOR } from '../../../projection/ProjectionConstants'
-import SlowServerNotifier from '../../../geopackage/SlowServerNotifier'
+} from '../../../network/HttpUtilities.js'
+import { getAxiosRequestScheduler, testServiceConnection } from '../../../network/ServiceConnectionUtils.js'
+import { constructRenderer } from '../renderer/RendererFactory.js'
+import { WMS, WMTS, XYZ_SERVER } from '../../../layer/LayerTypes.js'
+import EventBus from '../../../vue/EventBus.js'
+import { getWGS84BoundingBoxFromXYZ } from '../../../util/xyz/WGS84XYZTileUtilities.js'
+import CancellableTileRequest from '../../../network/CancellableTileRequest.js'
+import { getClippingRegion } from '../../../util/xyz/XYZTileUtilities.js'
+import { WEB_MERCATOR } from '../../../projection/ProjectionConstants.js'
+import SlowServerNotifier from '../../../geopackage/SlowServerNotifier.js'
+import { setSourceError, setSourceWarning } from '../../../vue/vuex/ProjectActions'
 
 /**
  * The map cache networking map layer is a wrapper for WMS/XYZ and other services
@@ -26,7 +27,7 @@ export default function (L) {
       L.TileLayer.prototype.initialize.call(this, window.mapcache.getBaseURL(options.layer.filePath), options)
       this.outstandingTileRequests = {}
       this.layer = options.layer
-      this.layerBounds = this.crs === WEB_MERCATOR ? window.mapcache.convertToWebMercator(this.layer.extent) : this.layer.extent.slice()
+      this.layerBounds = this.crs === WEB_MERCATOR ? window.mapcache.convertToWebMercator(options.layer.extent.slice()) : options.layer.extent.slice()
       this.id = options.layer.id
       this.retryAttempts = !isNil(this.layer.retryAttempts) ? this.layer.retryAttempts : DEFAULT_RETRY_ATTEMPTS
       this.timeout = !isNil(this.layer.timeoutMs) ? this.layer.timeoutMs : DEFAULT_TIMEOUT
@@ -100,21 +101,21 @@ export default function (L) {
     setError (error) {
       if (error.status === TIMEOUT_STATUS) {
         this.error = error
-        window.mapcache.setSourceError({ id: this.id, error: this.error })
+        setSourceError(this.id, this.error)
       } else if (error.response && (error.response.status >= 500 || error.response.status === 401)) {
         this.error = {
           status: error.response.status,
           statusText: error.response.statusText,
           authType: getAuthenticationMethod(error.response)
         }
-        window.mapcache.setSourceError({ id: this.id, error: this.error })
+        setSourceError(this.id, this.error)
       } else if (error.request) {
         if (navigator.onLine) {
           this.error = {
             status: -1,
             statusText: 'Unable to reach server.'
           }
-          window.mapcache.setSourceError({ id: this.id, error: this.error })
+          setSourceError(this.id, this.error)
         } else {
           // notify there may be a network error
           EventBus.$emit(EventBus.EventTypes.NETWORK_ERROR)
@@ -130,13 +131,22 @@ export default function (L) {
      * @param reject
      */
     loadImage (dataUrl, coords, tile, resolve, reject) {
-      tile.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        tile.getContext('2d').drawImage(image, 0, 0);
         resolve()
-      }
-      tile.onerror = (e) => {
+      };
+      image.onerror = (e) => {
         reject(e)
       }
-      tile.src = dataUrl
+      image.src = dataUrl
+      // tile.onload = () => {
+      //   resolve()
+      // }
+      // tile.onerror = (e) => {
+      //   reject(e)
+      // }
+      // tile.src = dataUrl
     },
     async compileTiles (id, tiles, size, clippingRegion, targetSrs, targetBounds) {
       return new Promise((resolve, reject) => {
@@ -205,9 +215,7 @@ export default function (L) {
                   if(!this.slownessNotified) {
                     this.serverMonitor.beforeRender(this.layer)
                   }
-                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({                                                                                                                                                     dataUrl,
-                                                                                                                                                                          error
-                                                                                                                                                                        }) => {
+                  cancellableTileRequest.requestTile(this.axiosRequestScheduler, request.url, this.retryAttempts, this.timeout, this.layer.withCredentials, size).then(({ dataUrl, error }) => {
                     if(!this.slownessNotified) {
                       this.serverMonitor.afterRender(this.layer)
                     }
@@ -258,7 +266,9 @@ export default function (L) {
     createTile (coords, done) {
       // create the tile img
       const requestId = window.mapcache.createUniqueID()
-      const tile = document.createElement('img')
+      const tile = document.createElement('canvas')
+      tile.width = 256
+      tile.height = 256
       tile.requestId = requestId
       tile.alt = ''
       tile.setAttribute('role', 'presentation')
@@ -289,7 +299,7 @@ export default function (L) {
           this.serverMonitor.applyWarningMessage(status)
           if(status.warning) {
             this.slownessNotified = true
-            window.mapcache.setSourceWarning({ id: this.id, warning: status.warning })
+            setSourceWarning(this.id, status.warning)
           }
         }
         doneWrapper(null, tile)
@@ -336,7 +346,6 @@ export default function (L) {
         this.error = null
       }
       this.layer.update(layer)
-      this.webMercatorLayerBounds = window.mapcache.convertToWebMercator(this.layer.extent)
       let southWest = L.latLng(this.layer.extent[1], this.layer.extent[0])
       let northEast = L.latLng(this.layer.extent[3], this.layer.extent[2])
       this.originalOptions.bounds = L.latLngBounds(southWest, northEast)

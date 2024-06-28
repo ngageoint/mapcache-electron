@@ -34,8 +34,4 @@ export default class Source {
   retrieveLayers (statusCallback) {
     throw new Error('Subclass must define the retrieveLayers function')
   }
-
-  async sleep (ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
 }

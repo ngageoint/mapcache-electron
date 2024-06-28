@@ -1,8 +1,12 @@
 // event-bus.js
-import Vue from 'vue'
-import { createUniqueID } from '../util/UniqueIDUtilities'
+import emitter from 'tiny-emitter/instance'
 
-const EventBus = new Vue()
+const EventBus = {
+  $on: (...args) => emitter.on(...args),
+  $once: (...args) => emitter.once(...args),
+  $off: (...args) => emitter.off(...args),
+  $emit: (...args) => emitter.emit(...args)
+}
 
 const Events = {
   CONFIRMATION_MESSAGE: 'confirmation-message',
@@ -45,7 +49,7 @@ EventBus.EventTypes = Events
  */
 EventBus.requestUserConfirmation = (title, message, icon) => {
   return new Promise(resolve => {
-    const id = createUniqueID()
+    const id = window.mapcache.createUniqueID()
     EventBus.$on(Events.CONFIRMATION_MESSAGE_RESPONSE(id), (approved) => {
       resolve(approved)
     })

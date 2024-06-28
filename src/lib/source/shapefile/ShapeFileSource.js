@@ -1,21 +1,22 @@
-import fs from 'fs'
+import fs from 'node:fs'
+import path from 'node:path'
 import AdmZip from 'adm-zip'
+// import shp from 'shpjs'
+
 import Source from '../Source'
-import path from 'path'
-import shp from 'shpjs'
-import jetpack from 'fs-jetpack'
+import GeoTIFFSource from '../geotiff/GeoTIFFSource'
 import VectorLayer from '../../layer/vector/VectorLayer'
 import { VECTOR } from '../../layer/LayerTypes'
 import { streamingGeoPackageBuild } from '../../geopackage/GeoPackageFeatureTableUtilities'
-import GeoTIFFSource from '../geotiff/GeoTIFFSource'
 import { defineProjection } from '../../projection/ProjectionUtilities'
 import { COLON_DELIMITER, EPSG } from '../../projection/ProjectionConstants'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class ShapeFileSource extends Source {
   async retrieveLayers (statusCallback) {
     const layers = []
     const name = path.basename(this.filePath, path.extname(this.filePath))
-    if (!await jetpack.existsAsync(this.filePath)) {
+    if (!fs.existsSync(this.filePath)) {
       throw new Error('.shp file not found in zip file\'s root directory.')
     }
     let isZip = false
@@ -82,10 +83,10 @@ export default class ShapeFileSource extends Source {
     if (shapefiles > 0) {
       let featureCollections = []
       statusCallback('Parsing shapefile', geotiffs.length > 0 ? 50 : 0)
-      await this.sleep(250)
+      await sleep(250)
 
       if (isZip) {
-        const result = await shp.parseZip(jetpack.read(this.filePath, 'buffer'))
+        const result = await shp.parseZip(fs.readFileSync(this.filePath))
         if (result.length == null) {
           featureCollections.push(result)
         } else {
@@ -94,7 +95,7 @@ export default class ShapeFileSource extends Source {
       } else {
         featureCollections.push({
           type: 'FeatureCollection',
-          features: shp.parseShp(jetpack.read(this.filePath, 'buffer')),
+          features: shp.parseShp(fs.readFileSync(this.filePath)),
           fileName: name
         })
       }
@@ -154,7 +155,7 @@ export default class ShapeFileSource extends Source {
     }
 
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
     return layers
   }
 }

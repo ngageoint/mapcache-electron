@@ -1,37 +1,6 @@
-import path from 'path'
-import jetpack from 'fs-jetpack'
-import isNil from 'lodash/isNil'
-import keys from 'lodash/keys'
 import cloneDeep from 'lodash/cloneDeep'
-import { getLastModifiedDate, rmDirAsync, isDirEmpty, exists } from '../../util/file/FileUtilities'
-import store from '../../../store'
-import Vue from 'vue'
-import { tryCollect } from '../../util/GarbageCollector'
-import {
-  getOrCreateGeoPackageForApp,
-  getGeoPackageFeatureTableForApp,
-  getGeoPackageFileSize,
-  performSafeGeoPackageOperation,
-  _getBoundingBoxForTable,
-  getExtentOfGeoPackageTables,
-  getOrCreateGeoPackage,
-  _getGeoPackageFeatureTableForApp
-} from '../../geopackage/GeoPackageCommon'
-import {
-  updateFeatureGeometry as updateFeatureGeo,
-  createFeatureTable,
-  _deleteFeatureRow,
-  _createFeatureTable,
-  _deleteFeatureRows,
-  _renameGeoPackageFeatureTableColumn,
-  _deleteGeoPackageFeatureTableColumn,
-  _addGeoPackageFeatureTableColumn,
-  _addFeatureToFeatureTable,
-  _addGeoPackageFeatureTableColumns
-} from '../../geopackage/GeoPackageFeatureTableUtilities'
-import * as GeoPackageStyleUtilities from '../../geopackage/GeoPackageStyleUtilities'
-import { LAYER_DIRECTORY_IDENTIFIER } from '../../util/file/FileConstants'
-import { _addMediaAttachment } from '../../geopackage/GeoPackageMediaUtilities'
+import store from '../../../renderer/src/store/renderer'
+import { isProxy, toRaw } from 'vue';
 
 function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   let filePath
@@ -45,676 +14,488 @@ function getGeoPackageFilePath (id, projectId, isGeoPackage, isBaseMap) {
   return filePath
 }
 
-function notifyTab ({ projectId, tabId }) {
-  store.dispatch('UIState/notifyTab', { projectId, tabId })
-}
-
-async function sleep (ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function notifyTab (projectId, tabId) {
+  return store.dispatch('UIState/notifyTab', { projectId, tabId })
 }
 
 function updateAllFeatureTableStyleKeys (projectId, id, isGeoPackage, isBaseMap = false) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+    geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
     const featureTables = Object.keys(geopackage.tables.features)
     for (let i = 0; i < featureTables.length; i++) {
       const table = featureTables[i]
       geopackage.tables.features[table].styleKey = geopackage.tables.features[table].styleKey + 1
     }
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+    return setGeoPackage(projectId, geopackage)
   } else if (isBaseMap) {
     const baseMap = cloneDeep(store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id))
     baseMap.layerConfiguration.styleKey = baseMap.layerConfiguration.styleKey + 1
-    store.dispatch('BaseMaps/editBaseMap', baseMap)
+    return setBaseMap(baseMap)
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
     source.styleKey = source.styleKey + 1
-    store.dispatch('Projects/setDataSource', { projectId, source })
+    return setDataSource(projectId, source)
   }
 }
 
 function updateStyleKey (projectId, id, tableName, isGeoPackage, isBaseMap = false) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
+    geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
     if (geopackage.tables.features[tableName]) {
       geopackage.tables.features[tableName].styleKey = geopackage.tables.features[tableName].styleKey + 1
     } else if (geopackage.tables.tiles[tableName]) {
       geopackage.tables.tiles[tableName].styleKey = geopackage.tables.tiles[tableName].styleKey + 1
     }
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+    return setGeoPackage(projectId, geopackage)
   } else if (isBaseMap) {
     const baseMap = cloneDeep(store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id))
     baseMap.layerConfiguration.styleKey = baseMap.layerConfiguration.styleKey + 1
-    store.dispatch('BaseMaps/editBaseMap', baseMap)
+    return setBaseMap(baseMap)
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
     source.styleKey = source.styleKey + 1
-    store.dispatch('Projects/setDataSource', { projectId, source })
+    return setDataSource(projectId, source)
   }
 }
 
-function setDataSource ({ projectId, source }) {
-  store.dispatch('Projects/setDataSource', { projectId, source })
+function setGeoPackage (projectId, geopackage) {
+  Object.keys(geopackage).forEach(key => {
+    if (isProxy(geopackage[key])) {
+      geopackage[key] = toRaw(geopackage[key])
+    }
+  })
+  return store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
 }
 
-function setProjectName ({ project, name }) {
-  store.dispatch('Projects/setProjectName', { project, name })
+function setDataSource (projectId, source) {
+  Object.keys(source).forEach(key => {
+    if (isProxy(source[key])) {
+      source[key] = toRaw(source[key])
+    }
+  })
+  return store.dispatch('Projects/setDataSource', { projectId, source: source })
 }
 
-function setNominatimUrl ({ url }) {
-  store.dispatch('URLs/setNominatimUrl', { url })
+function setBaseMap (baseMap) {
+  Object.keys(baseMap).forEach(key => {
+    if (isProxy(baseMap[key])) {
+      baseMap[key] = toRaw(baseMap[key])
+    }
+  })
+  return store.dispatch('BaseMaps/editBaseMap', baseMap)
 }
 
-function setOverpassUrl ({ url }) {
-  store.dispatch('URLs/setOverpassUrl', { url })
+function setProjectName (projectId, name) {
+  return store.dispatch('Projects/setProjectName', { projectId, name })
 }
 
-function showToolTips ({ projectId, show }) {
-  store.dispatch('Projects/showToolTips', { projectId, show })
+function setNominatimUrl (url) {
+  return store.dispatch('URLs/setNominatimUrl', url)
 }
 
-function setMapProjection ({ projectId, mapProjection }) {
-  store.dispatch('Projects/setMapProjection', { projectId, mapProjection })
+function setOverpassUrl (url) {
+  return store.dispatch('URLs/setOverpassUrl', url)
 }
 
-function setDataSourceDisplayName ({ projectId, sourceId, displayName }) {
-  store.dispatch('Projects/setDataSourceDisplayName', { projectId, sourceId, displayName })
+function showToolTips (projectId, show) {
+  return store.dispatch('Projects/showToolTips', { projectId, show })
 }
 
-async function addDataSources ({ projectId, dataSources }) {
+function setMapProjection (projectId, mapProjection) {
+  return store.dispatch('Projects/setMapProjection', { projectId, mapProjection })
+}
+
+function setDataSourceDisplayName (projectId, sourceId, displayName) {
+  return store.dispatch('Projects/setDataSourceDisplayName', { projectId, sourceId, displayName })
+}
+
+async function addDataSources (projectId, dataSources) {
+  dataSources = toRaw(dataSources)
   for (let i = 0; i < dataSources.length; i++) {
     const source = dataSources[i]
+    Object.keys(source).forEach(key => {
+      if (isProxy(source[key])) {
+        source[key] = toRaw(source[key])
+      }
+    })
     if (source.config.geopackageFilePath != null) {
-      source.table = await getGeoPackageFeatureTableForApp(source.config.geopackageFilePath, source.config.sourceLayerName)
+      source.table = await window.mapcache.getGeoPackageFeatureTableForApp(source.config.geopackageFilePath, source.config.sourceLayerName)
     }
   }
-  store.dispatch('Projects/addDataSources', { projectId, dataSources })
+  return await store.dispatch('Projects/addDataSources', { projectId, dataSources })
 }
 
-async function addGeoPackage ({ projectId, filePath }) {
-  const geopackage = await getOrCreateGeoPackageForApp(filePath)
-  if (geopackage != null) {
-    await store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-    return geopackage.id
-  } else {
-    return null
-  }
-}
 
-function setGeoPackageLayersVisible ({ projectId, geopackageId, visible }) {
+function setGeoPackageLayersVisible (projectId, geopackageId, visible) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  keys(geopackage.tables.tiles).forEach(table => {
+  Object.keys(geopackage.tables.tiles).forEach(table => {
     geopackage.tables.tiles[table].visible = visible
   })
-  keys(geopackage.tables.features).forEach(table => {
+  Object.keys(geopackage.tables.features).forEach(table => {
     geopackage.tables.features[table].visible = visible
   })
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+  return setGeoPackage(projectId, geopackage)
 }
 
-function setGeoPackageFeatureTableVisible ({ projectId, geopackageId, tableName, visible }) {
+function setGeoPackageFeatureTableVisible (projectId, geopackageId, tableName, visible) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
   geopackage.tables.features[tableName].visible = visible
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+  return setGeoPackage(projectId, geopackage)
 }
 
-function setGeoPackageTileTableVisible ({ projectId, geopackageId, tableName, visible }) {
+function setGeoPackageTileTableVisible (projectId, geopackageId, tableName, visible) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
   geopackage.tables.tiles[tableName].visible = visible
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+  return setGeoPackage(projectId, geopackage)
 }
 
-function _hasVisibleTables (geopackage) {
+function _hasVisibleTables (geoPackage) {
   let hasVisibleTables = false
-  keys(geopackage.tables.features).forEach(table => {
-    if (geopackage.tables.features[table].visible) {
+  Object.keys(geoPackage.tables.features).forEach(table => {
+    if (geoPackage.tables.features[table].visible) {
       hasVisibleTables = true
     }
   })
-  keys(geopackage.tables.tiles).forEach(table => {
-    if (geopackage.tables.tiles[table].visible) {
+  Object.keys(geoPackage.tables.tiles).forEach(table => {
+    if (geoPackage.tables.tiles[table].visible) {
       hasVisibleTables = true
     }
   })
   return hasVisibleTables
 }
 
-function renameGeoPackage ({ projectId, geopackageId, name }) {
-  return new Promise((resolve, reject) => {
-    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    tryCollect()
-    // on the next tick, try to rename
-    Vue.nextTick(async () => {
-      const oldPath = geopackage.path
-      const newName = name + '.gpkg'
-      const newPath = path.join(path.dirname(oldPath), newName)
-      let renamed = false
-      let retryAttempts = 0
-      let error
-      // try to rename until the max attempts are reached
-      while (!renamed && retryAttempts < 5) {
-        try {
-          await jetpack.renameAsync(oldPath, newName)
-          geopackage.path = newPath
-          geopackage.name = name
-          geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-          renamed = true
-        } catch (e) {
-          error = e
-          await sleep(100)
-        }
-        retryAttempts++
-      }
-      Vue.nextTick(() => {
-        store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-        renamed ? resolve() : reject(error)
-      })
-    })
-  })
+/**
+ * Renames a GeoPackage and handles calling preload to perform node.js functions for renaming
+ * @param projectId
+ * @param geopackageId
+ * @param name
+ * @return {Promise<boolean>}
+ */
+async function renameGeoPackage (projectId, geopackageId, name) {
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const { success, path, modifiedDate } = await window.mapcache.renameGeoPackage(geopackage.path, name);
+  if (success) {
+    geopackage.path = path
+    geopackage.name = name
+    geopackage.modifiedDate = modifiedDate
+    await setGeoPackage(projectId, geopackage)
+  }
+  return success
 }
 
-function removeGeoPackage ({ projectId, geopackageId }) {
-  store.dispatch('Projects/removeGeoPackage', { projectId, geopackageId })
+function removeGeoPackage (projectId, geopackageId) {
+  return store.dispatch('Projects/removeGeoPackage', { projectId, geopackageId })
 }
 
-function addCopiedGeoPackageTileTable ({ projectId, geopackageId, tableName, copyTableName, type = 'feature' }) {
-  let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
-  tableList[copyTableName] = cloneDeep(tableList[tableName])
-  tableList[copyTableName].visible = false
-  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+async function copyGeoPackageTable (projectId, geopackageId, filePath, tableName, copyTableName, type = 'feature') {
+  const success = window.mapcache.copyGeoPackageTable(filePath, tableName, copyTableName)
+  if (success) {
+    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+    const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+    tableList[copyTableName] = cloneDeep(tableList[tableName])
+    tableList[copyTableName].visible = false
+    geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
+    return setGeoPackage(projectId, geopackage)
+  }
 }
 
-function updateDeletedGeoPackageTileTable ({ projectId, geopackageId, tableName, type = 'feature' }) {
-  let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
-  delete tableList[tableName]
-  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+async function renameGeoPackageTable (projectId, geopackageId, filePath, tableName, newTableName, type = 'feature') {
+  const success = await window.mapcache.renameGeoPackageTable(filePath, tableName, newTableName)
+  if (success) {
+    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+    const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+    delete tableList[tableName]
+    geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
+    return setGeoPackage(projectId, geopackage)
+  }
 }
 
-function updateRenamedGeoPackageTable ({ projectId, geopackageId, tableName, newTableName, type = 'feature' }) {
+async function deleteGeoPackageTable (projectId, geopackageId, filePath, tableName, type = 'feature', silent = false) {
+  const success = await window.mapcache.deleteGeoPackageTable(filePath, tableName)
+  if (success && !silent) {
+    let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+    const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+    delete tableList[tableName]
+    geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
+    return setGeoPackage(projectId, geopackage)
+  }
+}
+
+function updateRenamedGeoPackageTable (projectId, geopackageId, tableName, newTableName, type = 'feature') {
   let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
   const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
   let table = tableList[tableName]
   delete tableList[tableName]
   tableList[newTableName] = table
-  geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-  store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+  geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
+  return setGeoPackage(projectId, geopackage)
 }
 
-async function renameGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, oldColumnName, newColumnName }) {
+async function renameFeatureTableColumn (projectId, id, isGeoPackage, tableName, oldColumnName, newColumnName) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
-    const existingTable = geopackage.tables.features[tableName]
-    const filePath = geopackage.path
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _renameGeoPackageFeatureTableColumn(gp, tableName, oldColumnName, newColumnName)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      updateGeoPackageFileInfo(geopackage)
-      if (existingTable != null && existingTable.columnOrder != null) {
-        const oldColumnIdx = existingTable.columnOrder.indexOf(oldColumnName.toLowerCase())
-        if (oldColumnIdx !== -1) {
-          existingTable.columnOrder.splice(oldColumnIdx, 1, newColumnName.toLowerCase())
-        }
-      }
-      updateExistingTable(existingTable, tableInfo, true, true)
-      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-    })
+    const updatedGeoPackage = await window.mapcache.renameGeoPackageFeatureTableColumn(geopackage, tableName, oldColumnName, newColumnName)
+    return setGeoPackage(projectId, updatedGeoPackage)
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
-    const filePath = source.geopackageFilePath
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _renameGeoPackageFeatureTableColumn(gp, tableName, oldColumnName, newColumnName)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      if (source.table == null) {
-        source.table = tableInfo
-      }
-      if (source.table.columnOrder != null) {
-        const oldColumnIdx = source.table.columnOrder.indexOf(oldColumnName.toLowerCase())
-        if (oldColumnIdx !== -1) {
-          source.table.columnOrder.splice(oldColumnIdx, 1, newColumnName.toLowerCase())
-        }
-      }
-      updateExistingTable(source.table, tableInfo, true, true)
-      store.dispatch('Projects/setDataSource', { projectId, source })
-    })
+    const updatedSource = await window.mapcache.renameDataSourceFeatureTableColumn(source, tableName, oldColumnName, newColumnName)
+    return setDataSource(projectId, updatedSource)
   }
 }
 
-async function deleteGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, columnName }) {
+async function deleteGeoPackageFeatureTableColumn (projectId, id, isGeoPackage, tableName, columnName) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
-    const existingTable = geopackage.tables.features[tableName]
-    const filePath = geopackage.path
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      updateGeoPackageFileInfo(geopackage)
-      updateExistingTable(existingTable, tableInfo, true, true)
-      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-    })
+    const updatedGeoPackage = await window.mapcache.deleteGeoPackageFeatureTableColumn(geopackage, tableName, columnName)
+    await setGeoPackage(projectId, updatedGeoPackage)
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
-    const filePath = source.geopackageFilePath
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _deleteGeoPackageFeatureTableColumn(gp, tableName, columnName)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      if (source.table == null) {
-        source.table = tableInfo
-      } else {
-        updateExistingTable(source.table, tableInfo, true, true)
-      }
-      store.dispatch('Projects/setDataSource', { projectId, source })
-    })
+    const updatedSource = await window.mapcache.deleteDataSourceFeatureTableColumn(source, tableName, columnName)
+    await setDataSource(projectId, updatedSource)
   }
 }
 
-async function addGeoPackageFeatureTableColumn ({ projectId, id, isGeoPackage, tableName, columnName, columnType }) {
+async function addGeoPackageFeatureTableColumn (projectId, id, isGeoPackage, tableName, columnName, columnType) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
-    const existingTable = geopackage.tables.features[tableName]
-    const filePath = geopackage.path
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      updateGeoPackageFileInfo(geopackage)
-      updateExistingTable(existingTable, tableInfo, true, true)
-      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-    })
+    const updatedGeoPackage = await window.mapcache.addGeoPackageFeatureTableColumn(geopackage, tableName, columnName, columnType)
+    return setGeoPackage(projectId, updatedGeoPackage)
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
-    const filePath = source.geopackageFilePath
-    await performSafeGeoPackageOperation(filePath, (gp) => {
-      _addGeoPackageFeatureTableColumn(gp, tableName, columnName, columnType)
-      const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-      source.table = updateExistingTable(source.table || {}, tableInfo, true, true)
-      store.dispatch('Projects/setDataSource', { projectId, source })
-    })
+    const updatedDataSource = await window.mapcache.addDataSourceFeatureTableColumn(source, tableName, columnName, columnType)
+    return setDataSource(projectId, updatedDataSource)
   }
 }
 
-function removeDataSource ({ projectId, sourceId }) {
-  const source = store.state.Projects[projectId].sources[sourceId]
-  if (!isNil(source.directory)) {
-    rmDirAsync(source.directory).then((err) => {
-      if (err) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to remove source layer directory: ' + source.directory)
-      }
-    })
-  }
-  if (!isNil(source.sourceDirectory) && exists(source.sourceDirectory) && isDirEmpty(path.join(source.sourceDirectory, LAYER_DIRECTORY_IDENTIFIER))) {
-    rmDirAsync(source.sourceDirectory).then((err) => {
-      if (err) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to remove source directory: ' + source.sourceDirectory)
-      }
-    })
-  }
-  store.dispatch('Projects/removeDataSource', { projectId, sourceId })
+async function removeDataSource (projectId, sourceId) {
+  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+  await window.mapcache.deleteSourceDirectory(source)
+  return store.dispatch('Projects/removeDataSource', { projectId, sourceId })
 }
 
-function setFeatureStyle ({ projectId, id, tableName, featureId, styleId, isGeoPackage, isBaseMap }) {
+function setFeatureStyle (projectId, id, tableName, featureId, styleId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
+  window.mapcache.setFeatureStyle(filePath, tableName, featureId, styleId).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function clearStylingForFeature ({ projectId, id, tableName, featureId, isGeoPackage, isBaseMap }) {
+function clearStylingForFeature (projectId, id, tableName, featureId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.clearStylingForFeature(filePath, tableName, featureId).then(function () {
+  window.mapcache.clearStylingForFeature(filePath, tableName, featureId).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function setFeatureIcon ({ projectId, id, tableName, featureId, iconId, isGeoPackage, isBaseMap }) {
+function setFeatureIcon (projectId, id, tableName, featureId, iconId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
+  window.mapcache.setFeatureIcon(filePath, tableName, featureId, iconId).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function setTableStyle ({ projectId, id, tableName, geometryType, styleId, isGeoPackage, isBaseMap }) {
+function setTableStyle (projectId, id, tableName, geometryType, styleId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
+  window.mapcache.setTableStyle(filePath, tableName, geometryType, styleId).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function setTableIcon ({ projectId, id, tableName, geometryType, iconId, isGeoPackage, isBaseMap }) {
+function setTableIcon (projectId, id, tableName, geometryType, iconId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
+  window.mapcache.setTableIcon(filePath, tableName, geometryType, iconId).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function createStyleRow ({ projectId, id, tableName, isGeoPackage, style, isBaseMap }) {
+function createStyleRow (projectId, id, tableName, style, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.createStyleRow(filePath, tableName, style).then(function () {
+  window.mapcache.createStyleRow(filePath, tableName, style).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function createIconRow ({ projectId, id, tableName, isGeoPackage, icon, isBaseMap }) {
+function createIconRow (projectId, id, tableName, icon, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.createIconRow(filePath, tableName, icon).then(function () {
+  window.mapcache.createIconRow(filePath, tableName, icon).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function updateStyleRow ({ projectId, id, tableName, styleRow, isGeoPackage, isBaseMap }) {
+function updateStyleRow (projectId, id, tableName, styleRow, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.updateStyleRow(filePath, tableName, styleRow).then(function () {
+  window.mapcache.updateStyleRow(filePath, tableName, styleRow).then(function () {
     updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function updateIconRow ({ projectId, id, tableName, iconRow, isGeoPackage, isBaseMap }) {
+function updateIconRow (projectId, id, tableName, iconRow, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.updateIconRow(filePath, tableName, iconRow).then(function () {
+  window.mapcache.updateIconRow(filePath, tableName, iconRow).then(function () {
     updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function deleteStyleRow ({ projectId, id, styleId, isGeoPackage, isBaseMap }) {
+function deleteStyleRow (projectId, id, styleId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.deleteStyleRow(filePath, styleId).then(function () {
+  window.mapcache.deleteStyleRow(filePath, styleId).then(function () {
     updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function deleteIconRow ({ projectId, id, iconId, isGeoPackage, isBaseMap }) {
+function deleteIconRow (projectId, id, iconId, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.deleteIconRow(filePath, iconId).then(function () {
+  window.mapcache.deleteIconRow(filePath, iconId).then(function () {
     updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-function addStyleExtensionForTable ({ projectId, id, tableName, isGeoPackage, isBaseMap }) {
+function addStyleExtensionForTable (projectId, id, tableName, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.addStyleExtensionForTable(filePath, tableName).then(function () {
+  window.mapcache.addStyleExtensionForTable(filePath, tableName).then(function () {
     updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
   })
 }
 
-function removeStyleExtensionForTable ({ projectId, id, tableName, isGeoPackage, isBaseMap }) {
+function removeStyleExtensionForTable (projectId, id, tableName, isGeoPackage, isBaseMap) {
   const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  GeoPackageStyleUtilities.removeStyleExtensionForTable(filePath, tableName).then(function () {
+  window.mapcache.removeStyleExtensionForTable(filePath, tableName).then(function () {
     updateAllFeatureTableStyleKeys(projectId, id, isGeoPackage, isBaseMap)
   })
 }
 
-async function addFeatureTableToGeoPackage ({ projectId, geopackageId, tableName, featureCollection }) {
-  return new Promise((resolve) => {
-    const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-    const filePath = geopackage.path
-    createFeatureTable(filePath, tableName, featureCollection).then(function () {
-      getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-        geopackage.size = getGeoPackageFileSize(filePath)
-        geopackage.tables.features[tableName] = cloneDeep(tableInfo)
-        geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-        store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-        resolve()
-      })
-    })
-  })
-}
-
-async function createGeoPackageWithFeatureTable (projectId, filePath, featureTableName, featureCollection) {
-  return new Promise((resolve) => {
-    let success = false
-    getOrCreateGeoPackage(filePath).then(gp => {
-      _createFeatureTable(gp, featureTableName, featureCollection).then(() => {
-        addGeoPackage({ projectId: projectId, filePath: filePath })
-        success = true
-      }).catch(() => {
-        // eslint-disable-next-line no-console
-        console.error('Failed to create feature table.')
-      }).finally(() => {
-        try {
-          gp.close()
-          gp = undefined
-          // eslint-disable-next-line no-unused-vars
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to close geopackage.')
-        }
-        resolve(success)
-      })
-    })
-  })
-}
-
-function updateFeatureGeometry ({ projectId, id, isGeoPackage, tableName, featureGeoJson, isBaseMap }) {
-  const filePath = getGeoPackageFilePath(id, projectId, isGeoPackage, isBaseMap)
-  updateFeatureGeo(filePath, tableName, featureGeoJson).then(function () {
-    updateStyleKey(projectId, id, tableName, isGeoPackage, isBaseMap)
-  })
-}
-
-function updateGeoPackageFileInfo (geoPackage) {
-  geoPackage.size = getGeoPackageFileSize(geoPackage.path)
-  geoPackage.modifiedDate = getLastModifiedDate(geoPackage.path)
-  return geoPackage
-}
-
-function updateExistingTable (table, tableInfo, updateStyleKey = true, updateColumnOrder = false) {
-  table.featureCount = tableInfo.featureCount
-  table.extent = tableInfo.extent
-  table.description = tableInfo.description
-  if (updateStyleKey) {
-    table.styleKey = table.styleKey != null ? table.styleKey + 1 : 0
-  }
-  table.indexed = tableInfo.indexed
-  if (updateColumnOrder) {
-    table.columnOrder = validateColumnOrder(table.columnOrder, tableInfo.columnOrder)
-  }
-  return table
-}
-
-async function addFeatureToGeoPackage ({ projectId, geopackageId, tableName, feature, columnsToAdd = [] }) {
+async function addFeatureTableToGeoPackage (projectId, geopackageId, tableName, featureCollection) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = store.state.Projects[projectId].geopackages[geopackageId].path
-  return performSafeGeoPackageOperation(filePath, (gp) => {
-    _addGeoPackageFeatureTableColumns(gp, tableName, columnsToAdd)
-    const featureDao = gp.getFeatureDao(tableName)
-    const rowId = _addFeatureToFeatureTable(gp, featureDao, tableName, feature)
-    if (feature.attachment != null) {
-      _addMediaAttachment(gp, tableName, rowId, feature.attachment)
-    }
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo, true, true)
-    if (!existingTable.visible) {
-      existingTable.visible = true
-    }
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+  const updatedGeoPackage = await window.mapcache.addFeatureTableToGeoPackage(geopackage, tableName, featureCollection)
+  return setGeoPackage(projectId, updatedGeoPackage)
 }
 
-async function updateGeoPackageFeatureTableColumnOrder ({ projectId, id, isGeoPackage, tableName, columnOrder }) {
+async function addFeatureToGeoPackage (projectId, geopackageId, tableName, feature, columnsToAdd = []) {
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const updatedGeoPackage = await window.mapcache.addFeatureToGeoPackage(geopackage, tableName, feature, columnsToAdd)
+  return setGeoPackage(projectId, updatedGeoPackage)
+}
+
+async function updateGeoPackageFeatureTableColumnOrder (projectId, id, isGeoPackage, tableName, columnOrder) {
   if (isGeoPackage) {
     const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[id])
     const existingTable = geopackage.tables.features[tableName]
     const filePath = geopackage.path
-    const tableInfo = await getGeoPackageFeatureTableForApp(filePath, tableName)
+    const tableInfo = await window.mapcache.getGeoPackageFeatureTableForApp(filePath, tableName)
     if (tableInfo != null) {
       existingTable.columnOrder = validateColumnOrder(columnOrder, tableInfo.columnOrder)
-      store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
+      return setGeoPackage(projectId, geopackage)
     }
   } else {
     const source = cloneDeep(store.state.Projects[projectId].sources[id])
     const filePath = source.geopackageFilePath
-    const tableInfo = await getGeoPackageFeatureTableForApp(filePath, tableName)
+    const tableInfo = await window.mapcache.getGeoPackageFeatureTableForApp(filePath, tableName)
     if (tableInfo != null) {
       if (source.table == null) {
         source.table = tableInfo
       }
       source.table.columnOrder = validateColumnOrder(columnOrder, tableInfo.columnOrder)
-      store.dispatch('Projects/setDataSource', { projectId, source })
+      return setDataSource(projectId, source)
     }
   }
 }
 
-function updateFeatureTable ({ projectId, geopackageId, tableName }) {
+async function updateFeatureTable (projectId, geopackageId, tableName) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  getGeoPackageFeatureTableForApp(filePath, tableName).then(tableInfo => {
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+  const updatedGeoPackage = window.mapcache.updateFeatureTable(geopackage, tableName)
+  return setGeoPackage(projectId, updatedGeoPackage)
 }
 
-function deleteFeatureIdsFromGeoPackage ({ projectId, geopackageId, tableName, featureIds }) {
+async function deleteFeatureIdsFromGeoPackage (projectId, geopackageId, tableName, featureIds) {
   const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteFeatureRows(gp, tableName, featureIds)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+  const updatedGeoPackage = await window.mapcache.deleteFeatureIdsFromGeoPackage(geopackage, tableName, featureIds)
+  return setGeoPackage(projectId, updatedGeoPackage)
 }
 
-function removeFeatureFromGeopackage ({ projectId, geopackageId, tableName, featureId }) {
-  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  const existingTable = geopackage.tables.features[tableName]
-  const filePath = geopackage.path
-  performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteFeatureRow(gp, tableName, featureId)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, tableName)
-    updateGeoPackageFileInfo(geopackage)
-    updateExistingTable(existingTable, tableInfo)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+async function deleteFeatureIdsFromDataSource (projectId, sourceId, featureIds) {
+  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+  const updatedSource = await window.mapcache.deleteFeatureIdsFromDataSource(source, featureIds)
+  return setDataSource(projectId, updatedSource)
 }
 
-function deleteFeatureIdsFromDataSource ({ projectId, sourceId, featureIds }) {
-  const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
-  const filePath = sourceCopy.geopackageFilePath
-  performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteFeatureRows(gp, sourceCopy.sourceLayerName, featureIds)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, sourceCopy.sourceLayerName)
-    if (tableInfo != null) {
-      if (sourceCopy.table == null) {
-        sourceCopy.table = tableInfo
-      } else {
-        updateExistingTable(sourceCopy.table, tableInfo)
-      }
-      sourceCopy.extent = tableInfo.extent
-      sourceCopy.count = tableInfo.featureCount
+async function removeFeatureFromGeoPackage (projectId, geopackageId, tableName, featureId) {
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const updatedGeoPackage = await window.mapcache.removeFeatureFromGeoPackage(geopackage, tableName, featureId)
+  return setGeoPackage(projectId, updatedGeoPackage)
+}
+
+async function removeFeatureFromDataSource (projectId, sourceId, featureId) {
+  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+  const updatedSource = await window.mapcache.removeFeatureFromDataSource(source, featureId)
+  return setDataSource(projectId, updatedSource)
+}
+
+function setProjectMaxFeatures (projectId, maxFeatures) {
+  return store.dispatch('Projects/setProjectMaxFeatures', { projectId, maxFeatures })
+}
+
+function setZoomControlEnabled (projectId, enabled) {
+  return store.dispatch('Projects/setZoomControlEnabled', { projectId, enabled })
+}
+
+function setDisplayZoomEnabled (projectId, enabled) {
+  return store.dispatch('Projects/setDisplayZoomEnabled', { projectId, enabled })
+}
+
+function setDisplayAddressSearchBar (projectId, enabled) {
+  return store.dispatch('Projects/setDisplayAddressSearchBar', { projectId, enabled })
+}
+
+function setDisplayCoordinates (projectId, enabled) {
+  return store.dispatch('Projects/setDisplayCoordinates', { projectId, enabled })
+}
+
+function setDisplayScale (projectId, enabled) {
+  return store.dispatch('Projects/setDisplayScale', { projectId, enabled })
+}
+
+function clearActiveLayers (projectId) {
+  return store.dispatch('Projects/clearActiveLayers', { projectId })
+}
+
+function increaseExtent(overallExtent, additionalExtent) {
+  if (overallExtent == null) {
+    overallExtent = additionalExtent.slice()
+  } else if (additionalExtent != null) {
+    if (additionalExtent[0] < overallExtent[0]) {
+      overallExtent[0] = additionalExtent[0]
     }
-    store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
-  })
-}
-
-function removeFeatureFromDataSource ({ projectId, sourceId, featureId }) {
-  const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
-  const filePath = sourceCopy.geopackageFilePath
-  performSafeGeoPackageOperation(filePath, (gp) => {
-    _deleteFeatureRow(gp, sourceCopy.sourceLayerName, featureId)
-    const tableInfo = _getGeoPackageFeatureTableForApp(gp, sourceCopy.sourceLayerName)
-    if (tableInfo != null) {
-      if (sourceCopy.table == null) {
-        sourceCopy.table = tableInfo
-      } else {
-        updateExistingTable(sourceCopy.table, tableInfo)
-      }
-      sourceCopy.extent = tableInfo.extent
-      sourceCopy.count = tableInfo.featureCount
+    if (additionalExtent[1] < overallExtent[1]) {
+      overallExtent[1] = additionalExtent[1]
     }
-    store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
-  })
-}
-
-function setProjectMaxFeatures ({ projectId, maxFeatures }) {
-  store.dispatch('Projects/setProjectMaxFeatures', { projectId, maxFeatures })
-}
-
-function setZoomControlEnabled ({ projectId, enabled }) {
-  store.dispatch('Projects/setZoomControlEnabled', { projectId, enabled })
-}
-
-function setDisplayZoomEnabled ({ projectId, enabled }) {
-  store.dispatch('Projects/setDisplayZoomEnabled', { projectId, enabled })
-}
-
-function setDisplayAddressSearchBar ({ projectId, enabled }) {
-  store.dispatch('Projects/setDisplayAddressSearchBar', { projectId, enabled })
-}
-
-function setDisplayCoordinates ({ projectId, enabled }) {
-  store.dispatch('Projects/setDisplayCoordinates', { projectId, enabled })
-}
-
-function setDisplayScale ({ projectId, enabled }) {
-  store.dispatch('Projects/setDisplayScale', { projectId, enabled })
-}
-
-function clearActiveLayers ({ projectId }) {
-  store.dispatch('Projects/clearActiveLayers', { projectId })
+    if (additionalExtent[2] > overallExtent[2]) {
+      overallExtent[2] = additionalExtent[2]
+    }
+    if (additionalExtent[3] > overallExtent[3]) {
+      overallExtent[3] = additionalExtent[3]
+    }
+  }
+  return overallExtent
 }
 
 async function getExtentOfActiveLayers (projectId) {
   let overallExtent = null
   try {
-    let geopackageKeys = keys(store.state.Projects[projectId].geopackages)
+    let geopackageKeys = Object.keys(store.state.Projects[projectId].geopackages)
     for (let i = 0; i < geopackageKeys.length; i++) {
       const geopackageId = geopackageKeys[i]
       const geopackage = store.state.Projects[projectId].geopackages[geopackageId]
-      const tablesToZoomTo = keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
-      const extentForGeoPackage = await getExtentOfGeoPackageTables(geopackage.path, tablesToZoomTo)
-      if (!isNil(extentForGeoPackage)) {
-        if (isNil(overallExtent)) {
-          overallExtent = extentForGeoPackage
-        } else {
-          if (extentForGeoPackage[0] < overallExtent[0]) {
-            overallExtent[0] = extentForGeoPackage[0]
-          }
-          if (extentForGeoPackage[1] < overallExtent[1]) {
-            overallExtent[1] = extentForGeoPackage[1]
-          }
-          if (extentForGeoPackage[2] > overallExtent[2]) {
-            overallExtent[2] = extentForGeoPackage[2]
-          }
-          if (extentForGeoPackage[3] > overallExtent[3]) {
-            overallExtent[3] = extentForGeoPackage[3]
-          }
-        }
-      }
+      const tablesToZoomTo = Object.keys(geopackage.tables.features).filter(table => geopackage.tables.features[table].visible).concat(Object.keys(geopackage.tables.tiles).filter(table => geopackage.tables.tiles[table].visible))
+      const extentForGeoPackage = await window.mapcache.getExtentOfGeoPackageTables(geopackage.path, tablesToZoomTo)
+      overallExtent = increaseExtent(overallExtent, extentForGeoPackage)
     }
-    const visibleSourceKeys = keys(store.state.Projects[projectId].sources).filter(key => store.state.Projects[projectId].sources[key].visible)
-    for (let i = 0; i < visibleSourceKeys.length; i++) {
-      const layerExtent = store.state.Projects[projectId].sources[visibleSourceKeys[i]].extent
-      if (!isNil(layerExtent)) {
-        if (isNil(overallExtent)) {
-          overallExtent = layerExtent
-        } else {
-          if (layerExtent[0] < overallExtent[0]) {
-            overallExtent[0] = layerExtent[0]
-          }
-          if (layerExtent[1] < overallExtent[1]) {
-            overallExtent[1] = layerExtent[1]
-          }
-          if (layerExtent[2] > overallExtent[2]) {
-            overallExtent[2] = layerExtent[2]
-          }
-          if (layerExtent[3] > overallExtent[3]) {
-            overallExtent[3] = layerExtent[3]
-          }
-        }
-      }
-    }
+    const visibleSourceKeys = Object.keys(store.state.Projects[projectId].sources).filter(key => store.state.Projects[projectId].sources[key].visible)
+    visibleSourceKeys.forEach(key => {
+      const layerExtent = store.state.Projects[projectId].sources[key].extent
+      overallExtent = increaseExtent(overallExtent, layerExtent)
+    })
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -749,112 +530,75 @@ function validateColumnOrder (columnOrder, actualColumns) {
  * @param projectId
  * @param geopackageId
  */
-function synchronizeGeoPackage ({ projectId, geopackageId }) {
-  const geopackageCopy = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
-  getOrCreateGeoPackageForApp(geopackageCopy.path).then(geopackage => {
-    geopackage.id = geopackageId
-    keys(geopackage.tables.features).forEach(table => {
-      const featureTable = geopackage.tables.features[table]
-      const originalTable = geopackageCopy.tables.features[table]
-      if (!isNil(originalTable)) {
-        featureTable.visible = originalTable.visible
-        featureTable.columnOrder = validateColumnOrder(originalTable.columnOrder, featureTable.columnOrder)
-      }
-    })
-    keys(geopackage.tables.tiles).forEach(table => {
-      const tileTable = geopackage.tables.tiles[table]
-      const originalTable = geopackageCopy.tables.tiles[table]
-      if (!isNil(originalTable)) {
-        tileTable.visible = originalTable.visible
-      }
-    })
-    geopackage.modifiedDate = getLastModifiedDate(geopackage.path)
-    store.dispatch('Projects/setGeoPackage', { projectId, geopackage })
-  })
+async function synchronizeGeoPackage (projectId, geopackageId) {
+  const geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
+  const synchronizedGeoPackage = await window.mapcache.synchronizeGeoPackage(geopackage)
+  return setGeoPackage(projectId, synchronizedGeoPackage)
 }
 
-function synchronizeDataSource ({ projectId, sourceId }) {
-  const sourceCopy = cloneDeep(store.state.Projects[projectId].sources[sourceId])
-  const filePath = sourceCopy.geopackageFilePath
-  performSafeGeoPackageOperation(filePath, (gp) => {
-    sourceCopy.extent = _getBoundingBoxForTable(gp, sourceCopy.sourceLayerName)
-    sourceCopy.count = gp.getFeatureDao(sourceCopy.sourceLayerName).count()
-    store.dispatch('Projects/setDataSource', { projectId, source: sourceCopy })
-  })
+async function synchronizeDataSource (projectId, sourceId) {
+  const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
+  const synchronizedSource = await window.mapcache.synchronizeDataSource(source)
+  return setDataSource(projectId, synchronizedSource)
 }
 
-function setActiveGeoPackage ({ projectId, geopackageId }) {
-  store.dispatch('Projects/setActiveGeoPackage', { projectId, geopackageId })
+function setActiveGeoPackage (projectId, geopackageId) {
+  return store.dispatch('Projects/setActiveGeoPackage', { projectId, geopackageId })
 }
 
-function setActiveGeoPackageFeatureLayer ({ projectId, geopackageId, tableName }) {
-  if (!isNil(projectId)) {
-    store.dispatch('Projects/setActiveGeoPackageFeatureLayer', { projectId, geopackageId, tableName })
+function setActiveGeoPackageFeatureLayer (projectId, geopackageId, tableName) {
+  if (projectId != null) {
+    return store.dispatch('Projects/setActiveGeoPackageFeatureLayer', { projectId, geopackageId, tableName })
   }
 }
 
-function setDarkTheme ({ projectId, enabled }) {
-  store.dispatch('UIState/setDarkTheme', { projectId, enabled })
+function setDarkTheme (projectId, enabled) {
+  return store.dispatch('UIState/setDarkTheme', { projectId, enabled })
 }
 
-function allowNotifications ({ projectId, allow }) {
-  store.dispatch('UIState/allowNotifications', { projectId, allow })
+function allowNotifications (projectId, allow) {
+  return store.dispatch('UIState/allowNotifications', { projectId, allow })
 }
 
-function clearNotification ({ projectId, tabId }) {
-  store.dispatch('UIState/clearNotification', { projectId, tabId })
+function clearNotification (projectId, tabId) {
+  return store.dispatch('UIState/clearNotification', { projectId, tabId })
 }
 
-function clearNotifications ({ projectId }) {
-  store.dispatch('UIState/clearNotifications', { projectId })
+function clearNotifications (projectId) {
+  return store.dispatch('UIState/clearNotifications', { projectId })
 }
 
-function setMapZoom ({ projectId, mapZoom }) {
-  store.dispatch('UIState/setMapZoom', { projectId, mapZoom })
+function setMapZoom (projectId, mapZoom) {
+  return store.dispatch('UIState/setMapZoom', { projectId, mapZoom })
 }
 
-function addProjectState ({ projectId }) {
-  store.dispatch('UIState/addProjectState', { projectId })
+function addProjectState (projectId) {
+  return store.dispatch('UIState/addProjectState', { projectId })
 }
 
-/**
- * Sets the rendering order of the map
- * @param projectId
- * @param renderingOrder
- */
-function setMapRenderingOrder ({ projectId, mapRenderingOrder }) {
-  store.dispatch('Projects/setMapRenderingOrder', { projectId, mapRenderingOrder })
+function setMapRenderingOrder (projectId, mapRenderingOrder) {
+  return store.dispatch('Projects/setMapRenderingOrder', { projectId, mapRenderingOrder })
 }
 
-/**
- * Pop out feature table
- * @param projectId
- * @param popOut
- */
-function popOutFeatureTable ({ projectId, popOut }) {
-  store.dispatch('UIState/popOutFeatureTable', { projectId, popOut })
+function popOutFeatureTable (projectId, popOut) {
+  return store.dispatch('UIState/popOutFeatureTable', { projectId, popOut })
 }
 
 /**
  * Adds a base map to the application
  */
 function addBaseMap (baseMap) {
-  store.dispatch('BaseMaps/addBaseMap', baseMap)
+  return store.dispatch('BaseMaps/addBaseMap', baseMap)
 }
 
-function editBaseMap (baseMap) {
-  store.dispatch('BaseMaps/editBaseMap', baseMap)
-}
+async function removeBaseMap (baseMap) {
+  const err = await window.mapcache.deleteBaseMapDirectory(cloneDeep(baseMap))
+  if (err) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to remove base map directory: ' + baseMap.directory)
+  }
 
-function removeBaseMap (baseMap) {
-  rmDirAsync(baseMap.directory).then((err) => {
-    if (err) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to remove base map directory: ' + baseMap.directory)
-    }
-  })
-
-  store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
+  return store.dispatch('BaseMaps/removeBaseMap', baseMap.id)
 }
 
 /**
@@ -862,26 +606,25 @@ function removeBaseMap (baseMap) {
  * @param id
  * @param error
  */
-function setSourceError ({ id, error }) {
+function setSourceError (id, error) {
   // search basemaps for matching id and assign error
   const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
-  if (!isNil(baseMap)) {
+  if (baseMap != null) {
     const baseMapCopy = cloneDeep(baseMap)
     baseMapCopy.error = error
-    store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+    return setBaseMap(baseMapCopy)
   }
 
   // search sources for matching id and assign error
-  const projectKeys = keys(store.state.Projects)
+  const projectKeys = Object.keys(store.state.Projects)
   for (let i = 0; i < projectKeys.length; i++) {
     const projectId = projectKeys[i]
-    const sourceId = keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
-    if (!isNil(sourceId)) {
+    const sourceId = Object.keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
+    if (sourceId != null) {
       const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
       source.error = error
       source.visible = false
-      store.dispatch('Projects/setDataSource', { projectId, source })
-      break
+      return setDataSource(projectId, source)
     }
   }
 }
@@ -891,25 +634,24 @@ function setSourceError ({ id, error }) {
  * @param id
  * @param warning The warning message.
  */
-function setSourceWarning ({ id, warning }) {
+function setSourceWarning (id, warning) {
   // search basemaps for matching id and assign error
   const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
-  if (!isNil(baseMap)) {
+  if (baseMap != null) {
     const baseMapCopy = cloneDeep(baseMap)
     baseMapCopy.warning = warning
-    store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+    return setBaseMap(baseMapCopy)
   }
 
   // search sources for matching id and assign error
-  const projectKeys = keys(store.state.Projects)
+  const projectKeys = Object.keys(store.state.Projects)
   for (let i = 0; i < projectKeys.length; i++) {
     const projectId = projectKeys[i]
-    const sourceId = keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
-    if (!isNil(sourceId)) {
+    const sourceId = Object.keys(store.state.Projects[projectId].sources).find(sourceId => sourceId === id)
+    if (sourceId != null) {
       const source = cloneDeep(store.state.Projects[projectId].sources[sourceId])
       source.warning = warning
-      store.dispatch('Projects/setDataSource', { projectId, source })
-      break
+      return setDataSource(projectId, source)
     }
   }
 }
@@ -919,38 +661,34 @@ function saveConnectionSettings (projectId, sourceId, timeoutMs, rateLimit, retr
   source.timeoutMs = timeoutMs
   source.rateLimit = rateLimit
   source.retryAttempts = retryAttempts
-  store.dispatch('Projects/setDataSource', { projectId, source })
+  return setDataSource(projectId, source)
 }
 
 function saveBaseMapConnectionSettings (id, timeoutMs, rateLimit, retryAttempts) {
   const baseMap = store.state.BaseMaps.baseMaps.find(baseMap => baseMap.id === id)
-  if (!isNil(baseMap)) {
+  if (baseMap != null) {
     const baseMapCopy = cloneDeep(baseMap)
     baseMapCopy.layerConfiguration.timeoutMs = timeoutMs
     baseMapCopy.layerConfiguration.rateLimit = rateLimit
     baseMapCopy.layerConfiguration.retryAttempts = retryAttempts
-    store.dispatch('BaseMaps/editBaseMap', baseMapCopy)
+    return setBaseMap(baseMapCopy)
   }
 }
 
 export {
+  setGeoPackage,
   setDataSource,
   setProjectName,
   showToolTips,
   setDataSourceDisplayName,
   addDataSources,
-  addGeoPackage,
   setGeoPackageLayersVisible,
   setGeoPackageFeatureTableVisible,
   setGeoPackageTileTableVisible,
   _hasVisibleTables,
-  sleep,
   renameGeoPackage,
   removeGeoPackage,
-  updateRenamedGeoPackageTable,
-  updateDeletedGeoPackageTileTable,
-  addCopiedGeoPackageTileTable,
-  renameGeoPackageFeatureTableColumn,
+  renameFeatureTableColumn,
   deleteGeoPackageFeatureTableColumn,
   addGeoPackageFeatureTableColumn,
   removeDataSource,
@@ -968,10 +706,9 @@ export {
   addStyleExtensionForTable,
   removeStyleExtensionForTable,
   addFeatureTableToGeoPackage,
-  updateFeatureGeometry,
   addFeatureToGeoPackage,
   updateFeatureTable,
-  removeFeatureFromGeopackage,
+  removeFeatureFromGeoPackage,
   removeFeatureFromDataSource,
   setProjectMaxFeatures,
   setZoomControlEnabled,
@@ -993,14 +730,13 @@ export {
   setMapZoom,
   setMapRenderingOrder,
   addBaseMap,
-  editBaseMap,
+  setBaseMap,
   removeBaseMap,
   setSourceError,
   setSourceWarning,
   saveConnectionSettings,
   saveBaseMapConnectionSettings,
   clearStylingForFeature,
-  createGeoPackageWithFeatureTable,
   deleteFeatureIdsFromGeoPackage,
   deleteFeatureIdsFromDataSource,
   popOutFeatureTable,
@@ -1009,5 +745,8 @@ export {
   addProjectState,
   setNominatimUrl,
   setOverpassUrl,
-  setMapProjection
+  setMapProjection,
+  copyGeoPackageTable,
+  renameGeoPackageTable,
+  deleteGeoPackageTable
 }

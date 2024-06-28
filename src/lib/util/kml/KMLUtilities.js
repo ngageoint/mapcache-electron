@@ -4,7 +4,6 @@ import { BoundingBox } from '@ngageoint/geopackage'
 import bbox from '@turf/bbox'
 import transformRotate from '@turf/transform-rotate'
 import isNil from 'lodash/isNil'
-import { writeArrayBuffer } from 'geotiff'
 import GeoTIFFSource from '../../source/geotiff/GeoTIFFSource'
 import { getRemoteImage } from '../../network/NetworkRequestUtils'
 import { createCanvas, disposeCanvas, disposeImage, makeImage } from '../canvas/CanvasUtilities'
@@ -38,24 +37,27 @@ async function convert4326ImageToGeoTIFF (filePath, geotiffFilePath, extent) {
         GeogCitationGeoKey: 'WGS 84',
         GTModelTypeGeoKey: 2,
       }
-      try {
-        fs.writeFile(geotiffFilePath, Buffer.from(writeArrayBuffer(values, metadata)), function (err) {
-          if (err) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to write GeoTIFF for KML Ground Overlay.')
-            resolve(false)
-          } else {
-            resolve(true)
-          }
-        })
-        // eslint-disable-next-line no-unused-vars
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to convert kml ground overlay into 4326 GeoTIFF image.')
-        disposeImage(image)
-        disposeCanvas(canvas)
-        resolve(false)
-      }
+      (async () => {
+        const { writeArrayBuffer } = await import('geotiff')
+        try {
+          fs.writeFile(geotiffFilePath, Buffer.from(writeArrayBuffer(values, metadata)), function (err) {
+            if (err) {
+              // eslint-disable-next-line no-console
+              console.error('Failed to write GeoTIFF for KML Ground Overlay.')
+              resolve(false)
+            } else {
+              resolve(true)
+            }
+          })
+          // eslint-disable-next-line no-unused-vars
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to convert kml ground overlay into 4326 GeoTIFF image.')
+          disposeImage(image)
+          disposeCanvas(canvas)
+          resolve(false)
+        }
+      })();
     })
   })
 }

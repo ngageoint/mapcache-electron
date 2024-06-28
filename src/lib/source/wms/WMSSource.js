@@ -1,6 +1,7 @@
 import Source from '../Source'
 import WMSLayer from '../../layer/tile/WMSLayer'
 import { WMS } from '../../layer/LayerTypes'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class WMSSource extends Source {
   constructor (id, directory, filePath, layers = [], sourceName, format = 'image/png', withCredentials = false) {
@@ -13,21 +14,21 @@ export default class WMSSource extends Source {
 
   async retrieveLayers (statusCallback) {
     statusCallback('Processing WMS server', 0)
-    await this.sleep(250)
+    await sleep(250)
 
     statusCallback('Storing WMS server data', 50)
-    await this.sleep(250)
+    await sleep(250)
 
     if (this.layers.length === 0) {
       statusCallback('Cleaning up', 100)
-      await this.sleep(250)
+      await sleep(250)
       return []
     } else {
       const version = this.layers[0].version
       const srs = this.layers[0].srs
       const { layerId, layerDirectory } = this.createLayerDirectory()
       statusCallback('Cleaning up', 100)
-      await this.sleep(250)
+      await sleep(250)
       return [
         new WMSLayer({
           id: layerId,

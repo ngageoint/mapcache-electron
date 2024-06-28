@@ -8,7 +8,7 @@ import {
   MediaTable
 } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
-import { performSafeGeoPackageOperation, sleep, deleteGeoPackageTable } from './GeoPackageCommon'
+import { performSafeGeoPackageOperation, deleteGeoPackageTable } from './GeoPackageCommon'
 import {
   getFeatureColumns,
   _createFeatureTableWithFeatureStream
@@ -20,6 +20,7 @@ import {
 import { _getMediaRow } from './GeoPackageMediaUtilities'
 import { getMediaTableName } from '../util/media/MediaUtilities'
 import { WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
+import { sleep } from '../util/common/CommonUtilities'
 
 /**
  * GeoPackgeFeatureTableBuilder handles building a feature layer using other GeoPackage layers and data sources

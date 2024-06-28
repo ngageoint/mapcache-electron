@@ -1,0 +1,331 @@
+.v-stepper__step--complete .v-stepper__step__step .v-icon > svg {
+    height: 16px !important;
+    width: 16px !important;
+}
+
+.v-stepper__step--error .v-stepper__step__step .v-icon > svg {
+    height: 24px !important;
+    width: 24px !important;
+}
+
+.v-stepper__step__step .v-icon {
+    font-size: 16px !important;
+}
+
+.v-label {
+    font-size: 14px;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:hover {
+    cursor: pointer;
+}
+
+.clickable-text {
+    cursor: pointer;
+}
+
+.clickable-text:hover {
+    cursor: pointer;
+    opacity: 0.75;
+}
+
+.clickable-text:active {
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.v-input--selection-controls {
+    margin-top: 0;
+}
+
+.card-button {
+    width: 64px;
+}
+
+.card-button:hover {
+    background-color: rgb(var(--v-theme-hover));
+}
+
+.card-button:disabled {
+    background-color: rgb(var(--v-theme-hover));
+}
+
+.content-panel {
+    -moz-box-shadow: 0 0 8px #000000;
+    -webkit-box-shadow: 0 0 8px #000000;
+    box-shadow: 0 0 8px #000000;
+    max-width: 400px;
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    z-index: 2;
+    background-color: rgb(var(--v-theme-detailbg)) !important;
+}
+
+.sticky-toolbar {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 3 !important;
+    max-height: 64px !important;
+}
+
+.sticky-card-action-footer {
+    position: -webkit-sticky !important; /* Safari */
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 3 !important;
+    min-height: 53px !important;
+    background: rgb(var(--v-theme-background)) !important;
+}
+
+.v-toolbar__title {
+    padding-left: 4px !important;
+}
+
+.fab-position {
+    position: fixed !important;
+    left: 384px !important;
+    bottom: 16px !important;
+}
+
+.v-btn {
+    text-transform: none !important;
+}
+
+.warning-text {
+    color: rgb(var(--v-theme-warning)) !important;
+}
+
+.theme-text {
+    color: rgb(var(--v-theme-text)) !important;
+}
+
+.hazard--text {
+    color: darkorange !important;
+}
+
+.detail--text {
+    color: rgb(var(--v-theme-detail)) !important;
+}
+
+.regular--text {
+    color: rgb(var(--v-theme-text)) !important;
+}
+
+.detail-bg {
+    background-color: rgb(var(--v-theme-detailbg)) !important;
+}
+
+.background {
+    background-color: rgb(var(--v-theme-background)) !important;
+}
+
+/* Works on Chrome/Edge/Safari */
+*::-webkit-scrollbar {
+    width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+    background: rgb(var(--v-theme-scroll_track));
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--v-theme-scroll_thumb));
+    border-radius: 10px;
+    border: 2px solid rgb(var(--v-theme-scroll_track));
+}
+
+.alert-position {
+    position: absolute !important;
+    margin-left: auto !important;;
+    margin-right: auto !important;;
+    left: calc(((100% - 456px) / 2) + 456px - ((100% - 456px) / 4)) !important;;
+    width: calc(((100% - 456px) / 2)) !important;;
+    text-align: center !important;;
+    top: 16px !important;;
+    z-index: 20 !important;;
+}
+
+.mapcache-sheet {
+    width: 100% !important;
+    height: 100% !important;
+    overflow-y: hidden !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.mapcache-sheet-content {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    overflow-y: auto !important;
+    flex-grow: 1 !important;
+    flex-direction: column !important;
+    min-height: min-content !important;
+}
+
+.mapcache-fab-spacer {
+    padding-bottom: 80px !important;
+}
+
+.leaflet-control a {
+    color: rgb(var(--v-theme-text)) !important;
+    background: rgb(var(--v-theme-background)) !important;
+}
+
+.leaflet-control a:hover {
+    background: rgb(var(--v-theme-hover)) !important;
+}
+
+.leaflet-control-zoom-in {
+    margin: auto;
+    line-height: 26px !important;
+}
+
+.leaflet-control-zoom-out {
+    margin: auto;
+    line-height: 26px !important;
+}
+
+.leaflet-touch .leaflet-control-layers-toggle {
+    width: 30px;
+    height: 30px;
+}
+
+.leaflet-control-zoom-indicator {
+    font-weight: bold;
+}
+
+.leaflet-control-disabled {
+    color: currentColor;
+    cursor: not-allowed !important;
+    opacity: 0.5;
+    text-decoration: none;
+}
+
+.leaflet-control-disabled:hover {
+    background-color: #fff !important;
+}
+
+.leaflet-bar a svg {
+    width: 24px;
+    height: 24px;
+    margin: 3px;
+}
+
+p {
+    margin-bottom: 16px;
+}
+
+ul {
+    padding-left: 24px;
+}
+
+#map-action-tip {
+    display: none;
+    position: absolute;
+    left: 10px;
+    background: #666;
+    color: white;
+    opacity: 0.90;
+    padding: 8px;
+    font-family: Roboto, sans-serif;
+    font-size: 12px;
+    height: 34px;
+    line-height: 18px;
+    z-index: 2000;
+    border: black 1px;
+    border-radius: 4px;
+}
+
+.hidden {
+    display: none !important;
+    visibility: hidden;
+}
+
+.primary--text {
+    color: rgb(var(--v-theme-primary)) !important;
+}
+
+.fake-link {
+    cursor: pointer !important;
+}
+
+.fake-link:hover {
+    text-decoration: underline !important;
+}
+
+.noselect {
+    user-select: none !important; /* standard syntax */
+    -webkit-user-select: none !important; /* webkit (safari, chrome) browsers */
+}
+
+.allowselect {
+    user-select: text !important; /* standard syntax */
+    -webkit-user-select: text !important; /* webkit (safari, chrome) browsers */
+}
+
+.icon-box {
+    border: 1px solid #ffffff00 !important;
+    border-radius: 4px !important;
+    width: 24px !important;
+    height: 24px !important;
+    object-fit: contain !important;
+}
+
+.leaflet-control-attribution {
+    color: rgb(var(--v-theme-text)) !important;
+    background: rgb(var(--v-theme-background)) !important;
+}
+
+.leaflet-coordinates {
+    line-height: 1.1;
+    padding: 2px 5px 1px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+    color: rgb(var(--v-theme-detail)) !important;
+    background: rgb(var(--v-theme-background)) !important;
+    border: solid #777777AA !important;
+}
+
+.leaflet-coordinates-control {
+    position: absolute !important;
+    left: 104px !important;
+    bottom: 0 !important;
+    margin-bottom: 0 !important;
+    min-width: 200px;
+}
+
+.leaflet-control-scale {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-control-scale-line {
+    background: rgb(var(--v-theme-background)) !important;
+    border-color: #777777AA !important;
+    text-shadow: unset !important;
+}
+
+.leaflet-control-attribution {
+    border: solid #777777AA !important;
+    border-bottom-right-radius: 10px;
+}
+
+
+.sortHandle {
+    cursor: grab !important;
+}
+
+.sortHandle:active {
+    cursor: grabbing !important;
+}
+
+.sortable-list-item {
+
+}

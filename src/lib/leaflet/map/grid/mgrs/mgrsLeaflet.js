@@ -121,7 +121,7 @@ function toExtent (bounds) {
 }
 
 function setupMGRSGrid (L) {
-  L.MGRSGrid = L.LayerGroup.extend({
+  L.LayerGroup.MGRSGrid = L.LayerGroup.extend({
     options: {
       gridOptions: defaultGridOptions(false),
       redraw: 'move',
@@ -284,10 +284,6 @@ function setupMGRSGrid (L) {
 
     },
   })
-
-  L.mgrsGrid = function (options) {
-    return new L.MGRSGrid(options)
-  }
 }
 
 export {

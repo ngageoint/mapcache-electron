@@ -1,6 +1,6 @@
 import isNil from 'lodash/isNil'
-import { constructRenderer } from '../renderer/RendererFactory'
-import { GEOPACKAGE } from '../../../layer/LayerTypes'
+import { constructRenderer } from '../renderer/RendererFactory.js'
+import { GEOPACKAGE } from '../../../layer/LayerTypes.js'
 
 /**
  * The map cache map layer is a wrapper for a MapCache Layer object. This object has functions for handling the rendering of EPSG:3857 tiles
@@ -50,7 +50,9 @@ export default function (L) {
         delete this.outstandingTileRequests[requestId]
       }
 
-      const tile = document.createElement('img')
+      const tile = document.createElement('canvas')
+      tile.width = 256
+      tile.height = 256
       tile.requestId = requestId
       tile.alt = ''
       tile.setAttribute('role', 'presentation')
@@ -59,14 +61,23 @@ export default function (L) {
         if (!isNil(err)) {
           doneWrapper(err, tile)
         } else if (base64Image != null) {
-          tile.done = done
-          tile.onload = () => {
+          const image = new Image();
+          image.onload = () => {
+            tile.getContext('2d').drawImage(image, 0, 0);
             doneWrapper(null, tile)
-          }
-          tile.onerror = (e) => {
+          };
+          image.onerror = (e) => {
             doneWrapper(e, tile)
           }
-          tile.src = base64Image
+          image.src = base64Image
+          // tile.done = done
+          // tile.onload = () => {
+          //   doneWrapper(null, tile)
+          // }
+          // tile.onerror = (e) => {
+          //   doneWrapper(e, tile)
+          // }
+          // tile.src = base64Image
         } else {
           doneWrapper(new Error('no data'), tile)
         }

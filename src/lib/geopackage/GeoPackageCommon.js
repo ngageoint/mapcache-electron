@@ -5,14 +5,12 @@ import {
   GeoPackageValidate,
   RTreeIndex,
 } from '@ngageoint/geopackage'
-import wkx from 'wkx'
 import isNil from 'lodash/isNil'
 import fs from 'fs'
 import path from 'path'
-import reproject from 'reproject'
 import { createUniqueID } from '../util/UniqueIDUtilities'
 import { toHumanReadable, getFileSizeInBytes, getLastModifiedDate, exists } from '../util/file/FileUtilities'
-import { EPSG, COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
+import { COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../projection/ProjectionConstants'
 
 /**
  * Runs a function against a geopackage on the file system. This will safely open the geopackage, execute the function and then close the geopackage.
@@ -36,7 +34,7 @@ async function performSafeGeoPackageOperation (filePath, func, isFuncAsync = fal
       } catch (error) {
         result = { error: error }
         // eslint-disable-next-line no-console
-        console.error('Failed to perform GeoPackage operation')
+        console.error('Failed to perform GeoPackage operation: ' + error)
       }
       try {
         gp.close()
@@ -166,7 +164,11 @@ function _calculateTrueExtentForFeatureTable (gp, tableName) {
     while (!nextRow.done) {
       const featureRow = featureDao.getRow(nextRow.value)
       if (extent == null) {
-        extent = [featureRow.geometry.envelope.minX, featureRow.geometry.envelope.minY, featureRow.geometry.envelope.maxX, featureRow.geometry.envelope.maxY]
+        if (featureRow.geometry.envelope == null) {
+          return null
+        } else {
+          extent = [featureRow.geometry.envelope.minX, featureRow.geometry.envelope.minY, featureRow.geometry.envelope.maxX, featureRow.geometry.envelope.maxY]
+        }
       } else {
         extent[0] = Math.min(extent[0], featureRow.geometry.envelope.minX)
         extent[1] = Math.min(extent[1], featureRow.geometry.envelope.minY)
@@ -221,23 +223,6 @@ function _calculateTrueExtentForTileTable (gp, tableName) {
   }
   return [tableBounds.minLongitude, tableBounds.minLatitude, tableBounds.maxLongitude, tableBounds.maxLatitude]
 }
-
-/**
- * Projects a geometry to 4326 from the srs provided
- * @param geometry
- * @param srs
- * @returns {wkx.Geometry}
- */
-function projectGeometryTo4326 (geometry, srs) {
-  let projectedGeometry = geometry.geometry
-  if (geometry && !geometry.empty && geometry.geometry) {
-    let geoJsonGeom = geometry.geometry.toGeoJSON()
-    geoJsonGeom = reproject.reproject(geoJsonGeom, srs.projection, WORLD_GEODETIC_SYSTEM)
-    projectedGeometry = wkx.Geometry.parseGeoJSON(geoJsonGeom)
-  }
-  return projectedGeometry
-}
-
 
 /**
  * Determines internal table information for a geopackage
@@ -321,20 +306,21 @@ function getGeoPackageFileSize (filePath) {
 
 /**
  * True if the geopackage's last modified date matches what is in state
- * @param geopackage
+ * @param path
+ * @param modifiedDate
  * @returns {boolean}
  */
-function isSynchronized (geopackage) {
-  return getLastModifiedDate(geopackage.path) === (geopackage.modifiedDate ? geopackage.modifiedDate : '0')
+function isSynchronized (path, modifiedDate) {
+  return getLastModifiedDate(path) === (modifiedDate ? modifiedDate : '0')
 }
 
 /**
  * True if the geopackage does not exist on the file system
- * @param geopackage
+ * @param path
  * @returns {boolean}
  */
-function isMissing (geopackage) {
-  return !exists(geopackage.path)
+function isMissing (path) {
+  return !exists(path)
 }
 
 /**
@@ -357,16 +343,17 @@ async function isGeoPackageValid (filePath) {
 
 /**
  * Check GeoPackage's health
- * @param geopackage
+ * @param path
+ * @param modifiedDate
  * @returns {Promise<{synchronized: boolean, invalid: boolean, missing: boolean}>}
  */
-async function checkGeoPackageHealth (geopackage) {
-  const missing = isMissing(geopackage)
-  const synchronized = isSynchronized(geopackage)
+async function checkGeoPackageHealth (path, modifiedDate) {
+  const missing = isMissing(path)
+  const synchronized = isSynchronized(path, modifiedDate)
   let invalid = false
   if (!missing) {
     try {
-      invalid = !await isGeoPackageValid(geopackage.path)
+      invalid = !await isGeoPackageValid(path)
     } catch (error) {
       invalid = true
     }
@@ -597,14 +584,6 @@ function getQueryBoundingBoxForCoordinateAndZoom (coordinate, zoom) {
   return new BoundingBox(normalizeLongitude(coordinate.lng) - queryDistanceDegrees, normalizeLongitude(coordinate.lng) + queryDistanceDegrees, coordinate.lat - queryDistanceDegrees, coordinate.lat + queryDistanceDegrees)
 }
 
-async function sleep (timeMs) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve()
-    }, timeMs)
-  })
-}
-
 function prettyPrintMs (milliseconds) {
   const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24))
   let msRemaining = milliseconds - days * (1000 * 60 * 60 * 24)
@@ -644,8 +623,8 @@ function boundingBoxIntersection (bbox1, bbox2) {
   return intersection
 }
 
-async function isHealthy (geopackage) {
-  const health = await checkGeoPackageHealth(geopackage)
+async function isHealthy (path, modifiedDate) {
+  const health = await checkGeoPackageHealth(path, modifiedDate)
   return !health.missing && !health.invalid && health.synchronized
 }
 
@@ -716,7 +695,6 @@ export {
   getBoundingBoxForTable,
   normalizeLongitude,
   getQueryBoundingBoxForCoordinateAndZoom,
-  sleep,
   flatten,
   prettyPrintMs,
   boundingBoxIntersection,
@@ -725,7 +703,6 @@ export {
   isHealthy,
   getDefaultValueForDataType,
   getExtentOfGeoPackageTables,
-  projectGeometryTo4326,
   _calculateTrueExtentForFeatureTable,
   _getGeoPackageFeatureTableForApp
 }

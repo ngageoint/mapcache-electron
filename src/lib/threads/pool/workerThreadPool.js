@@ -1,13 +1,13 @@
-const throttle = require('lodash/throttle')
-const { PROCESSING_STATES } = require('../../source/SourceProcessing')
-const { PROCESS_SOURCE_STATUS } = require('../../electron/ipc/MapCacheIPC')
-const { AsyncResource } = require('async_hooks')
-const { EventEmitter } = require('events')
-const path = require('path')
-const { Worker } = require('worker_threads')
+import throttle from 'lodash/throttle'
+import { PROCESSING_STATES } from '../../source/SourceProcessing'
+import { PROCESS_SOURCE_STATUS } from '../../../main/lib/ipc/MapCacheIPC'
+import { AsyncResource } from 'node:async_hooks'
+import { EventEmitter } from 'node:events'
+import path from 'node:path'
+import { Worker } from 'node:worker_threads'
 const kTaskInfo = Symbol('kTaskInfo')
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent')
-const { CANCEL } = require('../../threads/mapcacheThreadRequestTypes')
+import { CANCEL } from '../mapcacheThreadRequestTypes'
 
 
 class WorkerPoolTaskInfo extends AsyncResource {
@@ -92,68 +92,72 @@ export default class WorkerThreadPool extends EventEmitter {
 
   async addNewWorker (config) {
     return new Promise((resolve, reject) => {
-      const worker = new Worker(path.resolve(this.workerPath), {
-        stderr: true,
-        stdout: true
-      })
-      worker.config = config
-      worker.stdout.on('data', chunk => {
-        // eslint-disable-next-line no-console
-        console.log(chunk.toString())
-      })
-      worker.stderr.on('data', chunk => {
-        // eslint-disable-next-line no-console
-        console.error(chunk.toString())
-      })
-      worker.once('error', (err) => {
-        worker.removeAllListeners('error')
-        worker.removeAllListeners('message')
-        reject(err)
-      })
-      // wait for ready message
-      worker.once('message', ({ error }) => {
-        worker.removeAllListeners('error')
-        worker.removeAllListeners('message')
-        if (error != null) {
-          reject(error)
-        } else {
-          worker.on('message', ({ type, message, completionPercentage, error, result }) => {
-            if (type === 'status') {
-              worker[kTaskInfo].emitStatus(PROCESSING_STATES.PROCESSING, message, completionPercentage)
-            } else {
+      try {
+        const worker = new Worker(path.resolve(this.workerPath), {
+          stderr: true,
+          stdout: true
+        })
+        worker.config = config
+        worker.stdout.on('data', chunk => {
+          // eslint-disable-next-line no-console
+          console.log(chunk.toString())
+        })
+        worker.stderr.on('data', chunk => {
+          // eslint-disable-next-line no-console
+          console.error(chunk.toString())
+        })
+        worker.once('error', (err) => {
+          worker.removeAllListeners('error')
+          worker.removeAllListeners('message')
+          reject(err)
+        })
+        // wait for ready message
+        worker.once('message', ({ error }) => {
+          worker.removeAllListeners('error')
+          worker.removeAllListeners('message')
+          if (error != null) {
+            reject(error)
+          } else {
+            worker.on('message', ({ type, message, completionPercentage, error, result }) => {
+              if (type === 'status') {
+                worker[kTaskInfo].emitStatus(PROCESSING_STATES.PROCESSING, message, completionPercentage)
+              } else {
+                if (worker[kTaskInfo]) {
+                  worker[kTaskInfo].done(error, result)
+                  delete worker[kTaskInfo]
+                }
+                this.freeWorkers.push(worker)
+                this.emit(kWorkerFreedEvent)
+              }
+            })
+            worker.on('error', (err) => {
               if (worker[kTaskInfo]) {
-                worker[kTaskInfo].done(error, result)
+                worker[kTaskInfo].done(err, null)
                 delete worker[kTaskInfo]
               }
               this.freeWorkers.push(worker)
               this.emit(kWorkerFreedEvent)
-            }
-          })
-          worker.on('error', (err) => {
-            if (worker[kTaskInfo]) {
-              worker[kTaskInfo].done(err, null)
-              delete worker[kTaskInfo]
-            }
+            })
+            worker.on('exit', () => {
+              if (this.restartWorker) {
+                if (this.workers.indexOf(worker) !== -1) {
+                  this.workers.splice(this.workers.indexOf(worker), 1)
+                }
+                if (this.freeWorkers.indexOf(worker) !== -1) {
+                  this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
+                }
+                this.addNewWorker(worker.config)
+              }
+            })
+            this.workers.push(worker)
             this.freeWorkers.push(worker)
             this.emit(kWorkerFreedEvent)
-          })
-          worker.on('exit', () => {
-            if (this.restartWorker) {
-              if (this.workers.indexOf(worker) !== -1) {
-                this.workers.splice(this.workers.indexOf(worker), 1)
-              }
-              if (this.freeWorkers.indexOf(worker) !== -1) {
-                this.freeWorkers.splice(this.freeWorkers.indexOf(worker), 1)
-              }
-              this.addNewWorker(worker.config)
-            }
-          })
-          this.workers.push(worker)
-          this.freeWorkers.push(worker)
-          this.emit(kWorkerFreedEvent)
-          resolve()
-        }
-      })
+            resolve()
+          }
+        })
+      } catch (e) {
+        reject(e)
+      }
     })
   }
 

@@ -1,7 +1,6 @@
 import Preprocessor from '../preprocessing/Preprocessor'
 import { PROCESSING_STATES } from '../SourceProcessing'
 import EventBus from '../../vue/EventBus'
-import { mdiSteering } from '@mdi/js'
 import { METHOD } from '../../network/HttpUtilities'
 
 /**
@@ -98,7 +97,7 @@ export default class OverpassPreProcessor extends Preprocessor {
   async checkQuerySize (alert = false) {
     const count = await this.performQueryCount(this.source.queryCount, undefined, false)
     if (alert && count > this.QUERY_WARNING_COUNT) {
-      const approved = await EventBus.requestUserConfirmation('Overpass download confirmation', 'The response contains ' + count.toLocaleString() + ' results. Would you like to continue with the import?', mdiSteering)
+      const approved = await EventBus.requestUserConfirmation('Overpass download confirmation', 'The response contains ' + count.toLocaleString() + ' results. Would you like to continue with the import?', 'mdi-steering')
       if (!approved) {
         throw new Error('User cancelled.')
       }

@@ -2,7 +2,6 @@ import jetpack from 'fs-jetpack'
 import path from 'path'
 import Source from '../Source'
 import GeoTiffLayer from '../../layer/tile/GeoTiffLayer'
-import * as GeoTIFF from 'geotiff'
 import { getCRSForGeoTiff, getMaxForDataType } from '../../util/geotiff/GeoTiffUtilities'
 import fs from 'fs'
 import { GEOTIFF } from '../../layer/LayerTypes'
@@ -11,7 +10,10 @@ import { EPSG, COLON_DELIMITER, WORLD_GEODETIC_SYSTEM } from '../../projection/P
 
 export default class GeoTIFFSource extends Source {
   static async getGeoTIFF (filePath) {
-    return GeoTIFF.fromFile(filePath)
+    return (async () => {
+      const { fromFile } = await import('geotiff');
+      return fromFile(filePath)
+    })();
   }
 
   static async getImage (geotiff) {

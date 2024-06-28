@@ -1,9 +1,16 @@
-import { fromFile } from 'geotiff'
 import isNil from 'lodash/isNil'
 import { slice } from '../file/FileUtilities'
 import { WEB_MERCATOR_CODE } from '../../projection/ProjectionConstants'
 
 const MAX_BYTE_VALUE = 255
+
+async function getGeoTIFF (filePath) {
+  return (async () => {
+    const { fromFile } = await import('geotiff');
+
+    return fromFile(filePath)
+  })();
+}
 
 function getMaxForDataType (bitsPerSample) {
   let max = MAX_BYTE_VALUE
@@ -43,7 +50,7 @@ function getModelTypeName (modelTypeCode) {
 }
 
 async function readRasters (filePath) {
-  const geotiff = await fromFile(filePath)
+  const geotiff = await getGeoTIFF(filePath)
   const image = await geotiff.getImage()
   return await image.readRasters()
 }
@@ -169,5 +176,6 @@ export {
   getSample,
   readRasters,
   stretchValue,
-  MAX_BYTE_VALUE
+  MAX_BYTE_VALUE,
+  getGeoTIFF
 }

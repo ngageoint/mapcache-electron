@@ -1,6 +1,7 @@
 import Source from '../Source'
 import WMTSLayer from '../../layer/tile/WMTSLayer'
 import { WMTS } from '../../layer/LayerTypes'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class WMTSSource extends Source {
   constructor (id, directory, filePath, layers, wmtsInfo, sourceName, withCredentials = false) {
@@ -13,14 +14,14 @@ export default class WMTSSource extends Source {
 
   async retrieveLayers (statusCallback) {
     statusCallback('Processing WMTS server', 0)
-    await this.sleep(250)
+    await sleep(250)
 
     statusCallback('Storing WMTS server data', 50)
-    await this.sleep(250)
+    await sleep(250)
 
     const { layerId, layerDirectory } = this.createLayerDirectory()
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
     return [
       new WMTSLayer({
         id: layerId,

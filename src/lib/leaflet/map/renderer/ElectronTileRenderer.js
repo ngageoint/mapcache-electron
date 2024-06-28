@@ -1,4 +1,6 @@
 import { WEB_MERCATOR, WORLD_GEODETIC_SYSTEM } from '../../../projection/ProjectionConstants'
+import { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } from '../../../../main/lib/ipc/MapCacheIPC'
+import { prepareObjectForWindowFunction } from '../../../util/common/CommonUtilities'
 
 /**
  * Electron Tile Renderer. This passes request for tile off to electron main, which has node worker threads prepared to generate tiles
@@ -13,8 +15,8 @@ export default class ElectronTileRenderer {
   constructor (layer, isElectron = false) {
     this.layer = layer
     if (isElectron) {
-      const { ipcRenderer } = require('electron')
-      const { REQUEST_TILE, CANCEL_TILE_REQUEST, REQUEST_TILE_COMPLETED } = require('../../../electron/ipc/MapCacheIPC')
+      const ipcRenderer = global.ipcRenderer
+
       this.requestTile = (request) => {
         return new Promise(resolve => {
           ipcRenderer.once(REQUEST_TILE_COMPLETED(request.id), (event, result) => {
@@ -27,10 +29,10 @@ export default class ElectronTileRenderer {
       this.cancelTileRequest = (id) => {
         ipcRenderer.send(CANCEL_TILE_REQUEST, { id: id })
       }
-
-      const { getWebMercatorBoundingBoxFromXYZ, tileIntersects } = require('../../../util/tile/TileBoundingBoxUtils')
-      const { wgs84ToWebMercator } = require('../../../projection/ProjectionUtilities')
-      const { getWGS84ExtentFromXYZ } = require('../../../util/xyz/WGS84XYZTileUtilities')
+      const getWebMercatorBoundingBoxFromXYZ = global.getWebMercatorBoundingBoxFromXYZ
+      const tileIntersects = global.tileIntersects
+      const wgs84ToWebMercator = global.wgs84ToWebMercator
+      const getWGS84ExtentFromXYZ = global.getWGS84ExtentFromXYZ
 
       this.tileIntersects = (x, y, z, crs, extent) => {
         if (crs === WEB_MERCATOR) {
@@ -86,10 +88,12 @@ export default class ElectronTileRenderer {
    * @override
    */
   async renderTile (requestId, coords, size, crs, callback) {
-    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent)) {
+    if (this.performBoundaryCheck && this.layer.extent && !this.tileIntersects(coords.x, coords.y, coords.z, crs, this.layer.extent.slice())) {
       callback(null, null)
     } else {
-      this.requestTile(this.getTileRequest(requestId, coords, size, crs)).then((result) => {
+      const tileRequest = this.getTileRequest(requestId, coords, size, crs)
+      // TODO: inspect tile request for keys that would cause an issue cloning for preload
+      this.requestTile(prepareObjectForWindowFunction(tileRequest)).then((result) => {
         try {
           if (result.error) {
             callback(result.error, null)

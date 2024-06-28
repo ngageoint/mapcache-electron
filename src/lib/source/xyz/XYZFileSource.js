@@ -3,11 +3,12 @@ import AdmZip from 'adm-zip'
 import path from 'path'
 import XYZFileLayer from '../../layer/tile/XYZFileLayer'
 import { XYZ_FILE } from '../../layer/LayerTypes'
+import { sleep } from '../../util/common/CommonUtilities'
 
 export default class XYZFileSource extends Source {
   async retrieveLayers (statusCallback) {
     statusCallback('Processing XYZ file zip', 5)
-    await this.sleep(250)
+    await sleep(250)
     const { layerId, layerDirectory } = this.createLayerDirectory()
 
     const name = path.basename(this.filePath, path.extname(this.filePath))
@@ -17,7 +18,7 @@ export default class XYZFileSource extends Source {
     const xyzImageFile = zipFileNames.find(file => file.match('.*\\d\\/\\d\\/\\d.png') !== null)
 
     statusCallback('Extracting tiles', 33)
-    await this.sleep(250)
+    await sleep(250)
     zip.extractAllTo(layerDirectory, true, undefined)
     // set this source's file path to the root directory where z directories live
     let filePath = layerDirectory
@@ -26,7 +27,7 @@ export default class XYZFileSource extends Source {
       filePath = path.join(layerDirectory, match[1])
     }
     statusCallback('Determining min/max zoom levels', 66)
-    await this.sleep(250)
+    await sleep(250)
 
     let minZoom
     let maxZoom
@@ -38,7 +39,7 @@ export default class XYZFileSource extends Source {
     } catch (e) {
     }
     statusCallback('Cleaning up', 100)
-    await this.sleep(250)
+    await sleep(250)
     return [
       new XYZFileLayer({
         id: layerId,

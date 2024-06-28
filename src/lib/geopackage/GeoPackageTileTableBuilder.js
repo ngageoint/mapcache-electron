@@ -1,11 +1,9 @@
 import { BoundingBox, TileScaling, TileScalingType } from '@ngageoint/geopackage'
 import isNil from 'lodash/isNil'
 import throttle from 'lodash/throttle'
-import imagemin from 'imagemin'
-import imageminPngquant from 'imagemin-pngquant'
+import sharp from 'sharp'
 import {
   performSafeGeoPackageOperation,
-  sleep,
   prettyPrintMs,
   deleteGeoPackageTable
 } from './GeoPackageCommon'
@@ -37,9 +35,13 @@ import {
   WORLD_GEODETIC_SYSTEM_CODE
 } from '../projection/ProjectionConstants'
 import { getWGS84BoundingBoxFromXYZ, trimExtentToWGS84Max } from '../util/xyz/WGS84XYZTileUtilities'
-import { getWebMercatorBoundingBoxFromXYZ } from '../util/tile/TileBoundingBoxUtils'
+import { getWebMercatorBoundingBoxFromXYZ, tileIntersects, tileIntersectsXYZ } from '../util/tile/TileBoundingBoxUtils'
 import SlowServerNotifier from './SlowServerNotifier'
-
+import { convertPbfToDataUrl } from '../util/rendering/MBTilesUtilities'
+import { ipcRenderer } from 'electron'
+import { getWGS84ExtentFromXYZ } from '../util/xyz/WGS84XYZTileUtilities'
+import { reprojectBoundingBox, convertToWebMercator } from '../projection/ProjectionUtilities'
+import { sleep } from '../util/common/CommonUtilities'
 /**
  * GeoPackgeTileTableBuilder handles building a tile layer given a user defined configuration
  * Note: this file only runs within an electron browser window (specifically, the worker window)
@@ -49,9 +51,9 @@ async function getImageBufferFromCanvas (canvas) {
   if (!isBlank(canvas)) {
     if (hasTransparentPixels(canvas)) {
       try {
-        return await imagemin.buffer(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'), {
-          plugins: [imageminPngquant({ speed: 8, quality: [0.5, 0.8] })]
-        })
+        return sharp(Buffer.from(canvas.toDataURL().split(',')[1], 'base64'))
+          .png()
+          .toBuffer()
         // eslint-disable-next-line no-unused-vars
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -72,6 +74,17 @@ async function getImageBufferFromCanvas (canvas) {
  * @returns {Promise<any>}
  */
 async function buildTileLayer (configuration, statusCallback) {
+  global.ipcRenderer = ipcRenderer
+  global.convertPbfToDataUrl = convertPbfToDataUrl
+  global.tileIntersects = tileIntersects
+  global.wgs84ToWebMercator = wgs84ToWebMercator
+  global.getWGS84ExtentFromXYZ = getWGS84ExtentFromXYZ
+  global.createUniqueID = createUniqueID
+  global.getWebMercatorBoundingBoxFromXYZ = getWebMercatorBoundingBoxFromXYZ
+  global.tileIntersectsXYZ = tileIntersectsXYZ
+  global.reprojectBoundingBox = reprojectBoundingBox
+  global.convertToWebMercator = convertToWebMercator
+
   return performSafeGeoPackageOperation(configuration.path, async (gp) => {
     const buildStart = new Date().getTime()
 

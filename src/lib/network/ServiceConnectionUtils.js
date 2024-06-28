@@ -25,8 +25,8 @@ import {
   isUserCancellation,
   isNotFoundError
 } from './HttpUtilities'
-import { parseStringPromise } from 'xml2js'
 import { getWMTSCapabilitiesURL, getWMTSInfo } from '../util/wmts/WMTSUtilities'
+
 
 /**
  * These functions handles connections to supported GIS services
@@ -103,7 +103,7 @@ async function testWebMapTileServiceConnection (serviceUrl, options) {
     let response = await cancellableServiceRequest.request(url)
     withCredentials = cancellableServiceRequest.requiredCredentials()
     if (response) {
-      let result = await parseStringPromise(response.data)
+      let result = await window.mapcache.convertXMLtoJSON(response.data)
       let wmtsInfo = getWMTSInfo(result, url.indexOf('https') !== -1)
       serviceInfo = {
         title: 'WMTS Service',
@@ -163,7 +163,7 @@ async function testWebMapServiceConnection (serviceUrl, options) {
       let response = await cancellableServiceRequest.request(url)
       withCredentials = cancellableServiceRequest.requiredCredentials()
       if (response) {
-        let result = await parseStringPromise(response.data)
+        let result = await window.mapcache.convertXMLtoJSON(response.data)
         let wmsInfo = await getWMSInfo(serviceUrl, result, version, withCredentials)
 
         serviceInfo = {
@@ -216,7 +216,7 @@ async function testWebFeatureServiceConnection (serviceUrl, options) {
       let cancellableServiceRequest = new CancellableServiceRequest()
       cancellableServiceRequest.withCredentials = options.withCredentials || false
       let response = await cancellableServiceRequest.request(url)
-      let result = await parseStringPromise(response.data)
+      let result = await window.mapcache.convertXMLtoJSON(response.data)
       let wfsInfo = getWFSInfo(result, version)
       serviceInfo = {
         title: wfsInfo.title || 'WFS Service',
@@ -490,7 +490,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
         sourceClone.error = undefined
         sourceClone.visible = true
         sourceClone.withCredentials = withCredentials
-        updateDataSource({ projectId: projectId, source: sourceClone })
+        updateDataSource(projectId, sourceClone)
         success = true
       }
     }
@@ -498,7 +498,7 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
       let sourceClone = cloneDeep(source)
       sourceClone.error = error
       sourceClone.visible = false
-      updateDataSource({ projectId: projectId, source: sourceClone })
+      updateDataSource(projectId, sourceClone)
     }
   }
   return success
@@ -507,11 +507,11 @@ async function connectToSource (projectId, source, updateDataSource, timeout = 1
 /**
  * Attempts to connect to a source
  * @param baseMap
- * @param editBaseMap
+ * @param setBaseMap
  * @param timeout (default 5000)
  * @returns {Promise<boolean>}
  */
-async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
+async function connectToBaseMap (baseMap, setBaseMap, timeout = 5000) {
   let success = false
   if (!isNil(baseMap.layerConfiguration)) {
     const serviceType = getServiceType(baseMap.layerConfiguration.layerType)
@@ -551,14 +551,14 @@ async function connectToBaseMap (baseMap, editBaseMap, timeout = 5000) {
         let baseMapClone = cloneDeep(baseMap)
         baseMapClone.error = undefined
         baseMapClone.withCredentials = withCredentials
-        editBaseMap(baseMapClone)
+        setBaseMap(baseMapClone)
         success = true
       }
     }
     if (error) {
       let baseMapClone = cloneDeep(baseMap)
       baseMapClone.error = error
-      editBaseMap(baseMapClone)
+      setBaseMap(baseMapClone)
     }
   }
   return success
