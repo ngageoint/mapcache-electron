@@ -1,6 +1,6 @@
 {
   "name": "mapcache",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Desktop Electron app to create GeoPackages from geospatial data sources.",
   "author": "Christopher Caldwell <c.caldwell90@gmail.com> (https://github.com/caldwellc)",
   "scripts": {
@@ -12,6 +12,7 @@
     "electron:build": "yarn build && vue-cli-service electron:build",
     "electron:build-linux": "yarn build && electron-builder --linux",
     "electron:build-mac": "yarn build && electron-builder --mac",
+    "electron:build-mac-m1": "yarn build && electron-builder --arm64",
     "electron:build-mas": "yarn build && electron-builder --mas",
     "electron:build-win": "yarn build-win && electron-builder --win portable nsis",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
