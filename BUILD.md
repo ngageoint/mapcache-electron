@@ -61,11 +61,12 @@ Once you have set up a development environment, these steps will let you build a
 `git config --global url."https://".insteadOf git://`
 4. Remove yarn.lock to clear x86/arm compatibility problems
 `rm -rf yarn.lock`
-5. Install dependencies:  
+5. A note for Windows: We are typically building on MacOS, leading to the '.yarn' folder and '.yarnrc' file having OS specific builds.  Delete these two items when building on windows and ensure you have yarn installed
+6. Install dependencies:  
 `yarn`
-6. Important: rebuild better-sqlite3 before running:
+7. Important: rebuild better-sqlite3 before running:
 `yarn run rebuild`
-7. Run:  
+8. Run:  
 `yarn dev` (run locally in development mode)
 
 # Cleaning MapCache Desktop
