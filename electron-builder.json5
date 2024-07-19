@@ -16,12 +16,18 @@
     'dist/main',
     'dist/preload',
     'dist/renderer',
-    'resources'
+    'resources',
+    'extraResources'
   ],
   extraResources: [
     {
       from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
       to: "canvaskit/canvaskit.wasm",
+    },
+    {
+      from: "./resources/offline.gpkg",
+      to: "extraResources/offline.gpkg",
+      "filter": ["**/*"]
     }
   ],
   protocols: [
@@ -52,7 +58,8 @@
     "**/dist/main/mapcacheThread.js",
     "**/dist/preload/**/*",
     "**/dist/renderer/**/*",
-    "**/resources/**/*"
+    "**/resources/**/*",
+    "**/extraResources/**/*"
   ],
   directories: {
     buildResources: "buildResources"

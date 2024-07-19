@@ -178,6 +178,11 @@ contextBridge.exposeInMainWorld('mapcache', {
     clipboard.writeText(text)
   },
   getOfflineGeoPackageFilePath: () => {
+      if(!process.env.NODE_ENV || process.env.NODE_ENV === "production"){
+        // Prod access to offline gkpg is in extraResources after bundling
+        const gpkgPath = path.join(process.resourcesPath, 'extraResources', 'offline.gpkg')
+        return gpkgPath
+      }
     return offlineGeoPackagePath
   },
   createSourceDirectory: (projectDirectory) => {
