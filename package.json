@@ -85,9 +85,8 @@
     "@electron/rebuild": "^3.6.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@vitejs/plugin-vue": "^4.0.0",
-    "ajv": "^8.17.1",
     "electron": "^27.0.0",
-    "electron-builder": "^25.0.3",
+    "electron-builder": "^24.4.0",
     "electron-vite": "^2.0.0",
     "typescript": "^4.9.5",
     "vite": "^4.2.1",
@@ -96,7 +95,8 @@
   "main": "./dist/main/index.js",
   "resolutions": {
     "better-sqlite3": "8.4.0",
-    "bindings": "git://github.com/caldwellc/node-bindings.git#master"
+    "bindings": "git://github.com/caldwellc/node-bindings.git#master",
+    "minimatch": "9.0.5"
   },
   "contributors": [
     {
