@@ -64,7 +64,7 @@ Once you have set up a development environment, these steps will let you build a
 5. A note for Windows: We are typically building on MacOS, leading to the '.yarn' folder and '.yarnrc' file having OS specific builds.  Delete these two items when building on windows and ensure you have yarn installed
 6. Install dependencies:  
 `yarn`
-7. Important: rebuild better-sqlite3 before running:
+7. Important: rebuild sharp and better-sqlite3 to get the appropriate binaries:
 `yarn run rebuild`
 8. Run:  
 `yarn dev` (run locally in development mode)
@@ -107,6 +107,7 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 `yarn electron:build-win`
 2. Build Linux
 `npm run electron:build-linux`
+  Note: Sharp does not build correctly on linux.  When running electron-builder, it's not grabbing the node binary file and placing it in the node_modules/sharp/build/Release directory.  When building on linux, after running `yarn `, run `yarn rebuild` to generate the necessary binary, then remove the "binding.gyp" file located in node_modules/sharp directory.  This will prevent electron-builder from deleting the binary and failing to grab a new one during packaging.  Sharp 0.33.0 made changes to the way the binaries are packaged, but it's still not showing up with that version either.  It has references to @img/sharp-linux-x64, read the sharp install page for more info.
 3. Build Mac (note, ensure app is signed using Developer ID Application certificate)
 `yarn electron:build-mac`
 4. Build for Mac App Store (note, ensure app is signed by Apple Distribution certificate)
