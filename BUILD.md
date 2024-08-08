@@ -106,7 +106,7 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 1. Build Windows
 `yarn electron:build-win`
 2. Build Linux
-`npm run electron:build-linux`
+`yarn electron:build-linux`
   Note: Sharp does not build correctly on linux.  When running electron-builder, it's not grabbing the node binary file and placing it in the node_modules/sharp/build/Release directory.  When building on linux, after running `yarn `, run `yarn rebuild` to generate the necessary binary, then remove the "binding.gyp" file located in node_modules/sharp directory.  This will prevent electron-builder from deleting the binary and failing to grab a new one during packaging.  Sharp 0.33.0 made changes to the way the binaries are packaged, but it's still not showing up with that version either.  It has references to @img/sharp-linux-x64, read the sharp install page for more info.
 3. Build Mac (note, ensure app is signed using Developer ID Application certificate)
 `yarn electron:build-mac`
