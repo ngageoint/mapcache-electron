@@ -29,7 +29,7 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.14.2
+  * nvm install 18.17.0
 * Install Yarn.  We are currently using 1.22.22, check for correct version under .yarn/releases.
   * npm install yarn -g
 
@@ -46,9 +46,31 @@
 * Install Node Version Manager
   * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 * Install Node
-  * nvm install 16.14.2
+  * nvm install 18.17.0
 * Install Yarn
   * npm install yarn -g
+
+### Linux - Centos
+* Install dependencies 
+  * sudo yum upgrade 
+  * sudo yum install git-all
+  * sudo yum install cairo-devel
+  * sudo yum install gcc gcc-c++
+  * sudo yum groupinstall "Development Tools" "Development Libraries"
+  * sudo yum install rpm-build
+* Configure GIT
+  * git config --global url."https://github.com/".insteadOf git://github.com/ 
+* Install Node Version Manager
+  * curl o https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+* Install Node
+  * nvm install 18.17.0
+* Install Yarn
+  * npm install yarn -g
+* You may find it necessary to install libvips if you're working on getting sharp to build natively during your build process
+* Install libXScrnSaver
+  * sudo yum install libXScrnSaver
+
+
   
 # Building and Running MapCache Desktop
 Once you have set up a development environment, these steps will let you build and run MapCache:
@@ -64,7 +86,7 @@ Once you have set up a development environment, these steps will let you build a
 5. A note for Windows: We are typically building on MacOS, leading to the '.yarn' folder and '.yarnrc' file having OS specific builds.  Delete these two items when building on windows and ensure you have yarn installed
 6. Install dependencies:  
 `yarn`
-7. Important: rebuild better-sqlite3 before running:
+7. Important: rebuild sharp and better-sqlite3 to get the appropriate binaries:
 `yarn run rebuild`
 8. Run:  
 `yarn dev` (run locally in development mode)
@@ -106,7 +128,8 @@ The following will help you create binaries for windows, linux, and macOS. Due t
 1. Build Windows
 `yarn electron:build-win`
 2. Build Linux
-`npm run electron:build-linux`
+`yarn electron:build-linux`
+  Note: Sharp does not build correctly on linux.  When running electron-builder, it's not grabbing the node binary file and placing it in the node_modules/sharp/build/Release directory.  When building on linux, after running `yarn `, run `yarn rebuild` to generate the necessary binary, then remove the "binding.gyp" file located in node_modules/sharp directory.  This will prevent electron-builder from deleting the binary and failing to grab a new one during packaging.  Sharp 0.33.0 made changes to the way the binaries are packaged, but it's still not showing up with that version either.  It has references to @img/sharp-linux-x64, read the sharp install page for more info.  To install the completed rpm file, use `sudo rpm -i MapCache.1.6.0.rpm --force`.  If it's not starting after install, make sure you don't already have mapcache running `ps -ef` and kill any existing processes
 3. Build Mac (note, ensure app is signed using Developer ID Application certificate)
 `yarn electron:build-mac`
 4. Build for Mac App Store (note, ensure app is signed by Apple Distribution certificate)
@@ -130,15 +153,14 @@ Notarizing the application is necessary for distributing outside of the Mac App 
 `yarn electron:build-mac`
 2. Navigate to build folder
 `cd dist_electron`
-3. Ensure you have the Developer ID Application cert loaded into your keychain
-4. Submit .dmg and .pkg for notarization
-`xcrun altool --notarize-app -f MapCache-{version}.dmg --primary-bundle-id mil.nga.mapcache -u [apple developer id] --asc-provider [team id]`
-`xcrun altool --notarize-app -f MapCache-{version}.pkg --primary-bundle-id mil.nga.mapcache -u [apple developer id] --asc-provider [team id]`
-5. Check status of notarization (using requestUUID in previous command's response)
-`xcrun altool --notarization-info [requestUUID] -u [apple developer id]`
-6. Staple .dmg and .pkg once notarization completed (be on the lookout for an email)
-`xcrun stapler staple “MapCache-{version}.dmg”`
-`xcrun stapler staple “MapCache-{version}.pkg”`
+3. Store your credentials in your keychain
+`xcrun notarytool store-credentials —username [username] —team-id [teamID] —password [password]`
+4. Ensure you have the Developer ID Application cert loaded into your keychain.  This is the NGA's Developer ID Application cert.  Get it from a team member because you need the associated private key with it.  In the keychain they will find the cert and notice that it has the private key listed below it.  They'll need to export both as a p12 for you to import.
+5. Submit .dmg and .pkg for notarization
+`xcrun notarytool submit MapCache.1.6.0.dmg --keychain-profile "[you're stored credentials name]" --wait`
+6. Check status of notarization (using requestUUID in previous command's response)
+`xcrun notarytool info [requestUUID] -u [apple developer id]`
+
 
 # Vuex store migration
 Prior to release, any modifications that need to be made to the vuex store to support new features/bug fixes should perform the following steps.
