@@ -6,16 +6,27 @@ stages:
   - test
   - scan
 
+# Runs owasp dep check
 owasp_depcheck_scan:
   stage: scan
+
+# Runs Fortify and convert fpr to json file.  If this is running on the default branch 
+# (see settings in gitlab to verify which branch is set to default), it will upload the
+# json file to the gitlab security dashboard
 fortify_scanning:
   stage: test
   rules:
     - if: $SKIP_FORTIFY != 'true'
+
 include:
 - project: 'DSO-Millennium-Falcon/gitlab-ci-templates/scanning-templates'
   ref: master
   file: '/owasp-depcheck.gitlab-ci.yml'  
-- project: 'DSO-Millennium-Falcon/gitlab-ci-templates/scanning-templates'
-  ref: master
-  file: '/fortify-scanning.yml'
+# the new way of importing fortify.  note, this version will convert the fpr file
+# to a json readable file for gitlab security dashboard
+- component: ${CI_SERVER_HOST}/CORE/catalog/security/fortify_scanning@main
+
+# Old threadfix format
+# - project: 'DSO-Millennium-Falcon/gitlab-ci-templates/scanning-templates'
+#   ref: master
+#   file: '/fortify-scanning.yml'
