@@ -65,7 +65,7 @@
           </template>
           <v-time-picker
               v-model="editedTimeValue"
-              format="ampm"
+              format="24hr"
               use-seconds
           >
             <v-spacer></v-spacer>

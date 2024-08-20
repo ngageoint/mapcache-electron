@@ -61,7 +61,10 @@ import NumberPicker from '../Common/NumberPicker.vue'
 export default {
   components: { NumberPicker },
   props: {
-    map: Object,
+    map: {
+      type: Object,
+      required: true
+    },
     saveFeature: Function,
     close: Function
   },
@@ -180,6 +183,9 @@ export default {
     }
   },
   mounted () {
+    if(this.map == null){
+      this.cancel()
+    }
     this.handlePlacemarkSetting = ({ layer }) => {
       const feature = layer.toGeoJSON()
       this.map.removeLayer(layer)

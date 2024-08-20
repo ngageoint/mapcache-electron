@@ -491,7 +491,7 @@ function startThread () {
     setupRequestListener()
     parentPort.postMessage({ error: null })
   }).catch(e => {
-    console.error(e)
+    console.error("CanvasKit thread error")
     parentPort.postMessage({ error: e })
   })
 }
