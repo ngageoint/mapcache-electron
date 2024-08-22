@@ -25,6 +25,13 @@ include:
 # the new way of importing fortify.  note, this version will convert the fpr file
 # to a json readable file for gitlab security dashboard
 - component: ${CI_SERVER_HOST}/CORE/catalog/security/fortify_scanning@main
+# exporting a vulnerability report - doesnt look like it's ready yet
+- component: ${CI_SERVER_HOST}/CORE/catalog/security/vulnerability_report@main
+  inputs:
+     # private_token should be provided as a masked/protected project or group variable
+     private_token: ${PRIVATE_TOKEN}
+
+# Read about the latest core utilities here: https://gitlab.gs.mil/CORE/catalog
 
 # Old threadfix format
 # - project: 'DSO-Millennium-Falcon/gitlab-ci-templates/scanning-templates'
