@@ -602,7 +602,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
       processBatch()
     }
     // await _indexFeatureTable(gp, tableName)
-    return performSafeGeoPackageOperation(gp.filePath, (gp) => {
+    return performSafeGeoPackageOperation(gp.path, (gp) => {
       const contents = _updateBoundingBoxForFeatureTable(gp, tableName)
       const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
       return {

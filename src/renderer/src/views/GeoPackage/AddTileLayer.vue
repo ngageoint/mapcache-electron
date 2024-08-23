@@ -47,7 +47,7 @@
       <v-divider/>
     </v-sheet>
     <v-sheet v-else class="mapcache-sheet-content">
-      <v-stepper :items="['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8', 'Step 9']" class="background" non-linear vertical
+      <v-stepper :items="['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7']" class="background" non-linear vertical
                  :style="{borderRadius: '0 !important', boxShadow: '0px 0px !important'}" :mobile=true>
         
         <template v-slot:item.1 editable :complete="step > 1" :rules="[() => layerNameValid]" color="primary">
@@ -83,10 +83,10 @@
                 <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers"
                                    v-on:change="filterErroredLayers">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
-                    <v-list-item
+                    <v-list-item class=""
                         :value="item.id"
                         @click.stop.prevent="item.changeVisibility">
-                      <template v-slot:prepend class="mr-4">
+                      <template v-slot:prepend>
                         <v-btn icon @click.stop="item.zoomTo">
                           <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
                           <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
@@ -96,15 +96,17 @@
                       </template>
                       <template v-slot:default="{ active }">
                         <div>
-                          <v-list-item-title v-text="item.title"></v-list-item-title>
+                          <v-list-item-title v-text="item.title" class="pl-3"></v-list-item-title>
                         </div>
+                        <v-list-item-action>
+                          <source-visibility-switch class="pl-4" :model-value="active" :project-id="project.id"
+                                                    :source="project.sources[item.id]"></source-visibility-switch>
+                        </v-list-item-action>
+                      </template>
+                      <template v-slot:append>
                         <data-source-warning v-if="item.source.warning" :source="item.source"></data-source-warning>
                         <data-source-troubleshooting v-if="item.source.error" :source="item.source"
                                                      :project-id="project.id"></data-source-troubleshooting>
-                        <v-list-item-action>
-                          <source-visibility-switch :model-value="active" :project-id="project.id"
-                                                    :source="project.sources[item.id]"></source-visibility-switch>
-                        </v-list-item-action>
                       </template>
                     </v-list-item>
                     <v-divider
@@ -116,59 +118,116 @@
               </v-list>
             </v-card-text>
           </v-card>
-        </template>
-        
-        <template v-slot:item.3 :complete="step > 3" editable color="primary">
-          Select GeoPackage layers
-          <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
-            selected</small>
-          <v-card flat tile>
-            <v-card-subtitle>
-              Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
-              tile layer.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-list density="compact">
-                <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
-                  <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
-                    <v-list-item
-                        :value="item.id"
-                        @click.stop="item.changeVisibility">
-                      <template v-slot:prepend>
-                        <v-btn icon @click.stop="item.zoomTo">
-                          <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
-                          <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
-                        </v-btn>
-                      </template>
-                      <template v-slot:default="{ active }">
-                        <div>
-                          <v-list-item-title v-text="item.title"></v-list-item-title>
-                          <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
-                        </div>
-                        <v-list-item-action>
-                          <v-switch
-                              density="compact"
-                              @click.stop="item.changeVisibility"
-                              :model-value="active"
-                              color="primary"
-                          ></v-switch>
-                        </v-list-item-action>
-                      </template>
-                    </v-list-item>
-                    <v-divider
-                        v-if="i < geopackageLayers.length - 1"
-                        :key="'geopackage_layer_divider_' + i"
-                    ></v-divider>
-                  </template>
-                </v-list-item-group>
-              </v-list>
-            </v-card-text>
+
+          <v-expansion-panels>
+            <v-expansion-panel title="Select GeoPackage Layers">
+              <v-expansion-panel-text>
+                <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
+                  selected</small>
+                <v-card flat tile>
+                  <v-card-subtitle>
+                    Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
+                    tile layer.
+                  </v-card-subtitle>
+                  <v-card-text>
+                    <v-list density="compact">
+                      <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
+                        <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
+                          <v-list-item
+                              :value="item.id"
+                              @click.stop="item.changeVisibility">
+                            <template v-slot:prepend>
+                              <v-btn icon @click.stop="item.zoomTo">
+                                <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                                <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                                <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                                <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                              </v-btn>
+                            </template>
+                            <template v-slot:default="{ active }">
+                              <div>
+                                <v-list-item-title v-text="item.title" class="pl-3"></v-list-item-title>
+                                <v-list-item-subtitle v-text="item.subtitle" class="pl-3"></v-list-item-subtitle>
+                              </div>
+                              <v-list-item-action>
+                                <v-switch
+                                    density="compact"
+                                    @click.stop="item.changeVisibility"
+                                    :model-value="active"
+                                    color="primary"
+                                    class="pl-3"
+                                ></v-switch>
+                              </v-list-item-action>
+                            </template>
+                          </v-list-item>
+                          <v-divider
+                              v-if="i < geopackageLayers.length - 1"
+                              :key="'geopackage_layer_divider_' + i"
+                          ></v-divider>
+                        </template>
+                      </v-list-item-group>
+                    </v-list>
+                  </v-card-text>
+                </v-card>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+
+
+
+          
+          <v-card v-if="showSelectableGeoPacakgeLayers">
+            Select GeoPackage layers
+            <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
+              selected</small>
+            <v-card flat tile>
+              <v-card-subtitle>
+                Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
+                tile layer.
+              </v-card-subtitle>
+              <v-card-text>
+                <v-list density="compact">
+                  <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
+                    <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
+                      <v-list-item
+                          :value="item.id"
+                          @click.stop="item.changeVisibility">
+                        <template v-slot:prepend>
+                          <v-btn icon @click.stop="item.zoomTo">
+                            <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <v-img :style="{verticalAlign: 'middle'}" v-else-if="dark" src="/images/white_polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                            <v-img :style="{verticalAlign: 'middle'}" v-else-if="item.type === 'tile'" src="/images/colored_layers.png" alt="Tile layer" width="20px" height="20px"/>
+                            <v-img :style="{verticalAlign: 'middle'}" v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
+                          </v-btn>
+                        </template>
+                        <template v-slot:default="{ active }">
+                          <div>
+                            <v-list-item-title v-text="item.title"></v-list-item-title>
+                            <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
+                          </div>
+                          <v-list-item-action>
+                            <v-switch
+                                density="compact"
+                                @click.stop="item.changeVisibility"
+                                :model-value="active"
+                                color="primary"
+                            ></v-switch>
+                          </v-list-item-action>
+                        </template>
+                      </v-list-item>
+                      <v-divider
+                          v-if="i < geopackageLayers.length - 1"
+                          :key="'geopackage_layer_divider_' + i"
+                      ></v-divider>
+                    </template>
+                  </v-list-item-group>
+                </v-list>
+              </v-card-text>
+            </v-card>
           </v-card>
         </template>
-        
-        <template v-slot:item.4 editable :complete="step > 4" color="primary">
+
+        <template v-slot:item.3 editable :complete="step > 3" color="primary">
           Order layers
           <small
               class="pt-1">{{
@@ -212,7 +271,46 @@
           </v-card>
         </template>
         
-        <template v-slot:item.5 editable color="primary" :complete="step > 5">
+        <template v-slot:item.4 editable :complete="step > 4" :rules="[() => (boundingBoxFilter || Number(step) < 7) && (!isEditingBoundingBox() || (Number(step) === 6))]"
+        color="primary">
+          Specify bounding box
+          <small class="pt-1">
+            {{
+              isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box set' : 'Bounding box not set')
+            }}
+          </small>
+          <v-card flat tile>
+            <v-card-subtitle>
+              Provide a bounding box to restrict content from the selected data sources and GeoPackage feature layers
+            </v-card-subtitle>
+            <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project"
+                                 :boundingBox="boundingBoxFilter"
+                                 :update-bounding-box="updateBoundingBox"></bounding-box-editor>
+          </v-card>
+        </template>
+        
+        <template v-slot:item.5 editable :complete="step > 5" color="primary" :rules="[() => areZoomsValid()]">
+          Specify zoom levels
+          <v-card flat tile>
+            <v-card-subtitle>
+              Specify the minimum and maximum zoom levels.
+            </v-card-subtitle>
+            <v-card-text>
+              <v-container>
+                <v-row no-gutters>
+                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Min zoom"
+                                 :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+                </v-row>
+                <v-row no-gutters>
+                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max zoom"
+                                 :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
+                </v-row>
+              </v-container>
+            </v-card-text>
+          </v-card>
+        </template>
+        
+        <template v-slot:item.6 editable :complete="step > 6" color="primary">
           Set layer's projection
           <small class="pt-1">
             {{ targetProjection }}
@@ -237,48 +335,7 @@
               </v-radio-group>
             </v-card-text>
           </v-card>
-        </template>
-        
-        <template v-slot:item.6 editable :complete="step > 6" :rules="[() => (boundingBoxFilter || Number(step) < 7) && (!isEditingBoundingBox() || (Number(step) === 6))]"
-        color="primary">
-          Specify bounding box
-          <small class="pt-1">
-            {{
-              isEditingBoundingBox() ? 'Editing bounding box' : (boundingBoxFilter ? 'Bounding box set' : 'Bounding box not set')
-            }}
-          </small>
-          <v-card flat tile>
-            <v-card-subtitle>
-              Provide a bounding box to restrict content from the selected data sources and GeoPackage feature layers
-            </v-card-subtitle>
-            <bounding-box-editor ref="boundingBoxEditor" allow-extent :project="project"
-                                 :boundingBox="boundingBoxFilter"
-                                 :update-bounding-box="updateBoundingBox"></bounding-box-editor>
-          </v-card>
-        </template>
-        
-        <template v-slot:item.7 editable :complete="step > 7" color="primary" :rules="[() => areZoomsValid()]">
-          Specify zoom levels
-          <v-card flat tile>
-            <v-card-subtitle>
-              Specify the minimum and maximum zoom levels.
-            </v-card-subtitle>
-            <v-card-text>
-              <v-container>
-                <v-row no-gutters>
-                  <number-picker ref="minZoom" :number="Number(minZoom)" @update-number="updateMinZoom" label="Min zoom"
-                                 :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
-                </v-row>
-                <v-row no-gutters>
-                  <number-picker ref="maxZoom" :number="Number(maxZoom)" @update-number="updateMaxZoom" label="Max zoom"
-                                 :min="Number(0)" :max="Number(20)" :step="Number(1)"/>
-                </v-row>
-              </v-container>
-            </v-card-text>
-          </v-card>
-        </template>
-        
-        <template v-slot:item.8 editable :complete="step > 8" color="primary">
+          
           Enable tile scaling
           <v-card flat tile>
             <v-card-subtitle>
@@ -312,7 +369,7 @@
           </v-card>
         </template>
         
-        <template v-slot:item.9 editable color="primary" step="9">
+        <template v-slot:item.7 editable color="primary" step="7">
           Summary
           <v-card-text class="ma-0 pa-0">
             <p v-if="(dataSourceLayers.filter(item => item.visible).length + geopackageLayers.filter(item => item.visible).length) === 0"
@@ -438,6 +495,7 @@ export default {
       selectedDataSourceLayers: [],
       internalRenderingOrder: [],
       layersPreEnabled: [],
+      showSelectableGeoPacakgeLayers: false,
     }
   },
   methods: {
@@ -460,6 +518,9 @@ export default {
     },
     filterErroredLayers (layers) {
       this.selectedDataSourceLayers = this.selectedDataSourceLayers.filter(layerId => isNil(this.project.sources[layerId].error))
+    },
+    toggleShowSelectableGeoPacakgeLayers () {
+      this.showSelectableGeoPacakgeLayers = !this.showSelectableGeoPacakgeLayers
     },
     async cancelAddTileLayer () {
       const self = this

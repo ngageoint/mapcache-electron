@@ -39,7 +39,7 @@ export default class OverpassSource extends Source {
         statusCallback('Parsing and storing features', 25 + Math.floor(75 * percentageComplete))
       }, adjustBatchSize)
       // rmFile(this.fileData.filePath)
-      //const { extent, count } = await done()
+      const { extent, count } = await done()
       const overpassResult = await done()
       statusCallback('Cleaning up', 100)
       await sleep(350)
