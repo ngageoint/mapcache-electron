@@ -81,6 +81,13 @@ export default {
     return {
       releaseNotes: [
       {
+          title: 'MapCache 1.6.1',
+          releaseDate: 'Sept 1, 2024',
+          bugFixes: [
+            'Fixes for nominatum search, gpkg layer renames',
+            'Layout and alignment fixes.'
+          ]
+      },{
           title: 'MapCache 1.6.0',
           releaseDate: 'Jul. 14, 2024',
           bugFixes: [
