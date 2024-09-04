@@ -157,6 +157,63 @@
       </v-card>
 
       <v-card flat tile>
+        <v-card-text v-if="serviceInfo">
+          <h4 class="primary--text">{{ serviceInfo.title }}</h4>
+          <p class="pb-0 mb-0" v-if="serviceInfo.abstract">{{ serviceInfo.abstract }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.version">
+            {{ supportedServiceTypes[selectedServiceType].name + ' Version: ' + serviceInfo.version }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactName">{{ 'Contact person: ' + serviceInfo.contactName }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.contactOrg">
+            {{ 'Contact organization:' + serviceInfo.contactOrg }}</p>
+          <p class="pb-0 mb-0" v-if="serviceInfo.copyright">{{ 'Copyright:' + serviceInfo.copyright }}</p>
+        </v-card-text>
+        <v-card flat tile v-if="!loading && serviceLayers.length > 0 && !error">
+          <v-sheet>
+            <v-card-subtitle v-if="selectedServiceType === 1" class="primary--text pb-0 mb-0">
+              {{ 'Layers from the WFS service to import.' }}
+            </v-card-subtitle>
+            <v-card-subtitle v-if="selectedServiceType === 3" class="primary--text pb-0 mb-0">
+              {{ 'Layers from the ArcGIS feature service to import.' }}
+            </v-card-subtitle>
+            <v-card-text v-if="serviceLayers.length > 0" class="pt-0 mt-4">
+              <v-infinite-scroll
+                  class="pa-0 ma-0 detail-bg"
+                  :items="serviceLayers"
+                  :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
+                  :item-height="getHeightFromServiceLayers(serviceLayers)"
+              >
+                  <template v-for="(item, i) in serviceLayers" :key="`service-layer-item-${i}`" >
+                    <v-list-item
+                        class="detail-bg"
+                        :value="item"
+                        @click="() => {item.active = !item.active}"
+                    >
+                      <template v-slot:default="{ active }">
+                        <div>
+                          <div v-if="item.title" >
+                            <div class="list-item-title" v-text="item.title" :title="item.title"></div>
+                          </div>
+                          <div v-if="item.subtitles && item.subtitles.length > 0">
+                            <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
+                                  :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
+                          </div>
+                        </div>
+                        <v-list-item-action>
+                          <v-switch
+                              :model-value="active"
+                              color="primary"
+                          ></v-switch>
+                        </v-list-item-action>
+                      </template>
+                    </v-list-item>
+                </template>
+              </v-infinite-scroll>
+            </v-card-text>
+          </v-sheet>
+        </v-card>
+      </v-card>
+
+      <v-card flat tile>
         <v-card-text class="ma-4 pa-0"
                       v-if="!loading && (selectedServiceType === 0|| selectedServiceType === 5 ) && !error && serviceInfo">
           <h4 class="primary--text pb-0 mb-0">{{ serviceInfo.title }}</h4>
@@ -184,15 +241,15 @@
         </v-card-text>
         <v-card-text class="ma-4 pa-0" v-else>
           <p v-if="!loading && selectedServiceType === 1 && !error && selectedDataSourceLayersValid()">
-            <b>{{ selectedDataSourceLayers.length }}</b>
+            <b>{{ selectedSourceCount }}</b>
             {{
-              ' WFS layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
+              ' WFS layer' + (selectedSourceCount > 1 ? 's' : '') + ' will be imported as the '
             }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
           </p>
           <p v-if="!loading && selectedServiceType === 3 && !error && selectedDataSourceLayersValid()">
-            <b>{{ selectedDataSourceLayers.length }}</b>
+            <b>{{ selectedSourceCount }}</b>
             {{
-              ' ArcGIS Feature Service layer' + (selectedDataSourceLayers.length > 1 ? 's' : '') + ' will be imported as the '
+              ' ArcGIS Feature Service layer' + (selectedSourceCount > 1 ? 's' : '') + ' will be imported as the '
             }}<b>{{ dataSourceName }}</b>{{ ' data source.' }}
           </p>
           <p v-if="!loading && selectedServiceType === 2 && !error && connected">
@@ -341,6 +398,7 @@ export default {
       withCredentials: false,
       connected: false,
       connectionId: null,
+      selectedSourceCount: 0,
       xyzProjection: WEB_MERCATOR
     }
   },
@@ -446,8 +504,21 @@ export default {
 
       return testServiceConnection(urlToTest, serviceType, options)
     },
+    getSelectedSourcesCount () {
+      let activeCount = 0
+      if (this.serviceLayers !== undefined || this.serviceLayers.length == 0) { 
+        for (let i in this.serviceLayers) {
+          let source = this.serviceLayers[i]
+          if (source.active){
+            activeCount++
+          }
+        }
+      }
+      this.selectedSourceCount = activeCount
+      return activeCount
+    },
     selectedDataSourceLayersValid () {
-      return !isEmpty(this.selectedDataSourceLayers)
+      return this.getSelectedSourcesCount() > 0
     },
     async confirmLayerImport () {
       if (this.selectedDataSourceLayersValid() || this.selectedServiceType === SERVICE_TYPE.WMS || this.selectedServiceType === SERVICE_TYPE.WMTS) {
@@ -486,7 +557,7 @@ export default {
           })
           sourceToProcess.wmtsInfo = this.serviceInfo.wmtsInfo
         } else if (this.selectedServiceType === SERVICE_TYPE.WFS || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) {
-          sourceToProcess.layers = this.selectedDataSourceLayers.slice()
+          sourceToProcess.layers = this.serviceLayers.slice()
           sourceToProcess.format = this.serviceInfo.format
         }
 
@@ -500,6 +571,7 @@ export default {
     },
     resetURLValidation () {
       this.serviceLayers = []
+      this.selectedSourceCount = 0
       this.dataSourceUrl = environment.defaultBaseMaps[0].url
       this.subdomains = environment.defaultBaseMaps[0].subdomains
       this.selectedServiceType = 2
