@@ -5,11 +5,10 @@ import {
   get,
   addCoordinateTransforms,
   addEquivalentProjections,
-  createSafeCoordinateTransform
-} from 'ol-format-node/proj'
-import { get as getTransform } from 'ol-format-node/proj/transforms'
-import Projection from 'ol-format-node/proj/Projection'
-import { assign } from 'ol-format-node/obj'
+  createSafeCoordinateTransform,
+  assign
+} from 'ol-format-node'
+import { Projection, get as getTransform } from 'ol-format-node/proj'
 
 function defineProjection (name) {
   const code = getCode(name)
