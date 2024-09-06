@@ -27,7 +27,7 @@ export default class WFSSource extends Source {
     for (let i = 0; i < this.layers.length; i++) {
       const layer = this.layers[i]
       const filePath = layer.filePath
-      if (filePath) {
+      if (filePath && layer.active) {
         const layerData = readFile(filePath)
         rmFile(filePath)
         const features = convertWFSToGeoJSON(layer, layerData)

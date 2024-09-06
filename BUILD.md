@@ -11,6 +11,7 @@
   * npm install yarn -g
 
 ### Mac
+* Note: Electron 27+ only officially supports MacOS Catalina 10.15 or higher
 * Install Xcode 11.3 or greater
 * Install homebrew
 * Install python 2.7

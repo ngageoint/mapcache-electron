@@ -206,6 +206,7 @@ async function renameGeoPackageTable (projectId, geopackageId, filePath, tableNa
   if (success) {
     let geopackage = cloneDeep(store.state.Projects[projectId].geopackages[geopackageId])
     const tableList = type === 'feature' ? geopackage.tables.features : geopackage.tables.tiles
+    tableList[newTableName] = cloneDeep(tableList[tableName])
     delete tableList[tableName]
     geopackage.modifiedDate = window.mapcache.getLastModifiedDate(geopackage.path)
     return setGeoPackage(projectId, geopackage)

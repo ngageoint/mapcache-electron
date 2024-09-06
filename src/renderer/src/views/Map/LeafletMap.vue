@@ -107,8 +107,8 @@
               </v-btn>
             </template>
             <div class="pl-2 pa-0 ma-0">
-              <v-list-item-title v-text="item.title"></v-list-item-title>
-              <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+              <v-list-item-subtitle v-if="item.subtitle">{{ item.subtitle }}</v-list-item-subtitle>
             </div>
             <template v-slot:append>
               <v-icon @click.stop.prevent class="sortHandle mr-2" icon="mdi-drag-horizontal-variant"/>
