@@ -12,7 +12,7 @@ import {
   WFS,
   GML32,
   GML2
- } from 'ol-format-node/format'
+ } from '@ngageoint/ol-format-node/format'
 import {
   COLON_DELIMITER,
   WORLD_GEODETIC_SYSTEM,

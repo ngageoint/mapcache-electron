@@ -7,8 +7,8 @@ import {
   addEquivalentProjections,
   createSafeCoordinateTransform,
   assign
-} from 'ol-format-node'
-import { Projection, get as getTransform } from 'ol-format-node/proj'
+} from '@ngageoint/ol-format-node'
+import { Projection, get as getTransform } from '@ngageoint/ol-format-node/proj'
 
 function defineProjection (name) {
   const code = getCode(name)
