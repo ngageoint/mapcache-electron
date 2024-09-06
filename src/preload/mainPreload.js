@@ -24,6 +24,9 @@ if (environment.geopackageLibrariesUrl != null) {
 if (environment.eventkitUrl != null) {
   allowedOpenExternalLinks.push(environment.eventkitUrl)
 }
+if (environment.surveyUrl != null) {
+  allowedOpenExternalLinks.push(environment.surveyUrl)
+}
 
 // utilize the log functions
 Object.assign(console, log.functions)

@@ -54,6 +54,13 @@ const sidebarItems = [{
   image: 'images/eventkit.png',
   key: 'sidebar-item-2',
   alt: 'EventKit'
+}, {
+  title: 'Want to help make MapCache better?',
+  description: 'Answer a few questions to help us know what to build next.',
+  link: environment.surveyUrl,
+  image: 'images/survey.png',
+  key: 'sidebar-item-3',
+  alt: 'Survey'
 }]
 
 export default {

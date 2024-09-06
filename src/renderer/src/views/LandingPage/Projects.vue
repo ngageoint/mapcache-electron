@@ -345,8 +345,8 @@ export default {
 }
 
 .project-list {
-  height: 450px;
-  max-height: 450px;
+  height: 530px;
+  max-height: 530px;
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;

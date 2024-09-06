@@ -28,6 +28,7 @@ const environment = {
   geopackageUrl: 'https://geopackage.org',
   geopackageLibrariesUrl: 'https://ngageoint.github.io/GeoPackage',
   eventkitUrl: 'https://eventkit.gs.mil',
+  surveyUrl: 'https://portal.geo.nga.mil/survey123/share/93444389134845e79d79f18a11ab17d3',
   preloadedDataSources: []
 }
 

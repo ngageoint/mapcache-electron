@@ -106,7 +106,8 @@ function setupWebContentHandling () {
         (environment.geopackageLibrariesUrl != null && url.startsWith(environment.geopackageLibrariesUrl)) ||
         (environment.geopackageUrl != null && url.startsWith(environment.geopackageUrl)) ||
         (environment.mapcacheRepo != null && url.startsWith(environment.mapcacheRepo)) ||
-        (environment.eventkitUrl != null && url.startsWith(environment.eventkitUrl))) {
+        (environment.eventkitUrl != null && url.startsWith(environment.eventkitUrl)) ||
+        (environment.surveyUrl != null && url.startsWith(environment.surveyUrl))) {
         return { action: 'allow' }
       }
       return { action: 'deny' }
