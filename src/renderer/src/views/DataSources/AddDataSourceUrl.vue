@@ -558,7 +558,13 @@ export default {
           sourceToProcess.wmtsInfo = this.serviceInfo.wmtsInfo
         } else if (this.selectedServiceType === SERVICE_TYPE.WFS || this.selectedServiceType === SERVICE_TYPE.ARCGIS_FS) {
           sourceToProcess.layers = this.serviceLayers.slice()
-          // TODO: remove any layer that doesn't have layers.active = true 
+          // Only send selected layers to processing
+          for (let i=0; i < sourceToProcess.layers.length; ++i) {
+            if (!sourceToProcess.layers[i].active) {
+              sourceToProcess.layers.splice(i, 1);
+              --i;
+            }
+          }
           sourceToProcess.format = this.serviceInfo.format
         }
 
