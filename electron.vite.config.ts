@@ -7,7 +7,15 @@ import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfil
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin({exclude: ['@ngageoint/geopackage/dist/canvaskit/canvaskit.js', 'fetch']})],
+    optimizeDeps: {
+      disabled: false,
+    },
     build: {
+      // commonjsOptions: { 
+      //   include: ['node_modules/wkx/**','node_modules/ol-format-node/**/*'],
+      //   transformMixedEsModules: true,
+      //   extensions: ['.js','.d.ts']
+      // },
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/main/main.js'),

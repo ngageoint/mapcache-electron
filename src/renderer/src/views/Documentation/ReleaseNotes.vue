@@ -80,7 +80,21 @@ export default {
   data () {
     return {
       releaseNotes: [
-        {
+      {
+          title: 'MapCache 1.6.1',
+          releaseDate: 'Sept 1, 2024',
+          bugFixes: [
+            'Fixes for nominatum search, gpkg layer renames',
+            'Layout and alignment fixes.'
+          ]
+      },{
+          title: 'MapCache 1.6.0',
+          releaseDate: 'Jul. 14, 2024',
+          bugFixes: [
+            'Upgraded to Vuetify 3, Electron 27, and other dependencies under the hood.',
+            'Layout and alignment fixes.'
+          ]
+        },{
           title: 'MapCache 1.5.1',
           releaseDate: 'Feb. 14, 2023',
           bugFixes: [

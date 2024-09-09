@@ -607,7 +607,7 @@ async function _createFeatureTableWithFeatureStream (gp, tableName) {
       const extent = [contents.min_x, contents.min_y, contents.max_x, contents.max_y]
       return {
         extent,
-        count: featureDao.count()
+        count: featureDao.getCount()
       }
     })
   }

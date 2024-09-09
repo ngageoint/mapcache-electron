@@ -7,11 +7,12 @@ import {
   isGML32,
   isGML2
 } from '../geoserver/GeoServiceUtilities'
-import GeoJSON from 'ol-format-node/format/GeoJSON'
-import WFS from 'ol-format-node/format/WFS'
-import GML32 from 'ol-format-node/format/GML32'
-import GML3 from 'ol-format-node/format/GML3'
-import GML2 from 'ol-format-node/format/GML2'
+import { 
+  GeoJSON,
+  WFS,
+  GML32,
+  GML2
+ } from '@ngageoint/ol-format-node/format'
 import {
   COLON_DELIMITER,
   WORLD_GEODETIC_SYSTEM,
@@ -60,7 +61,11 @@ function convertWFSToGeoJSON (layer, layerData) {
   } else if (isGML3(outputFormat)) {
     features = new WFS({ gmlFormat: new GML3(), version: layer.version }).readFeatures(layerData, options)
   } else if (isGML2(outputFormat)) {
+    try {
     features = new WFS({ gmlFormat: new GML2(), version: layer.version }).readFeatures(layerData, options)
+    } catch (e) {
+      console.log("OpenLayersUtilities unable to parse and create WFS object from layer data")
+    }
   } else {
     throw new Error('Service in unsupported WFS format: ' + outputFormat)
   }

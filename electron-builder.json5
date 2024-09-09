@@ -16,12 +16,18 @@
     'dist/main',
     'dist/preload',
     'dist/renderer',
-    'resources'
+    'resources',
+    'extraResources'
   ],
   extraResources: [
     {
       from: "./node_modules/@ngageoint/geopackage/dist/canvaskit/canvaskit.wasm",
       to: "canvaskit/canvaskit.wasm",
+    },
+    {
+      from: "./resources/offline.gpkg",
+      to: "extraResources/offline.gpkg",
+      "filter": ["**/*"]
     }
   ],
   protocols: [
@@ -33,26 +39,12 @@
   ],
   asarUnpack: [
     "**/node_modules/**/*",
-    "**/node_modules/queue/**/*",
-    "**/node_modules/image-size/**/*",
-    "**/node_modules/@turf/**/*",
-    "**/node_modules/wkx/**/*",
-    "**/node_modules/lodash/**/*",
-    "**/node_modules/@ngageoint/**/*",
-    "**/node_modules/bin-wrapper/**/*",
-    "**/node_modules/imagemin-pngquant/**/*",
-    "**/node_modules/pngquant-bin/**/*",
-    "**/node_modules/better-sqlite3/**/*",
-    "**/node_modules/mime/**/*",
-    "**/node_modules/conf/**/*",
-    "**/node_modules/ajv-formats/**/*",
-    "**/node_modules/bindings/**/*",
-    "**/node_modules/file-uri-to-path/**/*",
     "**/dist/main/chunks/**/*",
     "**/dist/main/mapcacheThread.js",
     "**/dist/preload/**/*",
     "**/dist/renderer/**/*",
-    "**/resources/**/*"
+    "**/resources/**/*",
+    "**/extraResources/**/*"
   ],
   directories: {
     buildResources: "buildResources"
@@ -72,7 +64,7 @@
         type: "file"
       }
     ],
-    sign: false
+    sign: true
   },
   mac: {
     category: "public.app-category.productivity",
