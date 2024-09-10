@@ -179,8 +179,10 @@
               <v-infinite-scroll
                   class="pa-0 ma-0 detail-bg"
                   :items="serviceLayers"
+                  @load="getServiceLayers"
                   :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
                   :item-height="getHeightFromServiceLayers(serviceLayers)"
+                  :max-height="700"
               >
                   <template v-for="(item, i) in serviceLayers" :key="`service-layer-item-${i}`" >
                     <v-list-item
@@ -189,7 +191,7 @@
                         @click="() => {item.active = !item.active}"
                     >
                       <template v-slot:default="{ active }">
-                        <div>
+                        <v-list-item-title>
                           <div v-if="item.title" >
                             <div class="list-item-title" v-text="item.title" :title="item.title"></div>
                           </div>
@@ -197,15 +199,20 @@
                             <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
                                   :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
                           </div>
-                        </div>
-                        <v-list-item-action>
-                          <v-switch
-                              :model-value="active"
-                              color="primary"
-                          ></v-switch>
-                        </v-list-item-action>
+                        </v-list-item-title>
                       </template>
+                      <template v-slot:append>
+                        <v-switch
+                            :model-value="active"
+                            hide-details
+                            color="primary"
+                        ></v-switch>
+                      </template >
                     </v-list-item>
+                </template>
+                <!-- stop display of scroller -->
+                <template v-slot:empty>
+                  <div style="padding:2px;"></div>
                 </template>
               </v-infinite-scroll>
             </v-card-text>
@@ -503,6 +510,11 @@ export default {
       }
 
       return testServiceConnection(urlToTest, serviceType, options)
+    },
+    async getServiceLayers ({ done }) {
+      setTimeout(() => {
+          done('empty')
+        }, 300)
     },
     getSelectedSourcesCount () {
       let activeCount = 0
