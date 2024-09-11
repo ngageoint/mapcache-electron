@@ -182,7 +182,6 @@
                   @load="getServiceLayers"
                   :height="serviceLayers.length * getHeightFromServiceLayers(serviceLayers) > 1000 ? 300 : null"
                   :item-height="getHeightFromServiceLayers(serviceLayers)"
-                  :max-height="700"
               >
                   <template v-for="(item, i) in serviceLayers" :key="`service-layer-item-${i}`" >
                     <v-list-item
