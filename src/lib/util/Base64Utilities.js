@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 function base64toUInt8Array (base64String) {
   const data = base64String.split(',')[1]
   const bytes = Buffer.from(data, 'base64').toString('binary')
