@@ -396,9 +396,10 @@
                 Zoom levels
               </p>
               <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
-                <span style="margin-top: 8px;">{{ source.minZoom + ' - ' + source.maxZoom }}</span>
-                <v-btn style="margin-top: -2px;" icon="mdi-pencil" small v-if="source.layerType === 'XYZServer'"
-                       @click="editZoomLevels">
+                <span style="margin-top: 8px; margin-right: 8px">{{ source.minZoom + ' - ' + source.maxZoom }}</span>
+                <v-btn style="margin-top: -2px;" append-icon="$edit" density="compact" size="small" small 
+                  v-if="source.layerType === 'XYZServer'" @click="editZoomLevels">
+                  edit
                 </v-btn>
               </p>
             </v-col>
