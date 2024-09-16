@@ -84,7 +84,7 @@ export default {
           title: 'MapCache 1.6.1',
           releaseDate: 'Sept 30, 2024',
           bugFixes: [
-            'Fixes for nominatum search, gpkg layer renames, WFS imports',
+            'Fixes for overpass/nominatum search, gpkg layer renames, WFS imports',
             'Layout and alignment fixes',
             'Survey added'
           ]
