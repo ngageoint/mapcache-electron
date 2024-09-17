@@ -72,12 +72,16 @@
         
         <template v-slot:item.2 editable :complete="step > 2" step="2" color="primary">
           Select data sources
-          <small class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
-            selected</small>
           <v-card flat tile>
             <v-card-subtitle>
-              Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
+              <div class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
+                selected</div>
             </v-card-subtitle>
+            <v-card-text>
+              <div class="text-medium-emphasis">
+              Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
+              </div>
+            </v-card-text>
             <v-card-text>
               <v-list density="compact">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
@@ -121,14 +125,13 @@
           <v-expansion-panels>
             <v-expansion-panel title="Select GeoPackage Layers">
               <v-expansion-panel-text>
-                <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
-                  selected</small>
+                <div class="text-medium-emphasis pt-1 text-subtitle-2">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
+                  selected</div>
                 <v-card flat tile>
-                  <v-card-subtitle>
-                    Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
-                    tile layer.
-                  </v-card-subtitle>
-                  <v-card-text>
+                    <div class="text-medium-emphasis pt-2 text-subtitle-2">
+                      Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
+                      tile layer.
+                    </div>
                     <v-list density="compact">
                       <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
                         <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
@@ -166,7 +169,6 @@
                         </template>
                       </v-list-item-group>
                     </v-list>
-                  </v-card-text>
                 </v-card>
               </v-expansion-panel-text>
             </v-expansion-panel>
