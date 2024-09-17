@@ -80,12 +80,12 @@
             </v-card-subtitle>
             <v-card-text>
               <v-list density="compact">
-                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers"
-                                   v-on:change="filterErroredLayers">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
                     <v-list-item class=""
                         :value="item.id"
-                        @click.stop.prevent="item.changeVisibility">
+                        @click.stop.prevent="item.changeVisibility"
+                        :class="{ 'v-list-item--active': selectedDataSourceLayers.includes(item.id) }"
+                        @click="toggleSelection(item.id)">
                       <template v-slot:prepend>
                         <v-btn icon @click.stop="item.zoomTo">
                           <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
@@ -114,7 +114,6 @@
                         :key="'data_source_layer_divider_' + i"
                     ></v-divider>
                   </template>
-                </v-list-item-group>
               </v-list>
             </v-card-text>
           </v-card>
@@ -515,6 +514,15 @@ export default {
     },
     prettify (value) {
       return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
+    toggleSelection(itemId) {
+      const index = this.selectedDataSourceLayers.indexOf(itemId);
+      if (index === -1) {
+        this.selectedDataSourceLayers.push(itemId);
+      } else {
+        this.selectedDataSourceLayers.splice(index, 1);
+      }
+      this.filterErroredLayers();
     },
     filterErroredLayers (layers) {
       this.selectedDataSourceLayers = this.selectedDataSourceLayers.filter(layerId => isNil(this.project.sources[layerId].error))
