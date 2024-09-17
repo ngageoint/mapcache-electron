@@ -166,7 +166,7 @@
             <v-col>
               <v-row no-gutters :key="'col-view-' + index" v-for="(column, index) in featureViewData.editableColumns">
                 <v-col v-if="featureViewData.feature.properties[column.name] != null" class="pb-2">
-                  <p :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
+                  <p class="detail--text" :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                     {{ column.name }}
                   </p>
                   <div v-if="column.dataType === TEXT">
