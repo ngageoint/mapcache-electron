@@ -72,20 +72,24 @@
         
         <template v-slot:item.2 editable :complete="step > 2" step="2" color="primary">
           Select data sources
-          <small class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
-            selected</small>
           <v-card flat tile>
             <v-card-subtitle>
-              Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
+              <div class="pt-1">{{ selectedDataSourceLayers.length === 0 ? 'None' : selectedDataSourceLayers.length }}
+                selected</div>
             </v-card-subtitle>
             <v-card-text>
+              <div class="text-medium-emphasis">
+              Select imagery and features from <b>data sources</b> to populate the <b>{{ layerName }}</b> tile layer.
+              </div>
+            </v-card-text>
+            <v-card-text>
               <v-list density="compact">
-                <v-list-item-group multiple color="primary" v-model="selectedDataSourceLayers"
-                                   v-on:change="filterErroredLayers">
                   <template v-for="(item, i) in dataSourceLayers" :key="`data-source-item-${i}`">
                     <v-list-item class=""
                         :value="item.id"
-                        @click.stop.prevent="item.changeVisibility">
+                        @click.stop.prevent="item.changeVisibility"
+                        :class="{ 'v-list-item--active': selectedDataSourceLayers.includes(item.id) }"
+                        @click="toggleSelection(item.id)">
                       <template v-slot:prepend>
                         <v-btn icon @click.stop="item.zoomTo">
                           <v-img :style="{verticalAlign: 'middle'}" v-if="item.type === 'tile' && dark" src="/images/white_layers.png" alt="Tile layer" width="20px" height="20px"/>
@@ -114,7 +118,6 @@
                         :key="'data_source_layer_divider_' + i"
                     ></v-divider>
                   </template>
-                </v-list-item-group>
               </v-list>
             </v-card-text>
           </v-card>
@@ -122,14 +125,13 @@
           <v-expansion-panels>
             <v-expansion-panel title="Select GeoPackage Layers">
               <v-expansion-panel-text>
-                <small class="pt-1">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
-                  selected</small>
+                <div class="text-medium-emphasis pt-1 text-subtitle-2">{{ selectedGeoPackageLayers.length === 0 ? 'None' : selectedGeoPackageLayers.length }}
+                  selected</div>
                 <v-card flat tile>
-                  <v-card-subtitle>
-                    Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
-                    tile layer.
-                  </v-card-subtitle>
-                  <v-card-text>
+                    <div class="text-medium-emphasis pt-2 text-subtitle-2">
+                      Select imagery and features from existing <b>GeoPackage</b> layers to populate the <b>{{ layerName }}</b>
+                      tile layer.
+                    </div>
                     <v-list density="compact">
                       <v-list-item-group multiple color="primary" v-model="selectedGeoPackageLayers">
                         <template v-for="(item, i) in geopackageLayers" :key="`geopackage-layer-item-${i}`">
@@ -167,7 +169,6 @@
                         </template>
                       </v-list-item-group>
                     </v-list>
-                  </v-card-text>
                 </v-card>
               </v-expansion-panel-text>
             </v-expansion-panel>
@@ -515,6 +516,15 @@ export default {
     },
     prettify (value) {
       return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
+    toggleSelection(itemId) {
+      const index = this.selectedDataSourceLayers.indexOf(itemId);
+      if (index === -1) {
+        this.selectedDataSourceLayers.push(itemId);
+      } else {
+        this.selectedDataSourceLayers.splice(index, 1);
+      }
+      this.filterErroredLayers();
     },
     filterErroredLayers (layers) {
       this.selectedDataSourceLayers = this.selectedDataSourceLayers.filter(layerId => isNil(this.project.sources[layerId].error))
