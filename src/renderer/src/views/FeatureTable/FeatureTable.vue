@@ -42,7 +42,7 @@
       disable-pagination
       :server-items-length="table.featureCount"
       :loading="loading"
-      :page.sync="page"
+      :page="page"
       class="elevation-1"
       v-on:update:sort-by="handleSortUpdate"
       v-on:update:sort-desc="handleDescendingSortUpdate"

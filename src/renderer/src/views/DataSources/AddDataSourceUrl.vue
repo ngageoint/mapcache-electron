@@ -66,7 +66,7 @@
               <v-col>
                 <v-combobox
                     v-model="dataSourceUrl"
-                    :search-input.sync="dataSourceUrl"
+                    :search-input="dataSourceUrl"
                     :menu-props="menuProps"
                     :rules="dataSourceUrlRules"
                     clearable
@@ -189,7 +189,7 @@
                         :value="item"
                         @click="() => {item.active = !item.active}"
                     >
-                      <template v-slot:default="{ active }">
+                      <template v-slot:default="{ item }">
                         <v-list-item-title>
                           <div v-if="item.title" >
                             <div class="list-item-title" v-text="item.title" :title="item.title"></div>

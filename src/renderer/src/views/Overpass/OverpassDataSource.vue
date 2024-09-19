@@ -49,7 +49,7 @@
               auto-select-first
               multiple
               clearable
-              :search-input.sync="searchInput"
+              :search-input="searchInput"
           >
             <template v-slot:selection="{ item, index }">
               <v-chip v-if="index === 0">
