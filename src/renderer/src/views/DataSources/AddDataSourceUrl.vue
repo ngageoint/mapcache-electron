@@ -189,7 +189,7 @@
                         :value="item"
                         @click="() => {item.active = !item.active}"
                     >
-                      <template v-slot:default="{ item }">
+                      <template v-slot:default>
                         <v-list-item-title>
                           <div v-if="item.title" >
                             <div class="list-item-title" v-text="item.title" :title="item.title"></div>
