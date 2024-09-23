@@ -422,7 +422,7 @@ export default {
     },
     handleClick (item) {
       if (!this.removeDialog) {
-        this.showFeature(this.id, this.isGeoPackage, this.table.tableName, item.raw.id)
+        this.showFeature(this.id, this.isGeoPackage, this.table.tableName, item.id)
       }
     },
     zoomTo (item) {
