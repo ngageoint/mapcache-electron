@@ -79,10 +79,13 @@
           <div class="ma=0 pa-0" v-if="column.key === 'attachments'">
             {{ item.attachments > 0 ? item.attachments : null }}
           </div>
-          <v-checkbox hide-details style="margin-left: -8px;" v-else-if="column.key === 'data-table-select'" @click="(e) => {
-              toggleSelect(item)
+          <v-checkbox-btn hide-details style="margin-left: -8px;" v-else-if="column.key === 'data-table-select'" @click="(e) => {
+              // Manual toggle due to undefined objects getting added
+              //toggleSelect(item)
+              this.toggleSelected(item)
               e.stopPropagation()
-            }" :model-value="isSelected(item)"></v-checkbox>
+            }" :model-value="isSelected">
+            </v-checkbox-btn>
           <div class="ma-0 pa-0 text-truncate" v-else>
             {{item[column.key]}}
           </div>
@@ -295,6 +298,21 @@ export default {
     }
   },
   methods: {
+    toggleSelected(item){
+      const deproxiedItem = window.deproxy(item)
+      let found = false
+      for (let i = this.selected.length - 1; i >= 0; i--){
+        if(this.selected[i] != undefined){
+          if(this.selected[i].selectId == deproxiedItem.selectId){
+            found = true
+            this.selected.splice(i, 1)
+          }
+        }
+      }
+      if(!found){
+        this.selected.push(deproxiedItem)
+      }
+    },
     clearSelectedItems () {
       while (this.selected.length > 0) {
         this.selected.pop()
@@ -398,6 +416,9 @@ export default {
     },
     async deleteSelected () {
       this.loading = true
+      this.selected = this.selected.filter(function (element) {
+        return element != null
+      })
       if (!isNil(this.selected) && this.selected.length > 0) {
         const ids = this.selected.map(feature => feature.id)
         if (this.isGeoPackage) {
