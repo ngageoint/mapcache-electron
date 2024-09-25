@@ -36,11 +36,11 @@
           </template>
           <div>
             <div v-if="item.name">
-              <div class="list-item-title no-clamp" v-text="item.name"></div>
+              <div class="list-item-title no-clamp">{{ item.name }}</div>
             </div>
             <div v-if="item.subtitles && item.subtitles.length > 0">
               <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                   :key="i + 'service-layer-title'" v-text="title"></div>
+                   :key="i + 'service-layer-title'">{{ item.subtitles[i] }}</div>
             </div>
           </div>
           <v-list-item-action>

@@ -34,11 +34,11 @@
           </template>
           <div class="mr-4">
             <div v-if="item.title">
-              <div class="list-item-title no-clamp" v-text="item.title"></div>
+              <div class="list-item-title no-clamp">{{ item.title }}</div>
             </div>
             <div v-if="item.subtitles && item.subtitles.length > 0">
               <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                   :key="i + 'service-layer-title'" v-text="title"></div>
+                   :key="i + 'service-layer-title'">{{ item.subtitles[i] }}</div>
             </div>
           </div>
           <template v-slot:append>

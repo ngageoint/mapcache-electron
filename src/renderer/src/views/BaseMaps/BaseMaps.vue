@@ -22,9 +22,9 @@
                   @click="(e) => item.zoomTo(e, project.id)"/>
             </template>
             <div class="ml-4">
-              <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
-              <v-list-item-subtitle v-if="item.type != null" v-text="item.type"></v-list-item-subtitle>
-              <v-list-item-subtitle v-if="item.subtitle != null" v-text="item.subtitle"></v-list-item-subtitle>
+              <v-list-item-title :title="item.name" :style="{marginBottom: '0px'}">{{ item.name }}</v-list-item-title>
+              <v-list-item-subtitle v-if="item.type != null">{{ item.type }}</v-list-item-subtitle>
+              <v-list-item-subtitle v-if="item.subtitle != null">{{ item.subtitle }}</v-list-item-subtitle>
               <v-list-item-subtitle v-if="item.count != null">{{ item.count + ' features' }}</v-list-item-subtitle>
             </div>
             <template v-slot:append>
