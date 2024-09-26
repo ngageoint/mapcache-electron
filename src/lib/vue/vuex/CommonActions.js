@@ -29,8 +29,13 @@ async function addGeoPackage (projectId, filePath) {
   }
 }
 
+function logMatomoEvent (eventString) {
+  console.log("*********** matomo: " + eventString)
+}
+
 export {
   setDataSourceVisible,
   addGeoPackage,
-  deleteProject
+  deleteProject,
+  logMatomoEvent
 }
