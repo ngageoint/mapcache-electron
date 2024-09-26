@@ -192,11 +192,11 @@
                       <template v-slot:default>
                         <v-list-item-title>
                           <div v-if="item.title" >
-                            <div class="list-item-title" v-text="item.title" :title="item.title"></div>
+                            <div class="list-item-title" :title="item.title">{{ item.title }}</div>
                           </div>
                           <div v-if="item.subtitles && item.subtitles.length > 0">
                             <div class="list-item-subtitle no-clamp" v-for="(title, i) in item.subtitles"
-                                  :key="i + 'service-layer-title'" v-text="title" :title="title"></div>
+                                  :key="i + 'service-layer-title'" :title="title">{{ item.subtitles[i] }}</div>
                           </div>
                         </v-list-item-title>
                       </template>
