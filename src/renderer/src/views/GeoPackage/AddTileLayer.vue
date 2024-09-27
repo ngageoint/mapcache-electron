@@ -100,7 +100,7 @@
                       </template>
                       <template v-slot:default="{ active }">
                         <div>
-                          <v-list-item-title v-text="item.title" class="pl-3"></v-list-item-title>
+                          <v-list-item-title class="pl-3">{{ item.title }}</v-list-item-title>
                         </div>
                         <v-list-item-action>
                           <source-visibility-switch class="pl-4" :model-value="active" :project-id="project.id"
@@ -148,8 +148,8 @@
                             </template>
                             <template v-slot:default="{ active }">
                               <div>
-                                <v-list-item-title v-text="item.title" class="pl-3"></v-list-item-title>
-                                <v-list-item-subtitle v-text="item.subtitle" class="pl-3"></v-list-item-subtitle>
+                                <v-list-item-title class="pl-3">{{ item.title }}</v-list-item-title>
+                                <v-list-item-subtitle class="pl-3">{{ item.subtitle }}</v-list-item-subtitle>
                               </div>
                               <v-list-item-action>
                                 <v-switch
@@ -203,8 +203,8 @@
                         </template>
                         <template v-slot:default="{ active }">
                           <div>
-                            <v-list-item-title v-text="item.title"></v-list-item-title>
-                            <v-list-item-subtitle v-text="item.subtitle"></v-list-item-subtitle>
+                            <v-list-item-title>{{ item.title }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
                           </div>
                           <v-list-item-action>
                             <v-switch
@@ -260,8 +260,8 @@
                     </v-btn>
                   </template>
                   <div class="pa-0 ma-0">
-                    <v-list-item-title v-text="item.title"></v-list-item-title>
-                    <v-list-item-subtitle v-if="item.subtitle" v-text="item.subtitle"></v-list-item-subtitle>
+                    <v-list-item-title>{{ item.title }}</v-list-item-title>
+                    <v-list-item-subtitle v-if="item.subtitle">{{ item.subtitle }}</v-list-item-subtitle>
                   </div>
                   <template v-slot:append class="sortHandle" style="vertical-align: middle !important;">
                     <v-icon @click.sort.prevent icon="mdi-drag-horizontal-variant"/>

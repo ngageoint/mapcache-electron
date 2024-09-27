@@ -91,7 +91,7 @@
                 <div>
                   <v-row no-gutters justify="space-between" align="center">
                     <v-col cols="8">
-                      <v-list-item-title v-text="item.name"></v-list-item-title>
+                      <v-list-item-title>{{ item.name }}</v-list-item-title>
                     </v-col>
                     <v-col>
                       <v-row no-gutters justify="end" align="center" class="mr-6">
@@ -139,7 +139,7 @@
                 <div>
                   <v-row no-gutters justify="space-between" align="center">
                     <v-col cols="8">
-                      <v-list-item-title v-text="item.name"></v-list-item-title>
+                      <v-list-item-title>{{ item.name }}</v-list-item-title>
                     </v-col>
                     <v-col>
                       <v-row no-gutters justify="end" class="mr-12">
@@ -185,10 +185,10 @@
               <v-row no-gutters justify="space-between" align="center">
                 <v-col cols="8">
                   <v-row no-gutters>
-                    <v-list-item-title v-text="assignment.name"></v-list-item-title>
+                    <v-list-item-title>{{ assignment.name }}</v-list-item-title>
                   </v-row>
                   <v-row no-gutters>
-                    <v-list-item-subtitle v-if="assignment.icon" v-text="assignment.icon.name"></v-list-item-subtitle>
+                    <v-list-item-subtitle v-if="assignment.icon">{{ assignment.icon.name }}</v-list-item-subtitle>
                     <v-list-item-subtitle v-else-if="assignment.style">{{ assignment.style.name }}
                     </v-list-item-subtitle>
                     <v-list-item-subtitle v-else>Unassigned</v-list-item-subtitle>

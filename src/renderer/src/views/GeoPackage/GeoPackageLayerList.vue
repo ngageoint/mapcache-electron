@@ -19,7 +19,7 @@
             </template>
           </v-btn>
         </template>
-        <v-list-item-title class="ml-4" :title="item.name" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
+        <v-list-item-title class="ml-4" :title="item.name" :style="{marginBottom: '0px'}">{{ item.name }}</v-list-item-title>
         <template v-slot:append>
           <v-switch
               color="primary"
