@@ -227,7 +227,6 @@
             </v-card>
           </v-card>
         </template>
-
         <template v-slot:item.3 editable :complete="step > 3" color="primary">
           Order layers
           <small
@@ -246,7 +245,7 @@
                   density="compact">
                 <v-list-item
                     v-for="item in sortedLayers"
-                    class="sortable-list-item"
+                    class="sortable-list-item px-0"
                     :key="item.id">
                   <template v-slot:prepend>
                     <v-btn icon @click.stop="item.zoomTo">
@@ -259,7 +258,7 @@
                       <v-img v-else src="/images/polygon.png" alt="Feature layer" width="20px" height="20px"/>
                     </v-btn>
                   </template>
-                  <div class="pa-0 ma-0">
+                  <div class="pl-2 ma-0">
                     <v-list-item-title>{{ item.title }}</v-list-item-title>
                     <v-list-item-subtitle v-if="item.subtitle">{{ item.subtitle }}</v-list-item-subtitle>
                   </div>
