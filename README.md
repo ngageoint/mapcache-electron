@@ -22,7 +22,7 @@ Software source code previously released under an open source license and then m
 
 #### License
 
-[License](LICENSE.md)
+[License](LICENSE)
 
 ### Acknowledgements
 Earth image

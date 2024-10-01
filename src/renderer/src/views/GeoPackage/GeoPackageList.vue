@@ -28,9 +28,9 @@
       <template v-for="item in items" :key="item.id + 'list-item'">
         <v-list-item @click="() => item.click(item)">
           <div>
-            <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}" v-text="item.name"></v-list-item-title>
-            <v-list-item-subtitle v-text="item.featureLayersText"></v-list-item-subtitle>
-            <v-list-item-subtitle v-text="item.tileLayersText"></v-list-item-subtitle>
+            <v-list-item-title class="text-h6" :style="{marginBottom: '0px'}">{{ item.name }}</v-list-item-title>
+            <v-list-item-subtitle>{{ item.featureLayersText }}</v-list-item-subtitle>
+            <v-list-item-subtitle>{{ item.tileLayersText }}</v-list-item-subtitle>
           </div>
           <template v-slot:append class="mt-auto mb-auto">
             <v-btn variant="text" v-if="item.health.missing" color="#d9534f" @click.stop="item.showMissingFileDialog" title="Missing GeoPackage" icon="mdi-alert-circle"/>
