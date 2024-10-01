@@ -102,7 +102,7 @@
           color="primary" class="pt-2 pb-4">
         <v-card-text
             class="pt-2 text-theme-dark-background">
-          <p class="text-theme-dark-background" v-text="dialogText"/>
+          <p class="text-theme-dark-background">{{ dialogText }}</p>
           <v-progress-linear
               class="mt-2 text-theme-dark-background"
               indeterminate>

@@ -100,10 +100,8 @@
               class="detail-bg sortable-list-item pt-3 pb-3"
               @click="tableFields[column].click"
               :prepend-icon="tableFields[column].icon">
-            <v-list-item-title :title="tableFields[column].name"
-                               v-text="tableFields[column].name"></v-list-item-title>
-            <v-list-item-subtitle :title="tableFields[column].type"
-                                  v-text="tableFields[column].type"></v-list-item-subtitle>
+              <v-list-item-title :title="tableFields[column].name">{{ tableFields[column].name }}</v-list-item-title>
+              <v-list-item-subtitle :title="tableFields[column].type">{{ tableFields[column].type }}</v-list-item-subtitle>
             <template v-slot:append>
               <v-icon @click.stop.prevent class="sortHandle" icon="mdi-drag-horizontal-variant"/>
             </template>

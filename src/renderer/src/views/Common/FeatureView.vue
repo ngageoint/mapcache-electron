@@ -172,7 +172,7 @@
                   <div v-if="column.dataType === TEXT">
                     <div :style="{fontSize: '14px', fontWeight: '500', marginBottom: '0px'}">
                       <span v-if="featureViewData.feature.properties[column.name] != null && isHtml(featureViewData.feature.properties[column.name])" :class="column.showMore ? 'regular--text allowselect' : 'show-less-text regular--text allowselect'" v-html="$sanitize(featureViewData.feature.properties[column.name], transformHtml)"></span>
-                      <span v-else :class="column.showMore ? 'regular--text allowselect' : 'show-less-text regular--text allowselect'" v-text="featureViewData.feature.properties[column.name]"></span>
+                      <span v-else :class="column.showMore ? 'regular--text allowselect' : 'show-less-text regular--text allowselect'">{{ featureViewData.feature.properties[column.name] }}</span>
                     </div>
                     <div v-if="featureViewData.feature.properties[column.name] != null && featureViewData.feature.properties[column.name].length > 100 && column.showMore != null" class="show-more">
                       <span class="clickable-text" @click="column.showMore = !column.showMore ">{{column.showMore ? 'Show less...' : 'Show more...'}}</span>

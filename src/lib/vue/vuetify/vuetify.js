@@ -29,7 +29,8 @@ const light = {
     main_active_text: '#326482',
     scroll_thumb: '#808285',
     scroll_track: '#f5f5f5',
-    dark_background: '#f5f5f5'
+    dark_background: '#f5f5f5',
+    list_offset_background: '#ededed'
   }
 }
 
@@ -51,7 +52,8 @@ const dark = {
     main_active_text: '#f5f5f5',
     scroll_thumb: '#f5f5f5',
     scroll_track: '#414042',
-    dark_background: '#f5f5f5'
+    dark_background: '#f5f5f5',
+    list_offset_background: '#2b2b2b'
   }
 }
 
