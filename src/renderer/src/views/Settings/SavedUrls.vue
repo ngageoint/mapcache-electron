@@ -42,8 +42,8 @@
     <v-card-text v-if="!!urls" class="pb-0 pt-0">
       <v-card-subtitle v-if="!urls || urls.length === 0">No saved urls.</v-card-subtitle>
       <v-list style="max-height: 400px;" v-else>
-        <v-list-item class="pa-0" density="compact" :key="item" v-for="item in urls">
-          <v-list-item-title class="ma-0 pa-0 text-wrap" v-text="item"></v-list-item-title>
+        <v-list-item variant=text class="pa-0" density="compact" :key="item" v-for="item in urls">
+          <v-list-item-title class="ma-0 pa-0 text-wrap" @click="copyText(item)">{{ item }}</v-list-item-title>
           <template v-slot:append>
             <v-row no-gutters justify="end">
               <v-btn variant="text" icon="mdi-pencil" color="primary" @click.stop.prevent="showEditUrlDialog(item)">
@@ -70,6 +70,20 @@
       </v-btn>
     </v-card-actions>
   </v-card>
+  <v-snackbar
+      v-model="snackbar"
+      :timeout="timeout"
+    >
+      URL copied
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          @click="snackbar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
 </template>
 
 <script>
@@ -112,7 +126,9 @@ export default {
       editUrlValue: null,
       editUrlInitialValue: null,
       editUrlDialog: false,
-      editUrlValid: false
+      editUrlValid: false,
+      snackbar: false,
+      timeout: 2000
     }
   },
   methods: {
@@ -121,6 +137,10 @@ export default {
       editUrl: 'URLs/editUrl',
       removeUrl: 'URLs/removeUrl'
     }),
+    copyText(item) {
+      this.snackbar = true;
+      navigator.clipboard.writeText(item);
+    },
     cancelAddNewUrl () {
       this.addUrlDialog = false
     },
@@ -176,4 +196,16 @@ export default {
 </script>
 
 <style scoped>
+.v-list-item:nth-child(even) {
+  background: rgb(var(--v-theme-list_offset_background));
+}
+
+.v-list-item:nth-child(odd) {
+  background: rgb(var(--v-theme-background));
+}
+
+.v-list-item {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
 </style>
