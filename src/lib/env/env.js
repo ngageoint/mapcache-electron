@@ -29,8 +29,8 @@ const environment = {
   geopackageLibrariesUrl: 'https://ngageoint.github.io/GeoPackage',
   eventkitUrl: 'https://eventkit.gs.mil',
   surveyUrl: 'https://portal.geo.nga.mil/survey123/share/93444389134845e79d79f18a11ab17d3',
-  matomoUrl: 'https://webanalytics.nga.mil/',
-  matomoSiteId: '983',
+  matomoUrl: '',
+  matomoSiteId: '',
   matomoEnabled: false,
   preloadedDataSources: []
 }
