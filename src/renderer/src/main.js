@@ -1,4 +1,5 @@
 import { createApp, isProxy, toRaw } from 'vue'
+import VueMatomo from 'vue-matomo'
 import App from './views/App.vue'
 import router from './router'
 import vuetify from '../../lib/vue/vuetify/vuetify' // path to vuetify export
@@ -16,6 +17,7 @@ import modules from './store/modules'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import sanitizeHTML from 'sanitize-html'
 import Sortable from 'sortablejs'
+import { environment } from '../../lib/env/env'
 
 if (window && window.log) {
     // update console log functions to utilize the window's log functions. Also, make sure we don't send anything too complicated otherwise it will error out.
@@ -140,6 +142,12 @@ window.deproxy = (obj) => {
 
 /* eslint-disable no-new */
 const app = createApp(App).use(vuetify).use(router).use(store)
+if(environment.matomoEnabled){
+    app.use(VueMatomo, {
+        host: environment.matomoUrl,
+        siteId: environment.matomoSiteId,
+    })
+}
 app.config.globalProperties.$sanitize = sanitizeHTML
 app.config.globalProperties.showToolTips = false
 app.config.productionTip = false

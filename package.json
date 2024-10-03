@@ -75,6 +75,7 @@
     "uuid": "^9.0.0",
     "vector-tile": "^1.3.0",
     "vue": "^3.3.4",
+    "vue-matomo": "^4.2.0",
     "vue-observe-visibility": "^1.0.0",
     "vue-router": "^4.2.2",
     "vuetify": "3.5.12",

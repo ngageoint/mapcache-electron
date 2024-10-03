@@ -32,7 +32,6 @@
 
 <script>
 import { environment } from '../../../../lib/env/env'
-import { logMatomoEvent } from '../../../../lib/vue/vuex/CommonActions'
 
 const sidebarItems = [{
   title: 'What is a GeoPackage?',
@@ -70,9 +69,6 @@ export default {
       version: window.mapcache.getAppVersion(),
       sidebarItems
     }
-  },
-  mounted () {
-    logMatomoEvent("MapCache started")
   },
   methods: {
     open (link) {
