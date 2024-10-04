@@ -146,6 +146,7 @@ if(environment.matomoEnabled){
     app.use(VueMatomo, {
         host: environment.matomoUrl,
         siteId: environment.matomoSiteId,
+        router,
     })
 }
 app.config.globalProperties.$sanitize = sanitizeHTML
