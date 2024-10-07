@@ -128,6 +128,7 @@ import EventBus from '../../../../lib/vue/EventBus'
 import { addGeoPackage } from '../../../../lib/vue/vuex/CommonActions'
 import { setActiveGeoPackage } from '../../../../lib/vue/vuex/ProjectActions'
 import SpeedDial from '../Common/SpeedDial.vue'
+import VueMatomo from 'vue-matomo'
 
 export default {
   props: {
@@ -178,6 +179,9 @@ export default {
           if (window.mapcache.fileExists(filePath)) {
             this.geopackageExistsDialog = true
           } else {
+            if(this.$matomo){
+              this.$matomo.trackPageView("GeoPackage Created")
+            }
             addGeoPackage(this.project.id, filePath).then(added => {
               if (!added) {
                 // eslint-disable-next-line no-console
@@ -205,6 +209,9 @@ export default {
           let fileInfo = window.mapcache.getFileInfo(result.filePaths[0])
           const existsInApp = Object.values(geopackages).findIndex(geopackage => geopackage.path === fileInfo.absolutePath) !== -1
           if (!existsInApp) {
+            if(this.$matomo){
+              this.$matomo.trackPageView("GeoPackage Imported")
+            }
             addGeoPackage(this.project.id, fileInfo.absolutePath).then(added => {
               if (!added) {
                 // eslint-disable-next-line no-console

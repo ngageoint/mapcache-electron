@@ -145,8 +145,7 @@ const app = createApp(App).use(vuetify).use(router).use(store)
 if(environment.matomoEnabled){
     app.use(VueMatomo, {
         host: environment.matomoUrl,
-        siteId: environment.matomoSiteId,
-        router,
+        siteId: environment.matomoSiteId
     })
 }
 app.config.globalProperties.$sanitize = sanitizeHTML
