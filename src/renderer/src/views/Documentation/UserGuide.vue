@@ -64,6 +64,7 @@ import GettingStarted from './UserGuide/GettingStarted.vue'
 import UsingMapCache from './UserGuide/UsingMapCache.vue'
 import Settings from './UserGuide/Settings.vue'
 import FrequentlyAskedQuestions from './UserGuide/FrequentlyAskedQuestions.vue'
+import VueMatomo from 'vue-matomo'
 
 export default {
   components: { FrequentlyAskedQuestions, Settings, GettingStarted, UsingMapCache },
@@ -93,6 +94,9 @@ export default {
   mounted () {
     this.toTop(false)
     this.loaded = true
+    if(this.$matomo){
+      this.$matomo.trackPageView("Landing Page")
+    }
   },
   watch: {
     tab: {

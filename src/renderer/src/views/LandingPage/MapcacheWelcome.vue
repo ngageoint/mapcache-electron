@@ -32,6 +32,8 @@
 
 <script>
 import { environment } from '../../../../lib/env/env'
+import VueMatomo from 'vue-matomo'
+
 
 const sidebarItems = [{
   title: 'What is a GeoPackage?',
@@ -68,6 +70,11 @@ export default {
     return {
       version: window.mapcache.getAppVersion(),
       sidebarItems
+    }
+  },
+  mounted () {
+    if(this.$matomo){
+      this.$matomo.trackPageView("Landing Page")
     }
   },
   methods: {

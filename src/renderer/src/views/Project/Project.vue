@@ -103,6 +103,7 @@ import {
   setActiveGeoPackage,
   setProjectName
 } from '../../../../lib/vue/vuex/ProjectActions'
+import VueMatomo from 'vue-matomo'
 
 export default {
   setup () {
@@ -490,6 +491,9 @@ export default {
     EventBus.$on(EventBus.EventTypes.CREATE_BASE_MAP, () => {
       this.tabId = 2
     })
+    if(this.$matomo){
+      this.$matomo.trackPageView("Landing Page")
+    }
   },
   beforeDestroy () {
     window.removeEventListener('online', this.onLineListener)

@@ -50,6 +50,7 @@
 
 <script>
 import FeatureTable from './FeatureTable.vue'
+import VueMatomo from 'vue-matomo'
 
 export default {
   components: {
@@ -72,6 +73,11 @@ export default {
   data () {
     return {
       tab: null
+    }
+  },
+  mounted () {
+    if(this.$matomo){
+      this.$matomo.trackPageView("Landing Page")
     }
   }
 }
