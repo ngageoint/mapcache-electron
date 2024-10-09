@@ -492,7 +492,7 @@ export default {
       this.tabId = 2
     })
     if(this.$matomo){
-      this.$matomo.trackPageView("Landing Page")
+      this.$matomo.trackEvent("Page Load", "Project");
     }
   },
   beforeDestroy () {

@@ -50,7 +50,6 @@
 
 <script>
 import FeatureTable from './FeatureTable.vue'
-import VueMatomo from 'vue-matomo'
 
 export default {
   components: {
@@ -77,7 +76,7 @@ export default {
   },
   mounted () {
     if(this.$matomo){
-      this.$matomo.trackPageView("Landing Page")
+      this.$matomo.trackEvent("Page Load", "Loaded feature tables");
     }
   }
 }

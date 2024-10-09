@@ -95,7 +95,7 @@ export default {
     this.toTop(false)
     this.loaded = true
     if(this.$matomo){
-      this.$matomo.trackPageView("Landing Page")
+      this.$matomo.trackEvent("Page Load", "Loaded user guide");
     }
   },
   watch: {

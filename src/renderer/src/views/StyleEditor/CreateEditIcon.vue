@@ -290,6 +290,9 @@ export default {
       this.close()
     },
     save () {
+      if(this.$matomo){
+        this.$matomo.trackEvent("GPKG modified", "Created style icon");
+      }
       const iconRow = {
         data: this.data,
         width: this.width,

@@ -583,15 +583,14 @@ export default {
         targetProjection: this.targetProjection,
         size: {x: DEFAULT_TILE_SIZE, y: DEFAULT_TILE_SIZE}
       }
-
+      if(this.$matomo){
+        this.$matomo.trackEvent("GPKG modified", "Created Tile Layer");
+      }
       window.mapcache.addTileLayer(window.deproxy(this.configuration), (status) => {
         if (!this.done) {
           this.status = status
         }
       }).then(() => {
-        if(this.$matomo){
-          this.$matomo.trackPageView("Created Tile Layer")
-        }
         this.done = true
         this.disableSelectedSources()
         synchronizeGeoPackage(this.project.id, this.geopackage.id).then(() => {

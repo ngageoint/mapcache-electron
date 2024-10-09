@@ -358,6 +358,9 @@ export default {
       }
 
       if (this.configuration.sourceLayers.length === 0 && this.configuration.geopackageLayers.length === 0) {
+        if(this.$matomo){
+          this.$matomo.trackEvent("GPKG modified", "Created Feature Layer");
+        }
         await addFeatureTableToGeoPackage(this.project.id,this.geopackage.id, this.layerName)
         this.done = true
         await synchronizeGeoPackage(this.project.id, this.geopackage.id)
@@ -377,9 +380,6 @@ export default {
           }
         }, 100)
         window.mapcache.addFeatureLayer(window.deproxy(this.configuration), handleStatus).then(() => {
-          if(this.$matomo){
-            this.$matomo.trackPageView("Created Tile Layer")
-          }
           this.done = true
           synchronizeGeoPackage(this.project.id, this.geopackage.id)
           if (this.status == null || this.status.error == null) {
