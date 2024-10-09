@@ -589,6 +589,9 @@ export default {
           this.status = status
         }
       }).then(() => {
+        if(this.$matomo){
+          this.$matomo.trackPageView("Created Tile Layer")
+        }
         this.done = true
         this.disableSelectedSources()
         synchronizeGeoPackage(this.project.id, this.geopackage.id).then(() => {
