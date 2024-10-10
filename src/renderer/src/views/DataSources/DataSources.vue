@@ -201,6 +201,9 @@ export default {
         properties: ['openFile', 'multiSelections']
       }).then((result) => {
         if (result.filePaths && !isEmpty(result.filePaths)) {
+          if(this.$matomo){
+            this.$matomo.trackEvent("Data Source", "Data Source File added");
+          }
           this.processFiles(window.mapcache.getFileListInfo(result.filePaths))
         }
       })

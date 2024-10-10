@@ -479,6 +479,9 @@ export default {
       }
     },
     async addLayer () {
+      if(this.$matomo){
+        this.$matomo.trackEvent("Data Source", "Data Source URL added");
+      }
       if (this.selectedServiceType === SERVICE_TYPE.XYZ) {
         await this.processXYZUrl(window.mapcache.fixXYZTileServerUrlForLeaflet(this.dataSourceUrl), this.xyzProjection)
       } else {

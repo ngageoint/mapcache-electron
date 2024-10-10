@@ -65,6 +65,9 @@ export default {
       EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
     },
     runSearch () {
+      if(this.$matomo){
+        this.$matomo.trackEvent("Data Source", "Nominatum query");
+      }
       if (this.query == null || this.query.trim().length === 0) {
         this.searching = false
         EventBus.$emit(EventBus.EventTypes.CLEAR_NOMINATIM_SEARCH_RESULTS)
