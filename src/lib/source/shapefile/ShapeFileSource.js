@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import AdmZip from 'adm-zip'
-// import shp from 'shpjs'
+import shpjs from 'shpjs'
 
 import Source from '../Source'
 import GeoTIFFSource from '../geotiff/GeoTIFFSource'
@@ -86,16 +86,18 @@ export default class ShapeFileSource extends Source {
       await sleep(250)
 
       if (isZip) {
-        const result = await shp.parseZip(fs.readFileSync(this.filePath))
+        let fileBuffer = Buffer.from(fs.readFileSync(this.filePath))
+        const result = await shpjs.parseZip(fileBuffer)
         if (result.length == null) {
           featureCollections.push(result)
         } else {
           featureCollections = result
         }
       } else {
+        const result = await shpjs.parseShp(fs.readFileSync(this.filePath))
         featureCollections.push({
           type: 'FeatureCollection',
-          features: shp.parseShp(fs.readFileSync(this.filePath)),
+          features: result,
           fileName: name
         })
       }

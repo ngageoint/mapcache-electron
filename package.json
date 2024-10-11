@@ -67,6 +67,7 @@
     "sanitize-html": "^2.7.0",
     "sax": "^1.2.4",
     "sharp": "0.32.6",
+    "shpjs": "4.0.4",
     "sortablejs": "^1.15.0",
     "stream-chain": "^2.2.5",
     "stream-json": "^1.8.0",
