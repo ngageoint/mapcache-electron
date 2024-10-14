@@ -4,7 +4,7 @@ import path from 'path'
 import { deleteProjectFolder } from '../lib/vue/vuex/CommonPreloadFunctions'
 import { createNextAvailableLayerDirectory, createNextAvailableProjectDirectory, createNextAvailableSourceDirectory } from '../lib/util/file/FileUtilities'
 import { createUniqueID } from '../lib/util/UniqueIDUtilities'
-import { GET_APP_VERSION, GET_USER_DATA_DIRECTORY, LAUNCH_WITH_GEOPACKAGE_FILES, OPEN_EXTERNAL, SHOW_PROJECT } from '../main/lib/ipc/MapCacheIPC'
+import { GET_APP_VERSION, GET_USER_DATA_DIRECTORY, LAUNCH_WITH_GEOPACKAGE_FILES, OPEN_EXTERNAL, SHOW_PROJECT, CLOSE_APP } from '../main/lib/ipc/MapCacheIPC'
 import { Context, HtmlCanvasAdapter, SqliteAdapter } from '@ngageoint/geopackage'
 import { environment } from '../lib/env/env'
 import { vuexElectronAPI } from './vuexPreload'
@@ -44,6 +44,9 @@ contextBridge.exposeInMainWorld('mapcache', {
     if (allowedOpenExternalLinks.indexOf(link) !== -1) {
       ipcRenderer.send(OPEN_EXTERNAL, link)
     }
+  },
+  closeApp: () => {
+    ipcRenderer.send(CLOSE_APP)
   },
   setupGeoPackageContext: () => {
     Context.setupCustomContext(SqliteAdapter, HtmlCanvasAdapter)

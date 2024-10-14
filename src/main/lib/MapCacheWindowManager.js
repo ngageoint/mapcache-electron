@@ -71,7 +71,8 @@ import {
   UNDO,
   REQUEST_TILE_COMPILATION,
   REQUEST_TILE_COMPILATION_COMPLETED,
-  CANCEL_TILE_COMPILATION_REQUEST, WEB_VIEW_AUTH_REQUEST, WEB_VIEW_AUTH_CANCEL
+  CANCEL_TILE_COMPILATION_REQUEST, WEB_VIEW_AUTH_REQUEST, WEB_VIEW_AUTH_CANCEL,
+  CLOSE_APP
 } from './ipc/MapCacheIPC'
 import windowStateKeeper from 'electron-window-state'
 import WebViewAuth from './auth/WebViewAuth'
@@ -540,6 +541,10 @@ class MapCacheWindowManager {
       ipcMain.on(CANCEL_TILE_COMPILATION_REQUEST, async (event, payload) => {
         const taskId = payload.id
         await this.mapcacheThreadHelper.cancelTask(taskId, false)
+      })
+
+      ipcMain.on(CLOSE_APP, () => {
+        app.quit()
       })
     }
   }

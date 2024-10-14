@@ -11,6 +11,8 @@ const SHOW_PROJECT = 'show-project'
 const CLOSE_PROJECT = 'close-project'
 const CLOSING_PROJECT_WINDOW = 'closing-project-window'
 const PROCESS_SOURCE = 'process-source'
+const CLOSE_APP = 'close-app'
+
 
 function PROCESS_SOURCE_COMPLETED (id) {
   return 'process-source-completed-' + id
@@ -169,7 +171,8 @@ const MAIN_CHANNELS = [
   BUILD_TILE_LAYER,
   CANCEL_BUILD_TILE_LAYER,
   WORKER_READY,
-  LAUNCH_USER_GUIDE
+  LAUNCH_USER_GUIDE,
+  CLOSE_APP
 ]
 
 const WORKER_CHANNELS = [
@@ -267,5 +270,6 @@ export {
   REDO,
   WEB_VIEW_AUTH_REQUEST,
   WEB_VIEW_AUTH_RESPONSE,
-  WEB_VIEW_AUTH_CANCEL
+  WEB_VIEW_AUTH_CANCEL,
+  CLOSE_APP
 }
