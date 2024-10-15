@@ -11,7 +11,6 @@
         </div>
       </div>
     </div>
-
     <div class="app-title-block">
       <img class="gp-img" src="/images/256x256.png" alt="GeoPackage Icon">
       <h4>MapCache</h4>
@@ -44,6 +43,8 @@
 
 <script>
 import { environment } from '../../../../lib/env/env'
+import { mapState } from 'vuex'
+import { setConsent } from '../../../../lib/vue/vuex/ProjectActions'
 
 const sidebarItems = [{
   title: 'What is a GeoPackage?',
@@ -76,15 +77,22 @@ const sidebarItems = [{
 }]
 
 export default {
+  computed: {
+    ...mapState({
+      consent: state => state.UIState.consent
+    }),
+    showPopup() {
+      return !this.consent.consent
+    }
+  },
   data () {
     return {
       version: window.mapcache.getAppVersion(),
-      sidebarItems,
-      showPopup: true
+      sidebarItems
     }
   },
   mounted () {
-    if(this.$matomo){
+    if(this.$matomo && this.consent.consent){
       this.$matomo.trackEvent("App Launch", "Welcome Page");
     }
   },
@@ -93,9 +101,13 @@ export default {
       window.mapcache.openExternal(link)
     },
     acceptConsent() {
-      this.showPopup = false;
+    if(this.$matomo){
+      this.$matomo.trackEvent("App Launch", "Consent Accepted");
+    }
+      setConsent(true)
     },
     declineConsent() {
+      setConsent(false)
       window.mapcache.closeApp();
     }
   }
