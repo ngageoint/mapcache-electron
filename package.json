@@ -99,7 +99,8 @@
     "better-sqlite3": "8.4.0",
     "bindings": "git://github.com/caldwellc/node-bindings.git#master",
     "canvas": "git://github.com/jclark118/empty-module.git#main",
-    "minimatch": "9.0.5"
+    "minimatch": "9.0.5",
+    "rollup": "^3.29.5"
   },
   "contributors": [
     {

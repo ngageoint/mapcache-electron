@@ -3,7 +3,7 @@
 ### Windows
 * Install Visual Studio 19 w/ Desktop development with C++ workload
 * Install Python 2.7
-* Install Node 18.13.0
+* Install Node 18.17.0
 * Install Git for windows
 * Install GTK+ (version 2.22.1, do NOT get version 3)
 * Install libjpeg-turbo64
@@ -184,8 +184,9 @@ Software source code previously released under an open source license and then m
 # Releasing a New Version
 1. Update package.json version
 2. Add a changelog file for the version describing new features added and bugs fixed
-3. Commit changes
-4. Tag version
-5. Build windows, linux and mac installers
-6. Notarize mac installers
-7. Create release on github for the new version and upload all the installer files
+3. Enable Matomo in env
+4. Commit changes
+5. Tag version
+6. Build windows, linux and mac installers
+7. Notarize mac installers
+8. Create release on github for the new version and upload all the installer files
