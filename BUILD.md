@@ -190,3 +190,4 @@ Software source code previously released under an open source license and then m
 6. Build windows, linux and mac installers
 7. Notarize mac installers
 8. Create release on github for the new version and upload all the installer files
+9. You'll need to generate builds for all different environments in order to have the correct matomo urls
