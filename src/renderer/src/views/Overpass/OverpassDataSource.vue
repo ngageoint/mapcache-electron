@@ -273,6 +273,9 @@ export default {
       return boundingBoxWithBuffer
     },
     async addLayer () {
+      if(this.$matomo){
+        this.$matomo.trackEvent("Data Source", "Overpass features downloaded");
+      }
       const id = window.mapcache.createUniqueID()
       let sourceToProcess = {
         id: id,

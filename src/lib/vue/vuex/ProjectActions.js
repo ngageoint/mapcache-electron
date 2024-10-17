@@ -553,6 +553,10 @@ function setActiveGeoPackageFeatureLayer (projectId, geopackageId, tableName) {
   }
 }
 
+function setConsent (consent) {
+  return store.dispatch('UIState/setConsent', {consent})
+}
+
 function setDarkTheme (projectId, enabled) {
   return store.dispatch('UIState/setDarkTheme', { projectId, enabled })
 }
@@ -724,6 +728,7 @@ export {
   setActiveGeoPackage,
   setActiveGeoPackageFeatureLayer,
   updateStyleKey,
+  setConsent,
   setDarkTheme,
   notifyTab,
   clearNotification,

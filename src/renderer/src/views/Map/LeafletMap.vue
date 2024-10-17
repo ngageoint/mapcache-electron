@@ -805,6 +805,9 @@ export default {
       }
     },
     async saveFeature (projectId, geopackageId, tableName, feature, columnsToAdd) {
+      if(this.$matomo){
+        this.$matomo.trackEvent("Features", "Feature created");
+      }      
       await addFeatureToGeoPackage(projectId, geopackageId, tableName, feature, columnsToAdd)
       if (this.additionalFeatureToAdd) {
         // this.additionalFeatureToAdd.properties = Object.assign({}, feature.properties)

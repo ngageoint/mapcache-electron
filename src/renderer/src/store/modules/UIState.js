@@ -1,5 +1,7 @@
 const getDefaultState = () => {
-  return {}
+  return {
+    consent: false
+  }
 }
 
 const state = getDefaultState()
@@ -27,6 +29,9 @@ const mutations = {
   },
   deleteProject (state, { projectId }) {
     delete state[projectId]
+  },
+  setConsent (state, consent) {
+    state.consent = consent
   },
   setDarkTheme (state, { projectId, enabled }) {
     state[projectId].dark = enabled
@@ -76,6 +81,9 @@ const actions = {
   },
   deleteProject ({ commit }, { projectId }) {
     commit('deleteProject', { projectId })
+  },
+  setConsent ({ commit }, consent) {
+    commit('setConsent', consent)
   },
   setDarkTheme ({ commit }, { projectId, enabled }) {
     commit('setDarkTheme', { projectId, enabled })

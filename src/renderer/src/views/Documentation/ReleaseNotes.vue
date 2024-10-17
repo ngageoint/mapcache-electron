@@ -81,6 +81,14 @@ export default {
     return {
       releaseNotes: [
       {
+          title: 'MapCache 1.6.2',
+          releaseDate: 'Oct 21, 2024',
+          bugFixes: [
+            'Fixed shp file import',
+            'Matomo user metrics logging added',
+            'Consent banner added'
+          ]
+      },{
           title: 'MapCache 1.6.1',
           releaseDate: 'Sept 30, 2024',
           bugFixes: [

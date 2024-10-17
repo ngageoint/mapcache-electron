@@ -248,6 +248,9 @@ export default {
       this.featureLayerField.name = name
     },
     addField () {
+      if(this.$matomo){
+        this.$matomo.trackEvent("GPKG modified", "Created feature field");
+      }
       this.addFieldDialog = false
       addGeoPackageFeatureTableColumn(this.projectId, this.id, this.isGeoPackage, this.tableName, this.addFieldValue, this.addFieldType).then(() => {
         this.addFieldValue = ''

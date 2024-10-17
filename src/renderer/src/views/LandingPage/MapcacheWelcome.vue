@@ -1,5 +1,16 @@
 <template>
   <div>
+    <div v-if="showPopup" class="popup-overlay">
+      <div class="popup-content">
+        <h2>Consent to monitoring</h2>
+        <p>As a condition of downloading, accessing, or using the products, you agree to the terms of the NGA Disclaimer</p>
+        <p>Disclaimer of warranties and limitations on liability. NGA makes no representations or warranties regarding the accuracy or completeness of any content of the products. User agrees, through use of the product, to assume any and all liability for any damage or loss resulting from your use of the content or the products and holds NGA harmless from liability.</p>
+        <div class="popup-buttons">
+          <button @click="declineConsent" class="decline-button">Decline</button>
+          <button @click="acceptConsent" class="accept-button">Accept</button>
+        </div>
+      </div>
+    </div>
     <div class="app-title-block">
       <img class="gp-img" src="/images/256x256.png" alt="GeoPackage Icon">
       <h4>MapCache</h4>
@@ -32,6 +43,8 @@
 
 <script>
 import { environment } from '../../../../lib/env/env'
+import { mapState } from 'vuex'
+import { setConsent } from '../../../../lib/vue/vuex/ProjectActions'
 
 const sidebarItems = [{
   title: 'What is a GeoPackage?',
@@ -64,22 +77,44 @@ const sidebarItems = [{
 }]
 
 export default {
+  computed: {
+    ...mapState({
+      consent: state => state.UIState.consent
+    }),
+    showPopup() {
+      return !this.consent.consent
+    }
+  },
   data () {
     return {
       version: window.mapcache.getAppVersion(),
       sidebarItems
     }
   },
+  mounted () {
+    if(this.$matomo && this.consent.consent){
+      this.$matomo.trackEvent("App Launch", "Welcome Page");
+    }
+  },
   methods: {
     open (link) {
       window.mapcache.openExternal(link)
+    },
+    acceptConsent() {
+    if(this.$matomo){
+      this.$matomo.trackEvent("App Launch", "Consent Accepted");
+    }
+      setConsent(true)
+    },
+    declineConsent() {
+      setConsent(false)
+      window.mapcache.closeApp();
     }
   }
 }
 </script>
 
 <style scoped>
-
 .app-title-block {
   color: rgba(255, 255, 255, .87);
   margin-bottom: 2em;
@@ -168,5 +203,50 @@ button:disabled {
 button.alt {
   color: rgb(22, 117, 170);
   background-color: transparent;
+}
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 2em;
+  border-radius: 1em;
+  text-align: center;
+  max-width: 400px;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1em;
+}
+
+.accept-button, .decline-button {
+  padding: 0.5em 1em;
+  border-radius: 0.5em;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.accept-button {
+  background: rgb(45, 89, 117);
+  border: none;
+}
+
+.decline-button {
+  background: rgba(214, 214, 214, 0.87);
+  color: rgba(0, 0, 0, 0.87);
+  border: none;
 }
 </style>

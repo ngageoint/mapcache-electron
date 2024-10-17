@@ -73,6 +73,11 @@ export default {
     return {
       tab: null
     }
+  },
+  mounted () {
+    if(this.$matomo){
+      this.$matomo.trackEvent("Page Load", "Loaded feature tables");
+    }
   }
 }
 </script>
