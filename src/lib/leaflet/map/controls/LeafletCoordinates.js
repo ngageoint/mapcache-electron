@@ -33,7 +33,8 @@ export default class LeafletCoordinates extends L.Control {
     let text = ''
     if (coordinate != null && coordinateType != null) {
       if (coordinateType === 'LatLng') {
-        text = 'Lat, Lng: ' + coordinate.lat.toFixed(6) + ', ' + coordinate.lng.toFixed(6)
+        const lng = window.mapcache.normalizeLongitude(coordinate.lng) // Limit longitude to range [-180, 180]
+        text = 'Lat, Lng: ' + coordinate.lat.toFixed(6) + ', ' + lng.toFixed(6)
       } else if (coordinateType === 'MGRS') {
         const mgrs = MGRS.from(new LatLng(coordinate.lat, coordinate.lng))
         text = 'MGRS: ' + mgrs.toString()
